@@ -1,0 +1,60 @@
+<html>
+<head>
+<link rel="stylesheet" href="stylesheets/gameMenu.css">
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
+<script src="javascripts/gameMenu.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+</head>
+<body>
+    <header>
+        <p id="chain">CHAIN</p>
+        <p id="duel">DUEL</p>
+    </header>
+    <p id="maintitle">STAKE YOUR SATS</p>
+    <p id="titleslogan">Pay to play, first one to reach zero loses.</p>
+    <div id="centerSection">
+        <div id="gameCard">
+            <div id="gameImage"></div>
+            <p id="gamename">Longest Chain</p>
+            <p id="gameDescription">2 block long chain captures 2% of the Sats. 3 long blocks capture 4%, 4 long 8%, 5 block 16%, 6 block 32%, 7 block 64%.</p>
+        </div>
+        <div id="gameCard">
+            <div id="gameImage"></div>
+            <p id="gamename">Protocol Limits</p>
+            <p id="gameDescription">Touching the other chain, or the walls, resets your chainsize to 2 blocks. Head-on collisions resets both chains.</p>
+        </div>
+        <div id="gameCard">
+            <div id="gameImage"></div>
+            <p id="gamename">Trending to Zero</p>
+            <p id="gameDescription">Game ends when a player reaches zero Sats.</p>
+        </div>
+    </div>
+    <div id="gameButtons">
+        <button id="instructionsbutton" type="button">INSTRUCTIONS</button>
+        <button id="startgame" type="button">READY TO START</button>
+    </div>
+    <hr id="separator">
+    <div id="bottomInfo">
+        <div id="player1card">
+            <image id="qrcode1"></image>
+            <div id="player1cardinfo">
+                <p id="player1sats">0</p>
+                <p id="player1info">❏ Player 1</p>
+            </div>
+        </div>
+        <div id="prizeinfocard">
+            <p id="rules1">1% (0 sats) to the host</p>
+            <p id="rules2">1% (0 sats) to the developer</p>
+            <p id="prizevaluesats">0</p>
+            <p id="prizeinfosats">Total Prize (sats)</p>
+        </div>
+        <div id="player2card">
+            <div id="player2cardinfo">
+                <p id="player2sats">0</p>
+                <p id="player2info">Player 2 ❏</p>
+            </div>
+            <image id="qrcode2"></image>
+        </div>
+    </div>
+</body>
+</html>

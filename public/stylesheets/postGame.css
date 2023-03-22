@@ -1,0 +1,137 @@
+body{
+    background-color: black;
+}
+
+header{
+    display: flex;
+    justify-content: space-between
+}
+
+#chain{
+    color: white;
+    margin-top: 0%;
+    margin-left: 1%;
+    text-align: left;
+    font-size: 2.5cqw;
+    
+}
+
+#duel{
+    color: white;
+    margin-top: 0%;
+    text-align: right;
+    font-size: 2.5cqw;
+    margin-right: 1%;
+
+}
+
+#gameOver{
+    position:static; 
+    margin-top: 0%;
+    margin-bottom: 0%;
+    text-align: center;
+    font-size: 3cqw;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke-color: white;
+}
+
+#winner{
+    position:static; 
+    margin-top: 0%;
+    text-align: center;
+    font-size: 6cqw;
+    color: white;
+    padding-top: 0%;
+    margin-bottom: 0%;
+}
+
+#hostFee, #developerFee, #claimReq1{
+    position:static; 
+    margin-top: 0%;
+    text-align: center;
+    font-size: 2cqw;
+    color: white;
+    padding-top: 0%;
+    margin-bottom: 0%;
+}
+
+#claimReq1{
+    margin-top: 1%;
+    font-size: 1.5cqw;
+}
+
+#prize{
+    position:static; 
+    margin-top: 0%;
+    text-align: center;
+    font-size: 7cqw;
+    color: white;
+    padding-top: 0%;
+    margin-bottom: 0%;
+    text-shadow: 1px 1px 2px white, 0 0 25px white, 0 0 5px white;
+}
+
+#claimText{
+    position:static; 
+    margin-top: 5%;
+    text-align: center;
+    font-size: 2cqw;
+    color: white;
+}
+
+#claimbutton:hover{
+    background-color: white; 
+    color: black;
+  }
+
+#buttonsDiv{
+    display:flex;
+}
+
+#startnewbutton{
+    display: none;
+    color: white; 
+    background-color: transparent;
+    border: 1px solid white;
+    width: 25%;
+    height: 3.5cqw;
+    font-size: 2cqw;
+    margin-left: 1%;
+    margin-right: auto;
+    animation: glowing 0ms infinite;
+}
+
+#claimbutton{
+    display: block;
+    color: white; 
+    background-color: transparent;
+    border: 1px solid white;
+    width: 25%;
+    height: 3.5cqw;
+    font-size: 2cqw;
+    margin-left: auto;
+    margin-right: auto;
+    animation: glowing 2000ms infinite;
+}
+@keyframes glowing {
+    0% {
+      background-color: black;
+      box-shadow: 0 0 5px black;
+    }
+    50% {
+      background-color: rgb(49, 49, 49);
+      box-shadow: 0 0 5px rgb(49, 49, 49);
+    } 
+}
+
+#qrCode1{
+    display: none;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 3%;
+    margin-bottom: 3%;
+    height: 10cqw;
+    width: 10cqw;
+    background-color: white;
+}

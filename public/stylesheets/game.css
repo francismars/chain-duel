@@ -1,0 +1,61 @@
+body{
+    background-color: black;
+}
+
+header{
+    display: flex;
+    justify-content: space-between
+}
+
+#chain{
+    color: white;
+    margin-top: 0%;
+    margin-left: 1%;
+    text-align: left;
+    font-size: 2.5cqw;
+    
+}
+
+#duel{
+    color: white;
+    margin-top: 0%;
+    text-align: right;
+    font-size: 2.5cqw;
+    margin-right: 1%;
+
+}
+
+#titleCanvas{
+    position: absolute;
+    margin: auto;
+    left: 0;
+    right: 0;
+    background-color: black;
+}
+
+#gameCanvas{
+    position: absolute;
+    margin: auto;
+    left: 0;
+    right: 0;
+    top: 28%;
+    background-color: DimGray;
+}
+
+#p1Points{
+    color: white;
+    position: absolute;
+    margin: auto;
+    left: 15%;
+    top: 21%;
+    font-size: 2.5cqw;
+}
+
+#p2Points{
+    color: white;
+    position: absolute;
+    margin: auto;
+    right: 15%;
+    top: 21%;
+    font-size: 2.5cqw;
+}

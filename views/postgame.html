@@ -1,0 +1,27 @@
+<html>
+<head>
+<link rel="stylesheet" href="stylesheets/postGame.css">
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+</head>
+<body>
+    <header>
+        <p id="chain">CHAIN</p>
+        <p id="duel">DUEL</p>
+    </header>
+    <p id="gameOver">GAME OVER</p>
+    <p id="winner">PLAYER 1 WINS</p>
+    <p id="hostFee">1% for the host</p>
+    <p id="developerFee">1% for the developer</p>
+    <p id="prize">100,000 SATS</p>
+    <p id="claimText">CLAIM YOUR WINNINGS</p>
+    <image id="qrCode1"></image>
+    <div id="buttonsDiv">
+        <button id="claimbutton" type="button">SWEEP VIA LNURL</button>
+        <button id="startnewbutton" type="button">START NEW GAME</button>
+    </div>
+    <p id="claimReq1">Requires supporting wallet.</p>
+    
+</body>
+<script src="javascripts/postGame.js"></script>
+</html>

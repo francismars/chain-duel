@@ -1,0 +1,110 @@
+body{
+    background-color: black;
+}
+
+#logo{
+    height: auto;
+    width: 20cqw;    
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 0px;
+    margin-top: 2%;
+}
+
+#presents{
+    margin-top: 0px;
+    text-align: center;
+    color: white;
+    font-size: 2cqw;
+    font-family: Helvetica;
+    font-style: italic;
+    font-weight: thin;
+}
+
+#chainduel{
+    text-align: center;
+    color: white;
+    font-size: 10cqw;
+    margin-bottom: 0px;
+    margin-top: 0px;
+    font-family: Impact;
+}
+
+#slogan{
+    margin-top: 0px;
+    text-align: center;
+    color: white; 
+    font-size: 1.5cqw;  
+    font-family: Helvetica;
+    font-style: bold italic;
+}
+
+#startgame{
+    margin-top: 5%;
+    margin-bottom: 5%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    color: white; 
+    background-color: transparent;
+    border: 1px solid white;
+    width: 25%;
+    height: 8%;
+    font-size: 2cqw;
+}
+
+/*
+#startgame:hover {
+    /* background-color: white; */ /*
+    color: black;
+  }
+
+/*
+#startgame:active {
+    background-color: white;
+    color: black;
+}
+*/
+
+@keyframes glowing {
+    0% {
+      background-color: black;
+      box-shadow: 0 0 5px black;
+    }
+    50% {
+      background-color: rgb(49, 49, 49);
+      box-shadow: 0 0 5px rgb(49, 49, 49);
+    } 
+  }
+  #startgame {
+    animation: glowing 2000ms infinite;
+  }
+
+#bottomInfo{
+    display: absolute;
+    bottom: 0px;
+    right: 0px;
+}
+
+#rules1{
+    text-align: center;
+    color: white; 
+    font-size: 1cqw;
+    margin-bottom: 0.1%;
+}
+
+#rules2{
+    margin-top: 0px;
+    text-align: center;
+    color: grey; 
+    font-size: 1cqw;
+}
+
+
+#buttonlink {
+    all: unset;
+}
+
+
+

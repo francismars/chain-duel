@@ -1,0 +1,235 @@
+body{
+    background-color: black;
+}
+
+header{
+    display: flex;
+    justify-content: space-between
+}
+
+#chain{
+    color: white;
+    margin-top: 0%;
+    margin-left: 1%;
+    text-align: left;
+    font-size: 2.5cqw;
+    
+}
+
+#duel{
+    color: white;
+    margin-top: 0%;
+    text-align: right;
+    font-size: 2.5cqw;
+    margin-right: 1%;
+
+}
+
+#maintitle{
+    position:static; 
+    margin-top: 2%;
+    text-align: center;
+    font-size: 3cqw;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke-color: white;
+    margin-bottom: 0%;
+}
+
+#titleslogan{
+    color: white;
+    text-align: center;
+    margin-top: 0%;
+    margin-bottom: 2%;
+    font-size: 1cqw;
+}
+
+#centerSection{
+    display:flex;
+}
+
+#gameCard{
+    margin-left: auto;
+    margin-right: auto;  
+    width: 20%;
+    display: block;
+}
+
+#gameImage {
+    height: 5cqw;
+    width: 8cqw;
+    background-color: #555;
+    box-shadow: 0 0 100px 1px #555;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
+  }
+
+#gamename{
+    color: white;
+    text-align: center;
+    margin-bottom: 0px;
+    font-size: 1.5cqw;
+}
+
+#gameDescription{
+    text-align: center;
+    color: grey;
+    font-size: 0.9cqw;
+}
+
+#gameButtons{
+    display: none;
+    padding-top: 1cqw;
+}
+
+#instructionsbutton{
+    margin-top: 5%;
+    margin-bottom: 5%;
+    color: white; 
+    background-color: transparent;
+    border: 1px solid white;
+    width: 25%;
+    height: 3.5cqw;
+    font-size: 2cqw;
+    margin-right: 1cqw;
+    margin-left: auto;
+    animation: glowing 0ms infinite;
+}
+
+#instructionsbutton:hover, #startgame:hover {
+    background-color: white; 
+    color: black;
+  }
+
+#startgame{
+    margin-top: 5%;
+    margin-bottom: 5%;
+    color: white; 
+    background-color: transparent;
+    border: 1px solid white;
+    width: 25%;
+    height: 3.5cqw;
+    font-size: 2cqw;
+    margin-left: 1cqw;
+    margin-right: auto;
+    animation: glowing 2000ms infinite;
+}
+@keyframes glowing {
+    0% {
+      background-color: black;
+      box-shadow: 0 0 5px black;
+    }
+    50% {
+      background-color: rgb(49, 49, 49);
+      box-shadow: 0 0 5px rgb(49, 49, 49);
+    } 
+}
+
+
+#separator{
+    margin-top: 2cqw;
+    width:98%;
+    border: 1px solid grey;
+}
+
+#bottomInfo{
+    display: inline-flex;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 2cqw;
+
+}
+
+#player1card{
+    display: inline-flex;
+    width: 33%;
+}
+
+#qrcode1{    
+    margin-left: 3%;
+    height: 10cqw;
+    width: 10cqw;
+    background-color: white;
+}
+
+
+#player1cardinfo{
+    display: block;
+    padding-left: 1cqw;
+    padding-top: 3cqw;
+}
+#player1sats{
+    color: white;
+    font-size: 1.5cqw;
+    padding-bottom: 0px;
+}
+
+#player1info{
+    color: white;
+    font-size: 1.5cqw;
+    padding-top: 0px;
+}
+
+
+#prizeinfocard{
+    display: block;
+    width: 33%;
+}
+
+#rules1, #rules2{
+    margin-top: 0px;
+    color: grey;
+    text-align: center;
+    font-size: 1cqw;
+}
+
+#prizevaluesats{
+    margin-top: 0px;
+    color: white;
+    font-size: 3cqw;
+    text-align: center;   
+    margin-bottom: 0px;
+}
+
+#prizeinfosats{
+    margin-top: 0px;
+    color: white;
+    font-size: 1.5cqw;
+    text-align: center;   
+}
+
+#player2card{    
+    display: flex;
+    width: 33%;
+}
+
+#player2cardinfo{
+    position: absolute;
+    right: 10.5cqw;
+    text-align: right;
+    padding-top: 3cqw;
+    padding-right: 2cqw;
+}
+
+#player2sats{
+    color: white;
+    font-size: 1.5cqw;
+    padding-bottom: 0px;
+}
+
+#player2info{
+    color: white;
+    font-size: 1.5cqw;
+    padding-top: 0px;
+}
+
+#qrcode2{
+    position: absolute;
+    display: block;
+    right: 1.5%;
+    height: 10cqw;
+    width: 10cqw;
+    background-color: white;
+}
