@@ -20,15 +20,20 @@ body {
   padding: 0;
   margin: 0;
   font-family: inter;
+  color: #fff;
   background-color: black;
-  background-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0)),
-                    url(../images/chainduel_bg.png);
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0)), url(../images/chainduel_bg.png);
   background-size: cover;
   background-position: center;
 }
 
 a {
   color: #00B7FF;
+}
+
+.grey{
+  color: #fff;
+  opacity: 0.5;
 }
 
 h1, h2, h3, h4, .condensed {
