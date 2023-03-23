@@ -47,19 +47,15 @@ h1, h2, h3, h4, .condensed {
   flex-direction: column;
   justify-content: space-between;
 }
-<<<<<<< HEAD
 
 .flex-center{
   justify-content:center;
 }
 
-=======
->>>>>>> 597aa1c90425a121f81d8b42b941c626cf8d4cf5
 .full{
   width: 100vw;
   min-height: 100vh
 }
-<<<<<<< HEAD
 
 
 
@@ -67,8 +63,6 @@ h1, h2, h3, h4, .condensed {
     margin-top: 1rem;
 }
 
-=======
->>>>>>> 597aa1c90425a121f81d8b42b941c626cf8d4cf5
 
 .qrcode {
   filter: invert(1);
