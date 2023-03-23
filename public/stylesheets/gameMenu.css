@@ -72,9 +72,8 @@ header{
     font-size: 1.5cqw;
 }
 
-#gameDescription{
+.gameDescription{
     text-align: center;
-    color: grey;
     font-size: 0.9cqw;
 }
 
