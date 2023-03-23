@@ -29,9 +29,6 @@ a {
   color: #00B7FF;
 }
 
-
-
-
 h1, h2, h3, h4, .condensed {
   margin-top: 0px;
   line-height: 0.95;
@@ -43,6 +40,15 @@ h1, h2, h3, h4, .condensed {
 }
 
 
+.flex{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.full{
+  width: 100vw;
+  min-height: 100vh
+}
 
 .qrcode {
   filter: invert(1);
