@@ -22,7 +22,7 @@ let currentScoreDistribution = [SatsP1,SatsP2];
 let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
 
 
-intervalStart = setInterval(draw, 1000/2);
+intervalStart = setInterval(draw, 1000/10);
 
 let counterStart = 0;
 function counterStartFunc(){
