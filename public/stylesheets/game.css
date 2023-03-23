@@ -29,7 +29,7 @@ header{
     margin: 0 15%;
     left: 0;
     right: 0;
-    background-color: black;
+    background-color: transparent;
 }
 
 #gameCanvas{

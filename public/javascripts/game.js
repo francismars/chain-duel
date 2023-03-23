@@ -56,50 +56,38 @@ function update(){
 
 
 function resetP1(){
-    p1HeadPos = [6,16];
-    p1BodyPos = [[5,16]];
+    p1HeadPos = [6,12];
+    p1BodyPos = [[5,12]];
     p1Dir = "";
     p1DirWanted = "";
 }
 
 function resetP2(){
-    p2HeadPos = [64,16];
-    p2BodyPos = [[65,16]];
+    p2HeadPos = [43,12];
+    p2BodyPos = [[44,12]];
     p2Dir = "";
     p2DirWanted = "";
 }
 
 
-let gameCols = 70;
-let gameRows = 30;
+let gameCols = 50;
+let gameRows = 24;
 
-let p1HeadPos = [6,16];
-let p1BodyPos = [[5,16]];
+let p1HeadPos = [6,12];
+let p1BodyPos = [[5,12]];
 
 
 let p1Dir = "";
 let p1DirWanted = "";
 
-let p2HeadPos = [64,16];
-let p2BodyPos = [[65,16]];
+let p2HeadPos = [43,12];
+let p2BodyPos = [[44,12]];
 
 let p2Dir = "";
 let p2DirWanted = "";
 
-let foodPos = [[35,16]];
+let foodPos = [[25,12]];
 
-/*
-gameCols = 35;
-gameRows = 15;
-
-p1HeadPos = [4,8];
-p1BodyPos = [[3,8]];
-
-p2HeadPos = [30,8];
-p2BodyPos = [[31,8]];
-
-foodPos = [[11,8]];
-*/
 
 var countdownStart = false;
 var gameStarted = false;
@@ -144,7 +132,6 @@ function changeScore(playerID){
         changeInPoints=1;
     }
     if(playerID=="P1"){
-        console.log(changeInPoints)
         currentScoreDistribution[0]+=changeInPoints;
         currentScoreDistribution[1]-=changeInPoints;
     }
@@ -207,6 +194,25 @@ function displayGame(){
     var alturaGame = gameCanvas.height;
     colSize = larguraGame / gameCols;
     rowSize = alturaGame / gameRows;
+
+
+    /*
+    ctxGame.beginPath();
+    ctxGame.moveTo(0, alturaGame/2);
+    ctxGame.lineTo(larguraGame, alturaGame/2);
+    ctxGame.moveTo(larguraGame/2, 0);
+    ctxGame.lineTo(larguraGame/2, alturaGame);
+    ctxGame.stroke();
+    for (i=0;i<=gameCols;i++){
+        for (j=0;j<=gameRows;j++){
+            ctxGame.beginPath();
+            ctxGame.strokeStyle = "gray";
+            ctxGame.rect(i*colSize, j*rowSize, colSize, rowSize);
+            ctxGame.fillText((i+j), i*colSize, j*rowSize);
+            ctxGame.stroke();
+        }
+    }
+    */
 
     ctxGame.fillStyle = "white";
     ctxGame.beginPath();
@@ -403,43 +409,43 @@ addEventListener("keydown", function(event) {
             }
         break;
         case "ARROWLEFT":
-            if(p1Dir == "Up" || p1Dir == "Down"){
-                p1DirWanted = "Left"
+            if(p2Dir == "Up" || p2Dir == "Down" || p2Dir == ""){
+                p2DirWanted = "Left"
             }
             break;
         case "ARROWRIGHT":
-            if(p1Dir == "Up" || p1Dir == "Down" || p1Dir == ""){
-                p1DirWanted = "Right"
-            }
-            break;
-        case "ARROWUP":
-            if(p1Dir == "Left" || p1Dir == "Right"){
-                p1DirWanted = "Up"
-            }
-            break;
-        case "ARROWDOWN":
-            if(p1Dir == "Left" || p1Dir == "Right"){
-                p1DirWanted = "Down"
-            }
-            break;
-        case "A":
-            if(p2Dir == "Up" || p2Dir == "Down"  || p2Dir == ""){
-                p2DirWanted = "Left"
-            }
-        break;
-        case "D":
             if(p2Dir == "Up" || p2Dir == "Down"){
                 p2DirWanted = "Right"
             }
-        break;
-        case "W":
+            break;
+        case "ARROWUP":
             if(p2Dir == "Left" || p2Dir == "Right"){
                 p2DirWanted = "Up"
             }
-        break;
-        case "S":
+            break;
+        case "ARROWDOWN":
             if(p2Dir == "Left" || p2Dir == "Right"){
                 p2DirWanted = "Down"
+            }
+            break;
+        case "A":
+            if(p1Dir == "Up" || p1Dir == "Down"){
+                p1DirWanted = "Left"
+            }
+        break;
+        case "D":
+            if(p1Dir == "Up" || p1Dir == "Down" || p1Dir == ""){
+                p1DirWanted = "Right"
+            }
+        break;
+        case "W":
+            if(p1Dir == "Left" || p1Dir == "Right"){
+                p1DirWanted = "Up"
+            }
+        break;
+        case "S":
+            if(p1Dir == "Left" || p1Dir == "Right"){
+                p1DirWanted = "Down"
             }
         break;
     }
