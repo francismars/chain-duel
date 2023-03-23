@@ -121,4 +121,9 @@ function changeTextAfterPayment(){
     document.getElementById("rules2").innerText =  "1% ("+Math.floor(totalPrize*0.01)+" sats) to the developer"
     document.getElementById("player1info").innerText = p1Name
     document.getElementById("player2info").innerText = p2Name
+    if (menu=="GameModes" && playersSats[1]!=0 && playersSats[0]!=0){
+        document.getElementById("centerSection").style.display  = "none";
+        document.getElementById("gameButtons").style.display  = "flex"; 
+        menu="Buttons";
+    }
 }

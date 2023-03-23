@@ -60,14 +60,14 @@ function resetP1(){
     p1HeadPos = [6,12];
     p1BodyPos = [[5,12]];
     p1Dir = "";
-    p1DirWanted = "";
+    p1DirWanted = "Right";
 }
 
 function resetP2(){
     p2HeadPos = [43,12];
     p2BodyPos = [[44,12]];
     p2Dir = "";
-    p2DirWanted = "";
+    p2DirWanted = "Left";
 }
 
 
@@ -79,13 +79,13 @@ let p1BodyPos = [[5,12]];
 
 
 let p1Dir = "";
-let p1DirWanted = "";
+let p1DirWanted = "Right";
 
 let p2HeadPos = [43,12];
 let p2BodyPos = [[44,12]];
 
 let p2Dir = "";
-let p2DirWanted = "";
+let p2DirWanted = "Left";
 
 let foodPos = [[25,12]];
 
@@ -306,7 +306,11 @@ function displayGame(){
                 p1HeadPos[0] = p1HeadPos[0]+1;
                 break;
         }
-        if(p1HeadPos[0]>gameCols-1 || p1HeadPos[1]<0 || p1HeadPos[1]>gameRows-1 || p1HeadPos[0]<0 || (p1HeadPos[0]==p2HeadPos[0] && p1HeadPos[1]==p2HeadPos[1])){
+        if(p2HeadPos[0]==p1HeadPos[0] && p2HeadPos[1]==p1HeadPos[1]){
+            resetP1();
+            resetP2();
+        }
+        if(p1HeadPos[0]>gameCols-1 || p1HeadPos[1]<0 || p1HeadPos[1]>gameRows-1 || p1HeadPos[0]<0){
             resetP1();
         }
         for(i=0;i<(p1BodyPos.length);i++){
@@ -336,7 +340,7 @@ function displayGame(){
                 p2HeadPos[0] = p2HeadPos[0]+1
                 break;
         }
-        if(p2HeadPos[0]>gameCols-1 || p2HeadPos[1]<0 || p2HeadPos[1]>gameRows-1 || p2HeadPos[0]<0 || (p2HeadPos[0]==p1HeadPos[0] && p2HeadPos[1]==p1HeadPos[1])){
+        if(p2HeadPos[0]>gameCols-1 || p2HeadPos[1]<0 || p2HeadPos[1]>gameRows-1 || p2HeadPos[0]<0){
             resetP2();
         }
         for(i=0;i<(p2BodyPos.length);i++){
@@ -392,7 +396,7 @@ function displayGame(){
         else if(currentScoreDistribution[1]<=0){
             winner=P1Name
         }
-        ctxGame.fillText(winner+" WINS!", (larguraGame/2), alturaGame/2);
+        ctxGame.fillText(winner.toUpperCase()+" WINS!", (larguraGame/2), alturaGame/2);
     }
 }
 
