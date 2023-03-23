@@ -1,8 +1,39 @@
+@font-face {
+  font-family: "BureauGrotesque";
+  src: url("fonts/BureauGrotesque/BureauGrotesque.eot");
+  src: url("fonts/BureauGrotesque/BureauGrotesque.eot?#iefix") format("embedded-opentype"),
+  url("fonts/BureauGrotesque/BureauGrotesque.woff2") format("woff2"),
+  url("fonts/BureauGrotesque/BureauGrotesque.woff") format("woff"),
+  url("fonts/BureauGrotesque/BureauGrotesque.ttf") format("truetype"),
+  url("fonts/BureauGrotesque/BureauGrotesque.svg#BureauGrotesque") format("svg");
+}
+
+
+@import url('fonts/inter/inter.css');
+
+html, body, button {
+  font-family: 'Inter', sans-serif;
+}
+
+
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  font-family: inter;
+  background-color: black;
 }
 
 a {
   color: #00B7FF;
+}
+
+
+
+
+h1, h2, h3, h4, .condensed {
+  margin-top: 0px;
+  line-height: 0.95;
+  text-align: center;
+  font-family: "BureauGrotesque";
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: -0.05rem;
 }
