@@ -9,13 +9,13 @@
 }
 
 #presents{
-    margin-top: 0px;
+    margin-top: 15px;
     text-align: center;
     color: white;
-    font-size: 2cqw;
-    font-family: Helvetica;
-    font-style: italic;
-    font-weight: thin;
+    font-size: 14px;
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
 }
 
 #chainduel{
@@ -31,9 +31,8 @@
     margin-top: 0px;
     text-align: center;
     color: white;
-    font-size: 1.5cqw;
-    font-family: Helvetica;
-    font-style: bold italic;
+    letter-spacing: 0.1rem;
+    font-size: 16px;
 }
 
 #startgame{
@@ -47,7 +46,9 @@
     border: 1px solid white;
     width: 25%;
     height: 8%;
-    font-size: 2cqw;
+    font-size: 14px;
+    padding: 20px;
+    letter-spacing: 0.1rem;
 }
 
 /*
