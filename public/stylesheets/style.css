@@ -19,6 +19,8 @@ html, body, button {
 body {
   font-family: inter;
   background-color: black;
+  background-image: url(../images/chainduel_bg.png);
+  background-size: cover;
 }
 
 a {
