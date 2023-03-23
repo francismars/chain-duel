@@ -29,7 +29,7 @@ header{
     position:static;
     margin-top: 2%;
     text-align: center;
-    font-size: 3cqw;
+    font-size: 6cqw;
     -webkit-text-stroke-width: 1px;
     -webkit-text-fill-color: transparent;
     -webkit-text-stroke-color: white;
@@ -50,7 +50,7 @@ header{
 
 #gameCard{
     margin-left: auto;
-    margin-right: auto;  
+    margin-right: auto;
     width: 20%;
     display: block;
 }
@@ -86,7 +86,7 @@ header{
 #instructionsbutton{
     margin-top: 5%;
     margin-bottom: 5%;
-    color: white; 
+    color: white;
     background-color: transparent;
     border: 1px solid white;
     width: 25%;
@@ -98,14 +98,14 @@ header{
 }
 
 #instructionsbutton:hover, #startgame:hover {
-    background-color: white; 
+    background-color: white;
     color: black;
   }
 
 #startgame{
     margin-top: 5%;
     margin-bottom: 5%;
-    color: white; 
+    color: white;
     background-color: transparent;
     border: 1px solid white;
     width: 25%;
@@ -167,7 +167,7 @@ header{
 
 #player1info{
     color: white;
-    font-size: 1.5cqw;
+    font-size: 2.5cqw;
     padding-top: 0px;
 }
 
@@ -220,7 +220,7 @@ header{
 
 #player2info{
     color: white;
-    font-size: 1.5cqw;
+    font-size: 2.5cqw;
     padding-top: 0px;
 }
 

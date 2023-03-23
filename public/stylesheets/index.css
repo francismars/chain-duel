@@ -21,7 +21,8 @@
 #chainduel{
     text-align: center;
     color: white;
-    font-size: 10cqw;
+    font-size: 14cqw;
+    letter-spacing: -0.03em;
     margin-bottom: 0px;
     margin-top: 0px;
 }
