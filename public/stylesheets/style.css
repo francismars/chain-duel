@@ -19,8 +19,10 @@ html, body, button {
 body {
   font-family: inter;
   background-color: black;
-  background-image: url(../images/chainduel_bg.png);
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0)),
+                    url(../images/chainduel_bg.png);
   background-size: cover;
+  background-position: center;
 }
 
 a {
