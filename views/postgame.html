@@ -6,23 +6,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 </head>
 <body>
-    <header>
-        <p id="chain">CHAIN</p>
-        <p id="duel">DUEL</p>
+    <header id="brand">
+        <h2 id="chain">CHAIN</h2>
+        <h2 id="duel">DUEL</h2>
     </header>
-    <p id="gameOver">GAME OVER</p>
-    <p id="winner">PLAYER 1 WINS</p>
-    <p id="hostFee">1% for the host</p>
-    <p id="developerFee">1% for the developer</p>
-    <p id="prize">100,000 SATS</p>
-    <p id="claimText">CLAIM YOUR WINNINGS</p>
-    <image id="qrCode1"></image>
-    <div id="buttonsDiv">
-        <button id="claimbutton" type="button">SWEEP VIA LNURL</button>
-        <button id="startnewbutton" type="button">START NEW GAME</button>
+    <div class="flex full flex-center">
+      <h2 id="gameOver">GAME OVER</h2>
+      <h1 id="winner">PLAYER 1 WINS</h1>
+      <p id="hostFee">1% for the host</p>
+      <p id="developerFee">1% for the developer</p>
+      <h1 id="prize">100,000 SATS</h1>
+      <p id="claimText">CLAIM YOUR WINNINGS</p>
+      <image id="qrCode1"></image>
+      <div id="buttonsDiv">
+          <button id="claimbutton" type="button">SWEEP VIA LNURL</button>
+          <button id="startnewbutton" type="button">START NEW GAME</button>
+      </div>
+      <p id="claimReq1">Requires compatible wallet.</p>
     </div>
-    <p id="claimReq1">Requires supporting wallet.</p>
-    
 </body>
 <script src="javascripts/postGame.js"></script>
 </html>

@@ -13,7 +13,7 @@ header{
     margin-left: 1%;
     text-align: left;
     font-size: 2.5cqw;
-    
+
 }
 
 #duel{
@@ -26,7 +26,7 @@ header{
 }
 
 #gameOver{
-    position:static; 
+    position:static;
     margin-top: 0%;
     margin-bottom: 0%;
     text-align: center;
@@ -37,7 +37,7 @@ header{
 }
 
 #winner{
-    position:static; 
+    position:static;
     margin-top: 0%;
     text-align: center;
     font-size: 6cqw;
@@ -47,10 +47,10 @@ header{
 }
 
 #hostFee, #developerFee, #claimReq1{
-    position:static; 
+    position:static;
     margin-top: 0%;
     text-align: center;
-    font-size: 2cqw;
+    font-size: 1.4cqw;
     color: white;
     padding-top: 0%;
     margin-bottom: 0%;
@@ -62,10 +62,10 @@ header{
 }
 
 #prize{
-    position:static; 
-    margin-top: 0%;
+    position:static;
+    margin: 2rem 0;
     text-align: center;
-    font-size: 7cqw;
+    font-size: 14cqw;
     color: white;
     padding-top: 0%;
     margin-bottom: 0%;
@@ -73,7 +73,7 @@ header{
 }
 
 #claimText{
-    position:static; 
+    position:static;
     margin-top: 5%;
     text-align: center;
     font-size: 2cqw;
@@ -81,7 +81,7 @@ header{
 }
 
 #claimbutton:hover{
-    background-color: white; 
+    background-color: white;
     color: black;
   }
 
@@ -91,7 +91,7 @@ header{
 
 #startnewbutton{
     display: none;
-    color: white; 
+    color: white;
     background-color: transparent;
     border: 1px solid white;
     width: 25%;
@@ -104,7 +104,7 @@ header{
 
 #claimbutton{
     display: block;
-    color: white; 
+    color: white;
     background-color: transparent;
     border: 1px solid white;
     width: 25%;
@@ -122,7 +122,7 @@ header{
     50% {
       background-color: rgb(49, 49, 49);
       box-shadow: 0 0 5px rgb(49, 49, 49);
-    } 
+    }
 }
 
 #qrCode1{

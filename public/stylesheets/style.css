@@ -65,7 +65,9 @@ h1, h2, h3, h4, .condensed {
 
 
 #brand {
-    margin-top: 1rem;
+  position: fixed;
+  margin-top: 1rem;
+  width: 100%;
 }
 
 

@@ -13,7 +13,7 @@ header{
     margin-left: 1%;
     text-align: left;
     font-size: 2.5cqw;
-    
+
 }
 
 #duel{
@@ -26,26 +26,41 @@ header{
 }
 
 #titleCanvas{
-    position: absolute;
-    margin: auto;
+    margin: 0 15%;
     left: 0;
     right: 0;
     background-color: black;
 }
 
 #gameCanvas{
-    position: absolute;
-    margin: auto;
+    margin: 0 15%;
     left: 0;
     right: 0;
     top: 28%;
     background-color: DimGray;
 }
 
+
+.flex.full.game {
+    display: flex;
+    justify-content: center;
+    flex-grow: unset;
+    flex-basis: fit-content;
+}
+
+
+.flex.points {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 1rem 15%;
+}
+
+
 #p1Points{
     color: white;
-    position: absolute;
-    margin: auto;
+    margin-right: 0.5rem;
     left: 15%;
     top: 21%;
     font-size: 2.5cqw;
@@ -53,8 +68,7 @@ header{
 
 #p2Points{
     color: white;
-    position: absolute;
-    margin: auto;
+    margin-left: 0.5rem;
     right: 15%;
     top: 21%;
     font-size: 2.5cqw;
