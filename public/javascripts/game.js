@@ -22,7 +22,7 @@ let currentScoreDistribution = [SatsP1,SatsP2];
 let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
 
 
-intervalStart = setInterval(draw, 1000/10);
+intervalStart = setInterval(draw, 1000/2);
 
 let counterStart = 0;
 function counterStartFunc(){
@@ -306,23 +306,6 @@ function displayGame(){
                 p1HeadPos[0] = p1HeadPos[0]+1;
                 break;
         }
-        if(p2HeadPos[0]==p1HeadPos[0] && p2HeadPos[1]==p1HeadPos[1]){
-            resetP1();
-            resetP2();
-        }
-        if(p1HeadPos[0]>gameCols-1 || p1HeadPos[1]<0 || p1HeadPos[1]>gameRows-1 || p1HeadPos[0]<0){
-            resetP1();
-        }
-        for(i=0;i<(p1BodyPos.length);i++){
-            if(p1HeadPos[0]===p1BodyPos[i][0] && p1HeadPos[1]===p1BodyPos[i][1]){
-                resetP1();
-            }
-        }
-        for(i=0;i<p2BodyPos.length;i++){
-            if(p1HeadPos[0]===p2BodyPos[i][0] && p1HeadPos[1]===p2BodyPos[i][1]){
-                resetP1();
-            }
-        }
         p2BodyPos.unshift([p2HeadPos[0],p2HeadPos[1]]);
         p2BodyPos.pop();
         p2Dir = p2DirWanted;
@@ -339,6 +322,27 @@ function displayGame(){
             case "Right":
                 p2HeadPos[0] = p2HeadPos[0]+1
                 break;
+        }
+        if(p2HeadPos[0]==p1HeadPos[0] && p2HeadPos[1]==p1HeadPos[1]){
+            resetP1();
+            resetP2();
+        }
+        if(p1HeadPos[0]==p2HeadPos[0] && p1HeadPos[1]==p2HeadPos[1]){
+            resetP1();
+            resetP2();
+        }
+        if(p1HeadPos[0]>gameCols-1 || p1HeadPos[1]<0 || p1HeadPos[1]>gameRows-1 || p1HeadPos[0]<0){
+            resetP1();
+        }
+        for(i=0;i<(p1BodyPos.length);i++){
+            if(p1HeadPos[0]===p1BodyPos[i][0] && p1HeadPos[1]===p1BodyPos[i][1]){
+                resetP1();
+            }
+        }
+        for(i=0;i<p2BodyPos.length;i++){
+            if(p1HeadPos[0]===p2BodyPos[i][0] && p1HeadPos[1]===p2BodyPos[i][1]){
+                resetP1();
+            }
         }
         if(p2HeadPos[0]>gameCols-1 || p2HeadPos[1]<0 || p2HeadPos[1]>gameRows-1 || p2HeadPos[0]<0){
             resetP2();
