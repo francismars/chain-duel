@@ -24,14 +24,13 @@
     font-size: 10cqw;
     margin-bottom: 0px;
     margin-top: 0px;
-    font-family: Impact;
 }
 
 #slogan{
     margin-top: 0px;
     text-align: center;
-    color: white; 
-    font-size: 1.5cqw;  
+    color: white;
+    font-size: 1.5cqw;
     font-family: Helvetica;
     font-style: bold italic;
 }
@@ -42,7 +41,7 @@
     display: block;
     margin-left: auto;
     margin-right: auto;
-    color: white; 
+    color: white;
     background-color: transparent;
     border: 1px solid white;
     width: 25%;
@@ -71,7 +70,7 @@
     50% {
       background-color: rgb(49, 49, 49);
       box-shadow: 0 0 5px rgb(49, 49, 49);
-    } 
+    }
   }
   #startgame {
     animation: glowing 2000ms infinite;
@@ -85,7 +84,7 @@
 
 #rules1{
     text-align: center;
-    color: white; 
+    color: white;
     font-size: 1cqw;
     margin-bottom: 0.1%;
 }
@@ -93,7 +92,7 @@
 #rules2{
     margin-top: 0px;
     text-align: center;
-    color: grey; 
+    color: grey;
     font-size: 1cqw;
 }
 
@@ -101,6 +100,3 @@
 #buttonlink {
     all: unset;
 }
-
-
-
