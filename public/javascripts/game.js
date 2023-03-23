@@ -12,7 +12,8 @@ var larguraGame = gameCanvas.width;
 var alturaGame = gameCanvas.height;
 var ctxGame = gameCanvas.getContext("2d");
 
-
+var P1Name = sessionStorage.getItem("P1Name");
+var P2Name = sessionStorage.getItem("P2Name");
 var SatsP1 = parseInt(sessionStorage.getItem('P1Sats'));
 var SatsP2 = parseInt(sessionStorage.getItem('P2Sats'));
 let initialScoreDistribution = [SatsP1,SatsP2];
@@ -134,10 +135,16 @@ function changeScore(playerID){
     if(playerID=="P1"){
         currentScoreDistribution[0]+=changeInPoints;
         currentScoreDistribution[1]-=changeInPoints;
+        if(currentScoreDistribution[1]<0){
+            currentScoreDistribution[1]=0;
+        }
     }
     if(playerID=="P2"){
         currentScoreDistribution[1]+=changeInPoints;
         currentScoreDistribution[0]-=changeInPoints;
+        if(currentScoreDistribution[0]<0){
+            currentScoreDistribution[0]=0;
+        }
     }
 }
 
@@ -380,10 +387,10 @@ function displayGame(){
         ctxGame.strokeStyle = "white";
         let winner = "";
         if(currentScoreDistribution[0]<=0){
-            winner="Player 2"
+            winner=P2Name
         }
         else if(currentScoreDistribution[1]<=0){
-            winner="Player 1"
+            winner=P1Name
         }
         ctxGame.fillText(winner+" WINS!", (larguraGame/2), alturaGame/2);
     }
@@ -462,8 +469,8 @@ function displayTitle(){
     ctxTitle.font = "30px Arial";
     ctxTitle.fillStyle = "white";
     ctxTitle.textAlign = "center";
-    ctxTitle.fillText("PLAYER 1", (larguraTitle*0.08), 30);
-    ctxTitle.fillText("PLAYER 2", (larguraTitle*0.92), 30);
+    ctxTitle.fillText(P1Name, (larguraTitle*0.08), 30);
+    ctxTitle.fillText(P2Name, (larguraTitle*0.92), 30);
 
     ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();

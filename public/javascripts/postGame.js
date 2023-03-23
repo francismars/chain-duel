@@ -1,7 +1,14 @@
 
 var gameWinner = sessionStorage.getItem('gameWinner');
+var winnerName
+if(gameWinner=="Player 1"){
+    winnerName = sessionStorage.getItem("P1Name");
+}
+else if(gameWinner=="Player 2"){
+    winnerName = sessionStorage.getItem("P2Name");
+}
 if (gameWinner!=null){
-    document.getElementById("winner").innerText  = gameWinner.toUpperCase()+" WINS";
+    document.getElementById("winner").innerText  = winnerName.toUpperCase()+" WINS";
 }
 var withdrawalURL = sessionStorage.getItem('LNURL');
 if (withdrawalURL!=null){

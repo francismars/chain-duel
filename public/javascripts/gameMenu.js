@@ -3,6 +3,8 @@ let menu= "GameModes"
 
 let playersSats = [0,0]
 let numberofCreates = 0
+let p1Name = "Player 1"
+let p2Name = "Player 2"
 
 addEventListener("keydown", function(event) {
     switch (event.key) {
@@ -27,6 +29,8 @@ addEventListener("keydown", function(event) {
                         if(numberofCreates==0){
                             sessionStorage.setItem("P1Sats", playersSats[0]);
                             sessionStorage.setItem("P2Sats", playersSats[1]);
+                            sessionStorage.setItem("P1Name", p1Name);
+                            sessionStorage.setItem("P2Name", p2Name);
                             socket.emit('createWithdrawal', Math.floor((playersSats[0]+playersSats[1])*0.98));
                             numberofCreates=1;
                         }
@@ -91,13 +95,19 @@ socket.on("resPayLinks", body => {
 socket.on("invoicePaid", body => {
     if(body.lnurlp=="jk3tA3"){
         console.log(`Chegou pagamento de P1: ${(body.amount)/1000} sats`);
-        const player1Deposit = body.amount/1000
-        playersSats[0] = body.amount/1000
+        if(body.comment!=null){
+            console.log(body.comment)
+            p1Name=body.comment[0]            
+        }
+        playersSats[0] += body.amount/1000
     }
     if(body.lnurlp=="LyjSsd"){
         console.log(`Chegou pagamento de P2: ${(body.amount)/1000} sats`);
-        const player2Deposit = body.amount/1000
-        playersSats[1] = body.amount/1000
+        if(body.comment!=null){
+            console.log(body.comment)
+            p2Name=body.comment[0]            
+        }
+        playersSats[1] += body.amount/1000
     }
     changeTextAfterPayment()
 });
@@ -109,4 +119,6 @@ function changeTextAfterPayment(){
     document.getElementById("prizevaluesats").innerText = totalPrize
     document.getElementById("rules1").innerText = "1% ("+Math.floor(totalPrize*0.01)+" sats) to the host"
     document.getElementById("rules2").innerText =  "1% ("+Math.floor(totalPrize*0.01)+" sats) to the developer"
+    document.getElementById("player1info").innerText = p1Name
+    document.getElementById("player2info").innerText = p2Name
 }
