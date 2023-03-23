@@ -70,6 +70,33 @@ h1, h2, h3, h4, .condensed {
   width: 100%;
 }
 
+@keyframes glowing {
+  0% {
+    background-color: transparent;
+    box-shadow: 0 0 5px transparent;
+  }
+  50% {
+    background-color: rgb(255 255 255 / 29%);
+    box-shadow: 0 0 25px rgb(255 255 255);
+  }
+}
+
+
+.button{
+    margin-top: 5%;
+    margin-bottom: 5%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    color: white;
+    background-color: transparent;
+    border: 1px solid white;
+    width: 25%;
+    height: 8%;
+    font-size: 14px;
+    padding: 20px;
+    letter-spacing: 0.1rem;
+}
 
 .qrcode {
   filter: invert(1);

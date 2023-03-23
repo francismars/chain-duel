@@ -83,6 +83,7 @@ header{
 }
 
 #instructionsbutton{
+    /*
     margin-top: 5%;
     margin-bottom: 5%;
     color: white;
@@ -93,7 +94,9 @@ header{
     font-size: 2cqw;
     margin-right: 1cqw;
     margin-left: auto;
+    */
     animation: glowing 0ms infinite;
+
 }
 
 #instructionsbutton:hover, #startgame:hover {
@@ -102,6 +105,7 @@ header{
   }
 
 #startgame{
+    /*
     margin-top: 5%;
     margin-bottom: 5%;
     color: white;
@@ -112,19 +116,9 @@ header{
     font-size: 2cqw;
     margin-left: 1cqw;
     margin-right: auto;
+    */
     animation: glowing 2000ms infinite;
 }
-@keyframes glowing {
-    0% {
-      background-color: black;
-      box-shadow: 0 0 5px black;
-    }
-    50% {
-      background-color: rgb(49, 49, 49);
-      box-shadow: 0 0 5px rgb(49, 49, 49);
-    }
-}
-
 
 #separator{
     margin-top: 2cqw;
