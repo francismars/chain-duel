@@ -39,3 +39,10 @@ h1, h2, h3, h4, .condensed {
   font-weight: 500;
   letter-spacing: -0.05rem;
 }
+
+
+
+.qrcode {
+  filter: invert(1);
+  mix-blend-mode: screen;
+}
