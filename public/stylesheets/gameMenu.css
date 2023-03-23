@@ -141,6 +141,9 @@ header{
 
 }
 
+
+
+
 #player1card{
     display: inline-flex;
     width: 33%;
@@ -153,10 +156,17 @@ header{
 }
 
 
+.player-card-info{
+  display: flex;
+  align-content: space-between;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+
 #player1cardinfo{
-    display: block;
     padding-left: 1cqw;
-    padding-top: 3cqw;
+    /* padding-top: 3cqw; */
 }
 #player1sats{
     color: white;
@@ -201,14 +211,15 @@ header{
 #player2card{
     display: flex;
     width: 33%;
+    justify-content: flex-end;
 }
 
 #player2cardinfo{
-    position: absolute;
-    right: 10.5cqw;
+    /* position: absolute; */
+    /* right: 10.5cqw; */
     text-align: right;
-    padding-top: 3cqw;
-    padding-right: 2cqw;
+    /* padding-top: 3cqw; */
+    padding-right: 1cqw;
 }
 
 #player2sats{
@@ -224,8 +235,8 @@ header{
 }
 
 #qrcode2{
-    position: absolute;
-    display: block;
+    /* position: absolute; */
+    /* display: block; */
     right: 1.5%;
     height: 10cqw;
     width: 10cqw;
