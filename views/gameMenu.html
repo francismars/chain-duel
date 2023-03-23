@@ -7,12 +7,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 </head>
 <body>
-    <header>
+
+  <div class="flex full">
+    <header id="brand">
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
     </header>
-    <h2 id="maintitle" class="condensed">STAKE YOUR SATS</h2>
-    <p id="titleslogan">Pay to play, first one to reach zero loses.</p>
+
+    <div>
+      <h2 id="maintitle" class="condensed">STAKE YOUR SATS</h2>
+      <p id="titleslogan">Pay to play, first one to reach zero loses.</p>
+    </div>
+
     <div id="centerSection">
         <div id="gameCard">
             <div id="gameImage"></div>
@@ -29,12 +35,16 @@
             <p id="gamename">Trending to Zero</p>
             <p id="gameDescription">Game ends when a player reaches zero Sats.</p>
         </div>
+
     </div>
+
     <div id="gameButtons">
         <button id="instructionsbutton" type="button">INSTRUCTIONS</button>
         <button id="startgame" type="button">READY TO START</button>
     </div>
+
     <hr id="separator">
+
     <div id="bottomInfo">
         <div id="player1card">
             <image id="qrcode1" class="qrcode"></image>
@@ -57,5 +67,6 @@
             <image id="qrcode2" class="qrcode"></image>
         </div>
     </div>
+  </div>
 </body>
 </html>

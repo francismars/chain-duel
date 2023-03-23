@@ -4,14 +4,16 @@
 <link rel="stylesheet" href="stylesheets/game.css">
 </head>
 <body>
-    <header>
-        <p id="chain">CHAIN</p>
-        <p id="duel">DUEL</p>
-    </header>
-    <canvas id="titleCanvas"></canvas>
-    <p id="p1Points">0</p>
-    <p id="p2Points">0</p>
-    <canvas id="gameCanvas"></canvas>
+    <div class="flex full">
+        <header id="brand">
+            <h2 id="chain">CHAIN</h2>
+            <h2 id="duel">DUEL</h2>
+        </header>
+        <canvas id="titleCanvas"></canvas>
+        <p id="p1Points">0</p>
+        <p id="p2Points">0</p>
+        <canvas id="gameCanvas"></canvas>
+    </div>
 </body>
 <script src="javascripts/game.js"></script>
 </html>

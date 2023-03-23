@@ -17,6 +17,8 @@ html, body, button {
 
 
 body {
+  padding: 0;
+  margin: 0;
   font-family: inter;
   background-color: black;
   background-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0)),
@@ -29,9 +31,6 @@ a {
   color: #00B7FF;
 }
 
-
-
-
 h1, h2, h3, h4, .condensed {
   margin-top: 0px;
   line-height: 0.95;
@@ -42,6 +41,27 @@ h1, h2, h3, h4, .condensed {
   letter-spacing: -0.05rem;
 }
 
+
+.flex{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.flex-center{
+  justify-content:center;
+}
+
+.full{
+  width: 100vw;
+  min-height: 100vh
+}
+
+
+
+#brand {
+    margin-top: 1rem;
+}
 
 
 .qrcode {
