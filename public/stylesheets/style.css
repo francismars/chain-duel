@@ -27,6 +27,10 @@ body {
   background-position: center;
 }
 
+audio {
+    height: 0;
+}
+
 a {
   color: #00B7FF;
 }

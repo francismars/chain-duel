@@ -63,16 +63,17 @@
 
 #rules1{
     text-align: center;
-    color: white;
-    font-size: 1cqw;
-    margin-bottom: 0.1%;
+    font-size: 16px;
+    margin-bottom: 30px;
+    letter-spacing: 0.03rem;
+    line-height: 1.7rem;
 }
 
-#rules2{
+#rules2, #version{
     margin-top: 0px;
     text-align: center;
     color: grey;
-    font-size: 1cqw;
+    font-size: 14px;
 }
 
 
