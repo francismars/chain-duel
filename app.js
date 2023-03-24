@@ -5,10 +5,12 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
+var aboutRouter = require('./routes/about');
+var highscoresRouter = require('./routes/highscores');
 var usersRouter = require('./routes/users');
-var gameMenuRouter = require('./routes/gameMenu');
+var gameMenuRouter = require('./routes/gamemenu');
 var gameRouter = require('./routes/game');
-var postGameRouter = require('./routes/postGame');
+var postGameRouter = require('./routes/postgame');
 
 var app = express();
 
@@ -23,8 +25,10 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
+app.use('/about', aboutRouter);
+app.use('/highscores', highscoresRouter);
 app.use('/users', usersRouter);
-app.use('/gameMenu', gameMenuRouter);
+app.use('/gamemenu', gameMenuRouter);
 app.use('/game', gameRouter);
 app.use('/postgame', postGameRouter);
 

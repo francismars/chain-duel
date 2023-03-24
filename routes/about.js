@@ -6,7 +6,7 @@ const path = require('path');
 
 
 router.get('/', function(req, res, next) {
-  res.sendFile(path.join(__dirname+'/../views/gamemenu.html'));
+  res.sendFile(path.join(__dirname+'/../views/about.html'));
 });
 
 module.exports = router;
