@@ -42,7 +42,6 @@
     /* background-color: white; */ /*
     color: black;
   }
-
 /*
 #startgame:active {
     background-color: white;
@@ -51,9 +50,17 @@
 */
 
 
-  #startgame {
+#startgame {
     animation: glowing 2000ms infinite;
-  }
+}
+
+#aboutbutton {
+    animation: glowing 0ms infinite;
+}
+
+#highscoresbutton {
+    animation: glowing 0ms infinite;
+}
 
 #bottomInfo{
     display: absolute;

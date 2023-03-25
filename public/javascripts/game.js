@@ -126,12 +126,31 @@ function createNewFood(){
 }
 
 function changeScore(playerID){
+    let changeInPoints;
     if(Math.floor(totalPoints*0.05)>1){
-        changeInPoints=Math.floor(totalPoints*0.05);
+        let bodySnake;
+        if(playerID=="P1"){ bodySnake = p1BodyPos }
+        if(playerID=="P2"){ bodySnake = p2BodyPos }
+        if(bodySnake.length==1){
+            changeInPoints=Math.floor(totalPoints*0.02);
+        }
+        else if(bodySnake.length==2){
+            changeInPoints=Math.floor(totalPoints*0.04);
+        }
+        else if(bodySnake.length>=3 && bodySnake.length<=6){
+            changeInPoints=Math.floor(totalPoints*0.08);
+        }
+        else if(bodySnake.length>=7 && bodySnake.length<=14){
+            changeInPoints=Math.floor(totalPoints*0.16);
+        }
+        else if(bodySnake.length>=15){
+            changeInPoints=Math.floor(totalPoints*0.32);
+        }
     }
     else{
         changeInPoints=1;
     }
+    console.log(changeInPoints)
     if(playerID=="P1"){
         currentScoreDistribution[0]+=changeInPoints;
         currentScoreDistribution[1]-=changeInPoints;
