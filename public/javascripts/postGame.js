@@ -1,4 +1,3 @@
-
 var gameWinner = sessionStorage.getItem('gameWinner');
 var winnerName
 if(gameWinner=="Player 1"){
@@ -45,7 +44,8 @@ addEventListener("keydown", function(event) {
             }
             else if(menu==3){
                 if(activeButton==0){
-
+                    sessionStorage.clear();
+                    window.location.href = "/highscores";
                 }
                 else if(activeButton==1){
                     sessionStorage.clear();
@@ -70,6 +70,45 @@ addEventListener("keydown", function(event) {
     }
 });
 
+function updateHSJson(){
+    fetch('./files/highscores.json')
+    .then((response) => response.json())
+    .then((json) => {
+        highscores = json
+
+        orderedScores = highscores.sort((a, b) => {
+            if (a.sats > b.sats) {
+              return -1;
+            }
+          });
+
+        sizeHS = (orderedScores.length)-1
+        if(orderedScores[sizeHS].sats<totalPrize){
+          console.log("Mudar hs file")
+          console.log(orderedScores[sizeHS].sats)
+          console.log(totalPrize)
+          orderedScores[sizeHS].sats = parseInt(totalPrize);
+          orderedScores[sizeHS].name = winnerName;
+        }
+
+        const data = JSON.stringify(orderedScores)
+        // write JSON string to a file
+
+        fetch('http://127.0.0.1:3000/savejson', {
+            method: 'POST',
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: data,
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+        })  
+    })
+}
+
+
 
 const socket = io("170.75.172.55:3001" , { transports : ['websocket'] });
 socket.on("connect", () => {
@@ -82,6 +121,7 @@ socket.on("connect", () => {
 socket.on('prizeWithdrawn', (data) => {
     if(data.lnurlw==sessionStorage.getItem('LNURLID')){
         menu3CSS();
+        updateHSJson();
     }
 })
 
@@ -123,3 +163,4 @@ function menu3CSS(){
     document.getElementById("buttonsDiv").style.marginTop = "16cqw";
     menu=3;
 }
+
