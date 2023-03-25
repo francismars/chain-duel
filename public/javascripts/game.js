@@ -279,28 +279,28 @@ function displayGame(){
             alturaNumbers = (alturaGame*0.50).toString();
             ctxGame.font = alturaNumbers.concat("px Arial");
             if(counterStart==0){
-                ctxGame.fillText("3", (larguraGame*0.15), alturaGame/2);
-                ctxGame.strokeText("2", (larguraGame*0.30), alturaGame/2);
-                ctxGame.strokeText("1", (larguraGame*0.45), alturaGame/2);
-                ctxGame.strokeText("LFG", (larguraGame*0.75), alturaGame/2);
+                ctxGame.fillText("3", (larguraGame*0.11), alturaGame/2);
+                ctxGame.strokeText("2", (larguraGame*0.26), alturaGame/2);
+                ctxGame.strokeText("1", (larguraGame*0.41), alturaGame/2);
+                ctxGame.strokeText("LFG", (larguraGame*0.71), alturaGame/2);
             }
             else if (counterStart==1){
-                ctxGame.fillText("3", (larguraGame*0.15), alturaGame/2);
-                ctxGame.fillText("2", (larguraGame*0.30), alturaGame/2);
-                ctxGame.strokeText("1", (larguraGame*0.45), alturaGame/2);
-                ctxGame.strokeText("LFG", (larguraGame*0.75), alturaGame/2);
+                ctxGame.fillText("3", (larguraGame*0.11), alturaGame/2);
+                ctxGame.fillText("2", (larguraGame*0.26), alturaGame/2);
+                ctxGame.strokeText("1", (larguraGame*0.41), alturaGame/2);
+                ctxGame.strokeText("LFG", (larguraGame*0.71), alturaGame/2);
             }
             else if (counterStart==2){
-                ctxGame.fillText("3", (larguraGame*0.15), alturaGame/2);
-                ctxGame.fillText("2", (larguraGame*0.30), alturaGame/2);
-                ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
-                ctxGame.strokeText("LFG", (larguraGame*0.75), alturaGame/2);
+                ctxGame.fillText("3", (larguraGame*0.11), alturaGame/2);
+                ctxGame.fillText("2", (larguraGame*0.26), alturaGame/2);
+                ctxGame.fillText("1", (larguraGame*0.41), alturaGame/2);
+                ctxGame.strokeText("LFG", (larguraGame*0.71), alturaGame/2);
             }
             else if (counterStart==3){
-                ctxGame.fillText("3", (larguraGame*0.15), alturaGame/2);
-                ctxGame.fillText("2", (larguraGame*0.30), alturaGame/2);
-                ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
-                ctxGame.fillText("LFG", (larguraGame*0.75), alturaGame/2);
+                ctxGame.fillText("3", (larguraGame*0.11), alturaGame/2);
+                ctxGame.fillText("2", (larguraGame*0.26), alturaGame/2);
+                ctxGame.fillText("1", (larguraGame*0.41), alturaGame/2);
+                ctxGame.fillText("LFG", (larguraGame*0.71), alturaGame/2);
             }
             else if (counterStart==4){
                 gameStarted = true;
