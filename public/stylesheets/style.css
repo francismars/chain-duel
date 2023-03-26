@@ -8,21 +8,8 @@
   url("fonts/BureauGrotesque/BureauGrotesque.svg#BureauGrotesque") format("svg");
 }
 
-
-@font-face {
-  font-family: 'Inter';
-  font-style:  normal;
-  font-weight: 300;
-  font-display: swap;
-  src: url("fonts/inter/Inter-Light.woff2?v=3.18") format("woff2"),
-       url("fonts/inter/Inter-Light.woff?v=3.18") format("woff");
-}
-
-
-
-/*
 @import url('fonts/inter/inter.css');
-*/
+
 
 
 html, body, button {
