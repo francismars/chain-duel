@@ -13,24 +13,30 @@ fetch('./files/highscores.json')
 
             console.log(highscores[i])
 
-            const paragraphName = document.createElement("p");
+            const elName = document.createElement("h2");
             const nametext = document.createTextNode(highscores[i].name);
-            paragraphName.appendChild(nametext);
-            paragraphName.classList.add("nameStyle");
+            elName.appendChild(nametext);
+            elName.classList.add("nameStyle");
             //document.getElementById("nameandsats").appendChild(paragraphName);
 
-            const paragraphSats = document.createElement("p");
+            const elSats = document.createElement("h2");
             const satsvalue = document.createTextNode(highscores[i].sats);
-            paragraphSats.appendChild(satsvalue);
-            paragraphSats.classList.add("satsStyle");
+            elSats.appendChild(satsvalue);
+
+
+            const elSatsLabel = document.createElement("span");
+            elSatsLabel.textContent="sats";
+            elSats.appendChild(elSatsLabel);
+
+            elSats.classList.add("satsLabelStyle");
             //document.getElementById("nameandsats").appendChild(paragraphSats);
 
             var divElement = document.createElement('div');
             divElement.classList.add("score-row");
             document.getElementById("nameandsats").appendChild(divElement);
 
-            divElement.appendChild(paragraphName);
-            divElement.appendChild(paragraphSats);
+            divElement.appendChild(elName);
+            divElement.appendChild(elSats);
 
 
         }
