@@ -9,7 +9,21 @@
 }
 
 
+@font-face {
+  font-family: 'Inter';
+  font-style:  normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("fonts/inter/Inter-Light.woff2?v=3.18") format("woff2"),
+       url("fonts/inter/Inter-Light.woff?v=3.18") format("woff");
+}
+
+
+
+/*
 @import url('fonts/inter/inter.css');
+*/
+
 
 html, body, button {
   font-family: 'Inter', sans-serif;
@@ -19,7 +33,6 @@ html, body, button {
 body {
   padding: 0;
   margin: 0;
-  font-family: inter;
   color: #fff;
   background-color: black;
   background-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0)), url(../images/chainduel_bg.png);
