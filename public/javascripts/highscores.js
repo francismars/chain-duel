@@ -10,24 +10,29 @@ fetch('./files/highscores.json')
           });
 
         for(i=0;i<orderedScores.length;i++){
-            
+
             console.log(highscores[i])
 
             const paragraphName = document.createElement("p");
             const nametext = document.createTextNode(highscores[i].name);
-            paragraphName.appendChild(nametext);     
-            paragraphName.classList.add("nameStyle");   
-            document.getElementById("nameandsats").appendChild(paragraphName);
+            paragraphName.appendChild(nametext);
+            paragraphName.classList.add("nameStyle");
+            //document.getElementById("nameandsats").appendChild(paragraphName);
 
             const paragraphSats = document.createElement("p");
             const satsvalue = document.createTextNode(highscores[i].sats);
             paragraphSats.appendChild(satsvalue);
-            paragraphSats.classList.add("satsStyle");  
-            document.getElementById("nameandsats").appendChild(paragraphSats);
+            paragraphSats.classList.add("satsStyle");
+            //document.getElementById("nameandsats").appendChild(paragraphSats);
 
-            var hrElement = document.createElement('hr');
-            document.getElementById("nameandsats").appendChild(hrElement);
-            hrElement.classList.add("satsStyle");  
+            var divElement = document.createElement('div');
+            divElement.classList.add("score-row");
+            document.getElementById("nameandsats").appendChild(divElement);
+
+            divElement.appendChild(paragraphName);
+            divElement.appendChild(paragraphSats);
+
+
         }
     });
 
