@@ -1,3 +1,7 @@
+#page-title{
+    font-size: 50px;
+}
+
 #nameandsats {
     width: 100%;
 }
@@ -8,6 +12,10 @@
     justify-content: space-between;
     border-bottom: 1px solid #ffffff2b;
     padding-top: 18px;
+}
+
+.score-row h2{
+  letter-spacing: 0;
 }
 
 .satsLabelStyle span{
