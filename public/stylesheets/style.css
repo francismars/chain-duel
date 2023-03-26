@@ -67,11 +67,32 @@ h1, h2, h3, h4, .condensed {
 }
 
 
+header{
+  display: flex;
+  justify-content: space-between
+}
 
 #brand {
   position: fixed;
   margin-top: 1rem;
   width: 100%;
+}
+
+
+#chain{
+    color: white;
+    margin-top: 0%;
+    margin-left: 1%;
+    text-align: left;
+    font-size: 2.5cqw;
+}
+
+#duel{
+    color: white;
+    margin-top: 0%;
+    text-align: right;
+    font-size: 2.5cqw;
+    margin-right: 1%;
 }
 
 @keyframes glowing {
