@@ -6,5 +6,13 @@
     display: flex;
     width: 100%;
     justify-content: space-between;
-    border-bottom: 1px solid #ffffff2b
+    border-bottom: 1px solid #ffffff2b;
+    padding-top: 18px;
+}
+
+.satsLabelStyle span{
+  font-family: "inter", sans-serif;
+  text-transform: lowercase;
+  font-size: 12px;
+  margin-left: 10px;
 }
