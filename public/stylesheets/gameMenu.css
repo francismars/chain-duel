@@ -87,7 +87,7 @@ body{
     margin-right: 1cqw;
     margin-left: auto;
     */
-    animation: glowing 0ms infinite;
+    animation: glowing 2000ms infinite;
 
 }
 
@@ -109,7 +109,7 @@ body{
     margin-left: 1cqw;
     margin-right: auto;
     */
-    animation: glowing 2000ms infinite;
+    animation: glowing 0ms infinite;
 }
 
 #separator{

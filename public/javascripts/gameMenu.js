@@ -1,5 +1,4 @@
-let selected = "StartGame"
-let menu= "GameModes"
+let selected = "MainMenuButton"
 
 let playersSats = [0,0]
 let numberofCreates = 0
@@ -9,21 +8,20 @@ let p2Name = "Player 2"
 addEventListener("keydown", function(event) {
     switch (event.key) {
         case "ArrowLeft":
-            if (menu=="Buttons" && selected=="StartGame"){
+            if (selected=="StartGame"){
                 document.getElementById("startgame").style.animationDuration  = "0s";
-                document.getElementById("instructionsbutton").style.animationDuration  = "2s";
-                selected="InstructionsButton";
+                document.getElementById("mainmenubutton").style.animationDuration  = "2s";
+                selected="MainMenuButton";
             }
             break;
         case "ArrowRight":
-            if (menu=="Buttons" && selected=="InstructionsButton"){
+            if (selected=="MainMenuButton" && playersSats[0]!=0 && playersSats[1]!=0){
                 document.getElementById("startgame").style.animationDuration  = "2s";
-                document.getElementById("instructionsbutton").style.animationDuration  = "0s";
+                document.getElementById("mainmenubutton").style.animationDuration  = "0s";
                 selected="StartGame";
             }
             break;
         case "Enter":
-            if (menu=="Buttons"){
                 if (selected=="StartGame"){
                     if(playersSats[0]!=0&&playersSats[1]!=0){
                         if(numberofCreates==0){
@@ -34,19 +32,11 @@ addEventListener("keydown", function(event) {
                             socket.emit('createWithdrawal', Math.floor((playersSats[0]+playersSats[1])*0.98));
                             numberofCreates=1;
                         }
-                    }                    
-                }
-                if (selected=="InstructionsButton"){
-                    document.getElementById("centerSection").style.display  = "flex";
-                    document.getElementById("gameButtons").style.display  = "none"; 
-                    menu="GameModes";
+                    }  
+                }                  
+                else if (selected=="MainMenuButton"){
+                    window.location.href = "/";
                 }      
-            }
-            else if (menu=="GameModes"){
-                document.getElementById("centerSection").style.display  = "none";
-                document.getElementById("gameButtons").style.display  = "flex"; 
-                menu="Buttons";
-            }
             break;
     }
   });
