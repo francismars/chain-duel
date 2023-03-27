@@ -266,40 +266,40 @@ function displayGame(){
     }
 
     if(!gameStarted && !gameEnded){
-        ctxGame.font = "30px Arial";
+        ctxGame.font = "30px BureauGrotesque";
         ctxGame.fontWeight = "50%";
         ctxGame.fillStyle = "white";
         ctxGame.textAlign = "center";
         ctxGame.textBaseline = "middle";
         ctxGame.strokeStyle = "white";
         if(!countdownStart){
-            ctxGame.fillText("Press Enter to Start", (larguraGame/2), alturaGame/2);
+            ctxGame.fillText("PRESS ENTER TO START", (larguraGame/2), alturaGame/2);
         }
         if(countdownStart){
             alturaNumbers = (alturaGame*0.50).toString();
-            ctxGame.font = alturaNumbers.concat("px Arial");
+            ctxGame.font = alturaNumbers.concat("px BureauGrotesque");
             if(counterStart==0){
-                ctxGame.fillText("3", (larguraGame*0.11), alturaGame/2);
-                ctxGame.strokeText("2", (larguraGame*0.26), alturaGame/2);
-                ctxGame.strokeText("1", (larguraGame*0.41), alturaGame/2);
+                ctxGame.fillText("3", (larguraGame*0.25), alturaGame/2);
+                ctxGame.strokeText("2", (larguraGame*0.38), alturaGame/2);
+                ctxGame.strokeText("1", (larguraGame*0.49), alturaGame/2);
                 ctxGame.strokeText("LFG", (larguraGame*0.71), alturaGame/2);
             }
             else if (counterStart==1){
-                ctxGame.fillText("3", (larguraGame*0.11), alturaGame/2);
-                ctxGame.fillText("2", (larguraGame*0.26), alturaGame/2);
-                ctxGame.strokeText("1", (larguraGame*0.41), alturaGame/2);
+                ctxGame.fillText("3", (larguraGame*0.25), alturaGame/2);
+                ctxGame.fillText("2", (larguraGame*0.38), alturaGame/2);
+                ctxGame.strokeText("1", (larguraGame*0.49), alturaGame/2);
                 ctxGame.strokeText("LFG", (larguraGame*0.71), alturaGame/2);
             }
             else if (counterStart==2){
-                ctxGame.fillText("3", (larguraGame*0.11), alturaGame/2);
-                ctxGame.fillText("2", (larguraGame*0.26), alturaGame/2);
-                ctxGame.fillText("1", (larguraGame*0.41), alturaGame/2);
+                ctxGame.fillText("3", (larguraGame*0.25), alturaGame/2);
+                ctxGame.fillText("2", (larguraGame*0.38), alturaGame/2);
+                ctxGame.fillText("1", (larguraGame*0.49), alturaGame/2);
                 ctxGame.strokeText("LFG", (larguraGame*0.71), alturaGame/2);
             }
             else if (counterStart==3){
-                ctxGame.fillText("3", (larguraGame*0.11), alturaGame/2);
-                ctxGame.fillText("2", (larguraGame*0.26), alturaGame/2);
-                ctxGame.fillText("1", (larguraGame*0.41), alturaGame/2);
+                ctxGame.fillText("3", (larguraGame*0.25), alturaGame/2);
+                ctxGame.fillText("2", (larguraGame*0.38), alturaGame/2);
+                ctxGame.fillText("1", (larguraGame*0.49), alturaGame/2);
                 ctxGame.fillText("LFG", (larguraGame*0.71), alturaGame/2);
             }
             else if (counterStart==4){
@@ -406,7 +406,7 @@ function displayGame(){
         }
     }
     if(gameEnded){
-        ctxGame.font = "30px Arial";
+        ctxGame.font = "30px BureauGrotesque";
         ctxGame.fontWeight = "50%";
         ctxGame.fillStyle = "white";
         ctxGame.textAlign = "center";
@@ -493,7 +493,7 @@ function displayTitle(){
     var larguraTitle = titleCanvas.width;
     var alturaTitle = titleCanvas.height;
 
-    ctxTitle.font = "30px Arial";
+    ctxTitle.font = "30px BureauGrotesque";
     ctxTitle.fillStyle = "white";
     ctxTitle.textAlign = "center";
     ctxTitle.fillText(P1Name, (larguraTitle*0.08), 30);
@@ -517,7 +517,7 @@ function displayTitle(){
     ctxTitle.fillRect(0, 50, larguraTitle*percentageInitialP1, 5);
     ctxTitle.stroke();
 
-    ctxTitle.font = "25px Arial";
+    ctxTitle.font = "12px Inter";
     ctxTitle.fillStyle = "silver";
     ctxTitle.fillText("INITIAL DISTRIBUTION", larguraTitle*0.5, 40);
 
@@ -530,7 +530,7 @@ function displayTitle(){
     ctxTitle.fillRect(0, 65, larguraTitle*percentageCurrentP1, 30);
     ctxTitle.stroke();
 
-    ctxTitle.font = "25px Arial";
+    ctxTitle.font = "16px Inter";
     ctxTitle.fillStyle = "LightGray";
-    ctxTitle.fillText("CURRENT DISTRIBUTION", larguraTitle*0.5, 89);
+    ctxTitle.fillText("CURRENT DISTRIBUTION", larguraTitle*0.5, 80);
 }
