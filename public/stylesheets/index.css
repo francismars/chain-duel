@@ -6,6 +6,7 @@
     margin-right: auto;
     margin-bottom: 0px;
     margin-top: 2%;
+    display:none
 }
 
 #presents{
@@ -16,6 +17,7 @@
     font-weight: 300;
     text-transform: uppercase;
     letter-spacing: 0.1rem;
+    display:none
 }
 
 #chainduel{
