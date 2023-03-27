@@ -35,14 +35,18 @@ body{
 }
 
 #gameImage {
-    height: 5cqw;
-    width: 8cqw;
+    height: 7cqw;
+    width: 14cqw;
     background-color: #555;
     box-shadow: 0 0 100px 1px #555;
     margin-left: auto;
     margin-right: auto;
-    padding: 20px;
-  }
+    /* padding: 20px; */
+}
+
+#gameImage img {
+  width:100%;
+}
 
 .ruleTitle{
     color: white;
