@@ -293,13 +293,13 @@ function displayGame(){
             else if (counterStart==2){
                 ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
                 ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
-                ctxGame.fillText("1", (larguraGame*0.49), alturaGame/2);
+                ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
                 ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
             }
             else if (counterStart==3){
                 ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
                 ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
-                ctxGame.fillText("1", (larguraGame*0.49), alturaGame/2);
+                ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
                 ctxGame.fillText("LFG", (larguraGame*0.67), alturaGame/2);
             }
             else if (counterStart==4){
