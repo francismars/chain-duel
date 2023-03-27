@@ -24,3 +24,11 @@
   font-size: 12px;
   margin-left: 10px;
 }
+
+
+
+
+
+#mainmenubutton {
+    animation: glowing 2000ms infinite;
+}

@@ -46,6 +46,10 @@ a {
   opacity: 0.5;
 }
 
+h1 {
+  text-align: center
+}
+
 h1, h2, h3, h4, .condensed {
   margin-top: 0px;
   line-height: 0.95;
