@@ -59,11 +59,18 @@ body{
 }
 
 #gameButtons{
-    display: none;
     padding-top: 1cqw;
+    display: flex;
+    margin: auto;
+    justify-content: center;
+    gap: 21px;
 }
 
-#instructionsbutton{
+#gameButtons .button{
+  margin: 0
+}
+
+#mainmenubutton{
     /*
     margin-top: 5%;
     margin-bottom: 5%;
@@ -80,7 +87,7 @@ body{
 
 }
 
-#instructionsbutton:hover, #startgame:hover {
+#mainmenubutton:hover, #startgame:hover {
     background-color: white;
     color: black;
   }
