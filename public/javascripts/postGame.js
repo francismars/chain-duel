@@ -40,7 +40,7 @@ addEventListener("keydown", function(event) {
                 menu1CSS();
             }
             else if(menu==2){
-                menu2CSS();  
+                menu2CSS();
             }
             else if(menu==3){
                 if(activeButton==0){
@@ -104,7 +104,7 @@ function updateHSJson(){
         .then(response => response.json())
         .then(data => {
             console.log(data);
-        })  
+        })
     })
 }
 
@@ -126,41 +126,29 @@ socket.on('prizeWithdrawn', (data) => {
 })
 
 function menu1CSS(){
-    document.getElementById("gameOver").style.display = "none";
-    document.getElementById("claimText").style.display = "none";
-    document.getElementById("claimReq1").style.display = "none";
-    document.getElementById("winner").style.fontSize = "5cqw";
-    document.getElementById("hostFee").style.fontSize = "1.5cqw";
-    document.getElementById("developerFee").style.fontSize = "1.5cqw";
-    document.getElementById("prize").style.fontSize = "6cqw"; 
-    document.getElementById("claimbutton").innerText = "BACK"; 
-    document.getElementById("qrCode1").style.display = "block";
+    document.getElementById("claimbutton").innerText = "BACK";
+    document.getElementById("qrCode1").classList.remove('blur');
     menu=2;
 }
 
 function menu2CSS(){
     document.getElementById("gameOver").style.display = "block";
-    document.getElementById("claimText").style.display = "block";
-    document.getElementById("claimReq1").style.display = "block";
-    document.getElementById("winner").style.fontSize = "6cqw";
-    document.getElementById("hostFee").style.fontSize = "2cqw";
-    document.getElementById("developerFee").style.fontSize = "2cqw";
-    document.getElementById("prize").style.fontSize = "7cqw"; 
-    document.getElementById("claimbutton").innerText = "SWEEP VIA LNURL"; 
-    document.getElementById("qrCode1").style.display = "none";
+    document.getElementById("claimbutton").innerText = "SWEEP VIA LNURL";
+    document.getElementById("qrCode1").classList.add('blur');
     menu=1;
 }
 
 function menu3CSS(){
     if(menu==1){
-        menu1CSS()  
+        menu1CSS()
     }
-    document.getElementById("prize").innerText += " CLAIMED" 
+    document.getElementById("prize").innerText += " CLAIMED"
     document.getElementById("qrCode1").style.display = "none";
-    document.getElementById("claimbutton").innerText = "HIGHSCORES"; 
-    document.getElementById("claimbutton").style.marginRight = "1%"; 
+    document.getElementById("claimbutton").innerText = "HIGHSCORES";
+    document.getElementById("claimbutton").style.marginRight = "1%";
     document.getElementById("startnewbutton").style.display = "block";
     document.getElementById("buttonsDiv").style.marginTop = "16cqw";
+    document.getElementById("claimReq1").style.display = "none"
+    document.getElementById("claimText").style.display = "none"
     menu=3;
 }
-

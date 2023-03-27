@@ -11,14 +11,22 @@
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
     </header>
+
+
     <div class="flex full flex-center">
+
+
       <h2 id="gameOver">GAME OVER</h2>
       <h1 id="winner">PLAYER 1 WINS</h1>
-      <p id="hostFee">1% for the host</p>
-      <p id="developerFee">1% for the developer</p>
+
+      <div class="fees">
+        <span id="hostFee">1% for the host</span> | <span id="developerFee">1% for the developer</span>
+      <div>
+
       <h1 id="prize">100,000 SATS</h1>
+
       <p id="claimText">CLAIM YOUR WINNINGS</p>
-      <image class="qrcode" id="qrCode1"></image>
+      <image class="qrcode blur" id="qrCode1"></image>
       <div id="buttonsDiv">
           <button class="button" id="claimbutton" type="button">SWEEP VIA LNURL</button>
           <button class="button" id="startnewbutton" type="button">START NEW GAME</button>
@@ -26,11 +34,15 @@
       <p id="claimReq1">Requires compatible wallet.</p>
     </div>
 
+
+
+
+
     <audio id="audio" autoplay loop>
       <source src="/sound/chain_duel_2.ogg" type="audio/ogg"/>
       <source src="/sound/chain_duel_2.mp3" type="audio/mpeg"/>
     </audio>
-    
+
 </body>
 <script src="javascripts/postGame.js"></script>
 </html>
