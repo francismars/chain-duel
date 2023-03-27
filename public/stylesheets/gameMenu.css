@@ -7,7 +7,7 @@ body{
     position:static;
     margin-top: 2%;
     text-align: center;
-    font-size: 6cqw;
+    font-size: 8cqw;
     -webkit-text-stroke-width: 1px;
     -webkit-text-fill-color: transparent;
     -webkit-text-stroke-color: white;
@@ -19,7 +19,8 @@ body{
     text-align: center;
     margin-top: 0%;
     margin-bottom: 2%;
-    font-size: 1cqw;
+    font-size: 1.5cqw;
+    font-weight: 300;
 }
 
 #centerSection{
@@ -43,11 +44,13 @@ body{
     padding: 20px;
   }
 
-#gamename{
+.ruleTitle{
     color: white;
     text-align: center;
     margin-bottom: 0px;
-    font-size: 1.5cqw;
+    font-size: 0.8cqw;
+    text-transform: uppercase;
+    letter-spacing: 0.03rem;
 }
 
 .gameDescription{
@@ -109,8 +112,12 @@ body{
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    margin-top: 2cqw;
-
+    margin-top: 1cqw;
+    padding-top: 1cqw;
+    border-top: 1px #ffffff30 solid;
+    padding: 30px;
+    box-sizing: border-box;
+    justify-content: space-around;
 }
 
 
@@ -122,7 +129,6 @@ body{
 }
 
 #qrcode1{
-    margin-left: 3%;
     height: 10cqw;
     width: 10cqw;
 }
@@ -133,6 +139,7 @@ body{
   align-content: space-between;
   flex-direction: column;
   justify-content: flex-end;
+  height: 88%;
 }
 
 
@@ -150,6 +157,7 @@ body{
     color: white;
     font-size: 2.5cqw;
     padding-top: 0px;
+    margin-bottom: 10px;
 }
 
 
@@ -204,12 +212,32 @@ body{
     color: white;
     font-size: 2.5cqw;
     padding-top: 0px;
+    margin-bottom: 10px;
 }
 
 #qrcode2{
-    /* position: absolute; */
-    /* display: block; */
-    right: 1.5%;
+    right: 0%;
     height: 10cqw;
     width: 10cqw;
+    position: relative;
+}
+
+
+.deposit-message{
+  font-size: 12px;
+  opacity: 0.5
+}
+
+
+.playerSquare{
+  width: 2cqw;
+  height: 2cqw;
+  box-shadow: 0 0 11px #ffffffb0;
+}
+.white{
+  background: #fff
+}
+
+.black{
+  background: #000
 }

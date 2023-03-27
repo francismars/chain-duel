@@ -16,26 +16,35 @@
 
   <div class="flex full">
 
+
     <div>
-      <h2 id="maintitle" class="condensed">STAKE YOUR SATS</h2>
-      <p id="titleslogan">Pay to play, first one to reach zero loses.</p>
+    <!-- hack to center the next div on the page -->
     </div>
 
-    <div id="centerSection">
-        <div id="gameCard">
-            <div id="gameImage"></div>
-            <p id="gamename">Longest Chain</p>
-            <p class="gameDescription grey">2 block long chain captures 2% of the Sats. 3 blocks length capture 4%, 4-7 length 8%, 8-15 length 16%, 16+ length 32%.</p>
+
+    <div>
+        <div>
+          <h2 id="maintitle" class="condensed">STAKE YOUR SATS</h2>
+          <p id="titleslogan">Pay to play, first one to reach zero loses.</p>
         </div>
-        <div id="gameCard">
-            <div id="gameImage"></div>
-            <p id="gamename">Protocol Limits</p>
-            <p class="gameDescription grey">Touching the other chain, or the walls, resets your chainsize to 2 blocks. Head-on collisions resets both chains.</p>
-        </div>
-        <div id="gameCard">
-            <div id="gameImage"></div>
-            <p id="gamename">Trending to Zero</p>
-            <p class="gameDescription grey">Game ends when a player reaches zero Sats.</p>
+
+        <div id="centerSection">
+            <div id="gameCard">
+                <div id="gameImage"></div>
+                <p class="ruleTitle">Longest Chain</p>
+                <p class="gameDescription grey">2 block long chain captures 2% of the Sats. 3 blocks length capture 4%, 4-7 length 8%, 8-15 length 16%, 16+ length 32%.</p>
+            </div>
+            <div id="gameCard">
+                <div id="gameImage"></div>
+                <p class="ruleTitle">Protocol Limits</p>
+                <p class="gameDescription grey">Touching the other chain, or the walls, resets your chainsize to 2 blocks. Head-on collisions resets both chains.</p>
+            </div>
+            <div id="gameCard">
+                <div id="gameImage"></div>
+                <p class="ruleTitle">Trending to Zero</p>
+                <p class="gameDescription grey">Game ends when a player reaches zero Sats.</p>
+            </div>
+
         </div>
 
     </div>
@@ -45,7 +54,6 @@
         <button class="button" id="startgame" type="button">READY TO START</button>
     </div>
 
-    <hr id="separator">
 
     <div id="bottomInfo">
         <div id="player1card">
@@ -54,13 +62,24 @@
                 <div class"player-sats">
                   <span id="player1sats">0</span> <span class="grey">sats</span>
                 </div>
-                <p id="player1info" class="condensed">❏ Player 1</p>
+
+                <div id="player1info" class="condensed">
+                  <div class="inline playerSquare white"></div>
+                  <div class="inline">Player 1</div>
+                </div>
+
+                <div class="deposit-message">
+                  Deposit between 1000 and 10,000 sats to start
+                  <br>
+                  Set player name on invoice memo
+                </div>
+
             </div>
         </div>
         <div id="prizeinfocard">
             <p id="rules1">1% (0 sats) to the host</p>
             <p id="rules2">1% (0 sats) to the developer</p>
-            <p id="prizevaluesats">0</p>
+            <p id="prizevaluesats" class="condensed">0</p>
             <p id="prizeinfosats">Total Prize (sats)</p>
         </div>
         <div id="player2card">
@@ -68,7 +87,17 @@
                 <div class"player-sats">
                   <span class="grey">sats</span> <span id="player2sats">0</span>
                 </div>
-                <p id="player2info" class="condensed">Player 2 ❏</p>
+
+                <div id="player2info" class="condensed">
+                  <div class="inline">Player 2</div>
+                  <div class="inline playerSquare black"></div>
+                </div>
+
+                <div class="deposit-message">
+                  Deposit between 1000 and 10,000 sats to start
+                  <br>
+                  Set player name on invoice memo
+                </div>
             </div>
             <image id="qrcode2" class="qrcode"></image>
         </div>

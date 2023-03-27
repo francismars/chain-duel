@@ -1,3 +1,5 @@
+@import url('fonts/Inter/inter.css');
+
 @font-face {
   font-family: "BureauGrotesque";
   src: url("fonts/BureauGrotesque/BureauGrotesque.eot");
@@ -8,7 +10,7 @@
   url("fonts/BureauGrotesque/BureauGrotesque.svg#BureauGrotesque") format("svg");
 }
 
-@import url('fonts/Inter/inter.css');
+
 
 
 
@@ -35,6 +37,10 @@ a {
   color: #00B7FF;
 }
 
+.inline{
+  display: inline-block;
+}
+
 .grey{
   color: #fff;
   opacity: 0.5;
@@ -43,7 +49,6 @@ a {
 h1, h2, h3, h4, .condensed {
   margin-top: 0px;
   line-height: 0.95;
-  text-align: center;
   font-family: "BureauGrotesque";
   text-transform: uppercase;
   font-weight: 500;
