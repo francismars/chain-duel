@@ -34,6 +34,7 @@ function counterStartFunc(){
 
 function draw(){
     clear();
+    updateGamepads();
     updateScore();
     update();
 }
@@ -484,6 +485,60 @@ addEventListener("keydown", function(event) {
         break;
     }
 });
+
+// Define the two gamepads
+let gamepad1 = null;
+let gamepad2 = null;
+
+// Get the current gamepad state on each animation frame
+function updateGamepads() {
+  // Check for gamepad connection
+  if (navigator.getGamepads()[0]) {
+    if(gamepad1==null){
+        console.log("Gamepad 1 connected")
+    }
+    gamepad1 = navigator.getGamepads()[0];
+    if(gamepad1.buttons[0].pressed==true || gamepad1.buttons[1].pressed==true || gamepad1.buttons[2].pressed==true || gamepad1.buttons[3].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
+    }
+    if(gamepad1.buttons[12].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'w'}));
+    }
+    if(gamepad1.buttons[13].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'s'}));
+    }
+    if(gamepad1.buttons[14].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'a'}));
+    }
+    if(gamepad1.buttons[15].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
+    }
+    
+  }
+  if (navigator.getGamepads()[1]) {
+    if(gamepad2==null){
+        console.log("Gamepad 2 connected")
+    }
+    gamepad2 = navigator.getGamepads()[1];
+    if(gamepad2.buttons[0].pressed==true || gamepad2.buttons[1].pressed==true || gamepad2.buttons[2].pressed==true || gamepad2.buttons[3].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
+    }
+    if(gamepad2.buttons[12].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
+    }
+    if(gamepad2.buttons[13].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
+    }
+    if(gamepad2.buttons[14].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
+    }
+    if(gamepad2.buttons[15].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
+    }
+  }
+}
+
+  
 
 function displayTitle(){
     let percentageCurrentP1 = ((currentScoreDistribution[0] * 100) / totalPoints)/100;
