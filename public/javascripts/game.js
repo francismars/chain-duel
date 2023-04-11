@@ -22,7 +22,8 @@ let currentScoreDistribution = [SatsP1,SatsP2];
 let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
 
 
-intervalStart = setInterval(draw, 1000/10);
+gameSpeed = 1000/10
+intervalStart = setInterval(draw, gameSpeed);
 
 let counterStart = 0;
 function counterStartFunc(){
@@ -65,15 +66,15 @@ function resetP1(){
 }
 
 function resetP2(){
-    p2HeadPos = [43,12];
-    p2BodyPos = [[44,12]];
+    p2HeadPos = [44,12];
+    p2BodyPos = [[45,12]];
     p2Dir = "";
     p2DirWanted = "Left";
 }
 
 
-let gameCols = 50;
-let gameRows = 24;
+let gameCols = 51;
+let gameRows = 25;
 
 let p1HeadPos = [6,12];
 let p1BodyPos = [[5,12]];
@@ -82,8 +83,8 @@ let p1BodyPos = [[5,12]];
 let p1Dir = "";
 let p1DirWanted = "Right";
 
-let p2HeadPos = [43,12];
-let p2BodyPos = [[44,12]];
+let p2HeadPos = [44,12];
+let p2BodyPos = [[45,12]];
 
 let p2Dir = "";
 let p2DirWanted = "Left";
@@ -220,6 +221,7 @@ function increaseBody(playerID){
     }
 }
 
+
 function displayGame(){
     gameCanvas.width = window.innerWidth*(0.7);
     gameCanvas.height = window.innerWidth*(0.35);
@@ -228,24 +230,27 @@ function displayGame(){
     colSize = larguraGame / gameCols;
     rowSize = alturaGame / gameRows;
 
-
-    /*
-    ctxGame.beginPath();
-    ctxGame.moveTo(0, alturaGame/2);
-    ctxGame.lineTo(larguraGame, alturaGame/2);
-    ctxGame.moveTo(larguraGame/2, 0);
-    ctxGame.lineTo(larguraGame/2, alturaGame);
-    ctxGame.stroke();
-    for (i=0;i<=gameCols;i++){
-        for (j=0;j<=gameRows;j++){
-            ctxGame.beginPath();
-            ctxGame.strokeStyle = "gray";
-            ctxGame.rect(i*colSize, j*rowSize, colSize, rowSize);
-            ctxGame.fillText((i+j), i*colSize, j*rowSize);
-            ctxGame.stroke();
+    debugMode=false;
+    if (debugMode==true){
+        // Desenhar quadrados para game debug 
+        ctxGame.beginPath();
+        ctxGame.moveTo(0, alturaGame/2);
+        ctxGame.lineTo(larguraGame, alturaGame/2);
+        ctxGame.moveTo(larguraGame/2, 0);
+        ctxGame.lineTo(larguraGame/2, alturaGame);
+        ctxGame.stroke();
+        for (i=0;i<=gameCols;i++){
+            for (j=0;j<=gameRows;j++){
+                ctxGame.beginPath();
+                ctxGame.strokeStyle = "gray";
+                ctxGame.rect(i*colSize, j*rowSize, colSize, rowSize);
+                ctxGame.fillText((i+1)+(j*gameCols), i*colSize, j*rowSize+rowSize);
+                ctxGame.stroke();
+            }
         }
     }
-    */
+
+
 
     ctxGame.fillStyle = "white";
     ctxGame.beginPath();
