@@ -233,10 +233,9 @@ function increaseBody(playerID){
     }
 }
 
-
+debugMode=false;
 function displayGame(){
-    gameSettings()
-    debugMode=false;
+    gameSettings()    
     if (debugMode==true){
         drawDebugMode()
     }
