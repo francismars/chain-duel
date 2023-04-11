@@ -16,6 +16,11 @@ body{
     right: 0;
     top: 28%;
     background-color: DimGray;
+
+    background-image: url(../images/game_bg.png);
+    background-size: cover;
+    background-position: center;
+
 }
 
 
