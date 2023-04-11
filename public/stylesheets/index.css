@@ -1,3 +1,7 @@
+body {
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.2)), url(../images/chainduel_bg.jpg);
+}
+
 #logo{
     height: auto;
     width: 20cqw;
