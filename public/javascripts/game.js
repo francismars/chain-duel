@@ -183,7 +183,7 @@ function changeScore(playerID){
         }
         if(currentScoreDistribution[1]>totalPoints){
             currentScoreDistribution[1]=totalPoints;
-        }        
+        }
     }
 }
 
@@ -233,9 +233,9 @@ function increaseBody(playerID){
     }
 }
 
-debugMode=false;
+debugMode=true;
 function displayGame(){
-    gameSettings()    
+    gameSettings()
     if (debugMode==true){
         drawDebugMode()
     }
@@ -289,22 +289,27 @@ function finalText(winner){
 }
 
 function drawDebugMode(){
- // Desenhar quadrados para game debug 
- ctxGame.beginPath();
- ctxGame.moveTo(0, alturaGame/2);
- ctxGame.lineTo(larguraGame, alturaGame/2);
- ctxGame.moveTo(larguraGame/2, 0);
- ctxGame.lineTo(larguraGame/2, alturaGame);
- ctxGame.stroke();
- for (i=0;i<=gameCols;i++){
+  // Desenhar miras
+  /*
+  ctxGame.beginPath();
+  ctxGame.moveTo(0, alturaGame/2);
+  ctxGame.lineTo(larguraGame, alturaGame/2);
+  ctxGame.moveTo(larguraGame/2, 0);
+  ctxGame.lineTo(larguraGame/2, alturaGame);
+  ctxGame.stroke();
+  */
+
+  // Desenhar quadrados para game debug
+  for (i=0;i<=gameCols;i++){
      for (j=0;j<=gameRows;j++){
          ctxGame.beginPath();
-         ctxGame.strokeStyle = "gray";
+         ctxGame.strokeStyle =  "rgba(255, 255, 255, 0.05)";
+         ctxGame.lineWidth = 1;
          ctxGame.rect(i*colSize, j*rowSize, colSize, rowSize);
-         ctxGame.fillText((i+1)+(j*gameCols), i*colSize, j*rowSize+rowSize);
+         //ctxGame.fillText((i+1)+(j*gameCols), i*colSize, j*rowSize+rowSize);
          ctxGame.stroke();
      }
- }
+  }
 }
 
 function initialText(){
@@ -575,7 +580,7 @@ function updateGamepads() {
     if(gamepad1.buttons[15].pressed==true){
         window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
     }
-    
+
   }
   if (navigator.getGamepads()[1]) {
     if(gamepad2==null){
@@ -600,7 +605,7 @@ function updateGamepads() {
   }
 }
 
-  
+
 
 function displayTitle(){
     let percentageCurrentP1 = ((currentScoreDistribution[0] * 100) / totalPoints)/100;
@@ -620,16 +625,16 @@ function displayTitle(){
     ctxTitle.beginPath();
     ctxTitle.fillRect(0, 5, 30, 30);
     ctxTitle.stroke();
-    ctxTitle.fillStyle = "gray";
+    ctxTitle.fillStyle = "black";
     ctxTitle.beginPath();
     ctxTitle.fillRect(larguraTitle-30, 5, 30, 30);
     ctxTitle.stroke();
 
-    ctxTitle.fillStyle = "DimGray";
+    ctxTitle.fillStyle = "black";
     ctxTitle.beginPath();
     ctxTitle.fillRect(0, 50, larguraTitle, 5);
     ctxTitle.stroke();
-    ctxTitle.fillStyle = "LightGray";
+    ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();
     ctxTitle.fillRect(0, 50, larguraTitle*percentageInitialP1, 5);
     ctxTitle.stroke();
@@ -638,7 +643,7 @@ function displayTitle(){
     ctxTitle.fillStyle = "silver";
     ctxTitle.fillText("INITIAL DISTRIBUTION", larguraTitle*0.5, 40);
 
-    ctxTitle.fillStyle = "DimGray";
+    ctxTitle.fillStyle = "black";
     ctxTitle.beginPath();
     ctxTitle.fillRect(0, 65, larguraTitle, 30);
     ctxTitle.stroke();
