@@ -35,7 +35,9 @@ addEventListener("keydown", function(event) {
                     }  
                 }                  
                 else if (selected=="MainMenuButton"){
-                    window.location.href = "/";
+                    if(playersSats[0]==0&&playersSats[1]==0){
+                        window.location.href = "/";
+                    }
                 }      
             break;
     }
@@ -64,38 +66,38 @@ socket.on('rescreateWithdrawal', (data) => {
 socket.on("resPayLinks", body => {
     payLinks = body;
     console.log(payLinks)
-    if(payLinks[0].id=="ELxijs" && payLinks[0].description=="Player2"){
-        let qrcodeContainer = document.getElementById("qrcode2");
-        qrcodeContainer.innerHTML = "";
-        new QRious({
-            element: qrcodeContainer,
-            value: payLinks[0].lnurl
-          });
-    }
-    if(payLinks[1].id=="mDivrm" && payLinks[1].description=="Player1"){
+    if(payLinks[1].id=="fu96V2" && payLinks[1].description=="Player1"){
         let qrcodeContainer = document.getElementById("qrcode1");
         qrcodeContainer.innerHTML = "";
         new QRious({
             element: qrcodeContainer,
             value: payLinks[1].lnurl
           });
-    };    
+    };   
+    if(payLinks[0].id=="Y7rifi" && payLinks[0].description=="Player2"){
+        let qrcodeContainer = document.getElementById("qrcode2");
+        qrcodeContainer.innerHTML = "";
+        new QRious({
+            element: qrcodeContainer,
+            value: payLinks[0].lnurl
+          });
+    } 
 });
 
 socket.on("invoicePaid", body => {
-    if(body.lnurlp=="mDivrm"){
+    if(body.lnurlp=="fu96V2"){
         console.log(`Chegou pagamento de P1: ${(body.amount)/1000} sats`);
-        if(body.comment!=null){
-            console.log(body.comment)
-            p1Name=body.comment[0]            
+        if(body.comment!=null && body.comment!=""){
+            console.log("Player1 Name: " + body.comment)
+            p1Name=body.comment.trim()           
         }
         playersSats[0] += body.amount/1000
     }
-    if(body.lnurlp=="ELxijs"){
+    if(body.lnurlp=="Y7rifi"){
         console.log(`Chegou pagamento de P2: ${(body.amount)/1000} sats`);
-        if(body.comment!=null){
-            console.log(body.comment)
-            p2Name=body.comment[0]            
+        if(body.comment!=null && body.comment!=""){
+            console.log("Player2 Name: " + body.comment)
+            p2Name=body.comment.trim()            
         }
         playersSats[1] += body.amount/1000
     }
@@ -111,11 +113,11 @@ function changeTextAfterPayment(){
     document.getElementById("rules2").innerText =  "1% ("+Math.floor(totalPrize*0.01)+" sats) to the developer"
     document.getElementById("player1info").innerText = p1Name
     document.getElementById("player2info").innerText = p2Name
-    if (menu=="GameModes" && playersSats[1]!=0 && playersSats[0]!=0){
+    /* if (menu=="GameModes" && playersSats[1]!=0 && playersSats[0]!=0){
         document.getElementById("centerSection").style.display  = "none";
         document.getElementById("gameButtons").style.display  = "flex"; 
         menu="Buttons";
-    }
+    } */
 }
 
 intervalStart = setInterval(updateGamepads, 1000/10);

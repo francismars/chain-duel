@@ -158,6 +158,9 @@ function changeScore(playerID){
         if(currentScoreDistribution[1]<0){
             currentScoreDistribution[1]=0;
         }
+        if(currentScoreDistribution[0]>totalPoints){
+            currentScoreDistribution[0]=totalPoints;
+        }
     }
     if(playerID=="P2"){
         currentScoreDistribution[1]+=changeInPoints;
@@ -165,6 +168,9 @@ function changeScore(playerID){
         if(currentScoreDistribution[0]<0){
             currentScoreDistribution[0]=0;
         }
+        if(currentScoreDistribution[1]>totalPoints){
+            currentScoreDistribution[1]=totalPoints;
+        }        
     }
 }
 
