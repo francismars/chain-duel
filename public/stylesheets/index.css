@@ -10,7 +10,7 @@ body {
     margin-right: auto;
     margin-bottom: 0px;
     margin-top: 2%;
-    display:none
+    /* display:none */
 }
 
 #presents{
@@ -21,7 +21,7 @@ body {
     font-weight: 300;
     text-transform: uppercase;
     letter-spacing: 0.1rem;
-    display:none
+    /* display:none */
 }
 
 #chainduel{
