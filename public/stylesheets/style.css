@@ -24,7 +24,7 @@ body {
   margin: 0;
   color: #fff;
   background-color: black;
-  background-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0)), url(../images/chainduel_bg.png);
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.5)), url(../images/chainduel_bg.jpg);
   background-size: cover;
   background-position: center;
 }
