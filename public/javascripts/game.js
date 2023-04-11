@@ -13,9 +13,23 @@ var alturaGame = gameCanvas.height;
 var ctxGame = gameCanvas.getContext("2d");
 
 var P1Name = sessionStorage.getItem("P1Name");
+if (P1Name==null){
+    P1Name="Player 1"
+}
 var P2Name = sessionStorage.getItem("P2Name");
-var SatsP1 = parseInt(sessionStorage.getItem('P1Sats'));
-var SatsP2 = parseInt(sessionStorage.getItem('P2Sats'));
+if (P2Name==null){
+    P2Name="Player 2"
+}
+var SatsP1 = sessionStorage.getItem('P1Sats');
+if (SatsP1==null){
+    SatsP1=1000
+}
+else { SatsP1 = parseInt(SatsP1) }
+var SatsP2 = sessionStorage.getItem('P2Sats');
+if (SatsP2==null){
+    SatsP2=1000
+}
+else { SatsP2 = parseInt(SatsP2) }
 let initialScoreDistribution = [SatsP1,SatsP2];
 let totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
 let currentScoreDistribution = [SatsP1,SatsP2];
@@ -29,7 +43,7 @@ let counterStart = 0;
 function counterStartFunc(){
     counterStart++;
     if (counterStart == 5){
-        clearInterval(counterStartFunc);
+        clearInterval(intervalMain);
     }
 }
 
@@ -46,8 +60,6 @@ function clear(){
 }
 
 function updateScore(){
-    //console.log(currentScoreDistribution[0])
-
     document.getElementById('p1Points').innerText = currentScoreDistribution[0].toLocaleString()
     document.getElementById('p2Points').innerText = currentScoreDistribution[1].toLocaleString()
 }
@@ -223,35 +235,90 @@ function increaseBody(playerID){
 
 
 function displayGame(){
+    gameSettings()
+    debugMode=false;
+    if (debugMode==true){
+        drawDebugMode()
+    }
+    drawPlayers()
+    if(!gameStarted && !gameEnded){
+        if(!countdownStart){
+            initialText()
+        }
+        if(countdownStart){
+            drawCountdown()
+        }
+    }
+    else if(gameStarted && !gameEnded){
+        movePlayers()
+        checkCollisions()
+        drawFood()
+        eatingFood()
+        if(currentScoreDistribution[0]<=0 || currentScoreDistribution[1]<=0){
+            gameEnded = true;
+        }
+    }
+    if(gameEnded){
+        let winner = "";
+        if(currentScoreDistribution[0]<=0){
+            winner=P2Name
+        }
+        else if(currentScoreDistribution[1]<=0){
+            winner=P1Name
+        }
+        finalText(winner)
+    }
+}
+
+function gameSettings(){
     gameCanvas.width = window.innerWidth*(0.7);
     gameCanvas.height = window.innerWidth*(0.35);
     var larguraGame = gameCanvas.width;
     var alturaGame = gameCanvas.height;
     colSize = larguraGame / gameCols;
     rowSize = alturaGame / gameRows;
+}
 
-    debugMode=false;
-    if (debugMode==true){
-        // Desenhar quadrados para game debug 
-        ctxGame.beginPath();
-        ctxGame.moveTo(0, alturaGame/2);
-        ctxGame.lineTo(larguraGame, alturaGame/2);
-        ctxGame.moveTo(larguraGame/2, 0);
-        ctxGame.lineTo(larguraGame/2, alturaGame);
-        ctxGame.stroke();
-        for (i=0;i<=gameCols;i++){
-            for (j=0;j<=gameRows;j++){
-                ctxGame.beginPath();
-                ctxGame.strokeStyle = "gray";
-                ctxGame.rect(i*colSize, j*rowSize, colSize, rowSize);
-                ctxGame.fillText((i+1)+(j*gameCols), i*colSize, j*rowSize+rowSize);
-                ctxGame.stroke();
-            }
-        }
-    }
+function finalText(winner){
+    ctxGame.font = "30px BureauGrotesque";
+    ctxGame.fontWeight = "50%";
+    ctxGame.fillStyle = "white";
+    ctxGame.textAlign = "center";
+    ctxGame.textBaseline = "middle";
+    ctxGame.strokeStyle = "white";
+    ctxGame.fillText(winner.toUpperCase()+" WINS!", (larguraGame/2), alturaGame/2);
+}
 
+function drawDebugMode(){
+ // Desenhar quadrados para game debug 
+ ctxGame.beginPath();
+ ctxGame.moveTo(0, alturaGame/2);
+ ctxGame.lineTo(larguraGame, alturaGame/2);
+ ctxGame.moveTo(larguraGame/2, 0);
+ ctxGame.lineTo(larguraGame/2, alturaGame);
+ ctxGame.stroke();
+ for (i=0;i<=gameCols;i++){
+     for (j=0;j<=gameRows;j++){
+         ctxGame.beginPath();
+         ctxGame.strokeStyle = "gray";
+         ctxGame.rect(i*colSize, j*rowSize, colSize, rowSize);
+         ctxGame.fillText((i+1)+(j*gameCols), i*colSize, j*rowSize+rowSize);
+         ctxGame.stroke();
+     }
+ }
+}
 
+function initialText(){
+    ctxGame.font = "30px BureauGrotesque";
+    ctxGame.fontWeight = "50%";
+    ctxGame.fillStyle = "white";
+    ctxGame.textAlign = "center";
+    ctxGame.textBaseline = "middle";
+    ctxGame.strokeStyle = "white";
+    ctxGame.fillText("PRESS ENTER TO START", (larguraGame/2), alturaGame/2);
+}
 
+function drawPlayers(){
     ctxGame.fillStyle = "white";
     ctxGame.beginPath();
     ctxGame.fillRect(colSize*p1HeadPos[0], rowSize*p1HeadPos[1], colSize, rowSize);
@@ -276,163 +343,148 @@ function displayGame(){
         ctxGame.stroke();
         ctxGame.globalAlpha = 1;
     }
+}
 
-    if(!gameStarted && !gameEnded){
-        ctxGame.font = "30px BureauGrotesque";
-        ctxGame.fontWeight = "50%";
+function drawCountdown(){
+    ctxGame.font = "30px BureauGrotesque";
+    ctxGame.fontWeight = "50%";
+    ctxGame.fillStyle = "white";
+    ctxGame.textAlign = "center";
+    ctxGame.textBaseline = "middle";
+    ctxGame.strokeStyle = "white";
+    alturaNumbers = (alturaGame*0.50).toString();
+    ctxGame.font = alturaNumbers.concat("px BureauGrotesque");
+    if(counterStart==0){
+        ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
+        ctxGame.strokeText("2", (larguraGame*0.34), alturaGame/2);
+        ctxGame.strokeText("1", (larguraGame*0.45), alturaGame/2);
+        ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
+    }
+    else if (counterStart==1){
+        ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
+        ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
+        ctxGame.strokeText("1", (larguraGame*0.45), alturaGame/2);
+        ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
+    }
+    else if (counterStart==2){
+        ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
+        ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
+        ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
+        ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
+    }
+    else if (counterStart==3){
+        ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
+        ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
+        ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
+        ctxGame.fillText("LFG", (larguraGame*0.67), alturaGame/2);
+    }
+    else if (counterStart==4){
+        gameStarted = true;
+    }
+}
+
+function eatingFood(){
+    for(i=0;i<foodPos.length;i++){
+        if(p1HeadPos[0]==foodPos[i][0] && p1HeadPos[1]==foodPos[i][1]){
+            foodPos.splice(i, 1);
+            changeScore("P1");
+            increaseBody("P1");
+            createNewFood();
+        }
+        else if(p2HeadPos[0]==foodPos[i][0] && p2HeadPos[1]==foodPos[i][1]){
+            foodPos.splice(i, 1);
+            changeScore("P2");
+            increaseBody("P2");
+            createNewFood();
+        }
+    }
+}
+
+function drawFood(){
+    for(i=0;i<foodPos.length;i++){
+        ctxGame.beginPath();
+        ctxGame.arc(colSize*foodPos[i][0]+colSize/2, rowSize*foodPos[i][1]+rowSize/2, (rowSize/2)-5, 0, 2 * Math.PI, false);
         ctxGame.fillStyle = "white";
-        ctxGame.textAlign = "center";
-        ctxGame.textBaseline = "middle";
-        ctxGame.strokeStyle = "white";
-        if(!countdownStart){
-            ctxGame.fillText("PRESS ENTER TO START", (larguraGame/2), alturaGame/2);
-        }
-        if(countdownStart){
-            alturaNumbers = (alturaGame*0.50).toString();
-            ctxGame.font = alturaNumbers.concat("px BureauGrotesque");
-            if(counterStart==0){
-                ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
-                ctxGame.strokeText("2", (larguraGame*0.34), alturaGame/2);
-                ctxGame.strokeText("1", (larguraGame*0.45), alturaGame/2);
-                ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
-            }
-            else if (counterStart==1){
-                ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
-                ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
-                ctxGame.strokeText("1", (larguraGame*0.45), alturaGame/2);
-                ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
-            }
-            else if (counterStart==2){
-                ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
-                ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
-                ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
-                ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
-            }
-            else if (counterStart==3){
-                ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
-                ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
-                ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
-                ctxGame.fillText("LFG", (larguraGame*0.67), alturaGame/2);
-            }
-            else if (counterStart==4){
-                gameStarted = true;
-            }
-        }
+        ctxGame.shadowColor='white';
+        ctxGame.shadowOffsetX=0;
+        ctxGame.shadowOffsetY=0;
+        ctxGame.shadowBlur=20;
+        ctxGame.fill();
+        ctxGame.shadowColor = "transparent";
     }
-    else if(gameStarted && !gameEnded){
-        p1BodyPos.unshift([p1HeadPos[0],p1HeadPos[1]]);
-        p1BodyPos.pop();
-        p1Dir = p1DirWanted;
-        switch(p1Dir){
-            case "Up":
-                p1HeadPos[1] = p1HeadPos[1]-1;
-                break;
-            case "Down":
-                p1HeadPos[1] = p1HeadPos[1]+1;
-                break;
-            case "Left":
-                p1HeadPos[0] = p1HeadPos[0]-1;
-                break;
-            case "Right":
-                p1HeadPos[0] = p1HeadPos[0]+1;
-                break;
-        }
-        p2BodyPos.unshift([p2HeadPos[0],p2HeadPos[1]]);
-        p2BodyPos.pop();
-        p2Dir = p2DirWanted;
-        switch(p2Dir){
-            case "Up":
-                p2HeadPos[1] = p2HeadPos[1]-1
-                break;
-            case "Down":
-                p2HeadPos[1] = p2HeadPos[1]+1
-                break;
-            case "Left":
-                p2HeadPos[0] = p2HeadPos[0]-1
-                break;
-            case "Right":
-                p2HeadPos[0] = p2HeadPos[0]+1
-                break;
-        }
-        if(p2HeadPos[0]==p1HeadPos[0] && p2HeadPos[1]==p1HeadPos[1]){
-            resetP1();
-            resetP2();
-        }
-        if(p1HeadPos[0]==p2HeadPos[0] && p1HeadPos[1]==p2HeadPos[1]){
-            resetP1();
-            resetP2();
-        }
-        if(p1HeadPos[0]>gameCols-1 || p1HeadPos[1]<0 || p1HeadPos[1]>gameRows-1 || p1HeadPos[0]<0){
+}
+
+function movePlayers(){
+    p1BodyPos.unshift([p1HeadPos[0],p1HeadPos[1]]);
+    p1BodyPos.pop();
+    p1Dir = p1DirWanted;
+    switch(p1Dir){
+        case "Up":
+            p1HeadPos[1] = p1HeadPos[1]-1;
+            break;
+        case "Down":
+            p1HeadPos[1] = p1HeadPos[1]+1;
+            break;
+        case "Left":
+            p1HeadPos[0] = p1HeadPos[0]-1;
+            break;
+        case "Right":
+            p1HeadPos[0] = p1HeadPos[0]+1;
+            break;
+    }
+    p2BodyPos.unshift([p2HeadPos[0],p2HeadPos[1]]);
+    p2BodyPos.pop();
+    p2Dir = p2DirWanted;
+    switch(p2Dir){
+        case "Up":
+            p2HeadPos[1] = p2HeadPos[1]-1
+            break;
+        case "Down":
+            p2HeadPos[1] = p2HeadPos[1]+1
+            break;
+        case "Left":
+            p2HeadPos[0] = p2HeadPos[0]-1
+            break;
+        case "Right":
+            p2HeadPos[0] = p2HeadPos[0]+1
+            break;
+    }
+}
+
+function checkCollisions(){
+    // Head with head
+    if(p2HeadPos[0]==p1HeadPos[0] && p2HeadPos[1]==p1HeadPos[1]){
+        resetP1();
+        resetP2();
+    }
+    // Check for game borders
+    if(p1HeadPos[0]>gameCols-1 || p1HeadPos[1]<0 || p1HeadPos[1]>gameRows-1 || p1HeadPos[0]<0){
+        resetP1();
+    }
+    if(p2HeadPos[0]>gameCols-1 || p2HeadPos[1]<0 || p2HeadPos[1]>gameRows-1 || p2HeadPos[0]<0){
+        resetP2();
+    }
+    for(i=0;i<p1BodyPos.length;i++){
+        // P1 touching own body
+        if(p1HeadPos[0]===p1BodyPos[i][0] && p1HeadPos[1]===p1BodyPos[i][1]){
             resetP1();
         }
-        for(i=0;i<(p1BodyPos.length);i++){
-            if(p1HeadPos[0]===p1BodyPos[i][0] && p1HeadPos[1]===p1BodyPos[i][1]){
-                resetP1();
-            }
-        }
-        for(i=0;i<p2BodyPos.length;i++){
-            if(p1HeadPos[0]===p2BodyPos[i][0] && p1HeadPos[1]===p2BodyPos[i][1]){
-                resetP1();
-            }
-        }
-        if(p2HeadPos[0]>gameCols-1 || p2HeadPos[1]<0 || p2HeadPos[1]>gameRows-1 || p2HeadPos[0]<0){
+        // P2 touching P1 Body
+        if(p2HeadPos[0]===p1BodyPos[i][0] && p2HeadPos[1]===p1BodyPos[i][1]){
             resetP2();
         }
-        for(i=0;i<(p2BodyPos.length);i++){
-            if(p2HeadPos[0]===p2BodyPos[i][0] && p2HeadPos[1]===p2BodyPos[i][1]){
-                resetP2();
-            }
+    }
+    for(i=0;i<p2BodyPos.length;i++){
+        // P1 touching P2 body
+        if(p1HeadPos[0]===p2BodyPos[i][0] && p1HeadPos[1]===p2BodyPos[i][1]){
+            resetP1();
         }
-        for(i=0;i<p1BodyPos.length;i++){
-            if(p2HeadPos[0]===p1BodyPos[i][0] && p2HeadPos[1]===p1BodyPos[i][1]){
-                resetP2();
-            }
-        }
-        for(i=0;i<foodPos.length;i++){
-            ctxGame.beginPath();
-            ctxGame.arc(colSize*foodPos[i][0]+colSize/2, rowSize*foodPos[i][1]+rowSize/2, (rowSize/2)-5, 0, 2 * Math.PI, false);
-            ctxGame.fillStyle = "white";
-            ctxGame.shadowColor='white';
-            ctxGame.shadowOffsetX=0;
-            ctxGame.shadowOffsetY=0;
-            ctxGame.shadowBlur=20;
-            ctxGame.fill();
-            ctxGame.shadowColor = "transparent";
-        }
-        for(i=0;i<foodPos.length;i++){
-            if(p1HeadPos[0]==foodPos[i][0] && p1HeadPos[1]==foodPos[i][1]){
-                foodPos.splice(i, 1);
-                changeScore("P1");
-                increaseBody("P1");
-                createNewFood();
-            }
-            else if(p2HeadPos[0]==foodPos[i][0] && p2HeadPos[1]==foodPos[i][1]){
-                foodPos.splice(i, 1);
-                changeScore("P2");
-                increaseBody("P2");
-                createNewFood();
-            }
-        }
-        if(currentScoreDistribution[0]<=0 || currentScoreDistribution[1]<=0){
-            gameEnded = true;
+        // P2 touching own body
+        if(p2HeadPos[0]===p2BodyPos[i][0] && p2HeadPos[1]===p2BodyPos[i][1]){
+            resetP2();
         }
     }
-    if(gameEnded){
-        ctxGame.font = "30px BureauGrotesque";
-        ctxGame.fontWeight = "50%";
-        ctxGame.fillStyle = "white";
-        ctxGame.textAlign = "center";
-        ctxGame.textBaseline = "middle";
-        ctxGame.strokeStyle = "white";
-        let winner = "";
-        if(currentScoreDistribution[0]<=0){
-            winner=P2Name
-        }
-        else if(currentScoreDistribution[1]<=0){
-            winner=P1Name
-        }
-        ctxGame.fillText(winner.toUpperCase()+" WINS!", (larguraGame/2), alturaGame/2);
-    }
+
 }
 
 addEventListener("keydown", function(event) {
