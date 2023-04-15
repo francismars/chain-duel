@@ -71,6 +71,7 @@ socket.on("resPayLinks", body => {
         qrcodeContainer.innerHTML = "";
         new QRious({
             element: qrcodeContainer,
+            size: 120,
             value: payLinks[1].lnurl
           });
     };   
@@ -79,6 +80,7 @@ socket.on("resPayLinks", body => {
         qrcodeContainer.innerHTML = "";
         new QRious({
             element: qrcodeContainer,
+            size: 120,
             value: payLinks[0].lnurl
           });
     } 
