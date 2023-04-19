@@ -17,20 +17,24 @@ body{
 #titleslogan{
     color: white;
     text-align: center;
-    margin-top: 0%;
-    margin-bottom: 2%;
+    margin-bottom: 1%;
+    margin-top: 3%;
     font-size: 1.5cqw;
     font-weight: 300;
 }
 
 #centerSection{
     display:flex;
+    justify-content: center;
+    /* flex-wrap: wrap; */
+    /* align-items: flex-start; */
+    /* flex-direction: row; */
 }
 
 #gameCard{
-    margin-left: auto;
-    margin-right: auto;
-    width: 20%;
+    margin-left: 20px;
+    margin-right: 20px;
+    width: 25%;
     display: block;
 }
 
