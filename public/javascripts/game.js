@@ -319,7 +319,7 @@ function initialText(){
     ctxGame.textAlign = "center";
     ctxGame.textBaseline = "middle";
     ctxGame.strokeStyle = "white";
-    ctxGame.fillText("PRESS ENTER TO START", (larguraGame/2), alturaGame/2);
+    ctxGame.fillText("PRESS BUTTON TO START", (larguraGame/2), alturaGame/2);
 }
 
 function drawPlayers(){
