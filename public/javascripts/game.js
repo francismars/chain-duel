@@ -233,12 +233,9 @@ function increaseBody(playerID){
     }
 }
 
-debugMode=true;
 function displayGame(){
     gameSettings()
-    if (debugMode==true){
-        drawDebugMode()
-    }
+    drawGameSquares()
     drawPlayers()
     if(!gameStarted && !gameEnded){
         if(!countdownStart){
@@ -272,8 +269,8 @@ function displayGame(){
 function gameSettings(){
     gameCanvas.width = window.innerWidth*(0.7);
     gameCanvas.height = window.innerWidth*(0.35);
-    var larguraGame = gameCanvas.width;
-    var alturaGame = gameCanvas.height;
+    larguraGame = gameCanvas.width;
+    alturaGame = gameCanvas.height;
     colSize = larguraGame / gameCols;
     rowSize = alturaGame / gameRows;
 }
@@ -288,7 +285,7 @@ function finalText(winner){
     ctxGame.fillText(winner.toUpperCase()+" WINS!", (larguraGame/2), alturaGame/2);
 }
 
-function drawDebugMode(){
+function drawGameSquares(){
   // Desenhar miras
   /*
   ctxGame.beginPath();
