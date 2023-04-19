@@ -1,10 +1,12 @@
 var gameWinner = sessionStorage.getItem('gameWinner');
+var p1Name = sessionStorage.getItem("P1Name");
+var p2Name = sessionStorage.getItem("P2Name");
 var winnerName
 if(gameWinner=="Player 1"){
-    winnerName = sessionStorage.getItem("P1Name");
+    winnerName = p1Name
 }
 else if(gameWinner=="Player 2"){
-    winnerName = sessionStorage.getItem("P2Name");
+    winnerName = p2Name
 }
 if (gameWinner!=null){
     document.getElementById("winner").innerText  = winnerName.toUpperCase()+" WINS";
@@ -26,8 +28,10 @@ var P1SatsDeposit = sessionStorage.getItem('P1Sats');
 var P2SatsDeposit = sessionStorage.getItem('P2Sats');
 if (P1SatsDeposit!=null && P2SatsDeposit!=null){
     var developerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.01)
+    var designerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.005)
     document.getElementById("hostFee").innerText  = "1% ("+developerFee.toLocaleString()+" sats) for the host";
     document.getElementById("developerFee").innerText  = "1% ("+developerFee.toLocaleString()+" sats) for the developer";
+    document.getElementById("designerFee").innerText  = "1% ("+designerFee.toLocaleString()+" sats) for the developer";
 }
 
 
@@ -77,34 +81,38 @@ function updateHSJson(){
         highscores = json
 
         orderedScores = highscores.sort((a, b) => {
-            if (a.sats > b.sats) {
+            if (a.prize > b.prize) {
               return -1;
             }
           });
 
         sizeHS = (orderedScores.length)-1
-        if(orderedScores[sizeHS].sats<totalPrize){
+        if(orderedScores[sizeHS].prize<totalPrize){
+          // {"p1Name":"SELLIX5","p1sats":100,"p2Name":"Pedro5","p2sats":100,"winner":"Player1","prize":196}
           console.log("Mudar hs file")
-          console.log(orderedScores[sizeHS].sats)
+          console.log(orderedScores[sizeHS].prize)
           console.log(totalPrize)
-          orderedScores[sizeHS].sats = parseInt(totalPrize);
-          orderedScores[sizeHS].name = winnerName;
+          orderedScores[sizeHS].p1Name = p1Name
+          orderedScores[sizeHS].p1sats = parseInt(P1SatsDeposit)
+          orderedScores[sizeHS].p2Name = p2Name
+          orderedScores[sizeHS].p2sats = parseInt(P2SatsDeposit)
+          orderedScores[sizeHS].winner = gameWinner;
+          orderedScores[sizeHS].prize = parseInt(totalPrize);       
+          
+          const data = JSON.stringify(orderedScores)
+          // write JSON string to a file  
+          fetch('http://127.0.0.1:3000/savejson', {
+              method: 'POST',
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: data,
+          })
+          .then(response => response.json())
+          .then(data => {
+              console.log(data);
+          })
         }
-
-        const data = JSON.stringify(orderedScores)
-        // write JSON string to a file
-
-        fetch('http://127.0.0.1:3000/savejson', {
-            method: 'POST',
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: data,
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-        })
     })
 }
 
