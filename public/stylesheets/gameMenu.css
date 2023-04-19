@@ -67,7 +67,7 @@ body{
 }
 
 #gameButtons{
-    padding-top: 4cqw;
+    padding-top: 3cqw;
     display: flex;
     margin: auto;
     justify-content: center;
@@ -128,9 +128,8 @@ body{
     margin-left: auto;
     margin-right: auto;
     margin-top: 1cqw;
-    padding-top: 1cqw;
     border-top: 1px #ffffff30 solid;
-    padding: 30px;
+    padding: 1cqw;
     box-sizing: border-box;
     justify-content: space-around;
 }
