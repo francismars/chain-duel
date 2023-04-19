@@ -659,5 +659,5 @@ function displayTitle(){
 
     ctxTitle.font = "16px Inter";
     ctxTitle.fillStyle = "LightGray";
-    ctxTitle.fillText("CURRENT DISTRIBUTION", larguraTitle*0.5, 80);
+    ctxTitle.fillText("CURRENT DISTRIBUTION", larguraTitle*0.5, 85);
 }
