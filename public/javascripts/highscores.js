@@ -10,17 +10,17 @@ fetch('./files/highscores.json')
           });
 
         for(i=0;i<orderedScores.length;i++){
-
+            // "p1Name":"SELLIX","p1sats":1000000,"p2Name":"Pedro","p2sats":1000000,"winner":"Player 1","prize":1960000
             console.log(highscores[i])
 
             const elName = document.createElement("h2");
-            const nametext = document.createTextNode(highscores[i].name);
+            const nametext = document.createTextNode(highscores[i].p1Name);
             elName.appendChild(nametext);
             elName.classList.add("nameStyle");
             //document.getElementById("nameandsats").appendChild(paragraphName);
 
             const elSats = document.createElement("h2");
-            const satsvalue = document.createTextNode(highscores[i].sats);
+            const satsvalue = document.createTextNode(highscores[i].prize);
             elSats.appendChild(satsvalue);
 
 
