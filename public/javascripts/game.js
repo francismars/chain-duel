@@ -618,8 +618,13 @@ function displayTitle(){
     ctxTitle.font = "30px BureauGrotesque";
     ctxTitle.fillStyle = "white";
     ctxTitle.textAlign = "center";
+    /*
     ctxTitle.fillText(P1Name, (larguraTitle*0.08), 30);
     ctxTitle.fillText(P2Name, (larguraTitle*0.92), 30);
+    */
+    ctxTitle.fillText(P1Name.toUpperCase(), 80, 32);
+    ctxTitle.fillText(P2Name.toUpperCase(), (larguraTitle-80), 32);
+
 
     ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();
