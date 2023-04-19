@@ -181,12 +181,14 @@ body{
     width: 33%;
 }
 
-#rules1, #rules2{
-    margin-top: 0px;
-    color: grey;
-    text-align: center;
-    font-size: 1cqw;
+
+#splits {
+  margin-top: 0px;
+  color: grey;
+  text-align: center;
+  font-size: 1cqw;
 }
+
 
 #prizevaluesats{
     margin-top: 0px;
