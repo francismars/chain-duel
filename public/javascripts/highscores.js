@@ -12,6 +12,12 @@ fetch('./files/highscores.json')
         for(i=0;i<orderedScores.length;i++){
             // "p1Name":"SELLIX","p1sats":1000000,"p2Name":"Pedro","p2sats":1000000,"winner":"Player 1","prize":1960000
 
+            // Highscore Rank
+            const elRank = document.createElement("h2");
+            const ranktext = document.createTextNode(i+1);
+            elRank.appendChild(ranktext);
+            elRank.classList.add("rankStyle");
+
             // P1 Name
             const elP1Name = document.createElement("h2");
             const nameP1text = document.createTextNode(highscores[i].p1Name);
@@ -50,13 +56,12 @@ fetch('./files/highscores.json')
             divElement.classList.add("score-row");
             document.getElementById("nameandsats").appendChild(divElement);
 
+            divElement.appendChild(elRank);
             divElement.appendChild(elP1Name);
             divElement.appendChild(elP1Sats);
             divElement.appendChild(elP2Name);
             divElement.appendChild(elP2Sats);
             divElement.appendChild(elSats);
-
-
         }
     });
 
