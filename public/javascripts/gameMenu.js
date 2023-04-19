@@ -113,11 +113,12 @@ function changeTextAfterPayment(){
     document.getElementById("prizevaluesats").innerText = totalPrize
     document.getElementById("rules1").innerText = "1% ("+Math.floor(totalPrize*0.01)+" sats) to the host"
     document.getElementById("rules2").innerText =  "1% ("+Math.floor(totalPrize*0.01)+" sats) to the developer"
+    document.getElementById("rules3").innerText =  "0.5% ("+Math.floor(totalPrize*0.005)+" sats) to the designer"
     document.getElementById("player1info").innerText = p1Name
     document.getElementById("player2info").innerText = p2Name
     /* if (menu=="GameModes" && playersSats[1]!=0 && playersSats[0]!=0){
         document.getElementById("centerSection").style.display  = "none";
-        document.getElementById("gameButtons").style.display  = "flex"; 
+        document.getElementById("gameButtons").style.display  = "flex";
         menu="Buttons";
     } */
 }
