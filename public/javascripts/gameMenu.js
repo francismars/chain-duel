@@ -29,7 +29,7 @@ addEventListener("keydown", function(event) {
                             sessionStorage.setItem("P2Sats", playersSats[1]);
                             sessionStorage.setItem("P1Name", p1Name);
                             sessionStorage.setItem("P2Name", p2Name);
-                            socket.emit('createWithdrawal', Math.floor((playersSats[0]+playersSats[1])*0.98));
+                            socket.emit('createWithdrawal', Math.floor((playersSats[0]+playersSats[1])*0.975));
                             numberofCreates=1;
                         }
                     }  
