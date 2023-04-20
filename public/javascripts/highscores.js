@@ -29,6 +29,17 @@ fetch('./files/highscores.json')
             const p1Satstext = document.createTextNode(highscores[i].p1sats);
             elP1Sats.appendChild(p1Satstext);
             elP1Sats.classList.add("p1SatsStyle");
+
+            // P1 Sats Text
+            const elSatsP1Label = document.createElement("span");
+            elSatsP1Label.textContent="sats";
+            elP1Sats.appendChild(elSatsP1Label);
+            elSatsP1Label.classList.add("satsP1LabelStyle");
+
+            // VS Text
+            const elVSLabel = document.createElement("span");
+            elVSLabel.textContent="VS";
+            elVSLabel.classList.add("VSLabelStyle");
             
             // P2 Name
             const elP2Name = document.createElement("h2");
@@ -42,16 +53,24 @@ fetch('./files/highscores.json')
             elP2Sats.appendChild(p2Satstext);
             elP2Sats.classList.add("p2SatsStyle");
 
+            // P1 Sats Text
+            const elSatsP2Label = document.createElement("span");
+            elSatsP2Label.textContent="sats";
+            elP2Sats.appendChild(elSatsP2Label);
+            elSatsP2Label.classList.add("satsP2LabelStyle");
+
             // Total Prize
             const elSats = document.createElement("h2");
             const satsvalue = document.createTextNode(highscores[i].prize);
             elSats.appendChild(satsvalue);
 
+            // Prize Sats
             const elSatsLabel = document.createElement("span");
             elSatsLabel.textContent="sats";
             elSats.appendChild(elSatsLabel);
             elSats.classList.add("satsLabelStyle");
 
+            // Rows
             var divElement = document.createElement('div');
             divElement.classList.add("score-row");
             document.getElementById("nameandsats").appendChild(divElement);
@@ -59,6 +78,7 @@ fetch('./files/highscores.json')
             divElement.appendChild(elRank);
             divElement.appendChild(elP1Name);
             divElement.appendChild(elP1Sats);
+            divElement.appendChild(elVSLabel);
             divElement.appendChild(elP2Name);
             divElement.appendChild(elP2Sats);
             divElement.appendChild(elSats);
