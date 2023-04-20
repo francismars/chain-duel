@@ -276,7 +276,7 @@ function gameSettings(){
 }
 
 function finalText(winner){
-    ctxGame.font = "30px BureauGrotesque";
+    ctxGame.font = "80px BureauGrotesque";
     ctxGame.fontWeight = "50%";
     ctxGame.fillStyle = "white";
     ctxGame.textAlign = "center";
@@ -310,7 +310,7 @@ function drawGameSquares(){
 }
 
 function initialText(){
-    ctxGame.font = "30px BureauGrotesque";
+    ctxGame.font = "80px BureauGrotesque";
     ctxGame.fontWeight = "50%";
     ctxGame.fillStyle = "white";
     ctxGame.textAlign = "center";
