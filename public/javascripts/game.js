@@ -622,6 +622,27 @@ function displayTitle(){
     ctxTitle.fillText(P1Name.toUpperCase(), 80, 32);
     ctxTitle.fillText(P2Name.toUpperCase(), (larguraTitle-80), 32);
 
+    var p1capturing
+    if (p1BodyPos.length == 1) p1capturing = "2%";
+    else if (p1BodyPos.length == 2) p1capturing = "4%";
+    else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1capturing = "8%";
+    else if (p1BodyPos.length >= 8 && p1BodyPos.length < 16) p1capturing = "16%";
+    else if (p1BodyPos.length >= 16) p1capturing = "32%";
+    
+    ctxTitle.textAlign = "left";
+    ctxTitle.font = "15px Inter";
+    ctxTitle.fillText(("Capturing "+ p1capturing), 150, 32);
+
+    var p2capturing
+    if (p2BodyPos.length == 1) p2capturing = "2%";
+    else if (p2BodyPos.length == 2) p2capturing = "4%";
+    else if (p2BodyPos.length >= 3 && p2BodyPos.length < 8) p2capturing = "8%";
+    else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2capturing = "16%";
+    else if (p2BodyPos.length >= 16) p2capturing = "32%";
+
+    ctxTitle.textAlign = "right";
+    ctxTitle.fillText(("Capturing "+ p2capturing), larguraTitle-150, 32);
+
 
     ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();
@@ -641,6 +662,7 @@ function displayTitle(){
     ctxTitle.fillRect(0, 50, larguraTitle*percentageInitialP1, 5);
     ctxTitle.stroke();
 
+    ctxTitle.textAlign = "center";
     ctxTitle.font = "12px Inter";
     ctxTitle.fillStyle = "silver";
     ctxTitle.fillText("INITIAL DISTRIBUTION", larguraTitle*0.5, 40);
