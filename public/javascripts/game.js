@@ -281,8 +281,12 @@ function finalText(winner){
     ctxGame.fillStyle = "white";
     ctxGame.textAlign = "center";
     ctxGame.textBaseline = "middle";
-    ctxGame.strokeStyle = "white";
-    ctxGame.fillText(winner.toUpperCase()+" WINS!", (larguraGame/2), alturaGame/2);
+    ctxGame.strokeStyle = "black";
+    ctxGame.fillText(winner.toUpperCase()+" WINS!", (larguraGame/2), (alturaGame/2)-15);
+    ctxGame.strokeText(winner.toUpperCase()+" WINS!", (larguraGame/2), (alturaGame/2)-15);
+    ctxGame.font = "35px BureauGrotesque";
+    ctxGame.fillText("PRESS ANY BUTTON TO CONTINUE", (larguraGame/2), (alturaGame/2)+35);
+    ctxGame.strokeText("PRESS ANY BUTTON TO CONTINUE", (larguraGame/2), (alturaGame/2)+35);
 }
 
 function drawGameSquares(){
@@ -315,8 +319,9 @@ function initialText(){
     ctxGame.fillStyle = "white";
     ctxGame.textAlign = "center";
     ctxGame.textBaseline = "middle";
-    ctxGame.strokeStyle = "white";
+    ctxGame.strokeStyle = "black";    
     ctxGame.fillText("PRESS BUTTON TO START", (larguraGame/2), alturaGame/2);
+    ctxGame.strokeText("PRESS BUTTON TO START", (larguraGame/2), alturaGame/2);
 }
 
 function drawPlayers(){
@@ -356,28 +361,28 @@ function drawCountdown(){
     alturaNumbers = (alturaGame*0.50).toString();
     ctxGame.font = alturaNumbers.concat("px BureauGrotesque");
     if(counterStart==0){
-        ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
-        ctxGame.strokeText("2", (larguraGame*0.34), alturaGame/2);
-        ctxGame.strokeText("1", (larguraGame*0.45), alturaGame/2);
-        ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
+        ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
+        ctxGame.strokeText("2", (larguraGame*0.36), alturaGame/2);
+        ctxGame.strokeText("1", (larguraGame*0.47), alturaGame/2);
+        ctxGame.strokeText("LFG", (larguraGame*0.675), alturaGame/2);
     }
     else if (counterStart==1){
-        ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
-        ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
-        ctxGame.strokeText("1", (larguraGame*0.45), alturaGame/2);
-        ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
+        ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
+        ctxGame.fillText("2", (larguraGame*0.36), alturaGame/2);
+        ctxGame.strokeText("1", (larguraGame*0.47), alturaGame/2);
+        ctxGame.strokeText("LFG", (larguraGame*0.675), alturaGame/2);
     }
     else if (counterStart==2){
-        ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
-        ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
-        ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
-        ctxGame.strokeText("LFG", (larguraGame*0.67), alturaGame/2);
+        ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
+        ctxGame.fillText("2", (larguraGame*0.36), alturaGame/2);
+        ctxGame.fillText("1", (larguraGame*0.47), alturaGame/2);
+        ctxGame.strokeText("LFG", (larguraGame*0.675), alturaGame/2);
     }
     else if (counterStart==3){
-        ctxGame.fillText("3", (larguraGame*0.22), alturaGame/2);
-        ctxGame.fillText("2", (larguraGame*0.34), alturaGame/2);
-        ctxGame.fillText("1", (larguraGame*0.45), alturaGame/2);
-        ctxGame.fillText("LFG", (larguraGame*0.67), alturaGame/2);
+        ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
+        ctxGame.fillText("2", (larguraGame*0.36), alturaGame/2);
+        ctxGame.fillText("1", (larguraGame*0.47), alturaGame/2);
+        ctxGame.fillText("LFG", (larguraGame*0.675), alturaGame/2);
     }
     else if (counterStart==4){
         gameStarted = true;
