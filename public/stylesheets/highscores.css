@@ -7,8 +7,13 @@
 }
 
 .rankStyle{
-  font-size: 5cqw;
-  margin-bottom: 18px;
+  font-size: 6vw;
+  margin-bottom: 0px;
+  width: 10%;
+  text-align: left;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: grey;
 }
 
 .score-row {
@@ -19,21 +24,28 @@
     padding-top: 18px;
 }
 
-.score-row h2{
+.score-row {
   letter-spacing: 0;
 }
 
-.satsLabelStyle span{
+.satsLabelStyle {
   font-family: "inter", sans-serif;
-  text-transform: lowercase;
+  text-transform: uppercase;
   font-size: 12px;
   margin-left: 10px;
+  color: grey;
+}
+
+.winnerInfo{
+  width: 20%;
+  text-align: left;
 }
 
 .winnerNameStyle{
   text-align: left;
-  font-size: 3cqw;
-  margin-bottom: 10px;
+  font-size: 3.4vw;
+  margin-top: 2px;
+  margin-bottom: 5px
 }
 
 .winnerSatsStyle{
@@ -47,6 +59,14 @@
 .VSLabelStyle{
   font-size: 2cqw;
   color: grey;
+  width: 20%;
+  margin-top: 25px;
+}
+
+.loserinfo{
+  width: 20%;
+  text-align: left;
+  margin-top: auto;
 }
 
 .loserNameStyle{
@@ -54,6 +74,7 @@
   font-size: 2cqw;
   margin-bottom: 10px;
   color: grey;
+  margin-bottom: 5px;
 }
 
 .loserSatsStyle{
@@ -63,11 +84,13 @@
 
 .prizeinfo {
   text-align: right;
+  width: 40%;
 }
 
 .prizeSatsStyle {
-  margin-bottom: 5px;
-  font-size: 3cqw;
+  margin-bottom: 0px;
+  font-size: 4.4vw;
+  margin-top: 2px;
 }
 
 #mainmenubutton {

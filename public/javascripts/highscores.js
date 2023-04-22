@@ -40,7 +40,7 @@ fetch('./files/highscores.json')
             
             // Winner Sats
             const elWinnerSats = document.createElement("h2");
-            const winnerSatstext = document.createTextNode(winnerSats);
+            const winnerSatstext = document.createTextNode(winnerSats.toLocaleString());
             elWinnerSats.appendChild(winnerSatstext);
             elWinnerSats.classList.add("winnerSatsStyle");
 
@@ -69,7 +69,7 @@ fetch('./files/highscores.json')
 
             // Loser Sats
             const elLoserSats = document.createElement("h2");
-            const loserSatstext = document.createTextNode(loserSats);
+            const loserSatstext = document.createTextNode(loserSats.toLocaleString());
             elLoserSats.appendChild(loserSatstext);
             elLoserSats.classList.add("loserSatsStyle");
 
@@ -87,7 +87,7 @@ fetch('./files/highscores.json')
 
             // Total Prize
             const elPrize = document.createElement("h2");
-            const satsvalue = document.createTextNode(highscores[i].prize);
+            const satsvalue = document.createTextNode(highscores[i].prize.toLocaleString());
             elPrize.classList.add("prizeSatsStyle");
             elPrize.appendChild(satsvalue);
 
