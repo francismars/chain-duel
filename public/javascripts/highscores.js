@@ -57,7 +57,7 @@ fetch('./files/highscores.json')
             winnerDivElement.appendChild(elWinnerSats);
 
             // VS Text
-            const elVSLabel = document.createElement("span");
+            const elVSLabel = document.createElement("h2");
             elVSLabel.textContent="VS";
             elVSLabel.classList.add("VSLabelStyle");
             
