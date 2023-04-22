@@ -52,6 +52,9 @@ addEventListener("keydown", function(event) {
           console.log("Gamepad 1 connected")
       }
       gamepad1 = navigator.getGamepads()[0];
+      
+      /*
+      // Code for GAMEPAD
       if(gamepad1.buttons[0].pressed==true || gamepad1.buttons[1].pressed==true || gamepad1.buttons[2].pressed==true || gamepad1.buttons[3].pressed==true){
           window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
       }
@@ -61,12 +64,30 @@ addEventListener("keydown", function(event) {
       if(gamepad1.buttons[13].pressed==true){
           window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
       }
+      */
+
+      // Code for ARCADE CONTROLLER
+      // console.log("0 == "+ gamepad1.axes[0]) // Left = -1 || Right = 1
+      // console.log("1 == "+ gamepad1.axes[1]) // Up = -1 || Down = 1
+      if(gamepad1.buttons[0].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
+      }
+      if(gamepad1.axes[1]==-1){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
+      }
+      if(gamepad1.axes[1]==1){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
+      }
     }
+    
     if (navigator.getGamepads()[1]) {
       if(gamepad2==null){
           console.log("Gamepad 2 connected")
       }
       gamepad2 = navigator.getGamepads()[1];
+
+      /*
+      // Code for GAMEPAD
       if(gamepad2.buttons[0].pressed==true || gamepad2.buttons[1].pressed==true || gamepad2.buttons[2].pressed==true || gamepad2.buttons[3].pressed==true){
           window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
       }
@@ -75,6 +96,20 @@ addEventListener("keydown", function(event) {
       }
       if(gamepad2.buttons[13].pressed==true){
           window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
+      }
+      */
+
+      // Code for ARCADE CONTROLLER
+      // console.log("0 == "+ gamepad2.axes[0]) // Left = -1 || Right = 1
+      // console.log("1 == "+ gamepad2.axes[1]) // Up = -1 || Down = 1
+      if(gamepad2.buttons[0].pressed==true){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
+      }
+      if(gamepad2.axes[1]==-1){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
+      }
+      if(gamepad2.axes[1]==1){
+        window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
       }
     }
   }
