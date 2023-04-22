@@ -105,6 +105,9 @@ fetch('./files/highscores.json')
             // Rows
             var divElement = document.createElement('div');
             divElement.classList.add("score-row");
+            if(i==4){
+              divElement.classList.add("score-row-last");
+            }
             document.getElementById("highscoresList").appendChild(divElement);
 
             divElement.appendChild(elRank);

@@ -24,6 +24,10 @@
     padding-top: 18px;
 }
 
+.score-row-last {
+  border-bottom: 0px;
+}
+
 .score-row {
   letter-spacing: 0;
 }
