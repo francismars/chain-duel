@@ -20,21 +20,23 @@ var P2Name = sessionStorage.getItem("P2Name");
 if (P2Name==null){
     P2Name="Player 2"
 }
+
 var SatsP1 = sessionStorage.getItem('P1Sats');
 if (SatsP1==null){
     SatsP1=1000
 }
 else { SatsP1 = parseInt(SatsP1) }
+
 var SatsP2 = sessionStorage.getItem('P2Sats');
 if (SatsP2==null){
     SatsP2=1000
 }
 else { SatsP2 = parseInt(SatsP2) }
+
 let initialScoreDistribution = [SatsP1,SatsP2];
 let totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
 let currentScoreDistribution = [SatsP1,SatsP2];
 let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
-
 
 gameSpeed = 1000/10
 intervalStart = setInterval(draw, gameSpeed);
@@ -51,7 +53,8 @@ function draw(){
     clear();
     updateGamepads();
     updateScore();
-    update();
+    displayTitle();
+    displayGame();
 }
 
 function clear(){
@@ -63,12 +66,6 @@ function updateScore(){
     document.getElementById('p1Points').innerText = currentScoreDistribution[0].toLocaleString()
     document.getElementById('p2Points').innerText = currentScoreDistribution[1].toLocaleString()
 }
-
-function update(){
-    displayTitle();
-    displayGame();
-}
-
 
 function resetP1(){
     p1HeadPos = [6,12];
@@ -84,25 +81,20 @@ function resetP2(){
     p2DirWanted = "Left";
 }
 
-
 let gameCols = 51;
 let gameRows = 25;
 
 let p1HeadPos = [6,12];
 let p1BodyPos = [[5,12]];
-
-
 let p1Dir = "";
 let p1DirWanted = "Right";
 
 let p2HeadPos = [44,12];
 let p2BodyPos = [[45,12]];
-
 let p2Dir = "";
 let p2DirWanted = "Left";
 
 let foodPos = [[25,12]];
-
 
 var countdownStart = false;
 var gameStarted = false;
@@ -112,8 +104,8 @@ function createNewFood(){
     newValueAccepted = false;
     while(newValueAccepted==false){
         foundCollision = false;
-        maxX = Math.floor(gameCols);
-        maxY = Math.floor(gameRows);
+        maxX = gameCols;
+        maxY = gameRows;
         newX = Math.floor(Math.random() * maxX);
         newY = Math.floor(Math.random() * maxY);
         for(i=0;i<p1BodyPos.length;i++){
@@ -140,75 +132,53 @@ function createNewFood(){
 }
 
 function changeScore(playerID){
-    let changeInPoints;
-    if(Math.floor(totalPoints*0.05)>1){
-        let bodySnake;
-        if(playerID=="P1"){ bodySnake = p1BodyPos }
-        if(playerID=="P2"){ bodySnake = p2BodyPos }
-        if(bodySnake.length==1){
-            changeInPoints=Math.floor(totalPoints*0.02);
-        }
-        else if(bodySnake.length==2){
-            changeInPoints=Math.floor(totalPoints*0.04);
-        }
-        else if(bodySnake.length>=3 && bodySnake.length<=6){
-            changeInPoints=Math.floor(totalPoints*0.08);
-        }
-        else if(bodySnake.length>=7 && bodySnake.length<=14){
-            changeInPoints=Math.floor(totalPoints*0.16);
-        }
-        else if(bodySnake.length>=15){
-            changeInPoints=Math.floor(totalPoints*0.32);
-        }
+    let changeInPoints = 0;
+    let bodySnake;
+    if(playerID=="P1"){ bodySnake = p1BodyPos }
+    if(playerID=="P2"){ bodySnake = p2BodyPos }
+    if(bodySnake.length==1){
+        changeInPoints=Math.floor(totalPoints*0.02);
     }
-    else{
-        changeInPoints=1;
+    else if(bodySnake.length==2){
+        changeInPoints=Math.floor(totalPoints*0.04);
     }
-    console.log(changeInPoints)
+    else if(bodySnake.length>=3 && bodySnake.length<=6){
+        changeInPoints=Math.floor(totalPoints*0.08);
+    }
+    else if(bodySnake.length>=7 && bodySnake.length<=14){
+        changeInPoints=Math.floor(totalPoints*0.16);
+    }
+    else if(bodySnake.length>=15){
+        changeInPoints=Math.floor(totalPoints*0.32);
+    }
+    if(changeInPoints<1){ changeInPoints=1; }
     if(playerID=="P1"){
         currentScoreDistribution[0]+=changeInPoints;
         currentScoreDistribution[1]-=changeInPoints;
-        if(currentScoreDistribution[1]<0){
-            currentScoreDistribution[1]=0;
-        }
-        if(currentScoreDistribution[0]>totalPoints){
-            currentScoreDistribution[0]=totalPoints;
-        }
+        if(currentScoreDistribution[1]<0){ currentScoreDistribution[1]=0; }
+        if(currentScoreDistribution[0]>totalPoints){ currentScoreDistribution[0]=totalPoints; }
     }
-    if(playerID=="P2"){
+    else if(playerID=="P2"){
         currentScoreDistribution[1]+=changeInPoints;
         currentScoreDistribution[0]-=changeInPoints;
-        if(currentScoreDistribution[0]<0){
-            currentScoreDistribution[0]=0;
-        }
-        if(currentScoreDistribution[1]>totalPoints){
-            currentScoreDistribution[1]=totalPoints;
-        }
+        if(currentScoreDistribution[0]<0){ currentScoreDistribution[0]=0; }
+        if(currentScoreDistribution[1]>totalPoints){ currentScoreDistribution[1]=totalPoints; }
     }
 }
 
 function increaseBody(playerID){
+    let lastBodyPart;
+    let nextToLastBodyPart;
+    let bodyToIncrease;
     if(playerID=="P1"){
         lastBodyPart = p1BodyPos[p1BodyPos.length-1];
-        nextToLastBodyPart = [];
         if(p1BodyPos.length>1){
             nextToLastBodyPart = p1BodyPos[p1BodyPos.length-2];
         }
         else if(p1BodyPos.length==1){
             nextToLastBodyPart = p1HeadPos;
         }
-        if(lastBodyPart[0]<nextToLastBodyPart[0]){
-            p1BodyPos.push([lastBodyPart[0]-1,lastBodyPart[1]])
-        }
-        else if(lastBodyPart[0]>nextToLastBodyPart[0]){
-            p1BodyPos.push([lastBodyPart[0]+1,lastBodyPart[1]])
-        }
-        else if(lastBodyPart[1]<nextToLastBodyPart[1]){
-            p1BodyPos.push([lastBodyPart[0],lastBodyPart[1]-1])
-        }
-        else if(lastBodyPart[1]>nextToLastBodyPart[1]){
-            p1BodyPos.push([lastBodyPart[0],lastBodyPart[1]+1])
-        }
+        bodyToIncrease = p1BodyPos;
     }
     else if(playerID=="P2"){
         lastBodyPart = p2BodyPos[p2BodyPos.length-1];
@@ -218,18 +188,19 @@ function increaseBody(playerID){
         else if(p2BodyPos.length==1){
             nextToLastBodyPart = p2HeadPos;
         }
-        if(lastBodyPart[0]<nextToLastBodyPart[0]){
-            p2BodyPos.push([lastBodyPart[0]-1,lastBodyPart[1]])
-        }
-        else if(lastBodyPart[0]>nextToLastBodyPart[0]){
-            p2BodyPos.push([lastBodyPart[0]+1,lastBodyPart[1]])
-        }
-        else if(lastBodyPart[1]<nextToLastBodyPart[1]){
-            p2BodyPos.push([lastBodyPart[0],lastBodyPart[1]-1])
-        }
-        else if(lastBodyPart[1]>nextToLastBodyPart[1]){
-            p2BodyPos.push([lastBodyPart[0],lastBodyPart[1]+1])
-        }
+        bodyToIncrease = p2BodyPos;
+    }
+    if(lastBodyPart[0]<nextToLastBodyPart[0]){
+        bodyToIncrease.push([lastBodyPart[0]-1,lastBodyPart[1]])
+    }
+    else if(lastBodyPart[0]>nextToLastBodyPart[0]){
+        bodyToIncrease.push([lastBodyPart[0]+1,lastBodyPart[1]])
+    }
+    else if(lastBodyPart[1]<nextToLastBodyPart[1]){
+        bodyToIncrease.push([lastBodyPart[0],lastBodyPart[1]-1])
+    }
+    else if(lastBodyPart[1]>nextToLastBodyPart[1]){
+        bodyToIncrease.push([lastBodyPart[0],lastBodyPart[1]+1])
     }
 }
 
@@ -238,12 +209,8 @@ function displayGame(){
     drawGameSquares()
     drawPlayers()
     if(!gameStarted && !gameEnded){
-        if(!countdownStart){
-            initialText()
-        }
-        if(countdownStart){
-            drawCountdown()
-        }
+        if(!countdownStart){ initialText() }
+        if(countdownStart){ drawCountdown() }
     }
     else if(gameStarted && !gameEnded){
         movePlayers()
@@ -256,12 +223,8 @@ function displayGame(){
     }
     if(gameEnded){
         let winner = "";
-        if(currentScoreDistribution[0]<=0){
-            winner=P2Name
-        }
-        else if(currentScoreDistribution[1]<=0){
-            winner=P1Name
-        }
+        if(currentScoreDistribution[0]<=0){ winner=P2Name }
+        else if(currentScoreDistribution[1]<=0){ winner=P1Name }
         finalText(winner)
     }
 }
@@ -290,16 +253,6 @@ function finalText(winner){
 }
 
 function drawGameSquares(){
-  // Desenhar miras
-  /*
-  ctxGame.beginPath();
-  ctxGame.moveTo(0, alturaGame/2);
-  ctxGame.lineTo(larguraGame, alturaGame/2);
-  ctxGame.moveTo(larguraGame/2, 0);
-  ctxGame.lineTo(larguraGame/2, alturaGame);
-  ctxGame.stroke();
-  */
-
   // Desenhar quadrados para game debug
   for (i=0;i<=gameCols;i++){
      for (j=0;j<=gameRows;j++){
@@ -307,7 +260,6 @@ function drawGameSquares(){
          ctxGame.strokeStyle =  "rgba(255, 255, 255, 0.05)";
          ctxGame.lineWidth = 1;
          ctxGame.rect(i*colSize, j*rowSize, colSize, rowSize);
-         //ctxGame.fillText((i+1)+(j*gameCols), i*colSize, j*rowSize+rowSize);
          ctxGame.stroke();
      }
   }
@@ -390,11 +342,11 @@ function drawCountdown(){
 }
 
 function eatingFood(){
-    for(i=0;i<foodPos.length;i++){
+    for(i=0;i<foodPos.length;i++){ 
         if(p1HeadPos[0]==foodPos[i][0] && p1HeadPos[1]==foodPos[i][1]){
             foodPos.splice(i, 1);
             changeScore("P1");
-            increaseBody("P1");
+            increaseBody("P1");   
             createNewFood();
         }
         else if(p2HeadPos[0]==foodPos[i][0] && p2HeadPos[1]==foodPos[i][1]){
@@ -402,7 +354,7 @@ function eatingFood(){
             changeScore("P2");
             increaseBody("P2");
             createNewFood();
-        }
+        }        
     }
 }
 
@@ -490,7 +442,6 @@ function checkCollisions(){
             resetP2();
         }
     }
-
 }
 
 addEventListener("keydown", function(event) {
@@ -511,7 +462,7 @@ addEventListener("keydown", function(event) {
                 sessionStorage.setItem("gameWinner", winner);
                 window.location.href = "/postgame";
             }
-        break;
+            break;
         case "ARROWLEFT":
             if(p2Dir == "Up" || p2Dir == "Down" || p2Dir == ""){
                 p2DirWanted = "Left"
@@ -536,22 +487,22 @@ addEventListener("keydown", function(event) {
             if(p1Dir == "Up" || p1Dir == "Down"){
                 p1DirWanted = "Left"
             }
-        break;
+            break;
         case "D":
             if(p1Dir == "Up" || p1Dir == "Down" || p1Dir == ""){
                 p1DirWanted = "Right"
             }
-        break;
+            break;
         case "W":
             if(p1Dir == "Left" || p1Dir == "Right"){
                 p1DirWanted = "Up"
             }
-        break;
+            break;
         case "S":
             if(p1Dir == "Left" || p1Dir == "Right"){
                 p1DirWanted = "Down"
             }
-        break;
+            break;
     }
 });
 
@@ -651,16 +602,12 @@ function displayTitle(){
 
     titleCanvas.width = window.innerWidth*(0.7);
     titleCanvas.height = window.innerHeight*(0.1);
-    var larguraTitle = titleCanvas.width;
-    var alturaTitle = titleCanvas.height;
+    larguraTitle = titleCanvas.width;
+    alturaTitle = titleCanvas.height;
 
     ctxTitle.font = "30px BureauGrotesque";
     ctxTitle.fillStyle = "white";
     ctxTitle.textAlign = "center";
-    /*
-    ctxTitle.fillText(P1Name, (larguraTitle*0.08), 30);
-    ctxTitle.fillText(P2Name, (larguraTitle*0.92), 30);
-    */
     ctxTitle.fillText(P1Name.toUpperCase(), 80, 32);
     ctxTitle.fillText(P2Name.toUpperCase(), (larguraTitle-80), 32);
 
@@ -670,7 +617,6 @@ function displayTitle(){
     else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1capturing = "8%";
     else if (p1BodyPos.length >= 8 && p1BodyPos.length < 16) p1capturing = "16%";
     else if (p1BodyPos.length >= 16) p1capturing = "32%";
-    
     ctxTitle.textAlign = "left";
     ctxTitle.font = "15px Inter";
     ctxTitle.fillText(("Capturing "+ p1capturing), 150, 32);
@@ -681,10 +627,8 @@ function displayTitle(){
     else if (p2BodyPos.length >= 3 && p2BodyPos.length < 8) p2capturing = "8%";
     else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2capturing = "16%";
     else if (p2BodyPos.length >= 16) p2capturing = "32%";
-
     ctxTitle.textAlign = "right";
     ctxTitle.fillText(("Capturing "+ p2capturing), larguraTitle-150, 32);
-
 
     ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();

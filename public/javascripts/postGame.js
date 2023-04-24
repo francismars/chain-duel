@@ -174,7 +174,7 @@ function updateGamepads() {
         console.log("Gamepad 1 connected")
     }
     gamepad1 = navigator.getGamepads()[0];
-    if(gameWinner=="Player 1"){
+    if(gameWinner=="Player 1" || menu==3){
         if(gamepad1.buttons[0].pressed==true || gamepad1.buttons[1].pressed==true || gamepad1.buttons[2].pressed==true || gamepad1.buttons[3].pressed==true){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
         }
@@ -203,7 +203,7 @@ function updateGamepads() {
         console.log("Gamepad 2 connected")
     }
     gamepad2 = navigator.getGamepads()[1];
-    if(gameWinner=="Player 2"){
+    if(gameWinner=="Player 2" || menu==3){
         if(gamepad2.buttons[0].pressed==true || gamepad2.buttons[1].pressed==true || gamepad2.buttons[2].pressed==true || gamepad2.buttons[3].pressed==true){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
         }
