@@ -41,8 +41,8 @@ let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/10
 let gamepad1 = null;
 let gamepad2 = null;
 
-const gameSpeed = 1000/10
-intervalStart = setInterval(draw, gameSpeed);
+const gameSpeed = 100
+let intervalStart = setInterval(draw, gameSpeed);
 
 let counterStart = 0;
 function counterStartFunc(){
@@ -54,7 +54,7 @@ function counterStartFunc(){
 
 function draw(){
     clear();
-    listenToGamepads();
+    listenToGamepads()
     updateScore();
     displayTitle();
     displayGame();
@@ -417,6 +417,22 @@ function checkCollisions(){
     if(p2HeadPos[0]==p1HeadPos[0] && p2HeadPos[1]==p1HeadPos[1]){
         resetP1();
         resetP2();
+    }
+    if(p1HeadPos[0]==p2HeadPos[0]+1 && p2HeadPos[1]==p1HeadPos[1] && p1Dir=="Right" && p2Dir=="Left" && p1DirWanted=="Right" && p2DirWanted=="Left"){
+        resetP1();
+        resetP2();       
+    }
+    if(p1HeadPos[0]==p2HeadPos[0]-1 && p2HeadPos[1]==p1HeadPos[1] && p1Dir=="Left" && p2Dir=="Right" && p1DirWanted=="Left" && p2DirWanted=="Right"){
+        resetP1();
+        resetP2();       
+    }
+    if(p1HeadPos[0]==p2HeadPos[0] && p1HeadPos[1]==p2HeadPos[1]-1 && p1Dir=="Up" && p2Dir=="Down" && p1DirWanted=="Up" && p2DirWanted=="Down"){
+        resetP1();
+        resetP2();       
+    }
+    if(p1HeadPos[0]==p2HeadPos[0] && p1HeadPos[1]==p2HeadPos[1]+1 && p1Dir=="Down" && p2Dir=="Up" && p1DirWanted=="Down" && p2DirWanted=="Up"){
+        resetP1();
+        resetP2();       
     }
     // Check for game borders
     if(p1HeadPos[0]>gameCols-1 || p1HeadPos[1]<0 || p1HeadPos[1]>gameRows-1 || p1HeadPos[0]<0){
