@@ -17,7 +17,7 @@ body {
     margin-top: 15px;
     text-align: center;
     color: white;
-    font-size: 14px;
+    font-size: 0.8cqw;
     font-weight: 300;
     text-transform: uppercase;
     letter-spacing: 0.1rem;
@@ -38,7 +38,7 @@ body {
     text-align: center;
     color: white;
     letter-spacing: 0.1rem;
-    font-size: 16px;
+    font-size: 0.8cqw;
 }
 
 
@@ -76,17 +76,17 @@ body {
 
 #rules1{
     text-align: center;
-    font-size: 16px;
-    margin-bottom: 30px;
+    font-size: 0.8cqw;
+    margin-bottom: 1%;
     letter-spacing: 0.03rem;
-    line-height: 1.7rem;
+    line-height: 1.4rem;
 }
 
 #rules2, #version{
     margin-top: 0px;
     text-align: center;
     color: grey;
-    font-size: 14px;
+    font-size: 0.8cqw;
 }
 
 

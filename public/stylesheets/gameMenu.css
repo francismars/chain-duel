@@ -66,6 +66,22 @@ body{
     font-size: 0.9cqw;
 }
 
+
+
+
+
+.rewards{
+  margin:auto;
+  width: 60%;
+}
+.reward-blocks{
+  text-align: left;
+}
+.reward-percent{
+  text-align: right;
+}
+
+
 #gameButtons{
     padding-top: 3cqw;
     display: flex;
@@ -222,6 +238,10 @@ body{
     color: white;
     font-size: 1.5cqw;
     padding-bottom: 0px;
+}
+
+.sats-label {
+    font-size: 1cqw;
 }
 
 #player2info{

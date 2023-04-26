@@ -6,7 +6,7 @@
   src: url("fonts/BureauGrotesque/BureauGrotesque.eot?#iefix") format("embedded-opentype"),
   url("fonts/BureauGrotesque/BureauGrotesque.woff2") format("woff2"),
   url("fonts/BureauGrotesque/BureauGrotesque.woff") format("woff"),
-  url("fonts/BureauGrotesque/BureauGrotesque.ttf") format("truetype"),
+  url("fonts/BureauGrotesque/BureauGrotesque.ttf") format("truetype"),x
   url("fonts/BureauGrotesque/BureauGrotesque.svg#BureauGrotesque") format("svg");
 }
 
@@ -121,8 +121,8 @@ header{
 
 
 .button{
-    margin-top: 2%;
-    margin-bottom: 2%;
+    margin-top: 1%;
+    margin-bottom: 1%;
     display: block;
     margin-left: auto;
     margin-right: auto;
@@ -131,8 +131,8 @@ header{
     border: 1px solid white;
     width: 25%;
     height: 8%;
-    font-size: 14px;
-    padding: 20px;
+    font-size: 0.8cqw;
+    padding: 1%;
     letter-spacing: 0.1rem;
 }
 

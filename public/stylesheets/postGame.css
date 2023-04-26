@@ -18,7 +18,7 @@ body{
     position:static;
     margin-top: 0%;
     text-align: center;
-    font-size: 5cqw;
+    font-size: 3cqw;
     color: white;
     padding-top: 0%;
     margin-bottom: 0%;
@@ -28,9 +28,11 @@ body{
 .fees {
   width: 100%;
   text-align: center;
+  font-size: 0.8cqw;
+  margin-top: 0.2%;
 }
 
-#hostFee, #developerFee, #claimReq1{
+#hostFee, #developerFee, #claimReq1, #designerFee{
     position:static;
     margin-top: 0%;
     text-align: center;
@@ -43,14 +45,14 @@ body{
 
 #claimReq1{
     margin-top: -1%;
-    font-size: 1.5cqw;
+    font-size: 1cqw;
 }
 
 #prize{
     position:static;
     margin: 2rem 0;
     text-align: center;
-    font-size: 12cqw;
+    font-size: 10cqw;
     color: white;
     padding-top: 0%;
     margin-bottom: 0%;
@@ -73,6 +75,7 @@ body{
 
 #buttonsDiv{
     display:flex;
+    flex-direction: column;
 }
 
 #startnewbutton{
