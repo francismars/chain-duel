@@ -4,7 +4,7 @@ fetch('./files/highscores.json')
         highscores = json
 
         orderedScores = highscores.sort((a, b) => {
-            if (a.sats > b.sats) {
+            if (a.prize > b.prize) {
               return -1;
             }
           });
