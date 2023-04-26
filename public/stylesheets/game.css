@@ -24,6 +24,13 @@ body{
 
 }
 
+#pointsCanvas{
+    position:absolute;
+    margin: 0 15%;
+    left: 0;
+    right: 0;
+}
+
 
 .flex.full.game {
     display: flex;

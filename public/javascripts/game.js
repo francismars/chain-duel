@@ -12,6 +12,14 @@ var larguraGame = gameCanvas.width;
 var alturaGame = gameCanvas.height;
 var ctxGame = gameCanvas.getContext("2d");
 
+var pointsCanvas = document.getElementById("pointsCanvas");
+pointsCanvas.width = window.innerWidth*(0.7);
+pointsCanvas.height = window.innerWidth*(0.35);
+var larguraPoints = pointsCanvas.width;
+var alturaPoints = pointsCanvas.height;
+var ctxPoints = pointsCanvas.getContext("2d");
+
+
 var P1Name = sessionStorage.getItem("P1Name");
 if (P1Name==null){
     P1Name="Player 1"
@@ -155,6 +163,8 @@ function changeScore(playerID){
         changeInPoints=Math.floor(totalPoints*0.32);
     }
     if(changeInPoints<1){ changeInPoints=1; }
+    console.log(foodPos)
+    drawPointChange(playerID, changeInPoints, p1HeadPos, p2HeadPos);
     if(playerID=="P1"){
         currentScoreDistribution[0]+=changeInPoints;
         currentScoreDistribution[1]-=changeInPoints;
@@ -167,6 +177,39 @@ function changeScore(playerID){
         if(currentScoreDistribution[0]<0){ currentScoreDistribution[0]=0; }
         if(currentScoreDistribution[1]>totalPoints){ currentScoreDistribution[1]=totalPoints; }
     }
+}
+
+function drawPointChange(player, value, posP1, posP2){
+    console.log(value)
+    var alpha = 1.0;
+    let xP1 = (posP1[0]*colSize)+colSize/2
+    let yP1 = (posP1[1]*rowSize)+rowSize/2
+    let xP2 = (posP2[0]*colSize)+colSize/2
+    let yP2 = (posP2[1]*rowSize)+rowSize/2
+    var pointsInterval = setInterval(function () {
+        ctxPoints.font = "12pt Inter";
+        ctxPoints.textAlign = "center";
+        ctxPoints.textBaseline = "middle";
+        if(player=="P1"){
+            ctxPoints.fillStyle = "rgba(0, 0, 0, " + alpha + ")";
+            ctxPoints.fillText("+"+value, xP1, yP1);
+            ctxPoints.fillStyle = "rgba(255, 255, 255, " + alpha + ")";
+            ctxPoints.fillText("-"+value, xP2, yP2);
+        }
+        else if(player=="P2"){
+            ctxPoints.fillStyle = "rgba(0, 0, 0, " + alpha + ")";
+            ctxPoints.fillText("-"+value, xP1, yP1);
+            ctxPoints.fillStyle = "rgba(255, 255, 255, " + alpha + ")";
+            ctxPoints.fillText("+"+value, xP2, yP2);
+        }       
+        yP1 = yP1 - 1
+        yP2 = yP2 - 1
+        alpha = alpha - 0.1;
+        if (alpha < 0) {
+            clearInterval(pointsInterval);
+            ctxPoints.clearRect(0, 0, larguraPoints, alturaPoints);
+        }
+    }, 50);
 }
 
 function increaseBody(playerID){
@@ -235,6 +278,8 @@ function displayGame(){
 function gameSettings(){
     gameCanvas.width = window.innerWidth*(0.7);
     gameCanvas.height = window.innerWidth*(0.35);
+    pointsCanvas.width = window.innerWidth*(0.7);
+    pointsCanvas.height = window.innerWidth*(0.35);
     larguraGame = gameCanvas.width;
     alturaGame = gameCanvas.height;
     colSize = larguraGame / gameCols;
@@ -242,17 +287,19 @@ function gameSettings(){
 }
 
 function finalText(winner){
-    ctxGame.font = "80px BureauGrotesque";
+    ctxGame.font = gameCanvas.width/17+"px BureauGrotesque";
     ctxGame.fontWeight = "50%";
     ctxGame.fillStyle = "white";
     ctxGame.textAlign = "center";
     ctxGame.textBaseline = "middle";
     ctxGame.strokeStyle = "black";
+    ctxGame.shadowColor = "rgba(0,0,0,0.9)";
+    ctxGame.shadowOffsetX = 0;
+    ctxGame.shadowOffsetY = 0;
+    ctxGame.shadowBlur = 30;
     ctxGame.fillText(winner.toUpperCase()+" WINS!", (larguraGame/2), (alturaGame/2)-15);
-    ctxGame.strokeText(winner.toUpperCase()+" WINS!", (larguraGame/2), (alturaGame/2)-15);
-    ctxGame.font = "35px BureauGrotesque";
+    ctxGame.font = gameCanvas.width/39+"px BureauGrotesque";
     ctxGame.fillText("PRESS ANY BUTTON TO CONTINUE", (larguraGame/2), (alturaGame/2)+35);
-    ctxGame.strokeText("PRESS ANY BUTTON TO CONTINUE", (larguraGame/2), (alturaGame/2)+35);
 }
 
 function drawGameSquares(){
@@ -269,14 +316,17 @@ function drawGameSquares(){
 }
 
 function initialText(){
-    ctxGame.font = "80px BureauGrotesque";
+    ctxGame.font = gameCanvas.width/17+"px BureauGrotesque";
     ctxGame.fontWeight = "50%";
     ctxGame.fillStyle = "white";
     ctxGame.textAlign = "center";
     ctxGame.textBaseline = "middle";
     ctxGame.strokeStyle = "black";
+    ctxGame.shadowColor = "rgba(0,0,0,0.9)";
+    ctxGame.shadowOffsetX = 0;
+    ctxGame.shadowOffsetY = 0;
+    ctxGame.shadowBlur = 30;
     ctxGame.fillText("PRESS BUTTON TO START", (larguraGame/2), alturaGame/2);
-    ctxGame.strokeText("PRESS BUTTON TO START", (larguraGame/2), alturaGame/2);
 }
 
 function drawPlayers(){
@@ -347,15 +397,15 @@ function drawCountdown(){
 function eatingFood(){
     for(i=0;i<foodPos.length;i++){
         if(p1HeadPos[0]==foodPos[i][0] && p1HeadPos[1]==foodPos[i][1]){
-            foodPos.splice(i, 1);
             changeScore("P1");
             increaseBody("P1");
+            foodPos.splice(i, 1);
             createNewFood();
         }
-        else if(p2HeadPos[0]==foodPos[i][0] && p2HeadPos[1]==foodPos[i][1]){
-            foodPos.splice(i, 1);
+        else if(p2HeadPos[0]==foodPos[i][0] && p2HeadPos[1]==foodPos[i][1]){      
             changeScore("P2");
             increaseBody("P2");
+            foodPos.splice(i, 1);
             createNewFood();
         }
     }
@@ -364,7 +414,7 @@ function eatingFood(){
 function drawFood(){
     for(i=0;i<foodPos.length;i++){
         ctxGame.beginPath();
-        ctxGame.arc(colSize*foodPos[i][0]+colSize/2, rowSize*foodPos[i][1]+rowSize/2, (rowSize/2)-5, 0, 2 * Math.PI, false);
+        ctxGame.arc((colSize*foodPos[i][0])+colSize/2, (rowSize*foodPos[i][1])+rowSize/2, (rowSize/2)-rowSize/5.4, 0, 2 * Math.PI, false);
         ctxGame.fillStyle = "white";
         ctxGame.shadowColor='white';
         ctxGame.shadowOffsetX=0;
