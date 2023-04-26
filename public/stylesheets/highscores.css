@@ -47,9 +47,10 @@
 
 .winnerNameStyle{
   text-align: left;
-  font-size: 3.4vw;
+  font-size: 2.5vw;
   margin-top: 2px;
-  margin-bottom: 5px
+  margin-bottom: 5px;
+  letter-spacing: 0.03rem;
 }
 
 .winnerSatsStyle{
