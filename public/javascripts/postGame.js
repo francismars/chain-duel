@@ -35,40 +35,64 @@ if (P1SatsDeposit!=null && P2SatsDeposit!=null){
 }
 
 
-menu=1;
-activeButton=0;
+let menu = 1;
+let activeButtonMenu1 = 0;
+let activeButtonMenu3 = 0;
+let qrRevealed = 0
 addEventListener("keydown", function(event) {
     switch (event.key) {
         case "Enter":
-            if(menu==1){
-                menu1CSS();
+            if(menu==1 && activeButtonMenu1==0){
+                menu2CSS();
+                qrRevealed = 1;
+            }
+            else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
+                sessionStorage.clear();
+                sessionStorage.setItem("donPlayer", gameWinner);
+                sessionStorage.setItem("donName", winnerName);
+                sessionStorage.setItem("donPrize", totalPrize);
+                window.location.href = "/gamemenu";
             }
             else if(menu==2){
-                menu2CSS();
+                menu1CSS();
             }
             else if(menu==3){
-                if(activeButton==0){
+                if(activeButtonMenu3==0){
                     sessionStorage.clear();
                     window.location.href = "/highscores";
                 }
-                else if(activeButton==1){
+                else if(activeButtonMenu3==1){
                     sessionStorage.clear();
                     window.location.href = "/";
                 }
             }
             break;
+        case "ArrowDown":
+            if(menu==1 && activeButtonMenu1==0){
+                document.getElementById("doubleornotthingbutton").style.animationDuration  = "2s";
+                document.getElementById("claimbutton").style.animationDuration  = "0s";
+                activeButtonMenu1=1;
+            }
+            break;
+        case "ArrowUp":
+            if(menu==1 && activeButtonMenu1==1){
+                document.getElementById("doubleornotthingbutton").style.animationDuration  = "0s";
+                document.getElementById("claimbutton").style.animationDuration  = "2s";
+                activeButtonMenu1=0;
+            }
+            break;    
         case "ArrowRight":
-            if(menu==3 && activeButton==0){
+            if(menu==3 && activeButtonMenu3==0){
                 document.getElementById("startnewbutton").style.animationDuration  = "2s";
                 document.getElementById("claimbutton").style.animationDuration  = "0s";
-                activeButton=1;
+                activeButtonMenu3=1;
             }
             break;
         case "ArrowLeft":
-            if(menu==3 && activeButton==1){
+            if(menu==3 && activeButtonMenu3==1){
                 document.getElementById("claimbutton").style.animationDuration  = "2s";
                 document.getElementById("startnewbutton").style.animationDuration  = "0s";
-                activeButton=0;
+                activeButtonMenu3=0;
             }
             break;
     }
@@ -134,16 +158,16 @@ socket.on('prizeWithdrawn', (data) => {
 })
 
 function menu1CSS(){
-    document.getElementById("claimbutton").innerText = "BACK";
-    document.getElementById("qrCode1").classList.remove('blur');
-    menu=2;
-}
-
-function menu2CSS(){
     document.getElementById("gameOver").style.display = "block";
     document.getElementById("claimbutton").innerText = "SWEEP VIA LNURL";
     document.getElementById("qrCode1").classList.add('blur');
     menu=1;
+}
+
+function menu2CSS(){
+    document.getElementById("claimbutton").innerText = "BLUR QR CODE";
+    document.getElementById("qrCode1").classList.remove('blur');
+    menu=2;
 }
 
 function menu3CSS(){
@@ -158,6 +182,8 @@ function menu3CSS(){
     document.getElementById("buttonsDiv").style.marginTop = "16cqw";
     document.getElementById("claimReq1").style.display = "none"
     document.getElementById("claimText").style.display = "none"
+    document.getElementById("buttonsDiv").style.flexDirection = "unset"
+    document.getElementById("doubleornotthingbutton").style.display = "none";
     menu=3;
 }
 

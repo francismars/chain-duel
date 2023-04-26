@@ -5,6 +5,28 @@ let numberofCreates = 0
 let p1Name = "Player 1"
 let p2Name = "Player 2"
 
+var donPlayer = sessionStorage.getItem('donPlayer');
+var donPrize = sessionStorage.getItem("donPrize");
+var donName = sessionStorage.getItem("donName");
+
+if (donPlayer!=null){
+    if (donPrize!=null){
+        if(donPlayer=="Player 1"){
+            playersSats[0]+=parseInt(donPrize);
+            if (donName!=null){
+                p1Name=donName;
+            }
+        }
+        else if(donPlayer=="Player 2"){
+            playersSats[1]+=parseInt(donPrize);
+            if (donName!=null){
+                p2Name=donName;   
+            }
+        }
+    }
+    changeTextAfterPayment(); 
+}
+
 addEventListener("keydown", function(event) {
     switch (event.key) {
         case "ArrowLeft":
