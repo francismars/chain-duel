@@ -4,10 +4,12 @@
 
 #highscoresList {
     width: 100%;
+    padding: 0 30px;
+    box-sizing: border-box;
 }
 
 .rankStyle{
-  font-size: 6vw;
+  font-size: 5vw;
   margin-bottom: 0px;
   width: 10%;
   text-align: left;
@@ -21,7 +23,7 @@
     width: 100%;
     justify-content: space-between;
     border-bottom: 1px solid #ffffff2b;
-    padding-top: 18px;
+    padding-top: 12px;
 }
 
 .score-row-last {
@@ -47,9 +49,10 @@
 
 .winnerNameStyle{
   text-align: left;
-  font-size: 3.4vw;
+  font-size: 2.7vw;
   margin-top: 2px;
-  margin-bottom: 5px
+  margin-bottom: 5px;
+  letter-spacing: 0.03rem;
 }
 
 .winnerSatsStyle{
@@ -79,6 +82,7 @@
   margin-bottom: 10px;
   color: grey;
   margin-bottom: 5px;
+  letter-spacing: 0.01rem;
 }
 
 .loserSatsStyle{
