@@ -41,6 +41,10 @@ body{
     margin: 1rem 15%;
 }
 
+.player-sats span {
+  font-size: 1cqw;
+}
+
 
 #p1Points{
     color: white;

@@ -274,7 +274,7 @@ function initialText(){
     ctxGame.fillStyle = "white";
     ctxGame.textAlign = "center";
     ctxGame.textBaseline = "middle";
-    ctxGame.strokeStyle = "black";    
+    ctxGame.strokeStyle = "black";
     ctxGame.fillText("PRESS BUTTON TO START", (larguraGame/2), alturaGame/2);
     ctxGame.strokeText("PRESS BUTTON TO START", (larguraGame/2), alturaGame/2);
 }
@@ -345,11 +345,11 @@ function drawCountdown(){
 }
 
 function eatingFood(){
-    for(i=0;i<foodPos.length;i++){ 
+    for(i=0;i<foodPos.length;i++){
         if(p1HeadPos[0]==foodPos[i][0] && p1HeadPos[1]==foodPos[i][1]){
             foodPos.splice(i, 1);
             changeScore("P1");
-            increaseBody("P1");   
+            increaseBody("P1");
             createNewFood();
         }
         else if(p2HeadPos[0]==foodPos[i][0] && p2HeadPos[1]==foodPos[i][1]){
@@ -357,7 +357,7 @@ function eatingFood(){
             changeScore("P2");
             increaseBody("P2");
             createNewFood();
-        }        
+        }
     }
 }
 
@@ -420,19 +420,19 @@ function checkCollisions(){
     }
     if(p1HeadPos[0]==p2HeadPos[0]+1 && p2HeadPos[1]==p1HeadPos[1] && p1Dir=="Right" && p2Dir=="Left" && p1DirWanted=="Right" && p2DirWanted=="Left"){
         resetP1();
-        resetP2();       
+        resetP2();
     }
     if(p1HeadPos[0]==p2HeadPos[0]-1 && p2HeadPos[1]==p1HeadPos[1] && p1Dir=="Left" && p2Dir=="Right" && p1DirWanted=="Left" && p2DirWanted=="Right"){
         resetP1();
-        resetP2();       
+        resetP2();
     }
     if(p1HeadPos[0]==p2HeadPos[0] && p1HeadPos[1]==p2HeadPos[1]-1 && p1Dir=="Up" && p2Dir=="Down" && p1DirWanted=="Up" && p2DirWanted=="Down"){
         resetP1();
-        resetP2();       
+        resetP2();
     }
     if(p1HeadPos[0]==p2HeadPos[0] && p1HeadPos[1]==p2HeadPos[1]+1 && p1Dir=="Down" && p2Dir=="Up" && p1DirWanted=="Down" && p2DirWanted=="Up"){
         resetP1();
-        resetP2();       
+        resetP2();
     }
     // Check for game borders
     if(p1HeadPos[0]>gameCols-1 || p1HeadPos[1]<0 || p1HeadPos[1]>gameRows-1 || p1HeadPos[0]<0){
@@ -467,7 +467,7 @@ function displayTitle(){
     let percentageCurrentP1 = ((currentScoreDistribution[0] * 100) / totalPoints)/100;
 
     titleCanvas.width = window.innerWidth*(0.7);
-    titleCanvas.height = window.innerHeight*(0.1);
+    titleCanvas.height = 100;
     larguraTitle = titleCanvas.width;
     alturaTitle = titleCanvas.height;
 
@@ -484,7 +484,7 @@ function displayTitle(){
     else if (p1BodyPos.length >= 8 && p1BodyPos.length < 16) p1capturing = "16%";
     else if (p1BodyPos.length >= 16) p1capturing = "32%";
     ctxTitle.textAlign = "left";
-    ctxTitle.font = "15px Inter";
+    ctxTitle.font = titleCanvas.width/90 +"px Inter";
     ctxTitle.fillText(("Capturing "+ p1capturing), 150, 32);
 
     var p2capturing
@@ -641,11 +641,11 @@ function listenToGamepads() {
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
         }
     }
-    if(gamepad2==null){  
-        if(navigator.getGamepads()[1]) { 
+    if(gamepad2==null){
+        if(navigator.getGamepads()[1]) {
             console.log("Gamepad 2 connected")
             gamepad2 = navigator.getGamepads()[1];
-        }  
+        }
     }
     else if(gamepad2!=null){
         gamepad2 = navigator.getGamepads()[1];
