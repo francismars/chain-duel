@@ -1,14 +1,14 @@
 var gameWinner = sessionStorage.getItem('gameWinner');
 var p1Name = sessionStorage.getItem("P1Name");
 var p2Name = sessionStorage.getItem("P2Name");
-var winnerName
-if(gameWinner=="Player 1"){
-    winnerName = p1Name
-}
-else if(gameWinner=="Player 2"){
-    winnerName = p2Name
-}
+var winnerName;
 if (gameWinner!=null){
+    if(gameWinner=="Player 1"){
+        winnerName = p1Name
+    }
+    else if(gameWinner=="Player 2"){
+        winnerName = p2Name
+    }
     document.getElementById("winner").innerText  = winnerName.toUpperCase()+" WINS";
 }
 var withdrawalURL = sessionStorage.getItem('LNURL');
@@ -48,9 +48,11 @@ addEventListener("keydown", function(event) {
             }
             else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
                 sessionStorage.clear();
-                sessionStorage.setItem("donPlayer", gameWinner);
-                sessionStorage.setItem("donName", winnerName);
-                sessionStorage.setItem("donPrize", totalPrize);
+                if (gameWinner!=null && totalPrize!=null && winnerName!=undefined){
+                    sessionStorage.setItem("donPlayer", gameWinner);
+                    sessionStorage.setItem("donName", winnerName);
+                    sessionStorage.setItem("donPrize", totalPrize);
+                }
                 window.location.href = "/gamemenu";
             }
             else if(menu==2){
