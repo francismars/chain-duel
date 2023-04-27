@@ -22,7 +22,7 @@ if (withdrawalURL!=null){
 }
 var totalPrize = sessionStorage.getItem('LNURLMAXW');
 if (totalPrize!=null){
-    document.getElementById("prize").innerText  = totalPrize.toLocaleString()+" SATS";
+    document.getElementById("prize").innerText  = parseInt(totalPrize).toLocaleString()+" SATS";
 }
 var P1SatsDeposit = sessionStorage.getItem('P1Sats');
 var P2SatsDeposit = sessionStorage.getItem('P2Sats');
