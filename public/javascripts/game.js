@@ -12,6 +12,8 @@ var larguraGame = gameCanvas.width;
 var alturaGame = gameCanvas.height;
 var ctxGame = gameCanvas.getContext("2d");
 
+let payProtection = true;
+
 var P1Name = sessionStorage.getItem("P1Name");
 if (P1Name==null){
     P1Name="Player 1"
@@ -23,12 +25,18 @@ if (P2Name==null){
 
 var SatsP1 = sessionStorage.getItem('P1Sats');
 if (SatsP1==null){
+    if (payProtection==true){
+        window.location.href = "/gamemenu";
+    }
     SatsP1=1000
 }
 else { SatsP1 = parseInt(SatsP1) }
 
 var SatsP2 = sessionStorage.getItem('P2Sats');
 if (SatsP2==null){
+    if (payProtection==true){
+        window.location.href = "/gamemenu";
+    }
     SatsP2=1000
 }
 else { SatsP2 = parseInt(SatsP2) }
@@ -194,15 +202,15 @@ function drawPointChange(){
         ctxGame.textAlign = "center";
         ctxGame.textBaseline = "middle";
         if(player=="P1"){
-            ctxGame.fillStyle  = "rgba(0, 0, 0, " + alpha + ")";
+            ctxGame.fillStyle  = "rgba(66, 163, 69, " + alpha + ")";
             ctxGame.fillText("+"+value, xP1, yP1);
-            ctxGame.fillStyle  = "rgba(255, 255, 255, " + alpha + ")";
+            ctxGame.fillStyle  = "rgba(241, 56, 56, " + alpha + ")";
             ctxGame.fillText("-"+value, xP2, yP2);
         }
         else if(player=="P2"){
-            ctxGame.fillStyle  = "rgba(0, 0, 0, " + alpha + ")";
+            ctxGame.fillStyle  = "rgba(241, 56, 56, " + alpha + ")";
             ctxGame.fillText("-"+value, xP1, yP1);
-            ctxGame.fillStyle  = "rgba(255, 255, 255, " + alpha + ")";
+            ctxGame.fillStyle  = "rgba(66, 163, 69, " + alpha + ")";
             ctxGame.fillText("+"+value, xP2, yP2);
         }       
         listTakenValues[i].P1y = yP1 - 1
