@@ -53,13 +53,14 @@ function counterStartFunc(){
 }
 
 function draw(){
-    clear();
+    //clear();
     listenToGamepads()
     updateScore();
     displayTitle();
     displayGame();
 }
 
+// Not necessary since there's a loop on titleCanvas.width\height
 function clear(){
     ctxTitle.clearRect(0, 0, larguraTitle, alturaTitle);
     ctxGame.clearRect(0, 0, larguraGame, alturaGame);
@@ -155,7 +156,7 @@ function changeScore(playerID){
         changeInPoints=Math.floor(totalPoints*0.32);
     }
     if(changeInPoints<1){ changeInPoints=1; }
-    drawPointChange(playerID, changeInPoints, p1HeadPos, p2HeadPos);
+    pushToTakenValuesArray(playerID, changeInPoints, p1HeadPos, p2HeadPos);
     if(playerID=="P1"){
         currentScoreDistribution[0]+=changeInPoints;
         currentScoreDistribution[1]-=changeInPoints;
@@ -170,35 +171,47 @@ function changeScore(playerID){
     }
 }
 
-function drawPointChange(player, value, posP1, posP2){
+let listTakenValues = []
+function pushToTakenValuesArray(player, value, posP1, posP2){
     let alpha = 1.0;
     let xP1 = (posP1[0]*colSize)+colSize/2
     let yP1 = (posP1[1]*rowSize)+rowSize/2
     let xP2 = (posP2[0]*colSize)+colSize/2
     let yP2 = (posP2[1]*rowSize)+rowSize/2
-    let pointsInterval = setInterval(function () {
-        ctxGame.font = "12pt Inter";
+    listTakenValues.push({"player": player, "value": value, "P1x": xP1, "P1y": yP1, "P2x": xP2, "P2y" : yP2, "alpha": alpha})
+}
+
+function drawPointChange(){
+    for(i=0;i<listTakenValues.length;i++){
+        let alpha = listTakenValues[i].alpha;
+        let xP1 = listTakenValues[i].P1x
+        let yP1 = listTakenValues[i].P1y
+        let xP2 = listTakenValues[i].P2x
+        let yP2 = listTakenValues[i].P2y
+        let player = listTakenValues[i].player
+        let value = listTakenValues[i].value
+        ctxGame.font = gameCanvas.width/111+"pt Inter";
         ctxGame.textAlign = "center";
         ctxGame.textBaseline = "middle";
         if(player=="P1"){
-            ctxGame.fillStyle = "rgba(0, 0, 0, " + alpha + ")";
+            ctxGame.fillStyle  = "rgba(0, 0, 0, " + alpha + ")";
             ctxGame.fillText("+"+value, xP1, yP1);
-            ctxGame.fillStyle = "rgba(255, 255, 255, " + alpha + ")";
+            ctxGame.fillStyle  = "rgba(255, 255, 255, " + alpha + ")";
             ctxGame.fillText("-"+value, xP2, yP2);
         }
         else if(player=="P2"){
-            ctxGame.fillStyle = "rgba(0, 0, 0, " + alpha + ")";
+            ctxGame.fillStyle  = "rgba(0, 0, 0, " + alpha + ")";
             ctxGame.fillText("-"+value, xP1, yP1);
-            ctxGame.fillStyle = "rgba(255, 255, 255, " + alpha + ")";
+            ctxGame.fillStyle  = "rgba(255, 255, 255, " + alpha + ")";
             ctxGame.fillText("+"+value, xP2, yP2);
         }       
-        yP1 = yP1 - 1
-        yP2 = yP2 - 1
-        alpha = alpha - 0.05;
-        if (alpha < 0) {
-            clearInterval(pointsInterval);
+        listTakenValues[i].P1y = yP1 - 1
+        listTakenValues[i].P2y = yP2 - 1
+        listTakenValues[i].alpha = alpha - 0.05;
+        if (listTakenValues[i].alpha < 0) {
+            listTakenValues.splice(i, 1)
         }
-    }, 50);
+    }
 }
 
 function increaseBody(playerID){
@@ -243,6 +256,7 @@ function displayGame(){
     gameSettings()
     drawGameSquares()
     drawPlayers()
+    drawPointChange()
     if(!gameStarted && !gameEnded){
         if(!countdownStart){ initialText() }
         if(countdownStart){ drawCountdown() }
