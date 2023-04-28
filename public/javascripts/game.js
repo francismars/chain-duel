@@ -207,7 +207,7 @@ function drawPointChange(){
         }       
         listTakenValues[i].P1y = yP1 - 1
         listTakenValues[i].P2y = yP2 - 1
-        listTakenValues[i].alpha = alpha - 0.05;
+        listTakenValues[i].alpha = alpha - 0.1;
         if (listTakenValues[i].alpha < 0) {
             listTakenValues.splice(i, 1)
         }
