@@ -11,7 +11,7 @@ export function listenToGamepads() {
     if(gamepad1!=null){
         gamepad1 = navigator.getGamepads()[0];
         if(gamepad1.buttons[0].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
+            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':' '}));
         }
 
         /*

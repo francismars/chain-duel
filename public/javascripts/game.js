@@ -59,6 +59,7 @@ let currentScoreDistribution = [SatsP1,SatsP2];
 let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
 const gameSpeed = 100
 let counterStart = 0;
+let winnerP = "";
 let intervalCountdown;
 let intervalDraw = setInterval(draw, gameSpeed);
 // let gamepadsInterval = setInterval(listenToGamepads, gameSpeed/6)
@@ -273,6 +274,13 @@ function displayGame(){
         let winner = "";
         if(currentScoreDistribution[0]<=0){ winner=P2Name }
         else if(currentScoreDistribution[1]<=0){ winner=P1Name }
+        if(currentScoreDistribution[0]<=0){
+            winnerP="Player 2"
+        }
+        else if(currentScoreDistribution[1]<=0){
+            winnerP="Player 1"
+        }
+        sessionStorage.setItem("gameWinner", winnerP);
         finalText(winner)
     }
 }
@@ -524,9 +532,10 @@ function displayTitle(){
 
     ctxTitle.font = "30px BureauGrotesque";
     ctxTitle.fillStyle = "white";
-    ctxTitle.textAlign = "center";
-    ctxTitle.fillText(P1Name.toUpperCase(), 80, 32);
-    ctxTitle.fillText(P2Name.toUpperCase(), (larguraTitle-80), 32);
+    ctxTitle.textAlign = "left";
+    ctxTitle.fillText(P1Name.toUpperCase(), 40, 32);
+    ctxTitle.textAlign = "right";
+    ctxTitle.fillText(P2Name.toUpperCase(), (larguraTitle-40), 32);
 
     let p1capturing;
     if (p1BodyPos.length == 1) p1capturing = "2%";
@@ -536,7 +545,7 @@ function displayTitle(){
     else if (p1BodyPos.length >= 16) p1capturing = "32%";
     ctxTitle.textAlign = "left";
     ctxTitle.font = titleCanvas.width/90 +"px Inter";
-    ctxTitle.fillText(("Capturing "+ p1capturing), 150, 32);
+    ctxTitle.fillText(("Capturing "+ p1capturing), 220, 32);
 
     let p2capturing;
     if (p2BodyPos.length == 1) p2capturing = "2%";
@@ -545,7 +554,7 @@ function displayTitle(){
     else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2capturing = "16%";
     else if (p2BodyPos.length >= 16) p2capturing = "32%";
     ctxTitle.textAlign = "right";
-    ctxTitle.fillText(("Capturing "+ p2capturing), larguraTitle-150, 32);
+    ctxTitle.fillText(("Capturing "+ p2capturing), larguraTitle-220, 32);
 
     ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();
@@ -586,20 +595,16 @@ function displayTitle(){
 
 addEventListener("keydown", function(event) {
     switch (event.key.toUpperCase()) {
+        case " ":
+            if(gameEnded==true && winnerP=="Player 1"){
+                window.location.href = "/postgame";
+            }
         case "ENTER":
             if(gameStarted==false){
                 countdownStart = true;
                 intervalCountdown = setInterval(counterStartFunc, 1000);
             }
-            if(gameEnded==true){
-                let winner = "";
-                if(currentScoreDistribution[0]<=0){
-                    winner="Player 2"
-                }
-                else if(currentScoreDistribution[1]<=0){
-                    winner="Player 1"
-                }
-                sessionStorage.setItem("gameWinner", winner);
+            if(gameEnded==true && winnerP == "Player 2"){
                 window.location.href = "/postgame";
             }
             break;

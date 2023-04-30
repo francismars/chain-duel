@@ -2,7 +2,7 @@ import { listenToGamepads } from "./gamepads.js";
 
 let menu = 1;
 addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" || event.key === " ") {
       if(menu==1){
         window.location.href = "/gamemenu";
       }

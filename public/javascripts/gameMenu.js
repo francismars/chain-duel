@@ -1,9 +1,17 @@
 import { listenToGamepads } from "./gamepads.js";
 
 let selected = "MainMenuButton"
-
 let serverIP;
 let serverPORT;
+let playersSats = [0,0]
+let numberofCreates = 0
+let p1Name = "Player 1"
+let p2Name = "Player 2"
+let donPlayer = sessionStorage.getItem('donPlayer');
+let donPrize = sessionStorage.getItem("donPrize");
+let donName = sessionStorage.getItem("donName");
+let payLinks;
+let intervalStart = setInterval(listenToGamepads, 1000/10);
 
 await fetch('/loadconfig', {
     method: 'GET'
@@ -13,15 +21,7 @@ await fetch('/loadconfig', {
         serverIP = data.IP
         serverPORT = data.PORT
 });
-
-let playersSats = [0,0]
-let numberofCreates = 0
-let p1Name = "Player 1"
-let p2Name = "Player 2"
-
-var donPlayer = sessionStorage.getItem('donPlayer');
-var donPrize = sessionStorage.getItem("donPrize");
-var donName = sessionStorage.getItem("donName");
+const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 
 if (donPlayer!=null){
     if (donPrize!=null){
@@ -43,6 +43,7 @@ if (donPlayer!=null){
 
 addEventListener("keydown", function(event) {
     switch (event.key) {
+        case "a":
         case "ArrowLeft":
             if (selected=="StartGame"){
                 document.getElementById("startgame").style.animationDuration  = "0s";
@@ -50,6 +51,7 @@ addEventListener("keydown", function(event) {
                 selected="MainMenuButton";
             }
             break;
+        case "d":
         case "ArrowRight":
             if (selected=="MainMenuButton" && playersSats[0]!=0 && playersSats[1]!=0){
                 document.getElementById("startgame").style.animationDuration  = "2s";
@@ -57,6 +59,7 @@ addEventListener("keydown", function(event) {
                 selected="StartGame";
             }
             break;
+        case " ":
         case "Enter":
                 if (selected=="StartGame"){
                     if(playersSats[0]!=0&&playersSats[1]!=0){
@@ -80,9 +83,6 @@ addEventListener("keydown", function(event) {
   });
 
 
-let payLinks;
-
-const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 socket.on("connect", () => {
     console.log(`connected with id: ${socket.id}`)
 })
@@ -145,7 +145,7 @@ socket.on("invoicePaid", body => {
 function changeTextAfterPayment(){
     document.getElementById("player2sats").innerText = playersSats[1]
     document.getElementById("player1sats").innerText = playersSats[0]
-    totalPrize = playersSats[0] + playersSats[1]
+    let totalPrize = playersSats[0] + playersSats[1]
     document.getElementById("prizevaluesats").innerText = totalPrize
     document.getElementById("rules1").innerText = "1% ("+Math.floor(totalPrize*0.01)+" sats) to the host"
     document.getElementById("rules2").innerText =  "1% ("+Math.floor(totalPrize*0.01)+" sats) to the developer"
@@ -158,5 +158,3 @@ function changeTextAfterPayment(){
         menu="Buttons";
     } */
 }
-
-let intervalStart = setInterval(listenToGamepads, 1000/10);
