@@ -1,35 +1,43 @@
 import { listenToGamepads } from "./gamepads.js";
 
-var titleCanvas = document.getElementById("titleCanvas");
+let titleCanvas = document.getElementById("titleCanvas");
 titleCanvas.width = window.innerWidth*(0.7);
 titleCanvas.height = window.innerHeight*(0.1);
-var larguraTitle = titleCanvas.width;
-var alturaTitle = titleCanvas.height;
-var ctxTitle = titleCanvas.getContext("2d");
+let larguraTitle = titleCanvas.width;
+let alturaTitle = titleCanvas.height;
+let ctxTitle = titleCanvas.getContext("2d");
 let gameCols = 51;
 let gameRows = 25;
-let colSize = larguraGame / gameCols;
-let rowSize = alturaGame / gameRows;
-
-var gameCanvas = document.getElementById("gameCanvas");
+let gameCanvas = document.getElementById("gameCanvas");
 gameCanvas.width = window.innerWidth*(0.7);
 gameCanvas.height = window.innerWidth*(0.35);
-var larguraGame = gameCanvas.width;
-var alturaGame = gameCanvas.height;
-var ctxGame = gameCanvas.getContext("2d");
-
+let larguraGame = gameCanvas.width;
+let alturaGame = gameCanvas.height;
+let ctxGame = gameCanvas.getContext("2d");
+let colSize = larguraGame / gameCols;
+let rowSize = alturaGame / gameRows;
 let payProtection = false;
-
-var P1Name = sessionStorage.getItem("P1Name");
+let p1HeadPos = [6,12];
+let p1BodyPos = [[5,12]];
+let p1Dir = "";
+let p1DirWanted = "Right";
+let p2HeadPos = [44,12];
+let p2BodyPos = [[45,12]];
+let p2Dir = "";
+let p2DirWanted = "Left";
+let foodPos = [[25,12]];
+let countdownStart = false;
+let gameStarted = false;
+let gameEnded = false;
+let P1Name = sessionStorage.getItem("P1Name");
 if (P1Name==null){
     P1Name="Player 1"
 }
-var P2Name = sessionStorage.getItem("P2Name");
+let P2Name = sessionStorage.getItem("P2Name");
 if (P2Name==null){
     P2Name="Player 2"
 }
-
-var SatsP1 = sessionStorage.getItem('P1Sats');
+let SatsP1 = sessionStorage.getItem('P1Sats');
 if (SatsP1==null){
     if (payProtection==true){
         window.location.href = "/gamemenu";
@@ -37,8 +45,7 @@ if (SatsP1==null){
     SatsP1=1000
 }
 else { SatsP1 = parseInt(SatsP1) }
-
-var SatsP2 = sessionStorage.getItem('P2Sats');
+let SatsP2 = sessionStorage.getItem('P2Sats');
 if (SatsP2==null){
     if (payProtection==true){
         window.location.href = "/gamemenu";
@@ -46,31 +53,26 @@ if (SatsP2==null){
     SatsP2=1000
 }
 else { SatsP2 = parseInt(SatsP2) }
-
 let initialScoreDistribution = [SatsP1,SatsP2];
 let totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
 let currentScoreDistribution = [SatsP1,SatsP2];
 let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
-
-
-
 const gameSpeed = 100
-let intervalStart = setInterval(draw, gameSpeed);
-
 let counterStart = 0;
-let intervalMain;
+let intervalCountdown;
+let intervalDraw = setInterval(draw, gameSpeed);
+// let gamepadsInterval = setInterval(listenToGamepads, gameSpeed/6)
+
 function counterStartFunc(){
     counterStart++;
     if (counterStart == 5){
-        clearInterval(intervalMain);
+        clearInterval(intervalCountdown);
     }
 }
 
-let gamepadsInterval = setInterval(listenToGamepads, gameSpeed/6)
-
 function draw(){
     //clear();
-    //listenToGamepads();
+    listenToGamepads();
     updateScore();
     displayTitle();
     displayGame();
@@ -100,22 +102,6 @@ function resetP2(){
     p2Dir = "";
     p2DirWanted = "Left";
 }
-
-let p1HeadPos = [6,12];
-let p1BodyPos = [[5,12]];
-let p1Dir = "";
-let p1DirWanted = "Right";
-
-let p2HeadPos = [44,12];
-let p2BodyPos = [[45,12]];
-let p2Dir = "";
-let p2DirWanted = "Left";
-
-let foodPos = [[25,12]];
-
-var countdownStart = false;
-var gameStarted = false;
-var gameEnded = false;
 
 function createNewFood(){
     let newValueAccepted = false;
@@ -542,7 +528,7 @@ function displayTitle(){
     ctxTitle.fillText(P1Name.toUpperCase(), 80, 32);
     ctxTitle.fillText(P2Name.toUpperCase(), (larguraTitle-80), 32);
 
-    var p1capturing
+    let p1capturing;
     if (p1BodyPos.length == 1) p1capturing = "2%";
     else if (p1BodyPos.length == 2) p1capturing = "4%";
     else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1capturing = "8%";
@@ -552,7 +538,7 @@ function displayTitle(){
     ctxTitle.font = titleCanvas.width/90 +"px Inter";
     ctxTitle.fillText(("Capturing "+ p1capturing), 150, 32);
 
-    var p2capturing
+    let p2capturing;
     if (p2BodyPos.length == 1) p2capturing = "2%";
     else if (p2BodyPos.length == 2) p2capturing = "4%";
     else if (p2BodyPos.length >= 3 && p2BodyPos.length < 8) p2capturing = "8%";
@@ -603,7 +589,7 @@ addEventListener("keydown", function(event) {
         case "ENTER":
             if(gameStarted==false){
                 countdownStart = true;
-                intervalMain = setInterval(counterStartFunc, 1000);
+                intervalCountdown = setInterval(counterStartFunc, 1000);
             }
             if(gameEnded==true){
                 let winner = "";
