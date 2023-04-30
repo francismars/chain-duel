@@ -1,9 +1,15 @@
+import { listenToGamepads } from "./gamepads.js";
+
 var titleCanvas = document.getElementById("titleCanvas");
 titleCanvas.width = window.innerWidth*(0.7);
 titleCanvas.height = window.innerHeight*(0.1);
 var larguraTitle = titleCanvas.width;
 var alturaTitle = titleCanvas.height;
 var ctxTitle = titleCanvas.getContext("2d");
+let gameCols = 51;
+let gameRows = 25;
+let colSize = larguraGame / gameCols;
+let rowSize = alturaGame / gameRows;
 
 var gameCanvas = document.getElementById("gameCanvas");
 gameCanvas.width = window.innerWidth*(0.7);
@@ -12,7 +18,7 @@ var larguraGame = gameCanvas.width;
 var alturaGame = gameCanvas.height;
 var ctxGame = gameCanvas.getContext("2d");
 
-let payProtection = true;
+let payProtection = false;
 
 var P1Name = sessionStorage.getItem("P1Name");
 if (P1Name==null){
@@ -46,13 +52,13 @@ let totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
 let currentScoreDistribution = [SatsP1,SatsP2];
 let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
 
-let gamepad1 = null;
-let gamepad2 = null;
+
 
 const gameSpeed = 100
 let intervalStart = setInterval(draw, gameSpeed);
 
 let counterStart = 0;
+let intervalMain;
 function counterStartFunc(){
     counterStart++;
     if (counterStart == 5){
@@ -60,9 +66,11 @@ function counterStartFunc(){
     }
 }
 
+let gamepadsInterval = setInterval(listenToGamepads, gameSpeed/6)
+
 function draw(){
     //clear();
-    listenToGamepads()
+    //listenToGamepads();
     updateScore();
     displayTitle();
     displayGame();
@@ -93,9 +101,6 @@ function resetP2(){
     p2DirWanted = "Left";
 }
 
-let gameCols = 51;
-let gameRows = 25;
-
 let p1HeadPos = [6,12];
 let p1BodyPos = [[5,12]];
 let p1Dir = "";
@@ -113,14 +118,14 @@ var gameStarted = false;
 var gameEnded = false;
 
 function createNewFood(){
-    newValueAccepted = false;
+    let newValueAccepted = false;
     while(newValueAccepted==false){
-        foundCollision = false;
-        maxX = gameCols;
-        maxY = gameRows;
-        newX = Math.floor(Math.random() * maxX);
-        newY = Math.floor(Math.random() * maxY);
-        for(i=0;i<p1BodyPos.length;i++){
+        let foundCollision = false;
+        let maxX = gameCols;
+        let maxY = gameRows;
+        let newX = Math.floor(Math.random() * maxX);
+        let newY = Math.floor(Math.random() * maxY);
+        for(let i=0;i<p1BodyPos.length;i++){
             if(p1BodyPos[i][0]==newX && p1BodyPos[i][1]==newY){
                 foundCollision = true;
             }
@@ -128,7 +133,7 @@ function createNewFood(){
         if(p1HeadPos[0]==newX && p1HeadPos[1]==newY){
             foundCollision = true;
         }
-        for(i=0;i<p2BodyPos.length;i++){
+        for(let i=0;i<p2BodyPos.length;i++){
             if(p2BodyPos[i][0]==newX && p2BodyPos[i][1]==newY){
                 foundCollision = true;
             }
@@ -190,7 +195,7 @@ function pushToTakenValuesArray(player, value, posP1, posP2){
 }
 
 function drawPointChange(){
-    for(i=0;i<listTakenValues.length;i++){
+    for(let i=0;i<listTakenValues.length;i++){
         let alpha = listTakenValues[i].alpha;
         let xP1 = listTakenValues[i].P1x
         let yP1 = listTakenValues[i].P1y
@@ -313,8 +318,8 @@ function finalText(winner){
 
 function drawGameSquares(){
   // Desenhar quadrados para game debug
-  for (i=0;i<=gameCols;i++){
-     for (j=0;j<=gameRows;j++){
+  for (let i=0;i<=gameCols;i++){
+     for (let j=0;j<=gameRows;j++){
          ctxGame.beginPath();
          ctxGame.strokeStyle =  "rgba(255, 255, 255, 0.05)";
          ctxGame.lineWidth = 1;
@@ -343,7 +348,8 @@ function drawPlayers(){
     ctxGame.beginPath();
     ctxGame.fillRect(colSize*p1HeadPos[0], rowSize*p1HeadPos[1], colSize, rowSize);
     ctxGame.stroke();
-    for (i=0;i<p1BodyPos.length;i++){
+    let bodyPart;
+    for (let i=0;i<p1BodyPos.length;i++){
         bodyPart = p1BodyPos[i];
         ctxGame.globalAlpha = 0.6;
         ctxGame.beginPath();
@@ -355,7 +361,7 @@ function drawPlayers(){
     ctxGame.beginPath();
     ctxGame.fillRect(colSize*p2HeadPos[0], rowSize*p2HeadPos[1], colSize, rowSize);
     ctxGame.stroke();
-    for (i=0;i<p2BodyPos.length;i++){
+    for (let i=0;i<p2BodyPos.length;i++){
         bodyPart = p2BodyPos[i];
         ctxGame.globalAlpha = 0.6;
         ctxGame.beginPath();
@@ -372,7 +378,7 @@ function drawCountdown(){
     ctxGame.textAlign = "center";
     ctxGame.textBaseline = "middle";
     ctxGame.strokeStyle = "white";
-    alturaNumbers = (alturaGame*0.50).toString();
+    let alturaNumbers = (alturaGame*0.50).toString();
     ctxGame.font = alturaNumbers.concat("px BureauGrotesque");
     if(counterStart==0){
         ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
@@ -404,7 +410,7 @@ function drawCountdown(){
 }
 
 function eatingFood(){
-    for(i=0;i<foodPos.length;i++){
+    for(let i=0;i<foodPos.length;i++){
         if(p1HeadPos[0]==foodPos[i][0] && p1HeadPos[1]==foodPos[i][1]){
             changeScore("P1");
             increaseBody("P1");
@@ -421,7 +427,7 @@ function eatingFood(){
 }
 
 function drawFood(){
-    for(i=0;i<foodPos.length;i++){
+    for(let i=0;i<foodPos.length;i++){
         ctxGame.beginPath();
         ctxGame.arc((colSize*foodPos[i][0])+colSize/2, (rowSize*foodPos[i][1])+rowSize/2, (rowSize/2)-rowSize/5.4, 0, 2 * Math.PI, false);
         ctxGame.fillStyle = "white";
@@ -500,7 +506,7 @@ function checkCollisions(){
     if(p2HeadPos[0]>gameCols-1 || p2HeadPos[1]<0 || p2HeadPos[1]>gameRows-1 || p2HeadPos[0]<0){
         resetP2();
     }
-    for(i=0;i<p1BodyPos.length;i++){
+    for(let i=0;i<p1BodyPos.length;i++){
         // P1 touching own body
         if(p1HeadPos[0]===p1BodyPos[i][0] && p1HeadPos[1]===p1BodyPos[i][1]){
             resetP1();
@@ -510,7 +516,7 @@ function checkCollisions(){
             resetP2();
         }
     }
-    for(i=0;i<p2BodyPos.length;i++){
+    for(let i=0;i<p2BodyPos.length;i++){
         // P1 touching P2 body
         if(p1HeadPos[0]===p2BodyPos[i][0] && p1HeadPos[1]===p2BodyPos[i][1]){
             resetP1();
@@ -653,96 +659,3 @@ addEventListener("keydown", function(event) {
             break;
     }
 });
-
-function listenToGamepads() {
-    if(gamepad1==null){
-        if (navigator.getGamepads()[0]) {
-            console.log("Gamepad 1 connected")
-            gamepad1 = navigator.getGamepads()[0];
-        }
-    }
-    if(gamepad1!=null){
-        gamepad1 = navigator.getGamepads()[0];
-        if(gamepad1.buttons[0].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
-        }
-
-        /*
-        // Code for GAMEPAD
-        if(gamepad1.buttons[12].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'w'}));
-        }
-        if(gamepad1.buttons[13].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'s'}));
-        }
-        if(gamepad1.buttons[14].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'a'}));
-        }
-        if(gamepad1.buttons[15].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
-        }
-        */
-
-        // CODE FOR ARCADE CONTROLLER
-        //console.log("PLAYER 1")
-        //console.log("0 == "+ gamepad1.axes[0]) // Left = -1 || Right = 1
-        //console.log("1 == "+ gamepad1.axes[1]) // Up = -1 || Down = 1
-        if(gamepad1.axes[1]<-0.5){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'w'}));
-        }
-        if(gamepad1.axes[1]>0.5){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'s'}));
-        }
-        if(gamepad1.axes[0]<-0.5){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'a'}));
-        }
-        if(gamepad1.axes[0]>0.5){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
-        }
-    }
-    if(gamepad2==null){
-        if(navigator.getGamepads()[1]) {
-            console.log("Gamepad 2 connected")
-            gamepad2 = navigator.getGamepads()[1];
-        }
-    }
-    else if(gamepad2!=null){
-        gamepad2 = navigator.getGamepads()[1];
-        if(gamepad2.buttons[0].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
-        }
-
-        /*
-        // Code for GAMEPAD
-        if(gamepad2.buttons[12].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
-        }
-        if(gamepad2.buttons[13].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
-        }
-        if(gamepad2.buttons[14].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
-        }
-        if(gamepad2.buttons[15].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
-        }
-        */
-
-        // CODE FOR ARCADE CONTROLLER
-        //console.log("PLAYER 2")
-        //console.log("0 == "+ gamepad2.axes[0]) // Left = -1 || Right = 1
-        //console.log("1 == "+ gamepad2.axes[1]) // Up = -1 || Down = 1
-        if(gamepad2.axes[1]<-0.5){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
-        }
-        if(gamepad2.axes[1]>0.5){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
-        }
-        if(gamepad2.axes[0]<-0.5){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
-        }
-        if(gamepad2.axes[0]>0.5){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
-        }
-    }
-}

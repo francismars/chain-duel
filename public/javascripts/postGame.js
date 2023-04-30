@@ -1,15 +1,28 @@
+import { listenToGamepads } from "./gamepads.js";
+
+let serverIP;
+let serverPORT;
+await fetch('./files/config.json')
+    .then((response) => response.json())
+    .then((json) => {
+        serverIP = json.serverIP
+        serverPORT = json.serverPort
+    });
+
 var gameWinner = sessionStorage.getItem('gameWinner');
 var p1Name = sessionStorage.getItem("P1Name");
 var p2Name = sessionStorage.getItem("P2Name");
 var winnerName;
 if (gameWinner!=null){
-    if(gameWinner=="Player 1"){
+    if(gameWinner=="Player 1" && p1Name!=null){
         winnerName = p1Name
     }
-    else if(gameWinner=="Player 2"){
+    else if(gameWinner=="Player 2" && p2Name!=null){
         winnerName = p2Name
     }
-    document.getElementById("winner").innerText  = winnerName.toUpperCase()+" WINS";
+    if(winnerName!=null){
+        document.getElementById("winner").innerText  = winnerName.toUpperCase()+" WINS";
+    }
 }
 var withdrawalURL = sessionStorage.getItem('LNURL');
 if (withdrawalURL!=null){
@@ -144,7 +157,7 @@ function updateHSJson(){
 
 
 
-const socket = io("170.75.172.55:3001" , { transports : ['websocket'] });
+const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 socket.on("connect", () => {
     console.log(`connected with id: ${socket.id}`)
 })
@@ -189,68 +202,4 @@ function menu3CSS(){
     menu=3;
 }
 
-intervalStart = setInterval(updateGamepads, 1000/10);
-
-// Define the two gamepads
-let gamepad1 = null;
-let gamepad2 = null;
-
-function updateGamepads() {
-  // Check for gamepad connection
-  if (navigator.getGamepads()[0]) {
-    if(gamepad1==null){
-        console.log("Gamepad 1 connected")
-    }
-    gamepad1 = navigator.getGamepads()[0];
-    if(gameWinner=="Player 1" || menu==3){
-        if(gamepad1.buttons[0].pressed==true || gamepad1.buttons[1].pressed==true || gamepad1.buttons[2].pressed==true || gamepad1.buttons[3].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
-        }
-        /*
-        // Code for GAMEPAD
-        if(gamepad1.buttons[14].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
-        }
-        if(gamepad1.buttons[15].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
-        }
-        */
-        // CODE FOR ARCADE CONTROLLER
-        // console.log("0 == "+ gamepad1.axes[0]) // Left = -1 || Right = 1
-        // console.log("1 == "+ gamepad1.axes[1]) // Up = -1 || Down = 1
-        if(gamepad1.axes[0]==-1){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
-        }
-        if(gamepad1.axes[0]==1){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
-        }
-    }
-  }
-  if (navigator.getGamepads()[1]) {
-    if(gamepad2==null){
-        console.log("Gamepad 2 connected")
-    }
-    gamepad2 = navigator.getGamepads()[1];
-    if(gameWinner=="Player 2" || menu==3){
-        if(gamepad2.buttons[0].pressed==true || gamepad2.buttons[1].pressed==true || gamepad2.buttons[2].pressed==true || gamepad2.buttons[3].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
-        }
-        /*
-        // Code for GAMEPAD
-        if(gamepad2.buttons[14].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
-        }
-        if(gamepad2.buttons[15].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
-        }
-        */
-        // CODE FOR ARCADE CONTROLLER
-        if(gamepad2.axes[0]==-1){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
-        }
-        if(gamepad2.axes[0]==1){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
-        }
-    }
-  }
-}
+let intervalStart = setInterval(listenToGamepads, 1000/10);
