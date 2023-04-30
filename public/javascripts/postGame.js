@@ -2,12 +2,15 @@ import { listenToGamepads } from "./gamepads.js";
 
 let serverIP;
 let serverPORT;
-await fetch('./files/config.json')
+await fetch('/loadconfig', {
+    method: 'GET'
+    })
     .then((response) => response.json())
-    .then((json) => {
-        serverIP = json.serverIP
-        serverPORT = json.serverPort
-    });
+    .then((data) => {
+        serverIP = data.IP
+        serverPORT = data.PORT
+});
+
 
 var gameWinner = sessionStorage.getItem('gameWinner');
 var p1Name = sessionStorage.getItem("P1Name");
@@ -140,7 +143,7 @@ function updateHSJson(){
           
           const data = JSON.stringify(orderedScores)
           // write JSON string to a file  
-          fetch('http://127.0.0.1:3000/savejson', {
+          fetch('/savejson', {
               method: 'POST',
               headers: {
                 "Content-Type": "application/json"

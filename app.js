@@ -12,6 +12,7 @@ var gameMenuRouter = require('./routes/gamemenu');
 var gameRouter = require('./routes/game');
 var postGameRouter = require('./routes/postgame');
 var saveJsonRouter = require('./routes/savejson');
+var loadConfigRouter = require('./routes/loadconfig');
 
 var app = express();
 
@@ -33,6 +34,7 @@ app.use('/gamemenu', gameMenuRouter);
 app.use('/game', gameRouter);
 app.use('/postgame', postGameRouter);
 app.use('/savejson', saveJsonRouter);
+app.use('/loadconfig', loadConfigRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

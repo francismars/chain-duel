@@ -4,12 +4,15 @@ let selected = "MainMenuButton"
 
 let serverIP;
 let serverPORT;
-await fetch('./files/config.json')
+
+await fetch('/loadconfig', {
+    method: 'GET'
+    })
     .then((response) => response.json())
-    .then((json) => {
-        serverIP = json.serverIP
-        serverPORT = json.serverPort
-    });
+    .then((data) => {
+        serverIP = data.IP
+        serverPORT = data.PORT
+});
 
 let playersSats = [0,0]
 let numberofCreates = 0

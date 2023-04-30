@@ -8,10 +8,9 @@ dotenv.config();
 
 
 router.get('/', function(req, res, next) {
-  
-  console.log(`Your IP: ${process.env.IP}`);
-
-  res.sendFile(path.join(__dirname+'/../views/gamemenu.html'), `{"IP":${process.env.IP}}`);
+    res.setHeader("Content-Type", "application/json");
+    data = {"IP":process.env.IP_SOCKET, "PORT":process.env.PORT_SOCKET}
+    res.send(data);
 });
 
 module.exports = router;
