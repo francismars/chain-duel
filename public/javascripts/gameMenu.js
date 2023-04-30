@@ -89,7 +89,7 @@ socket.on("connect", () => {
 //socket.onAny((event, ...args) => {
 //    console.log(event, args);
 //});
-socket.emit('message', "getLinks");
+socket.emit('paylinks', "getLinks");
 
 socket.on('rescreateWithdrawal', (data) => {
     sessionStorage.setItem("LNURLID", data.id);
