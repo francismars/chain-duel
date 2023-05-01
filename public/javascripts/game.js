@@ -16,7 +16,6 @@ let alturaGame = gameCanvas.height;
 let ctxGame = gameCanvas.getContext("2d");
 let colSize = larguraGame / gameCols;
 let rowSize = alturaGame / gameRows;
-let payProtection = false;
 let p1HeadPos = [6,12];
 let p1BodyPos = [[5,12]];
 let p1Dir = "";
@@ -37,6 +36,7 @@ let P2Name = sessionStorage.getItem("P2Name");
 if (P2Name==null){
     P2Name="Player 2"
 }
+const payProtection = true;
 let SatsP1 = sessionStorage.getItem('P1Sats');
 if (SatsP1==null){
     if (payProtection==true){
