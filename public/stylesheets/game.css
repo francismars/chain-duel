@@ -67,6 +67,10 @@ body{
     background: #fff;
 }
 
+.black{
+  background: #000
+}
+
 .player-sats span {
   font-size: 1cqw;
 }
