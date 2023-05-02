@@ -32,12 +32,39 @@ body{
 }
 
 
-.flex.points {
+.flex.points, .flex.players {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: baseline;
     margin: 1rem 15%;
+}
+
+
+
+.playerSquare {
+    width: 2cqw;
+    height: 2cqw;
+    box-shadow: 0 0 11px #ffffffb0;
+}
+
+#player1info {
+    color: white;
+    font-size: 2.5cqw;
+    padding-top: 0px;
+    margin-bottom: 10px;
+}
+
+#player2info {
+    color: white;
+    font-size: 2.5cqw;
+    padding-top: 0px;
+    margin-bottom: 10px;
+}
+
+
+.white {
+    background: #fff;
 }
 
 .player-sats span {
