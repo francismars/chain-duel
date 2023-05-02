@@ -46,6 +46,10 @@ a {
   opacity: 0.5;
 }
 
+.disabled {
+  opacity: 0.5;
+}
+
 h1 {
   text-align: center
 }
