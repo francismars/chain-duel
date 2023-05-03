@@ -152,6 +152,9 @@ function changeTextAfterPayment(){
     document.getElementById("rules3").innerText =  "0.5% ("+Math.floor(totalPrize*0.005)+" sats) to the designer"
     document.getElementById("player1info").innerText = p1Name
     document.getElementById("player2info").innerText = p2Name
+    if(playersSats[0]!=0 && playersSats[1]!=0){
+        document.getElementById("startgame").classList.remove("disabled");
+    }    
     /* if (menu=="GameModes" && playersSats[1]!=0 && playersSats[0]!=0){
         document.getElementById("centerSection").style.display  = "none";
         document.getElementById("gameButtons").style.display  = "flex";
