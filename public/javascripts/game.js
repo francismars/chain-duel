@@ -526,18 +526,20 @@ function displayTitle(){
     let percentageCurrentP1 = ((currentScoreDistribution[0] * 100) / totalPoints)/100;
 
     titleCanvas.width = window.innerWidth*(0.7);
-    titleCanvas.height = 110;
+    titleCanvas.height = 70;
     larguraTitle = titleCanvas.width;
     alturaTitle = titleCanvas.height;
 
+    /*
     ctxTitle.font = "30px BureauGrotesque";
-    ctxTitle.fillStyle = "white";
     ctxTitle.textAlign = "left";
     ctxTitle.fillText(P1Name.toUpperCase(), 40, 26);
     ctxTitle.textAlign = "right";
     ctxTitle.fillText(P2Name.toUpperCase(), (larguraTitle-40), 26);
+    */
 
     let p1capturing;
+    ctxTitle.fillStyle = "white";
     if (p1BodyPos.length == 1) p1capturing = "2%";
     else if (p1BodyPos.length == 2) p1capturing = "4%";
     else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1capturing = "8%";
@@ -545,7 +547,7 @@ function displayTitle(){
     else if (p1BodyPos.length >= 16) p1capturing = "32%";
     ctxTitle.textAlign = "left";
     ctxTitle.font = titleCanvas.width/90 +"px Inter";
-    ctxTitle.fillText(("Capturing "+ p1capturing), 0, 50);
+    ctxTitle.fillText(("Capturing "+ p1capturing), 0, 15);
 
     let p2capturing;
     if (p2BodyPos.length == 1) p2capturing = "2%";
@@ -554,8 +556,9 @@ function displayTitle(){
     else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2capturing = "16%";
     else if (p2BodyPos.length >= 16) p2capturing = "32%";
     ctxTitle.textAlign = "right";
-    ctxTitle.fillText(("Capturing "+ p2capturing), larguraTitle, 50);
+    ctxTitle.fillText(("Capturing "+ p2capturing), larguraTitle, 15);
   
+    /*
     ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();
     ctxTitle.fillRect(0, 0, 30, 30);
@@ -564,33 +567,35 @@ function displayTitle(){
     ctxTitle.beginPath();
     ctxTitle.fillRect(larguraTitle-30, 0, 30, 30);
     ctxTitle.stroke();
+    */
 
     ctxTitle.fillStyle = "black";
     ctxTitle.beginPath();
-    ctxTitle.fillRect(0, 60, larguraTitle, 5);
+    ctxTitle.fillRect(0, 25, larguraTitle, 5);
     ctxTitle.stroke();
     ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();
-    ctxTitle.fillRect(0, 60, larguraTitle*percentageInitialP1, 5);
+    ctxTitle.fillRect(0, 25, larguraTitle*percentageInitialP1, 5);
     ctxTitle.stroke();
+    
 
     ctxTitle.textAlign = "center";
     ctxTitle.font = "12px Inter";
     ctxTitle.fillStyle = "silver";
-    ctxTitle.fillText("INITIAL DISTRIBUTION", larguraTitle*0.5, 50);
+    ctxTitle.fillText("INITIAL DISTRIBUTION", larguraTitle*0.5, 15);
 
     ctxTitle.fillStyle = "black";
     ctxTitle.beginPath();
-    ctxTitle.fillRect(0, 75, larguraTitle, 30);
+    ctxTitle.fillRect(0, 40, larguraTitle, 30);
     ctxTitle.stroke();
     ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();
-    ctxTitle.fillRect(0, 75, larguraTitle*percentageCurrentP1, 30);
+    ctxTitle.fillRect(0, 40, larguraTitle*percentageCurrentP1, 30);
     ctxTitle.stroke();
 
     ctxTitle.font = "16px Inter";
     ctxTitle.fillStyle = "LightGray";
-    ctxTitle.fillText("CURRENT DISTRIBUTION", larguraTitle*0.5, 96);
+    ctxTitle.fillText("CURRENT DISTRIBUTION", larguraTitle*0.5, 61);
 }
 
 addEventListener("keydown", function(event) {
