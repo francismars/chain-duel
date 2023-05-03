@@ -10,12 +10,16 @@
 
 .pages {
     position: relative;
-    height: 40vw;
+    height: 35vw;
 }
 
 .page {
     position: absolute;
-    font-size: 1.8vw;
+    font-size: 1.3vw;
+}
+
+.page p{
+    margin-top: 3px;
 }
 
 #page-2{
@@ -46,12 +50,12 @@ img.value{
 
 p.value-text{
   width: 50%;
-  margin-top: -80px
+  margin-top: -8vw;
 }
 
 
 img.inline-logo {
-    height: 30px;
+    height: 2.5vw;
     display: inline;
     margin-right: 15px;
 }
