@@ -34,6 +34,7 @@ if (withdrawalURL!=null){
         element: qrcodeContainer,
         value: withdrawalURL
     });
+    localStorage.removeItem("LNURL");
 }
 let totalPrize = sessionStorage.getItem('LNURLMAXW');
 if (totalPrize!=null){
