@@ -37,7 +37,6 @@ addEventListener("keydown", function(event) {
             pageSelected=(pageSelected+1)
             if (pageSelected==5){ pageSelected=1 }
             displayPage(); 
-            console.log(pageSelected)
         } 
         if(buttonSelected=="prevButton"){
             pageSelected-=1
