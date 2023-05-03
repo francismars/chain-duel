@@ -1,9 +1,71 @@
 #about{
-
+    margin: 0 23vw;
 }
-
 
 
 #mainmenubutton {
     animation: glowing 2000ms infinite;
+}
+
+
+.pages {
+    position: relative;
+    height: 50vh;
+}
+
+.page {
+    position: absolute;
+    font-size: 1.8vw;
+}
+
+p.text-upscale {
+    font-size: 2vw;
+}
+
+h2.label {
+    font-size: 1.5vw;
+    letter-spacing: 0;
+    margin-bottom: 0;
+}
+
+
+
+img.value{
+    width: 100%;
+}
+
+p.value-text{
+  width: 50%;
+  margin-top: -80px
+}
+
+
+img.inline-logo {
+    height: 30px;
+    display: inline;
+    margin-right: 15px;
+}
+
+
+
+
+.double-button{width: 164px;display: flex;margin: auto;justify-content: center;}
+
+.double-button .button{
+  display: inline-block;
+  width: 46%;
+}
+
+#prev.button{
+}
+
+
+#next.button{
+}
+
+
+.credits {columns: 2;}
+
+.credit p {
+    margin-top: 5px;
 }
