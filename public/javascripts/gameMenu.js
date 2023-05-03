@@ -45,19 +45,23 @@ addEventListener("keydown", function(event) {
     switch (event.key) {
         case "a":
         case "ArrowLeft":
+            /*
             if (selected=="StartGame"){
                 document.getElementById("startgame").style.animationDuration  = "0s";
                 document.getElementById("mainmenubutton").style.animationDuration  = "2s";
                 selected="MainMenuButton";
             }
+            */
             break;
         case "d":
         case "ArrowRight":
+            /*
             if (selected=="MainMenuButton" && playersSats[0]!=0 && playersSats[1]!=0){
                 document.getElementById("startgame").style.animationDuration  = "2s";
                 document.getElementById("mainmenubutton").style.animationDuration  = "0s";
                 selected="StartGame";
             }
+            */
             break;
         case " ":
         case "Enter":
@@ -152,8 +156,14 @@ function changeTextAfterPayment(){
     document.getElementById("rules3").innerText =  "0.5% ("+Math.floor(totalPrize*0.005)+" sats) to the designer"
     document.getElementById("player1info").innerText = p1Name
     document.getElementById("player2info").innerText = p2Name
+    if(playersSats[0]!=0 || playersSats[1]!=0){
+        document.getElementById("mainmenubutton").classList.add("disabled");
+        document.getElementById("mainmenubutton").style.animationDuration  = "0s";
+    }
     if(playersSats[0]!=0 && playersSats[1]!=0){
         document.getElementById("startgame").classList.remove("disabled");
+        document.getElementById("startgame").style.animationDuration  = "2s";
+        selected="StartGame";
     }    
     /* if (menu=="GameModes" && playersSats[1]!=0 && playersSats[0]!=0){
         document.getElementById("centerSection").style.display  = "none";
