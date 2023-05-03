@@ -34,7 +34,7 @@ if (withdrawalURL!=null){
         element: qrcodeContainer,
         value: withdrawalURL
     });
-    localStorage.removeItem("LNURL");
+    sessionStorage.removeItem("LNURL");
 }
 let totalPrize = sessionStorage.getItem('LNURLMAXW');
 if (totalPrize!=null){
@@ -247,5 +247,11 @@ function menu3CSS(){
     document.getElementById("claimText").style.display = "none"
     document.getElementById("buttonsDiv").style.flexDirection = "unset"
     document.getElementById("doubleornotthingbutton").style.display = "none";
+    document.getElementById("buttonsDiv").style.justifyContent = "center";
+    document.getElementById("buttonsDiv").style.gap = "21px";
+    document.getElementById("claimbutton").style.marginRight = "0px";
+    document.getElementById("claimbutton").style.marginLeft = "0px";
+    document.getElementById("startnewbutton").style.marginRight = "0px";
+    document.getElementById("startnewbutton").style.marginLeft = "0px";
     menu=3;
 }
