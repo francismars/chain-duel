@@ -32,9 +32,15 @@ let P1Name = sessionStorage.getItem("P1Name");
 if (P1Name==null){
     P1Name="Player 1"
 }
+if (P1Name!="Player 1"){
+    document.getElementById("player1name").innerText = P1Name; 
+}
 let P2Name = sessionStorage.getItem("P2Name");
 if (P2Name==null){
     P2Name="Player 2"
+}
+if (P2Name!="Player 2"){
+    document.getElementById("player2name").innerText = P2Name; 
 }
 const payProtection = false;
 let SatsP1 = sessionStorage.getItem('P1Sats');
