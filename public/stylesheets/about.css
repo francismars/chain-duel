@@ -18,6 +18,16 @@
     font-size: 1.8vw;
 }
 
+#page-2{
+    display: none;
+}
+#page-3{
+    display: none;
+}
+#page-4{
+    display: none;
+}
+
 p.text-upscale {
     font-size: 2vw;
 }
@@ -57,11 +67,13 @@ img.inline-logo {
   height: 8%;
 }
 
-#prev.button{
+#prevButton{
+    animation: glowing 0ms infinite;
 }
 
 
-#next.button{
+#nextButton{
+    animation: glowing 0ms infinite;
 }
 
 
