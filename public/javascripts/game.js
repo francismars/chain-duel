@@ -69,6 +69,12 @@ let winnerP = "";
 let intervalCountdown;
 let intervalDraw = setInterval(draw, gameSpeed);
 // let gamepadsInterval = setInterval(listenToGamepads, gameSpeed/6)
+const beepCD1 = new Audio("./sound/Beep1.m4a");
+const beepCD2 = new Audio("./sound/Beep2.m4a");
+let beep1Played = false;
+let beep2Played = false;
+let beep3Played = false;
+let beep4Played = false;
 
 function counterStartFunc(){
     counterStart++;
@@ -164,16 +170,12 @@ function changeScore(playerID){
     if(changeInPoints<1){ changeInPoints=1; }
     pushToTakenValuesArray(playerID, changeInPoints, p1HeadPos, p2HeadPos);
     if(playerID=="P1"){
-        var snd = new Audio("./sound/Beep1.m4a"); 
-        snd.play();
         currentScoreDistribution[0]+=changeInPoints;
         currentScoreDistribution[1]-=changeInPoints;
         if(currentScoreDistribution[1]<0){ currentScoreDistribution[1]=0; }
         if(currentScoreDistribution[0]>totalPoints){ currentScoreDistribution[0]=totalPoints; }
     }
     else if(playerID=="P2"){
-        var snd = new Audio("./sound/Beep2.m4a");
-        snd.play();
         currentScoreDistribution[1]+=changeInPoints;
         currentScoreDistribution[0]-=changeInPoints;
         if(currentScoreDistribution[0]<0){ currentScoreDistribution[0]=0; }
@@ -385,24 +387,40 @@ function drawCountdown(){
     let alturaNumbers = (alturaGame*0.50).toString();
     ctxGame.font = alturaNumbers.concat("px BureauGrotesque");
     if(counterStart==0){
+        if(!beep1Played){
+            beepCD1.play();
+            beep1Played = true;
+        }        
         ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
         ctxGame.strokeText("2", (larguraGame*0.36), alturaGame/2);
         ctxGame.strokeText("1", (larguraGame*0.47), alturaGame/2);
         ctxGame.strokeText("LFG", (larguraGame*0.675), alturaGame/2);
     }
     else if (counterStart==1){
+        if(!beep2Played){
+            beepCD1.play();
+            beep2Played = true;
+        }   
         ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
         ctxGame.fillText("2", (larguraGame*0.36), alturaGame/2);
         ctxGame.strokeText("1", (larguraGame*0.47), alturaGame/2);
         ctxGame.strokeText("LFG", (larguraGame*0.675), alturaGame/2);
     }
     else if (counterStart==2){
+        if(!beep3Played){
+            beepCD1.play();
+            beep3Played = true;
+        } 
         ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
         ctxGame.fillText("2", (larguraGame*0.36), alturaGame/2);
         ctxGame.fillText("1", (larguraGame*0.47), alturaGame/2);
         ctxGame.strokeText("LFG", (larguraGame*0.675), alturaGame/2);
     }
     else if (counterStart==3){
+        if(!beep4Played){
+            beepCD2.play();
+            beep4Played = true;
+        } 
         ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
         ctxGame.fillText("2", (larguraGame*0.36), alturaGame/2);
         ctxGame.fillText("1", (larguraGame*0.47), alturaGame/2);
