@@ -63,12 +63,20 @@ img.inline-logo {
 
 
 
-.double-button{width: 164px;display: flex;margin: auto;justify-content: center;}
+.double-button{
+  width: 25%;
+  display: flex;
+  margin: auto;
+  justify-content: center;
+  text-transform: uppercase;
+  column-gap: 3%;
+}
 
 .double-button .button{
   display: inline-block;
   width: 50%;
   height: 8%;
+  padding: 4%;
 }
 
 #prevButton{
