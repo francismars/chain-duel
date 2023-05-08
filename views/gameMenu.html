@@ -8,33 +8,25 @@
 <title>Chain Duel</title>
 </head>
 <body>
-
   <header id="brand">
       <h2 id="chain">CHAIN</h2>
       <h2 id="duel">DUEL</h2>
   </header>
-
   <div class="flex full">
-
-
     <div>
     <!-- hack to center the next div on the page -->
     </div>
-
-
     <div>
         <div>
           <h2 id="maintitle" class="condensed">STAKE YOUR SATS</h2>
           <p id="titleslogan">Rules</p>
         </div>
-
         <div id="centerSection">
             <div id="gameCard">
               <p class="ruleTitle">1. Winner takes all</p>
               <p class="gameDescription grey">Deposit your bets, play, redeem.</p>
               <p class="gameDescription grey">Epoch ends when one chain hits zero sats.</p>
             </div>
-
             <div id="gameCard">
               <p class="ruleTitle">2. Longer chains steal more sats</p>
               <p class="gameDescription grey">Capture UTXOs to get a longer chain.</p>
@@ -67,14 +59,11 @@
               </table>
             </p>
             </div>
-
             <div id="gameCard">
               <p class="ruleTitle">3. Reset/respawn</p>
               <p class="gameDescription grey">Hitting walls or the other chain resets to genesis.</p>
               <p class="gameDescription grey">Head-to-head collisions reset both chains.</p>
             </div>
-
-
 
             <!--
             <div id="gameCard">
@@ -99,9 +88,7 @@
             <button onclick="location.href='/';" class="button" id="mainmenubutton" type="button">MAIN MENU</button>
             <button class="button disabled" id="startgame" type="button">READY TO START</button>
         </div>
-
     </div>
-
     <div id="bottomInfo">
         <div id="player1card">
             <image id="qrcode1" class="qrcode"></image>
@@ -109,12 +96,10 @@
                 <div class="player-sats">
                   <span id="player1sats">0</span> <span class="grey sats-label">sats</span>
                 </div>
-
                 <div id="player1info" class="condensed">
                   <div class="inline playerSquare white"></div>
                   <div class="inline">Player 1</div>
                 </div>
-
                 <div class="deposit-message">
                   Deposit between <b>10,000</b> and <b>10,000,000</b> sats
                   <br>
@@ -124,7 +109,6 @@
                   <br>
                   Allows for multiple deposits
                 </div>
-
             </div>
         </div>
         <div id="prizeinfocard">
@@ -148,7 +132,6 @@
                   <div class="inline">Player 2</div>
                   <div class="inline playerSquare black"></div>
                 </div>
-
                 <div class="deposit-message">
                   Deposit between <b>10,000</b> and <b>10,000,000</b> sats
                   <br>
@@ -165,11 +148,12 @@
   </div>
 
   <audio id="audio" autoplay loop>
-    <source src="/sound/chain_duel_2.ogg" type="audio/ogg"/>
-    <source src="/sound/chain_duel_2.mp3" type="audio/mpeg"/>
-  </audio>
-
-
+    <!--
+      <source src="/sound/chain_duel_1.ogg" type="audio/ogg"/>
+      <source src="/sound/chain_duel_1.mp3" type="audio/mpeg"/>
+    -->
+    <source src="/sound/chain_duel_produced_menu.m4a" type="audio/x-m4a">
+    </audio>
 </body>
 <script  type="module" src="javascripts/gameMenu.js"></script>
 </html>
