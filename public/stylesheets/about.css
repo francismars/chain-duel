@@ -16,10 +16,32 @@
 .page {
     position: absolute;
     font-size: 1.3vw;
+    height: 100%;
 }
 
+.page-inner{
+  display: flex;
+  height: 80%;
+  align-items: center;
+  flex-wrap: wrap;
+  text-align: center;
+  align-content: center;
+  row-gap: 0%;
+}
+
+
+
+.pager {
+  margin: 2% auto;
+  text-align: center;
+  letter-spacing: 0.5rem;
+  width: 100%;
+  font-size: 1vw;
+}
+
+
 .page p{
-    margin-top: 3px;
+    margin-top: 0;
 }
 
 #page-2{
@@ -38,7 +60,7 @@ p.text-upscale {
 
 h2.label {
     font-size: 1.5vw;
-    letter-spacing: 0;
+    letter-spacing: 0.01rem;
     margin-bottom: 0;
 }
 
@@ -48,10 +70,6 @@ img.value{
     width: 100%;
 }
 
-p.value-text{
-  width: 50%;
-  margin-top: -8vw;
-}
 
 
 img.inline-logo {
@@ -89,8 +107,28 @@ img.inline-logo {
 }
 
 
-.credits {columns: 2;}
+.credits {
+  columns: 2;
+  text-align: center;
+}
 
-.credit p {
-    margin-top: 5px;
+.credit .label {
+    margin-bottom: 1%;
+}
+
+.credit .credit-name {
+    margin-top: 1%;
+    font-size: 3vw;
+    letter-spacing: 0.005rem;
+}
+
+.credits .liquidity{
+  column-span: all;
+  width: 60%;
+  margin: auto;
+}
+
+.credits .liquidity .credit-name{
+  font-size: 2vw;
+  letter-spacing: 0.01rem;
 }
