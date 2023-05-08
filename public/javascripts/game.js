@@ -33,14 +33,14 @@ if (P1Name==null){
     P1Name="Player 1"
 }
 if (P1Name!="Player 1"){
-    document.getElementById("player1name").innerText = P1Name; 
+    document.getElementById("player1name").innerText = P1Name;
 }
 let P2Name = sessionStorage.getItem("P2Name");
 if (P2Name==null){
     P2Name="Player 2"
 }
 if (P2Name!="Player 2"){
-    document.getElementById("player2name").innerText = P2Name; 
+    document.getElementById("player2name").innerText = P2Name;
 }
 const payProtection = false;
 let SatsP1 = sessionStorage.getItem('P1Sats');
@@ -164,12 +164,16 @@ function changeScore(playerID){
     if(changeInPoints<1){ changeInPoints=1; }
     pushToTakenValuesArray(playerID, changeInPoints, p1HeadPos, p2HeadPos);
     if(playerID=="P1"){
+        var snd = new Audio("./sound/Beep1.m4a"); 
+        snd.play();
         currentScoreDistribution[0]+=changeInPoints;
         currentScoreDistribution[1]-=changeInPoints;
         if(currentScoreDistribution[1]<0){ currentScoreDistribution[1]=0; }
         if(currentScoreDistribution[0]>totalPoints){ currentScoreDistribution[0]=totalPoints; }
     }
     else if(playerID=="P2"){
+        var snd = new Audio("./sound/Beep2.m4a");
+        snd.play();
         currentScoreDistribution[1]+=changeInPoints;
         currentScoreDistribution[0]-=changeInPoints;
         if(currentScoreDistribution[0]<0){ currentScoreDistribution[0]=0; }
@@ -563,7 +567,7 @@ function displayTitle(){
     else if (p2BodyPos.length >= 16) p2capturing = "32%";
     ctxTitle.textAlign = "right";
     ctxTitle.fillText(("Capturing "+ p2capturing), larguraTitle, 15);
-  
+
     /*
     ctxTitle.fillStyle = "white";
     ctxTitle.beginPath();
@@ -583,7 +587,7 @@ function displayTitle(){
     ctxTitle.beginPath();
     ctxTitle.fillRect(0, 25, larguraTitle*percentageInitialP1, 5);
     ctxTitle.stroke();
-    
+
 
     ctxTitle.textAlign = "center";
     ctxTitle.font = "12px Inter";
