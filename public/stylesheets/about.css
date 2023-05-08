@@ -1,5 +1,5 @@
 #about{
-    margin: 0 23vw;
+    margin: 0 29vw;
 }
 
 
@@ -117,14 +117,13 @@ img.inline-logo {
 }
 
 .credit .credit-name {
-    margin-top: 1%;
+    margin-bottom: 6%;
     font-size: 3vw;
     letter-spacing: 0.005rem;
 }
 
-.credits .liquidity{
+.credits .span-all{
   column-span: all;
-  width: 60%;
   margin: auto;
 }
 
