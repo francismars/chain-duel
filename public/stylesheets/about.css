@@ -55,7 +55,8 @@
 }
 
 p.text-upscale {
-    font-size: 2vw;
+    /* font-size: 2vw; */
+    text-transform: uppercase;
 }
 
 h2.label {
