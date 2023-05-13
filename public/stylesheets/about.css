@@ -53,6 +53,9 @@
 #page-4{
     display: none;
 }
+#page-5{
+    display: none;
+}
 
 p.text-upscale {
     text-transform: uppercase;

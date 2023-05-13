@@ -6,8 +6,8 @@ let pageSelected=1;
 function displayPage(){
     switch(pageSelected){
         case 1:
-            document.getElementById("page-1").style.display = "block";
-            document.getElementById("page-4").style.display = "none";
+            document.getElementById("page-5").style.display = "none";
+            document.getElementById("page-1").style.display = "block";            
             document.getElementById("page-2").style.display = "none";
         break;
         case 2:
@@ -23,6 +23,11 @@ function displayPage(){
         case 4:
             document.getElementById("page-3").style.display = "none";
             document.getElementById("page-4").style.display = "block";
+            document.getElementById("page-5").style.display = "none";
+        break;
+        case 5:
+            document.getElementById("page-4").style.display = "none";
+            document.getElementById("page-5").style.display = "block";
             document.getElementById("page-1").style.display = "none";
         break;
     }
@@ -35,12 +40,12 @@ addEventListener("keydown", function(event) {
         }  
         if(buttonSelected=="nextButton"){
             pageSelected=(pageSelected+1)
-            if (pageSelected==5){ pageSelected=1 }
+            if (pageSelected==6){ pageSelected=1 }
             displayPage(); 
         } 
         if(buttonSelected=="prevButton"){
             pageSelected-=1
-            if (pageSelected==0){ pageSelected=4 }
+            if (pageSelected==0){ pageSelected=5 }
             displayPage(); 
         }             
     }    
