@@ -17,6 +17,7 @@
     position: absolute;
     font-size: 1.3vw;
     height: 100%;
+    width: 100%;
 }
 
 .page-inner{
@@ -29,6 +30,10 @@
   row-gap: 0%;
 }
 
+.page-inner h1 {
+  margin: auto;
+  margin-bottom: 1rem;
+}
 
 
 .pager {
@@ -64,7 +69,7 @@ p.text-upscale {
 h2.label {
     font-size: 1.5vw;
     letter-spacing: 0.01rem;
-    margin-bottom: 0;
+    margin-bottom: 3%;
 }
 
 
@@ -113,10 +118,12 @@ img.inline-logo {
 .credits {
   columns: 2;
   text-align: center;
+  width: 100%;
 }
 
 .credit .label {
     margin-bottom: 1%;
+    font-size: 1cqw;
 }
 
 .credit .credit-name {
