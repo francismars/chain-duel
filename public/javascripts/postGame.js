@@ -47,7 +47,7 @@ if (P1SatsDeposit!=null && P2SatsDeposit!=null){
     let designerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.005)
     document.getElementById("hostFee").innerText  = "1% ("+developerFee.toLocaleString()+" sats) for the host";
     document.getElementById("developerFee").innerText  = "1% ("+developerFee.toLocaleString()+" sats) for the developer";
-    document.getElementById("designerFee").innerText  = "1% ("+designerFee.toLocaleString()+" sats) for the developer";
+    document.getElementById("designerFee").innerText  = ".5% ("+designerFee.toLocaleString()+" sats) for the designer";
 }
 let menu = 1;
 let activeButtonMenu1 = 0;
@@ -117,7 +117,7 @@ function pressContinue(){
 }
 
 addEventListener("keydown", function(event) {
-    switch (event.key) {      
+    switch (event.key) {
         case " ":
             if(gameWinner=="Player 1" && (menu==1 || menu==2)){
                 pressContinue();
@@ -137,26 +137,26 @@ addEventListener("keydown", function(event) {
         case "s":
             if(gameWinner=="Player 1" && (menu==1 || menu==2)){
                 pressDown()
-            }     
+            }
             break;
         case "ArrowDown":
             if(gameWinner=="Player 2" && (menu==1 || menu==2)){
                 pressDown()
-            }            
+            }
             break;
         case "w":
             if(gameWinner=="Player 1" && (menu==1 || menu==2)){
                 pressUp()
-            }   
+            }
             break;
         case "ArrowUp":
             if(gameWinner=="Player 2" && (menu==1 || menu==2)){
                 pressUp()
-            }   
-            break;  
-        case "d":  
+            }
+            break;
+        case "d":
         case "ArrowRight":
-            pressRight()             
+            pressRight()
             break;
         case "a":
             pressLeft()
@@ -190,10 +190,10 @@ function updateHSJson(){
           orderedScores[sizeHS].p2Name = p2Name
           orderedScores[sizeHS].p2sats = parseInt(P2SatsDeposit)
           orderedScores[sizeHS].winner = gameWinner;
-          orderedScores[sizeHS].prize = parseInt(totalPrize);       
-          
+          orderedScores[sizeHS].prize = parseInt(totalPrize);
+
           const data = JSON.stringify(orderedScores)
-          // write JSON string to a file  
+          // write JSON string to a file
           fetch('/savejson', {
               method: 'POST',
               headers: {
