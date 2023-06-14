@@ -130,8 +130,10 @@ socket.on("invoicePaid", body => {
     if(body.lnurlp=="fu96V2"){
         console.log(`Chegou pagamento de P1: ${(body.amount)/1000} sats`);
         if(body.comment!=null && body.comment!=""){
+            console.log(typeof body.comment);
+            console.log(body.comment)
             console.log("Player1 Name: " + body.comment)
-            p1Name=body.comment.trim()           
+            p1Name=(body.comment)[0].trim()           
         }
         playersSats[0] += body.amount/1000
     }
@@ -139,7 +141,7 @@ socket.on("invoicePaid", body => {
         console.log(`Chegou pagamento de P2: ${(body.amount)/1000} sats`);
         if(body.comment!=null && body.comment!=""){
             console.log("Player2 Name: " + body.comment)
-            p2Name=body.comment.trim()            
+            p2Name=(body.comment)[0].trim()            
         }
         playersSats[1] += body.amount/1000
     }
