@@ -72,7 +72,7 @@ addEventListener("keydown", function(event) {
                             sessionStorage.setItem("P2Sats", playersSats[1]);
                             sessionStorage.setItem("P1Name", p1Name);
                             sessionStorage.setItem("P2Name", p2Name);
-                            socket.emit('createWithdrawal', Math.floor((playersSats[0]+playersSats[1])*0.975));
+                            socket.emit('createWithdrawal', Math.floor((playersSats[0]+playersSats[1])*0.95));
                             numberofCreates=1;
                         }
                     }  
@@ -153,9 +153,9 @@ function changeTextAfterPayment(){
     document.getElementById("player1sats").innerText = playersSats[0]
     let totalPrize = playersSats[0] + playersSats[1]
     document.getElementById("prizevaluesats").innerText = totalPrize
-    document.getElementById("rules1").innerText = "1% ("+Math.floor(totalPrize*0.01)+" sats) to the host"
-    document.getElementById("rules2").innerText =  "1% ("+Math.floor(totalPrize*0.01)+" sats) to the developer"
-    document.getElementById("rules3").innerText =  "0.5% ("+Math.floor(totalPrize*0.005)+" sats) to the designer"
+    document.getElementById("rules1").innerText = "2% ("+Math.floor(totalPrize*0.02)+" sats) to the host"
+    document.getElementById("rules2").innerText =  "2% ("+Math.floor(totalPrize*0.02)+" sats) to the developer"
+    document.getElementById("rules3").innerText =  "1% ("+Math.floor(totalPrize*0.01)+" sats) to the designer"
     document.getElementById("player1info").innerText = p1Name
     document.getElementById("player2info").innerText = p2Name
     if(playersSats[0]!=0 || playersSats[1]!=0){

@@ -43,11 +43,11 @@ if (totalPrize!=null){
 let P1SatsDeposit = sessionStorage.getItem('P1Sats');
 let P2SatsDeposit = sessionStorage.getItem('P2Sats');
 if (P1SatsDeposit!=null && P2SatsDeposit!=null){
-    let developerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.01)
-    let designerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.005)
-    document.getElementById("hostFee").innerText  = "1% ("+developerFee.toLocaleString()+" sats) for the host";
-    document.getElementById("developerFee").innerText  = "1% ("+developerFee.toLocaleString()+" sats) for the developer";
-    document.getElementById("designerFee").innerText  = ".5% ("+designerFee.toLocaleString()+" sats) for the designer";
+    let developerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.02)
+    let designerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.01)
+    document.getElementById("hostFee").innerText  = "2% ("+developerFee.toLocaleString()+" sats) for the host";
+    document.getElementById("developerFee").innerText  = "2% ("+developerFee.toLocaleString()+" sats) for the developer";
+    document.getElementById("designerFee").innerText  = "1% ("+designerFee.toLocaleString()+" sats) for the designer";
 }
 let menu = 1;
 let activeButtonMenu1 = 0;
