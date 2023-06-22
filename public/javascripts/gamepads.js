@@ -34,6 +34,8 @@ export function listenToGamepads() {
         //console.log("PLAYER 1")
         //console.log("0 == "+ gamepad1.axes[0]) // Left = -1 || Right = 1
         //console.log("1 == "+ gamepad1.axes[1]) // Up = -1 || Down = 1
+
+        // Joystick
         if(gamepad1.axes[1]<-0.5){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'w'}));
         }
@@ -46,6 +48,25 @@ export function listenToGamepads() {
         if(gamepad1.axes[0]>0.5){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
         }
+
+        //console.log("9 == "+ gamepad1.axes[9])
+
+        // Arrow kyes
+        if(gamepad1.axes[9]==-1){
+            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'w'}));
+        }
+        if(gamepad1.axes[9]==0.14285719394683838){
+            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'s'}));
+        }
+        if(gamepad1.axes[9]==0.7142857313156128){
+            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'a'}));
+        }
+        if(gamepad1.axes[9]==-0.4285714030265808){
+            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
+        }
+
+
+
     }
     if(gamepad2==null){
         if(navigator.getGamepads()[1]) {
@@ -79,6 +100,8 @@ export function listenToGamepads() {
         //console.log("PLAYER 2")
         //console.log("0 == "+ gamepad2.axes[0]) // Left = -1 || Right = 1
         //console.log("1 == "+ gamepad2.axes[1]) // Up = -1 || Down = 1
+
+        // Joystick
         if(gamepad2.axes[1]<-0.5){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
         }
@@ -89,6 +112,22 @@ export function listenToGamepads() {
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
         }
         if(gamepad2.axes[0]>0.5){
+            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
+        }
+
+        //console.log("9 == "+ gamepad2.axes[9])
+
+        // Arrow kyes
+        if(gamepad2.axes[9]==-1){
+            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
+        }
+        if(gamepad2.axes[9]==0.14285719394683838){
+            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
+        }
+        if(gamepad2.axes[9]==0.7142857313156128){
+            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
+        }
+        if(gamepad2.axes[9]==-0.4285714030265808){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
         }
     }
