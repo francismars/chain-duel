@@ -166,3 +166,14 @@ header{
   filter: invert(1);
   mix-blend-mode: screen;
 }
+
+
+
+#socialFollow {
+    font-size: 1cqw;
+}
+.social-icon {
+    display: inline-block;
+    height: 1.5cqw;
+    margin-bottom: -0.5cqw;
+}
