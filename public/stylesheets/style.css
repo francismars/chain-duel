@@ -79,6 +79,12 @@ h1, h2, h3, h4, .condensed {
   min-height: 100vh
 }
 
+.flex.inline {
+    flex-direction: row;
+    justify-content: center;
+    column-gap: 10px;
+}
+
 
 header{
   display: flex;
