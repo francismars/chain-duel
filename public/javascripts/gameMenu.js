@@ -173,3 +173,23 @@ function changeTextAfterPayment(){
         menu="Buttons";
     } */
 }
+
+fetch('./files/highscores.json')
+    .then((response) => response.json())
+    .then((json) => {
+        let highscores = json
+
+        let orderedScores = highscores.sort((a, b) => {
+            if (a.prize > b.prize) {
+              return -1;
+            }
+          });
+        let sizeHS = (orderedScores.length)-1
+        let lastHighscore = (orderedScores[sizeHS].p1sats + orderedScores[sizeHS].p2sats)
+        updateLastHighscoreValue(lastHighscore);
+        }
+    );
+
+function updateLastHighscoreValue(lastHighscore){
+    document.getElementById("leaderboardSats").innerText = (lastHighscore+1).toLocaleString();
+}

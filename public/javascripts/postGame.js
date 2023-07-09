@@ -180,7 +180,7 @@ function updateHSJson(){
           });
 
         let sizeHS = (orderedScores.length)-1
-        if(orderedScores[sizeHS].prize<totalPrize){
+        if((orderedScores[sizeHS].p1sats + orderedScores[sizeHS].p2sats) < (parseInt(P1SatsDeposit) + parseInt(P2SatsDeposit))){
           // {"p1Name":"SELLIX5","p1sats":100,"p2Name":"Pedro5","p2sats":100,"winner":"Player1","prize":196}
           console.log("Mudar hs file")
           console.log(orderedScores[sizeHS].prize)
