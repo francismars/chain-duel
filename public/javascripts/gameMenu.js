@@ -153,9 +153,9 @@ function changeTextAfterPayment(){
     document.getElementById("player1sats").innerText = playersSats[0]
     let totalPrize = playersSats[0] + playersSats[1]
     document.getElementById("prizevaluesats").innerText = totalPrize
-    document.getElementById("rules1").innerText = "host 2% ("+Math.floor(totalPrize*0.02)+" sats)"
-    document.getElementById("rules2").innerText = "developer 2% ("+Math.floor(totalPrize*0.02)+" sats)"
-    document.getElementById("rules3").innerText = "designer 1% ("+Math.floor(totalPrize*0.01)+" sats)"
+    document.getElementById("rules1").innerText = "host 2% ("+Math.floor(totalPrize*0.02).toLocaleString()+" sats)"
+    document.getElementById("rules2").innerText = "developer 2% ("+Math.floor(totalPrize*0.02).toLocaleString()+" sats)"
+    document.getElementById("rules3").innerText = "designer 1% ("+Math.floor(totalPrize*0.01).toLocaleString()+" sats)"
     document.getElementById("player1info").innerText = p1Name
     document.getElementById("player2info").innerText = p2Name
     if(playersSats[0]!=0 || playersSats[1]!=0){
