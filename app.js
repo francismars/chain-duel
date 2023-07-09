@@ -13,6 +13,8 @@ var gameRouter = require('./routes/game');
 var postGameRouter = require('./routes/postgame');
 var saveJsonRouter = require('./routes/savejson');
 var loadConfigRouter = require('./routes/loadconfig');
+var tournPrefsRouter = require('./routes/tournprefs');
+var tournLobbyRouter = require('./routes/tournlobby');
 
 var app = express();
 
@@ -35,6 +37,8 @@ app.use('/game', gameRouter);
 app.use('/postgame', postGameRouter);
 app.use('/savejson', saveJsonRouter);
 app.use('/loadconfig', loadConfigRouter);
+app.use('/tournprefs', tournPrefsRouter);
+app.use('/tournlobby', tournLobbyRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

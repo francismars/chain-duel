@@ -1,0 +1,43 @@
+<html>
+<head>
+<link rel="stylesheet" href="stylesheets/style.css">
+<link rel="stylesheet" href="stylesheets/tournprefs.css">
+
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
+<script type="module" src="javascripts/tournlobby.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<title>Chain Duel</title>
+<link rel="icon" type="image/x-icon" href="/images/favicon.png">
+</head>
+<body>
+
+  <header id="brand">
+      <h2 id="chain">CHAIN</h2>
+      <h2 id="duel">DUEL</h2>
+  </header>
+
+  <div class="flex full flex-center">
+    <div id="about">
+      <div class="pages">
+        <div id="page-1" class="page">
+          <h1>Tournament Lobby</h1>
+          <div class="page-inner">
+            <p id="numberOfPlayers">2</p>
+            <p id="depositValue">10,000</p><p>sats</p>        
+          </div>              
+        </div>  
+      </div> 
+      <button class="button" id="continueButton" type="button">Back</button>
+      <button onclick="location.href='/';" class="button" id="mainmenubutton" type="button">Next Game</button>
+    </div>
+  </div>
+
+  <audio id="audio" autoplay loop>
+    <!--
+      <source src="/sound/chain_duel_1.ogg" type="audio/ogg"/>
+      <source src="/sound/chain_duel_1.mp3" type="audio/mpeg"/>
+    -->
+    <source src="/sound/chain_duel_produced_menu.m4a" type="audio/x-m4a">
+    </audio>
+</body>
+</html>
