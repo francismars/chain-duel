@@ -1,7 +1,7 @@
 <html>
 <head>
 <link rel="stylesheet" href="stylesheets/style.css">
-<link rel="stylesheet" href="stylesheets/tournprefs.css">
+<link rel="stylesheet" href="stylesheets/tournlobby.css">
 
 <script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
 <script type="module" src="javascripts/tournlobby.js"></script>
@@ -21,14 +21,14 @@
       <div class="pages">
         <div id="page-1" class="page">
           <h1>Tournament Lobby</h1>
-          <div class="page-inner">
-            <p id="numberOfPlayers">2</p>
-            <p id="depositValue">10,000</p><p>sats</p>        
+          <h3>Players: <span id="numberOfPlayers">2</span> · Buy In: <span id="buyIn">10,000</span> sats</h3>
+          <div class="page-inner" id="pageinner">
+            
           </div>              
         </div>  
       </div> 
-      <button class="button" id="continueButton" type="button">Back</button>
-      <button onclick="location.href='/';" class="button" id="mainmenubutton" type="button">Next Game</button>
+      <button onclick="location.href='/tournprefs';" class="button" id="proceedButton" type="button">Proceed</button>
+      <button class="button" id="backButton" type="button">Back</button>
     </div>
   </div>
 

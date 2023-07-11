@@ -2,11 +2,13 @@
     margin: 0 29vw;
 }
 
+h3 {
+    text-align: center
+  }
 
-#mainmenubutton {
-    animation: glowing 2000ms infinite;
+.tintedQR{
+    filter: sepia(100%) saturate(200) brightness(15%) hue-rotate(30deg);
 }
-
 
 .pages {
     position: relative;
@@ -47,6 +49,7 @@
 
 .page p{
     margin-top: 0;
+    margin-bottom: 0;
 }
 
 #page-2{
@@ -105,25 +108,13 @@ img.inline-logo {
   padding: 4%;
 }
 
-#decreasePlayersButton{
+#proceedButton{
     animation: glowing 0ms infinite;
 }
 
 
-#increasePlayersButton{
-    animation: glowing 0ms infinite;
-}
-
-#increaseDepositButton{
-    animation: glowing 0ms infinite;
-}
-
-#decreaseDepositButton{
-    animation: glowing 0ms infinite;
-}
-
-#continueButton{
-    animation: glowing 0ms infinite;
+#backButton{
+    animation: glowing 2000ms infinite;
 }
 
 .credits {
@@ -156,4 +147,15 @@ img.inline-logo {
 
 .choice{
     display:flex;
+}
+
+.rowPlayers{
+    display: flex;
+    margin-top: 1.5cqw;
+    margin-bottom: 1.5cqw;
+}
+
+.colPlayer{
+    width: 25%;
+    margin: 0;
 }
