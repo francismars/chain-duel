@@ -139,7 +139,6 @@ addEventListener("keydown", function(event) {
             console.log("Let's proceed")
             let string = JSON.stringify(playersDict)
             localStorage.setItem("Players", string)
-            redirect="proceed";
             for(var key in paymentsDict) {
                 let value = paymentsDict[key];
                 console.log("Trying to delete paylink "+value);
