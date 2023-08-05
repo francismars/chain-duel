@@ -1,19 +1,19 @@
 import { listenToGamepads } from "./gamepads.js";
 
-let playersNumber = 2;
+let playersNumber = 4;
 let deposit = 10000;
 let buttonSelected = "mainMenuButton";
 
 function increasePlayers(){
     if (playersNumber<16){
-        playersNumber++;
+        playersNumber=playersNumber*2;
         document.getElementById("numberOfPlayers").innerText = playersNumber;
     }    
 }
 
 function decreasePlayers(){
-    if (playersNumber>2){
-        playersNumber--;
+    if (playersNumber>4){
+        playersNumber=playersNumber/2;
         document.getElementById("numberOfPlayers").innerText = playersNumber;
     }
 }

@@ -1,0 +1,48 @@
+<html>
+<head>
+<link rel="stylesheet" href="stylesheets/style.css">
+<link rel="stylesheet" href="stylesheets/game.css">
+
+<title>Chain Duel</title>
+<link rel="icon" type="image/x-icon" href="/images/favicon.png">
+</head>
+<body>
+    <header id="brand">
+        <h2 id="chain">CHAIN</h2>
+        <h2 id="duel">DUEL</h2>
+    </header>
+    <div class="flex full game">
+        <div>
+          <div class="flex players">
+            <div id="player1info" class="condensed">
+              <div class="inline playerSquare white"></div>
+              <div class="inline" id="player1name">Player 1</div>
+            </div>
+            <div id="player2info" class="condensed">
+              <div class="inline" id="player2name">Player 2</div>
+              <div class="inline playerSquare black"></div>
+            </div>
+          </div>
+          <canvas id="titleCanvas"></canvas>
+          <div class="flex points">
+            <div class="player-sats">
+              <span id="p1Points" class="condensed">0</span> <span class="grey">sats</span>
+            </div>
+            <div class="player-sats">
+              <span class="grey">sats</span> <span id="p2Points" class="condensed">0</span>
+            </div>
+          </div>
+          <canvas id="gameCanvas"></canvas>
+        </div>
+    </div>
+
+    <audio id="audio" autoplay loop>
+      <!--
+        <source src="/sound/chain_duel_1.ogg" type="audio/ogg"/>
+        <source src="/sound/chain_duel_1.mp3" type="audio/mpeg"/>
+      -->
+      <source src="/sound/chain_duel_produced_game.m4a" type="audio/x-m4a">
+      </audio>
+</body>
+<script type="module" src="javascripts/demo.js"></script>
+</html>

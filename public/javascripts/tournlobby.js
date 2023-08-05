@@ -15,16 +15,26 @@ const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 let urlToParse = location.search;
 
 const params = new URLSearchParams(urlToParse);
-const players = parseInt(params.get("players"));
+const numberOfPlayers = parseInt(params.get("players"));
 const deposit = parseInt(params.get("deposit"));
 
-console.log(players)
-console.log(deposit)
-document.getElementById("numberOfPlayers").innerText = players;
+document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
 document.getElementById("buyIn").innerText = deposit.toLocaleString();
 
-let rowPlayersDiv = document.createElement('div');
-rowPlayersDiv.classList.add("rowPlayers");
+socket.emit('createPaylink', {"description":"tournament","buyIn":deposit});
+
+for(let i=1;i<=numberOfPlayers;i++){
+    const divPlayerDetails = document.createElement('div');    
+    document.getElementById("playersListDiv").appendChild(divPlayerDetails);
+    const pPlayerDescription = document.createElement('p');
+    pPlayerDescription.textContent="Player"+i+":";
+    divPlayerDetails.appendChild(pPlayerDescription);
+    const pPlayerName = document.createElement('p');
+    pPlayerName.setAttribute("id","namePlayer"+i);
+    divPlayerDetails.appendChild(pPlayerName);
+}
+
+/* CODE FOR ONE QR CODES FOR EACH PLAYER
 for(let i=0;i<players;i++){
     let playerNumber = i+1;
     let rowPlayers = Math.floor(i / 4);
@@ -52,12 +62,14 @@ for(let i=0;i<players;i++){
         rowPlayersDiv.classList.add("rowPlayers");
     }
 }
+*/
+
 
 let paymentsDict = {}
 socket.on("rescreatePaylink", body => {
     let payLink = body;
     paymentsDict[payLink.description] = payLink.id;
-    let qrcodeContainer = document.getElementById("qr"+payLink.description);
+    let qrcodeContainer = document.getElementById("qrTournament");
     qrcodeContainer.innerHTML = "";
     new QRious({
         element: qrcodeContainer,
@@ -68,7 +80,8 @@ socket.on("rescreatePaylink", body => {
 
 let playersDict = {}
 socket.on("invoicePaid", body => {
-    for(let key in paymentsDict) {
+    /*
+    for(let key in paymentsDict) {        
         let value = paymentsDict[key];
         if(value==body.lnurlp){
             console.log(`Chegou pagamento de "${key} : ${(body.amount)/1000} sats`);
@@ -90,7 +103,28 @@ socket.on("invoicePaid", body => {
         document.getElementById("backButton").classList.add("disabled");
         document.getElementById("backButton").style.animationDuration  = "0s";        
     }
-    if(playersPaid==players){
+    if(playersPaid==numberOfPlayers){
+        document.getElementById("proceedButton").classList.remove("disabled");
+        document.getElementById("proceedButton").style.animationDuration  = "2s";
+        buttonSelected="proceedButton";
+    }
+    */
+    let playersPaid = Object.keys(playersDict).length;
+    if(body.comment!=null && body.comment!=""){
+        let pName=(body.comment)[0].trim()
+        document.getElementById(`namePlayer${playersPaid+1}`).innerText = pName;
+        playersDict[`player${playersPaid+1}`] = pName;
+    }
+    else {
+        playersDict[`player${playersPaid+1}`] = `Player ${playersPaid+1}`;
+        document.getElementById(`namePlayer${playersPaid+1}`).innerText = playersDict[`player${playersPaid+1}`];
+    }       
+    if(buttonSelected!="none"){
+        buttonSelected = "none"
+        document.getElementById("backButton").classList.add("disabled");
+        document.getElementById("backButton").style.animationDuration  = "0s";        
+    }
+    if(playersPaid+1==numberOfPlayers){
         document.getElementById("proceedButton").classList.remove("disabled");
         document.getElementById("proceedButton").style.animationDuration  = "2s";
         buttonSelected="proceedButton";
@@ -104,12 +138,12 @@ socket.on("resdelpaylinks", body => {
     if(body.success==true){
         totalOfDeletes++;
     }
-    if (totalOfDeletes==players){
+    if (totalOfDeletes==1){
         if(redirect=="back"){
             window.location.href = "/tournprefs";
         }
         if(redirect=="proceed"){
-            socket.emit('createWithdrawal', Math.floor((deposit*players)*0.95));
+            socket.emit('createWithdrawal', Math.floor((deposit*numberOfPlayers)*0.95));
             
         }
          
@@ -121,7 +155,7 @@ socket.on('rescreateWithdrawal', (data) => {
     sessionStorage.setItem("LNURL", data.lnurl);
     sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
 
-    window.location.href = "/tournmain";
+    window.location.href = "/tournbracket";
 })
 
 let buttonSelected = "backButton"
@@ -138,7 +172,7 @@ addEventListener("keydown", function(event) {
         if(buttonSelected=="proceedButton"){
             console.log("Let's proceed")
             let string = JSON.stringify(playersDict)
-            localStorage.setItem("Players", string)
+            sessionStorage.setItem("Players", string)
             redirect="proceed";
             for(var key in paymentsDict) {
                 let value = paymentsDict[key];

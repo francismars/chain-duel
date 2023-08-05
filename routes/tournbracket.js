@@ -6,7 +6,7 @@ const path = require('path');
 
 
 router.get('/', function(req, res, next) {
-  res.sendFile(path.join(__dirname+'/../views/tournmain.html'));
+  res.sendFile(path.join(__dirname+'/../views/tournbracket.html'));
 });
 
 module.exports = router;

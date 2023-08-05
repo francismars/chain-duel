@@ -15,7 +15,8 @@ var saveJsonRouter = require('./routes/savejson');
 var loadConfigRouter = require('./routes/loadconfig');
 var tournPrefsRouter = require('./routes/tournprefs');
 var tournLobbyRouter = require('./routes/tournlobby');
-var tournMainRouter = require('./routes/tournmain');
+var tournBracketRouter = require('./routes/tournbracket');
+var demoRouter = require('./routes/demo');
 
 var app = express();
 
@@ -40,7 +41,9 @@ app.use('/savejson', saveJsonRouter);
 app.use('/loadconfig', loadConfigRouter);
 app.use('/tournprefs', tournPrefsRouter);
 app.use('/tournlobby', tournLobbyRouter);
-app.use('/tournmain', tournMainRouter);
+app.use('/tournbracket', tournBracketRouter);
+app.use('/demo', demoRouter);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
