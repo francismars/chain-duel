@@ -1,0 +1,14 @@
+svg text{
+  font-family: BureauGrotesque-OneFive, BureauGrotesque;
+  text-anchor: middle;
+  text-transform: uppercase;
+}
+
+
+text#G1,text#G2,text#G3,text#G4,
+text#G5,text#G6,text#G7,text#G8,
+text#G9,text#G10,text#G11,text#G12,
+text#G13,text#G14,text#G15,text#G16 {
+    text-anchor: start;
+    font-family: inter;
+}

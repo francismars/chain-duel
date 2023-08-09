@@ -17,16 +17,57 @@
   </header>
 
   <div class="flex full flex-center">
-    <div id="about">
+    <div id="bracket">
       <div class="pages">
         <div id="page-1" class="page">
           <h1>Tournament Lobby</h1>
-          <h3>Players: <span id="numberOfPlayers">2</span> · Prize: <span id="buyIn">10,000</span> sats</h3>
           <div class="page-inner" id="pageinner">
-            <object id="bracket4players" data="/images/tournament/svg/4_player.svg" id="4playerssvg">
-          </div>              
-        </div>  
-      </div> 
+            <object id="bracket4players" data="/images/tournament/svg/4_player.svg" class="tournbracketSVG"></object>
+          </div>
+
+
+          <div class="bracketDetails">
+
+            <div class="bracketDetail" id="bracketDetailPlayers">
+              <div class="label">
+                Players
+              </div>
+              <div class="value">
+                <h3 id="numberOfPlayers">4</h3>
+              </div>
+            </div>
+
+            <div class="bracketDetail" id="bracketDetailFinalPrize">
+              <div class="label">
+                Final Prize
+              </div>
+              <div class="value">
+                <h3 id="bracketFinalPrize">400,000</h3> <span>sats</span>
+              </div>
+            </div>
+
+            <div class="bracketDetail" id="bracketDetailBuyIn">
+              <div class="label">
+                Buy In
+              </div>
+              <div class="value">
+                <h3 id="buyIn">100,000</h3> <span>sats</span>
+              </div>
+            </div>
+
+
+          </div>
+
+
+
+
+
+
+
+
+
+        </div>
+      </div>
       <button onclick="location.href='/tournprefs';" class="button disabled" id="proceedButton" type="button">Proceed</button>
       <button class="button" id="backButton" type="button">Back</button>
     </div>
