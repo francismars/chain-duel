@@ -11,15 +11,39 @@ await fetch('/loadconfig', {
 
 const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 
+let initialPositions = ["G1_P1", "G1_P2", "G2_P1", "G2_P2", "G3_P1", "G3_P2", "G4_P1", "G4_P2", "G5_P1", "G5_P2", "G6_P1", "G6_P2", "G7_P1", "G7_P2", "G8_P1", "G8_P2"]
+
 let urlToParse = location.search;
 
 const params = new URLSearchParams(urlToParse);
 const numberOfPlayers = parseInt(params.get("players"));
 const deposit = parseInt(params.get("deposit"));
 
+let elementSVG;
+if(numberOfPlayers==4){
+    elementSVG = document.getElementById("bracket4players");
+}
+else if(numberOfPlayers==8){
+    elementSVG = document.getElementById("bracket8players");
+}
+else if(numberOfPlayers==16){
+    elementSVG = document.getElementById("bracket16players");
+}
+elementSVG.style.display = "block";
+
+let svgDoc;
+let playersList = []
+
+playersList = ["Player 1","Player 2","Player 3","Player 4","Player 5","Player 6","Player 7","Player 8","Player 9","Player 10","Player 11","Player 12","Player 13","Player 14","Player 15","Player 16"]
+
+elementSVG.addEventListener("load",function(){      
+        svgDoc = elementSVG.contentDocument;
+        changePlayerListHTML()
+});
+
 document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
 document.getElementById("buyinvalue").innerText = deposit.toLocaleString();
-document.getElementById("bracketFinalPrize").innerText = (deposit*4).toLocaleString();
+document.getElementById("bracketFinalPrize").innerText = (deposit*numberOfPlayers).toLocaleString();
 document.getElementById("buyinvalue2").innerText = deposit.toLocaleString();
 
 socket.emit('createPaylink', {"description":"tournament","buyIn":deposit});
@@ -37,14 +61,11 @@ socket.on("rescreatePaylink", body => {
         }); 
 });
 
-var a = document.getElementById("bracket4players");
-let svgDoc;
-a.addEventListener("load",function(){
-        svgDoc = a.contentDocument;
-});
 
 
-let playersList = []
+
+
+
 socket.on("invoicePaid", body => {
     if(body.comment!=null && body.comment!=""){
         let pName=(body.comment)[0].trim()
@@ -54,13 +75,13 @@ socket.on("invoicePaid", body => {
     else{
         let pName="Player "+(playersList.length+1)
         playersList.push(pName)
-    }
-    console.log(playersList)
+    }    
+    changePlayerListHTML()
+});
+
+function changePlayerListHTML(){
     for(let i=0;i<playersList.length;i++){
-        if(i==0) changeNameText(svgDoc,"G1_P1", playersList[0])
-        if(i==1) changeNameText(svgDoc,"G1_P2", playersList[1])
-        if(i==2) changeNameText(svgDoc,"G2_P1", playersList[2])
-        if(i==3) changeNameText(svgDoc,"G2_P2", playersList[3])
+        changeNameText(svgDoc,initialPositions[i], playersList[i])
     }
     document.getElementById("depositedvalue").textContent = (deposit*playersList.length).toLocaleString();
 
@@ -70,8 +91,7 @@ socket.on("invoicePaid", body => {
         // TO DO:
         // CHANGE QR CODE TO CHECKMARK
     }
-    
-});
+}
 
 let buttonSelected = "backButton"
 addEventListener("keydown", function(event) {

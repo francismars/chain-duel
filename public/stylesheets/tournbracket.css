@@ -121,11 +121,23 @@
 .nextGameDiv{
   display:none;
   width:30%;
-  height: 10vw;
+  height: 15vw;
   position: absolute;
   bottom: 6.2vw;
   left: 50%;
   margin-left: -15%;
   padding: 1vw;
   box-sizing: border-box;
+}
+
+.tournbracket4SVG{
+  display:none;
+}
+
+.tournbracket8SVG{
+  display:none;
+}
+
+.tournbracket16SVG{
+  display:none;
 }
