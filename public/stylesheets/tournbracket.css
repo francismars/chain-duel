@@ -4,9 +4,14 @@
 
 
 
-#mainmenubutton {
+#backButton {
     animation: glowing 2000ms infinite;
 }
+
+#proceedButton{
+  animation: glowing 0ms infinite;
+}
+
 
 
 .pages {
@@ -46,6 +51,11 @@
 }
 
 
+.nextGameButton{
+  animation: glowing 2000ms infinite;
+  height: auto;
+  width: auto;
+}
 
 
 
@@ -90,6 +100,7 @@
 
 
 .bracketPayment{
+ 
   width:30%;
   height: 30vw;
   background: black;
@@ -100,4 +111,21 @@
   padding: 1vw;
   box-sizing: border-box;
   box-shadow: white 0px 0px 100px;
+}
+
+.buttonsDiv{
+  display: flex;
+}
+
+
+.nextGameDiv{
+  display:none;
+  width:30%;
+  height: 10vw;
+  position: absolute;
+  bottom: 6.2vw;
+  left: 50%;
+  margin-left: -15%;
+  padding: 1vw;
+  box-sizing: border-box;
 }

@@ -33,7 +33,7 @@ function increaseDeposit(){
 }
 
 function continueTournament(){
-    window.location.href = "/tournlobby?players="+playersNumber+"&deposit="+deposit
+    window.location.href = "/tournbracket?players="+playersNumber+"&deposit="+deposit
     
 }
 

@@ -1,7 +1,122 @@
-var players = ["Francis","Pedro","Hal","Nakamoto","John","Mark","Jamie","Milton"];
+let serverIP;
+let serverPORT;
+await fetch('/loadconfig', {
+    method: 'GET'
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        serverIP = data.IP
+        serverPORT = data.PORT
+});
 
+const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
+
+let urlToParse = location.search;
+
+const params = new URLSearchParams(urlToParse);
+const numberOfPlayers = parseInt(params.get("players"));
+const deposit = parseInt(params.get("deposit"));
+
+document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
+document.getElementById("buyinvalue").innerText = deposit.toLocaleString();
+document.getElementById("bracketFinalPrize").innerText = (deposit*4).toLocaleString();
+document.getElementById("buyinvalue2").innerText = deposit.toLocaleString();
+
+socket.emit('createPaylink', {"description":"tournament","buyIn":deposit});
+
+let paymentsDict = {}
+socket.on("rescreatePaylink", body => {
+    let payLink = body;
+    paymentsDict[payLink.description] = payLink.id;
+    let qrcodeContainer = document.getElementById("qrTournament");
+    qrcodeContainer.innerHTML = "";
+    new QRious({
+        element: qrcodeContainer,
+        size: 120,
+        value: payLink.lnurl
+        }); 
+});
 
 var a = document.getElementById("bracket4players");
+let svgDoc;
+a.addEventListener("load",function(){
+        svgDoc = a.contentDocument;
+});
+
+
+let playersList = []
+socket.on("invoicePaid", body => {
+    if(body.comment!=null && body.comment!=""){
+        let pName=(body.comment)[0].trim()
+        playersList.push(pName)
+
+    }
+    else{
+        let pName="Player "+(playersList.length+1)
+        playersList.push(pName)
+    }
+    console.log(playersList)
+    for(let i=0;i<playersList.length;i++){
+        if(i==0) changeNameText(svgDoc,"G1_P1", playersList[0])
+        if(i==1) changeNameText(svgDoc,"G1_P2", playersList[1])
+        if(i==2) changeNameText(svgDoc,"G2_P1", playersList[2])
+        if(i==3) changeNameText(svgDoc,"G2_P2", playersList[3])
+    }
+    document.getElementById("depositedvalue").textContent = (deposit*playersList.length).toLocaleString();
+
+    if(playersList.length==numberOfPlayers){
+        document.getElementById("proceedButton").classList.remove("disabled");
+        document.getElementById("buyinp").textContent = "LET'S GO"
+        // TO DO:
+        // CHANGE QR CODE TO CHECKMARK
+    }
+    
+});
+
+let buttonSelected = "backButton"
+addEventListener("keydown", function(event) {
+    if (event.key === "ArrowRight" || event.key === "d") {
+        if(playersList.length==numberOfPlayers && buttonSelected== "backButton"){
+            document.getElementById("proceedButton").style.animationDuration  = "2s";
+            document.getElementById("backButton").style.animationDuration  = "0s";
+            buttonSelected="proceedButton";
+        }
+    }
+    if (event.key === "ArrowLeft" || event.key === "a") {
+        if(playersList.length==numberOfPlayers && buttonSelected== "proceedButton"){
+            document.getElementById("proceedButton").style.animationDuration  = "0s";
+            document.getElementById("backButton").style.animationDuration  = "2s";
+            buttonSelected="backButton";
+        }  
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+        if(buttonSelected=="backButton"){
+            for(var key in paymentsDict) {
+                let value = paymentsDict[key];
+                console.log("Trying to delete paylink "+value);
+                socket.emit('deletepaylink', value);
+            }   
+            // GENERATE WITHDRAWAL LINK
+            // AFTER MONEY RETURNED: GO BACK TO TOURNPREFS
+
+        }
+        if(buttonSelected=="proceedButton"){
+            // DESTROY QR CODE
+            // GENERATE WITHDRAWAL LINK
+            document.getElementById("bracketPayment").style.display = "none";
+            document.getElementById("nextGameDiv").style.display = "block";
+            document.getElementById("nextGame_P1").textContent = playersList[0]
+            document.getElementById("nextGame_P2").textContent = playersList[1]
+        }
+    }
+
+})
+
+
+/*
+
+var players = ["Francis","Pedro","Hal","Nakamoto","John","Mark","Jamie","Milton"];
 
 // It's important to add an load event listener to the object,
 // as it will load the svg doc asynchronously
@@ -10,9 +125,9 @@ a.addEventListener("load",function(){
   var svgDoc = a.contentDocument;
 
 
-  /* GAME LOGIC 4 */
+  // GAME LOGIC 4 /
 
-  /*
+ 
   name(svgDoc,"G1_P1", players[0]);
   name(svgDoc,"G1_P2", players[1]);
     highLight(svgDoc,"G1_P1", players[0]);
@@ -24,10 +139,9 @@ a.addEventListener("load",function(){
   name(svgDoc,"G3_P2", players[3]);
       highLight(svgDoc,"G3_P2", players[3]);
       highLight(svgDoc,"Winner", players[3]);
-  */
 
-  /* GAME LOGIC 8 */
-
+  // GAME LOGIC 8 
+ 
   name(svgDoc,"G1_P1", players[0]);
   name(svgDoc,"G1_P2", players[1]);
     highLight(svgDoc,"G1_P1", players[0]);
@@ -73,6 +187,10 @@ function highLight(svgDoc,id, name){
 }
 
 
-function name(svgDoc,id, name){
-  svgDoc.getElementById(id+'_name').textContent = name;
+
+
+*/
+
+function changeNameText(svgDoc,id, name){
+    svgDoc.getElementById(id+'_name').textContent = name;
 }

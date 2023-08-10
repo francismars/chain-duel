@@ -22,7 +22,7 @@
         <div id="page-1" class="page">
           <h1>Tournament Lobby</h1>
           <div class="page-inner" id="pageinner">
-            <object id="bracket4players" data="/images/tournament/svg/8_player.svg" class="tournbracketSVG"></object>
+            <object id="bracket4players" data="/images/tournament/svg/4_player.svg" class="tournbracketSVG"></object>
           </div>
 
 
@@ -38,8 +38,6 @@
 
         </div>
       </div>
-      <button onclick="location.href='/tournprefs';" class="button disabled" id="proceedButton" type="button">Proceed</button>
-      <button class="button" id="backButton" type="button">Back</button>
     </div>
   </div>
 
@@ -47,11 +45,28 @@
 
 
 
-  <div class="bracketPayment">
+  <div class="bracketPayment" id="bracketPayment">
+    <div class="buyintext">
+      <p>BUY IN DEPOSIT</p>
+      <p id="buyinp"><span class="buyinvalue" id="buyinvalue">10,000</span> sats</p>
+    </div>
+    <div class="qrCodeDiv" id="qrCodeDiv">
+      <img id="qrTournament">
+    </div>
+    <div class="deposited">
+      <p><span class="depositedvalue" id="depositedvalue">0</span> SATS DEPOSITED</p>
+    </div>
+    <div class="buttonsDiv">
+      <button class="button" id="backButton" type="button">Cancel</button>
+      <button class="button disabled" id="proceedButton" type="button">Start</button>
+    </div>    
+  </div>
 
-    <button onclick="location.href='/tournprefs';" class="button disabled" id="proceedButton" type="button">Proceed</button>
-    <button class="button" id="backButton" type="button">Back</button>
-    
+  <div class="nextGameDiv" id="nextGameDiv">
+  <p>
+    <span id="nextGame_P1">G1_P1</span><span> vs </span><span id="nextGame_P2">G1_P2</span>
+    <button class="button nextGameButton" id="nextGameButton" type="button"><span>Start </span><span id="nextGameNumber">Game 1</span></button>
+  </p>
   </div>
 
   <div class="bracketDetails">
@@ -79,7 +94,7 @@
         Buy In
       </div>
       <div class="value">
-        <h3 id="buyIn">100,000</h3> <span>sats</span>
+        <h3 id="buyinvalue2">100,000</h3> <span>sats</span>
       </div>
     </div>
 
