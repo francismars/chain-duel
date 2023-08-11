@@ -24,6 +24,7 @@
     font-size: 1.3vw;
     height: 100%;
     width: 100%;
+    text-align: center;
 }
 
 .page-inner{
@@ -72,7 +73,7 @@
 
 
 .bracketDetail{
-  width:30%;
+  width: 25%;
   padding:1vw;
   box-sizing: border-box;
   border-right: 1px solid #ffffff36;
@@ -99,19 +100,7 @@
 
 
 
-.bracketPayment{
- 
-  width:30%;
-  height: 30vw;
-  background: black;
-  position: absolute;
-  bottom: 6.2vw;
-  left: 50%;
-  margin-left: -15%;
-  padding: 1vw;
-  box-sizing: border-box;
-  box-shadow: white 0px 0px 100px;
-}
+.bracketPayment{width: 25%;height: 35vw;background: black;position: absolute;bottom: 8.2vw;left: 50%;margin-left: -12.5%;/* padding: 1vw; */box-sizing: border-box;box-shadow: white 0px 0px 100px;text-align: center;display: flex;flex-direction: column;justify-content: space-between;}
 
 .buttonsDiv{
   display: flex;
@@ -140,4 +129,60 @@
 
 .tournbracket16SVG{
   display:none;
+}
+
+
+.bracketPayment .label {
+    font-size: 0.8vw;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+.bracketPayment .button {
+    margin-top: 0;
+    margin-bottom: 0;
+    width: 100%;
+    height: 100%;
+    padding: 3%;
+}
+
+#buyinvalue {
+    font-size: 3vw;
+    display: inline;
+    padding-left: 1vw;
+}
+
+.bracketPaymentInner{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#qrTournament {
+  width:15vw;
+  height:15vw;
+}
+
+#qrTournamentCheck{
+  width:15vw;
+  height:15vw;
+  display: none;
+  margin: auto;
+}
+
+.depositedvalue{
+  font-size: 0.8vw;
+}
+
+
+#buyinDepositLabel,
+#paymentNote{
+  transition: all 0.5s ease-out;
+}
+
+
+.paymentComplete #buyinDepositLabel,
+.paymentComplete #paymentNote{
+  font-size: 0;
 }
