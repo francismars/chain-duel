@@ -131,6 +131,13 @@
   display:none;
 }
 
+.issuerefundsdiv{
+  display:none;
+}
+
+.issuerefundssecond{
+  display:none;
+}
 
 .bracketPayment .label {
     font-size: 0.8vw;

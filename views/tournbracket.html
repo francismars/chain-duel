@@ -51,16 +51,30 @@
   <div class="bracketPayment" id="bracketPayment">
 
     <div class="bracketPaymentInner">
-      <div class="buyintext">
+      <div class="buyintext" id="buyintext">
         <div class="label mb-10" id="buyinDepositLabel">BUY IN DEPOSIT</div>
         <div id="buyinp"><h3 class="buyinvalue" id="buyinvalue">10,000</h3> <span class="label" id="satsLabel">sats</span></div>
         <div class="label mt-10" id="paymentNote">Set player name on payment note</div>
+      </div>
+      <div class="issuerefundsdiv" id="issuerefundsdiv">
+        <div>ISSUE REFUNDS</div> 
+        <div id="issuerefundsfirst">
+          <div>ARE YOU SURE YOU WANT TO CANCEL?</div>
+          <div>THIS WILL DISPLAY 0 QR CODES TO WITHDRAW 10,000 SATS EACH OF THE PLAYERS THAT PAYED ALREADY.</div>
+          <div>MINUS THE FEE.</div>
+        </div>
+        <div id="issuerefundssecond" class="issuerefundssecond">
+          <div>Player</div>
+          <div id="currentWithdrawalPlayer">Player 1</div>
+          <img id="qrWithdrawal" class="qrcode" />
+          <b class="label" id="withdrawablevalue">0</b> <span class="label">SATS</span>
+        </div>
       </div>
       <div class="qrCodeDiv mt-10" id="qrCodeDiv">
         <img id="qrTournament" class="qrcode" />
         <img id="qrTournamentCheck" src="/images/tournament/svg/tournCheck.svg"/>
       </div>
-      <div class="deposited mt-10">
+      <div class="deposited mt-10" id="satsdeposited">
         <b class="depositedvalue" id="depositedvalue">0</b> <span class="label">SATS DEPOSITED</span>
       </div>
     </div>

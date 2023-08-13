@@ -34,11 +34,11 @@ elementSVG.style.display = "block";
 let svgDoc;
 let playersList = []
 
-//playersList = ["Player 1","Player 2","Player 3","Player 4","Player 5","Player 6","Player 7","Player 8","Player 9","Player 10","Player 11","Player 12","Player 13","Player 14","Player 15","Player 16"]
+playersList = ["Player 1","Player 2","Player 3","Player 4"] // ,"Player 5","Player 6","Player 7","Player 8","Player 9","Player 10","Player 11","Player 12","Player 13","Player 14","Player 15","Player 16"]
 
 elementSVG.addEventListener("load",function(){
         svgDoc = elementSVG.contentDocument;
-        //changePlayerListHTML()
+        changeHTMLAfterPayment()
 });
 
 document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
@@ -76,22 +76,20 @@ socket.on("invoicePaid", body => {
         let pName="Player "+(playersList.length+1)
         playersList.push(pName)
     }    
-    changePlayerListHTML()
+    changeHTMLAfterPayment()
 });
 
-function changePlayerListHTML(){
+function changeHTMLAfterPayment(){
     for(let i=0;i<playersList.length;i++){
         changeNameText(svgDoc,initialPositions[i], playersList[i])
     }
     document.getElementById("depositedvalue").textContent = (deposit*playersList.length).toLocaleString();
 
     if(playersList.length==numberOfPlayers){
-
         document.getElementById("bracketPayment").classList.add("paymentComplete");
         document.getElementById("proceedButton").classList.remove("disabled");
         document.getElementById("buyinvalue").textContent = "LET'S GO";
         document.getElementById("satsLabel").style.display = "none";
-        // TO DO:
         // CHANGE QR CODE TO CHECKMARK
         document.getElementById("buyinvalue").style.padding = "none";
         document.getElementById("qrTournament").style.display = "none";
@@ -100,35 +98,58 @@ function changePlayerListHTML(){
     }
 }
 
-let buttonSelected = "backButton"
+let buttonSelected = "cancelButton"
 addEventListener("keydown", function(event) {
     if (event.key === "ArrowRight" || event.key === "d") {
-        if(playersList.length==numberOfPlayers && buttonSelected== "backButton"){
+        if(playersList.length==numberOfPlayers && buttonSelected== "cancelButton"){
             document.getElementById("proceedButton").style.animationDuration  = "2s";
             document.getElementById("backButton").style.animationDuration  = "0s";
             buttonSelected="proceedButton";
+        }
+        else if(buttonSelected== "backButton"){
+            document.getElementById("proceedButton").style.animationDuration  = "2s";
+            document.getElementById("backButton").style.animationDuration  = "0s";
+            buttonSelected="confirmButton";            
         }
     }
     if (event.key === "ArrowLeft" || event.key === "a") {
         if(playersList.length==numberOfPlayers && buttonSelected== "proceedButton"){
             document.getElementById("proceedButton").style.animationDuration  = "0s";
             document.getElementById("backButton").style.animationDuration  = "2s";
-            buttonSelected="backButton";
+            buttonSelected="cancelButton";
         }  
+        else if(buttonSelected=="confirmButton"){
+            document.getElementById("proceedButton").style.animationDuration  = "0s";
+            document.getElementById("backButton").style.animationDuration  = "2s";
+            buttonSelected="backButton";                 
+        }
     }
 
     if (event.key === "Enter" || event.key === " ") {
-        if(buttonSelected=="backButton"){
-            for(var key in paymentsDict) {
-                let value = paymentsDict[key];
-                console.log("Trying to delete paylink "+value);
-                socket.emit('deletepaylink', value);
-            }   
-            // GENERATE WITHDRAWAL LINK
-            // AFTER MONEY RETURNED: GO BACK TO TOURNPREFS
-
+        if(buttonSelected=="cancelButton"){
+            document.getElementById("buyintext").style.display = "none";
+            document.getElementById("qrCodeDiv").style.display = "none";
+            document.getElementById("satsdeposited").style.display = "none";
+            document.getElementById("issuerefundsdiv").style.display = "block";    
+            document.getElementById("backButton").textContent = "BACK";
+            document.getElementById("proceedButton").textContent = "CONFIRM";
+            document.getElementById("proceedButton").classList.remove("disabled");
+            buttonSelected="backButton"
         }
-        if(buttonSelected=="proceedButton"){
+        else if(buttonSelected=="backButton"){
+            document.getElementById("buyintext").style.display = "block";
+            document.getElementById("qrCodeDiv").style.display = "block";
+            document.getElementById("satsdeposited").style.display = "block";
+            document.getElementById("issuerefundsdiv").style.display = "none";    
+            document.getElementById("backButton").textContent = "CANCEL";
+            document.getElementById("proceedButton").textContent = "START";
+            if(playersList.length!=numberOfPlayers){
+                document.getElementById("proceedButton").classList.add("disabled");
+            }
+            
+            buttonSelected="cancelButton"  
+        }
+        else if(buttonSelected=="proceedButton"){
             // DESTROY QR CODE
             // GENERATE WITHDRAWAL LINK
             document.getElementById("bracketPayment").style.display = "none";
@@ -136,9 +157,50 @@ addEventListener("keydown", function(event) {
             document.getElementById("nextGame_P1").textContent = playersList[0]
             document.getElementById("nextGame_P2").textContent = playersList[1]
         }
+        else if(buttonSelected=="confirmButton"){
+            for(var key in paymentsDict) {
+                let value = paymentsDict[key];
+                console.log("Trying to delete paylink "+value);
+                socket.emit('deletepaylink', value);
+            } 
+            if(playersList.length==0){
+                window.location.href = "/tournprefs"; 
+            }
+            else if(playersList.length>0){
+                console.log("Trying to create LNURLw");
+                socket.emit('createWithdrawal', {"amount": Math.floor((deposit)*0.95), "maxWithdrawals": playersList.length});
+                document.getElementById("issuerefundsfirst").style.display = "none";
+                document.getElementById("issuerefundssecond").style.display = "block";
+                document.getElementById("backButton").style.display = "none";
+                document.getElementById("proceedButton").style.display = "none";               
+                buttonSelected="none";
+            }
+        }
     }
 
 })
+
+let timesWithdrawed = 0;
+socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_withdrawable
+    document.getElementById("currentWithdrawalPlayer").textContent = playersList[0];
+    document.getElementById("withdrawablevalue").textContent = data.max_withdrawable;
+    let qrcodeContainer = document.getElementById("qrWithdrawal");
+    qrcodeContainer.innerHTML = "";
+    new QRious({
+        element: qrcodeContainer,
+        size: 120,
+        value: data.lnurl
+        });    
+});
+
+socket.on('prizeWithdrawn', (data) => {
+    //console.log(data)
+    timesWithdrawed++;
+    document.getElementById("currentWithdrawalPlayer").textContent = playersList[timesWithdrawed];
+    if(timesWithdrawed==playersList.length){
+        window.location.href = "/tournprefs"; 
+    }
+});
 
 
 /*
