@@ -34,11 +34,11 @@ elementSVG.style.display = "block";
 let svgDoc;
 let playersList = []
 
-playersList = ["Player 1","Player 2","Player 3","Player 4"] // ,"Player 5","Player 6","Player 7","Player 8","Player 9","Player 10","Player 11","Player 12","Player 13","Player 14","Player 15","Player 16"]
+// playersList = ["Player 1","Player 2","Player 3","Player 4","Player 5","Player 6","Player 7","Player 8","Player 9","Player 10","Player 11","Player 12","Player 13","Player 14","Player 15","Player 16"]
 
 elementSVG.addEventListener("load",function(){
         svgDoc = elementSVG.contentDocument;
-        changeHTMLAfterPayment()
+        //changeHTMLAfterPayment()
 });
 
 document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
@@ -149,8 +149,13 @@ addEventListener("keydown", function(event) {
             
             buttonSelected="cancelButton"  
         }
-        else if(buttonSelected=="proceedButton"){
-            // DESTROY QR CODE
+        else if(buttonSelected=="proceedButton"){     
+            for(var key in paymentsDict) {
+                let value = paymentsDict[key];
+                console.log("Trying to delete paylink "+value);
+                socket.emit('deletepaylink', value);
+            } 
+            // TODO
             // GENERATE WITHDRAWAL LINK
             document.getElementById("bracketPayment").style.display = "none";
             document.getElementById("nextGameDiv").style.display = "block";
@@ -195,6 +200,7 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
 
 socket.on('prizeWithdrawn', (data) => {
     //console.log(data)
+    changeNameText(svgDoc,initialPositions[timesWithdrawed], "")
     timesWithdrawed++;
     document.getElementById("currentWithdrawalPlayer").textContent = playersList[timesWithdrawed];
     if(timesWithdrawed==playersList.length){
