@@ -127,6 +127,8 @@ addEventListener("keydown", function(event) {
 
     if (event.key === "Enter" || event.key === " ") {
         if(buttonSelected=="cancelButton"){
+            document.getElementById("withdrawableuses").textContent = playersList.length;
+            document.getElementById("withdrawablevaluefirst").textContent = deposit.toLocaleString();
             document.getElementById("buyintext").style.display = "none";
             document.getElementById("qrCodeDiv").style.display = "none";
             document.getElementById("satsdeposited").style.display = "none";
@@ -200,7 +202,7 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
 
 socket.on('prizeWithdrawn', (data) => {
     //console.log(data)
-    changeNameText(svgDoc,initialPositions[timesWithdrawed], "")
+    changeNameText(svgDoc,initialPositions[timesWithdrawed], initialPositions[timesWithdrawed])
     timesWithdrawed++;
     document.getElementById("currentWithdrawalPlayer").textContent = playersList[timesWithdrawed];
     if(timesWithdrawed==playersList.length){
