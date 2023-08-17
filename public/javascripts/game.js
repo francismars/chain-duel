@@ -29,6 +29,12 @@ let countdownStart = false;
 let gameStarted = false;
 let gameEnded = false;
 let P1Name = sessionStorage.getItem("P1Name");
+let playerList = JSON.parse(sessionStorage.getItem("PlayerList"));
+
+
+if(playerList!=null){
+    P1Name=playerList[0]
+}
 if (P1Name==null){
     P1Name="Player 1"
 }
@@ -36,6 +42,9 @@ if (P1Name!="Player 1"){
     document.getElementById("player1name").innerText = P1Name;
 }
 let P2Name = sessionStorage.getItem("P2Name");
+if(playerList!=null){
+    P2Name=playerList[1]
+}
 if (P2Name==null){
     P2Name="Player 2"
 }
@@ -626,11 +635,20 @@ function displayTitle(){
     ctxTitle.fillText("CURRENT DISTRIBUTION", larguraTitle*0.5, 61);
 }
 
+function redirectWindowAfterGame(){
+    if(playerList==null){
+        window.location.href = "/postgame";
+    }
+    else if(playerList!=null){
+        window.location.href = "/tournbracket";
+    }
+}
+
 addEventListener("keydown", function(event) {
     switch (event.key.toUpperCase()) {
         case " ":
             if(gameEnded==true && winnerP=="Player 1"){
-                window.location.href = "/postgame";
+                redirectWindowAfterGame();
             }
         case "ENTER":
             if(gameStarted==false){
@@ -638,7 +656,7 @@ addEventListener("keydown", function(event) {
                 intervalCountdown = setInterval(counterStartFunc, 1000);
             }
             if(gameEnded==true && winnerP == "Player 2"){
-                window.location.href = "/postgame";
+                redirectWindowAfterGame();
             }
             break;
         case "ARROWLEFT":
