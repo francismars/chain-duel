@@ -17,36 +17,32 @@
   </header>
 
   <div class="flex full flex-center">
-    <div id="about">
+    <div id="tournprefs">
 
-      <div class="pages">
-        <div id="page-1" class="page">
-          <h1>Tournament Preferences</h1>   
-          <div class="page-inner">
-            <div class="choice">
-              <h1>Number of Players</h1>
-              <div class="double-button">              
-                <button class="button" id="decreasePlayersButton" type="button">-</button>              
-                  <div class="pager" >
-                    <p id="numberOfPlayers">4</p>
-                  </div>
-                <button class="button" id="increasePlayersButton" type="button">+</button>
-              </div>
+        <h1>Tournament Preferences</h1>
+        <div class="mb-30">
+          <div class="choice">
+            <div class="label mb-10">Number of Players</div>
+            <div class="amount-preference">
+              <button class="button increment" id="decreasePlayersButton" type="button">-</button>
+                <div class="value-display">
+                  <h1 id="numberOfPlayers">4</h1>
+                </div>
+              <button class="button increment" id="increasePlayersButton" type="button">+</button>
             </div>
-            <div class="choice">  
-              <h1>Deposit</h1>
-              <div class="double-button">              
-                <button class="button" id="decreaseDepositButton" type="button">-</button>              
-                  <div class="pager">
-                    <p id="depositValue">10,000</p><p>sats</p>
-                    
-                  </div>
-                <button class="button" id="increaseDepositButton" type="button">+</button>
-              </div>  
+          </div>
+          <div class="choice">
+            <div class="label mb-10">Buy in (sats)</div>
+            <div class="amount-preference">
+              <button class="button increment" id="decreaseDepositButton" type="button">-</button>
+                <div class="value-display">
+                  <h1 id="depositValue">10,000</h1>
+                </div>
+              <button class="button increment" id="increaseDepositButton" type="button">+</button>
             </div>
           </div>
         </div>
-      </div>  
+
       <button class="button" id="continueButton" type="button">Continue</button>
       <button onclick="location.href='/';" class="button" id="mainmenubutton" type="button">MAIN MENU</button>
     </div>

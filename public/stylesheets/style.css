@@ -64,6 +64,17 @@ h1, h2, h3, h4, .condensed {
 }
 
 
+.label {
+    color: white;
+    text-align: center;
+    margin-bottom: 0px;
+    font-size: 0.8cqw;
+    text-transform: uppercase;
+    letter-spacing: 0.03rem;
+}
+
+
+
 .flex{
   display: flex;
   flex-direction: column;
@@ -93,6 +104,10 @@ h1, h2, h3, h4, .condensed {
 
 .mb-10{
   margin-bottom: 1vw;
+}
+
+.mb-30{
+  margin-bottom: 3vw;
 }
 
 header{
