@@ -4,6 +4,12 @@
 
 
 
+#tournament-name.hero-outline{
+  margin: 0 0 -4cqw 0;
+  font-size: 6cqw;
+}
+
+
 #backButton {
     animation: glowing 2000ms infinite;
 }
@@ -133,10 +139,19 @@
 
 .issuerefundsdiv{
   display:none;
+  padding: 1.5vw;
+  font-size: 1.5vw;
 }
 
 .issuerefundssecond{
   display:none;
+}
+
+.issuerefundssecond #qrWithdrawal {
+    display: block;
+    margin: auto;
+    width: 20vw;
+    height: 20vw;
 }
 
 .bracketPayment .label {

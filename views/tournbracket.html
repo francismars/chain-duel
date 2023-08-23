@@ -21,7 +21,7 @@
       <div class="pages">
         <div id="page-1" class="page">
           <div class="label">Tournament Lobby</div>
-          <h1>The Merkle Tree</h1>
+          <h1 id="tournament-name" class="hero-outline">The Merkle Tree</h1>
           <div class="page-inner" id="pageinner">
             <object id="bracket4players" data="/images/tournament/svg/4_player.svg" class="tournbracket4SVG"></object>
             <object id="bracket8players" data="/images/tournament/svg/8_player.svg" class="tournbracket8SVG"></object>
@@ -45,15 +45,16 @@
         <div class="label mt-10" id="paymentNote">Set player name on payment note</div>
       </div>
       <div class="issuerefundsdiv" id="issuerefundsdiv">
-        <div>ISSUE REFUNDS</div> 
+        <div class="label">Issue Refunds</div>
         <div id="issuerefundsfirst">
-          <div>ARE YOU SURE YOU WANT TO CANCEL?</div>
-          <div>THIS WILL DISPLAY <span id="withdrawableuses">0</span> QR CODES TO WITHDRAW <b id="withdrawablevaluefirst">10,000</b> SATS FOR EACH OF THE PLAYERS THAT PAYED ALREADY.</div>
-          <div>MINUS THE FEE.</div>
+          Are you sure you want to cancel?
+          <br/><br/>
+          This will display<span id="withdrawableuses">0</span> QR codes to withdraw <b id="withdrawablevaluefirst">10,000</b> sats for each of the players that already payed.
+          <br/><br/>Minus the fee.
         </div>
         <div id="issuerefundssecond" class="issuerefundssecond">
           <div>Player</div>
-          <div id="currentWithdrawalPlayer">Player 1</div>
+          <h1 id="currentWithdrawalPlayer" class="condensed">Player 1</h1>
           <img id="qrWithdrawal" class="qrcode" />
           <b class="label" id="withdrawablevalue">0</b> <span class="label">SATS</span>
         </div>

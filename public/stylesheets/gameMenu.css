@@ -3,17 +3,6 @@ body{
 }
 
 
-#maintitle{
-    position:static;
-    margin-top: 2%;
-    text-align: center;
-    font-size: 8cqw;
-    -webkit-text-stroke-width: 1px;
-    -webkit-text-fill-color: transparent;
-    -webkit-text-stroke-color: white;
-    margin-bottom: 0%;
-}
-
 #titleslogan{
     color: white;
     text-align: center;

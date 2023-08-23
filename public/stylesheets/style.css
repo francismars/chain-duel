@@ -172,6 +172,17 @@ header{
 }
 
 
+
+.hero-outline{
+    position:static;
+    margin-bottom: 2%;
+    text-align: center;
+    font-size: 8cqw;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke-color: white;
+}
+
 .center {
   margin: auto;
 }
