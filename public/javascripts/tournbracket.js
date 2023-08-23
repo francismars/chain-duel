@@ -38,7 +38,7 @@ if(playerListParsed!=null){
 }
 else if(playerListParsed==null){
     playersList = []
-    playersList = ["Pedro","Joao","Player 3","Player 4","Player 5","Player 6","Player 7","Player 8"] //,"Player 9","Player 10","Player 11","Player 12","Player 13","Player 14","Player 15","Player 16"]   
+    playersList = ["Pedro","Joao","Player 3","Player 4","Player 5","Player 6","Player 7","Player 8"] //,"Player 9","Player 10","Player 11","Player 12","Player 13","Player 14","Player 15","Player 16"]
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
@@ -79,9 +79,9 @@ socket.on("rescreatePaylink", body => {
     qrcodeContainer.innerHTML = "";
     new QRious({
         element: qrcodeContainer,
-        size: 120,
+        size: 800,
         value: payLink.lnurl
-        }); 
+        });
 });
 
 socket.on("invoicePaid", body => {
@@ -93,7 +93,7 @@ socket.on("invoicePaid", body => {
     else{
         let pName="Player "+(playersList.length+1)
         playersList.push(pName)
-    }    
+    }
     changeHTMLAfterPayment()
 });
 
@@ -117,7 +117,7 @@ function changeHTMLAfterPayment(){
             document.getElementById("qrTournamentCheck").style.display = "block";
         }
     }
-    else if(previousWinner!=null){ 
+    else if(previousWinner!=null){
         document.getElementById("bracketPayment").style.display = "none";
         document.getElementById("nextGameDiv").style.display = "block";
         let elapsedGames = winnersList.length;
@@ -148,9 +148,9 @@ function changeHTMLAfterPayment(){
             console.log(nextGameP2)
             document.getElementById("nextGame_P1").textContent = nextGameP1;
             document.getElementById("nextGame_P2").textContent = nextGameP2;
-            
+
         }
-        document.getElementById("nextGameID").textContent = winnersList.length+1 
+        document.getElementById("nextGameID").textContent = winnersList.length+1
         buttonSelected="startGameButton"
 
         console.log(winnersList)
@@ -179,7 +179,7 @@ function changeHTMLAfterPayment(){
                     }
                     else if(winnerPrevious=="Player 2"){
                         winnerName = playersList[(i - numberOfPlayers/2) + 1]
-                    } 
+                    }
                 }
                 if(winnerPlayer=="Player 2"){
                     highLight(svgDoc,initialPositions[(i*2)+1])
@@ -189,7 +189,7 @@ function changeHTMLAfterPayment(){
                     }
                     else if(winnerPrevious=="Player 2"){
                         winnerName = playersList[((i) - numberOfPlayers/2)]
-                    } 
+                    }
                 }
                 console.log(winnerPrevious)
             }
@@ -211,7 +211,7 @@ addEventListener("keydown", function(event) {
         else if(buttonSelected== "backButton"){
             document.getElementById("proceedButton").style.animationDuration  = "2s";
             document.getElementById("backButton").style.animationDuration  = "0s";
-            buttonSelected="confirmButton";            
+            buttonSelected="confirmButton";
         }
     }
     if (event.key === "ArrowLeft" || event.key === "a") {
@@ -219,11 +219,11 @@ addEventListener("keydown", function(event) {
             document.getElementById("proceedButton").style.animationDuration  = "0s";
             document.getElementById("backButton").style.animationDuration  = "2s";
             buttonSelected="cancelButton";
-        }  
+        }
         else if(buttonSelected=="confirmButton"){
             document.getElementById("proceedButton").style.animationDuration  = "0s";
             document.getElementById("backButton").style.animationDuration  = "2s";
-            buttonSelected="backButton";                 
+            buttonSelected="backButton";
         }
     }
     if (event.key === "Enter" || event.key === " ") {
@@ -233,7 +233,7 @@ addEventListener("keydown", function(event) {
             document.getElementById("buyintext").style.display = "none";
             document.getElementById("qrCodeDiv").style.display = "none";
             document.getElementById("satsdeposited").style.display = "none";
-            document.getElementById("issuerefundsdiv").style.display = "block";    
+            document.getElementById("issuerefundsdiv").style.display = "block";
             document.getElementById("backButton").textContent = "BACK";
             document.getElementById("proceedButton").textContent = "CONFIRM";
             document.getElementById("proceedButton").classList.remove("disabled");
@@ -243,21 +243,21 @@ addEventListener("keydown", function(event) {
             document.getElementById("buyintext").style.display = "block";
             document.getElementById("qrCodeDiv").style.display = "block";
             document.getElementById("satsdeposited").style.display = "block";
-            document.getElementById("issuerefundsdiv").style.display = "none";    
+            document.getElementById("issuerefundsdiv").style.display = "none";
             document.getElementById("backButton").textContent = "CANCEL";
             document.getElementById("proceedButton").textContent = "START";
             if(playersList.length!=numberOfPlayers){
                 document.getElementById("proceedButton").classList.add("disabled");
             }
-            
-            buttonSelected="cancelButton"  
+
+            buttonSelected="cancelButton"
         }
-        else if(buttonSelected=="proceedButton"){     
+        else if(buttonSelected=="proceedButton"){
             for(var key in paymentsDict) {
                 let value = paymentsDict[key];
                 console.log("Trying to delete paylink "+value);
                 socket.emit('deletepaylink', value);
-            } 
+            }
             document.getElementById("bracketPayment").style.display = "none";
             document.getElementById("nextGameDiv").style.display = "block";
             document.getElementById("nextGame_P1").textContent = playersList[0]
@@ -269,9 +269,9 @@ addEventListener("keydown", function(event) {
                 let value = paymentsDict[key];
                 console.log("Trying to delete paylink "+value);
                 socket.emit('deletepaylink', value);
-            } 
+            }
             if(playersList.length==0){
-                window.location.href = "/tournprefs"; 
+                window.location.href = "/tournprefs";
             }
             else if(playersList.length>0){
                 buttonSelected="none";
@@ -280,7 +280,7 @@ addEventListener("keydown", function(event) {
                 document.getElementById("issuerefundsfirst").style.display = "none";
                 document.getElementById("issuerefundssecond").style.display = "block";
                 document.getElementById("backButton").style.display = "none";
-                document.getElementById("proceedButton").style.display = "none";                        
+                document.getElementById("proceedButton").style.display = "none";
             }
         }
         else if(buttonSelected=="startGameButton"){
@@ -314,14 +314,14 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
         qrcodeContainer.innerHTML = "";
         new QRious({
             element: qrcodeContainer,
-            size: 120,
+            size: 800,
             value: data.lnurl
-            }); 
+            });
     }
     else if(buttonSelected=="startGameButton"){
         sessionStorage.setItem("LNURL", data.lnurl);
-        sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);   
-        window.location.href = "/game";        
+        sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
+        window.location.href = "/game";
     }
 });
 
@@ -331,7 +331,7 @@ socket.on('prizeWithdrawn', (data) => {
     timesWithdrawed++;
     document.getElementById("currentWithdrawalPlayer").textContent = playersList[timesWithdrawed];
     if(timesWithdrawed==playersList.length){
-        window.location.href = "/tournprefs"; 
+        window.location.href = "/tournprefs";
     }
 });
 
@@ -360,7 +360,7 @@ a.addEventListener("load",function(){
 
   // GAME LOGIC 4 /
 
- 
+
   name(svgDoc,"G1_P1", players[0]);
   name(svgDoc,"G1_P2", players[1]);
     highLight(svgDoc,"G1_P1", players[0]);
@@ -373,8 +373,8 @@ a.addEventListener("load",function(){
       highLight(svgDoc,"G3_P2", players[3]);
       highLight(svgDoc,"Winner", players[3]);
 
-  // GAME LOGIC 8 
- 
+  // GAME LOGIC 8
+
   name(svgDoc,"G1_P1", players[0]);
   name(svgDoc,"G1_P2", players[1]);
     highLight(svgDoc,"G1_P1", players[0]);

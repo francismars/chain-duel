@@ -34,11 +34,11 @@ if (donPlayer!=null){
         else if(donPlayer=="Player 2"){
             playersSats[1]+=parseInt(donPrize);
             if (donName!=null){
-                p2Name=donName;   
+                p2Name=donName;
             }
         }
     }
-    changeTextAfterPayment(); 
+    changeTextAfterPayment();
 }
 
 addEventListener("keydown", function(event) {
@@ -75,13 +75,13 @@ addEventListener("keydown", function(event) {
                             socket.emit('createWithdrawal', {"amount": Math.floor((playersSats[0]+playersSats[1])*0.95), "maxWithdrawals": 1});
                             numberofCreates=1;
                         }
-                    }  
-                }                  
+                    }
+                }
                 else if (selected=="MainMenuButton"){
                     if(playersSats[0]==0&&playersSats[1]==0){
                         window.location.href = "/";
                     }
-                }      
+                }
             break;
     }
   });
@@ -111,19 +111,19 @@ socket.on("resPayLinks", body => {
         qrcodeContainer.innerHTML = "";
         new QRious({
             element: qrcodeContainer,
-            size: 120,
+            size: 800,
             value: payLinks[1].lnurl
           });
-    };   
+    };
     if(payLinks[0].id=="Y7rifi" && payLinks[0].description=="Player2"){
         let qrcodeContainer = document.getElementById("qrcode2");
         qrcodeContainer.innerHTML = "";
         new QRious({
             element: qrcodeContainer,
-            size: 120,
+            size: 800,
             value: payLinks[0].lnurl
           });
-    } 
+    }
 });
 
 socket.on("invoicePaid", body => {
@@ -133,7 +133,7 @@ socket.on("invoicePaid", body => {
             console.log(typeof body.comment);
             console.log(body.comment)
             console.log("Player1 Name: " + body.comment)
-            p1Name=(body.comment)[0].trim()           
+            p1Name=(body.comment)[0].trim()
         }
         playersSats[0] += body.amount/1000
     }
@@ -141,7 +141,7 @@ socket.on("invoicePaid", body => {
         console.log(`Chegou pagamento de P2: ${(body.amount)/1000} sats`);
         if(body.comment!=null && body.comment!=""){
             console.log("Player2 Name: " + body.comment)
-            p2Name=(body.comment)[0].trim()            
+            p2Name=(body.comment)[0].trim()
         }
         playersSats[1] += body.amount/1000
     }
@@ -166,7 +166,7 @@ function changeTextAfterPayment(){
         document.getElementById("startgame").classList.remove("disabled");
         document.getElementById("startgame").style.animationDuration  = "2s";
         selected="StartGame";
-    }    
+    }
     /* if (menu=="GameModes" && playersSats[1]!=0 && playersSats[0]!=0){
         document.getElementById("centerSection").style.display  = "none";
         document.getElementById("gameButtons").style.display  = "flex";
