@@ -97,7 +97,16 @@
   display: flex;
   justify-content: center;
   text-align: center;
+  align-items: flex-end;
+  gap: 0.2vw;
+  padding-left: 1.5vw;
 }
+
+
+.bracketDetail .value.players{
+  padding-left: 0;
+}
+
 
 .bracketDetail .value h3{
   font-size:3vw;
