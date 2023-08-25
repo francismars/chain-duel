@@ -383,7 +383,8 @@ addEventListener("keydown", function(event) {
             if(previousWinner==null){
                 nextGameP1 = playersList[0]
                 nextGameP2 = playersList[1]  
-            }         
+            }  
+            nextGamePlayers = [nextGameP1, nextGameP2]       
             sessionStorage.setItem("gamePlayers", JSON.stringify(nextGamePlayers));
             if(previousWinner==null){
                 nextGameP1 = playersList[0]
