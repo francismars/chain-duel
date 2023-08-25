@@ -29,11 +29,11 @@ let countdownStart = false;
 let gameStarted = false;
 let gameEnded = false;
 let P1Name = sessionStorage.getItem("P1Name");
-let playerList = JSON.parse(sessionStorage.getItem("PlayerList"));
+let gamePlayers = JSON.parse(sessionStorage.getItem("gamePlayers"));
 
 
-if(playerList!=null){
-    P1Name=playerList[0]
+if(gamePlayers!=null){
+    P1Name=gamePlayers[0]
 }
 if (P1Name==null){
     P1Name="Player 1"
@@ -42,8 +42,8 @@ if (P1Name!="Player 1"){
     document.getElementById("player1name").innerText = P1Name;
 }
 let P2Name = sessionStorage.getItem("P2Name");
-if(playerList!=null){
-    P2Name=playerList[1]
+if(gamePlayers!=null){
+    P2Name=gamePlayers[1]
 }
 if (P2Name==null){
     P2Name="Player 2"
@@ -636,10 +636,10 @@ function displayTitle(){
 }
 
 function redirectWindowAfterGame(){
-    if(playerList==null){
+    if(gamePlayers==null){
         window.location.href = "/postgame";
     }
-    else if(playerList!=null){
+    else if(gamePlayers!=null){
         window.location.href = "/tournbracket";
     }
 }
