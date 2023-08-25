@@ -62,6 +62,8 @@
   animation: glowing 2000ms infinite;
   height: auto;
   width: auto;
+  height: 3vw;
+  width: 40%;
 }
 
 .claimSatsButton{
@@ -138,6 +140,13 @@
   margin-left: -15%;
   padding: 1vw;
   box-sizing: border-box;
+  text-align: center;
+  margin-bottom: 3%;
+}
+
+#nextGamePlayers{display: flex;margin: auto;width: 100%;justify-content: center;gap: 1vw;margin-bottom: 4%;}
+.playerName{
+  font-size: 3vw;
 }
 
 .tournFinishedDiv{

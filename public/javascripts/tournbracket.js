@@ -38,7 +38,7 @@ if(playerListParsed!=null){
 }
 else if(playerListParsed==null){
     playersList = []
-    playersList = ["Pedro","Joao","Maria","Jose"] //,"Antonio","Leonardo","David","Carla" ,"Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
+    //playersList = ["Pedro","Joao","Maria","Jose"] //,"Antonio","Leonardo","David","Carla" ,"Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));

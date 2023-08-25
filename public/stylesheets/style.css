@@ -102,6 +102,10 @@ h1, h2, h3, h4, .condensed {
   margin-top: 1vw;
 }
 
+.mb-0 {
+  margin-bottom: 0
+}
+
 .mb-10{
   margin-bottom: 1vw;
 }
