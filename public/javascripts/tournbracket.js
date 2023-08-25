@@ -38,7 +38,7 @@ if(playerListParsed!=null){
 }
 else if(playerListParsed==null){
     playersList = []
-    //playersList = ["Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla" ,"Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
+    playersList = ["Pedro","Joao","Maria","Jose"] //,"Antonio","Leonardo","David","Carla" ,"Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
@@ -122,6 +122,7 @@ function changeHTMLAfterPayment(){
     }
 }
 
+let WinnerNamesList = []
 function updateBracketWinner(){
     if(previousWinner!=null){ 
         document.getElementById("bracketPayment").style.display = "none";
@@ -132,7 +133,6 @@ function updateBracketWinner(){
         let subtractor1 = 0
         let subtractor2 = 0
         let subtractor3 = 0
-        let WinnerNamesList = []
         console.log(winnersList)
         for(let i=0;i<winnersList.length;i++){            
             let winnerName
@@ -268,13 +268,31 @@ function updateBracketWinner(){
 }
 
 function updateNextGameText(){
-    if(winnersList.length<numberOfPlayers/2){
-        nextGameP1 = playersList[(2*winnersList.length)]
-        nextGameP2 = playersList[(2*winnersList.length)+1]    
+    if(winnersList.length + 1 < numberOfPlayers){
+        if(winnersList.length<numberOfPlayers/2){
+            nextGameP1 = playersList[(2*winnersList.length)]
+            nextGameP2 = playersList[(2*winnersList.length)+1]    
+        }
+        nextGamePlayers = [nextGameP1, nextGameP2]
+        document.getElementById("nextGame_P1").textContent = nextGameP1;
+        document.getElementById("nextGame_P2").textContent = nextGameP2;
     }
-    nextGamePlayers = [nextGameP1, nextGameP2]
-    document.getElementById("nextGame_P1").textContent = nextGameP1;
-    document.getElementById("nextGame_P2").textContent = nextGameP2;
+    else if(winnersList.length + 1 == numberOfPlayers){   
+        document.getElementById("nextGameDiv").style.display = "none";
+        buttonSelected = "claimButton"
+        document.getElementById("winnerName").textContent = WinnerNamesList[(WinnerNamesList.length-1)];
+        document.getElementById("tournFinishedDiv").style.display = "block";
+        
+        sessionStorage.setItem("P1Sats", (deposit*numberOfPlayers));
+        sessionStorage.setItem("P2Sats", 0);
+
+        if(winnersList[winnersList.length-1]=="Player 1"){
+            sessionStorage.setItem("P1Name", WinnerNamesList[(WinnerNamesList.length-1)]);
+        }
+        else if(winnersList[winnersList.length-1]=="Player 2"){
+            sessionStorage.setItem("P2Name", WinnerNamesList[(WinnerNamesList.length-1)]);
+        }
+    }
 }
 
 let numberofCreates = 0;
@@ -361,9 +379,15 @@ addEventListener("keydown", function(event) {
                 document.getElementById("proceedButton").style.display = "none";                        
             }
         }
-        else if(buttonSelected=="startGameButton"){            
+        else if(buttonSelected=="startGameButton"){   
+            if(previousWinner==null){
+                nextGameP1 = playersList[0]
+                nextGameP2 = playersList[1]  
+            }         
             sessionStorage.setItem("gamePlayers", JSON.stringify(nextGamePlayers));
             if(previousWinner==null){
+                nextGameP1 = playersList[0]
+                nextGameP2 = playersList[1]  
                 if(numberofCreates==0){
                     let stringplayersList = JSON.stringify(playersList)
                     sessionStorage.setItem("PlayerList", stringplayersList);
@@ -380,6 +404,9 @@ addEventListener("keydown", function(event) {
                 window.location.href = "/game";
             }
         }
+        else if(buttonSelected=="claimButton"){
+            window.location.href = "/postgame";
+        } 
     }
 
 })

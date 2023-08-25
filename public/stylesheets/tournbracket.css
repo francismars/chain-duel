@@ -64,6 +64,12 @@
   width: auto;
 }
 
+.claimSatsButton{
+  animation: glowing 2000ms infinite;
+  height: auto;
+  width: auto;
+}
+
 
 
 .bracketDetails {
@@ -132,6 +138,18 @@
   margin-left: -15%;
   padding: 1vw;
   box-sizing: border-box;
+}
+
+.tournFinishedDiv{
+  display:none;
+  width:30%;
+  height: 15vw;
+  position: absolute;
+  bottom: 6.2vw;
+  left: 50%;
+  margin-left: -15%;
+  padding: 1vw;
+  box-sizing: border-box;  
 }
 
 .tournbracket4SVG{
