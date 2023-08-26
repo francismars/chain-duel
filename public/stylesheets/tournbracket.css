@@ -5,7 +5,7 @@
 
 
 #tournament-name.hero-outline{
-  margin: 0 0 -4cqw 0;
+  margin: 0 0 -2cqw 0;
   font-size: 6cqw;
 }
 
@@ -68,8 +68,8 @@
 
 .claimSatsButton{
   animation: glowing 2000ms infinite;
-  height: auto;
-  width: auto;
+  height: 20%;
+  width: 55%;
 }
 
 
@@ -158,7 +158,12 @@
   left: 50%;
   margin-left: -15%;
   padding: 1vw;
-  box-sizing: border-box;  
+  box-sizing: border-box;
+  text-align: center;
+}
+
+#winnerName {
+    font-size: 4vw;
 }
 
 .tournbracket4SVG{
@@ -233,12 +238,10 @@
   font-size: 0.8vw;
 }
 
-
 #buyinDepositLabel,
 #paymentNote{
   transition: all 0.5s ease-out;
 }
-
 
 .paymentComplete #buyinDepositLabel,
 .paymentComplete #paymentNote{
