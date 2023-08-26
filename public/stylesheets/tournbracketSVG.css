@@ -1,3 +1,15 @@
+@import url('fonts/Inter/inter.css');
+
+@font-face {
+  font-family: "BureauGrotesque";
+  src: url("fonts/BureauGrotesque/BureauGrotesque.eot");
+  src: url("fonts/BureauGrotesque/BureauGrotesque.eot?#iefix") format("embedded-opentype"),
+  url("fonts/BureauGrotesque/BureauGrotesque.woff2") format("woff2"),
+  url("fonts/BureauGrotesque/BureauGrotesque.woff") format("woff"),
+  url("fonts/BureauGrotesque/BureauGrotesque.ttf") format("truetype"),
+  url("fonts/BureauGrotesque/BureauGrotesque.svg#BureauGrotesque") format("svg");
+}
+
 svg text{
   font-family: BureauGrotesque-OneFive, BureauGrotesque;
   text-anchor: middle;
