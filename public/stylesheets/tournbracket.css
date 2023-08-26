@@ -144,7 +144,7 @@
   margin-bottom: 3%;
 }
 
-#nextGamePlayers{display: flex;margin: auto;width: 100%;justify-content: center;gap: 1vw;margin-bottom: 4%;}
+#nextGamePlayers{display: flex;margin: auto;width: 100%;justify-content: center;gap: 1vw;margin-bottom: 4%;padding-top: 3%;align-items: center;}
 .playerName{
   font-size: 3vw;
 }
