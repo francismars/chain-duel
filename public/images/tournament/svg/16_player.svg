@@ -3,11 +3,11 @@
     @import url(../../../stylesheets/tournbracketSVG.css);
   </style>
   <defs>
-    <clipPath id="clip-_16_player">
+    <clipPath id="clip-_16_player_a">
       <rect width="2180" height="561"/>
     </clipPath>
   </defs>
-  <g id="_16_player" data-name="16_player" clip-path="url(#clip-_16_player)">
+  <g id="_16_player_a" data-name="16_player_a" clip-path="url(#clip-_16_player_a)">
     <g id="Winner" transform="translate(947.832 139.168)">
       <g id="Group_778" data-name="Group 778" transform="translate(-664.74 -68.31)">
         <g id="Winner_rect" transform="translate(664.74 68.31)" fill="none" stroke="#fff" stroke-width="1">
@@ -15,7 +15,7 @@
           <rect x="0.5" y="0.5" width="280.295" height="67.502" fill="none"/>
         </g>
       </g>
-      <text id="Winner_name" transform="translate(141.336 50.251)" fill="#fff" font-size="46" font-family="HelveticaNeue, Helvetica Neue"><tspan x="0" y="0">WINNER</tspan></text>
+      <text id="Winner_name" transform="translate(141.336 50.251)" fill="#fff" font-size="46" font-family="HelveticaNeue, Helvetica Neue" opacity="0.502"><tspan x="0" y="0">WINNER</tspan></text>
     </g>
     <g id="G15_P2" transform="translate(1040 206.22)">
       <g id="G15_P2_rect" transform="translate(90.26 48.63)" fill="none" stroke="#fff" stroke-width="1">
