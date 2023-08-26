@@ -31,6 +31,7 @@ if (withdrawalURL!=null){
     let qrcodeContainer = document.getElementById("qrCode1");
     qrcodeContainer.innerHTML = "";
     new QRious({
+        size: 800,
         element: qrcodeContainer,
         value: withdrawalURL
     });
