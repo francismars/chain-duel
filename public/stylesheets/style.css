@@ -177,6 +177,24 @@ header{
 
 
 
+.double-button{
+  display: flex;
+  margin: auto;
+  width: 25%;
+  justify-content: space-between;
+  height: 8%;
+  gap: 4%;
+}
+
+.double-button .button{
+  margin: 0;
+  width: 49%;
+  height: 100%;
+  padding: 3.5%;
+}
+
+
+
 .hero-outline{
     position:static;
     margin-bottom: 2%;
