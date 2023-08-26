@@ -7,9 +7,12 @@ addEventListener("keydown", function(event) {
         window.location.href = "/gamemenu";
       }
       else if(menu==2){
-        window.location.href = "/about";
+        window.location.href = "/tournprefs";
       }
       else if(menu==3){
+        window.location.href = "/about";
+      }
+      else if(menu==4){
         window.location.href = "/highscores";
       }
     }
@@ -17,12 +20,12 @@ addEventListener("keydown", function(event) {
       if(menu==1){
         menu = 2;
         document.getElementById("startgame").style.animationDuration  = "0s";
-        document.getElementById("aboutbutton").style.animationDuration  = "2s";
+        document.getElementById("starttourn").style.animationDuration  = "2s";
       }
       else if(menu==2){
         menu = 3;
-        document.getElementById("highscoresbutton").style.animationDuration  = "2s";
-        document.getElementById("aboutbutton").style.animationDuration  = "0s";
+        document.getElementById("starttourn").style.animationDuration  = "2s";
+        document.getElementById("highscoresbutton").style.animationDuration  = "0s";
       }
     }
     if (event.key === "ArrowUp" || event.key === "w"){
