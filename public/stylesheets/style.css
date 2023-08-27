@@ -63,6 +63,9 @@ h1, h2, h3, h4, .condensed {
   letter-spacing: -0.05rem;
 }
 
+.hide{
+  display: none !important;
+}
 
 .label {
     color: white;
@@ -239,4 +242,74 @@ header{
     display: inline-block;
     height: 1.5cqw;
     margin-bottom: -0.5cqw;
+}
+
+
+
+
+
+
+/*
+Bottom bar with game data for bracket screen and game screen
+*/
+
+.bracketDetails {
+    width: 100%;
+    position: absolute;
+    bottom: 0px;
+
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    border-top: 1px solid #ffffff36
+}
+
+
+.bracketDetail{
+  width: 25%;
+  padding:1vw;
+  box-sizing: border-box;
+  border-right: 1px solid #ffffff36;
+}
+
+
+.in-game .bracketDetail{
+  padding:0.5vw;
+}
+
+.bracketDetail:last-child{
+  border-right:none
+}
+.bracketDetail .label{
+  font-size:1vw;
+  text-transform: uppercase;
+  opacity:0.7
+}
+
+.in-game .bracketDetail .label{
+  font-size:0.8vw;
+}
+
+.bracketDetail .value{
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  align-items: flex-end;
+  gap: 0.2vw;
+  padding-left: 1.5vw;
+}
+
+
+.bracketDetail .value.players{
+  padding-left: 0;
+}
+
+
+.bracketDetail .value h3{
+  font-size:3vw;
+  margin-bottom: 0;
+}
+
+.in-game .bracketDetail .value h3{
+  font-size:2vw;
 }

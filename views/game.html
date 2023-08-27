@@ -11,6 +11,9 @@
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
     </header>
+
+    <h1 id="tournament-name" class="hero-outline in-game hide">The Merkle Tree</h1>
+
     <div class="flex full game">
         <div>
           <div class="flex players">
@@ -35,6 +38,44 @@
           <canvas id="gameCanvas"></canvas>
         </div>
     </div>
+
+
+
+    <div class="bracketDetails in-game hide">
+
+      <div class="bracketDetail" id="bracketDetailPlayers">
+        <div class="label">
+          Players
+        </div>
+        <div class="value players">
+          <h3 id="numberOfPlayers">4</h3>
+        </div>
+      </div>
+
+      <div class="bracketDetail" id="bracketDetailFinalPrize">
+        <div class="label">
+          Final Prize
+        </div>
+        <div class="value">
+          <h3 id="bracketFinalPrize">400,000</h3> <span>sats</span>
+        </div>
+      </div>
+
+      <div class="bracketDetail" id="bracketDetailBuyIn">
+        <div class="label">
+          Buy In
+        </div>
+        <div class="value">
+          <h3 id="buyinvalue2">100,000</h3> <span>sats</span>
+        </div>
+      </div>
+
+    </div>
+
+
+
+
+
 
     <audio id="audio" autoplay loop>
       <!--
