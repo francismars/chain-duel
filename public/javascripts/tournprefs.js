@@ -1,4 +1,5 @@
 import { listenToGamepads } from "./gamepads.js";
+let intervalStart = setInterval(listenToGamepads, 1000/10);
 
 let playersNumber = 4;
 let deposit = 10000;
