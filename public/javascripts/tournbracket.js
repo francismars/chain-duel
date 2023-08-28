@@ -70,7 +70,7 @@ elementSVG.addEventListener("load",function(){
 
 document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
 document.getElementById("buyinvalue").innerText = deposit.toLocaleString();
-document.getElementById("bracketFinalPrize").innerText = (deposit*numberOfPlayers).toLocaleString();
+document.getElementById("bracketFinalPrize").innerText = (deposit*numberOfPlayers*0.95).toLocaleString();
 document.getElementById("buyinvalue2").innerText = deposit.toLocaleString();
 
 
