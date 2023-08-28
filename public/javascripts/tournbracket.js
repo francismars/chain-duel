@@ -45,7 +45,7 @@ else if(playerListParsed==null){
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
     deposit = parseInt(params.get("deposit"));
-    socket.emit('createPaylink', {"description":"tournament","buyIn":deposit});
+    socket.emit('createPaylink', {"description":"tournament","buyInMin":deposit,"buyInMax":deposit});
 }
 
 let elementSVG;

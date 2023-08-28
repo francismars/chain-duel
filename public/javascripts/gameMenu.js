@@ -10,7 +10,7 @@ let p2Name = "Player 2"
 let donPlayer = sessionStorage.getItem('donPlayer');
 let donPrize = sessionStorage.getItem("donPrize");
 let donName = sessionStorage.getItem("donName");
-let payLinks;
+let payLinks = [];
 let intervalStart = setInterval(listenToGamepads, 1000/10);
 
 await fetch('/loadconfig', {
@@ -79,7 +79,9 @@ addEventListener("keydown", function(event) {
                 }
                 else if (selected=="MainMenuButton"){
                     if(playersSats[0]==0&&playersSats[1]==0){
-                        window.location.href = "/";
+                        deletePayLinks().then(
+                            function(value) { if(value=="redirect") window.location.href = "/"; }        
+                        )
                     }
                 }
             break;
@@ -93,41 +95,61 @@ socket.on("connect", () => {
 //socket.onAny((event, ...args) => {
 //    console.log(event, args);
 //});
-socket.emit('paylinks', "getLinks");
+socket.emit('createPaylink', {"description":"Player1","buyInMin":10,"buyInMax":10000000});
+socket.emit('createPaylink', {"description":"Player2","buyInMin":10,"buyInMax":10000000});
 
 socket.on('rescreateWithdrawal', (data) => {
     sessionStorage.setItem("LNURLID", data.id);
     sessionStorage.setItem("LNURL", data.lnurl);
     sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
-
-    window.location.href = "/game";
+    deletePayLinks().then(
+        function(value) { if(value=="redirect") redirectToGame() }        
+    )
 })
 
-socket.on("resPayLinks", body => {
-    payLinks = body;
-    console.log(payLinks)
-    if(payLinks[1].id=="fu96V2" && payLinks[1].description=="Player1"){
+
+async function deletePayLinks(){
+    let deletedPayLinks = 0;
+    for(let i=0;i<payLinks.length;i++){
+        console.log("Trying to delete paylink "+i+": "+payLinks[i].id);
+        socket.emit('deletepaylink', payLinks[i].id);
+        deletedPayLinks++
+    }
+    if(deletedPayLinks==2){
+        return "redirect"
+    }
+}
+
+
+function redirectToGame(){
+    window.location.href = "/game";
+}
+
+socket.on("rescreatePaylink", body => {
+    let payLink = body;
+    payLinks.push(payLink)
+    if(payLink.description=="Player1"){
         let qrcodeContainer = document.getElementById("qrcode1");
         qrcodeContainer.innerHTML = "";
         new QRious({
             element: qrcodeContainer,
             size: 800,
-            value: payLinks[1].lnurl
+            value: payLink.lnurl
           });
     };
-    if(payLinks[0].id=="Y7rifi" && payLinks[0].description=="Player2"){
+    if(payLink.description=="Player2"){
         let qrcodeContainer = document.getElementById("qrcode2");
         qrcodeContainer.innerHTML = "";
         new QRious({
             element: qrcodeContainer,
             size: 800,
-            value: payLinks[0].lnurl
+            value: payLink.lnurl
           });
     }
 });
 
 socket.on("invoicePaid", body => {
-    if(body.lnurlp=="fu96V2"){
+    if(body.lnurlp==payLinks[0].id && payLinks[0].description == "Player1" || body.lnurlp==payLinks[1].id && payLinks[1].description == "Player1"){
         console.log(`Chegou pagamento de P1: ${(body.amount)/1000} sats`);
         if(body.comment!=null && body.comment!=""){
             console.log(typeof body.comment);
@@ -137,7 +159,7 @@ socket.on("invoicePaid", body => {
         }
         playersSats[0] += body.amount/1000
     }
-    if(body.lnurlp=="Y7rifi"){
+    if(body.lnurlp==payLinks[0].id && payLinks[0].description == "Player2" || body.lnurlp==payLinks[1].id && payLinks[1].description == "Player2"){
         console.log(`Chegou pagamento de P2: ${(body.amount)/1000} sats`);
         if(body.comment!=null && body.comment!=""){
             console.log("Player2 Name: " + body.comment)
