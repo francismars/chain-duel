@@ -95,8 +95,8 @@ socket.on("connect", () => {
 //socket.onAny((event, ...args) => {
 //    console.log(event, args);
 //});
-socket.emit('createPaylink', {"description":"Player1","buyInMin":10,"buyInMax":10000000});
-socket.emit('createPaylink', {"description":"Player2","buyInMin":10,"buyInMax":10000000});
+socket.emit('createPaylink', {"description":"Player1","buyInMin":10000,"buyInMax":10000000});
+socket.emit('createPaylink', {"description":"Player2","buyInMin":10000,"buyInMax":10000000});
 
 socket.on('rescreateWithdrawal', (data) => {
     sessionStorage.setItem("LNURLID", data.id);
