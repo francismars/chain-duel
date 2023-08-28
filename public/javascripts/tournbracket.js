@@ -40,7 +40,7 @@ if(playerListParsed!=null){
 }
 else if(playerListParsed==null){
     playersList = []
-    //playersList = ["Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
+    playersList = ["Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
@@ -365,6 +365,8 @@ addEventListener("keydown", function(event) {
                 console.log("Trying to delete paylink "+value);
                 socket.emit('deletepaylink', value);
             }
+            playersList = shuffleList(playersList)
+            changeHTMLAfterPayment()
             document.getElementById("bracketPayment").style.display = "none";
             document.getElementById("nextGameDiv").style.display = "block";
             document.getElementById("nextGame_P1").textContent = playersList[0]
@@ -473,3 +475,15 @@ function changeNameText(svgDoc,id, name){
     svgDoc.getElementById(id+'_name').textContent = name;
     svgDoc.getElementById(id+'_name').style.opacity = "1";
 }
+
+function shuffleList(array) {
+    let m = array.length;
+    let t, i;
+    while (m) {  
+      i = Math.floor(Math.random() * m--);
+      t = array[m];
+      array[m] = array[i];
+      array[i] = t;
+    }
+    return array;
+  }
