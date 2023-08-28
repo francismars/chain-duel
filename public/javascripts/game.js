@@ -279,7 +279,11 @@ function displayGame(){
     drawPlayers()
     drawPointChange()
     if(!gameStarted && !gameEnded){
-        if(!countdownStart){ initialText() }
+        
+        if(!countdownStart){ 
+            initialText() 
+            //drawControllerTest()
+        }
         if(countdownStart){ drawCountdown() }
     }
     else if(gameStarted && !gameEnded){
@@ -304,6 +308,16 @@ function displayGame(){
         sessionStorage.setItem("gameWinner", winnerP);
         finalText(winner)
     }
+}
+
+function drawControllerTest(){
+    ctxGame.beginPath();
+    ctxGame.arc(gameCanvas.width/4, gameCanvas.height/1.5, gameCanvas.height/10, 0, 2 * Math.PI)
+    ctxGame.fillStyle = "orange";
+    ctxGame.fill();
+    let p1testText = ""
+    if(p2DirWanted=="UP") p1testText=="UP"
+    ctxGame.fillText(controllerTestP1Direction, gameCanvas.width/4, gameCanvas.height/1.5); 
 }
 
 function gameSettings(){
@@ -359,28 +373,40 @@ function initialText(){
 }
 
 function drawPlayers(){
+    let p1height = rowSize
+    let p2height = rowSize
+    let displacementP1 = 0
+    let displacementP2 = 0
+    if(!gameStarted && controllerTestP1Direction!=""){
+        displacementP1 = 2
+        p1height = p1height + displacementP1*2
+    }
+    if(!gameStarted && controllerTestP2Direction!=""){
+        displacementP2 = 2
+        p2height = p2height + displacementP2*2
+    }
     ctxGame.fillStyle = "white";
     ctxGame.beginPath();
-    ctxGame.fillRect(colSize*p1HeadPos[0], rowSize*p1HeadPos[1], colSize, rowSize);
+    ctxGame.fillRect(colSize*p1HeadPos[0], rowSize*p1HeadPos[1]-displacementP1, colSize, p1height);
     ctxGame.stroke();
     let bodyPart;
     for (let i=0;i<p1BodyPos.length;i++){
         bodyPart = p1BodyPos[i];
         ctxGame.globalAlpha = 0.6;
         ctxGame.beginPath();
-        ctxGame.fillRect(colSize*bodyPart[0], rowSize*bodyPart[1], colSize, rowSize);
+        ctxGame.fillRect(colSize*bodyPart[0], rowSize*bodyPart[1]-displacementP1, colSize, p1height);
         ctxGame.stroke();
         ctxGame.globalAlpha = 1;
     }
     ctxGame.fillStyle = "black";
     ctxGame.beginPath();
-    ctxGame.fillRect(colSize*p2HeadPos[0], rowSize*p2HeadPos[1], colSize, rowSize);
+    ctxGame.fillRect(colSize*p2HeadPos[0], rowSize*p2HeadPos[1]-displacementP2, colSize, p2height);
     ctxGame.stroke();
     for (let i=0;i<p2BodyPos.length;i++){
         bodyPart = p2BodyPos[i];
         ctxGame.globalAlpha = 0.6;
         ctxGame.beginPath();
-        ctxGame.fillRect(colSize*bodyPart[0], rowSize*bodyPart[1], colSize, rowSize);
+        ctxGame.fillRect(colSize*bodyPart[0], rowSize*bodyPart[1]-displacementP2, colSize, p2height);
         ctxGame.stroke();
         ctxGame.globalAlpha = 1;
     }
@@ -644,6 +670,8 @@ function redirectWindowAfterGame(){
     }
 }
 
+let controllerTestP1Direction = ""
+let controllerTestP2Direction = ""
 addEventListener("keydown", function(event) {
     switch (event.key.toUpperCase()) {
         case " ":
@@ -660,44 +688,129 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "ARROWLEFT":
-            if(p2Dir == "Up" || p2Dir == "Down" || p2Dir == ""){
-                p2DirWanted = "Left"
+            if(gameStarted==true){
+                if(p2Dir == "Up" || p2Dir == "Down" || p2Dir == ""){
+                    p2DirWanted = "Left"
+                }
+            }
+            else if(gameStarted==false){
+                controllerTestP2Direction = "Left"
             }
             break;
         case "ARROWRIGHT":
-            if(p2Dir == "Up" || p2Dir == "Down"){
-                p2DirWanted = "Right"
+            if(gameStarted==true){
+                if(p2Dir == "Up" || p2Dir == "Down"){
+                    p2DirWanted = "Right"
+                }
+            }
+            else if(gameStarted==false){
+                controllerTestP2Direction = "Right"
             }
             break;
         case "ARROWUP":
-            if(p2Dir == "Left" || p2Dir == "Right"){
-                p2DirWanted = "Up"
+            if(gameStarted==true){
+                if(p2Dir == "Left" || p2Dir == "Right"){
+                    p2DirWanted = "Up"
+                }
+            }
+            else if(gameStarted==false){
+                controllerTestP2Direction = "Up"
             }
             break;
         case "ARROWDOWN":
-            if(p2Dir == "Left" || p2Dir == "Right"){
-                p2DirWanted = "Down"
+            if(gameStarted==true){
+                if(p2Dir == "Left" || p2Dir == "Right"){
+                    p2DirWanted = "Down"
+                }
+            }
+            else if(gameStarted==false){
+                controllerTestP2Direction = "Down"
             }
             break;
         case "A":
-            if(p1Dir == "Up" || p1Dir == "Down"){
-                p1DirWanted = "Left"
+            if(gameStarted==true){
+                if(p1Dir == "Up" || p1Dir == "Down"){
+                    p1DirWanted = "Left"
+                }
+            }
+            else if(gameStarted==false){
+                controllerTestP1Direction = "Down"
             }
             break;
         case "D":
-            if(p1Dir == "Up" || p1Dir == "Down" || p1Dir == ""){
-                p1DirWanted = "Right"
+            if(gameStarted==true){
+                if(p1Dir == "Up" || p1Dir == "Down" || p1Dir == ""){
+                    p1DirWanted = "Right"
+                }
             }
+            else if(gameStarted==false){
+                controllerTestP1Direction = "Right"
+            } 
             break;
         case "W":
-            if(p1Dir == "Left" || p1Dir == "Right"){
-                p1DirWanted = "Up"
+            if(gameStarted==true){
+                if(p1Dir == "Left" || p1Dir == "Right"){
+                    p1DirWanted = "Up"
+                }
+            }
+            else if(gameStarted==false){
+                controllerTestP1Direction = "Up"
+            }                 
+            break;
+        case "S":
+            if(gameStarted==true){
+                if(p1Dir == "Left" || p1Dir == "Right"){
+                    p1DirWanted = "Down"
+                }
+            }
+            else if(gameStarted==false){
+                controllerTestP1Direction = "Down"
+            } 
+            break;
+    }
+});
+
+addEventListener("keyup", function(event) {
+    switch (event.key.toUpperCase()) {
+        case "ARROWLEFT":
+            if(gameStarted==false){
+                controllerTestP2Direction = ""
+            }
+            break;
+        case "ARROWRIGHT":
+            if(gameStarted==false){
+                controllerTestP2Direction = ""
+            }
+            break;
+        case "ARROWDOWN":
+            if(gameStarted==false){
+                controllerTestP2Direction = ""
+            }
+            break;
+        case "ARROWUP":
+            if(gameStarted==false){
+                controllerTestP2Direction = ""
+            }
+            break;
+        case "A":
+            if(gameStarted==false){
+                controllerTestP1Direction = ""
             }
             break;
         case "S":
-            if(p1Dir == "Left" || p1Dir == "Right"){
-                p1DirWanted = "Down"
+            if(gameStarted==false){
+                controllerTestP1Direction = ""
             }
             break;
+        case "D":
+            if(gameStarted==false){
+                controllerTestP1Direction = ""
+            }
+            break;
+        case "W":
+            if(gameStarted==false){
+                controllerTestP1Direction = ""
+            }
+            break;            
     }
 });
