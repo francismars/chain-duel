@@ -140,7 +140,11 @@
 .issuerefundsdiv{
   display:none;
   padding: 1.5vw;
-  font-size: 1.5vw;
+  font-size: 1.2vw;
+}
+
+.issuerefundsdiv h2{
+  font-size: 2vw;
 }
 
 .issuerefundssecond{
