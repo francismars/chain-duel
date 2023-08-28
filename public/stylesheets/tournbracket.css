@@ -98,26 +98,40 @@
   margin-bottom: 3%;
 }
 
-#nextGamePlayers{display: flex;margin: auto;width: 100%;justify-content: center;gap: 1vw;margin-bottom: 4%;padding-top: 3%;align-items: center;}
+#nextGamePlayers{
+  display: flex;
+  margin: auto;width: 100%;
+  justify-content: center;gap: 1vw;
+  margin-bottom: 4%;
+  padding-top: 3%;
+  align-items: center;
+}
+
+
 .playerName{
-  font-size: 3vw;
+  font-size: 5vw;
 }
 
 .tournFinishedDiv{
   display:none;
-  width:30%;
-  height: 15vw;
+  width: 40%;
+  height: 20vw;
   position: absolute;
   bottom: 6.2vw;
   left: 50%;
-  margin-left: -15%;
+  margin-left: -20%;
   padding: 1vw;
   box-sizing: border-box;
   text-align: center;
 }
 
 #winnerName {
-    font-size: 4vw;
+    font-size: 8vw;
+}
+
+#tournFinishedDiv h2{
+  font-size: 2.5vw;
+  margin: 0;
 }
 
 .tournbracket4SVG{
@@ -135,7 +149,11 @@
 .issuerefundsdiv{
   display:none;
   padding: 1.5vw;
-  font-size: 1.5vw;
+  font-size: 1.2vw;
+}
+
+.issuerefundsdiv h2{
+  font-size: 2vw;
 }
 
 .issuerefundssecond{
