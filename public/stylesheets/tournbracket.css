@@ -105,19 +105,24 @@
 
 .tournFinishedDiv{
   display:none;
-  width:30%;
-  height: 15vw;
+  width: 40%;
+  height: 20vw;
   position: absolute;
   bottom: 6.2vw;
   left: 50%;
-  margin-left: -15%;
+  margin-left: -20%;
   padding: 1vw;
   box-sizing: border-box;
   text-align: center;
 }
 
 #winnerName {
-    font-size: 4vw;
+    font-size: 8vw;
+}
+
+#tournFinishedDiv h2{
+  font-size: 2.5vw;
+  margin: 0;
 }
 
 .tournbracket4SVG{
