@@ -40,7 +40,7 @@ if(playerListParsed!=null){
 }
 else if(playerListParsed==null){
     playersList = []
-    //playersList = ["Pedro","Joao","Maria","Jose"] //,"Antonio","Leonardo","David","Carla" ,"Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
+    playersList = ["Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
@@ -279,14 +279,11 @@ function updateNextGameText(){
         document.getElementById("nextGame_P1").textContent = nextGameP1;
         document.getElementById("nextGame_P2").textContent = nextGameP2;
     }
-    else if(winnersList.length + 1 == numberOfPlayers){
+    else if(winnersList.length + 1 >= numberOfPlayers){
         document.getElementById("nextGameDiv").style.display = "none";
         buttonSelected = "claimButton"
         document.getElementById("winnerName").textContent = WinnerNamesList[(WinnerNamesList.length-1)];
         document.getElementById("tournFinishedDiv").style.display = "block";
-
-        sessionStorage.setItem("P1Sats", (deposit*numberOfPlayers));
-        sessionStorage.setItem("P2Sats", 0);
 
         if(winnersList[winnersList.length-1]=="Player 1"){
             sessionStorage.setItem("P1Name", WinnerNamesList[(WinnerNamesList.length-1)]);
@@ -408,6 +405,8 @@ addEventListener("keydown", function(event) {
             }
         }
         else if(buttonSelected=="claimButton"){
+            sessionStorage.setItem("P1Sats", (deposit*numberOfPlayers));
+            sessionStorage.setItem("P2Sats", 0);
             window.location.href = "/postgame";
         }
     }
