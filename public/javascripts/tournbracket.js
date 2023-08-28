@@ -323,16 +323,28 @@ addEventListener("keydown", function(event) {
     }
     if (event.key === "Enter" || event.key === " ") {
         if(buttonSelected=="cancelButton"){
-            document.getElementById("withdrawableuses").textContent = playersList.length;
-            document.getElementById("withdrawablevaluefirst").textContent = deposit.toLocaleString();
-            document.getElementById("buyintext").style.display = "none";
-            document.getElementById("qrCodeDiv").style.display = "none";
-            document.getElementById("satsdeposited").style.display = "none";
-            document.getElementById("issuerefundsdiv").style.display = "block";
-            document.getElementById("backButton").textContent = "BACK";
-            document.getElementById("proceedButton").textContent = "CONFIRM";
-            document.getElementById("proceedButton").classList.remove("disabled");
-            buttonSelected="backButton"
+            if(playersList.length>0){
+                document.getElementById("withdrawableuses").textContent = playersList.length;
+                document.getElementById("withdrawablevaluefirst").textContent = deposit.toLocaleString();
+                document.getElementById("buyintext").style.display = "none";
+                document.getElementById("qrCodeDiv").style.display = "none";
+                document.getElementById("satsdeposited").style.display = "none";
+                document.getElementById("issuerefundsdiv").style.display = "block";
+                document.getElementById("backButton").textContent = "BACK";
+                document.getElementById("proceedButton").textContent = "CONFIRM";
+                document.getElementById("proceedButton").classList.remove("disabled");
+                buttonSelected="backButton"
+            }
+            else if(playersList.length==0){
+                for(var key in paymentsDict) {
+                    let value = paymentsDict[key];
+                    console.log("Trying to delete paylink "+value);
+                    socket.emit('deletepaylink', value);
+                }
+                if(playersList.length==0){
+                    window.location.href = "/tournprefs";
+                }
+            }
         }
         else if(buttonSelected=="backButton"){
             document.getElementById("buyintext").style.display = "block";
@@ -407,6 +419,8 @@ addEventListener("keydown", function(event) {
         else if(buttonSelected=="claimButton"){
             sessionStorage.setItem("P1Sats", (deposit*numberOfPlayers));
             sessionStorage.setItem("P2Sats", 0);
+            sessionStorage.removeItem("WinnersList");
+            sessionStorage.removeItem("PlayerList");
             window.location.href = "/postgame";
         }
     }
@@ -427,6 +441,7 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
             });
     }
     else if(buttonSelected=="startGameButton"){
+        sessionStorage.setItem("LNURLID", data.id);
         sessionStorage.setItem("LNURL", data.lnurl);
         sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
         window.location.href = "/game";
