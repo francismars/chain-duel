@@ -8,6 +8,16 @@ body{
 }
 
 
+#bracket4players {
+  max-width: 80%;
+  margin: 3vw auto -4vw auto;
+}
+
+#bracket8players {
+  max-width: 90%;
+  margin: 1.5vw auto -2vw auto;
+}
+
 
 .tournament-header{
   margin: 0 0 -3cqw 0;
