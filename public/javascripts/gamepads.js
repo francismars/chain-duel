@@ -49,6 +49,10 @@ export function listenToGamepads() {
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
         }
 
+        if(gamepad1.axes[0]==0.0 && gamepad1.axes[1]==0.0){
+            window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'w'}));
+        }
+
         //console.log("9 == "+ gamepad1.axes[9])
 
         // Arrow kyes
@@ -113,6 +117,10 @@ export function listenToGamepads() {
         }
         if(gamepad2.axes[0]>0.5){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
+        }
+
+        if(gamepad2.axes[0]==0.0 && gamepad2.axes[1]==0.0){
+            window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'ArrowUp'}));
         }
 
         //console.log("9 == "+ gamepad2.axes[9])
