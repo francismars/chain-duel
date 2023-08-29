@@ -5,8 +5,8 @@
 
 
 #tournament-name.hero-outline{
-  margin: 0 0 -2cqw 0;
-  font-size: 6cqw;
+  margin: 0 0 -3cqw 0;
+  font-size: 5cqw;
 }
 
 
@@ -89,13 +89,13 @@
   width:30%;
   height: 15vw;
   position: absolute;
-  bottom: 6.2vw;
+  bottom: 8.2vw;
   left: 50%;
   margin-left: -15%;
   padding: 1vw;
   box-sizing: border-box;
   text-align: center;
-  margin-bottom: 3%;
+  margin-top: 9vw;
 }
 
 #nextGamePlayers{
