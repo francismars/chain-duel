@@ -1,5 +1,10 @@
+body{
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgb(0 0 0 / 81%)), url(../images/chainduel_bg.jpg);
+}
+
+
 #bracket{
-    margin: 0 5vw;
+    margin: -4vw 1vw 0 1vw;
 }
 
 
@@ -63,7 +68,7 @@
   height: auto;
   width: auto;
   height: 3vw;
-  width: 40%;
+  width: 32%;
 }
 
 .claimSatsButton{
@@ -86,12 +91,12 @@
 
 .nextGameDiv{
   display:none;
-  width:30%;
+  width: 80%;
   height: 15vw;
   position: absolute;
   bottom: 8.2vw;
-  left: 50%;
-  margin-left: -15%;
+  left: 50;
+  margin-left: 6.5%;
   padding: 1vw;
   box-sizing: border-box;
   text-align: center;
@@ -100,10 +105,12 @@
 
 #nextGamePlayers{
   display: flex;
-  margin: auto;width: 100%;
-  justify-content: center;gap: 1vw;
-  margin-bottom: 4%;
-  padding-top: 3%;
+  margin: auto;
+  width: 100%;
+  justify-content: center;
+  gap: 1vw;
+  margin-bottom: 2%;
+  padding-top: 1%;
   align-items: center;
 }
 
