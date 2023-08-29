@@ -129,14 +129,15 @@ body{
 .tournFinishedDiv{
   display:none;
   width: 40%;
-  height: 20vw;
+  height: 19vw;
   position: absolute;
-  bottom: 6.2vw;
+  bottom: 4vw;
   left: 50%;
   margin-left: -20%;
   padding: 1vw;
   box-sizing: border-box;
   text-align: center;
+  background: radial-gradient(#000000,#000000,#000000 #00000000, #00000000);
 }
 
 #winnerName {
