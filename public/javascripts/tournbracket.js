@@ -131,6 +131,11 @@ function updateBracketWinner(){
         let elapsedGames = winnersList.length;
         document.getElementById("nextGameID").textContent = winnersList.length+1
         buttonSelected="startGameButton"
+        if(winnersList.length+1<numberOfPlayers){
+            highLightCurrentGameRect(svgDoc,initialPositions[2*winnersList.length])
+            highLightCurrentGameRect(svgDoc,initialPositions[2*winnersList.length+1])
+            highLightCurrentGameName(svgDoc,winnersList.length+1)
+        }
         let subtractor1 = 0
         let subtractor2 = 0
         let subtractor3 = 0
@@ -140,10 +145,13 @@ function updateBracketWinner(){
             if(i<(numberOfPlayers/2)){ // Primeira Ronda
                 if(winnersList[i]=="Player 1"){
                     highLight(svgDoc,initialPositions[(i*2)])
+                    dimLoser(svgDoc,initialPositions[(i*2)+1])
+                    
                     winnerName = playersList[i*2]
                 }
                 else if(winnersList[i]=="Player 2"){
                     highLight(svgDoc,initialPositions[(i*2)+1])
+                    dimLoser(svgDoc,initialPositions[(i*2)])
                     winnerName = playersList[(i*2)+1]
                 }
             }
@@ -153,6 +161,7 @@ function updateBracketWinner(){
                 let winnerPreviousMultiplier;
                 if(winnerPlayer=="Player 1"){
                     highLight(svgDoc,initialPositions[(i*2)])
+                    dimLoser(svgDoc,initialPositions[(i*2)+1])
                     let winnerPreviousIndex = (i - ((numberOfPlayers/2)) + subtractor1)
                     winnerPrevious = winnersList[winnerPreviousIndex]
                     if(winnerPrevious=="Player 1"){
@@ -164,6 +173,7 @@ function updateBracketWinner(){
                 }
                 if(winnerPlayer=="Player 2"){
                     highLight(svgDoc,initialPositions[(i*2)+1])
+                    dimLoser(svgDoc,initialPositions[(i*2)])
                     let winnerPreviousIndex = (i - ((numberOfPlayers/2)) + subtractor1 + 1)
                     winnerPrevious = winnersList[winnerPreviousIndex]
                     if(winnerPrevious=="Player 1"){
@@ -183,6 +193,7 @@ function updateBracketWinner(){
 
                 if(winnersList[i]=="Player 1"){ // WINNER = Primeira Metade
                     highLight(svgDoc,initialPositions[(i*2)])
+                    dimLoser(svgDoc,initialPositions[(i*2)+1])
                     let winnerPreviousIndex = i - (numberOfPlayers/4) + subtractor2
                     console.log("winnerPreviousIndex: " + winnerPreviousIndex)
 
@@ -213,8 +224,9 @@ function updateBracketWinner(){
 
                 else if(winnersList[i]=="Player 2"){ // WINNER = SEGUNDA METADE
                     highLight(svgDoc,initialPositions[(i*2)+1])
+                    dimLoser(svgDoc,initialPositions[(i*2)])
                     let winnerPreviousIndex = i - (numberOfPlayers/4) + 1 + subtractor2
-                    subtractor3++
+                    //subtractor3++
                     console.log("winnerPreviousIndex: " + winnerPreviousIndex)
 
                     if(winnersList[winnerPreviousIndex] == "Player 1"){ // Terceiro Quarto
@@ -224,7 +236,8 @@ function updateBracketWinner(){
                         if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Quinto Oitavo
                             winnerPreviousMultiplier = 4
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Sexto Oitavo
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Sexto Oitavo <- ERRO AQUI
+                            console.log("erro aqui 1")
                             winnerPreviousMultiplier = 5
                         }
                     }
@@ -236,7 +249,8 @@ function updateBracketWinner(){
                         if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Setimo Oitavo
                             winnerPreviousMultiplier = 6
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Nono Oitavo
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Nono Oitavo <- ERRO AQUI
+                            console.log("erro aqui 2")
                             winnerPreviousMultiplier = 7
                         }
                     }
@@ -368,6 +382,9 @@ addEventListener("keydown", function(event) {
             //changeHTMLAfterPayment()
             document.getElementById("bracketPayment").style.display = "none";
             document.getElementById("nextGameDiv").style.display = "block";
+            highLightCurrentGameRect(svgDoc,initialPositions[0])
+            highLightCurrentGameRect(svgDoc,initialPositions[1])
+            highLightCurrentGameName(svgDoc,1)
             document.getElementById("nextGame_P1").textContent = playersList[0]
             document.getElementById("nextGame_P2").textContent = playersList[1]
             buttonSelected="startGameButton"
@@ -458,11 +475,25 @@ socket.on('prizeWithdrawn', (data) => {
     }
 });
 
+function highLightCurrentGameRect(svgDoc,id){
+    svgDoc.getElementById(id+'_rect').style.strokeWidth = 6;
+}
+
+function highLightCurrentGameName(svgDoc,gameNumber){
+    svgDoc.getElementById("G"+gameNumber).style.opacity = 1;
+    svgDoc.getElementById("G"+gameNumber).style.fontWeight = "900";
+}
+
+function dimLoser(svgDoc,id){
+    svgDoc.getElementById(id+'_name').style.opacity = 0.5;
+    svgDoc.getElementById(id+'_rect').style.opacity = 0.7;
+}
+
 function highLight(svgDoc,id){
     svgDoc.getElementById(id+'_name').style.fill = "black";
     svgDoc.getElementById(id+'_rect').style.fill = "#fff";
     svgDoc.getElementById(id+'_path').style.opacity = 1;
-    svgDoc.getElementById(id+'_path').style.strokeWidth = 2;
+    svgDoc.getElementById(id+'_path').style.strokeWidth = 5;
   }
 
 function highLightWinnerSquare(svgDoc,id){
