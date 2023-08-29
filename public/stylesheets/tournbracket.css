@@ -109,8 +109,15 @@
 
 
 .playerName{
-  font-size: 5vw;
+  font-size: 4vw;
 }
+
+.playerSquare{
+  width: 3cqw;
+  height: 3cqw;
+  box-shadow: 0 0 19px #ffffffb0;
+}
+
 
 .tournFinishedDiv{
   display:none;
