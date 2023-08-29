@@ -140,6 +140,7 @@ function updateBracketWinner(){
         let subtractor2 = 0
         let subtractor3 = 0
         console.log(winnersList)
+        console.log(WinnerNamesList)
         for(let i=0;i<winnersList.length;i++){
             let winnerName
             if(i<(numberOfPlayers/2)){ // Primeira Ronda
@@ -185,72 +186,75 @@ function updateBracketWinner(){
                 }
                 winnerName = playersList[(4*(i-numberOfPlayers/2))+winnerPreviousMultiplier]
                 subtractor1++;
-                console.log(subtractor1)
+                //console.log(subtractor1)
             }
             else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)){ // Terceira Ronda
                 console.log("i: " + i)
+                console.log("subtractor2: " + subtractor2)
                 let winnerPreviousMultiplier;
 
-                if(winnersList[i]=="Player 1"){ // WINNER = Primeira Metade
+                if(winnersList[i]=="Player 1"){ // Primeiro e Terceiro Quarto
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
-                    let winnerPreviousIndex = i - (numberOfPlayers/4) + subtractor2
-                    console.log("winnerPreviousIndex: " + winnerPreviousIndex)
 
-                    if(winnersList[winnerPreviousIndex] == "Player 1"){ // Primeiro Quarto
-                        let winnerPreviousPreviousIndex = winnerPreviousIndex - (numberOfPlayers/2) + subtractor3
+                    let winnerPreviousIndex = i - ((numberOfPlayers/4)-subtractor2) 
+                    console.log("winnerPreviousIndex: " + winnerPreviousIndex)
+                    if(subtractor2==0) subtractor3=0;
+                    if(subtractor2==1) subtractor3=2;
+                    if(winnersList[winnerPreviousIndex] == "Player 1"){ // Primeiro Oitavo e Quinto Oitavo
+                        let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2) - subtractor3)
                         console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
-                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Primeiro Oitavo
+                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 1 ou 9
                             winnerPreviousMultiplier = 0
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Segundo Oitavo
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Winner = 2 ou 10
                             winnerPreviousMultiplier = 1
                         }
                     }
 
-                    else if(winnersList[winnerPreviousIndex] == "Player 2"){ // Segundo Quarto
-                        let winnerPreviousPreviousIndex = winnerPreviousIndex - (numberOfPlayers/2) + 1 + subtractor3
+                    else if(winnersList[winnerPreviousIndex] == "Player 2"){ // Segundo Oitavo e Sexto Oitavo
+                        let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2) - subtractor3) + 1
+
                         console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
-                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Terceiro Oitavo
+                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 3 ou 11
                             winnerPreviousMultiplier = 2
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Quarto Oitavo
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Winner = 4 ou 12
                             winnerPreviousMultiplier = 3
                         }
                     }
                 }
 
-                else if(winnersList[i]=="Player 2"){ // WINNER = SEGUNDA METADE
+                else if(winnersList[i]=="Player 2"){ // Segundo e Quarto Quarto
                     highLight(svgDoc,initialPositions[(i*2)+1])
                     dimLoser(svgDoc,initialPositions[(i*2)])
-                    let winnerPreviousIndex = i - (numberOfPlayers/4) + 1 + subtractor2
-                    //subtractor3++
+                    let winnerPreviousIndex = i - ((numberOfPlayers/4)-subtractor2) + 1
                     console.log("winnerPreviousIndex: " + winnerPreviousIndex)
-
-                    if(winnersList[winnerPreviousIndex] == "Player 1"){ // Terceiro Quarto
-                        let winnerPreviousPreviousIndex = winnerPreviousIndex - (numberOfPlayers/2) + subtractor3
+                    if(subtractor2==0) subtractor3=1;
+                    if(subtractor2==1) subtractor3=3;
+                    if(winnersList[winnerPreviousIndex] == "Player 1"){ // Terceiro Oitavo e Setimo Oitavo
+                        
+                        let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2)-subtractor3)
                         console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
-                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Quinto Oitavo
+                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 5 ou 13
                             winnerPreviousMultiplier = 4
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Sexto Oitavo <- ERRO AQUI
-                            console.log("erro aqui 1")
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Winner = 6 ou 14
                             winnerPreviousMultiplier = 5
                         }
                     }
 
-                    else if(winnersList[winnerPreviousIndex] == "Player 2"){ // Quarto Quarto
-                        let winnerPreviousPreviousIndex = winnerPreviousIndex - (numberOfPlayers/2) + 1 + subtractor3
+                    else if(winnersList[winnerPreviousIndex] == "Player 2"){  // Quarto Oitavo e Oitavo Oitavo
+                        let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2)-subtractor3) + 1
                         console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
-                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Setimo Oitavo
+                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 7 ou 15
                             winnerPreviousMultiplier = 6
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Nono Oitavo <- ERRO AQUI
-                            console.log("erro aqui 2")
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Winner = 8 ou 16
                             winnerPreviousMultiplier = 7
                         }
                     }
@@ -258,8 +262,9 @@ function updateBracketWinner(){
                 let winnerId = (8*(i-(numberOfPlayers/2)-(numberOfPlayers/4)))+winnerPreviousMultiplier
                 winnerName = playersList[winnerId]
                 subtractor2++
-                subtractor3++
             }
+            
+
             let domPosition
             if((i+1)==(numberOfPlayers-1)){
                 highLightWinnerSquare(svgDoc,"Winner")
