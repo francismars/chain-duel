@@ -10,6 +10,14 @@ await fetch('/loadconfig', {
         serverIP = data.IP
         serverPORT = data.PORT
 });
+
+let tournamentMode = false;
+if(sessionStorage.getItem('gamePlayers')!=null){
+    tournamentMode = true;
+    document.getElementById("doubleornotthingbutton").style.display = "none";
+    
+}
+
 const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 let gameWinner = sessionStorage.getItem('gameWinner');
 let p1Name = sessionStorage.getItem("P1Name");
@@ -136,12 +144,12 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "s":
-            if(gameWinner=="Player 1" && (menu==1 || menu==2)){
+            if(gameWinner=="Player 1" && (menu==1 || menu==2) && tournamentMode==false){
                 pressDown()
             }
             break;
         case "ArrowDown":
-            if(gameWinner=="Player 2" && (menu==1 || menu==2)){
+            if(gameWinner=="Player 2" && (menu==1 || menu==2) && tournamentMode==false){
                 pressDown()
             }
             break;
