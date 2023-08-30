@@ -24,6 +24,7 @@ let playerListParsed = JSON.parse(sessionStorage.getItem("PlayerList"));
 let previousWinner = sessionStorage.getItem("gameWinner");
 let winnersListStorage = JSON.parse(sessionStorage.getItem("WinnersList"));
 let winnersList;
+let playerListSequencial;
 if(winnersListStorage==null){
     winnersList = []
 }
@@ -42,6 +43,7 @@ if(playerListParsed!=null){
 }
 else if(playerListParsed==null){
     playersList = []
+    playerListSequencial = []
     //playersList = ["Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
     //playersList = ["giacomozucco","BTCGandalf","Laurastacksats","DZd1d1","KristianCsep","?","?","BitcoinShooter","mir_btc" ,"watermaniak","Jose_S_bam","BtcFrancis","JoeNakamoto","?","Rikki6ixx","?"]
     let urlToParse = location.search;
@@ -116,6 +118,7 @@ socket.on("invoicePaid", body => {
     //console.log(playersList)
     //console.log("playerPosition: " + playerPosition)
     //console.log("playerPositionFinal :" + playerPositionFinal)
+    playerListSequencial.push(pName)
     playersList[playerPosition]=pName
     numberOfDeposits++
     changeHTMLAfterPayment()    
@@ -474,7 +477,7 @@ addEventListener("keydown", function(event) {
 let timesWithdrawed = 0;
 socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_withdrawable
     if(buttonSelected=="none"){
-        document.getElementById("currentWithdrawalPlayer").textContent = playersList[0];
+        document.getElementById("currentWithdrawalPlayer").textContent = playerListSequencial[0];
         document.getElementById("withdrawablevalue").textContent = data.max_withdrawable;
         let qrcodeContainer = document.getElementById("qrWithdrawal");
         qrcodeContainer.innerHTML = "";
@@ -493,9 +496,14 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
 });
 
 socket.on('prizeWithdrawn', (data) => {
-    changeNameText(svgDoc,initialPositions[timesWithdrawed], initialPositions[timesWithdrawed])
+    let playerToRemove = playerListSequencial[timesWithdrawed]
+    let counter = 0
+    while(playersList[counter]!=playerToRemove){
+        counter++
+    }
+    changeNameText(svgDoc,initialPositions[counter], initialPositions[counter])
     timesWithdrawed++;
-    document.getElementById("currentWithdrawalPlayer").textContent = playersList[timesWithdrawed];
+    document.getElementById("currentWithdrawalPlayer").textContent = playerListSequencial[timesWithdrawed];
     if(timesWithdrawed==numberOfDeposits){
         window.location.href = "/tournprefs";
     }
