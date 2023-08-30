@@ -18,6 +18,7 @@ let initialPositions = ["G1_P1", "G1_P2", "G2_P1", "G2_P2", "G3_P1", "G3_P2", "G
 
 let playersList;
 let numberOfPlayers;
+let numberOfDeposits;
 let deposit;
 let playerListParsed = JSON.parse(sessionStorage.getItem("PlayerList"));
 let previousWinner = sessionStorage.getItem("gameWinner");
@@ -46,6 +47,11 @@ else if(playerListParsed==null){
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
+    numberOfDeposits = 0
+    for(let i=0;i<numberOfPlayers;i++){
+        playersList.push("")
+    }
+    console.log(playersList)
     deposit = parseInt(params.get("deposit"));
     socket.emit('createPaylink', {"description":"tournament","buyInMin":deposit,"buyInMax":deposit});
 }
@@ -89,16 +95,30 @@ socket.on("rescreatePaylink", body => {
 });
 
 socket.on("invoicePaid", body => {
+    let pName
     if(body.comment!=null && body.comment!=""){
-        let pName=(body.comment)[0].trim()
-        playersList.push(pName)
-
+        pName=(body.comment)[0].trim()
     }
     else{
-        let pName="Player "+(playersList.length+1)
-        playersList.push(pName)
+        pName="Player "+(numberOfDeposits+1)
     }
-    changeHTMLAfterPayment()
+    let playerPosition = Math.floor(Math.random() * (numberOfPlayers-numberOfDeposits));
+    //console.log("playerPosition before loop: " + playerPosition)
+    //let playerPositionFinal = playerPosition
+    for(let i=0;i<=playerPosition;){
+        if(playersList[i]!=""){
+            playerPosition++
+        } 
+        i++
+    }
+    // 16-3 = 13
+    // ["","","","","Pedro","","","","Raquel","","","","","","","Andrade"]
+    //console.log(playersList)
+    //console.log("playerPosition: " + playerPosition)
+    //console.log("playerPositionFinal :" + playerPositionFinal)
+    playersList[playerPosition]=pName
+    numberOfDeposits++
+    changeHTMLAfterPayment()    
 });
 
 let nextGameP1;
@@ -108,10 +128,10 @@ function changeHTMLAfterPayment(){
     for(let i=0;i<numberOfPlayers;i++){
         changeNameText(svgDoc,initialPositions[i], playersList[i])
     }
-    document.getElementById("depositedvalue").textContent = (deposit*playersList.length).toLocaleString();
+    document.getElementById("depositedvalue").textContent = (deposit*numberOfDeposits).toLocaleString();
 
     if(previousWinner==null){
-        if(playersList.length>=numberOfPlayers){
+        if(numberOfDeposits>=numberOfPlayers){
             document.getElementById("bracketPayment").classList.add("paymentComplete");
             document.getElementById("proceedButton").classList.remove("disabled");
             document.getElementById("buyinvalue").textContent = "LET'S GO";
@@ -317,7 +337,7 @@ let numberofCreates = 0;
 let buttonSelected = "cancelButton"
 addEventListener("keydown", function(event) {
     if (event.key === "ArrowRight" || event.key === "d") {
-        if(playersList.length>=numberOfPlayers && buttonSelected== "cancelButton"){
+        if(numberOfDeposits>=numberOfPlayers && buttonSelected== "cancelButton"){
             document.getElementById("proceedButton").style.animationDuration  = "2s";
             document.getElementById("backButton").style.animationDuration  = "0s";
             buttonSelected="proceedButton";
@@ -329,7 +349,7 @@ addEventListener("keydown", function(event) {
         }
     }
     if (event.key === "ArrowLeft" || event.key === "a") {
-        if(playersList.length>=numberOfPlayers && buttonSelected== "proceedButton"){
+        if(numberOfDeposits>=numberOfPlayers && buttonSelected== "proceedButton"){
             document.getElementById("proceedButton").style.animationDuration  = "0s";
             document.getElementById("backButton").style.animationDuration  = "2s";
             buttonSelected="cancelButton";
@@ -342,8 +362,8 @@ addEventListener("keydown", function(event) {
     }
     if (event.key === "Enter" || event.key === " ") {
         if(buttonSelected=="cancelButton"){
-            if(playersList.length>0){
-                document.getElementById("withdrawableuses").textContent = playersList.length;
+            if(numberOfDeposits>0){
+                document.getElementById("withdrawableuses").textContent = numberOfDeposits;
                 document.getElementById("withdrawablevaluefirst").textContent = deposit.toLocaleString();
                 document.getElementById("buyintext").style.display = "none";
                 document.getElementById("qrCodeDiv").style.display = "none";
@@ -354,13 +374,13 @@ addEventListener("keydown", function(event) {
                 document.getElementById("proceedButton").classList.remove("disabled");
                 buttonSelected="backButton"
             }
-            else if(playersList.length==0){
+            else if(numberOfDeposits==0){
                 for(var key in paymentsDict) {
                     let value = paymentsDict[key];
                     console.log("Trying to delete paylink "+value);
                     socket.emit('deletepaylink', value);
                 }
-                if(playersList.length==0){
+                if(numberOfDeposits==0){
                     window.location.href = "/tournprefs";
                 }
             }
@@ -372,7 +392,7 @@ addEventListener("keydown", function(event) {
             document.getElementById("issuerefundsdiv").style.display = "none";
             document.getElementById("backButton").textContent = "CANCEL";
             document.getElementById("proceedButton").textContent = "START";
-            if(playersList.length!=numberOfPlayers){
+            if(numberOfDeposits!=numberOfPlayers){
                 document.getElementById("proceedButton").classList.add("disabled");
             }
 
@@ -401,13 +421,13 @@ addEventListener("keydown", function(event) {
                 console.log("Trying to delete paylink "+value);
                 socket.emit('deletepaylink', value);
             }
-            if(playersList.length==0){
+            if(numberOfDeposits==0){
                 window.location.href = "/tournprefs";
             }
-            else if(playersList.length>0){
+            else if(numberOfDeposits>0){
                 buttonSelected="none";
                 console.log("Trying to create LNURLw");
-                socket.emit('createWithdrawal', {"amount": Math.floor((deposit)*0.95), "maxWithdrawals": playersList.length});
+                socket.emit('createWithdrawal', {"amount": Math.floor((deposit)*0.95), "maxWithdrawals": numberOfDeposits});
                 document.getElementById("issuerefundsfirst").style.display = "none";
                 document.getElementById("issuerefundssecond").style.display = "block";
                 document.getElementById("backButton").style.display = "none";
@@ -430,7 +450,7 @@ addEventListener("keydown", function(event) {
                     sessionStorage.setItem("P1Sats", deposit);
                     sessionStorage.setItem("P2Sats", deposit);
                     console.log("Trying to create LNURLw");
-                    socket.emit('createWithdrawal', {"amount": Math.floor((deposit*playersList.length)*0.95), "maxWithdrawals": 1});
+                    socket.emit('createWithdrawal', {"amount": Math.floor((deposit*numberOfDeposits)*0.95), "maxWithdrawals": 1});
                     numberofCreates=1;
                 }
             }
@@ -476,7 +496,7 @@ socket.on('prizeWithdrawn', (data) => {
     changeNameText(svgDoc,initialPositions[timesWithdrawed], initialPositions[timesWithdrawed])
     timesWithdrawed++;
     document.getElementById("currentWithdrawalPlayer").textContent = playersList[timesWithdrawed];
-    if(timesWithdrawed==playersList.length){
+    if(timesWithdrawed==numberOfDeposits){
         window.location.href = "/tournprefs";
     }
 });
