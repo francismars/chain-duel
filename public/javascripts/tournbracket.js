@@ -500,9 +500,9 @@ socket.on('prizeWithdrawn', (data) => {
     while(playersList[counter]!=playerToRemove && counter<numberOfPlayers){
         counter++
     }
-    changeNameText(svgDoc,initialPositions[counter], initialPositions[counter])
+    changeNameText(svgDoc,initialPositions[counter], "")
     timesWithdrawed++;
-    document.getElementById("currentWithdrawalPlayer").textContent = "";
+    document.getElementById("currentWithdrawalPlayer").textContent = playerListSequencial[timesWithdrawed];
     if(timesWithdrawed==numberOfDeposits){
         window.location.href = "/tournprefs";
     }
