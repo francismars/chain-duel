@@ -107,11 +107,10 @@ socket.on("invoicePaid", body => {
     let playerPosition = Math.floor(Math.random() * (numberOfPlayers-numberOfDeposits));
     //console.log("playerPosition before loop: " + playerPosition)
     //let playerPositionFinal = playerPosition
-    for(let i=0;i<=playerPosition;){
-        if(playersList[i]!=""){
+    for(let i=0;i<=playerPosition;i++){
+        if(playersList[i]!="" && i<numberOfPlayers){
             playerPosition++
         } 
-        i++
     }
     // 16-3 = 13
     // ["","","","","Pedro","","","","Raquel","","","","","","","Andrade"]
@@ -498,7 +497,7 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
 socket.on('prizeWithdrawn', (data) => {
     let playerToRemove = playerListSequencial[timesWithdrawed]
     let counter = 0
-    while(playersList[counter]!=playerToRemove){
+    while(playersList[counter]!=playerToRemove && counter<numberOfPlayers){
         counter++
     }
     changeNameText(svgDoc,initialPositions[counter], initialPositions[counter])
