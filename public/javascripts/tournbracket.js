@@ -503,7 +503,7 @@ socket.on('prizeWithdrawn', (data) => {
     }
     changeNameText(svgDoc,initialPositions[counter], initialPositions[counter])
     timesWithdrawed++;
-    document.getElementById("currentWithdrawalPlayer").textContent = playerListSequencial[timesWithdrawed];
+    document.getElementById("currentWithdrawalPlayer").textContent = "";
     if(timesWithdrawed==numberOfDeposits){
         window.location.href = "/tournprefs";
     }
