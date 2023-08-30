@@ -156,7 +156,7 @@ body{
   padding: 1vw;
   box-sizing: border-box;
   text-align: center;
-  background: radial-gradient(#000000,#000000,#000000, #00000000, #00000000);
+  background: radial-gradient(#000000b3,#000000a1,#00000061, #00000000, #00000000);
 }
 
 #winnerName {
