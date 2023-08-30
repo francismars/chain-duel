@@ -105,12 +105,12 @@ body{
     margin-left: auto;
     margin-right: auto;
     */
-    margin-bottom: 0;
+    margin-bottom: 1%;
     animation: glowing 2000ms infinite;
 }
 
 #doubleornotthingbutton{
-    margin-top: 1%;
+    margin-top: 0;
     animation: glowing 0ms infinite;
 }
 
