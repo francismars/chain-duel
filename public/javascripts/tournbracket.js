@@ -328,9 +328,11 @@ function updateNextGameText(){
 
         if(winnersList[winnersList.length-1]=="Player 1"){
             sessionStorage.setItem("P1Name", WinnerNamesList[(WinnerNamesList.length-1)]);
+            sessionStorage.setItem("P2Name", WinnerNamesList[(WinnerNamesList.length-2)]);
         }
         else if(winnersList[winnersList.length-1]=="Player 2"){
             sessionStorage.setItem("P2Name", WinnerNamesList[(WinnerNamesList.length-1)]);
+            sessionStorage.setItem("P1Name", WinnerNamesList[(WinnerNamesList.length-2)]);
         }
     }
 }
@@ -463,8 +465,8 @@ addEventListener("keydown", function(event) {
             }
         }
         else if(buttonSelected=="claimButton"){
-            sessionStorage.setItem("P1Sats", (deposit*numberOfPlayers));
-            sessionStorage.setItem("P2Sats", 0);
+            sessionStorage.setItem("P1Sats", ((deposit*numberOfPlayers)/2));
+            sessionStorage.setItem("P2Sats", ((deposit*numberOfPlayers)/2));
             sessionStorage.removeItem("WinnersList");
             sessionStorage.removeItem("PlayerList");
             window.location.href = "/postgame";
