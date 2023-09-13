@@ -120,11 +120,13 @@ function loadHSHtml(highscores){
           const elSponsorLabel = document.createElement("span");
           const elSponsorLogo = document.createElement("img");
           let elSponsorLabelText;
-          if(highscores[i].tournamentSponsor != null){
-            elSponsorLabelText = document.createTextNode("sponsored by");
-            elSponsorLogo.src = highscores[i].tournamentSponsor;
+          if(highscores[i].tournament == true){
+            if(highscores[i].tournamentSponsor != null && highscores[i].tournamentSponsor != ""){
+              elSponsorLabelText = document.createTextNode("sponsored by");
+              elSponsorLogo.src = highscores[i].tournamentSponsor;
 
-            elSponsorLabel.appendChild(elSponsorLabelText);
+              elSponsorLabel.appendChild(elSponsorLabelText);
+            }
           }
           elSponsor.classList.add("sponsor");
           elSponsor.appendChild(elSponsorLabel);

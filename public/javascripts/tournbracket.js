@@ -45,7 +45,7 @@ else if(playerListParsed==null){
     playersList = []
     playerListSequencial = []
     //playersList = ["Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
-    //playersList = ["giacomozucco","BTCGandalf","Laurastacksats","DZd1d1","KristianCsep","?","?","BitcoinShooter","mir_btc" ,"watermaniak","Jose_S_bam","BtcFrancis","JoeNakamoto","?","Rikki6ixx","?"]
+    playersList = ["giacomozucco","BTCGandalf","Laurastacksats","DZd1d1","KristianCsep","?","?","BitcoinShooter","mir_btc" ,"watermaniak","Jose_S_bam","BtcFrancis","JoeNakamoto","?","Rikki6ixx","?","Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
@@ -67,6 +67,9 @@ else if(numberOfPlayers==8){
 }
 else if(numberOfPlayers==16){
     elementSVG = document.getElementById("bracket16players");
+}
+else if(numberOfPlayers==32){
+    elementSVG = document.getElementById("bracket32players");
 }
 elementSVG.style.display = "block";
 
