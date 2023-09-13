@@ -1,6 +1,6 @@
 import { listenToGamepads } from "./gamepads.js";
 
-let pageHS = 1
+let pageHS = 0
 let divElement;
 let highscores
 
@@ -11,7 +11,7 @@ async function loadJson(){
 }
 
 function loadHSHtml(highscores){
-      for(let i=(pageHS-1)*7;i<(pageHS*7);i++){
+      for(let i=((pageHS+1)-1)*7;i<((pageHS+1)*7);i++){
           // "p1Name":"SELLIX","p1sats":1000000,"p2Name":"Pedro","p2sats":1000000,"winner":"Player 1","prize":1960000
 
           // Highscore Rank
@@ -151,7 +151,7 @@ function loadHSHtml(highscores){
           // Rows
           divElement = document.createElement('div');
           divElement.classList.add("score-row");
-          if(i==(pageHS*7)-1){
+          if(i==((pageHS+1)*7)-1){
             divElement.classList.add("score-row-last");
           }
           document.getElementById("highscoresList").appendChild(divElement);
@@ -183,22 +183,18 @@ addEventListener("keydown", function(event) {
         window.location.href = "/"; 
       }
       if(buttonSelected=="nextButton"){ 
-        if(pageHS<3){
-          pageHS++
-          while(highscoresList.firstElementChild) {
-            highscoresList.firstElementChild.remove();
-         }
-         loadHSHtml(highscores)
+        pageHS = ((pageHS+1)%3)
+        while(highscoresList.firstElementChild) {
+          highscoresList.firstElementChild.remove();
         }
+        loadHSHtml(highscores)
       }
       if(buttonSelected=="prevButton"){ 
-        if(pageHS>1){
-          pageHS--
-          while(highscoresList.firstElementChild) {
-            highscoresList.firstElementChild.remove();
-         }
-         loadHSHtml(highscores)
+        pageHS = ((pageHS+3-1) % 3)
+        while(highscoresList.firstElementChild) {
+          highscoresList.firstElementChild.remove();
         }
+        loadHSHtml(highscores)
       }
     }
     if (event.key === "ArrowUp" || event.key === "w") {
