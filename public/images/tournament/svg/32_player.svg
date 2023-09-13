@@ -8,23 +8,23 @@
     </clipPath>
   </defs>
   <g id="_32_player_a" data-name="32_player_a" clip-path="url(#clip-_32_player_a)">
-    <g id="G12_P2" transform="translate(2228 407.934)">
-      <g id="G12_P2_rect" transform="translate(50.6 41.91)" fill="none" stroke="#fff" stroke-width="1">
+    <g id="G22_P2" transform="translate(2228 407.934)">
+      <g id="G22_P2_rect" transform="translate(50.6 41.91)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
-      <text id="G12_P2_name" transform="translate(147.103 75.914)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G22_P2</tspan></text>
-      <path id="G12_P2_path" d="M7,49.385V23.246H63.955V0" transform="translate(49.385) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <text id="G22_P2_name" transform="translate(147.103 75.914)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G22_P2</tspan></text>
+      <path id="G22_P2_path" d="M7,49.385V23.246H63.955V0" transform="translate(49.385) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
-    <g id="G12_P2-2" data-name="G12_P2" transform="translate(2228 921.037)">
+    <g id="G24_P2" transform="translate(2228 921.037)">
       <g id="G24_P2_rect" transform="translate(50.6 41.91)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G24_P2_name" transform="translate(147.103 75.914)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G24_P2</tspan></text>
-      <path id="G242_P2_path" d="M7,49.385V23.246H63.955V0" transform="translate(49.385) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G24_P2_path" d="M7,49.385V23.246H63.955V0" transform="translate(49.385) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
-    <g id="G22_P1" transform="translate(2229 278.974)">
+    <g id="G22_P1" transform="translate(2228 278.974)">
       <g id="G22_P1_rect" transform="translate(49.479 50)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
@@ -49,7 +49,7 @@
       <path id="G21_P1_path" d="M114,49.385V23.246H50V0" transform="translate(49.385 22.417) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G23_P1" transform="translate(2229 525.729)">
-      <g id="G2_P1_rect" transform="translate(49.479 50)" fill="none" stroke="#fff" stroke-width="1">
+      <g id="G23_P1_rect" transform="translate(49.479 50)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
@@ -200,13 +200,13 @@
       <text id="G13_P1_name" transform="translate(145.723 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G13_P1</tspan></text>
       <path id="G13_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(49.384 23.5) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
-    <g id="G12_P2-3" data-name="G12_P2" transform="translate(2472 471.715)">
-      <g id="G12_P2_rect-2" data-name="G12_P2_rect" transform="translate(49.375 8.133)" fill="none" stroke="#fff" stroke-width="1">
+    <g id="G12_P2" transform="translate(2472 471.715)">
+      <g id="G12_P2_rect" transform="translate(49.375 8.133)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
-      <text id="G12_P2_name-2" data-name="G12_P2_name" transform="translate(145.713 42.133)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G12_P2</tspan></text>
-      <path id="G12_P2_path-2" data-name="G12_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.384) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <text id="G12_P2_name" transform="translate(145.713 42.133)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G12_P2</tspan></text>
+      <path id="G12_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.384) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G12_P1" transform="translate(2472 399.848)">
       <g id="G12_P1_rect" transform="translate(49.86 20)" fill="none" stroke="#fff" stroke-width="1">
@@ -216,7 +216,7 @@
       <text id="G12_P1_name" transform="translate(146.194 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G12_P1</tspan></text>
       <path id="G12_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(49.384 24.957) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
-    <g id="G11_P1" transform="translate(2475.094 281.601)">
+    <g id="G11_P1" transform="translate(2472.094 281.601)">
       <g id="G11_P1_rect" transform="translate(49.385 20)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
@@ -369,7 +369,7 @@
       <path id="G2_P2_path" d="M46.911,49.384V23.245H20V0" transform="translate(193.001 46.911) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G2_P1" transform="translate(132 134.957)">
-      <g id="G2_P1_rect-2" data-name="G2_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
+      <g id="G2_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
@@ -518,7 +518,7 @@
       <text id="G30" transform="translate(1193.5 397.227)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="0" y="0">GAME 30</tspan></text>
       <text id="G29" transform="translate(360.5 398.727)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="0" y="0">GAME 29</tspan></text>
       <text id="G28" transform="translate(1425 657.852)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="0" y="0">GAME 28</tspan></text>
-      <text id="G27" transform="translate(1425 144.852)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="0" y="0">GAME 27</tspan><tspan x="0" y="23"></tspan></text>
+      <text id="G27" transform="translate(1425 144.852)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="0" y="0">GAME 27</tspan></text>
       <text id="G26" transform="translate(200 652.852)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="-85.756" y="0">GAME 26</tspan></text>
       <text id="G25" transform="translate(200 144.852)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="-85.459" y="0">GAME 25</tspan></text>
       <text id="G24" transform="translate(1667 783.852)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="0" y="0">GAME 24</tspan></text>
@@ -547,4 +547,4 @@
       <text id="G1" transform="translate(-496 -54.148)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="-70.856" y="0">GAME 1</tspan></text>
     </g>
   </g>
-</svg>
+  </svg>
