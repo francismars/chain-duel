@@ -35,6 +35,14 @@
   letter-spacing: 0;
 }
 
+#prevButton{
+  animation: glowing 0ms infinite;
+}
+
+#nextButton{
+  animation: glowing 0ms infinite;
+}
+
 .satsLabelStyle {
   font-family: "inter", sans-serif;
   text-transform: uppercase;

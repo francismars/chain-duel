@@ -1,5 +1,6 @@
 [
   {
+    "tournament": false,
     "p1Name": "Christopher",
     "p1sats": 1000000,
     "p2Name": "Alessandra",
@@ -70,5 +71,12 @@
   {"tournament": false,"p1Name":"Francis","p1sats":25000,"p2Name":"Escobar","p2sats":25000,"winner":"Player 2","prize":48750},
   {"tournament": false,"p1Name":"Francis","p1sats":30000,"p2Name":"Martin","p2sats":28275,"winner":"Player 2","prize":56818},
   {"tournament": false,"p1Name":"Francis","p1sats":19500,"p2Name":"Clint","p2sats":20000,"winner":"Player 2","prize":38512},
-  {"tournament": false,"p1Name":"Hebe","p1sats":10000,"p2Name":"Francis","p2sats":19500,"winner":"Player 2","prize":28762}
+  {"tournament": false,"p1Name":"Hebe","p1sats":10000,"p2Name":"Francis","p2sats":19500,"winner":"Player 2","prize":28762},
+  {"tournament": false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},
+  {"tournament": false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},
+  {"tournament": false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},
+  {"tournament": false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},
+  {"tournament": false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},
+  {"tournament": false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},
+  {"tournament": false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000}
 ]
