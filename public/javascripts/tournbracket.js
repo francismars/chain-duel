@@ -14,7 +14,7 @@ await fetch('/loadconfig', {
 
 const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 
-let initialPositions = ["G1_P1", "G1_P2", "G2_P1", "G2_P2", "G3_P1", "G3_P2", "G4_P1", "G4_P2", "G5_P1", "G5_P2", "G6_P1", "G6_P2", "G7_P1", "G7_P2", "G8_P1", "G8_P2", "G9_P1", "G9_P2", "G10_P1", "G10_P2", "G11_P1", "G11_P2", "G12_P1", "G12_P2", "G13_P1", "G13_P2", "G14_P1", "G14_P2", "G15_P1", "G15_P2"]
+let initialPositions = ["G1_P1", "G1_P2", "G2_P1", "G2_P2", "G3_P1", "G3_P2", "G4_P1", "G4_P2", "G5_P1", "G5_P2", "G6_P1", "G6_P2", "G7_P1", "G7_P2", "G8_P1", "G8_P2", "G9_P1", "G9_P2", "G10_P1", "G10_P2", "G11_P1", "G11_P2", "G12_P1", "G12_P2", "G13_P1", "G13_P2", "G14_P1", "G14_P2", "G15_P1", "G15_P2", "G16_P1", "G16_P2", "G17_P1", "G17_P2", "G18_P1", "G18_P2", "G19_P1", "G19_P2", "G20_P1", "G20_P2", "G21_P1", "G21_P2", "G22_P1", "G22_P2", "G23_P1", "G23_P2", "G24_P1", "G24_P2", "G25_P1", "G25_P2", "G26_P1", "G26_P2", "G27_P1", "G27_P2", "G28_P1", "G28_P2", "G29_P1", "G29_P2", "G30_P1", "G30_P2", "G31_P1", "G31_P2"]
 
 let playersList;
 let numberOfPlayers;
@@ -49,7 +49,7 @@ else if(playerListParsed==null){
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
-    numberOfDeposits = 0
+    numberOfDeposits = playersList.length
     for(let i=0;i<numberOfPlayers;i++){
         playersList.push("")
     }
@@ -165,6 +165,7 @@ function updateBracketWinner(){
         let subtractor1 = 0
         let subtractor2 = 0
         let subtractor3 = 0
+        let subtractor4 = 0
         console.log(winnersList)
         console.log(WinnerNamesList)
         for(let i=0;i<winnersList.length;i++){
@@ -215,8 +216,8 @@ function updateBracketWinner(){
                 //console.log(subtractor1)
             }
             else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)){ // Terceira Ronda
-                console.log("i: " + i)
-                console.log("subtractor2: " + subtractor2)
+                //console.log("i: " + i)
+                //console.log("subtractor2: " + subtractor2)
                 let winnerPreviousMultiplier;
 
                 if(winnersList[i]=="Player 1"){ // Primeiro e Terceiro Quarto
@@ -224,12 +225,12 @@ function updateBracketWinner(){
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
 
                     let winnerPreviousIndex = i - ((numberOfPlayers/4)-subtractor2) 
-                    console.log("winnerPreviousIndex: " + winnerPreviousIndex)
+                    //console.log("winnerPreviousIndex: " + winnerPreviousIndex)
                     if(subtractor2==0) subtractor3=0;
                     if(subtractor2==1) subtractor3=2;
                     if(winnersList[winnerPreviousIndex] == "Player 1"){ // Primeiro Oitavo e Quinto Oitavo
                         let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2) - subtractor3)
-                        console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
+                        //console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
                         if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 1 ou 9
                             winnerPreviousMultiplier = 0
@@ -242,7 +243,7 @@ function updateBracketWinner(){
                     else if(winnersList[winnerPreviousIndex] == "Player 2"){ // Segundo Oitavo e Sexto Oitavo
                         let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2) - subtractor3) + 1
 
-                        console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
+                        //console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
                         if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 3 ou 11
                             winnerPreviousMultiplier = 2
@@ -257,13 +258,13 @@ function updateBracketWinner(){
                     highLight(svgDoc,initialPositions[(i*2)+1])
                     dimLoser(svgDoc,initialPositions[(i*2)])
                     let winnerPreviousIndex = i - ((numberOfPlayers/4)-subtractor2) + 1
-                    console.log("winnerPreviousIndex: " + winnerPreviousIndex)
+                    //console.log("winnerPreviousIndex: " + winnerPreviousIndex)
                     if(subtractor2==0) subtractor3=1;
                     if(subtractor2==1) subtractor3=3;
                     if(winnersList[winnerPreviousIndex] == "Player 1"){ // Terceiro Oitavo e Setimo Oitavo
                         
                         let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2)-subtractor3)
-                        console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
+                        //console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
                         if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 5 ou 13
                             winnerPreviousMultiplier = 4
@@ -275,7 +276,7 @@ function updateBracketWinner(){
 
                     else if(winnersList[winnerPreviousIndex] == "Player 2"){  // Quarto Oitavo e Oitavo Oitavo
                         let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2)-subtractor3) + 1
-                        console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
+                        //console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
                         if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 7 ou 15
                             winnerPreviousMultiplier = 6
@@ -288,6 +289,16 @@ function updateBracketWinner(){
                 let winnerId = (8*(i-(numberOfPlayers/2)-(numberOfPlayers/4)))+winnerPreviousMultiplier
                 winnerName = playersList[winnerId]
                 subtractor2++
+            }
+            else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8)){
+                let winnerPreviousIndex = (i - ((numberOfPlayers/2)) + subtractor4)
+                if(winnersList[winnerPreviousIndex] == "Player 1"){
+                    winnerName = WinnerNamesList[WinnerNamesList.length-playersList.length/4+subtractor4]
+                }
+                if(winnersList[winnerPreviousIndex] == "Player 2"){
+                    winnerName = WinnerNamesList[WinnerNamesList.length-playersList.length/4+1+subtractor4]
+                }
+                subtractor4++;
             }
             
 
@@ -526,6 +537,7 @@ function dimLoser(svgDoc,id){
 }
 
 function highLight(svgDoc,id){
+    console.log(id)
     svgDoc.getElementById(id+'_name').style.fill = "black";
     svgDoc.getElementById(id+'_rect').style.fill = "#fff";
     svgDoc.getElementById(id+'_path').style.opacity = 1;

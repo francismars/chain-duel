@@ -6,7 +6,7 @@ let deposit = 10000;
 let buttonSelected = "mainMenuButton";
 
 function increasePlayers(){
-    if (playersNumber<16){
+    if (playersNumber<32){
         playersNumber=playersNumber*2;
         document.getElementById("numberOfPlayers").innerText = playersNumber;
     }    
