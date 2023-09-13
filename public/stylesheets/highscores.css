@@ -11,7 +11,7 @@
 .rankStyle{
   font-size: 5vw;
   margin-bottom: 0px;
-  width: 10%;
+  width: 7%;
   text-align: left;
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
@@ -24,6 +24,7 @@
     justify-content: space-between;
     border-bottom: 1px solid #ffffff2b;
     padding-top: 12px;
+    align-items: center;
 }
 
 .score-row-last {
@@ -67,13 +68,13 @@
   font-size: 2cqw;
   color: grey;
   width: 10%;
-  margin-top: 25px;
+  /* margin-top: 25px; */
 }
 
 .loserinfo{
   width: 25%;
   text-align: left;
-  margin-top: auto;
+  /* margin-top: auto; */
 }
 
 .loserNameStyle{
@@ -103,4 +104,32 @@
 
 #mainmenubutton {
     animation: glowing 2000ms infinite;
+}
+
+
+
+
+
+.sponsor img {
+    max-width: 12vw;
+}
+
+.sponsor {
+    text-align: left;
+    width: 30%;
+}
+
+.sponsor span {
+    font-size: 1vw;
+    opacity: 0.5;
+}
+
+.tournStyle {
+    width: 11%;
+    font-size: 2vw;
+}
+
+.tournNameStyle {
+    font-size: 1vw;
+    color: grey;
 }
