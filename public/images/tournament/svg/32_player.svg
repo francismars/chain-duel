@@ -33,7 +33,7 @@
       <path id="G22_P1_path" d="M114,49.385V23.246H50V0" transform="translate(49.385 22.417) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G24_P1" transform="translate(2229 792.077)">
-      <g id="G25_P1_rect" transform="translate(49.479 50)" fill="none" stroke="#fff" stroke-width="1">
+      <g id="G24_P1_rect" transform="translate(49.479 50)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
@@ -69,7 +69,7 @@
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
-      <text id="G13_P2_name" transform="translate(147.103 75.914)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G23_P2</tspan></text>
+      <text id="G23_P2_name" transform="translate(147.103 75.914)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G23_P2</tspan></text>
       <path id="G23_P2_path" d="M7,49.385V23.246H63.955V0" transform="translate(49.385) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G20_P2" transform="translate(373.875 877.94)">
@@ -189,7 +189,7 @@
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
-      <text id="G13_P2_name-2" data-name="G13_P2_name" transform="translate(146.185 39.086)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G13_P2</tspan></text>
+      <text id="G13_P2_name" transform="translate(146.185 39.086)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G13_P2</tspan></text>
       <path id="G13_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.384) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G13_P1" transform="translate(2472 528.355)">
