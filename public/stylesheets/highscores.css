@@ -11,7 +11,7 @@
 .rankStyle{
   font-size: 3.8vw;
   margin: 0px;
-  width: 6%;
+  width: 7%;
   text-align: left;
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
@@ -144,4 +144,18 @@
     font-size: 1vw;
     color: grey;
     margin: 0;
+}
+
+
+
+
+
+.button {
+    margin-top: 0.5%;
+    width: 15%;
+    padding: 0.5%;
+}
+
+.double-button {
+    width: 15%;
 }
