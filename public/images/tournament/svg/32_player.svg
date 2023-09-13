@@ -89,7 +89,7 @@
       <path id="G18_P1_path" d="M50,49.385V23.246h63.955V0" transform="translate(192.877 137.83) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G18_P2" transform="translate(373.875 365.061)">
-      <g id="G10_P2_rect" transform="translate(0 83.045)" fill="none" stroke="#fff" stroke-width="1">
+      <g id="G18_P2_rect" transform="translate(0 83.045)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
@@ -97,7 +97,7 @@
       <path id="G18_P2_path" d="M56.544,49.385V23.246H0V0" transform="translate(192.867 106.544) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G20_P1" transform="translate(373.875 840.111)">
-      <g id="G10_P1_rect" fill="none" stroke="#fff" stroke-width="1">
+      <g id="G20_P1_rect" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
@@ -233,7 +233,7 @@
       <path id="G11_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.384) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G10_P2" transform="translate(2472 207.366)">
-      <g id="G10_P2_rect-2" data-name="G10_P2_rect" transform="translate(49.375 8.133)" fill="none" stroke="#fff" stroke-width="1">
+      <g id="G10_P2_rect" transform="translate(49.375 8.133)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
@@ -241,7 +241,7 @@
       <path id="G10_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.384) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G10_P1" transform="translate(2472 135.499)">
-      <g id="G10_P1_rect-2" data-name="G10_P1_rect" transform="translate(49.86 20)" fill="none" stroke="#fff" stroke-width="1">
+      <g id="G10_P1_rect" transform="translate(49.86 20)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
@@ -273,7 +273,7 @@
       <path id="G8_P2_path" d="M46.911,49.384V23.245H20V0" transform="translate(193.001 46.911) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G8_P1" transform="translate(132 912.443)">
-      <g id="G4_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
+      <g id="G8_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
@@ -337,7 +337,7 @@
       <path id="G4_P2_path" d="M46.911,49.384V23.245H20V0" transform="translate(193.001 46.911) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G4_P1" transform="translate(132 399.563)">
-      <g id="G4_P1_rect-2" data-name="G4_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
+      <g id="G4_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
@@ -547,4 +547,4 @@
       <text id="G1" transform="translate(-496 -54.148)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="-70.856" y="0">GAME 1</tspan></text>
     </g>
   </g>
-  </svg>
+</svg>
