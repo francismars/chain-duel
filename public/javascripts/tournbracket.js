@@ -465,10 +465,8 @@ addEventListener("keydown", function(event) {
             }
         }
         else if(buttonSelected=="claimButton"){
-            sessionStorage.setItem("P1Sats", ((deposit*numberOfPlayers)/2));
-            sessionStorage.setItem("P2Sats", ((deposit*numberOfPlayers)/2));
-            sessionStorage.removeItem("WinnersList");
-            sessionStorage.removeItem("PlayerList");
+            sessionStorage.setItem("P1Sats", deposit);
+            sessionStorage.setItem("P2Sats", deposit);
             window.location.href = "/postgame";
         }
     }

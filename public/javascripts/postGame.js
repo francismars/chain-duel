@@ -1,5 +1,10 @@
 import { listenToGamepads } from "./gamepads.js";
 
+// Variables for Tournament Specifics
+let tournamentSponsorImageUrl = "/images/sponsors/piratehash.png"
+let tournamentPlaceName = "Dummy Conference"
+
+
 let serverIP;
 let serverPORT;
 await fetch('/loadconfig', {
@@ -22,6 +27,7 @@ const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 let gameWinner = sessionStorage.getItem('gameWinner');
 let p1Name = sessionStorage.getItem("P1Name");
 let p2Name = sessionStorage.getItem("P2Name");
+let playersList = sessionStorage.getItem("PlayerList");
 let winnerName;
 if (gameWinner!=null){
     if(gameWinner=="Player 1" && p1Name!=null){
@@ -194,6 +200,14 @@ function updateHSJson(){
           console.log("Mudar hs file")
           console.log(orderedScores[sizeHS].prize)
           console.log(totalPrize)
+          if(playersList != null){
+            orderedScores[sizeHS].tournament = true; 
+            orderedScores[sizeHS].tournamentSponsor = tournamentSponsorImageUrl;
+            orderedScores[sizeHS].tournamentName = tournamentPlaceName;
+            orderedScores[sizeHS].tournamentPlayers = playersList.length;
+          } else{
+            orderedScores[sizeHS].tournament = false;
+          }                                
           orderedScores[sizeHS].p1Name = p1Name
           orderedScores[sizeHS].p1sats = parseInt(P1SatsDeposit)
           orderedScores[sizeHS].p2Name = p2Name

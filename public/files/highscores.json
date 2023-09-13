@@ -14,9 +14,9 @@
     "tournamentName": "Baltic Honey Badger 2023",
     "tournamentPlayers": 16,
     "p1Name": "jose",
-    "p1sats": 800000,
+    "p1sats": 50000,
     "p2Name": "bitsalv",
-    "p2sats": 800000,
+    "p2sats": 50000,
     "winner": "Player 2",
     "prize": 1520000
   },
