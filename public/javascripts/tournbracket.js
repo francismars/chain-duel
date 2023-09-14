@@ -166,10 +166,12 @@ function updateBracketWinner(){
         let subtractor2 = 0
         let subtractor3 = 0
         let subtractor4 = 0
+        console.log("Winners List: ")
         console.log(winnersList)
-        console.log(WinnerNamesList)
         for(let i=0;i<winnersList.length;i++){
+            if(i==numberOfPlayers-1) break;
             let winnerName
+            //console.log(i)
             if(i<(numberOfPlayers/2)){ // Primeira Ronda
                 if(winnersList[i]=="Player 1"){
                     highLight(svgDoc,initialPositions[(i*2)])
@@ -184,6 +186,7 @@ function updateBracketWinner(){
                 }
             }
             else if(i>=(numberOfPlayers/2) && i<(numberOfPlayers/2)+(numberOfPlayers/4)){ // Segunda Ronda
+                
                 let winnerPlayer = winnersList[i];
                 let winnerPrevious;
                 let winnerPreviousMultiplier;
@@ -215,7 +218,7 @@ function updateBracketWinner(){
                 subtractor1++;
                 //console.log(subtractor1)
             }
-            else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)){ // Terceira Ronda
+            else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4) && i<(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8)){ // Terceira Ronda
                 //console.log("i: " + i)
                 //console.log("subtractor2: " + subtractor2)
                 let winnerPreviousMultiplier;
@@ -290,13 +293,28 @@ function updateBracketWinner(){
                 winnerName = playersList[winnerId]
                 subtractor2++
             }
-            else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8)){
-                let winnerPreviousIndex = (i - ((numberOfPlayers/2)) + subtractor4)
+            else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8) && i<(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8)+(numberOfPlayers/16)){
+                let winnerPreviousIndex = (i - ((numberOfPlayers/8)) + subtractor4)
+                console.log("----------------------")
+                console.log("i: " + i)
+                console.log("WinnersNamesList: ")
+                console.log(WinnerNamesList)
+                console.log("WinnerNamesList Pos: ")
+                console.log(WinnerNamesList.length - playersList.length/8 + subtractor4)
+                console.log(WinnerNamesList[WinnerNamesList.length-playersList.length/8+subtractor4])
+                console.log("winnerPreviousIndex: " + winnerPreviousIndex)
+                console.log(winnersList[winnerPreviousIndex])
+                console.log(initialPositions[(i*2)])
+                console.log(initialPositions[(i*2)+1])
                 if(winnersList[winnerPreviousIndex] == "Player 1"){
-                    winnerName = WinnerNamesList[WinnerNamesList.length-playersList.length/4+subtractor4]
+                    highLight(svgDoc,initialPositions[(i*2)])
+                    dimLoser(svgDoc,initialPositions[(i*2)+1])
+                    winnerName = WinnerNamesList[WinnerNamesList.length-playersList.length/8+subtractor4]
                 }
                 if(winnersList[winnerPreviousIndex] == "Player 2"){
-                    winnerName = WinnerNamesList[WinnerNamesList.length-playersList.length/4+1+subtractor4]
+                    highLight(svgDoc,initialPositions[(i*2)+1])
+                    dimLoser(svgDoc,initialPositions[(i*2)])
+                    winnerName = WinnerNamesList[WinnerNamesList.length-playersList.length/8+1+subtractor4]
                 }
                 subtractor4++;
             }
@@ -304,7 +322,18 @@ function updateBracketWinner(){
 
             let domPosition
             if((i+1)==(numberOfPlayers-1)){
+                console.log(i)
+                console.log(initialPositions[(i*2)])
+                console.log(initialPositions[(i*2)+1])
                 highLightWinnerSquare(svgDoc,"Winner")
+                if(winnersList[winnersList.length-1] == "Player 1"){
+                    highLight(svgDoc,initialPositions[(i*2)])
+                    dimLoser(svgDoc,initialPositions[(i*2)+1])
+                }
+                else if(winnersList[winnersList.length-1] == "Player 2"){
+                    highLight(svgDoc,initialPositions[(i*2)+1])
+                    dimLoser(svgDoc,initialPositions[(i*2)])
+                }
                 domPosition = "Winner"
                 winnersList[i]=="Player 1" ? winnerName = WinnerNamesList[i-2] : winnerName = WinnerNamesList[i-1]
             }
@@ -537,7 +566,6 @@ function dimLoser(svgDoc,id){
 }
 
 function highLight(svgDoc,id){
-    console.log(id)
     svgDoc.getElementById(id+'_name').style.fill = "black";
     svgDoc.getElementById(id+'_rect').style.fill = "#fff";
     svgDoc.getElementById(id+'_path').style.opacity = 1;
