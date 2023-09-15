@@ -48,6 +48,18 @@
     "prize": 180500
   },
   {
+    "tournament": true,
+    "p1Name": "Number ten",
+    "p1sats": 10000,
+    "p2Name": "Number ten",
+    "p2sats": 10000,
+    "winner": "Player 2",
+    "prize": 152000,
+    "tournamentSponsor": "",
+    "tournamentName": "",
+    "tournamentPlayers": 16
+  },
+  {
     "tournament": false,
     "p1Name": "Francis",
     "p1sats": 70450,
@@ -180,24 +192,15 @@
     "prize": 19000
   },
   {
-    "tournament": false,
-    "p1Name": "Player 1",
-    "p1sats": 10000,
-    "p2Name": "Player 2",
-    "p2sats": 10000,
-    "winner": "Player 2",
-    "prize": 19000
-  },
-  {
     "tournament": true,
-    "p1Name": "Number ten",
+    "p1Name": "Nakamotor",
     "p1sats": 10000,
-    "p2Name": "Number ten",
+    "p2Name": "Nakamotor",
     "p2sats": 10000,
     "winner": "Player 2",
-    "prize": 152000,
+    "prize": 304000,
     "tournamentSponsor": "",
-    "tournamentName": "",
-    "tournamentPlayers": 16
+    "tournamentName": "Biggest Tournamet Test",
+    "tournamentPlayers": 32
   }
 ]
