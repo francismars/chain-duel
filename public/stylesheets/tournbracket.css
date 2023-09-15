@@ -184,6 +184,11 @@ body{
   display:none;
 }
 
+#bracket32players {
+    max-width: 85%;
+    margin: -4vw auto 0vw auto;
+}
+
 .issuerefundsdiv{
   display:none;
   padding: 1.5vw;
