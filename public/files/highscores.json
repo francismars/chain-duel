@@ -1,1 +1,203 @@
-[{"tournament":false,"p1Name":"Christopher","p1sats":1000000,"p2Name":"Alessandra","p2sats":1000000,"winner":"Player 1","prize":1996000},{"tournament":true,"tournamentSponsor":"/images/sponsors/piratehash.png","tournamentName":"Baltic Honey Badger 2023","tournamentPlayers":16,"p1Name":"jose","p1sats":50000,"p2Name":"bitsalv","p2sats":50000,"winner":"Player 2","prize":1520000},{"tournament":false,"p1Name":"Riccardo","p1sats":185250,"p2Name":"Francis","p2sats":185250,"winner":"Player 1","prize":351975},{"tournament":false,"p1Name":"Tony","p1sats":100000,"p2Name":"BTCShooter","p2sats":100000,"winner":"Player 2","prize":196000},{"tournament":false,"p1Name":"Pedro 🧨","p1sats":90000,"p2Name":"Abjecto♟E4","p2sats":100000,"winner":"Player 2","prize":180500},{"tournament":false,"p1Name":"Francis","p1sats":70450,"p2Name":"Shooter","p2sats":70450,"winner":"Player 1","prize":137377},{"tournament":false,"p1Name":"Rikki","p1sats":50000,"p2Name":"Francis","p2sats":49922,"winner":"Player 2","prize":94925},{"tournament":false,"p1Name":"Francis","p1sats":36000,"p2Name":"max","p2sats":36000,"winner":"Player 1","prize":70200},{"tournament":false,"p1Name":"ORDI LABS","p1sats":30000,"p2Name":"Francis","p2sats":30000,"winner":"Player 2","prize":58500},{"tournament":false,"p1Name":"Francis","p1sats":30000,"p2Name":"Martin","p2sats":28275,"winner":"Player 2","prize":56818},{"tournament":false,"p1Name":"Martin","p1sats":25000,"p2Name":"Kevin","p2sats":25000,"winner":"Player 1","prize":48750},{"tournament":false,"p1Name":"Francis","p1sats":25000,"p2Name":"Escobar","p2sats":25000,"winner":"Player 2","prize":48750},{"tournament":false,"p1Name":"Francis","p1sats":19500,"p2Name":"Clint","p2sats":20000,"winner":"Player 2","prize":38512},{"tournament":false,"p1Name":"Hebe","p1sats":10000,"p2Name":"Francis","p2sats":19500,"winner":"Player 2","prize":28762},{"tournament":false,"p1Name":"satoshi","p1sats":15000,"p2Name":"rockamoto","p2sats":10000,"winner":"Player 1","prize":23750},{"tournament":false,"p1Name":"Riccardo","p1sats":11000,"p2Name":"Jose","p2sats":11000,"winner":"Player 2","prize":20900},{"tournament":false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},{"tournament":false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},{"tournament":false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},{"tournament":false,"p1Name":"Player 1","p1sats":10000,"p2Name":"Player 2","p2sats":10000,"winner":"Player 2","prize":19000},{"tournament":true,"p1Name":"laurastack","p1sats":10000,"p2Name":"laurastack","p2sats":10000,"winner":"Player 2","prize":38000,"tournamentSponsor":"","tournamentName":"","tournamentPlayers":4}]
+[
+  {
+    "tournament": false,
+    "p1Name": "Christopher",
+    "p1sats": 1000000,
+    "p2Name": "Alessandra",
+    "p2sats": 1000000,
+    "winner": "Player 1",
+    "prize": 1996000
+  },
+  {
+    "tournament": true,
+    "tournamentSponsor": "/images/sponsors/piratehash.png",
+    "tournamentName": "Baltic Honey Badger 2023",
+    "tournamentPlayers": 16,
+    "p1Name": "jose",
+    "p1sats": 50000,
+    "p2Name": "bitsalv",
+    "p2sats": 50000,
+    "winner": "Player 2",
+    "prize": 1520000
+  },
+  {
+    "tournament": false,
+    "p1Name": "Riccardo",
+    "p1sats": 185250,
+    "p2Name": "Francis",
+    "p2sats": 185250,
+    "winner": "Player 1",
+    "prize": 351975
+  },
+  {
+    "tournament": false,
+    "p1Name": "Tony",
+    "p1sats": 100000,
+    "p2Name": "BTCShooter",
+    "p2sats": 100000,
+    "winner": "Player 2",
+    "prize": 196000
+  },
+  {
+    "tournament": false,
+    "p1Name": "Pedro 🧨",
+    "p1sats": 90000,
+    "p2Name": "Abjecto♟E4",
+    "p2sats": 100000,
+    "winner": "Player 2",
+    "prize": 180500
+  },
+  {
+    "tournament": false,
+    "p1Name": "Francis",
+    "p1sats": 70450,
+    "p2Name": "Shooter",
+    "p2sats": 70450,
+    "winner": "Player 1",
+    "prize": 137377
+  },
+  {
+    "tournament": false,
+    "p1Name": "Rikki",
+    "p1sats": 50000,
+    "p2Name": "Francis",
+    "p2sats": 49922,
+    "winner": "Player 2",
+    "prize": 94925
+  },
+  {
+    "tournament": false,
+    "p1Name": "Francis",
+    "p1sats": 36000,
+    "p2Name": "max",
+    "p2sats": 36000,
+    "winner": "Player 1",
+    "prize": 70200
+  },
+  {
+    "tournament": false,
+    "p1Name": "ORDI LABS",
+    "p1sats": 30000,
+    "p2Name": "Francis",
+    "p2sats": 30000,
+    "winner": "Player 2",
+    "prize": 58500
+  },
+  {
+    "tournament": false,
+    "p1Name": "Francis",
+    "p1sats": 30000,
+    "p2Name": "Martin",
+    "p2sats": 28275,
+    "winner": "Player 2",
+    "prize": 56818
+  },
+  {
+    "tournament": false,
+    "p1Name": "Martin",
+    "p1sats": 25000,
+    "p2Name": "Kevin",
+    "p2sats": 25000,
+    "winner": "Player 1",
+    "prize": 48750
+  },
+  {
+    "tournament": false,
+    "p1Name": "Francis",
+    "p1sats": 25000,
+    "p2Name": "Escobar",
+    "p2sats": 25000,
+    "winner": "Player 2",
+    "prize": 48750
+  },
+  {
+    "tournament": false,
+    "p1Name": "Francis",
+    "p1sats": 19500,
+    "p2Name": "Clint",
+    "p2sats": 20000,
+    "winner": "Player 2",
+    "prize": 38512
+  },
+  {
+    "tournament": true,
+    "p1Name": "laurastack",
+    "p1sats": 10000,
+    "p2Name": "laurastack",
+    "p2sats": 10000,
+    "winner": "Player 2",
+    "prize": 38000,
+    "tournamentSponsor": "",
+    "tournamentName": "",
+    "tournamentPlayers": 4
+  },
+  {
+    "tournament": true,
+    "p1Name": "Elliptical",
+    "p1sats": 10000,
+    "p2Name": "Trivia",
+    "p2sats": 10000,
+    "winner": "Player 1",
+    "prize": 38000,
+    "tournamentSponsor": "",
+    "tournamentName": "",
+    "tournamentPlayers": 4
+  },
+  {
+    "tournament": false,
+    "p1Name": "Hebe",
+    "p1sats": 10000,
+    "p2Name": "Francis",
+    "p2sats": 19500,
+    "winner": "Player 2",
+    "prize": 28762
+  },
+  {
+    "tournament": false,
+    "p1Name": "satoshi",
+    "p1sats": 15000,
+    "p2Name": "rockamoto",
+    "p2sats": 10000,
+    "winner": "Player 1",
+    "prize": 23750
+  },
+  {
+    "tournament": false,
+    "p1Name": "Riccardo",
+    "p1sats": 11000,
+    "p2Name": "Jose",
+    "p2sats": 11000,
+    "winner": "Player 2",
+    "prize": 20900
+  },
+  {
+    "tournament": false,
+    "p1Name": "Player 1",
+    "p1sats": 10000,
+    "p2Name": "Player 2",
+    "p2sats": 10000,
+    "winner": "Player 2",
+    "prize": 19000
+  },
+  {
+    "tournament": false,
+    "p1Name": "Player 1",
+    "p1sats": 10000,
+    "p2Name": "Player 2",
+    "p2sats": 10000,
+    "winner": "Player 2",
+    "prize": 19000
+  },
+  {
+    "tournament": true,
+    "p1Name": "Number ten",
+    "p1sats": 10000,
+    "p2Name": "Number ten",
+    "p2sats": 10000,
+    "winner": "Player 2",
+    "prize": 152000,
+    "tournamentSponsor": "",
+    "tournamentName": "",
+    "tournamentPlayers": 16
+  }
+]
