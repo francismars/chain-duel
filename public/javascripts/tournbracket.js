@@ -44,8 +44,7 @@ if(playerListParsed!=null){
 else if(playerListParsed==null){
     playersList = []
     playerListSequencial = []
-    //playersList = ["Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
-    playersList = ["giacomozucco","BTCGandalf","Laurastacksats","DZd1d1","KristianCsep","?","?","BitcoinShooter","mir_btc" ,"watermaniak","Jose_S_bam","BtcFrancis","JoeNakamoto","?","Rikki6ixx","?","Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
+    //playersList = ["giacomozucco","BTCGandalf","Laurastacksats","DZd1d1"] //,"KristianCsep","?","?","BitcoinShooter","mir_btc" ,"watermaniak","Jose_S_bam","BtcFrancis","JoeNakamoto","?","Rikki6ixx","?","Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
@@ -55,7 +54,7 @@ else if(playerListParsed==null){
     }
     console.log(playersList)
     deposit = parseInt(params.get("deposit"));
-    socket.emit('createPaylink', {"description":"tournament","buyInMin":deposit,"buyInMax":deposit});
+    socket.emit('createPaylink', {"description":"Chain Duel Tournament","buyInMin":deposit,"buyInMax":deposit});
 }
 
 let elementSVG;

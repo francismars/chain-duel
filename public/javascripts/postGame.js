@@ -27,7 +27,7 @@ const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 let gameWinner = sessionStorage.getItem('gameWinner');
 let p1Name = sessionStorage.getItem("P1Name");
 let p2Name = sessionStorage.getItem("P2Name");
-let playersList = sessionStorage.getItem("PlayerList");
+let playersList = JSON.parse(sessionStorage.getItem("PlayerList"));
 let winnerName;
 if (gameWinner!=null){
     if(gameWinner=="Player 1" && p1Name!=null){
@@ -195,11 +195,12 @@ function updateHSJson(){
           });
 
         let sizeHS = (orderedScores.length)-1
-        if((orderedScores[sizeHS].p1sats + orderedScores[sizeHS].p2sats) < (parseInt(P1SatsDeposit) + parseInt(P2SatsDeposit))){
+        if(orderedScores[sizeHS].prize < parseInt(totalPrize)){
           // {"p1Name":"SELLIX5","p1sats":100,"p2Name":"Pedro5","p2sats":100,"winner":"Player1","prize":196}
           console.log("Mudar hs file")
           console.log(orderedScores[sizeHS].prize)
           console.log(totalPrize)
+          console.log("tournament mode :" + playersList != null)
           if(playersList != null){
             orderedScores[sizeHS].tournament = true; 
             orderedScores[sizeHS].tournamentSponsor = tournamentSponsorImageUrl;
