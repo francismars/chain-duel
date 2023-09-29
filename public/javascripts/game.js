@@ -461,7 +461,7 @@ function drawCountdown(){
         ctxGame.fillText("1", (larguraGame*0.47), alturaGame/2);
         ctxGame.fillText("LFG", (larguraGame*0.675), alturaGame/2);
     }
-    else if (counterStart==4){
+    else if (counterStart>=4){
         gameStarted = true;
     }
 }

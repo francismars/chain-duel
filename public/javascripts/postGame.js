@@ -110,8 +110,9 @@ function pressContinue(){
     else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
         sessionStorage.clear();
         if (gameWinner!=null && totalPrize!=null && winnerName!=undefined){
-            sessionStorage.setItem("donPlayer", gameWinner);
-            sessionStorage.setItem("donName", winnerName);
+            sessionStorage.setItem("donWinner", gameWinner);
+            sessionStorage.setItem("donP1Name", p1Name);
+            sessionStorage.setItem("donP2Name", p2Name);
             sessionStorage.setItem("donPrize", totalPrize);
         }
         window.location.href = "/gamemenu";

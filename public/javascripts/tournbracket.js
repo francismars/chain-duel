@@ -44,7 +44,7 @@ if(playerListParsed!=null){
 else if(playerListParsed==null){
     playersList = []
     playerListSequencial = []
-    //playersList = ["giacomozucco","BTCGandalf","Laurastacksats","DZd1d1"] //,"KristianCsep","?","?","BitcoinShooter","mir_btc" ,"watermaniak","Jose_S_bam","BtcFrancis","JoeNakamoto","?","Rikki6ixx","?","Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
+    playersList = ["giacomozucco","BTCGandalf","Laurastacksats","DZd1d1", "KristianCsep","?","?","BitcoinShooter","mir_btc" ,"watermaniak","Jose_S_bam","BtcFrancis","JoeNakamoto","?","Rikki6ixx","?","Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
@@ -292,19 +292,15 @@ function updateBracketWinner(){
                 winnerName = playersList[winnerId]
                 subtractor2++
             }
-            else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8) && i<(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8)+(numberOfPlayers/16)){
-                let winnerPreviousIndex = (i - ((numberOfPlayers/8)) + subtractor4)
+            // Quarta Ronda
+            else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8) 
+                                && i<((numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8)+(numberOfPlayers/16))){ // 8 + 4 + 2 + 1 = 15
+                let winnerPreviousIndex = (i - (numberOfPlayers/16) + subtractor4 + 1)
                 console.log("----------------------")
                 console.log("i: " + i)
-                console.log("WinnersNamesList: ")
-                console.log(WinnerNamesList)
-                console.log("WinnerNamesList Pos: ")
-                console.log(WinnerNamesList.length - playersList.length/8 + subtractor4)
-                console.log(WinnerNamesList[WinnerNamesList.length-playersList.length/8+subtractor4])
                 console.log("winnerPreviousIndex: " + winnerPreviousIndex)
-                console.log(winnersList[winnerPreviousIndex])
-                console.log(initialPositions[(i*2)])
-                console.log(initialPositions[(i*2)+1])
+                console.log("initial positions p1: " + initialPositions[(i*2)])
+                console.log("initial positions p2: " + initialPositions[(i*2)+1])
                 if(winnersList[winnerPreviousIndex] == "Player 1"){
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
@@ -318,13 +314,13 @@ function updateBracketWinner(){
                 subtractor4++;
             }
             
-
             let domPosition
             if((i+1)==(numberOfPlayers-1)){
-                console.log(i)
-                console.log(initialPositions[(i*2)])
-                console.log(initialPositions[(i*2)+1])
+                //console.log(i)
+                //console.log(initialPositions[(i*2)])
+                //console.log(initialPositions[(i*2)+1])
                 highLightWinnerSquare(svgDoc,"Winner")
+                
                 if(winnersList[winnersList.length-1] == "Player 1"){
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
@@ -333,6 +329,7 @@ function updateBracketWinner(){
                     highLight(svgDoc,initialPositions[(i*2)+1])
                     dimLoser(svgDoc,initialPositions[(i*2)])
                 }
+                
                 domPosition = "Winner"
                 winnersList[i]=="Player 1" ? winnerName = WinnerNamesList[i-2] : winnerName = WinnerNamesList[i-1]
             }

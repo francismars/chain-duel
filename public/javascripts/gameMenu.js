@@ -7,9 +7,10 @@ let playersSats = [0,0]
 let numberofCreates = 0
 let p1Name = "Player 1"
 let p2Name = "Player 2"
-let donPlayer = sessionStorage.getItem('donPlayer');
+let donWinner = sessionStorage.getItem('donWinner');
+let donP1Name = sessionStorage.getItem("donP1Name");
+let donP2Name = sessionStorage.getItem("donP2Name");
 let donPrize = sessionStorage.getItem("donPrize");
-let donName = sessionStorage.getItem("donName");
 let payLinks = [];
 let intervalStart = setInterval(listenToGamepads, 1000/10);
 
@@ -23,22 +24,35 @@ await fetch('/loadconfig', {
 });
 const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
 
-if (donPlayer!=null){
+//sessionStorage.setItem("donPrize", totalPrize);
+//sessionStorage.setItem("donWinner", gameWinner);
+//sessionStorage.setItem("donP1Name", p1Name);
+//sessionStorage.setItem("donP2Name", p2Name);
+console.log(donPrize, donWinner, donP1Name, donP2Name)
+if (donWinner!=null){
     if (donPrize!=null){
-        if(donPlayer=="Player 1"){
+        p1Name = donP1Name
+        p2Name = donP2Name
+        if(donWinner=="Player 1"){
             playersSats[0]+=parseInt(donPrize);
-            if (donName!=null){
-                p1Name=donName;
-            }
+            socket.emit('createPaylink', {"description":"Player1","buyInMin":1000,"buyInMax":10000000});
+            socket.emit('createPaylink', {"description":"Player2","buyInMin":donPrize,"buyInMax":10000000});
+            document.getElementById("mindepP1").innerText = "1000"
+            document.getElementById("mindepP2").innerText = donPrize
         }
-        else if(donPlayer=="Player 2"){
+        else if(donWinner=="Player 2"){
             playersSats[1]+=parseInt(donPrize);
-            if (donName!=null){
-                p2Name=donName;
-            }
+            socket.emit('createPaylink', {"description":"Player1","buyInMin":donPrize,"buyInMax":10000000});
+            socket.emit('createPaylink', {"description":"Player2","buyInMin":1000,"buyInMax":10000000});
+            document.getElementById("mindepP2").innerText = "1000"
+            document.getElementById("mindepP1").innerText = donPrize
         }
     }
     changeTextAfterPayment();
+}
+else if(donWinner==null){
+    socket.emit('createPaylink', {"description":"Player1","buyInMin":10000,"buyInMax":10000000});
+    socket.emit('createPaylink', {"description":"Player2","buyInMin":10000,"buyInMax":10000000});
 }
 
 addEventListener("keydown", function(event) {
@@ -95,8 +109,6 @@ socket.on("connect", () => {
 //socket.onAny((event, ...args) => {
 //    console.log(event, args);
 //});
-socket.emit('createPaylink', {"description":"Player1","buyInMin":10000,"buyInMax":10000000});
-socket.emit('createPaylink', {"description":"Player2","buyInMin":10000,"buyInMax":10000000});
 
 socket.on('rescreateWithdrawal', (data) => {
     sessionStorage.setItem("LNURLID", data.id);
