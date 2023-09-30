@@ -72,12 +72,11 @@ let initialScoreDistribution = [SatsP1,SatsP2];
 let totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
 let currentScoreDistribution = [SatsP1,SatsP2];
 let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
-const gameSpeed = 100
+const gameSpeed = 1000/60
+const stepSpeed = 1000/10
 let counterStart = 0;
 let winnerP = "";
-let intervalCountdown;
-let intervalDraw = setInterval(draw, gameSpeed);
-// let gamepadsInterval = setInterval(listenToGamepads, gameSpeed/6)
+let intervalStep = setInterval(step, stepSpeed);
 const beepCD1 = new Audio("./sound/Beep1.m4a");
 const beepCD2 = new Audio("./sound/Beep2.m4a");
 let beep1Played = false;
@@ -85,12 +84,19 @@ let beep2Played = false;
 let beep3Played = false;
 let beep4Played = false;
 
+/*
+let intervalDraw = setInterval(draw, gameSpeed);
+let intervalCountdown = setInterval(counterStartFunc, 100);
 function counterStartFunc(){
-    counterStart++;
-    if (counterStart == 5){
-        clearInterval(intervalCountdown);
+    if(countdownStart == true){
+        counterStart++;
+        if (counterStart > 50){
+            clearInterval(intervalCountdown);
+        }
     }
+
 }
+*/
 
 function draw(){
     //clear();
@@ -98,6 +104,23 @@ function draw(){
     updateScore();
     displayTitle();
     displayGame();
+    window.requestAnimationFrame(draw);
+}
+
+window.requestAnimationFrame(draw);
+
+function step(){
+    if(gameStarted && !gameEnded){
+        movePlayers()
+        checkCollisions()
+        eatingFood()
+    }
+    else if(countdownStart){
+        counterStart++;
+        if (counterStart > 50){
+            countdownStart = false;
+        }
+    }
 }
 
 // Not necessary since there's a loop on titleCanvas.width\height
@@ -228,7 +251,7 @@ function drawPointChange(){
         }
         listTakenValues[i].P1y = yP1 - 1
         listTakenValues[i].P2y = yP2 - 1
-        listTakenValues[i].alpha = alpha - 0.1;
+        listTakenValues[i].alpha = alpha - 0.1/6;
         if (listTakenValues[i].alpha < 0) {
             listTakenValues.splice(i, 1)
         }
@@ -286,13 +309,12 @@ function displayGame(){
         }
         if(countdownStart){ drawCountdown() }
     }
-    else if(gameStarted && !gameEnded){
-        movePlayers()
-        checkCollisions()
-        drawFood()
-        eatingFood()
+    if(gameStarted && !gameEnded){
         if(currentScoreDistribution[0]<=0 || currentScoreDistribution[1]<=0){
             gameEnded = true;
+        }
+        else {
+            drawFood()
         }
     }
     if(gameEnded){
@@ -421,7 +443,7 @@ function drawCountdown(){
     ctxGame.strokeStyle = "white";
     let alturaNumbers = (alturaGame*0.50).toString();
     ctxGame.font = alturaNumbers.concat("px BureauGrotesque");
-    if(counterStart==0){
+    if(counterStart>0 && counterStart<=10){
         if(!beep1Played){
             beepCD1.play();
             beep1Played = true;
@@ -431,7 +453,7 @@ function drawCountdown(){
         ctxGame.strokeText("1", (larguraGame*0.47), alturaGame/2);
         ctxGame.strokeText("LFG", (larguraGame*0.675), alturaGame/2);
     }
-    else if (counterStart==1){
+    else if (counterStart>10 && counterStart<=20){
         if(!beep2Played){
             beepCD1.play();
             beep2Played = true;
@@ -441,7 +463,7 @@ function drawCountdown(){
         ctxGame.strokeText("1", (larguraGame*0.47), alturaGame/2);
         ctxGame.strokeText("LFG", (larguraGame*0.675), alturaGame/2);
     }
-    else if (counterStart==2){
+    else if (counterStart>20 && counterStart<=30){
         if(!beep3Played){
             beepCD1.play();
             beep3Played = true;
@@ -451,7 +473,7 @@ function drawCountdown(){
         ctxGame.fillText("1", (larguraGame*0.47), alturaGame/2);
         ctxGame.strokeText("LFG", (larguraGame*0.675), alturaGame/2);
     }
-    else if (counterStart==3){
+    else if (counterStart>30 && counterStart<=40){
         if(!beep4Played){
             beepCD2.play();
             beep4Played = true;
@@ -461,7 +483,7 @@ function drawCountdown(){
         ctxGame.fillText("1", (larguraGame*0.47), alturaGame/2);
         ctxGame.fillText("LFG", (larguraGame*0.675), alturaGame/2);
     }
-    else if (counterStart>=4){
+    else if (counterStart>40){
         gameStarted = true;
     }
 }
@@ -681,7 +703,7 @@ addEventListener("keydown", function(event) {
         case "ENTER":
             if(gameStarted==false){
                 countdownStart = true;
-                intervalCountdown = setInterval(counterStartFunc, 1000);
+                
             }
             if(gameEnded==true && winnerP == "Player 2"){
                 redirectWindowAfterGame();
