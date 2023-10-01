@@ -5,6 +5,7 @@
 
 <script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
 <script type="module" src="javascripts/tournbracket.js"></script>
+<script type="module" src="javascripts/value.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <title>Chain Duel</title>
 <link rel="icon" type="image/x-icon" href="/images/favicon.png">
@@ -25,11 +26,12 @@
             <div class="tournament-header">
               <div class="label">Tournament Lobby</div>
               <h1 id="tournament-name" class="hero-outline">The Merkle Tree</h1>
-              <div id="sponsorship">
-                <div class="label hide">50,000 sats * 16 BUY IN MATCH <span id="sponsorship-amount">800,000</span> sats prize donated by</div>
-                <div class="label">Sponsored by</div>
-                <img src="/images/sponsors/piratehash.png" class="sponsorship-logo">
+
+              <div class="sponsorship" id="sponsorship-braket">
+                <div class="sponsored-by-label label" id="sponsored-by-label-braket"></div>
+                <img src="" class="sponsored-img" id="sponsored-img-braket" />
               </div>
+
             </div>
 
             <object id="bracket4players" data="/images/tournament/svg/4_player.svg" class="tournbracket4SVG"></object>

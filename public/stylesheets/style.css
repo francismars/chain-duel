@@ -215,7 +215,7 @@ header{
 
 .hero-outline{
     position:static;
-    margin-bottom: 2%;
+    margin-bottom: 1%;
     text-align: center;
     font-size: 8cqw;
     -webkit-text-stroke-width: 1px;
@@ -327,4 +327,29 @@ Bottom bar with game data for bracket screen and game screen
 
 .in-game .bracketDetail .value h3{
   font-size:2vw;
+}
+
+
+
+
+
+
+
+
+
+.sponsorship{
+  display: none;
+  margin-bottom: 2%;
+}
+
+.sponsored-img{
+  height: 3vw;
+  margin: auto;
+  margin-top: 0.8vw;
+  display:block;
+}
+
+
+.sponsorship-amount{
+  font-weight: 900;
 }
