@@ -20,7 +20,7 @@ let tournamentMode = false;
 if(sessionStorage.getItem('gamePlayers')!=null){
     tournamentMode = true;
     document.getElementById("doubleornotthingbutton").style.display = "none";
-    
+
 }
 
 const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
@@ -60,9 +60,9 @@ let P2SatsDeposit = sessionStorage.getItem('P2Sats');
 if (P1SatsDeposit!=null && P2SatsDeposit!=null){
     let developerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.02)
     let designerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.01)
-    document.getElementById("hostFee").innerText  = "2% ("+developerFee.toLocaleString()+" sats) for the host";
-    document.getElementById("developerFee").innerText  = "2% ("+developerFee.toLocaleString()+" sats) for the developer";
-    document.getElementById("designerFee").innerText  = "1% ("+designerFee.toLocaleString()+" sats) for the designer";
+    document.getElementById("hostFee").innerText  = "("+developerFee.toLocaleString()+" sats)";
+    document.getElementById("developerFee").innerText  = "("+developerFee.toLocaleString()+" sats)";
+    document.getElementById("designerFee").innerText  = "("+designerFee.toLocaleString()+" sats)";
 }
 let menu = 1;
 let activeButtonMenu1 = 0;
@@ -203,13 +203,13 @@ function updateHSJson(){
           console.log(totalPrize)
           console.log("tournament mode :" + playersList != null)
           if(playersList != null){
-            orderedScores[sizeHS].tournament = true; 
+            orderedScores[sizeHS].tournament = true;
             orderedScores[sizeHS].tournamentSponsor = tournamentSponsorImageUrl;
             orderedScores[sizeHS].tournamentName = tournamentPlaceName;
             orderedScores[sizeHS].tournamentPlayers = playersList.length;
           } else{
             orderedScores[sizeHS].tournament = false;
-          }                                
+          }
           orderedScores[sizeHS].p1Name = p1Name
           orderedScores[sizeHS].p1sats = parseInt(P1SatsDeposit)
           orderedScores[sizeHS].p2Name = p2Name
