@@ -28,7 +28,9 @@ export function listenToGamepads() {
         if(gamepad1.buttons[15].pressed==true){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
         }
-        
+        if(gamepad1.buttons[12].pressed==false && gamepad1.buttons[13].pressed==false && gamepad1.buttons[14].pressed==false && gamepad1.buttons[15].pressed==false){
+            window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'w'}));
+        }
 
         // CODE FOR ARCADE CONTROLLER
         //console.log("PLAYER 1")
@@ -97,6 +99,10 @@ export function listenToGamepads() {
         }
         if(gamepad2.buttons[15].pressed==true){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
+        }
+
+        if(gamepad2.buttons[12].pressed==false && gamepad2.buttons[13].pressed==false && gamepad2.buttons[14].pressed==false && gamepad2.buttons[15].pressed==false){
+            window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'ArrowUp'}));
         }
         
 
