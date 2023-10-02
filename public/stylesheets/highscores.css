@@ -119,7 +119,8 @@
 
 
 .sponsor img {
-    max-height: 2.5vw;
+    max-height: 2vw;
+    padding: 3% 0;
 }
 
 .sponsor {
