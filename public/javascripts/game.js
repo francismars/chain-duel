@@ -24,7 +24,7 @@ let p2HeadPos = [44,12];
 let p2BodyPos = [[45,12]];
 let p2Dir = "";
 let p2DirWanted = "Left";
-let foodPos = [[25,12]];
+let coinbasePos = [[25,12]];
 let countdownStart = false;
 let gameStarted = false;
 let gameEnded = false;
@@ -113,7 +113,7 @@ function step(){
     if(gameStarted && !gameEnded){
         movePlayers()
         checkCollisions()
-        eatingFood()
+        captureCoinbase()
     }
     else if(countdownStart){
         counterStart++;
@@ -148,7 +148,7 @@ function resetP2(){
     p2DirWanted = "Left";
 }
 
-function createNewFood(){
+function createNewCoinbase(){
     let newValueAccepted = false;
     while(newValueAccepted==false){
         let foundCollision = false;
@@ -314,7 +314,7 @@ function displayGame(){
             gameEnded = true;
         }
         else {
-            drawFood()
+            drawCoinbase()
         }
     }
     if(gameEnded){
@@ -488,27 +488,27 @@ function drawCountdown(){
     }
 }
 
-function eatingFood(){
-    for(let i=0;i<foodPos.length;i++){
-        if(p1HeadPos[0]==foodPos[i][0] && p1HeadPos[1]==foodPos[i][1]){
+function captureCoinbase(){
+    for(let i=0;i<coinbasePos.length;i++){
+        if(p1HeadPos[0]==coinbasePos[i][0] && p1HeadPos[1]==coinbasePos[i][1]){
             changeScore("P1");
             increaseBody("P1");
-            foodPos.splice(i, 1);
-            createNewFood();
+            coinbasePos.splice(i, 1);
+            createNewCoinbase();
         }
-        else if(p2HeadPos[0]==foodPos[i][0] && p2HeadPos[1]==foodPos[i][1]){
+        else if(p2HeadPos[0]==coinbasePos[i][0] && p2HeadPos[1]==coinbasePos[i][1]){
             changeScore("P2");
             increaseBody("P2");
-            foodPos.splice(i, 1);
-            createNewFood();
+            coinbasePos.splice(i, 1);
+            createNewCoinbase();
         }
     }
 }
 
-function drawFood(){
-    for(let i=0;i<foodPos.length;i++){
+function drawCoinbase(){
+    for(let i=0;i<coinbasePos.length;i++){
         ctxGame.beginPath();
-        ctxGame.arc((colSize*foodPos[i][0])+colSize/2, (rowSize*foodPos[i][1])+rowSize/2, (rowSize/2)-rowSize/5.4, 0, 2 * Math.PI, false);
+        ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, (rowSize/2)-rowSize/5.4, 0, 2 * Math.PI, false);
         ctxGame.fillStyle = "white";
         ctxGame.shadowColor='white';
         ctxGame.shadowOffsetX=0;
