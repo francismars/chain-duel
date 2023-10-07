@@ -174,7 +174,7 @@ function createNewCoinbase(){
         }
         if(foundCollision==false){
             newValueAccepted = true;
-            foodPos.push([newX,newY]);
+            coinbasePos.push([newX,newY]);
         }
     }
 }
@@ -302,9 +302,9 @@ function displayGame(){
     drawPlayers()
     drawPointChange()
     if(!gameStarted && !gameEnded){
-        
-        if(!countdownStart){ 
-            initialText() 
+
+        if(!countdownStart){
+            initialText()
             //drawControllerTest()
         }
         if(countdownStart){ drawCountdown() }
@@ -339,7 +339,7 @@ function drawControllerTest(){
     ctxGame.fill();
     let p1testText = ""
     if(p2DirWanted=="UP") p1testText=="UP"
-    ctxGame.fillText(controllerTestP1Direction, gameCanvas.width/4, gameCanvas.height/1.5); 
+    ctxGame.fillText(controllerTestP1Direction, gameCanvas.width/4, gameCanvas.height/1.5);
 }
 
 function gameSettings(){
@@ -447,7 +447,7 @@ function drawCountdown(){
         if(!beep1Played){
             beepCD1.play();
             beep1Played = true;
-        }        
+        }
         ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
         ctxGame.strokeText("2", (larguraGame*0.36), alturaGame/2);
         ctxGame.strokeText("1", (larguraGame*0.47), alturaGame/2);
@@ -457,7 +457,7 @@ function drawCountdown(){
         if(!beep2Played){
             beepCD1.play();
             beep2Played = true;
-        }   
+        }
         ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
         ctxGame.fillText("2", (larguraGame*0.36), alturaGame/2);
         ctxGame.strokeText("1", (larguraGame*0.47), alturaGame/2);
@@ -467,7 +467,7 @@ function drawCountdown(){
         if(!beep3Played){
             beepCD1.play();
             beep3Played = true;
-        } 
+        }
         ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
         ctxGame.fillText("2", (larguraGame*0.36), alturaGame/2);
         ctxGame.fillText("1", (larguraGame*0.47), alturaGame/2);
@@ -477,7 +477,7 @@ function drawCountdown(){
         if(!beep4Played){
             beepCD2.play();
             beep4Played = true;
-        } 
+        }
         ctxGame.fillText("3", (larguraGame*0.24), alturaGame/2);
         ctxGame.fillText("2", (larguraGame*0.36), alturaGame/2);
         ctxGame.fillText("1", (larguraGame*0.47), alturaGame/2);
@@ -703,7 +703,7 @@ addEventListener("keydown", function(event) {
         case "ENTER":
             if(gameStarted==false){
                 countdownStart = true;
-                
+
             }
             if(gameEnded==true && winnerP == "Player 2"){
                 redirectWindowAfterGame();
@@ -767,7 +767,7 @@ addEventListener("keydown", function(event) {
             }
             else if(gameStarted==false){
                 controllerTestP1Direction = "Right"
-            } 
+            }
             break;
         case "W":
             if(gameStarted==true){
@@ -777,7 +777,7 @@ addEventListener("keydown", function(event) {
             }
             else if(gameStarted==false){
                 controllerTestP1Direction = "Up"
-            }                 
+            }
             break;
         case "S":
             if(gameStarted==true){
@@ -787,7 +787,7 @@ addEventListener("keydown", function(event) {
             }
             else if(gameStarted==false){
                 controllerTestP1Direction = "Down"
-            } 
+            }
             break;
     }
 });
@@ -833,6 +833,6 @@ addEventListener("keyup", function(event) {
             if(gameStarted==false){
                 controllerTestP1Direction = ""
             }
-            break;            
+            break;
     }
 });
