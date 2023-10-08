@@ -44,7 +44,7 @@ if(playerListParsed!=null){
 else if(playerListParsed==null){
     playersList = []
     playerListSequencial = []
-    playersList = ["giacomozucco","BTCGandalf","Laurastacksats","DZd1d1", "KristianCsep","?","?","BitcoinShooter","mir_btc" ,"watermaniak","Jose_S_bam","BtcFrancis","JoeNakamoto","?","Rikki6ixx","?","Pedro","Joao","Maria","Jose","Antonio","Leonardo","David","Carla","Ricardo","Tiago","Hebe","Zucco","Back","Todd","Satoshi","Nakamoto"]
+    playersList = []
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
@@ -112,7 +112,7 @@ socket.on("invoicePaid", body => {
     for(let i=0;i<=playerPosition;i++){
         if(playersList[i]!="" && i<numberOfPlayers){
             playerPosition++
-        } 
+        }
     }
     // 16-3 = 13
     // ["","","","","Pedro","","","","Raquel","","","","","","","Andrade"]
@@ -122,7 +122,7 @@ socket.on("invoicePaid", body => {
     playerListSequencial.push(pName)
     playersList[playerPosition]=pName
     numberOfDeposits++
-    changeHTMLAfterPayment()    
+    changeHTMLAfterPayment()
 });
 
 let nextGameP1;
@@ -175,7 +175,7 @@ function updateBracketWinner(){
                 if(winnersList[i]=="Player 1"){
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
-                    
+
                     winnerName = playersList[i*2]
                 }
                 else if(winnersList[i]=="Player 2"){
@@ -185,7 +185,7 @@ function updateBracketWinner(){
                 }
             }
             else if(i>=(numberOfPlayers/2) && i<(numberOfPlayers/2)+(numberOfPlayers/4)){ // Segunda Ronda
-                
+
                 let winnerPlayer = winnersList[i];
                 let winnerPrevious;
                 let winnerPreviousMultiplier;
@@ -226,7 +226,7 @@ function updateBracketWinner(){
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
 
-                    let winnerPreviousIndex = i - ((numberOfPlayers/4)-subtractor2) 
+                    let winnerPreviousIndex = i - ((numberOfPlayers/4)-subtractor2)
                     //console.log("winnerPreviousIndex: " + winnerPreviousIndex)
                     if(subtractor2==0) subtractor3=0;
                     if(subtractor2==1) subtractor3=2;
@@ -264,7 +264,7 @@ function updateBracketWinner(){
                     if(subtractor2==0) subtractor3=1;
                     if(subtractor2==1) subtractor3=3;
                     if(winnersList[winnerPreviousIndex] == "Player 1"){ // Terceiro Oitavo e Setimo Oitavo
-                        
+
                         let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2)-subtractor3)
                         //console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
@@ -293,7 +293,7 @@ function updateBracketWinner(){
                 subtractor2++
             }
             // Quarta Ronda
-            else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8) 
+            else if(i>=(numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8)
                                 && i<((numberOfPlayers/2)+(numberOfPlayers/4)+(numberOfPlayers/8)+(numberOfPlayers/16))){ // 8 + 4 + 2 + 1 = 15
                 let winnerPreviousIndex = (i - (numberOfPlayers/16) + subtractor4 + 1)
                 console.log("----------------------")
@@ -313,14 +313,14 @@ function updateBracketWinner(){
                 }
                 subtractor4++;
             }
-            
+
             let domPosition
             if((i+1)==(numberOfPlayers-1)){
                 //console.log(i)
                 //console.log(initialPositions[(i*2)])
                 //console.log(initialPositions[(i*2)+1])
                 highLightWinnerSquare(svgDoc,"Winner")
-                
+
                 if(winnersList[winnersList.length-1] == "Player 1"){
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
@@ -329,7 +329,7 @@ function updateBracketWinner(){
                     highLight(svgDoc,initialPositions[(i*2)+1])
                     dimLoser(svgDoc,initialPositions[(i*2)])
                 }
-                
+
                 domPosition = "Winner"
                 winnersList[i]=="Player 1" ? winnerName = WinnerNamesList[i-2] : winnerName = WinnerNamesList[i-1]
             }
@@ -581,7 +581,7 @@ function changeNameText(svgDoc,id, name){
 function shuffleList(array) {
     let m = array.length;
     let t, i;
-    while (m) {  
+    while (m) {
       i = Math.floor(Math.random() * m--);
       t = array[m];
       array[m] = array[i];
