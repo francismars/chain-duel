@@ -262,3 +262,19 @@ body{
 .paymentComplete #paymentNote{
   font-size: 0;
 }
+
+
+
+
+/* Sponsroship payment */
+.bracketPayment .sponsored-img{
+    margin-top: -2vw;
+    height: 2.5vw;
+    margin-bottom: 2vw;
+}
+
+.bracketPayment {
+    width: 30%;
+    height: 38vw;
+    margin-left:-15%;'
+}
