@@ -84,6 +84,14 @@ let beep2Played = false;
 let beep3Played = false;
 let beep4Played = false;
 
+const p1FC = new Audio("./sound/P1-FC.mp3");
+const p2FC = new Audio("./sound/P2-FC.mp3");
+
+
+
+const p1reset = new Audio("./sound/P1-HWAC.mp3");
+const p2reset = new Audio("./sound/P2-HWAC.mp3");
+
 /*
 let intervalDraw = setInterval(draw, gameSpeed);
 let intervalCountdown = setInterval(counterStartFunc, 100);
@@ -139,6 +147,9 @@ function resetP1(){
     p1BodyPos = [[5,12]];
     p1Dir = "";
     p1DirWanted = "Right";
+    p1reset.pause();
+    p1reset.currentTime = 0;
+    p1reset.play();
 }
 
 function resetP2(){
@@ -146,6 +157,9 @@ function resetP2(){
     p2BodyPos = [[45,12]];
     p2Dir = "";
     p2DirWanted = "Left";
+    p2reset.pause();
+    p2reset.currentTime = 0;
+    p2reset.play();
 }
 
 function createNewCoinbase(){
@@ -489,18 +503,25 @@ function drawCountdown(){
 }
 
 function captureCoinbase(){
+
     for(let i=0;i<coinbasePos.length;i++){
         if(p1HeadPos[0]==coinbasePos[i][0] && p1HeadPos[1]==coinbasePos[i][1]){
             changeScore("P1");
             increaseBody("P1");
             coinbasePos.splice(i, 1);
             createNewCoinbase();
+            p1FC.pause();
+            p1FC.currentTime = 0;
+            p1FC.play();
         }
         else if(p2HeadPos[0]==coinbasePos[i][0] && p2HeadPos[1]==coinbasePos[i][1]){
             changeScore("P2");
             increaseBody("P2");
             coinbasePos.splice(i, 1);
             createNewCoinbase();
+            p2FC.pause();
+            p2FC.currentTime = 0;
+            p2FC.play();
         }
     }
 }
