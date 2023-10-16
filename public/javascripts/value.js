@@ -4,6 +4,7 @@ if (document.getElementsByClassName("sponsorship").length != 0){
   console.log(document.getElementsByClassName("sponsorship"));
   const sponsorship = document.getElementsByClassName("sponsorship");
   sponsorship[0].style.display = 'block';
+  sponsorship[0].style.display = 'none';
 }
 
 // Overides
@@ -53,6 +54,7 @@ if (document.getElementsByClassName("sponsored-img").length != 0){
 if (document.getElementsByClassName("sponsored-img").length == 2){
   const sponsoredImg = document.getElementsByClassName("sponsored-img");
   sponsoredImg[1].src = sponsorImage;
+  sponsoredImg[1].style.display = 'none';
 }
 
 
