@@ -14,6 +14,15 @@ let donPrize = sessionStorage.getItem("donPrize");
 let payLinks = [];
 let intervalStart = setInterval(listenToGamepads, 1000/10);
 
+
+let donRound = JSON.parse(sessionStorage.getItem("donRound"));
+let donText = "*2"
+if(donRound!=null){
+  donText = donText.repeat(donRound)
+  document.getElementById("gameMenuTitle").textContent = "Stake your sats"+donText
+}
+  
+
 await fetch('/loadconfig', {
     method: 'GET'
     })
@@ -94,7 +103,7 @@ addEventListener("keydown", function(event) {
                 else if (selected=="MainMenuButton"){
                     if(playersSats[0]==0&&playersSats[1]==0){
                         deletePayLinks().then(
-                            function(value) { if(value=="redirect") window.location.href = "/"; }        
+                            function(value) { if(value=="redirect") window.location.href = "/"; }
                         )
                     }
                 }
@@ -115,7 +124,7 @@ socket.on('rescreateWithdrawal', (data) => {
     sessionStorage.setItem("LNURL", data.lnurl);
     sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
     deletePayLinks().then(
-        function(value) { if(value=="redirect") redirectToGame() }        
+        function(value) { if(value=="redirect") redirectToGame() }
     )
 })
 

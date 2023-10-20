@@ -102,18 +102,27 @@ function pressDown(){
     }
 }
 
+let donRound = sessionStorage.getItem("donRound");
+if(donRound==null){
+  donRound = 0
+  sessionStorage.setItem("donRound", donRound);
+}
+
+
 function pressContinue(){
     if(menu==1 && activeButtonMenu1==0){
         menu2CSS();
         qrRevealed = 1;
     }
     else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
+        donRound = donRound + 1
         sessionStorage.clear();
         if (gameWinner!=null && totalPrize!=null && winnerName!=undefined){
             sessionStorage.setItem("donWinner", gameWinner);
             sessionStorage.setItem("donP1Name", p1Name);
             sessionStorage.setItem("donP2Name", p2Name);
             sessionStorage.setItem("donPrize", totalPrize);
+            sessionStorage.setItem("donRound", donRound);
         }
         window.location.href = "/gamemenu";
     }

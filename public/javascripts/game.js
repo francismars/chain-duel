@@ -92,6 +92,29 @@ const p2FC = new Audio("./sound/P2-FC.mp3");
 const p1reset = new Audio("./sound/P1-HWAC.mp3");
 const p2reset = new Audio("./sound/P2-HWAC.mp3");
 
+
+
+/* P2P vs Tournament Game Name */
+let playerListParsed = JSON.parse(sessionStorage.getItem("PlayerList"));
+let winnersListStorage = JSON.parse(sessionStorage.getItem("WinnersList"));
+let donRound = JSON.parse(sessionStorage.getItem("donRound"));
+let donText = "*2"
+if(playerListParsed==null){
+    if(donRound!=null){
+      donText = donText.repeat(donRound)
+    }
+    document.getElementById("gameInfo").textContent = "P2P"+donText
+}
+else if(playerListParsed!=null){
+  if(winnersListStorage==null){
+      document.getElementById("gameInfo").textContent = "GAME 1/"+playerListParsed.length
+  }else{
+      document.getElementById("gameInfo").textContent = "GAME " + (winnersListStorage.length+1)+"/"+playerListParsed.length
+  }
+}
+
+
+
 /*
 let intervalDraw = setInterval(draw, gameSpeed);
 let intervalCountdown = setInterval(counterStartFunc, 100);
