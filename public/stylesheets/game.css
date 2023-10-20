@@ -51,18 +51,33 @@ body{
     box-shadow: 0 0 11px #ffffffb0;
 }
 
+
+
+
+#player1info, #player2info, #gameInfo{
+  font-size: 2.5cqw;
+  width: 33.3333%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 #player1info {
     color: white;
-    font-size: 2.5cqw;
     padding-top: 0px;
     margin-bottom: 0px;
 }
 
 #player2info {
     color: white;
-    font-size: 2.5cqw;
     padding-top: 0px;
     margin-bottom: 0px;
+    margin-right: 0;
+    text-align:right
+}
+
+#gameInfo{
+  text-align: center;
 }
 
 

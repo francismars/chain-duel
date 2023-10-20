@@ -223,6 +223,13 @@ header{
     -webkit-text-stroke-color: white;
 }
 
+
+.outline{
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke-color: white;
+}
+
 .center {
   margin: auto;
 }
