@@ -99,9 +99,13 @@ let playerListParsed = JSON.parse(sessionStorage.getItem("PlayerList"));
 let winnersListStorage = JSON.parse(sessionStorage.getItem("WinnersList"));
 let donRound = JSON.parse(sessionStorage.getItem("donRound"));
 let donText = "*2"
+console.log("donRound")
 if(playerListParsed==null){
+    console.log(donRound)
     if(donRound!=null){
       donText = donText.repeat(donRound)
+    }else{
+      donText = ""
     }
     document.getElementById("gameInfo").textContent = "P2P"+donText
 }
