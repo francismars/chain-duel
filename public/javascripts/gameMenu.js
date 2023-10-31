@@ -16,12 +16,12 @@ let intervalStart = setInterval(listenToGamepads, 1000/10);
 
 
 let donRound = JSON.parse(sessionStorage.getItem("donRound"));
-let donText = "*2"
+let donText = "";
 if(donRound!=null){
-  donText = donText.repeat(donRound)
+  donText = "*"+(Math.pow(2,donRound))
   document.getElementById("gameMenuTitle").textContent = "Stake your sats"+donText
 }
-  
+
 
 await fetch('/loadconfig', {
     method: 'GET'
