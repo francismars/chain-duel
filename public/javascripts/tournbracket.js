@@ -475,6 +475,7 @@ addEventListener("keydown", function(event) {
                 document.getElementById("issuerefundssecond").style.display = "block";
                 document.getElementById("backButton").style.display = "none";
                 document.getElementById("proceedButton").style.display = "none";
+                document.getElementById("sponsoredImgBraket").style.display = "none";
             }
         }
         else if(buttonSelected=="startGameButton"){
