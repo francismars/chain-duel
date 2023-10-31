@@ -42,6 +42,30 @@
     "tournamentPlayers": 16
   },
   {
+    "tournament": true,
+    "p1Name": "Joep",
+    "p1sats": 50000,
+    "p2Name": "Joep",
+    "p2sats": 50000,
+    "winner": "Player 2",
+    "prize": 760000,
+    "tournamentSponsor": "",
+    "tournamentName": "Bitcoin Amsterdam 2023",
+    "tournamentPlayers": 16
+  },
+  {
+    "tournament": true,
+    "p1Name": "francis🐉",
+    "p1sats": 50000,
+    "p2Name": "francis🐉",
+    "p2sats": 50000,
+    "winner": "Player 2",
+    "prize": 760000,
+    "tournamentSponsor": "",
+    "tournamentName": "Bitcoin Amsterdam 2023",
+    "tournamentPlayers": 16
+  },
+  {
     "tournament": false,
     "p1Name": "Riccardo",
     "p1sats": 185250,
@@ -49,18 +73,6 @@
     "p2sats": 185250,
     "winner": "Player 1",
     "prize": 351975
-  },
-  {
-    "tournament": true,
-    "p1Name": "Nakamotor",
-    "p1sats": 10000,
-    "p2Name": "Nakamotor",
-    "p2sats": 10000,
-    "winner": "Player 2",
-    "prize": 304000,
-    "tournamentSponsor": "",
-    "tournamentName": "Biggest Tournamet Test",
-    "tournamentPlayers": 32
   },
   {
     "tournament": false,
@@ -130,12 +142,15 @@
   },
   {
     "tournament": false,
-    "p1Name": "F",
+    "p1Name": "Francis🐉",
     "p1sats": 68590,
-    "p2Name": "Pedro🧨",
+    "p2Name": "CraigWrong",
     "p2sats": 68590,
-    "winner": "Player 2",
-    "prize": 130321
+    "winner": "Player 1",
+    "prize": 130321,
+    "tournamentSponsor": "",
+    "tournamentName": "",
+    "tournamentPlayers": 4
   },
   {
     "tournament": false,
