@@ -97,6 +97,7 @@ addEventListener("keydown", function(event) {
                             sessionStorage.setItem("P2Name", p2Name);
                             socket.emit('createWithdrawal', {"amount": Math.floor((playersSats[0]+playersSats[1])*0.95), "maxWithdrawals": 1});
                             numberofCreates=1;
+                            document.getElementById("loading").style.display  = "flex";
                         }
                     }
                 }

@@ -286,3 +286,24 @@ body{
 #leaderboardSats{
   font-weight: bold;
 }
+
+
+
+
+
+#loading.overlay{
+  width: 100vw;
+  height: 100vh;
+  display: none;
+  background: #000000cc;
+  position: fixed;
+  top: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+#loading.overlay img{
+  display: block;
+  width: 7vw;
+  height: 7vw;
+}
