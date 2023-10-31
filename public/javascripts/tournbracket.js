@@ -43,8 +43,8 @@ if(playerListParsed!=null){
 }
 else if(playerListParsed==null){
     playersList = []
+    //playersList = ["Big Toshi","XORNOTHING","Nakamotor","256octans"]
     playerListSequencial = []
-    playersList = []
     let urlToParse = location.search;
     const params = new URLSearchParams(urlToParse);
     numberOfPlayers = parseInt(params.get("players"));
