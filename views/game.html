@@ -29,10 +29,15 @@
           </div>
           <canvas id="titleCanvas"></canvas>
           <div class="flex points">
-            <div class="player-sats">
+            <div class="player-sats player-sats-p1">
               <span id="p1Points" class="condensed">0</span> <span class="grey">sats</span>
             </div>
-            <div class="player-sats">
+
+            <div class="sponsorship" id="sponsorshipGame">
+              <img src="" class="sponsored-img" id="sponsoredImgBraket" />
+            </div>
+
+            <div class="player-sats player-sats-p2">
               <span class="grey">sats</span> <span id="p2Points" class="condensed">0</span>
             </div>
           </div>
@@ -87,4 +92,5 @@
       </audio>
 </body>
 <script type="module" src="javascripts/game.js"></script>
+<script type="module" src="javascripts/value.js"></script>
 </html>

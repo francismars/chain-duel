@@ -95,6 +95,13 @@ body{
   background: #000
 }
 
+.player-sats{
+  width: 25%;
+}
+
+.player-sats-p2{
+  text-align: right;
+}
 .player-sats span {
   font-size: 1cqw;
 }
@@ -114,4 +121,15 @@ body{
     right: 15%;
     top: 21%;
     font-size: 2.5cqw;
+}
+
+
+.points .sponsorship {
+    margin-bottom: 0;
+}
+
+.points .sponsored-img {
+    height: 2.1vw;
+    margin-top: 0;
+    margin-bottom: -0.2vw;
 }
