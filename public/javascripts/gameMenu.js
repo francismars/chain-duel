@@ -192,10 +192,10 @@ socket.on("invoicePaid", body => {
 });
 
 function changeTextAfterPayment(){
-    document.getElementById("player2sats").innerText = playersSats[1]
-    document.getElementById("player1sats").innerText = playersSats[0]
+    document.getElementById("player2sats").innerText = playersSats[1].toLocaleString()
+    document.getElementById("player1sats").innerText = playersSats[0].toLocaleString()
     let totalPrize = playersSats[0] + playersSats[1]
-    document.getElementById("prizevaluesats").innerText = totalPrize
+    document.getElementById("prizevaluesats").innerText = totalPrize.toLocaleString()
     document.getElementById("rules1").innerText = "host 2% ("+Math.floor(totalPrize*0.02).toLocaleString()+" sats)"
     document.getElementById("rules2").innerText = "developer 2% ("+Math.floor(totalPrize*0.02).toLocaleString()+" sats)"
     document.getElementById("rules3").innerText = "designer 1% ("+Math.floor(totalPrize*0.01).toLocaleString()+" sats)"
