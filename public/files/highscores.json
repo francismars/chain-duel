@@ -1,15 +1,6 @@
 [
   {
     "tournament": false,
-    "p1Name": "Christopher",
-    "p1sats": 1000000,
-    "p2Name": "Alessandra",
-    "p2sats": 1000000,
-    "winner": "Player 1",
-    "prize": 1996000
-  },
-  {
-    "tournament": false,
     "p1Name": "Turtlecute",
     "p1sats": 1100000,
     "p2Name": "hack.bs.it",
@@ -19,15 +10,51 @@
   },
   {
     "tournament": true,
-    "tournamentSponsor": "/images/sponsors/piratehash.png",
-    "tournamentName": "Baltic Honey Badger 2023",
-    "tournamentPlayers": 16,
     "p1Name": "jose",
     "p1sats": 50000,
     "p2Name": "bitsalv",
     "p2sats": 50000,
     "winner": "Player 2",
-    "prize": 1520000
+    "prize": 1520000,
+    "tournamentSponsor": "/images/sponsors/piratehash.png",
+    "tournamentName": "Baltic Honey Badger 2023",
+    "tournamentPlayers": 16
+  },
+  {
+    "tournament": true,
+    "p1Name": "Riccardo",
+    "p1sats": 200000,
+    "p2Name": "Riccardo",
+    "p2sats": 200000,
+    "winner": "Player 2",
+    "prize": 1520000,
+    "tournamentSponsor": "/images/sponsors/relai_bg.svg",
+    "tournamentName": "Lugano PlanB Forum 2023",
+    "tournamentPlayers": 8
+  },
+  {
+    "tournament": true,
+    "p1Name": "Turtle🐢⚠️",
+    "p1sats": 50000,
+    "p2Name": "Daniel Pi",
+    "p2sats": 50000,
+    "winner": "Player 1",
+    "prize": 807500,
+    "tournamentSponsor": "/images/sponsors/relai_bg.svg",
+    "tournamentName": "Lugano PlanB Forum 2023",
+    "tournamentPlayers": 16
+  },
+  {
+    "tournament": true,
+    "p1Name": "Fede 🚂",
+    "p1sats": 50000,
+    "p2Name": "Fede 🚂",
+    "p2sats": 50000,
+    "winner": "Player 2",
+    "prize": 807500,
+    "tournamentSponsor": "/images/sponsors/relai_bg.svg",
+    "tournamentName": "Lugano PlanB Forum 2023",
+    "tournamentPlayers": 16
   },
   {
     "tournament": true,
@@ -66,6 +93,63 @@
     "tournamentPlayers": 16
   },
   {
+    "tournament": true,
+    "p1Name": "Riccardo",
+    "p1sats": 50000,
+    "p2Name": "Riccardo",
+    "p2sats": 50000,
+    "winner": "Player 2",
+    "prize": 760000,
+    "tournamentSponsor": "/images/sponsors/relai_bg.svg",
+    "tournamentName": "Lugano PlanB Forum 2023",
+    "tournamentPlayers": 16
+  },
+  {
+    "tournament": true,
+    "p1Name": "Dusan",
+    "p1sats": 50000,
+    "p2Name": "Rogzy 🐇",
+    "p2sats": 50000,
+    "winner": "Player 1",
+    "prize": 760000,
+    "tournamentSponsor": "",
+    "tournamentName": "Adopting Bitcoin 2023",
+    "tournamentPlayers": 16
+  },
+  {
+    "tournament": true,
+    "p1Name": "Rogzy 🐇",
+    "p1sats": 50000,
+    "p2Name": "Rogzy 🐇",
+    "p2sats": 50000,
+    "winner": "Player 2",
+    "prize": 760000,
+    "tournamentSponsor": "",
+    "tournamentName": "Adopting Bitcoin 2023",
+    "tournamentPlayers": 16
+  },
+  {
+    "tournament": false,
+    "p1Name": "Riccardo",
+    "p1sats": 247609,
+    "p2Name": "🏖",
+    "p2sats": 247609,
+    "winner": "Player 2",
+    "prize": 470457
+  },
+  {
+    "tournament": true,
+    "p1Name": "Rogzy 🐇",
+    "p1sats": 50000,
+    "p2Name": "🐉🐉🐉🐉🐉",
+    "p2sats": 50000,
+    "winner": "Player 1",
+    "prize": 380000,
+    "tournamentSponsor": "",
+    "tournamentName": "Adopting Bitcoin 2023",
+    "tournamentPlayers": 8
+  },
+  {
     "tournament": false,
     "p1Name": "Riccardo",
     "p1sats": 185250,
@@ -82,6 +166,27 @@
     "p2sats": 130321,
     "winner": "Player 2",
     "prize": 247609
+  },
+  {
+    "tournament": false,
+    "p1Name": "WEF",
+    "p1sats": 130000,
+    "p2Name": "Ça pue",
+    "p2sats": 130000,
+    "winner": "Player 1",
+    "prize": 247000
+  },
+  {
+    "tournament": true,
+    "p1Name": "Player 5",
+    "p1sats": 30000,
+    "p2Name": "Player 5",
+    "p2sats": 30000,
+    "winner": "Player 2",
+    "prize": 228000,
+    "tournamentSponsor": "/images/sponsors/relai_bg.svg",
+    "tournamentName": "Lugano PlanB Forum 2023",
+    "tournamentPlayers": 8
   },
   {
     "tournament": false,
@@ -111,18 +216,6 @@
     "prize": 166421
   },
   {
-    "tournament": true,
-    "p1Name": "Number ten",
-    "p1sats": 10000,
-    "p2Name": "Number ten",
-    "p2sats": 10000,
-    "winner": "Player 2",
-    "prize": 152000,
-    "tournamentSponsor": "",
-    "tournamentName": "",
-    "tournamentPlayers": 16
-  },
-  {
     "tournament": false,
     "p1Name": "Ebrey 👃👃👃",
     "p1sats": 73000,
@@ -130,92 +223,5 @@
     "p2sats": 73000,
     "winner": "Player 1",
     "prize": 138700
-  },
-  {
-    "tournament": false,
-    "p1Name": "Francis",
-    "p1sats": 70450,
-    "p2Name": "Shooter",
-    "p2sats": 70450,
-    "winner": "Player 1",
-    "prize": 137377
-  },
-  {
-    "tournament": false,
-    "p1Name": "Francis🐉",
-    "p1sats": 68590,
-    "p2Name": "CraigWrong",
-    "p2sats": 68590,
-    "winner": "Player 1",
-    "prize": 130321,
-    "tournamentSponsor": "",
-    "tournamentName": "",
-    "tournamentPlayers": 4
-  },
-  {
-    "tournament": false,
-    "p1Name": "Francis🐉",
-    "p1sats": 68590,
-    "p2Name": "Nat",
-    "p2sats": 68590,
-    "winner": "Player 1",
-    "prize": 130321
-  },
-  {
-    "tournament": false,
-    "p1Name": "Fede ⚡️",
-    "p1sats": 68590,
-    "p2Name": "Rogzy 🐇",
-    "p2sats": 68590,
-    "winner": "Player 1",
-    "prize": 130321
-  },
-  {
-    "tournament": false,
-    "p1Name": "big snake",
-    "p1sats": 68590,
-    "p2Name": "Pedro🧨",
-    "p2sats": 68590,
-    "winner": "Player 1",
-    "prize": 130321
-  },
-  {
-    "tournament": false,
-    "p1Name": "🪔",
-    "p1sats": 68590,
-    "p2Name": "Rogzy🐰",
-    "p2sats": 68590,
-    "winner": "Player 2",
-    "prize": 130321,
-    "tournamentSponsor": "",
-    "tournamentName": "",
-    "tournamentPlayers": 4
-  },
-  {
-    "tournament": false,
-    "p1Name": "F",
-    "p1sats": 68590,
-    "p2Name": "Tony",
-    "p2sats": 68590,
-    "winner": "Player 1",
-    "prize": 130321
-  },
-  {
-    "tournament": false,
-    "p1Name": "Rikki",
-    "p1sats": 50000,
-    "p2Name": "Francis",
-    "p2sats": 49922,
-    "winner": "Player 2",
-    "prize": 94925
-  },
-  {
-    "tournament": false,
-    "p1Name": "DC",
-    "p1sats": 68590,
-    "p2Name": "ebreoh ⚠️",
-    "p2sats": 68590,
-    "winner": "Player 2",
-    "prize": 130321
   }
 ]
