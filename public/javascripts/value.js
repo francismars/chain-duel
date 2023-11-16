@@ -2,10 +2,9 @@
 // Global Sponsorship
 if (document.getElementsByClassName("sponsorship") != null){
   if (document.getElementsByClassName("sponsorship").length != 0){
-    console.log(document.getElementsByClassName("sponsorship"));
     const sponsorship = document.getElementsByClassName("sponsorship");
     sponsorship[0].style.display = 'block';
-    sponsorship[0].style.display = 'none';
+    //sponsorship[0].style.display = 'none';
   }
 }
 // Overides
@@ -41,22 +40,21 @@ if (document.getElementById("sponsorshipGame").length != 0){
 if (document.getElementsByClassName("sponsored-by-label") != null){
   if (document.getElementsByClassName("sponsored-by-label").length != 0){
     const sponsoredLabel = document.getElementsByClassName("sponsored-by-label");
-    sponsoredLabel[0].innerHTML = "Sponsored by";
+    sponsoredLabel[0].innerHTML = "Hosted by";
     //sponsoredLabel[0].innerHTML = "50,000 sats * 16 BUY IN MATCH <span id='sponsorship-amount'>800,000</span> sats prize donated by";
   }
 }
 
 let sponsorImage = "";
 
-sponsorImage = "/images/sponsors/bitcoin_magazine.svg";
-sponsorImage = "/images/sponsors/piratehash.png";
-sponsorImage = "/images/sponsors/bitbox.png";
-
+//sponsorImage = "/images/sponsors/bitcoin_magazine.svg";
+//sponsorImage = "/images/sponsors/piratehash.png";
+//sponsorImage = "/images/sponsors/bitbox.png";
 //sponsorImage = "/images/sponsors/relai_bg.png";
 //sponsorImage = "/images/sponsors/build_the_builders.png";
 //sponsorImage = "/images/sponsors/bitcoin_amsterdam.png";
-//sponsorImage = "/images/sponsors/mempool.png";
-sponsorImage = "/images/sponsors/coldcard.png";
+sponsorImage = "/images/sponsors/amityage_color.png";
+
 
 if (document.getElementsByClassName("sponsored-img") != null){
   if (document.getElementsByClassName("sponsored-img").length != 0){
@@ -75,14 +73,14 @@ if (document.getElementsByClassName("sponsored-img") != null){
 if (document.getElementById("split1") != null){
   if (document.getElementById("split1").length != 0){
     const split1 = document.getElementById("split1");
-    split1.innerHTML = "<b>2%</b> <span id='hostFee'></span> to the host (@thebitcoinconf)";
+    split1.innerHTML = "<b>2%</b> <span id='hostFee'></span> to the host (@AmityAge)";
   }
 }
 
 if (document.getElementById("split2") != null){
   if (document.getElementById("split2").length != 0){
     const split2 = document.getElementById("split2");
-    split2.innerHTML = "<b>2%</b> <span id='developerFee'></span> to the developer (@francismars)";
+    split2.innerHTML = "<b>2%</b> <span id='developerFee'></span> to the developer (@BTCfrancis)";
   }
 }
 
