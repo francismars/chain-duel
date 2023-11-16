@@ -53,7 +53,8 @@ body{
 
 #player2info .playerSquare {
     box-shadow: 0 0 27px #000000, 0 0 27px #000000;
-    border:1px #1f1f1f solid
+    border:1px #1f1f1f solid;
+    box-shadow: 0 0 11px #ffffffb0;
 }
 
 
