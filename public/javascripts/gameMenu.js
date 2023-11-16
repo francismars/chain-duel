@@ -10,6 +10,7 @@ let p2Name = "Player 2"
 let donWinner = sessionStorage.getItem('donWinner');
 let donP1Name = sessionStorage.getItem("donP1Name");
 let donP2Name = sessionStorage.getItem("donP2Name");
+let sessionID = sessionStorage.getItem("sessionID");
 let donPrize = sessionStorage.getItem("donPrize");
 let payLinks = [];
 let intervalStart = setInterval(listenToGamepads, 1000/10);
@@ -31,7 +32,12 @@ await fetch('/loadconfig', {
         serverIP = data.IP
         serverPORT = data.PORT
 });
-const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
+const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'], autoConnect: false });
+if(sessionID){
+    console.log("Found sessionID on sessionStorage "+ sessionID)
+    socket.auth = { sessionID };
+}
+socket.connect();
 
 //sessionStorage.setItem("donPrize", totalPrize);
 //sessionStorage.setItem("donWinner", gameWinner);
@@ -60,8 +66,8 @@ if (donWinner!=null){
     changeTextAfterPayment();
 }
 else if(donWinner==null){
-    socket.emit('createPaylink', {"description":"Player1","buyInMin":10000,"buyInMax":10000000});
-    socket.emit('createPaylink', {"description":"Player2","buyInMin":10000,"buyInMax":10000000});
+    socket.emit('createPaylink', {"description":"Player1","buyInMin":100,"buyInMax":10000000});
+    socket.emit('createPaylink', {"description":"Player2","buyInMin":100,"buyInMax":10000000});
 }
 
 addEventListener("keydown", function(event) {
@@ -103,9 +109,8 @@ addEventListener("keydown", function(event) {
                 }
                 else if (selected=="MainMenuButton"){
                     if(playersSats[0]==0&&playersSats[1]==0){
-                        deletePayLinks().then(
-                            function(value) { if(value=="redirect") window.location.href = "/"; }
-                        )
+                        socket.emit('cancelgame')
+                        window.location.href = "/"; 
                     }
                 }
             break;
@@ -120,13 +125,18 @@ socket.on("connect", () => {
 //    console.log(event, args);
 //});
 
+socket.on("session", ({ sessionID, userID }) => {
+    // attach the session ID to the next reconnection attempts
+    socket.auth = { sessionID };
+    // store it in the localStorage
+    sessionStorage.setItem("sessionID", sessionID);
+  });
+
 socket.on('rescreateWithdrawal', (data) => {
     sessionStorage.setItem("LNURLID", data.id);
     sessionStorage.setItem("LNURL", data.lnurl);
     sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
-    deletePayLinks().then(
-        function(value) { if(value=="redirect") redirectToGame() }
-    )
+    redirectToGame()
 })
 
 

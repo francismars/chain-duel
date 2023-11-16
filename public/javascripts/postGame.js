@@ -23,7 +23,14 @@ if(sessionStorage.getItem('gamePlayers')!=null){
 
 }
 
-const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
+const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'], autoConnect: false });
+let sessionID = sessionStorage.getItem("sessionID");
+if(sessionID){
+    console.log("Found sessionID on sessionStorage "+ sessionID)
+    socket.auth = { sessionID };
+}
+socket.connect();
+
 let gameWinner = sessionStorage.getItem('gameWinner');
 let p1Name = sessionStorage.getItem("P1Name");
 let p2Name = sessionStorage.getItem("P2Name");
