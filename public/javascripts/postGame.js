@@ -125,6 +125,7 @@ function pressContinue(){
         donRound = Number(donRound) + 1
         sessionStorage.clear();
         if (gameWinner!=null && totalPrize!=null && winnerName!=undefined){
+            sessionStorage.setItem("sessionID", sessionID);
             sessionStorage.setItem("donWinner", gameWinner);
             sessionStorage.setItem("donP1Name", p1Name);
             sessionStorage.setItem("donP2Name", p2Name);
