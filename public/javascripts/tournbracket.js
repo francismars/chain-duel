@@ -431,14 +431,9 @@ addEventListener("keydown", function(event) {
                 buttonSelected="backButton"
             }
             else if(numberOfDeposits==0){
-                for(var key in paymentsDict) {
-                    let value = paymentsDict[key];
-                    console.log("Trying to delete paylink "+value);
-                    socket.emit('deletepaylink', value);
-                }
-                if(numberOfDeposits==0){
-                    window.location.href = "/tournprefs";
-                }
+                console.log("Trying to delete paylink "+paymentsDict[key]);
+                socket.emit('cancelgame')
+                window.location.href = "/tournprefs";
             }
         }
         else if(buttonSelected=="backButton"){
