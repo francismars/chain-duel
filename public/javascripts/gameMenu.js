@@ -66,8 +66,8 @@ if (donWinner!=null){
     changeTextAfterPayment();
 }
 else if(donWinner==null){
-    socket.emit('createPaylink', {"description":"Player1","buyInMin":100,"buyInMax":10000000});
-    socket.emit('createPaylink', {"description":"Player2","buyInMin":100,"buyInMax":10000000});
+    socket.emit('createPaylink', {"description":"Player1","buyInMin":10000,"buyInMax":10000000});
+    socket.emit('createPaylink', {"description":"Player2","buyInMin":10000,"buyInMax":10000000});
 }
 
 addEventListener("keydown", function(event) {
@@ -110,7 +110,7 @@ addEventListener("keydown", function(event) {
                 else if (selected=="MainMenuButton"){
                     if(playersSats[0]==0&&playersSats[1]==0){
                         socket.emit('cancelgame')
-                        window.location.href = "/"; 
+                        window.location.href = "/";
                     }
                 }
             break;
