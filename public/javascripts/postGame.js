@@ -1,8 +1,8 @@
 import { listenToGamepads } from "./gamepads.js";
 
 // Variables for Tournament Specifics
-let tournamentSponsorImageUrl = "/images/sponsors/mempool.png"
-let tournamentPlaceName = "Adopting Bitcoin 2023"
+let tournamentSponsorImageUrl = ""
+let tournamentPlaceName = "AmityAge 2023"
 
 
 let serverIP;
