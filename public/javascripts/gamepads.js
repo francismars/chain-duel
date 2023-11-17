@@ -53,8 +53,8 @@ export function listenToGamepads() {
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
         }
 
-	      console.log(gamepad1.axes[0])
-	      console.log(gamepad1.axes[1])
+	      //console.log(gamepad1.axes[0])
+	      //console.log(gamepad1.axes[1])
         if(gamepad1.axes[0]==0.003921627998352051 && gamepad1.axes[1]==0.003921627998352051 /* && gamepad1.axes[9]==3.2857141494750977 */){
             window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'w'}));
         }
