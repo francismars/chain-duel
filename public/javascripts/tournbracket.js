@@ -1,5 +1,6 @@
 import { listenToGamepads } from "./gamepads.js";
 let intervalStart = setInterval(listenToGamepads, 1000/10);
+let sessionID = sessionStorage.getItem("sessionID");
 
 let serverIP;
 let serverPORT;
@@ -12,7 +13,12 @@ await fetch('/loadconfig', {
         serverPORT = data.PORT
 });
 
-const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'] });
+const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'], autoConnect: false });
+if(sessionID){
+    console.log("Found sessionID on sessionStorage "+ sessionID)
+    socket.auth = { sessionID };
+}
+socket.connect();
 
 let initialPositions = ["G1_P1", "G1_P2", "G2_P1", "G2_P2", "G3_P1", "G3_P2", "G4_P1", "G4_P2", "G5_P1", "G5_P2", "G6_P1", "G6_P2", "G7_P1", "G7_P2", "G8_P1", "G8_P2", "G9_P1", "G9_P2", "G10_P1", "G10_P2", "G11_P1", "G11_P2", "G12_P1", "G12_P2", "G13_P1", "G13_P2", "G14_P1", "G14_P2", "G15_P1", "G15_P2", "G16_P1", "G16_P2", "G17_P1", "G17_P2", "G18_P1", "G18_P2", "G19_P1", "G19_P2", "G20_P1", "G20_P2", "G21_P1", "G21_P2", "G22_P1", "G22_P2", "G23_P1", "G23_P2", "G24_P1", "G24_P2", "G25_P1", "G25_P2", "G26_P1", "G26_P2", "G27_P1", "G27_P2", "G28_P1", "G28_P2", "G29_P1", "G29_P2", "G30_P1", "G30_P2", "G31_P1", "G31_P2"]
 
@@ -96,6 +102,13 @@ socket.on("rescreatePaylink", body => {
         size: 800,
         value: payLink.lnurl
         });
+});
+
+socket.on("session", ({ sessionID, userID }) => {
+    // attach the session ID to the next reconnection attempts
+    socket.auth = { sessionID };
+    // store it in the localStorage
+    sessionStorage.setItem("sessionID", sessionID);
 });
 
 socket.on("invoicePaid", body => {
