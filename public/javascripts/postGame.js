@@ -122,7 +122,7 @@ function pressContinue(){
         qrRevealed = 1;
     }
     else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
-        donRound = donRound + 1
+        donRound = Number(donRound) + 1
         sessionStorage.clear();
         if (gameWinner!=null && totalPrize!=null && winnerName!=undefined){
             sessionStorage.setItem("donWinner", gameWinner);
