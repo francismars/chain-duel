@@ -501,9 +501,10 @@ addEventListener("keydown", function(event) {
                     sessionStorage.setItem("PlayerList", stringplayersList);
                     sessionStorage.setItem("P1Sats", deposit);
                     sessionStorage.setItem("P2Sats", deposit);
-                    console.log("Trying to create LNURLw");
-                    socket.emit('createWithdrawal', {"amount": Math.floor((deposit*numberOfDeposits)*0.95), "maxWithdrawals": 1});
+                    //console.log("Trying to create LNURLw");
+                    //socket.emit('createWithdrawal', {"amount": Math.floor((deposit*numberOfDeposits)*0.95), "maxWithdrawals": 1});
                     numberofCreates=1;
+                    window.location.href = "/game";
                 }
             }
             else if(previousWinner!=null){
@@ -538,7 +539,7 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
         sessionStorage.setItem("LNURLID", data.id);
         sessionStorage.setItem("LNURL", data.lnurl);
         sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
-        window.location.href = "/game";
+        //window.location.href = "/game";
     }
 });
 
