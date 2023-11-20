@@ -1,10 +1,24 @@
 
+let sponsorImage = "";
+
+//sponsorImage = "/images/sponsors/bitcoin_magazine.svg";
+//sponsorImage = "/images/sponsors/piratehash.png";
+//sponsorImage = "/images/sponsors/bitbox.png";
+//sponsorImage = "/images/sponsors/relai_bg.png";
+//sponsorImage = "/images/sponsors/build_the_builders.png";
+//sponsorImage = "/images/sponsors/bitcoin_amsterdam.png";
+sponsorImage = "/images/sponsors/amityage_color.png";
+
+
+
 // Global Sponsorship
+let sponsorshipSwitch = 0;
 if (document.getElementsByClassName("sponsorship") != null){
   if (document.getElementsByClassName("sponsorship").length != 0){
     const sponsorship = document.getElementsByClassName("sponsorship");
-    sponsorship[0].style.display = 'block';
-    //sponsorship[0].style.display = 'none';
+    for(var i = 0; i < sponsorship.length; i++){
+      sponsorship[i].style.display = sponsorshipSwitch ? "block" : "none";
+    }
   }
 }
 // Overides
@@ -45,15 +59,7 @@ if (document.getElementsByClassName("sponsored-by-label") != null){
   }
 }
 
-let sponsorImage = "";
 
-//sponsorImage = "/images/sponsors/bitcoin_magazine.svg";
-//sponsorImage = "/images/sponsors/piratehash.png";
-//sponsorImage = "/images/sponsors/bitbox.png";
-//sponsorImage = "/images/sponsors/relai_bg.png";
-//sponsorImage = "/images/sponsors/build_the_builders.png";
-//sponsorImage = "/images/sponsors/bitcoin_amsterdam.png";
-sponsorImage = "/images/sponsors/amityage_color.png";
 
 
 if (document.getElementsByClassName("sponsored-img") != null){
