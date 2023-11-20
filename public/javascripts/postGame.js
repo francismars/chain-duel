@@ -47,7 +47,8 @@ if (gameWinner!=null){
         document.getElementById("winner").innerText  = winnerName.toUpperCase()+" WINS";
     }
 } else gameWinner="Player 1";
-let withdrawalURL = sessionStorage.getItem('LNURL');
+//let withdrawalURL = sessionStorage.getItem('LNURL');
+let withdrawalURL = "LNURL1DP68GURN8GHJ7MRWVF5HGUEWV3HK5MEWWP6Z7AMFW35XGUNPWUHKZURF9AMRZTMVDE6HYMP0V438Y7NKXUE5S5TFG9X9GE2509N5VMN0G46S0WQJQ4";
 if (withdrawalURL!=null){
     let qrcodeContainer = document.getElementById("qrCode1");
     qrcodeContainer.innerHTML = "";
@@ -262,6 +263,26 @@ socket.on('prizeWithdrawn', (data) => {
     }
 })
 
+
+let resCreateWithdrawal = false;
+socket.on('resCreateWithdrawalPostGame', (data) => {
+    if(resCreateWithdrawal == false){
+      let withdrawalURL = data;
+      let qrcodeContainer = document.getElementById("qrCode1");
+      qrcodeContainer.innerHTML = "";
+      new QRious({
+          size: 800,
+          element: qrcodeContainer,
+          value: withdrawalURL
+      });
+      resCreateWithdrawal = true;
+    }
+    document.getElementById("claimbutton").innerText = "BLUR QR CODE";
+    document.getElementById("qrCode1").classList.add('qrcode');
+    menu=2;
+})
+
+
 function menu1CSS(){
     document.getElementById("gameOver").style.display = "block";
     document.getElementById("claimbutton").innerText = "SWEEP VIA LNURL";
@@ -269,10 +290,26 @@ function menu1CSS(){
     menu=1;
 }
 
+
 function menu2CSS(){
-    document.getElementById("claimbutton").innerText = "BLUR QR CODE";
+    document.getElementById("doubleornotthingbutton").classList.add('disabled');
+
+    if(resCreateWithdrawal == false){
+      //Update image source to loading gif
+      document.getElementById("qrCode1").src = "/images/loading.gif";
+      document.getElementById("qrCode1").classList.remove('qrcode');
+      document.getElementById("claimbutton").innerText = "CREATING CODE...";
+      //Request LNURLw from server
+      socket.emit('createWithdrawalPostGame');
+    }else{
+      document.getElementById("claimbutton").innerText = "BLUR QR CODE";
+      document.getElementById("qrCode1").classList.add('qrcode');
+    }
     document.getElementById("qrCode1").classList.remove('blur');
     menu=2;
+
+
+
 }
 
 function menu3CSS(){
