@@ -15,7 +15,6 @@ let donPrize = sessionStorage.getItem("donPrize");
 let payLinks = [];
 let intervalStart = setInterval(listenToGamepads, 1000/10);
 
-
 let donRound = JSON.parse(sessionStorage.getItem("donRound"));
 let donText = "";
 if(donRound!=null){
@@ -66,8 +65,9 @@ if (donWinner!=null){
     changeTextAfterPayment();
 }
 else if(donWinner==null){
-    socket.emit('createPaylink', {"description":"Player1","buyInMin":100,"buyInMax":10000000});
-    socket.emit('createPaylink', {"description":"Player2","buyInMin":100,"buyInMax":10000000});
+    //socket.emit('createPaylink', {"description":"Player1","buyInMin":100,"buyInMax":10000000});
+    //socket.emit('createPaylink', {"description":"Player2","buyInMin":100,"buyInMax":10000000});
+    socket.emit("getGamePaylinks");
 }
 
 addEventListener("keydown", function(event) {
@@ -97,12 +97,12 @@ addEventListener("keydown", function(event) {
                 if (selected=="StartGame"){
                     if(playersSats[0]!=0&&playersSats[1]!=0){
                         if(numberofCreates==0){
-                            sessionStorage.setItem("P1Sats", playersSats[0]);
-                            sessionStorage.setItem("P2Sats", playersSats[1]);
-                            sessionStorage.setItem("P1Name", p1Name);
-                            sessionStorage.setItem("P2Name", p2Name);
+                            //sessionStorage.setItem("P1Sats", playersSats[0]);
+                            //sessionStorage.setItem("P2Sats", playersSats[1]);
+                            //sessionStorage.setItem("P1Name", p1Name);
+                            //sessionStorage.setItem("P2Name", p2Name);
                             //socket.emit('createWithdrawal', {"amount": Math.floor((playersSats[0]+playersSats[1])*0.95), "maxWithdrawals": 1});
-                            numberofCreates=1;
+                            //numberofCreates=1;
                             document.getElementById("loading").style.display  = "flex";
                             redirectToGame();
                         }
@@ -133,6 +133,7 @@ socket.on("session", ({ sessionID, userID }) => {
     sessionStorage.setItem("sessionID", sessionID);
   });
 
+/*
 socket.on('rescreateWithdrawal', (data) => {
     //sessionStorage.setItem("LNURLID", data.id);
     //sessionStorage.setItem("LNURL", data.lnurl);
@@ -152,12 +153,39 @@ async function deletePayLinks(){
         return "redirect"
     }
 }
+*/
 
 
 function redirectToGame(){
     window.location.href = "/game";
 }
 
+socket.on("resGetGamePaylinks", body => {
+    //console.log(body)
+    for(let payLink of body){
+        payLinks = body
+        if(payLink.description=="Player1"){
+            let qrcodeContainer = document.getElementById("qrcode1");
+            qrcodeContainer.innerHTML = "";
+            new QRious({
+                element: qrcodeContainer,
+                size: 800,
+                value: payLink.lnurlp
+              });
+        };
+        if(payLink.description=="Player2"){
+            let qrcodeContainer = document.getElementById("qrcode2");
+            qrcodeContainer.innerHTML = "";
+            new QRious({
+                element: qrcodeContainer,
+                size: 800,
+                value: payLink.lnurlp
+              });
+        }
+    }
+})
+
+/*
 socket.on("rescreatePaylink", body => {
     let payLink = body;
     payLinks.push(payLink)
@@ -180,27 +208,30 @@ socket.on("rescreatePaylink", body => {
           });
     }
 });
+*/
 
-socket.on("invoicePaid", body => {
-    if(body.lnurlp==payLinks[0].id && payLinks[0].description == "Player1" || body.lnurlp==payLinks[1].id && payLinks[1].description == "Player1"){
-        console.log(`Chegou pagamento de P1: ${(body.amount)/1000} sats`);
-        if(body.comment!=null && body.comment!=""){
-            console.log(typeof body.comment);
-            console.log(body.comment)
-            console.log("Player1 Name: " + body.comment)
-            p1Name=(body.comment)[0].trim()
+socket.on("updatePayments", body => {
+    console.log(body)
+    for(let key in body){
+        let payment = body[key];
+        if(key==payLinks[0].id && payLinks[0].description == "Player1" || key==payLinks[1].id && payLinks[1].description == "Player1"){
+            console.log(`P1 deposited ${(payment.total)} sats`);
+            if(payment.note!=null && payment.note!=""){
+                console.log("Player1 Name: " + payment.note)
+                p1Name=(payment.note).trim()
+            }
+            playersSats[0] = payment.total
         }
-        playersSats[0] += body.amount/1000
-    }
-    if(body.lnurlp==payLinks[0].id && payLinks[0].description == "Player2" || body.lnurlp==payLinks[1].id && payLinks[1].description == "Player2"){
-        console.log(`Chegou pagamento de P2: ${(body.amount)/1000} sats`);
-        if(body.comment!=null && body.comment!=""){
-            console.log("Player2 Name: " + body.comment)
-            p2Name=(body.comment)[0].trim()
+        if(key==payLinks[0].id && payLinks[0].description == "Player2" || key==payLinks[1].id && payLinks[1].description == "Player2"){
+            console.log(`P2 deposited ${(payment.amount)} sats`);
+            if(payment.note!=null && payment.note!=""){
+                console.log("Player2 Name: " + payment.note)
+                p2Name=(payment.note).trim()
+            }
+            playersSats[1] = payment.total
         }
-        playersSats[1] += body.amount/1000
+        changeTextAfterPayment()
     }
-    changeTextAfterPayment()
 });
 
 function changeTextAfterPayment(){
