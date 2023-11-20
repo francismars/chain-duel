@@ -20,7 +20,6 @@ let tournamentMode = false;
 if(sessionStorage.getItem('gamePlayers')!=null){
     tournamentMode = true;
     document.getElementById("doubleornotthingbutton").style.display = "none";
-
 }
 
 const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'], autoConnect: false });
@@ -59,19 +58,27 @@ if (withdrawalURL!=null){
     });
     sessionStorage.removeItem("LNURL");
 }
-let totalPrize = sessionStorage.getItem('LNURLMAXW');
-if (totalPrize!=null){
-    document.getElementById("prize").innerText  = parseInt(totalPrize).toLocaleString()+" SATS";
-}
+
 let P1SatsDeposit = sessionStorage.getItem('P1Sats');
 let P2SatsDeposit = sessionStorage.getItem('P2Sats');
+let totalDeposit;
+!tournamentMode ? totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit) : totalDeposit = parseInt(P1SatsDeposit)*playersList.length;
+
 if (P1SatsDeposit!=null && P2SatsDeposit!=null){
-    let developerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.02)
-    let designerFee = Math.floor((parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit))*0.01)
+    let developerFee = Math.floor(totalDeposit*0.02)
+    let designerFee = Math.floor(totalDeposit*0.01)
     document.getElementById("hostFee").innerText  = "("+developerFee.toLocaleString()+" sats)";
     document.getElementById("developerFee").innerText  = "("+developerFee.toLocaleString()+" sats)";
     document.getElementById("designerFee").innerText  = "("+designerFee.toLocaleString()+" sats)";
 }
+
+let totalPrize = Math.floor(totalDeposit*0.95);
+
+
+if (totalPrize!=null){
+    document.getElementById("prize").innerText  = parseInt(totalPrize).toLocaleString()+" SATS";
+}
+
 let menu = 1;
 let activeButtonMenu1 = 0;
 let activeButtonMenu3 = 0;
@@ -257,10 +264,8 @@ socket.on("connect", () => {
 })
 
 socket.on('prizeWithdrawn', (data) => {
-    if(data.lnurlw==sessionStorage.getItem('LNURLID')){
-        menu3CSS();
-        updateHSJson();
-    }
+    menu3CSS();
+    updateHSJson();
 })
 
 
@@ -293,7 +298,6 @@ function menu1CSS(){
 
 function menu2CSS(){
     document.getElementById("doubleornotthingbutton").classList.add('disabled');
-
     if(resCreateWithdrawal == false){
       //Update image source to loading gif
       document.getElementById("qrCode1").src = "/images/loading.gif";
@@ -307,9 +311,6 @@ function menu2CSS(){
     }
     document.getElementById("qrCode1").classList.remove('blur');
     menu=2;
-
-
-
 }
 
 function menu3CSS(){

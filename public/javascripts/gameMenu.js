@@ -66,8 +66,8 @@ if (donWinner!=null){
     changeTextAfterPayment();
 }
 else if(donWinner==null){
-    socket.emit('createPaylink', {"description":"Player1","buyInMin":10000,"buyInMax":10000000});
-    socket.emit('createPaylink', {"description":"Player2","buyInMin":10000,"buyInMax":10000000});
+    socket.emit('createPaylink', {"description":"Player1","buyInMin":100,"buyInMax":10000000});
+    socket.emit('createPaylink', {"description":"Player2","buyInMin":100,"buyInMax":10000000});
 }
 
 addEventListener("keydown", function(event) {
@@ -101,9 +101,10 @@ addEventListener("keydown", function(event) {
                             sessionStorage.setItem("P2Sats", playersSats[1]);
                             sessionStorage.setItem("P1Name", p1Name);
                             sessionStorage.setItem("P2Name", p2Name);
-                            socket.emit('createWithdrawal', {"amount": Math.floor((playersSats[0]+playersSats[1])*0.95), "maxWithdrawals": 1});
+                            //socket.emit('createWithdrawal', {"amount": Math.floor((playersSats[0]+playersSats[1])*0.95), "maxWithdrawals": 1});
                             numberofCreates=1;
                             document.getElementById("loading").style.display  = "flex";
+                            redirectToGame();
                         }
                     }
                 }
@@ -133,9 +134,9 @@ socket.on("session", ({ sessionID, userID }) => {
   });
 
 socket.on('rescreateWithdrawal', (data) => {
-    sessionStorage.setItem("LNURLID", data.id);
-    sessionStorage.setItem("LNURL", data.lnurl);
-    sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
+    //sessionStorage.setItem("LNURLID", data.id);
+    //sessionStorage.setItem("LNURL", data.lnurl);
+    //sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
     redirectToGame()
 })
 
