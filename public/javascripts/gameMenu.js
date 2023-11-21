@@ -120,7 +120,7 @@ addEventListener("keydown", function(event) {
 
 
 socket.on("connect", () => {
-    console.log(`connected with id: ${socket.id}`)
+    console.log(`connected with id ${socket.id}`)
 })
 //socket.onAny((event, ...args) => {
 //    console.log(event, args);
