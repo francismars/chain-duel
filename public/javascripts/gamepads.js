@@ -74,24 +74,30 @@ export function listenToGamepads() {
         }
         if(gamepad1.axes[9]==-0.1428571343421936){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'s'}));
-	    window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
+	          window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
         }
         if(gamepad1.axes[9]==0.7142857313156128){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'a'}));
         }
         if(gamepad1.axes[9]==-0.7142857313156128){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'w'}));
-	    window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
+	          window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
         }
         if(gamepad1.axes[9]==-0.4285714030265808){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
         }
         if(gamepad1.axes[9]==0.4285714626312256){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'s'}));
-	    window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'a'}));
+	          window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'a'}));
         }
 
 
+        // Expand QR Code on game menu Player 1
+        if(gamepad1.buttons[6].pressed==true || gamepad1.buttons[7].pressed==true){
+          window.dispatchEvent(new KeyboardEvent('keydown',  {'code':'ShiftLeft'}));
+        }else{
+          window.dispatchEvent(new KeyboardEvent('keyup',  {'code':'ShiftLeft'}));
+        }
 
     }
     if(gamepad2==null){
@@ -151,35 +157,43 @@ export function listenToGamepads() {
 
         //console.log("9 == "+ gamepad2.axes[9])
 
-	console.log(gamepad2.axes[9])
+
         // Arrow kyes
         if(gamepad2.axes[9]==-1){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
         }
         if(gamepad2.axes[9]==1){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
- 	    window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
+ 	          window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
         }
         if(gamepad2.axes[9]==0.14285719394683838){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
         }
         if(gamepad2.axes[9]==-0.1428571343421936){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
-	    window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
+	          window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
         }
         if(gamepad2.axes[9]==0.7142857313156128){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
         }
         if(gamepad2.axes[9]==-0.7142857313156128){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
-	    window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
+	          window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
         }
         if(gamepad2.axes[9]==-0.4285714030265808){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
         }
         if(gamepad2.axes[9]==0.4285714626312256){
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
-	    window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
+	          window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
         }
+
+        // Expand QR Code on game menu Player 2
+        if(gamepad2.buttons[6].pressed==true || gamepad2.buttons[7].pressed==true){
+          window.dispatchEvent(new KeyboardEvent('keydown',  {'code':'ShiftRight'}));
+        }else{
+          window.dispatchEvent(new KeyboardEvent('keyup',  {'code':'ShiftRight'}));
+        }
+
     }
 }
