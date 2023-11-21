@@ -71,8 +71,8 @@ else if(donWinner==null){
 }
 
 addEventListener("keydown", function(event) {
-    switch (event.key) {
-        case "a":
+    switch (event.code) {
+        case "KeyA":
         case "ArrowLeft":
             /*
             if (selected=="StartGame"){
@@ -82,7 +82,7 @@ addEventListener("keydown", function(event) {
             }
             */
             break;
-        case "d":
+        case "keyD":
         case "ArrowRight":
             /*
             if (selected=="MainMenuButton" && playersSats[0]!=0 && playersSats[1]!=0){
@@ -92,17 +92,17 @@ addEventListener("keydown", function(event) {
             }
             */
             break;
-        case " ":
+        case "Space":
         case "Enter":
                 if (selected=="StartGame"){
                     if(playersSats[0]!=0&&playersSats[1]!=0){
                         if(numberofCreates==0){
-                            //sessionStorage.setItem("P1Sats", playersSats[0]);
-                            //sessionStorage.setItem("P2Sats", playersSats[1]);
-                            //sessionStorage.setItem("P1Name", p1Name);
-                            //sessionStorage.setItem("P2Name", p2Name);
+                            sessionStorage.setItem("P1Sats", playersSats[0]);
+                            sessionStorage.setItem("P2Sats", playersSats[1]);
+                            sessionStorage.setItem("P1Name", p1Name);
+                            sessionStorage.setItem("P2Name", p2Name);
                             //socket.emit('createWithdrawal', {"amount": Math.floor((playersSats[0]+playersSats[1])*0.95), "maxWithdrawals": 1});
-                            //numberofCreates=1;
+                            numberofCreates=1;
                             document.getElementById("loading").style.display  = "flex";
                             redirectToGame();
                         }
@@ -114,9 +114,26 @@ addEventListener("keydown", function(event) {
                         window.location.href = "/";
                     }
                 }
-            break;
+          break;
+        case "ShiftLeft":
+          document.getElementById("player1card").classList.add("expanded");
+          break;
+        case "ShiftRight":
+          document.getElementById("player2card").classList.add("expanded");
+          break;
     }
-  });
+});
+
+addEventListener("keyup", function(event) {
+    switch (event.code) {
+      case "ShiftLeft":
+        document.getElementById("player1card").classList.remove("expanded");
+        break;
+      case "ShiftRight":
+        document.getElementById("player2card").classList.remove("expanded");
+        break;
+    }
+});
 
 
 socket.on("connect", () => {
