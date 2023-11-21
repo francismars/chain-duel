@@ -1,5 +1,43 @@
 import { listenToGamepads } from "./gamepads.js";
 
+let serverIP;
+let serverPORT;
+let sessionID = sessionStorage.getItem("sessionID");
+
+await fetch('/loadconfig', {
+    method: 'GET'
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        serverIP = data.IP
+        serverPORT = data.PORT
+});
+const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'], autoConnect: false });
+if(sessionID){
+    console.log("Found sessionID on sessionStorage "+ sessionID)
+    socket.auth = { sessionID };
+}
+socket.connect();
+
+socket.on("connect", () => {
+    console.log(`connected with id ${socket.id} and session ${socket.auth.sessionID}`)
+})
+
+//socket.onAny((event, ...args) => {
+//    console.log(event, args);
+//});
+
+socket.on("session", ({ sessionID, userID }) => {
+    socket.auth = { sessionID };
+    sessionStorage.setItem("sessionID", sessionID);
+});
+
+socket.emit("getDuelInfos")
+
+socket.on("resGetDuelInfos", (duelInfos) => {
+    console.log(duelInfos)
+})
+
 let titleCanvas = document.getElementById("titleCanvas");
 titleCanvas.width = window.innerWidth*(0.7);
 titleCanvas.height = window.innerHeight*(0.1);
