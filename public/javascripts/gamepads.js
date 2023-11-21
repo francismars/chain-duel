@@ -94,9 +94,9 @@ export function listenToGamepads() {
 
         // Expand QR Code on game menu Player 1
         if(gamepad1.buttons[6].pressed==true || gamepad1.buttons[7].pressed==true){
-          window.dispatchEvent(new KeyboardEvent('keydown',  {'code':'ShiftLeft'}));
+          window.dispatchEvent(new KeyboardEvent('keydown',  {'code':'ControlLeft'}));
         }else{
-          window.dispatchEvent(new KeyboardEvent('keyup',  {'code':'ShiftLeft'}));
+          window.dispatchEvent(new KeyboardEvent('keyup',  {'code':'ControlLeft'}));
         }
 
     }
@@ -190,9 +190,9 @@ export function listenToGamepads() {
 
         // Expand QR Code on game menu Player 2
         if(gamepad2.buttons[6].pressed==true || gamepad2.buttons[7].pressed==true){
-          window.dispatchEvent(new KeyboardEvent('keydown',  {'code':'ShiftRight'}));
+          window.dispatchEvent(new KeyboardEvent('keydown',  {'code':'ControlRight'}));
         }else{
-          window.dispatchEvent(new KeyboardEvent('keyup',  {'code':'ShiftRight'}));
+          window.dispatchEvent(new KeyboardEvent('keyup',  {'code':'ControlRight'}));
         }
 
     }
