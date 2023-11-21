@@ -34,6 +34,10 @@ socket.on("session", ({ sessionID, userID }) => {
 
 socket.emit("getDuelInfos")
 
+let P1Name;
+let P2Name;
+let SatsP1;
+let SatsP2;
 socket.on("resGetDuelInfos", (duelInfos) => {
     console.log(duelInfos)
 })
@@ -66,7 +70,7 @@ let coinbasePos = [[25,12]];
 let countdownStart = false;
 let gameStarted = false;
 let gameEnded = false;
-let P1Name = sessionStorage.getItem("P1Name");
+
 let gamePlayers = JSON.parse(sessionStorage.getItem("gamePlayers"));
 
 
@@ -79,7 +83,7 @@ if (P1Name==null){
 if (P1Name!="Player 1"){
     document.getElementById("player1name").innerText = P1Name;
 }
-let P2Name = sessionStorage.getItem("P2Name");
+
 if(gamePlayers!=null){
     P2Name=gamePlayers[1]
 }
@@ -90,7 +94,7 @@ if (P2Name!="Player 2"){
     document.getElementById("player2name").innerText = P2Name;
 }
 const payProtection = false;
-let SatsP1 = sessionStorage.getItem('P1Sats');
+
 if (SatsP1==null){
     if (payProtection==true){
         window.location.href = "/gamemenu";
@@ -98,7 +102,7 @@ if (SatsP1==null){
     SatsP1=1000
 }
 else { SatsP1 = parseInt(SatsP1) }
-let SatsP2 = sessionStorage.getItem('P2Sats');
+
 if (SatsP2==null){
     if (payProtection==true){
         window.location.href = "/gamemenu";
