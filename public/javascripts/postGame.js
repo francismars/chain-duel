@@ -280,7 +280,7 @@ socket.on("connect", () => {
     console.log(`connected with id: ${socket.id}`)
 })
 
-socket.on('prizeWithdrawn', (data) => {
+socket.on('prizeWithdrawn', () => {
     menu3CSS();
     updateHSJson();
 })
