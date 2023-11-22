@@ -30,22 +30,57 @@ if(sessionID){
 }
 socket.connect();
 
-let gameWinner = sessionStorage.getItem('gameWinner');
-let p1Name = sessionStorage.getItem("P1Name");
-let p2Name = sessionStorage.getItem("P2Name");
-let playersList = JSON.parse(sessionStorage.getItem("PlayerList"));
+socket.emit("postGameInfoRequest");
+
+let gameWinner
+let p1Name;
+let p2Name;
 let winnerName;
-if (gameWinner!=null){
-    if(gameWinner=="Player 1" && p1Name!=null){
-        winnerName = p1Name
+let P1SatsDeposit;
+let P2SatsDeposit;
+let totalDeposit;
+let maxWithdrawable;
+let totalPrize;
+socket.on("resPostGameInfoRequest", (duelInfos) =>{
+    // { "Player2": { "total": 100, "note": "bnm" }, "Player1": { "total": 100, "note": "xcv" }, "withdrawable": 190, "winner": "Player 1" }
+    console.log(duelInfos)
+    gameWinner = duelInfos.winner;
+    p1Name = duelInfos.Player1.note;
+    p2Name = duelInfos.Player2.note;
+    P1SatsDeposit = duelInfos.Player1.total;
+    P2SatsDeposit = duelInfos.Player2.total;
+    if (gameWinner!=null){
+        if(gameWinner=="Player 1" && p1Name!=null){
+            winnerName = p1Name
+        }
+        else if(gameWinner=="Player 2" && p2Name!=null){
+            winnerName = p2Name
+        }
+        if(winnerName!=null){
+            document.getElementById("winner").innerText = winnerName.toUpperCase()+" WINS";
+        }
+    } else gameWinner="Player 1";
+
+    !tournamentMode ? totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit) : totalDeposit = parseInt(P1SatsDeposit)*playersList.length;
+
+    if (P1SatsDeposit!=null && P2SatsDeposit!=null){
+        let developerFee = Math.floor(totalDeposit*0.02)
+        let designerFee = Math.floor(totalDeposit*0.01)
+        document.getElementById("hostFee").innerText  = "("+developerFee.toLocaleString()+" sats)";
+        document.getElementById("developerFee").innerText  = "("+developerFee.toLocaleString()+" sats)";
+        document.getElementById("designerFee").innerText  = "("+designerFee.toLocaleString()+" sats)";
     }
-    else if(gameWinner=="Player 2" && p2Name!=null){
-        winnerName = p2Name
+
+    totalPrize = Math.floor(totalDeposit*0.95);
+
+
+    if (totalPrize!=null){
+        document.getElementById("prize").innerText  = parseInt(totalPrize).toLocaleString()+" SATS";
     }
-    if(winnerName!=null){
-        document.getElementById("winner").innerText  = winnerName.toUpperCase()+" WINS";
-    }
-} else gameWinner="Player 1";
+})
+
+let playersList = JSON.parse(sessionStorage.getItem("PlayerList"));
+
 //let withdrawalURL = sessionStorage.getItem('LNURL');
 let withdrawalURL = "LNURL1DP68GURN8GHJ7MRWVF5HGUEWV3HK5MEWWP6Z7AMFW35XGUNPWUHKZURF9AMRZTMVDE6HYMP0V438Y7NKXUE5S5TFG9X9GE2509N5VMN0G46S0WQJQ4";
 if (withdrawalURL!=null){
@@ -59,25 +94,7 @@ if (withdrawalURL!=null){
     sessionStorage.removeItem("LNURL");
 }
 
-let P1SatsDeposit = sessionStorage.getItem('P1Sats');
-let P2SatsDeposit = sessionStorage.getItem('P2Sats');
-let totalDeposit;
-!tournamentMode ? totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit) : totalDeposit = parseInt(P1SatsDeposit)*playersList.length;
 
-if (P1SatsDeposit!=null && P2SatsDeposit!=null){
-    let developerFee = Math.floor(totalDeposit*0.02)
-    let designerFee = Math.floor(totalDeposit*0.01)
-    document.getElementById("hostFee").innerText  = "("+developerFee.toLocaleString()+" sats)";
-    document.getElementById("developerFee").innerText  = "("+developerFee.toLocaleString()+" sats)";
-    document.getElementById("designerFee").innerText  = "("+designerFee.toLocaleString()+" sats)";
-}
-
-let totalPrize = Math.floor(totalDeposit*0.95);
-
-
-if (totalPrize!=null){
-    document.getElementById("prize").innerText  = parseInt(totalPrize).toLocaleString()+" SATS";
-}
 
 let menu = 1;
 let activeButtonMenu1 = 0;
