@@ -97,10 +97,10 @@ addEventListener("keydown", function(event) {
                 if (selected=="StartGame"){
                     if(playersSats[0]!=0&&playersSats[1]!=0){
                         if(numberofCreates==0){
-                            sessionStorage.setItem("P1Sats", playersSats[0]);
-                            sessionStorage.setItem("P2Sats", playersSats[1]);
-                            sessionStorage.setItem("P1Name", p1Name);
-                            sessionStorage.setItem("P2Name", p2Name);
+                            //sessionStorage.setItem("P1Sats", playersSats[0]);
+                            //sessionStorage.setItem("P2Sats", playersSats[1]);
+                            //sessionStorage.setItem("P1Name", p1Name);
+                            //sessionStorage.setItem("P2Name", p2Name);
                             //socket.emit('createWithdrawal', {"amount": Math.floor((playersSats[0]+playersSats[1])*0.95), "maxWithdrawals": 1});
                             numberofCreates=1;
                             document.getElementById("loading").style.display  = "flex";

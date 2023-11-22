@@ -34,14 +34,6 @@ socket.on("session", ({ sessionID, userID }) => {
 
 socket.emit("getDuelInfos")
 
-let P1Name;
-let P2Name;
-let SatsP1;
-let SatsP2;
-socket.on("resGetDuelInfos", (duelInfos) => {
-    console.log(duelInfos)
-})
-
 let titleCanvas = document.getElementById("titleCanvas");
 titleCanvas.width = window.innerWidth*(0.7);
 titleCanvas.height = window.innerHeight*(0.1);
@@ -70,50 +62,6 @@ let coinbasePos = [[25,12]];
 let countdownStart = false;
 let gameStarted = false;
 let gameEnded = false;
-
-let gamePlayers = JSON.parse(sessionStorage.getItem("gamePlayers"));
-
-
-if(gamePlayers!=null){
-    P1Name=gamePlayers[0]
-}
-if (P1Name==null){
-    P1Name="Player 1"
-}
-if (P1Name!="Player 1"){
-    document.getElementById("player1name").innerText = P1Name;
-}
-
-if(gamePlayers!=null){
-    P2Name=gamePlayers[1]
-}
-if (P2Name==null){
-    P2Name="Player 2"
-}
-if (P2Name!="Player 2"){
-    document.getElementById("player2name").innerText = P2Name;
-}
-const payProtection = false;
-
-if (SatsP1==null){
-    if (payProtection==true){
-        window.location.href = "/gamemenu";
-    }
-    SatsP1=1000
-}
-else { SatsP1 = parseInt(SatsP1) }
-
-if (SatsP2==null){
-    if (payProtection==true){
-        window.location.href = "/gamemenu";
-    }
-    SatsP2=1000
-}
-else { SatsP2 = parseInt(SatsP2) }
-let initialScoreDistribution = [SatsP1,SatsP2];
-let totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
-let currentScoreDistribution = [SatsP1,SatsP2];
-let percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
 const gameSpeed = 1000/60
 const stepSpeed = 1000/10
 let counterStart = 0;
@@ -125,16 +73,71 @@ let beep1Played = false;
 let beep2Played = false;
 let beep3Played = false;
 let beep4Played = false;
-
 const p1FC = new Audio("./sound/P1-FC.mp3");
 const p2FC = new Audio("./sound/P2-FC.mp3");
-
-
-
 const p1reset = new Audio("./sound/P1-HWAC.mp3");
 const p2reset = new Audio("./sound/P2-HWAC.mp3");
 
 
+let gamePlayers;
+let P1Name;
+let P2Name;
+let SatsP1;
+let SatsP2;
+let initialScoreDistribution
+let totalPoints
+let currentScoreDistribution
+let percentageInitialP1
+socket.on("resGetDuelInfos", (duelInfos) => {
+    console.log(duelInfos)
+    P1Name=duelInfos["Player1"].note;
+    P2Name=duelInfos["Player2"].note;
+    SatsP1=duelInfos["Player1"].total;
+    SatsP2=duelInfos["Player2"].total;
+
+    if(gamePlayers!=null){
+        P1Name=gamePlayers[0]
+    }
+    if (P1Name==null){
+        P1Name="Player 1"
+    }
+    if (P1Name!="Player 1"){
+        document.getElementById("player1name").innerText = P1Name;
+    }
+
+    if(gamePlayers!=null){
+        P2Name=gamePlayers[1]
+    }
+    if (P2Name==null){
+        P2Name="Player 2"
+    }
+    if (P2Name!="Player 2"){
+        document.getElementById("player2name").innerText = P2Name;
+    }
+    const payProtection = false;
+
+    if (SatsP1==null){
+        if (payProtection==true){
+            window.location.href = "/gamemenu";
+        }
+        SatsP1=1000
+    }
+    else { SatsP1 = parseInt(SatsP1) }
+
+    if (SatsP2==null){
+        if (payProtection==true){
+            window.location.href = "/gamemenu";
+        }
+        SatsP2=1000
+    }
+    else { SatsP2 = parseInt(SatsP2) }
+    initialScoreDistribution = [SatsP1,SatsP2];
+    totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
+    currentScoreDistribution = [SatsP1,SatsP2];
+    percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
+
+    window.requestAnimationFrame(draw);
+})
 
 /* P2P vs Tournament Game Name */
 let playerListParsed = JSON.parse(sessionStorage.getItem("PlayerList"));
@@ -184,7 +187,7 @@ function draw(){
     window.requestAnimationFrame(draw);
 }
 
-window.requestAnimationFrame(draw);
+// window.requestAnimationFrame(draw);
 
 function step(){
     if(gameStarted && !gameEnded){
@@ -775,6 +778,7 @@ function displayTitle(){
 
 function redirectWindowAfterGame(){
     if(gamePlayers==null){
+        socket.emit("gameFinished", winnerP)
         window.location.href = "/postgame";
     }
     else if(gamePlayers!=null){
