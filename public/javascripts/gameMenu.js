@@ -115,10 +115,10 @@ addEventListener("keydown", function(event) {
                     }
                 }
           break;
-        case "ShiftLeft":
+        case "ControlLeft":
           document.getElementById("player1card").classList.add("expanded");
           break;
-        case "ShiftRight":
+        case "ControlRight":
           document.getElementById("player2card").classList.add("expanded");
           break;
     }
@@ -126,10 +126,10 @@ addEventListener("keydown", function(event) {
 
 addEventListener("keyup", function(event) {
     switch (event.code) {
-      case "ShiftLeft":
+      case "ControlLeft":
         document.getElementById("player1card").classList.remove("expanded");
         break;
-      case "ShiftRight":
+      case "ControlRight":
         document.getElementById("player2card").classList.remove("expanded");
         break;
     }
