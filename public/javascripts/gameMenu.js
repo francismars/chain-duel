@@ -71,8 +71,8 @@ else if(donWinner==null){
 }
 
 addEventListener("keydown", function(event) {
-    switch (event.code) {
-        case "KeyA":
+    switch (event.key) {
+        case "a":
         case "ArrowLeft":
             /*
             if (selected=="StartGame"){
@@ -82,7 +82,7 @@ addEventListener("keydown", function(event) {
             }
             */
             break;
-        case "keyD":
+        case "d":
         case "ArrowRight":
             /*
             if (selected=="MainMenuButton" && playersSats[0]!=0 && playersSats[1]!=0){
@@ -92,7 +92,7 @@ addEventListener("keydown", function(event) {
             }
             */
             break;
-        case "Space":
+        case " ":
         case "Enter":
                 if (selected=="StartGame"){
                     if(playersSats[0]!=0&&playersSats[1]!=0){
@@ -115,6 +115,11 @@ addEventListener("keydown", function(event) {
                     }
                 }
           break;
+    }
+});
+
+addEventListener("keydown", function(event) {
+    switch (event.code) {
         case "ControlLeft":
           document.getElementById("player1card").classList.add("expanded");
           break;
