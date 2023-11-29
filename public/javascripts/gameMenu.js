@@ -97,11 +97,6 @@ addEventListener("keydown", function(event) {
                 if (selected=="StartGame"){
                     if(playersSats[0]!=0&&playersSats[1]!=0){
                         if(numberofCreates==0){
-                            //sessionStorage.setItem("P1Sats", playersSats[0]);
-                            //sessionStorage.setItem("P2Sats", playersSats[1]);
-                            //sessionStorage.setItem("P1Name", p1Name);
-                            //sessionStorage.setItem("P2Name", p2Name);
-                            //socket.emit('createWithdrawal', {"amount": Math.floor((playersSats[0]+playersSats[1])*0.95), "maxWithdrawals": 1});
                             numberofCreates=1;
                             document.getElementById("loading").style.display  = "flex";
                             redirectToGame();
@@ -154,29 +149,6 @@ socket.on("session", ({ sessionID, userID }) => {
     // store it in the localStorage
     sessionStorage.setItem("sessionID", sessionID);
   });
-
-/*
-socket.on('rescreateWithdrawal', (data) => {
-    //sessionStorage.setItem("LNURLID", data.id);
-    //sessionStorage.setItem("LNURL", data.lnurl);
-    //sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
-    redirectToGame()
-})
-
-
-async function deletePayLinks(){
-    let deletedPayLinks = 0;
-    for(let i=0;i<payLinks.length;i++){
-        console.log("Trying to delete paylink "+i+": "+payLinks[i].id);
-        socket.emit('deletepaylink', payLinks[i].id);
-        deletedPayLinks++
-    }
-    if(deletedPayLinks==2){
-        return "redirect"
-    }
-}
-*/
-
 
 function redirectToGame(){
     window.location.href = "/game";
