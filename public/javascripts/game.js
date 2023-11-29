@@ -408,12 +408,11 @@ function displayGame(){
         if(currentScoreDistribution[0]<=0){ winner=P2Name }
         else if(currentScoreDistribution[1]<=0){ winner=P1Name }
         if(currentScoreDistribution[0]<=0){
-            winnerP="Player 2"
+            winnerP="Player2"
         }
         else if(currentScoreDistribution[1]<=0){
-            winnerP="Player 1"
+            winnerP="Player1"
         }
-        sessionStorage.setItem("gameWinner", winnerP);
         finalText(winner)
     }
 }
@@ -791,7 +790,7 @@ let controllerTestP2Direction = ""
 addEventListener("keydown", function(event) {
     switch (event.key.toUpperCase()) {
         case " ":
-            if(gameEnded==true && winnerP=="Player 1"){
+            if(gameEnded==true && winnerP=="Player1"){
                 redirectWindowAfterGame();
             }
         case "ENTER":
@@ -799,7 +798,7 @@ addEventListener("keydown", function(event) {
                 countdownStart = true;
 
             }
-            if(gameEnded==true && winnerP == "Player 2"){
+            if(gameEnded==true && winnerP == "Player2"){
                 redirectWindowAfterGame();
             }
             break;

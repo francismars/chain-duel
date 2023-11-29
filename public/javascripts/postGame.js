@@ -42,18 +42,19 @@ let totalDeposit;
 let maxWithdrawable;
 let totalPrize;
 socket.on("resPostGameInfoRequest", (duelInfos) =>{
-    // { "Player2": { "total": 100, "note": "bnm" }, "Player1": { "total": 100, "note": "xcv" }, "withdrawable": 190, "winner": "Player 1" }
+    // { "Player2": { "value": 100, "name": "bnm" }, "Player1": { "value": 100, "name": "xcv" }, "winners": ["Player 1"] }
     console.log(duelInfos)
-    gameWinner = duelInfos.winner;
-    p1Name = duelInfos.Player1.note;
-    p2Name = duelInfos.Player2.note;
-    P1SatsDeposit = duelInfos.Player1.total;
-    P2SatsDeposit = duelInfos.Player2.total;
+    let winnerP = String(duelInfos.winners.slice(-1));
+    if(winnerP == "Player1" || winnerP == "Player2") gameWinner = winnerP;
+    p1Name = duelInfos.Player1.name;
+    p2Name = duelInfos.Player2.name;
+    P1SatsDeposit = duelInfos.Player1.value;
+    P2SatsDeposit = duelInfos.Player2.value;
     if (gameWinner!=null){
-        if(gameWinner=="Player 1" && p1Name!=null){
+        if(gameWinner=="Player1" && p1Name!=null){
             winnerName = p1Name
         }
-        else if(gameWinner=="Player 2" && p2Name!=null){
+        else if(gameWinner=="Player2" && p2Name!=null){
             winnerName = p2Name
         }
         if(winnerName!=null){
@@ -177,7 +178,7 @@ function pressContinue(){
 addEventListener("keydown", function(event) {
     switch (event.key) {
         case " ":
-            if(gameWinner=="Player 1" && (menu==1 || menu==2)){
+            if(gameWinner=="Player1" && (menu==1 || menu==2)){
                 pressContinue();
             }
             if(menu==3){
@@ -185,7 +186,7 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "Enter":
-            if(gameWinner=="Player 2" && (menu==1 || menu==2)){
+            if(gameWinner=="Player2" && (menu==1 || menu==2)){
                 pressContinue();
             }
             if(menu==3){
@@ -193,22 +194,22 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "s":
-            if(gameWinner=="Player 1" && (menu==1 || menu==2) && tournamentMode==false){
+            if(gameWinner=="Player1" && (menu==1 || menu==2) && tournamentMode==false){
                 pressDown()
             }
             break;
         case "ArrowDown":
-            if(gameWinner=="Player 2" && (menu==1 || menu==2) && tournamentMode==false){
+            if(gameWinner=="Player2" && (menu==1 || menu==2) && tournamentMode==false){
                 pressDown()
             }
             break;
         case "w":
-            if(gameWinner=="Player 1" && (menu==1 || menu==2)){
+            if(gameWinner=="Player1" && (menu==1 || menu==2)){
                 pressUp()
             }
             break;
         case "ArrowUp":
-            if(gameWinner=="Player 2" && (menu==1 || menu==2)){
+            if(gameWinner=="Player2" && (menu==1 || menu==2)){
                 pressUp()
             }
             break;
