@@ -234,23 +234,25 @@ socket.on("rescreatePaylink", body => {
 
 socket.on("updatePayments", body => {
     console.log(body)
-    for(let key in body){
-        let payment = body[key];
-        if(key==payLinks[0].id && payLinks[0].description == "Player1" || key==payLinks[1].id && payLinks[1].description == "Player1"){
-            console.log(`P1 deposited ${(payment.total)} sats`);
-            if(payment.note!=null && payment.note!=""){
-                console.log("Player1 Name: " + payment.note)
-                p1Name=(payment.note).trim()
+    let playersData = body
+    for(let key in playersData){
+        let playerData = playersData[key]
+        console.log(playerData)
+        if(key == "Player1"){
+            console.log(`P1 has ${(playerData.value)} sats`);
+            if(playerData.name!=null && playerData.name!=""){
+                console.log("Player1 Name: " + playerData.name)
+                p1Name=(playerData.name).trim()
             }
-            playersSats[0] = payment.total
+            playersSats[0] = playerData.value
         }
-        if(key==payLinks[0].id && payLinks[0].description == "Player2" || key==payLinks[1].id && payLinks[1].description == "Player2"){
-            console.log(`P2 deposited ${(payment.amount)} sats`);
-            if(payment.note!=null && payment.note!=""){
-                console.log("Player2 Name: " + payment.note)
-                p2Name=(payment.note).trim()
+        if(key == "Player2"){
+            console.log(`P2 has ${(playerData.value)} sats`);
+            if(playerData.name!=null && playerData.name!=""){
+                console.log("Player2 Name: " + playerData.name)
+                p2Name=(playerData.name).trim()
             }
-            playersSats[1] = payment.total
+            playersSats[1] = playerData.value
         }
         changeTextAfterPayment()
     }
