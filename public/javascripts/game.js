@@ -90,10 +90,10 @@ let currentScoreDistribution
 let percentageInitialP1
 socket.on("resGetDuelInfos", (duelInfos) => {
     console.log(duelInfos)
-    P1Name=duelInfos["Player1"].note;
-    P2Name=duelInfos["Player2"].note;
-    SatsP1=duelInfos["Player1"].total;
-    SatsP2=duelInfos["Player2"].total;
+    P1Name=duelInfos["Player1"].name;
+    P2Name=duelInfos["Player2"].name;
+    SatsP1=duelInfos["Player1"].value;
+    SatsP2=duelInfos["Player2"].value;
 
     if(gamePlayers!=null){
         P1Name=gamePlayers[0]
