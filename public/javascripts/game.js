@@ -95,6 +95,15 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     SatsP1=duelInfos["Player1"].value;
     SatsP2=duelInfos["Player2"].value;
 
+    if(duelInfos["winners"]){
+      let winner = duelInfos["winners"].slice(-1);
+      let winnersCount = duelInfos["winners"].length;
+      if(winnersCount){
+        let donText = "*"+(Math.pow(2,winnersCount))
+        document.getElementById("gameInfo").textContent = "P2P"+donText
+      }
+    }
+
     if(gamePlayers!=null){
         P1Name=gamePlayers[0]
     }
@@ -139,7 +148,8 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     window.requestAnimationFrame(draw);
 })
 
-/* P2P vs Tournament Game Name */
+/*
+// P2P vs Tournament Game Name
 let playerListParsed = JSON.parse(sessionStorage.getItem("PlayerList"));
 let winnersListStorage = JSON.parse(sessionStorage.getItem("WinnersList"));
 let donRound = sessionStorage.getItem("donRound");
@@ -161,7 +171,7 @@ else if(playerListParsed!=null){
     document.getElementById("gameInfo").textContent = "GAME " + (winnersListStorage.length+1)+" of "+(playerListParsed.length-1)
   }
 }
-
+*/
 
 
 /*
