@@ -71,10 +71,12 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
         document.getElementById("designerFee").innerText  = "("+designerFee.toLocaleString()+" sats)";
     }
 
-    totalPrize = Math.floor(totalDeposit*0.95);
+    totalPrize = Math.floor(totalDeposit);
 
 
     if (totalPrize!=null){
+        document.getElementById("postGame").classList.remove('empty');
+        document.getElementById("loading").classList.add('hide');
         document.getElementById("prize").innerText  = parseInt(totalPrize).toLocaleString()+" SATS";
     }
 })

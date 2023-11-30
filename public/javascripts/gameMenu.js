@@ -137,6 +137,7 @@ socket.on("resGetGameMenuInfos", body => {
               });
         }
     }
+    document.getElementById("loading").classList.add('hide');
 })
 
 socket.on("updatePayments", body => {
