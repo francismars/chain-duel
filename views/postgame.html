@@ -12,15 +12,15 @@
       <h2 id="chain">CHAIN</h2>
       <h2 id="duel">DUEL</h2>
   </header>
-  <div class="flex full flex-center">
+  <div id="postGame" class="flex full flex-center animateIn empty">
     <div class="flex">
       <h2 id="gameOver">GAME OVER</h2>
       <h1 id="winner">PLAYER 1 WINS</h1>
     </div>
 
-    <div class="fees">
+    <div id="fees">
       <span id="split1">2% <span id="hostFee"></span> to the Sponsor (@peeeiratehash)</span> · <span id="split2">2% <span id="developerFee"></span> to the developer (@francismars)</span> · <span id="split3">1% <span id="designerFee"></span> to the designer (@bitcoinanatomy)</span>
-    <div>
+    </div>
     <h1 id="prize">100,000 SATS</h1>
     <p id="claimText">CLAIM YOUR WINNINGS</p>
     <image class="qrcode blur" id="qrCode1"></image>
@@ -31,8 +31,12 @@
               <button class="button" id="startnewbutton" type="button">RETURN TO MAIN MENU</button>
     </div>
     <div id="socialFollow">
-        Follow <img class="social-icon" src="images/social/Nostr.png" /> chainduel@nostrplebs.com  <img class="social-icon" src="images/social/Twitter.png" /> @chainduel</div>
+        Follow <img class="social-icon" src="images/social/Nostr.png" /> chainduel@nostrplebs.com  <img class="social-icon" src="images/social/Twitter.png" /> @chainduel
     </div>
+  </div>
+
+  <div class="overlay" id="loading">
+    <img src="images/loading.gif">
   </div>
 
   <audio id="audio" autoplay loop>

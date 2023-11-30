@@ -259,6 +259,7 @@ header{
 
 #socialFollow {
     font-size: 1cqw;
+    text-align: center;
 }
 .social-icon {
     display: inline-block;
@@ -359,4 +360,44 @@ Bottom bar with game data for bracket screen and game screen
 
 .sponsorship-amount{
   font-weight: 900;
+}
+
+
+
+
+#loading.overlay{
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: #000000cc;
+  position: fixed;
+  top: 0;
+  align-items: center;
+  justify-content: center;
+  transition: all .35s ease-in-out;
+  -moz-transition: all .35s ease-in-out;
+  -webkit-transition: all .35s ease-in-out;
+  opacity: 1;
+}
+
+#loading.overlay img{
+  display: block;
+  width: 7vw;
+  height: 7vw;
+}
+
+
+#loading.overlay.hide{
+  opacity: 0;
+}
+
+
+.animateIn{
+  transition: all .35s ease-in-out;
+  -moz-transition: all .35s ease-in-out;
+  -webkit-transition: all .35s ease-in-out;
+}
+
+.empty{
+  opacity: 0;
 }
