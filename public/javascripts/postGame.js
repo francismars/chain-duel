@@ -2,8 +2,7 @@ import { listenToGamepads } from "./gamepads.js";
 
 // Variables for Tournament Specifics
 let tournamentSponsorImageUrl = ""
-let tournamentPlaceName = "AmityAge 2023"
-
+let tournamentPlaceName = ""
 
 let serverIP;
 let serverPORT;
@@ -92,7 +91,6 @@ if (withdrawalURL!=null){
         element: qrcodeContainer,
         value: withdrawalURL
     });
-    sessionStorage.removeItem("LNURL");
 }
 
 
@@ -135,29 +133,13 @@ function pressDown(){
     }
 }
 
-let donRound = sessionStorage.getItem("donRound");
-if(donRound==null){
-  donRound = 0
-  sessionStorage.setItem("donRound", donRound);
-}
-
-
 function pressContinue(){
     if(menu==1 && activeButtonMenu1==0){
         menu2CSS();
         qrRevealed = 1;
     }
     else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
-        donRound = Number(donRound) + 1
-        sessionStorage.clear();
-        if (gameWinner!=null && totalPrize!=null && winnerName!=undefined){
-            sessionStorage.setItem("sessionID", sessionID);
-            sessionStorage.setItem("donWinner", gameWinner);
-            sessionStorage.setItem("donP1Name", p1Name);
-            sessionStorage.setItem("donP2Name", p2Name);
-            sessionStorage.setItem("donPrize", totalPrize);
-            sessionStorage.setItem("donRound", donRound);
-        }
+        socket.emit("doubleornothing")
         window.location.href = "/gamemenu";
     }
     else if(menu==2){

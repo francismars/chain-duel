@@ -7,21 +7,9 @@ let playersSats = [0,0]
 let numberofCreates = 0
 let p1Name = "Player 1"
 let p2Name = "Player 2"
-let donWinner = sessionStorage.getItem('donWinner');
-let donP1Name = sessionStorage.getItem("donP1Name");
-let donP2Name = sessionStorage.getItem("donP2Name");
-let sessionID = sessionStorage.getItem("sessionID");
-let donPrize = sessionStorage.getItem("donPrize");
 let payLinks = [];
 let intervalStart = setInterval(listenToGamepads, 1000/10);
-
-let donRound = JSON.parse(sessionStorage.getItem("donRound"));
-let donText = "";
-if(donRound!=null){
-  donText = "*"+(Math.pow(2,donRound))
-  document.getElementById("gameMenuTitle").textContent = "Stake your sats"+donText
-}
-
+let sessionID = sessionStorage.getItem("sessionID");
 
 await fetch('/loadconfig', {
     method: 'GET'
@@ -37,38 +25,6 @@ if(sessionID){
     socket.auth = { sessionID };
 }
 socket.connect();
-
-//sessionStorage.setItem("donPrize", totalPrize);
-//sessionStorage.setItem("donWinner", gameWinner);
-//sessionStorage.setItem("donP1Name", p1Name);
-//sessionStorage.setItem("donP2Name", p2Name);
-console.log(donPrize, donWinner, donP1Name, donP2Name)
-if (donWinner!=null){
-    if (donPrize!=null){
-        p1Name = donP1Name
-        p2Name = donP2Name
-        if(donWinner=="Player 1"){
-            playersSats[0]+=parseInt(donPrize);
-            socket.emit('createPaylink', {"description":"Player1","buyInMin":1000,"buyInMax":10000000});
-            socket.emit('createPaylink', {"description":"Player2","buyInMin":donPrize,"buyInMax":10000000});
-            document.getElementById("mindepP1").innerText = "1000"
-            document.getElementById("mindepP2").innerText = donPrize
-        }
-        else if(donWinner=="Player 2"){
-            playersSats[1]+=parseInt(donPrize);
-            socket.emit('createPaylink', {"description":"Player1","buyInMin":donPrize,"buyInMax":10000000});
-            socket.emit('createPaylink', {"description":"Player2","buyInMin":1000,"buyInMax":10000000});
-            document.getElementById("mindepP2").innerText = "1000"
-            document.getElementById("mindepP1").innerText = donPrize
-        }
-    }
-    changeTextAfterPayment();
-}
-else if(donWinner==null){
-    //socket.emit('createPaylink', {"description":"Player1","buyInMin":100,"buyInMax":10000000});
-    //socket.emit('createPaylink', {"description":"Player2","buyInMin":100,"buyInMax":10000000});
-    socket.emit("getGamePaylinks");
-}
 
 addEventListener("keydown", function(event) {
     switch (event.key) {
@@ -154,11 +110,14 @@ function redirectToGame(){
     window.location.href = "/game";
 }
 
-socket.on("resGetGamePaylinks", body => {
+socket.emit("getGameMenuInfos");
+
+socket.on("resGetGameMenuInfos", body => {
     //console.log(body)
-    for(let payLink of body){
-        payLinks = body
+    payLinks = body
+    for(let payLink of body){        
         if(payLink.description=="Player1"){
+            document.getElementById("mindepP1").innerText = payLink.min
             let qrcodeContainer = document.getElementById("qrcode1");
             qrcodeContainer.innerHTML = "";
             new QRious({
@@ -168,6 +127,7 @@ socket.on("resGetGamePaylinks", body => {
               });
         };
         if(payLink.description=="Player2"){
+            document.getElementById("mindepP2").innerText = payLink.min
             let qrcodeContainer = document.getElementById("qrcode2");
             qrcodeContainer.innerHTML = "";
             new QRious({
@@ -178,31 +138,6 @@ socket.on("resGetGamePaylinks", body => {
         }
     }
 })
-
-/*
-socket.on("rescreatePaylink", body => {
-    let payLink = body;
-    payLinks.push(payLink)
-    if(payLink.description=="Player1"){
-        let qrcodeContainer = document.getElementById("qrcode1");
-        qrcodeContainer.innerHTML = "";
-        new QRious({
-            element: qrcodeContainer,
-            size: 800,
-            value: payLink.lnurl
-          });
-    };
-    if(payLink.description=="Player2"){
-        let qrcodeContainer = document.getElementById("qrcode2");
-        qrcodeContainer.innerHTML = "";
-        new QRious({
-            element: qrcodeContainer,
-            size: 800,
-            value: payLink.lnurl
-          });
-    }
-});
-*/
 
 socket.on("updatePayments", body => {
     console.log(body)
@@ -225,6 +160,13 @@ socket.on("updatePayments", body => {
                 p2Name=(playerData.name).trim()
             }
             playersSats[1] = playerData.value
+        }
+        if(key == "winners"){
+            console.log(`This is DoN number ${playerData.length}. Previous winner was ${(playerData.slice(-1))}`);
+            if(playerData.length!=null){
+                donText = "*"+(Math.pow(2,playerData.length))
+                document.getElementById("gameMenuTitle").textContent = "Stake your sats"+donText
+              }
         }
         changeTextAfterPayment()
     }
