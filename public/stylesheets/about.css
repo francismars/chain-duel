@@ -142,3 +142,21 @@ img.inline-logo {
   font-size: 2vw;
   letter-spacing: 0.01rem;
 }
+
+
+
+
+.social-handles {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0 40px;
+}
+
+.handle{}
+
+.qr{
+  width: 100%;
+}
