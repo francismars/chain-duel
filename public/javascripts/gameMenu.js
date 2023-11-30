@@ -164,8 +164,8 @@ socket.on("updatePayments", body => {
         if(key == "winners"){
             console.log(`This is DoN number ${playerData.length}. Previous winner was ${(playerData.slice(-1))}`);
             if(playerData.length!=null){
-                donText = "*"+(Math.pow(2,playerData.length))
-                document.getElementById("gameMenuTitle").textContent = "Stake your sats"+donText
+                let donMultiple = Math.pow(2,playerData.length);
+                document.getElementById("gameMenuTitle").textContent = "P2P*"+donMultiple
               }
         }
         changeTextAfterPayment()
