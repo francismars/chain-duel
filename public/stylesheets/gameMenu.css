@@ -189,8 +189,13 @@ body{
 
 
 #prizeinfocard{
-    display: block;
+    display: flex;
     width: 33%;
+    align-content: center;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 
@@ -340,4 +345,25 @@ body{
     text-align: center;
     width: auto;
     margin: auto;
+    background: #fff;
+    border-radius: 100px;
+    font-size: 0.7vw;
+    padding:0.3vw 0.8vw;
+    box-shadow: #fff 0px 0px 10px
+}
+
+#leaderboard-inner {
+  margin:0px
+}
+
+#leaderboardSats{
+  font-weight: 900;
+}
+
+
+.playerSquare.white{
+  margin-right:0.5vw
+}
+.playerSquare.black{
+  margin-left:0.5vw
 }
