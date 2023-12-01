@@ -282,6 +282,7 @@ socket.on('resCreateWithdrawalPostGame', (data) => {
           element: qrcodeContainer,
           value: withdrawalURL
       });
+      document.getElementById("qrcodeLink").href = "lightning:"+withdrawalURL
       resCreateWithdrawal = true;
     }
     document.getElementById("claimbutton").innerText = "BLUR QR CODE";
