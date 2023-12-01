@@ -114,6 +114,11 @@ body{
     animation: glowing 0ms infinite;
 }
 
+
+#qrcodeLink{
+  display: flex;
+}
+
 #qrCode1{
     margin-left: auto;
     margin-right: auto;

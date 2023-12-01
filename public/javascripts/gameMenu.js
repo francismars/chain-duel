@@ -125,6 +125,8 @@ socket.on("resGetGameMenuInfos", body => {
                 size: 800,
                 value: payLink.lnurlp
               });
+            document.getElementById("qrcode1Link").href = "lightning:"+payLink.lnurlp
+
         };
         if(payLink.description=="Player2"){
             document.getElementById("mindepP2").innerText = payLink.min
@@ -135,6 +137,7 @@ socket.on("resGetGameMenuInfos", body => {
                 size: 800,
                 value: payLink.lnurlp
               });
+            document.getElementById("qrcode2Link").href = "lightning:"+payLink.lnurlp
         }
     }
     document.getElementById("loading").classList.add('hide');
