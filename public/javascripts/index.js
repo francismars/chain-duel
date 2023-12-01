@@ -1,5 +1,5 @@
 import { listenToGamepads } from "./gamepads.js";
-sessionStorage.clear();
+
 let menu = 1;
 addEventListener("keydown", function(event) {
     if (event.key === "Enter" || event.key === " ") {
