@@ -77,6 +77,7 @@ const p1FC = new Audio("./sound/P1-FC.mp3");
 const p2FC = new Audio("./sound/P2-FC.mp3");
 const p1reset = new Audio("./sound/P1-HWAC.mp3");
 const p2reset = new Audio("./sound/P2-HWAC.mp3");
+let controllersActive = false;
 
 
 let gamePlayers;
@@ -147,6 +148,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
 
     window.requestAnimationFrame(draw);
     document.getElementById("loading").classList.add('hide');
+    controllersActive = true
 })
 
 /*
@@ -805,7 +807,7 @@ addEventListener("keydown", function(event) {
                 redirectWindowAfterGame();
             }
         case "ENTER":
-            if(gameStarted==false){
+            if(controllersActive && gameStarted==false){
                 countdownStart = true;
 
             }

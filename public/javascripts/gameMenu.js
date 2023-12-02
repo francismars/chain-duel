@@ -10,6 +10,7 @@ let p2Name = "Player 2"
 let payLinks = [];
 let intervalStart = setInterval(listenToGamepads, 1000/10);
 let sessionID = sessionStorage.getItem("sessionID");
+let controllersActive = false;
 
 await fetch('/loadconfig', {
     method: 'GET'
@@ -52,14 +53,10 @@ addEventListener("keydown", function(event) {
         case "Enter":
                 if (selected=="StartGame"){
                     if(playersSats[0]!=0&&playersSats[1]!=0){
-                        if(numberofCreates==0){
-                            numberofCreates=1;
-                            document.getElementById("loading").style.display  = "flex";
-                            redirectToGame();
-                        }
+                        redirectToGame();
                     }
                 }
-                else if (selected=="MainMenuButton"){
+                else if (controllersActive && selected=="MainMenuButton"){
                     if(playersSats[0]==0&&playersSats[1]==0){
                         window.location.href = "/";
                     }
@@ -71,21 +68,21 @@ addEventListener("keydown", function(event) {
 addEventListener("keydown", function(event) {
     switch (event.code) {
         case "ControlLeft":
-          document.getElementById("player1card").classList.add("expanded");
-          break;
+            if(controllersActive) document.getElementById("player1card").classList.add("expanded");
+            break;
         case "ControlRight":
-          document.getElementById("player2card").classList.add("expanded");
-          break;
+            if(controllersActive) document.getElementById("player2card").classList.add("expanded");
+            break;
     }
 });
 
 addEventListener("keyup", function(event) {
     switch (event.code) {
       case "ControlLeft":
-        document.getElementById("player1card").classList.remove("expanded");
+        if(controllersActive) document.getElementById("player1card").classList.remove("expanded");
         break;
       case "ControlRight":
-        document.getElementById("player2card").classList.remove("expanded");
+        if(controllersActive) document.getElementById("player2card").classList.remove("expanded");
         break;
     }
 });
@@ -137,6 +134,7 @@ socket.on("resGetGameMenuInfos", body => {
                 value: payLink.lnurlp
               });
             document.getElementById("qrcode2Link").href = "lightning:"+payLink.lnurlp
+            controllersActive = true; 
         }
     }
     document.getElementById("loading").classList.add('hide');
