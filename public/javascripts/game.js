@@ -146,6 +146,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
 
     window.requestAnimationFrame(draw);
+    document.getElementById("loading").classList.add('hide');
 })
 
 /*
