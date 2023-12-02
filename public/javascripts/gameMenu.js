@@ -61,7 +61,6 @@ addEventListener("keydown", function(event) {
                 }
                 else if (selected=="MainMenuButton"){
                     if(playersSats[0]==0&&playersSats[1]==0){
-                        socket.emit('cancelgame')
                         window.location.href = "/";
                     }
                 }
