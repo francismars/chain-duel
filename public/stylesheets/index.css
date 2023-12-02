@@ -70,19 +70,19 @@ body {
     right: 0px;
 }
 
-#rules1{
+
+
+#splits, #version{
+    margin-top: 0;
     text-align: center;
+    color: grey;
     font-size: 0.8cqw;
-    margin-bottom: 1%;
     letter-spacing: 0.03rem;
     line-height: 1.4rem;
 }
 
-#rules2, #version{
-    margin-top: 0px;
-    text-align: center;
-    color: grey;
-    font-size: 0.8cqw;
+#splits{
+    margin-top: 3%;
 }
 
 
