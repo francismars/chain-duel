@@ -77,6 +77,7 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
     if (totalPrize!=null){
         document.getElementById("postGame").classList.remove('empty');
         document.getElementById("loading").classList.add('hide');
+        controllersActive = true;
         document.getElementById("prize").innerText  = parseInt(totalPrize).toLocaleString()+" SATS";
     }
 })
@@ -102,6 +103,7 @@ let activeButtonMenu1 = 0;
 let activeButtonMenu3 = 0;
 let qrRevealed = 0
 let intervalStart = setInterval(listenToGamepads, 1000/10);
+let controllersActive = false;
 
 function pressLeft(){
     if(menu==3 && activeButtonMenu3==1){
@@ -128,7 +130,7 @@ function pressUp(){
 }
 
 function pressDown(){
-    if(menu==1 && activeButtonMenu1==0){
+    if(menu==1 && activeButtonMenu1==0 && controllersActive){
         document.getElementById("doubleornotthingbutton").style.animationDuration  = "2s";
         document.getElementById("claimbutton").style.animationDuration  = "0s";
         activeButtonMenu1=1;
@@ -136,25 +138,25 @@ function pressDown(){
 }
 
 function pressContinue(){
-    if(menu==1 && activeButtonMenu1==0){
-        menu2CSS();
-        qrRevealed = 1;
-    }
-    else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
-        socket.emit("doubleornothing")
-        window.location.href = "/gamemenu";
-    }
-    else if(menu==2){
-        menu1CSS();
-    }
-    else if(menu==3){
-        if(activeButtonMenu3==0){
-            sessionStorage.clear();
-            window.location.href = "/highscores";
+    if(controllersActive){
+        if(menu==1 && activeButtonMenu1==0){
+            menu2CSS();
+            qrRevealed = 1;
         }
-        else if(activeButtonMenu3==1){
-            sessionStorage.clear();
-            window.location.href = "/";
+        else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
+            socket.emit("doubleornothing")
+            window.location.href = "/gamemenu";
+        }
+        else if(menu==2){
+            menu1CSS();
+        }
+        else if(menu==3){
+            if(activeButtonMenu3==0){
+                window.location.href = "/highscores";
+            }
+            else if(activeButtonMenu3==1){
+                window.location.href = "/";
+            }
         }
     }
 }
@@ -266,6 +268,7 @@ socket.on("connect", () => {
 })
 
 socket.on('prizeWithdrawn', () => {
+    sessionStorage.clear();
     menu3CSS();
     updateHSJson();
 })
