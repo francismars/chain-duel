@@ -34,12 +34,14 @@ socket.on("session", ({ sessionID, userID }) => {
 
 socket.emit("getDuelInfos")
 
+/*
 let titleCanvas = document.getElementById("titleCanvas");
 titleCanvas.width = window.innerWidth*(0.7);
 titleCanvas.height = window.innerHeight*(0.1);
 let larguraTitle = titleCanvas.width;
 let alturaTitle = titleCanvas.height;
 let ctxTitle = titleCanvas.getContext("2d");
+*/
 let gameCols = 51;
 let gameRows = 25;
 let gameCanvas = document.getElementById("gameCanvas");
@@ -89,6 +91,7 @@ let initialScoreDistribution
 let totalPoints
 let currentScoreDistribution
 let percentageInitialP1
+let percentageInitialP2
 socket.on("resGetDuelInfos", (duelInfos) => {
     console.log(duelInfos)
     P1Name=duelInfos["Player1"].name;
@@ -144,7 +147,11 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     initialScoreDistribution = [SatsP1,SatsP2];
     totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
     currentScoreDistribution = [SatsP1,SatsP2];
-    percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints)/100;
+    percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints);
+    percentageInitialP2 = ((initialScoreDistribution[1] * 100) / totalPoints);
+
+    document.getElementById("initialDistributionP1").style.width = percentageInitialP1+"%";
+    document.getElementById("initialDistributionP2").style.width = percentageInitialP2+"%";
 
     window.requestAnimationFrame(draw);
     document.getElementById("loading").classList.add('hide');
@@ -195,7 +202,7 @@ function draw(){
     //clear();
     listenToGamepads();
     updateScore();
-    displayTitle();
+    //displayTitle();
     displayGame();
     window.requestAnimationFrame(draw);
 }
@@ -608,6 +615,7 @@ function captureCoinbase(){
             p2FC.play();
         }
     }
+    updateState();
 }
 
 function drawCoinbase(){
@@ -720,14 +728,6 @@ function displayTitle(){
     larguraTitle = titleCanvas.width;
     alturaTitle = titleCanvas.height;
 
-    /*
-    ctxTitle.font = "30px BureauGrotesque";
-    ctxTitle.textAlign = "left";
-    ctxTitle.fillText(P1Name.toUpperCase(), 40, 26);
-    ctxTitle.textAlign = "right";
-    ctxTitle.fillText(P2Name.toUpperCase(), (larguraTitle-40), 26);
-    */
-
     let p1capturing;
     ctxTitle.fillStyle = "white";
     if (p1BodyPos.length == 1) p1capturing = "2%";
@@ -787,6 +787,40 @@ function displayTitle(){
     ctxTitle.fillStyle = "LightGray";
     ctxTitle.fillText("CURRENT DISTRIBUTION", larguraTitle*0.5, 61);
 }
+
+
+
+function updateState(){
+    let percentageCurrentP1 = ((currentScoreDistribution[0] * 100) / totalPoints);
+    let percentageCurrentP2 = ((currentScoreDistribution[1] * 100) / totalPoints);
+    let p1capturing;
+    let p2capturing;
+
+
+    // Update capturing
+    if (p1BodyPos.length == 1) p1capturing = "2%";
+    else if (p1BodyPos.length == 2) p1capturing = "4%";
+    else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1capturing = "8%";
+    else if (p1BodyPos.length >= 8 && p1BodyPos.length < 16) p1capturing = "16%";
+    else if (p1BodyPos.length >= 16) p1capturing = "32%";
+    document.getElementById("capturingP1Amount").innerHTML = p1capturing;
+
+    if (p2BodyPos.length == 1) p2capturing = "2%";
+    else if (p2BodyPos.length == 2) p2capturing = "4%";
+    else if (p2BodyPos.length >= 3 && p2BodyPos.length < 8) p2capturing = "8%";
+    else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2capturing = "16%";
+    else if (p2BodyPos.length >= 16) p2capturing = "32%";
+    document.getElementById("capturingP2Amount").innerHTML = p2capturing;
+
+    // Update bars
+    document.getElementById("currentDistributionP1").style.width = percentageCurrentP1+"%";
+    document.getElementById("currentDistributionP2").style.width = percentageCurrentP2+"%";
+
+}
+
+
+
+
 
 function redirectWindowAfterGame(){
     if(gamePlayers==null){

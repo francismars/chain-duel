@@ -37,7 +37,7 @@ body{
     flex-direction: row;
     justify-content: space-between;
     align-items: baseline;
-    margin: 1rem 15%;
+    margin: 1vw 15%;
 }
 
 .flex.players {
@@ -110,7 +110,7 @@ body{
 
 #p1Points{
     color: white;
-    margin-right: 0.5rem;
+    margin-right: 0.1vw;
     left: 15%;
     top: 21%;
     font-size: 2.5cqw;
@@ -118,7 +118,7 @@ body{
 
 #p2Points{
     color: white;
-    margin-left: 0.5rem;
+    margin-left: 0.1vw;
     right: 15%;
     top: 21%;
     font-size: 2.5cqw;
@@ -133,4 +133,80 @@ body{
     height: 2.1vw;
     margin-top: 0;
     margin-bottom: -0.2vw;
+}
+
+
+
+
+
+
+
+
+
+
+.gameState{
+    margin: 0.2vw 15% 1vw 15%;
+    text-transform: uppercase;
+    text-align: center;
+    font-size: 0.8vw;
+    letter-spacing: 0.05em;
+    height: 2.5vw;
+}
+
+
+#capturing{
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: -0.8vw;
+}
+
+.capturingAmount{
+  font-weight: 900;
+}
+
+#distributions{
+  width: 100%;
+  position: relative;
+}
+
+#initialDistribution .distributionTitle{
+  margin-bottom: 0.2vw;
+}
+#currentDistribution .distributionTitle{
+  position: relative;
+  z-index: 10;
+  margin-bottom: -1vw;
+  color: #717171;
+}
+
+.distributionBarOutter{
+    width: 100%;
+    margin-bottom: 0.8vw;
+}
+
+#initialDistribution .distributionBar{
+  height: 0.3vw;
+  width: 50%;
+  position: absolute;
+}
+
+#currentDistribution .distributionBar{
+  height: 1vw;
+  width: 50%;
+  position: absolute;
+  box-shadow: #ffffff36 0 0 24px;
+  -webkit-transition: width 0.15s ease-out;
+  -moz-transition: width 0.15s ease-out;
+  -o-transition: width 0.15s ease-out;
+  transition: width 0.15s ease-out;
+}
+
+#initialDistributionP1, #currentDistributionP1 {
+  background: #fff;
+}
+
+#initialDistributionP2, #currentDistributionP2 {
+  background: #000;
+  right: 0;
 }
