@@ -92,6 +92,8 @@ let totalPoints
 let currentScoreDistribution
 let percentageInitialP1
 let percentageInitialP2
+let currentCaptureP1
+let currentCaptureP2
 socket.on("resGetDuelInfos", (duelInfos) => {
     console.log(duelInfos)
     P1Name=duelInfos["Player1"].name;
@@ -803,20 +805,35 @@ function updateState(){
     else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1capturing = "8%";
     else if (p1BodyPos.length >= 8 && p1BodyPos.length < 16) p1capturing = "16%";
     else if (p1BodyPos.length >= 16) p1capturing = "32%";
-    document.getElementById("capturingP1Amount").innerHTML = p1capturing;
-
+    if( currentCaptureP1 != p1capturing){
+      updateHiglightCapture("P1", p1capturing);
+      currentCaptureP1 = p1capturing
+    }
     if (p2BodyPos.length == 1) p2capturing = "2%";
     else if (p2BodyPos.length == 2) p2capturing = "4%";
     else if (p2BodyPos.length >= 3 && p2BodyPos.length < 8) p2capturing = "8%";
     else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2capturing = "16%";
     else if (p2BodyPos.length >= 16) p2capturing = "32%";
-    document.getElementById("capturingP2Amount").innerHTML = p2capturing;
+    if( currentCaptureP2 != p2capturing){
+      updateHiglightCapture("P2", p2capturing);
+      currentCaptureP2 = p2capturing
+    }
 
     // Update bars
     document.getElementById("currentDistributionP1").style.width = percentageCurrentP1+"%";
     document.getElementById("currentDistributionP2").style.width = percentageCurrentP2+"%";
 
 }
+
+
+function updateHiglightCapture(player, content){
+    document.getElementById("capturing"+player+"Amount").innerHTML = content;
+    document.getElementById("capturing"+player+"Amount").classList.add('highlight');
+    setTimeout(function() {
+        document.getElementById("capturing"+player+"Amount").classList.remove('highlight');
+    }, 100);
+}
+
 
 
 

@@ -159,10 +159,30 @@ body{
   display: flex;
   justify-content: space-between;
   margin-bottom: -0.8vw;
+  height: 1.2vw;
 }
 
 .capturingAmount{
   font-weight: 900;
+  font-size: 1vw;
+  -webkit-transition: all 0.1s ease-out;
+  -moz-transition: all 0.1s ease-out;
+  -o-transition: all 0.1s ease-out;
+  transition: all 0.1s ease-out;
+  display: inline-block;
+}
+
+.capturingAmount.highlight{
+  font-size: 1.8vw;
+  padding: 0.05vw;
+}
+
+#capturingP1Amount.highlight{
+  margin: -0.7vw 0 0 -0.2vw;
+}
+
+#capturingP2Amount.highlight{
+  margin: -0.7vw -0.2vw 0 0;
 }
 
 #distributions{
