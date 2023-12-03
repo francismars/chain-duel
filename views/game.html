@@ -37,7 +37,37 @@
               <div class="inline playerSquare black"></div>
             </div>
           </div>
-          <canvas id="titleCanvas"></canvas>
+
+        
+
+          <div class="gameState">
+            <div id="capturing">
+              <div id="capturingP1">
+                <span id="capturingP1Amount" class="capturingAmount">2%</span> capture
+              </div>
+              <div id="capturingP2">
+                <div id="capturingP1">
+                  capture <span id="capturingP2Amount" class="capturingAmount">2%</span>
+                </div>
+              </div>
+
+            </div>
+
+            <div id="distributions">
+              <div id="initialDistribution" class="distributionBarOutter">
+                <div class="distributionTitle">Initial Distribution</div>
+                <div id="initialDistributionP1" class="distributionBar"></div>
+                <div id="initialDistributionP2" class="distributionBar"></div>
+              </div>
+              <div id="currentDistribution" class="distributionBarOutter">
+                <div class="distributionTitle">Current Distribution</div>
+                <div id="currentDistributionP1" class="distributionBar"></div>
+                <div id="currentDistributionP2" class="distributionBar"></div>
+              </div>
+            </div>
+          </div>
+
+
           <div class="flex points">
             <div class="player-sats player-sats-p1">
               <span id="p1Points" class="condensed">0</span> <span class="grey">sats</span>
