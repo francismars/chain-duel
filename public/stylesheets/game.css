@@ -145,12 +145,12 @@ body{
 
 
 .gameState{
-    margin: 0.2vw 15% 1vw 15%;
+    margin: 0.5vw 15% 1vw 15%;
     text-transform: uppercase;
     text-align: center;
     font-size: 0.8vw;
     letter-spacing: 0.05em;
-    height: 2.5vw;
+    height: 3.4vw;
 }
 
 
@@ -192,17 +192,19 @@ body{
 
 #initialDistribution .distributionTitle{
   margin-bottom: 0.2vw;
+  color: #828282;
 }
 #currentDistribution .distributionTitle{
   position: relative;
   z-index: 10;
-  margin-bottom: -1vw;
-  color: #717171;
+  margin-bottom: -1.2vw;
+  color: #848484;
+  font-size: 0.9vw;
 }
 
 .distributionBarOutter{
     width: 100%;
-    margin-bottom: 0.8vw;
+    margin-bottom: 1vw;
 }
 
 #initialDistribution .distributionBar{
@@ -212,7 +214,7 @@ body{
 }
 
 #currentDistribution .distributionBar{
-  height: 1vw;
+  height: 1.3vw;
   width: 50%;
   position: absolute;
   box-shadow: #ffffff36 0 0 24px;
