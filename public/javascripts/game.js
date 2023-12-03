@@ -92,8 +92,9 @@ let totalPoints
 let currentScoreDistribution
 let percentageInitialP1
 let percentageInitialP2
-let currentCaptureP1
-let currentCaptureP2
+let currentCaptureP1 = "2%";
+let currentCaptureP2 = "2%";
+
 socket.on("resGetDuelInfos", (duelInfos) => {
     console.log(duelInfos)
     P1Name=duelInfos["Player1"].name;
@@ -157,6 +158,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
 
     window.requestAnimationFrame(draw);
     document.getElementById("loading").classList.add('hide');
+    document.getElementById("gameContainer").classList.remove('hide');
     controllersActive = true
 })
 
@@ -298,13 +300,13 @@ function changeScore(playerID){
     else if(bodySnake.length==2){
         changeInPoints=Math.floor(totalPoints*0.04);
     }
-    else if(bodySnake.length>=3 && bodySnake.length<=6){
+    else if(bodySnake.length>=4 && bodySnake.length<=6){
         changeInPoints=Math.floor(totalPoints*0.08);
     }
-    else if(bodySnake.length>=7 && bodySnake.length<=14){
+    else if(bodySnake.length>=7 && bodySnake.length<=10){
         changeInPoints=Math.floor(totalPoints*0.16);
     }
-    else if(bodySnake.length>=15){
+    else if(bodySnake.length>=11){
         changeInPoints=Math.floor(totalPoints*0.32);
     }
     if(changeInPoints<1){ changeInPoints=1; }
@@ -801,19 +803,20 @@ function updateState(){
 
     // Update capturing
     if (p1BodyPos.length == 1) p1capturing = "2%";
-    else if (p1BodyPos.length == 2) p1capturing = "4%";
-    else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1capturing = "8%";
-    else if (p1BodyPos.length >= 8 && p1BodyPos.length < 16) p1capturing = "16%";
-    else if (p1BodyPos.length >= 16) p1capturing = "32%";
+    else if (p1BodyPos.length >= 2 && p1BodyPos.length < 4) p1capturing = "4%";
+    else if (p1BodyPos.length >= 4 && p1BodyPos.length < 7) p1capturing = "8%";
+    else if (p1BodyPos.length >= 7 && p1BodyPos.length < 11) p1capturing = "16%";
+    else if (p1BodyPos.length >= 11) p1capturing = "32%";
+    // Animate on change
     if( currentCaptureP1 != p1capturing){
       updateHiglightCapture("P1", p1capturing);
       currentCaptureP1 = p1capturing
     }
     if (p2BodyPos.length == 1) p2capturing = "2%";
-    else if (p2BodyPos.length == 2) p2capturing = "4%";
-    else if (p2BodyPos.length >= 3 && p2BodyPos.length < 8) p2capturing = "8%";
-    else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2capturing = "16%";
-    else if (p2BodyPos.length >= 16) p2capturing = "32%";
+    else if (p2BodyPos.length >= 2 && p2BodyPos.length < 4) p2capturing = "4%";
+    else if (p2BodyPos.length >= 4 && p2BodyPos.length < 7) p2capturing = "8%";
+    else if (p2BodyPos.length >= 7 && p2BodyPos.length < 11) p2capturing = "16%";
+    else if (p2BodyPos.length >= 11) p2capturing = "32%";
     if( currentCaptureP2 != p2capturing){
       updateHiglightCapture("P2", p2capturing);
       currentCaptureP2 = p2capturing

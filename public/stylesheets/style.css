@@ -378,6 +378,7 @@ Bottom bar with game data for bracket screen and game screen
   -moz-transition: all .35s ease-in-out;
   -webkit-transition: all .35s ease-in-out;
   opacity: 1;
+  z-index: 10
 }
 
 #loading.overlay img{

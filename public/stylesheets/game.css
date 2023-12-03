@@ -37,7 +37,7 @@ body{
     flex-direction: row;
     justify-content: space-between;
     align-items: baseline;
-    margin: 1vw 15%;
+    margin: 0.5vw 15%;
 }
 
 .flex.players {
@@ -150,7 +150,7 @@ body{
     text-align: center;
     font-size: 0.8vw;
     letter-spacing: 0.05em;
-    height: 3.4vw;
+    height: 3.55vw;
 }
 
 
@@ -173,16 +173,16 @@ body{
 }
 
 .capturingAmount.highlight{
-  font-size: 1.8vw;
+  font-size: 1.4vw;
   padding: 0.05vw;
 }
 
 #capturingP1Amount.highlight{
-  margin: -0.7vw 0 0 -0.2vw;
+  margin: -0.4vw -0.1vw 0 -0.4vw;
 }
 
 #capturingP2Amount.highlight{
-  margin: -0.7vw -0.2vw 0 0;
+  margin: -0.4vw -0.4vw 0 -0.1vw;
 }
 
 #distributions{
@@ -196,15 +196,15 @@ body{
 }
 #currentDistribution .distributionTitle{
   position: relative;
-  z-index: 10;
-  margin-bottom: -1.2vw;
+  z-index: 1;
+  margin-bottom: -1.3vw;
   color: #848484;
   font-size: 0.9vw;
 }
 
 .distributionBarOutter{
     width: 100%;
-    margin-bottom: 1vw;
+    margin-bottom: 1.2vw;
 }
 
 #initialDistribution .distributionBar{
@@ -214,7 +214,7 @@ body{
 }
 
 #currentDistribution .distributionBar{
-  height: 1.3vw;
+  height: 1.5vw;
   width: 50%;
   position: absolute;
   box-shadow: #ffffff36 0 0 24px;
