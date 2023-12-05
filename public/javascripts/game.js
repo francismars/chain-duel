@@ -157,6 +157,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
 
     document.getElementById("initialDistributionP1").style.width = percentageInitialP1+"%";
     document.getElementById("initialDistributionP2").style.width = percentageInitialP2+"%";
+    updateState();
 
     window.requestAnimationFrame(draw);
     document.getElementById("loading").classList.add('hide');
