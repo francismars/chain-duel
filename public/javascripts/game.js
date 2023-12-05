@@ -109,6 +109,8 @@ socket.on("resGetDuelInfos", (duelInfos) => {
         let donText = "*"+(Math.pow(2,winnersCount))
         document.getElementById("gameInfo").textContent = "P2P"+donText
       }
+    }else{
+      document.getElementById("gameInfo").textContent = "P2P"
     }
 
     if(gamePlayers!=null){
