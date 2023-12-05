@@ -145,10 +145,10 @@ body{
 
 
 .gameState{
-    margin: 0.5vw 15% 1vw 15%;
+    margin: 0vw 15% 1vw 15%;
     text-transform: uppercase;
     text-align: center;
-    font-size: 0.8vw;
+    font-size: 0.7vw;
     letter-spacing: 0.05em;
     height: 3.55vw;
 }
@@ -197,7 +197,7 @@ body{
 #currentDistribution .distributionTitle{
   position: relative;
   z-index: 1;
-  margin-bottom: -1.3vw;
+  margin-bottom: -1.38vw;
   color: #848484;
   font-size: 0.9vw;
 }
@@ -214,7 +214,7 @@ body{
 }
 
 #currentDistribution .distributionBar{
-  height: 1.5vw;
+  height: 1.7vw;
   width: 50%;
   position: absolute;
   box-shadow: #ffffff36 0 0 24px;
