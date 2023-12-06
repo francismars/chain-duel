@@ -117,7 +117,7 @@ function loadBracket(){
 
     elementSVG.addEventListener("load",function(){
             svgDoc = elementSVG.contentDocument;
-            //changeHTMLAfterPayment()
+            changeHTMLAfterPayment()
             //updateBracketWinner()
             //updateNextGameText()
     });
@@ -619,8 +619,10 @@ function highLightWinnerSquare(svgDoc,id){
 }
 
 function changeNameText(svgDoc,id, name){
-    svgDoc.getElementById(id+'_name').textContent = name;
-    svgDoc.getElementById(id+'_name').style.opacity = "1";
+    if(svgDoc){
+        svgDoc.getElementById(id+'_name').textContent = name;
+        svgDoc.getElementById(id+'_name').style.opacity = "1";
+    }
 }
 
 function shuffleList(array) {
