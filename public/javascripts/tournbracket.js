@@ -44,7 +44,8 @@ socket.on("resGetTournamentInfos", (data) => {
         size: 800,
         value: data
         });
-    loadBracket()
+    loadBracket();
+    document.getElementById("qrTournamentLink").href = "lightning:"+data
 });
 
 socket.on("updatePayments", body => {
@@ -85,7 +86,7 @@ else if(playerListParsed==null){
     playersList = []
     //playersList = ["Big Toshi","XORNOTHING","Nakamotor","256octans"]
     playerListSequencial = []
-    
+
     numberOfPlayers = parseInt(params.get("players"));
     numberOfDeposits = playersList.length
     for(let i=0;i<numberOfPlayers;i++){
@@ -113,7 +114,7 @@ function loadBracket(){
         elementSVG = document.getElementById("bracket32players");
     }
     elementSVG.style.display = "block";
-    
+
     elementSVG.addEventListener("load",function(){
             svgDoc = elementSVG.contentDocument;
             //changeHTMLAfterPayment()
@@ -189,6 +190,7 @@ function changeHTMLAfterPayment(){
             // CHANGES QR CODE TO CHECKMARK
             document.getElementById("buyinvalue").style.padding = "none";
             document.getElementById("qrTournament").style.display = "none";
+            document.getElementById("lnurlpqrTournament").style.display = "none";
             document.getElementById("qrTournamentCheck").style.display = "block";
         }
     }
