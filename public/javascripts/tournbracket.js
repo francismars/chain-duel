@@ -20,17 +20,36 @@ if(sessionID){
 }
 socket.connect();
 
+let urlToParse = location.search;
+const params = new URLSearchParams(urlToParse);
+
+let numberOfPlayers = parseInt(params.get("players"));
+let deposit = parseInt(params.get("deposit"));
+let getTournamentInfosMSG = {"buyin": deposit, "players":numberOfPlayers}
+socket.emit("getTournamentInfos", getTournamentInfosMSG)
+
+socket.on("resGetTournamentInfos", (data) => {
+    console.log(data)
+    let qrcodeContainer = document.getElementById("qrTournament");
+    qrcodeContainer.innerHTML = "";
+    new QRious({
+        element: qrcodeContainer,
+        size: 800,
+        value: data
+        });
+});
+
 let initialPositions = ["G1_P1", "G1_P2", "G2_P1", "G2_P2", "G3_P1", "G3_P2", "G4_P1", "G4_P2", "G5_P1", "G5_P2", "G6_P1", "G6_P2", "G7_P1", "G7_P2", "G8_P1", "G8_P2", "G9_P1", "G9_P2", "G10_P1", "G10_P2", "G11_P1", "G11_P2", "G12_P1", "G12_P2", "G13_P1", "G13_P2", "G14_P1", "G14_P2", "G15_P1", "G15_P2", "G16_P1", "G16_P2", "G17_P1", "G17_P2", "G18_P1", "G18_P2", "G19_P1", "G19_P2", "G20_P1", "G20_P2", "G21_P1", "G21_P2", "G22_P1", "G22_P2", "G23_P1", "G23_P2", "G24_P1", "G24_P2", "G25_P1", "G25_P2", "G26_P1", "G26_P2", "G27_P1", "G27_P2", "G28_P1", "G28_P2", "G29_P1", "G29_P2", "G30_P1", "G30_P2", "G31_P1", "G31_P2"]
 
 let playersList;
-let numberOfPlayers;
 let numberOfDeposits;
-let deposit;
 let playerListParsed = JSON.parse(sessionStorage.getItem("PlayerList"));
 let previousWinner = sessionStorage.getItem("gameWinner");
 let winnersListStorage = JSON.parse(sessionStorage.getItem("WinnersList"));
 let winnersList;
 let playerListSequencial;
+
+/*
 if(winnersListStorage==null){
     winnersList = []
 }
@@ -51,8 +70,7 @@ else if(playerListParsed==null){
     playersList = []
     //playersList = ["Big Toshi","XORNOTHING","Nakamotor","256octans"]
     playerListSequencial = []
-    let urlToParse = location.search;
-    const params = new URLSearchParams(urlToParse);
+    
     numberOfPlayers = parseInt(params.get("players"));
     numberOfDeposits = playersList.length
     for(let i=0;i<numberOfPlayers;i++){
@@ -62,29 +80,33 @@ else if(playerListParsed==null){
     deposit = parseInt(params.get("deposit"));
     socket.emit('createPaylink', {"description":"Chain Duel Tournament","buyInMin":deposit,"buyInMax":deposit});
 }
-
-let elementSVG;
-if(numberOfPlayers==4){
-    elementSVG = document.getElementById("bracket4players");
-}
-else if(numberOfPlayers==8){
-    elementSVG = document.getElementById("bracket8players");
-}
-else if(numberOfPlayers==16){
-    elementSVG = document.getElementById("bracket16players");
-}
-else if(numberOfPlayers==32){
-    elementSVG = document.getElementById("bracket32players");
-}
-elementSVG.style.display = "block";
+*/
 
 let svgDoc;
-elementSVG.addEventListener("load",function(){
-        svgDoc = elementSVG.contentDocument;
-        changeHTMLAfterPayment()
-        updateBracketWinner()
-        updateNextGameText()
-});
+function loadBracket(){
+    let elementSVG;
+    if(numberOfPlayers==4){
+        elementSVG = document.getElementById("bracket4players");
+    }
+    else if(numberOfPlayers==8){
+        elementSVG = document.getElementById("bracket8players");
+    }
+    else if(numberOfPlayers==16){
+        elementSVG = document.getElementById("bracket16players");
+    }
+    else if(numberOfPlayers==32){
+        elementSVG = document.getElementById("bracket32players");
+    }
+    elementSVG.style.display = "block";
+    
+    
+    elementSVG.addEventListener("load",function(){
+            svgDoc = elementSVG.contentDocument;
+            changeHTMLAfterPayment()
+            //updateBracketWinner()
+            //updateNextGameText()
+    });
+}
 
 document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
 document.getElementById("buyinvalue").innerText = deposit.toLocaleString();
@@ -111,6 +133,15 @@ socket.on("session", ({ sessionID, userID }) => {
     sessionStorage.setItem("sessionID", sessionID);
 });
 
+socket.on("updatePayments", body => {
+    console.log(body)
+    playersList = body.playersList
+    numberOfDeposits = body.depositsCount
+    loadBracket()
+    //changeHTMLAfterPayment()
+})
+
+/*
 socket.on("invoicePaid", body => {
     let pName
     if(body.comment!=null && body.comment!=""){
@@ -137,6 +168,7 @@ socket.on("invoicePaid", body => {
     numberOfDeposits++
     changeHTMLAfterPayment()
 });
+*/
 
 let nextGameP1;
 let nextGameP2;
