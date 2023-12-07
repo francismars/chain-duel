@@ -1,0 +1,169 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="stylesheets/style.css">
+        <link rel="stylesheet" href="stylesheets/config.css">
+        <script type="module" src="javascripts/config.js"></script>
+        <script type="module" src="javascripts/value.js"></script>
+        <title>Chain Duel</title>
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon_package/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon_package/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon_package/favicon-16x16.png">
+        <link rel="manifest" href="/images/favicon_package/site.webmanifest">
+        <link rel="mask-icon" href="/images/favicon_package/safari-pinned-tab.svg" color="#5bbad5">
+        <meta name="apple-mobile-web-app-title" content="Chain Duel">
+        <meta name="application-name" content="Chain Duel">
+        <meta name="msapplication-TileColor" content="#cccccc">
+        <meta name="theme-color" content="#ffffff">
+    </head>
+    <body>
+        <div class="flex full flex-center">
+
+
+          <p class="page-title label">Config</p>
+          <div class="config-rows">
+
+              <div class="config-row">
+                <div class="config-row-text">
+                  <div class="label">
+                    Backend
+                  </div>
+                  <div class="value" id="backEndIP">
+                    chainduel.xyx:3000
+                  </div>
+                </div>
+                <button onclick="" class="button" id="backEndIPChange" type="button">Change</button>
+              </div>
+
+              <div class="config-row disabled">
+                <div class="config-row-text">
+                  <div class="label">
+                    Subscription (<span id="daylyPrice">5,000</span> sats/day)
+                  </div>
+                  <div class="value">
+                    <span id="subscriptionBalance">0</span> <span class="label">sats</span>
+                  </div>
+                </div>
+                <button onclick="" class="button" id="subscriptionBalanceManage" type="button">Pay/Refill</button>
+              </div>
+
+              <div class="config-row disabled">
+                <div class="config-row-text">
+                  <div class="label">
+                    Sats destination (<span id="hostFee">0</span>% fee)
+                  </div>
+                  <div class="value" id="hostLNAddress">
+                    empty
+                  </div>
+                </div>
+                <button onclick="" class="button" id="hostLNAddressChange" type="button">Manage</button>
+              </div>
+
+              <div class="config-row disabled">
+                <div class="config-row-text">
+                  <div class="label">
+                    Top Brand Image
+                  </div>
+                  <div class="value" id="topBrandImage">
+                    empty
+                  </div>
+                </div>
+                <button onclick="" class="button" id="topBrandImageChange" type="button">Change</button>
+              </div>
+
+              <div class="config-row disabled">
+                <div class="config-row-text">
+                  <div class="label">
+                    Brand Image Label
+                  </div>
+                  <div class="value" id="topBrandImageLabel">
+                    empyt
+                  </div>
+                </div>
+                <button onclick="" class="button" id="topBrandImageLabelChange" type="button">Change</button>
+              </div>
+
+              <div class="config-row disabled">
+                <div class="config-row-text">
+                  <div class="label">
+                    Controlers
+                  </div>
+                  <div class="value" id="gamepadeDetected">
+                    No gamepad detected
+                  </div>
+                </div>
+                <button onclick="" class="button" id="gamepadeDetectedConfig" type="button">Config</button>
+              </div>
+
+              <div class="config-row disabled">
+                <div class="config-row-text">
+                  <div class="label">
+                    Sound
+                  </div>
+                  <div class="value" id="topBrandImageLabel">
+                    Music <span id="musicStatus">ON</span> / Sound Effect <span id="sfxStatus">ON</span>
+                  </div>
+                </div>
+                <button onclick="" class="button" id="soundStatusChange" type="button">Edit</button>
+              </div>
+
+
+              <div class="double-button">
+                <button onclick="" class="button" id="aboutbutton" type="button">Reset</button>
+                <button onclick="location.href='/';" class="button" id="highscoresbutton" type="button">Main Menu</button>
+              </div>
+
+          </div>
+        </div>
+
+
+
+
+
+        <!-- OVERLAYS -->
+        <div class="config-overlay hide" id="backendConfig">
+          <div class="config-overlay-inner">
+            <h2 class="config-overlay-title">
+              Backend
+            </h2>
+            <div class="config-overlay-title">
+              Type the IP or URL of the back end that will validate transasctions.
+            </div>
+            <input type="text" id="backendConfigInput" name="backendConfigURLIP">
+            <div class="double-button">
+              <button onclick="" class="button" id="aboutbutton" type="button">Reset</button>
+              <button onclick="location.href='/';" class="button" id="highscoresbutton" type="button">Main Menu</button>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="config-overlay hide" id="backendConfig">
+          <div class="config-overlay-inner">
+            <h2 class="config-overlay-title">
+              Backend
+            </h2>
+            <div class="config-overlay-title">
+              Type the IP or URL of the back end that will validate transasctions.
+            </div>
+            <input type="text" id="backendConfigInput" name="backendConfigURLIP">
+            <div class="double-button">
+              <button onclick="" class="button" id="aboutbutton" type="button">Reset</button>
+              <button onclick="location.href='/';" class="button" id="highscoresbutton" type="button">Main Menu</button>
+            </div>
+          </div>
+        </div>
+
+
+
+
+
+
+        <audio id="audio" autoplay loop>
+        <!--
+          <source src="/sound/chain_duel_1.ogg" type="audio/ogg"/>
+          <source src="/sound/chain_duel_1.mp3" type="audio/mpeg"/>
+        -->
+        <source src="/sound/chain_duel_produced_menu.m4a" type="audio/x-m4a">
+        </audio>
+    </body>
+</html>

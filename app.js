@@ -16,6 +16,7 @@ var loadConfigRouter = require('./routes/loadconfig');
 var tournPrefsRouter = require('./routes/tournprefs');
 var tournLobbyRouter = require('./routes/tournlobby');
 var tournBracketRouter = require('./routes/tournbracket');
+var configRouter = require('./routes/config');
 var demoRouter = require('./routes/demo');
 
 var app = express();
@@ -42,6 +43,7 @@ app.use('/loadconfig', loadConfigRouter);
 app.use('/tournprefs', tournPrefsRouter);
 app.use('/tournlobby', tournLobbyRouter);
 app.use('/tournbracket', tournBracketRouter);
+app.use('/config', configRouter)
 app.use('/demo', demoRouter);
 
 
