@@ -190,7 +190,7 @@ function changeHTMLAfterPayment(){
             // CHANGES QR CODE TO CHECKMARK
             document.getElementById("buyinvalue").style.padding = "none";
             document.getElementById("qrTournament").style.display = "none";
-            document.getElementById("lnurlpqrTournament").style.display = "none";
+            //document.getElementById("lnurlpqrTournament").style.display = "none";
             document.getElementById("qrTournamentCheck").style.display = "block";
         }
     }
