@@ -82,7 +82,7 @@ const p2reset = new Audio("./sound/P2-HWAC.mp3");
 let controllersActive = false;
 
 
-let gamePlayers;
+let playersList;
 let P1Name;
 let P2Name;
 let SatsP1;
@@ -97,22 +97,44 @@ let currentCaptureP2 = "2%";
 
 socket.on("resGetDuelInfos", (duelInfos) => {
     console.log(duelInfos)
-    P1Name=duelInfos["Player1"].name;
-    P2Name=duelInfos["Player2"].name;
-    SatsP1=duelInfos["Player1"].value;
-    SatsP2=duelInfos["Player2"].value;
-
-    if(duelInfos["winners"]){
-      let winner = duelInfos["winners"].slice(-1);
-      let winnersCount = duelInfos["winners"].length;
-      if(winnersCount){
-        let donText = "*"+(Math.pow(2,winnersCount))
-        document.getElementById("gameInfo").textContent = "P2P"+donText
-      }
-    }else{
-      document.getElementById("gameInfo").textContent = "P2P"
+    if(duelInfos.playersList){
+        console.log("Tournament Mode")
+        playersList = duelInfos.playersList;
+        let numberOfPlayers = playersList.length
+        let winnersList = duelInfos.winners;
+        if(!winnersList) winnersList = []
+        if(winnersList.length + 1 < numberOfPlayers){
+            if(winnersList.length<numberOfPlayers/2){
+                P1Name = playersList[(2*winnersList.length)]
+                P2Name = playersList[(2*winnersList.length)+1]
+            }
+        }
+        document.getElementById("gameInfo").textContent = "GAME " + (winnersList.length+1)+" of "+(numberOfPlayers-1)
+        SatsP1=parseInt(duelInfos.min);
+        SatsP2=SatsP1;
     }
+    else{
+        console.log("P2P Mode")
+        P1Name=duelInfos["Player1"].name;
+        P2Name=duelInfos["Player2"].name;
+        SatsP1=parseInt(duelInfos["Player1"].value);
+        SatsP2=parseInt(duelInfos["Player2"].value);
+    
+        if(duelInfos["winners"]){
+          let winner = duelInfos["winners"].slice(-1);
+          let winnersCount = duelInfos["winners"].length;
+          if(winnersCount){
+            let donText = "*"+(Math.pow(2,winnersCount))
+            document.getElementById("gameInfo").textContent = "P2P"+donText
+          }
+        }else{
+          document.getElementById("gameInfo").textContent = "P2P"
+        }
+    }
+    document.getElementById("player1name").innerText = P1Name;
+    document.getElementById("player2name").innerText = P2Name;
 
+    /*
     if(gamePlayers!=null){
         P1Name=gamePlayers[0]
     }
@@ -132,6 +154,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     if (P2Name!="Player 2"){
         document.getElementById("player2name").innerText = P2Name;
     }
+
     const payProtection = false;
 
     if (SatsP1==null){
@@ -149,6 +172,8 @@ socket.on("resGetDuelInfos", (duelInfos) => {
         SatsP2=1000
     }
     else { SatsP2 = parseInt(SatsP2) }
+    */
+
     initialScoreDistribution = [SatsP1,SatsP2];
     totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
     currentScoreDistribution = [SatsP1,SatsP2];
@@ -846,11 +871,11 @@ function updateHiglightCapture(player, content){
 
 
 function redirectWindowAfterGame(){
-    if(gamePlayers==null){
-        socket.emit("gameFinished", winnerP)
+    socket.emit("gameFinished", winnerP)
+    if(playersList==null){
         window.location.href = "/postgame";
     }
-    else if(gamePlayers!=null){
+    else if(playersList!=null){
         window.location.href = "/tournbracket";
     }
 }
