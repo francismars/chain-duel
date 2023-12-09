@@ -113,7 +113,7 @@ socket.on("resGetGameMenuInfos", body => {
     payLinks = body
     for(let payLink of body){        
         if(payLink.description=="Player1"){
-            document.getElementById("mindepP1").innerText = payLink.min
+            document.getElementById("mindepP1").innerText = parseInt(payLink.min).toLocaleString()
             let qrcodeContainer = document.getElementById("qrcode1");
             qrcodeContainer.innerHTML = "";
             new QRious({
@@ -125,7 +125,7 @@ socket.on("resGetGameMenuInfos", body => {
 
         };
         if(payLink.description=="Player2"){
-            document.getElementById("mindepP2").innerText = payLink.min
+            document.getElementById("mindepP2").innerText = parseInt(payLink.min).toLocaleString()
             let qrcodeContainer = document.getElementById("qrcode2");
             qrcodeContainer.innerHTML = "";
             new QRious({
