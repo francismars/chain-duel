@@ -37,15 +37,31 @@ socket.emit("getTournamentInfos", getTournamentInfosMSG)
 
 socket.on("resGetTournamentInfos", (data) => {
     console.log(data)
-    let qrcodeContainer = document.getElementById("qrTournament");
-    qrcodeContainer.innerHTML = "";
-    new QRious({
-        element: qrcodeContainer,
-        size: 800,
-        value: data
-        });
+    if(data.lnurlp){
+        let lnurlp = data.lnurlp
+        let qrcodeContainer = document.getElementById("qrTournament");
+        qrcodeContainer.innerHTML = "";
+        new QRious({
+            element: qrcodeContainer,
+            size: 800,
+            value: lnurlp
+            });
+        document.getElementById("qrTournamentLink").href = "lightning:"+lnurlp
+    }
+    if(data.playersList){
+        playersList = data.playersList
+        numberOfDeposits = data.depositsCount
+        changeHTMLAfterPayment()
+        numberOfPlayers = playersList.length
+    }
+    if(data.min){
+        deposit = parseInt(data.min)
+    }
+    if(data.winners){
+        winnersList = data.winners
+    }
     loadBracket();
-    document.getElementById("qrTournamentLink").href = "lightning:"+data
+    loadBottomInfos()
 });
 
 socket.on("updatePayments", body => {
@@ -116,17 +132,22 @@ function loadBracket(){
     elementSVG.style.display = "block";
 
     elementSVG.addEventListener("load",function(){
-            svgDoc = elementSVG.contentDocument;
-            changeHTMLAfterPayment()
-            //updateBracketWinner()
-            //updateNextGameText()
+            svgDoc = elementSVG.contentDocument
+            if(numberOfDeposits > 0) changeHTMLAfterPayment()
+            updateBracketWinner()
+            updateNextGameText()
     });
+
+    
 }
 
-document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
-document.getElementById("buyinvalue").innerText = deposit.toLocaleString();
-document.getElementById("bracketFinalPrize").innerText = (deposit*numberOfPlayers*0.95).toLocaleString();
-document.getElementById("buyinvalue2").innerText = deposit.toLocaleString();
+function loadBottomInfos(){
+    document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
+    document.getElementById("buyinvalue").innerText = deposit.toLocaleString();
+    document.getElementById("bracketFinalPrize").innerText = (deposit*numberOfPlayers*0.95).toLocaleString();
+    document.getElementById("buyinvalue2").innerText = deposit.toLocaleString();
+}
+
 
 /*
 let paymentsDict = {}
@@ -198,7 +219,7 @@ function changeHTMLAfterPayment(){
 
 let WinnerNamesList = []
 function updateBracketWinner(){
-    if(previousWinner!=null){
+    if(winnersList!=null){
         document.getElementById("bracketPayment").style.display = "none";
         document.getElementById("nextGameDiv").style.display = "block";
         let elapsedGames = winnersList.length;
@@ -220,13 +241,13 @@ function updateBracketWinner(){
             let winnerName
             //console.log(i)
             if(i<(numberOfPlayers/2)){ // Primeira Ronda
-                if(winnersList[i]=="Player 1"){
+                if(winnersList[i]=="Player1"){
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
 
                     winnerName = playersList[i*2]
                 }
-                else if(winnersList[i]=="Player 2"){
+                else if(winnersList[i]=="Player2"){
                     highLight(svgDoc,initialPositions[(i*2)+1])
                     dimLoser(svgDoc,initialPositions[(i*2)])
                     winnerName = playersList[(i*2)+1]
@@ -237,27 +258,27 @@ function updateBracketWinner(){
                 let winnerPlayer = winnersList[i];
                 let winnerPrevious;
                 let winnerPreviousMultiplier;
-                if(winnerPlayer=="Player 1"){
+                if(winnerPlayer=="Player1"){
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
                     let winnerPreviousIndex = (i - ((numberOfPlayers/2)) + subtractor1)
                     winnerPrevious = winnersList[winnerPreviousIndex]
-                    if(winnerPrevious=="Player 1"){
+                    if(winnerPrevious=="Player1"){
                         winnerPreviousMultiplier = 0
                     }
-                    if(winnerPrevious=="Player 2"){
+                    if(winnerPrevious=="Player2"){
                         winnerPreviousMultiplier = 1
                     }
                 }
-                if(winnerPlayer=="Player 2"){
+                if(winnerPlayer=="Player2"){
                     highLight(svgDoc,initialPositions[(i*2)+1])
                     dimLoser(svgDoc,initialPositions[(i*2)])
                     let winnerPreviousIndex = (i - ((numberOfPlayers/2)) + subtractor1 + 1)
                     winnerPrevious = winnersList[winnerPreviousIndex]
-                    if(winnerPrevious=="Player 1"){
+                    if(winnerPrevious=="Player1"){
                         winnerPreviousMultiplier = 2
                     }
-                    if(winnerPrevious=="Player 2"){
+                    if(winnerPrevious=="Player2"){
                         winnerPreviousMultiplier = 3
                     }
                 }
@@ -270,7 +291,7 @@ function updateBracketWinner(){
                 //console.log("subtractor2: " + subtractor2)
                 let winnerPreviousMultiplier;
 
-                if(winnersList[i]=="Player 1"){ // Primeiro e Terceiro Quarto
+                if(winnersList[i]=="Player1"){ // Primeiro e Terceiro Quarto
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
 
@@ -278,60 +299,60 @@ function updateBracketWinner(){
                     //console.log("winnerPreviousIndex: " + winnerPreviousIndex)
                     if(subtractor2==0) subtractor3=0;
                     if(subtractor2==1) subtractor3=2;
-                    if(winnersList[winnerPreviousIndex] == "Player 1"){ // Primeiro Oitavo e Quinto Oitavo
+                    if(winnersList[winnerPreviousIndex] == "Player1"){ // Primeiro Oitavo e Quinto Oitavo
                         let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2) - subtractor3)
                         //console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
-                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 1 ou 9
+                        if(winnersList[winnerPreviousPreviousIndex] == "Player1"){ // Winner = 1 ou 9
                             winnerPreviousMultiplier = 0
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Winner = 2 ou 10
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player2"){ // Winner = 2 ou 10
                             winnerPreviousMultiplier = 1
                         }
                     }
 
-                    else if(winnersList[winnerPreviousIndex] == "Player 2"){ // Segundo Oitavo e Sexto Oitavo
+                    else if(winnersList[winnerPreviousIndex] == "Player2"){ // Segundo Oitavo e Sexto Oitavo
                         let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2) - subtractor3) + 1
 
                         //console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
-                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 3 ou 11
+                        if(winnersList[winnerPreviousPreviousIndex] == "Player1"){ // Winner = 3 ou 11
                             winnerPreviousMultiplier = 2
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Winner = 4 ou 12
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player2"){ // Winner = 4 ou 12
                             winnerPreviousMultiplier = 3
                         }
                     }
                 }
 
-                else if(winnersList[i]=="Player 2"){ // Segundo e Quarto Quarto
+                else if(winnersList[i]=="Player2"){ // Segundo e Quarto Quarto
                     highLight(svgDoc,initialPositions[(i*2)+1])
                     dimLoser(svgDoc,initialPositions[(i*2)])
                     let winnerPreviousIndex = i - ((numberOfPlayers/4)-subtractor2) + 1
                     //console.log("winnerPreviousIndex: " + winnerPreviousIndex)
                     if(subtractor2==0) subtractor3=1;
                     if(subtractor2==1) subtractor3=3;
-                    if(winnersList[winnerPreviousIndex] == "Player 1"){ // Terceiro Oitavo e Setimo Oitavo
+                    if(winnersList[winnerPreviousIndex] == "Player1"){ // Terceiro Oitavo e Setimo Oitavo
 
                         let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2)-subtractor3)
                         //console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
-                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 5 ou 13
+                        if(winnersList[winnerPreviousPreviousIndex] == "Player1"){ // Winner = 5 ou 13
                             winnerPreviousMultiplier = 4
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Winner = 6 ou 14
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player2"){ // Winner = 6 ou 14
                             winnerPreviousMultiplier = 5
                         }
                     }
 
-                    else if(winnersList[winnerPreviousIndex] == "Player 2"){  // Quarto Oitavo e Oitavo Oitavo
+                    else if(winnersList[winnerPreviousIndex] == "Player2"){  // Quarto Oitavo e Oitavo Oitavo
                         let winnerPreviousPreviousIndex = winnerPreviousIndex - ((numberOfPlayers/2)-subtractor3) + 1
                         //console.log("winnerPreviousPreviousIndex: " + winnerPreviousPreviousIndex)
 
-                        if(winnersList[winnerPreviousPreviousIndex] == "Player 1"){ // Winner = 7 ou 15
+                        if(winnersList[winnerPreviousPreviousIndex] == "Player1"){ // Winner = 7 ou 15
                             winnerPreviousMultiplier = 6
                         }
-                        else if(winnersList[winnerPreviousPreviousIndex] == "Player 2"){ // Winner = 8 ou 16
+                        else if(winnersList[winnerPreviousPreviousIndex] == "Player2"){ // Winner = 8 ou 16
                             winnerPreviousMultiplier = 7
                         }
                     }
@@ -349,12 +370,12 @@ function updateBracketWinner(){
                 console.log("winnerPreviousIndex: " + winnerPreviousIndex)
                 console.log("initial positions p1: " + initialPositions[(i*2)])
                 console.log("initial positions p2: " + initialPositions[(i*2)+1])
-                if(winnersList[winnerPreviousIndex] == "Player 1"){
+                if(winnersList[winnerPreviousIndex] == "Player1"){
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
                     winnerName = WinnerNamesList[WinnerNamesList.length-playersList.length/8+subtractor4]
                 }
-                if(winnersList[winnerPreviousIndex] == "Player 2"){
+                if(winnersList[winnerPreviousIndex] == "Player2"){
                     highLight(svgDoc,initialPositions[(i*2)+1])
                     dimLoser(svgDoc,initialPositions[(i*2)])
                     winnerName = WinnerNamesList[WinnerNamesList.length-playersList.length/8+1+subtractor4]
@@ -369,17 +390,17 @@ function updateBracketWinner(){
                 //console.log(initialPositions[(i*2)+1])
                 highLightWinnerSquare(svgDoc,"Winner")
 
-                if(winnersList[winnersList.length-1] == "Player 1"){
+                if(winnersList[winnersList.length-1] == "Player1"){
                     highLight(svgDoc,initialPositions[(i*2)])
                     dimLoser(svgDoc,initialPositions[(i*2)+1])
                 }
-                else if(winnersList[winnersList.length-1] == "Player 2"){
+                else if(winnersList[winnersList.length-1] == "Player2"){
                     highLight(svgDoc,initialPositions[(i*2)+1])
                     dimLoser(svgDoc,initialPositions[(i*2)])
                 }
 
                 domPosition = "Winner"
-                winnersList[i]=="Player 1" ? winnerName = WinnerNamesList[i-2] : winnerName = WinnerNamesList[i-1]
+                winnersList[i]=="Player1" ? winnerName = WinnerNamesList[i-2] : winnerName = WinnerNamesList[i-1]
             }
             else{
                 domPosition = initialPositions[(numberOfPlayers)+i]
@@ -413,13 +434,13 @@ function updateNextGameText(){
         document.getElementById("winnerName").textContent = WinnerNamesList[(WinnerNamesList.length-1)];
         document.getElementById("tournFinishedDiv").style.display = "block";
 
-        if(winnersList[winnersList.length-1]=="Player 1"){
-            sessionStorage.setItem("P1Name", WinnerNamesList[(WinnerNamesList.length-1)]);
-            sessionStorage.setItem("P2Name", WinnerNamesList[(WinnerNamesList.length-2)]);
+        if(winnersList[winnersList.length-1]=="Player1"){
+            //sessionStorage.setItem("P1Name", WinnerNamesList[(WinnerNamesList.length-1)]);
+            //sessionStorage.setItem("P2Name", WinnerNamesList[(WinnerNamesList.length-2)]);
         }
-        else if(winnersList[winnersList.length-1]=="Player 2"){
-            sessionStorage.setItem("P2Name", WinnerNamesList[(WinnerNamesList.length-1)]);
-            sessionStorage.setItem("P1Name", WinnerNamesList[(WinnerNamesList.length-2)]);
+        else if(winnersList[winnersList.length-1]=="Player2"){
+            //sessionStorage.setItem("P2Name", WinnerNamesList[(WinnerNamesList.length-1)]);
+            //sessionStorage.setItem("P1Name", WinnerNamesList[(WinnerNamesList.length-2)]);
         }
     }
 }
@@ -485,11 +506,6 @@ addEventListener("keydown", function(event) {
             buttonSelected="cancelButton"
         }
         else if(buttonSelected=="proceedButton"){
-            for(var key in paymentsDict) {
-                let value = paymentsDict[key];
-                console.log("Trying to delete paylink "+value);
-                socket.emit('deletepaylink', value);
-            }
             //playersList = shuffleList(playersList)
             //changeHTMLAfterPayment()
             document.getElementById("bracketPayment").style.display = "none";
@@ -527,15 +543,15 @@ addEventListener("keydown", function(event) {
                 nextGameP2 = playersList[1]
             }
             nextGamePlayers = [nextGameP1, nextGameP2]
-            sessionStorage.setItem("gamePlayers", JSON.stringify(nextGamePlayers));
+            //sessionStorage.setItem("gamePlayers", JSON.stringify(nextGamePlayers));
             if(previousWinner==null){
                 nextGameP1 = playersList[0]
                 nextGameP2 = playersList[1]
                 if(numberofCreates==0){
                     let stringplayersList = JSON.stringify(playersList.slice(0, numberOfPlayers))
-                    sessionStorage.setItem("PlayerList", stringplayersList);
-                    sessionStorage.setItem("P1Sats", deposit);
-                    sessionStorage.setItem("P2Sats", deposit);
+                    //sessionStorage.setItem("PlayerList", stringplayersList);
+                    //sessionStorage.setItem("P1Sats", deposit);
+                    //sessionStorage.setItem("P2Sats", deposit);
                     //console.log("Trying to create LNURLw");
                     //socket.emit('createWithdrawal', {"amount": Math.floor((deposit*numberOfDeposits)*0.95), "maxWithdrawals": 1});
                     numberofCreates=1;
@@ -544,13 +560,13 @@ addEventListener("keydown", function(event) {
             }
             else if(previousWinner!=null){
                 let stringWinnersList = JSON.stringify(winnersList)
-                sessionStorage.setItem("WinnersList", stringWinnersList);
+                //sessionStorage.setItem("WinnersList", stringWinnersList);
                 window.location.href = "/game";
             }
         }
         else if(buttonSelected=="claimButton"){
-            sessionStorage.setItem("P1Sats", deposit);
-            sessionStorage.setItem("P2Sats", deposit);
+            //sessionStorage.setItem("P1Sats", deposit);
+            //sessionStorage.setItem("P2Sats", deposit);
             window.location.href = "/postgame";
         }
     }
@@ -571,9 +587,9 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
             });
     }
     else if(buttonSelected=="startGameButton"){
-        sessionStorage.setItem("LNURLID", data.id);
-        sessionStorage.setItem("LNURL", data.lnurl);
-        sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
+        //sessionStorage.setItem("LNURLID", data.id);
+        //sessionStorage.setItem("LNURL", data.lnurl);
+        //sessionStorage.setItem("LNURLMAXW", data.max_withdrawable);
         //window.location.href = "/game";
     }
 });
