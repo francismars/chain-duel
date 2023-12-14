@@ -95,6 +95,15 @@ let percentageInitialP2
 let currentCaptureP1 = "2%";
 let currentCaptureP2 = "2%";
 
+function buildWinnerNamesList(playersList, winnersList){
+    let playersListCopy = [...playersList]
+    for(let i=0;i<winnersList.length;i++){
+        let winner = winnersList[i]
+        winner=="Player1" ? playersListCopy.push(playersListCopy[(2*i)]) : playersListCopy.push(playersListCopy[(2*i)+1])
+    }
+    return playersListCopy
+}
+
 socket.on("resGetDuelInfos", (duelInfos) => {
     console.log(duelInfos)
     if(duelInfos.playersList){
@@ -107,6 +116,12 @@ socket.on("resGetDuelInfos", (duelInfos) => {
             if(winnersList.length<numberOfPlayers/2){
                 P1Name = playersList[(2*winnersList.length)]
                 P2Name = playersList[(2*winnersList.length)+1]
+            }
+            else{
+                let winnerNamesList = buildWinnerNamesList(playersList, winnersList)
+                console.log(winnerNamesList)
+                P1Name = winnerNamesList[(2*winnersList.length)]
+                P2Name = winnerNamesList[(2*winnersList.length)+1]
             }
         }
         document.getElementById("gameInfo").textContent = "GAME " + (winnersList.length+1)+" of "+(numberOfPlayers-1)
