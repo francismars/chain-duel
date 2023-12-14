@@ -96,7 +96,22 @@ body{
 
 
 
-.bracketPayment{width: 25%;height: 35vw;background: black;position: absolute;bottom: 8.2vw;left: 50%;margin-left: -12.5%;/* padding: 1vw; */box-sizing: border-box;box-shadow: white 0px 0px 100px;text-align: center;display: flex;flex-direction: column;justify-content: space-between;}
+.bracketPayment{
+  width: 25%;
+  height: 35vw;
+  background: black;
+  position: absolute;
+  bottom: 8.2vw;
+  left: 50%;
+  margin-left: -12.5%;
+  /* padding: 1vw; */
+  box-sizing: border-box;
+  box-shadow: white 0px 0px 100px;
+  text-align: center;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+}
 
 .buttonsDiv{
   display: flex;

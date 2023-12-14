@@ -60,6 +60,9 @@ socket.on("resGetTournamentInfos", (data) => {
     if(data.winners){
         winnersList = data.winners
     }
+    if(!data.winners){
+        document.getElementById("bracketPayment").style.display = "flex";
+    }
     loadBracket();
     loadBottomInfos()
 });
@@ -419,7 +422,7 @@ function updateBracketWinner(){
 }
 
 function updateNextGameText(){
-    if(winnersList.length + 1 < numberOfPlayers){
+    if(winnersList!=null && winnersList.length + 1 < numberOfPlayers){
         if(winnersList.length<numberOfPlayers/2){
             nextGameP1 = playersList[(2*winnersList.length)]
             nextGameP2 = playersList[(2*winnersList.length)+1]
@@ -428,7 +431,7 @@ function updateNextGameText(){
         document.getElementById("nextGame_P1").textContent = nextGameP1;
         document.getElementById("nextGame_P2").textContent = nextGameP2;
     }
-    else if(winnersList.length + 1 >= numberOfPlayers){
+    else if(winnersList!=null && winnersList.length + 1 >= numberOfPlayers){
         document.getElementById("nextGameDiv").style.display = "none";
         buttonSelected = "claimButton"
         document.getElementById("winnerName").textContent = WinnerNamesList[(WinnerNamesList.length-1)];
