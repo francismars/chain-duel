@@ -15,12 +15,6 @@ await fetch('/loadconfig', {
         serverPORT = data.PORT
 });
 
-let tournamentMode = false;
-if(sessionStorage.getItem('gamePlayers')!=null){
-    tournamentMode = true;
-    document.getElementById("doubleornotthingbutton").style.display = "none";
-}
-
 const socket = io(serverIP+":"+serverPORT , { transports : ['websocket'], autoConnect: false });
 let sessionID = sessionStorage.getItem("sessionID");
 if(sessionID){
@@ -31,6 +25,15 @@ socket.connect();
 
 socket.emit("postGameInfoRequest");
 
+function buildWinnerNamesList(playersList, winnersList){
+    let playersListCopy = [...playersList]
+    for(let i=0;i<winnersList.length;i++){
+        let winner = winnersList[i]
+        winner=="Player1" ? playersListCopy.push(playersListCopy[(2*i)]) : playersListCopy.push(playersListCopy[(2*i)+1])
+    }
+    return playersListCopy
+}
+
 let gameWinner
 let p1Name;
 let p2Name;
@@ -40,28 +43,54 @@ let P2SatsDeposit;
 let totalDeposit;
 let maxWithdrawable;
 let totalPrize;
+let playersList
 socket.on("resPostGameInfoRequest", (duelInfos) =>{
     // { "Player2": { "value": 100, "name": "bnm" }, "Player1": { "value": 100, "name": "xcv" }, "winners": ["Player 1"] }
     console.log(duelInfos)
     let winnerP = String(duelInfos.winners.slice(-1));
     if(winnerP == "Player1" || winnerP == "Player2") gameWinner = winnerP;
-    p1Name = duelInfos.Player1.name;
-    p2Name = duelInfos.Player2.name;
-    P1SatsDeposit = duelInfos.Player1.value;
-    P2SatsDeposit = duelInfos.Player2.value;
-    if (gameWinner!=null){
-        if(gameWinner=="Player1" && p1Name!=null){
-            winnerName = p1Name
-        }
-        else if(gameWinner=="Player2" && p2Name!=null){
-            winnerName = p2Name
-        }
-        if(winnerName!=null){
-            document.getElementById("winner").innerText = winnerName.toUpperCase()+" WINS";
-        }
-    } else gameWinner="Player 1";
+    if(duelInfos.playersList){
+        playersList = [...duelInfos.playersList]
+        let winnersList = [...duelInfos.winners]
+        let playersListNames = buildWinnerNamesList(playersList, winnersList)
+        winnerName = String(playersListNames.slice(-1));
+        P1SatsDeposit = duelInfos.min;
+        P2SatsDeposit = duelInfos.min;
+        totalDeposit = parseInt(P1SatsDeposit)*playersList.length;
+        document.getElementById("doubleornotthingbutton").style.display = "none";
+        if (gameWinner!=null){
+            if(gameWinner=="Player1" && winnerName!=null){
+                p1Name = winnerName
+                p2Name = String(playersListNames.slice(-2));
+            }
+            else if(gameWinner=="Player2" && winnerName!=null){
+                p1Name = String(playersListNames.slice(-2));
+                p2Name = winnerName
+            }
+        } else gameWinner="Player 1";
+    }
+    else{
+        p1Name = duelInfos.Player1.name;
+        p2Name = duelInfos.Player2.name;
+        P1SatsDeposit = duelInfos.Player1.value;
+        P2SatsDeposit = duelInfos.Player2.value;        
+        totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit)
+        if (gameWinner!=null){
+            if(gameWinner=="Player1" && p1Name!=null){
+                winnerName = p1Name
+            }
+            else if(gameWinner=="Player2" && p2Name!=null){
+                winnerName = p2Name
+            }
+            if(winnerName!=null){
+                document.getElementById("winner").innerText = winnerName.toUpperCase()+" WINS";
+            }
+        } else gameWinner="Player 1";
+    }
 
-    !tournamentMode ? totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit) : totalDeposit = parseInt(P1SatsDeposit)*playersList.length;
+    if(winnerName!=null){
+        document.getElementById("winner").innerText = winnerName.toUpperCase()+" WINS";
+    }
 
     if (P1SatsDeposit!=null && P2SatsDeposit!=null){
         let developerFee = Math.floor(totalDeposit*0.02)
@@ -71,8 +100,7 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
         document.getElementById("designerFee").innerText  = "("+designerFee.toLocaleString()+" sats)";
     }
 
-    totalPrize = Math.floor(totalDeposit);
-
+    totalPrize = Math.floor(totalDeposit)*0.95;
 
     if (totalPrize!=null){
         document.getElementById("postGame").classList.remove('empty');
@@ -81,8 +109,6 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
         document.getElementById("prize").innerText  = parseInt(totalPrize).toLocaleString()+" SATS";
     }
 })
-
-let playersList = JSON.parse(sessionStorage.getItem("PlayerList"));
 
 //let withdrawalURL = sessionStorage.getItem('LNURL');
 let withdrawalURL = "LNURL1DP68GURN8GHJ7MRWVF5HGUEWV3HK5MEWWP6Z7AMFW35XGUNPWUHKZURF9AMRZTMVDE6HYMP0V438Y7NKXUE5S5TFG9X9GE2509N5VMN0G46S0WQJQ4";
@@ -95,8 +121,6 @@ if (withdrawalURL!=null){
         value: withdrawalURL
     });
 }
-
-
 
 let menu = 1;
 let activeButtonMenu1 = 0;
