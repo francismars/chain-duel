@@ -214,7 +214,7 @@
         <rect width="193" height="47" stroke="none"/>
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
-      <text id="G3_P2_name" transform="translate(96.337 55.996)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0.1"><tspan x="0" y="0">G3_P2</tspan></text>
+      <text id="G3_P2_name" transform="translate(96.337 55.996)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G3_P2</tspan></text>
       <path id="G3_P2_path" d="M26.911,49.384V23.245H0V0" transform="translate(193.001 46.911) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G3_P1" transform="translate(131.5 277.606)">
