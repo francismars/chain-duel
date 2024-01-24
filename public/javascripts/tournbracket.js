@@ -50,19 +50,12 @@ socket.on("resGetTournamentInfos", (data) => {
     }
     if(data.playersList){
         playersList = data.playersList
-        numberOfDeposits = data.depositsCount
         changeHTMLAfterPayment()
         numberOfPlayers = playersList.length
     }
-    if(data.min){
-        deposit = parseInt(data.min)
-    }
-    if(data.winners){
-        winnersList = data.winners
-    }
-    if(!data.winners){
-        document.getElementById("bracketPayment").style.display = "flex";
-    }
+    if(data.min) deposit = parseInt(data.min)
+    data.winners ? winnersList = data.winners : document.getElementById("bracketPayment").style.display = "flex";
+    data.depositsCount ? numberOfDeposits = data.depositsCount : numberOfDeposits = 0
     loadBracket();
     loadBottomInfos()
 });
@@ -490,7 +483,7 @@ addEventListener("keydown", function(event) {
                 buttonSelected="backButton"
             }
             else if(numberOfDeposits==0){
-                console.log("Trying to delete paylink "+paymentsDict[key]);
+                console.log("Trying to delete tournament infos");
                 socket.emit('cancelgame')
                 window.location.href = "/tournprefs";
             }
