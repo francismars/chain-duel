@@ -44,12 +44,14 @@ let totalDeposit;
 let maxWithdrawable;
 let totalPrize;
 let playersList
+let tournamentMode
 socket.on("resPostGameInfoRequest", (duelInfos) =>{
     // { "Player2": { "value": 100, "name": "bnm" }, "Player1": { "value": 100, "name": "xcv" }, "winners": ["Player 1"] }
     console.log(duelInfos)
     let winnerP = String(duelInfos.winners.slice(-1));
     if(winnerP == "Player1" || winnerP == "Player2") gameWinner = winnerP;
     if(duelInfos.playersList){
+        tournamentMode = true
         playersList = [...duelInfos.playersList]
         let winnersList = [...duelInfos.winners]
         let playersListNames = buildWinnerNamesList(playersList, winnersList)
@@ -57,6 +59,7 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
         P1SatsDeposit = duelInfos.min;
         P2SatsDeposit = duelInfos.min;
         totalDeposit = parseInt(P1SatsDeposit)*playersList.length;
+        totalPrize = Math.floor(totalDeposit)*0.95;
         document.getElementById("doubleornotthingbutton").style.display = "none";
         if (gameWinner!=null){
             if(gameWinner=="Player1" && winnerName!=null){
@@ -70,11 +73,13 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
         } else gameWinner="Player 1";
     }
     else{
+        tournamentMode = false
         p1Name = duelInfos.Player1.name;
         p2Name = duelInfos.Player2.name;
         P1SatsDeposit = duelInfos.Player1.value;
         P2SatsDeposit = duelInfos.Player2.value;        
         totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit)
+        totalPrize = Math.floor(totalDeposit);
         if (gameWinner!=null){
             if(gameWinner=="Player1" && p1Name!=null){
                 winnerName = p1Name
@@ -100,7 +105,7 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
         document.getElementById("designerFee").innerText  = "("+designerFee.toLocaleString()+" sats)";
     }
 
-    totalPrize = Math.floor(totalDeposit)*0.95;
+    
 
     if (totalPrize!=null){
         document.getElementById("postGame").classList.remove('empty');
