@@ -12,7 +12,7 @@ sponsorImage = "/images/sponsors/amityage_color.png";
 
 
 // Global Sponsorship
-let sponsorshipSwitch = 1;
+let sponsorshipSwitch = 0;
 if (document.getElementsByClassName("sponsorship") != null){
   if (document.getElementsByClassName("sponsorship").length != 0){
     const sponsorship = document.getElementsByClassName("sponsorship");
@@ -79,7 +79,7 @@ if (document.getElementsByClassName("sponsored-img") != null){
 if (document.getElementById("split1") != null){
   if (document.getElementById("split1").length != 0){
     const split1 = document.getElementById("split1");
-    split1.innerHTML = "<b>2%</b> <span id='hostFee'></span> to the host (@AmityAge)";
+    split1.innerHTML = "<b>2%</b> <span id='hostFee'></span> to the host (@ChainDuel)";
   }
 }
 
