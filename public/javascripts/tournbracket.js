@@ -604,7 +604,7 @@ socket.on("rescanceltourn", (data) => {
             size: 800,
             value: resLNURL
         });
-        document.getElementById("qrWithdrawal").href = "lightning:"+resLNURL
+        document.getElementById("qrWithdrawalLink").href = "lightning:"+resLNURL
         document.getElementById("issuerefundsfirst").style.display = "none";
         document.getElementById("issuerefundssecond").style.display = "block";
         document.getElementById("backButton").style.display = "none";
