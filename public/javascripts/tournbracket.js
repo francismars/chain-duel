@@ -470,6 +470,8 @@ addEventListener("keydown", function(event) {
     }
     if (event.key === "Enter" || event.key === " ") {
         if(buttonSelected=="cancelButton"){
+            socket.emit('canceltournament')
+            /*
             if(numberOfDeposits>0){
                 document.getElementById("withdrawableuses").textContent = numberOfDeposits;
                 document.getElementById("withdrawablevaluefirst").textContent = deposit.toLocaleString();
@@ -487,6 +489,7 @@ addEventListener("keydown", function(event) {
                 socket.emit('cancelgame')
                 window.location.href = "/tournprefs";
             }
+            */
         }
         else if(buttonSelected=="backButton"){
             document.getElementById("buyintext").style.display = "block";
