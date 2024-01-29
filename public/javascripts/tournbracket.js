@@ -140,7 +140,7 @@ function loadBracket(){
 function loadBottomInfos(){
     document.getElementById("numberOfPlayers").innerText = numberOfPlayers;
     document.getElementById("buyinvalue").innerText = deposit.toLocaleString();
-    document.getElementById("bracketFinalPrize").innerText = (deposit*numberOfPlayers*0.95).toLocaleString();
+    document.getElementById("bracketFinalPrize").innerText = Math.floor((deposit*numberOfPlayers*0.95)).toLocaleString();
     document.getElementById("buyinvalue2").innerText = deposit.toLocaleString();
 }
 
@@ -470,11 +470,9 @@ addEventListener("keydown", function(event) {
     }
     if (event.key === "Enter" || event.key === " ") {
         if(buttonSelected=="cancelButton"){
-            socket.emit('canceltournament')
-            /*
             if(numberOfDeposits>0){
                 document.getElementById("withdrawableuses").textContent = numberOfDeposits;
-                document.getElementById("withdrawablevaluefirst").textContent = deposit.toLocaleString();
+                document.getElementById("withdrawablevaluefirst").textContent = Math.floor(deposit*0.95).toLocaleString();
                 document.getElementById("buyintext").style.display = "none";
                 document.getElementById("qrCodeDiv").style.display = "none";
                 document.getElementById("satsdeposited").style.display = "none";
@@ -482,14 +480,13 @@ addEventListener("keydown", function(event) {
                 document.getElementById("backButton").textContent = "BACK";
                 document.getElementById("proceedButton").textContent = "CONFIRM";
                 document.getElementById("proceedButton").classList.remove("disabled");
-                buttonSelected="backButton"
+                buttonSelected="backButton"                
+                document.getElementById("withdrawablevalue").textContent = Math.floor(deposit*0.95);
+
             }
             else if(numberOfDeposits==0){
-                console.log("Trying to delete tournament infos");
-                socket.emit('cancelgame')
                 window.location.href = "/tournprefs";
             }
-            */
         }
         else if(buttonSelected=="backButton"){
             document.getElementById("buyintext").style.display = "block";
@@ -517,24 +514,18 @@ addEventListener("keydown", function(event) {
             buttonSelected="startGameButton"
         }
         else if(buttonSelected=="confirmButton"){
+            socket.emit('canceltournament')
+            // Disable Keyboard
+            // Loading Overlay
+
+            /*
             for(var key in paymentsDict) {
                 let value = paymentsDict[key];
                 console.log("Trying to delete paylink "+value);
                 socket.emit('deletepaylink', value);
             }
-            if(numberOfDeposits==0){
-                window.location.href = "/tournprefs";
-            }
-            else if(numberOfDeposits>0){
-                buttonSelected="none";
-                console.log("Trying to create LNURLw");
-                socket.emit('createWithdrawal', {"amount": Math.floor((deposit)*0.95), "maxWithdrawals": numberOfDeposits});
-                document.getElementById("issuerefundsfirst").style.display = "none";
-                document.getElementById("issuerefundssecond").style.display = "block";
-                document.getElementById("backButton").style.display = "none";
-                document.getElementById("proceedButton").style.display = "none";
-                document.getElementById("sponsoredImgBraket").style.display = "none";
-            }
+            
+            */
         }
         else if(buttonSelected=="startGameButton"){
             if(previousWinner==null){
@@ -572,6 +563,7 @@ addEventListener("keydown", function(event) {
 
 })
 
+/*
 let timesWithdrawed = 0;
 socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_withdrawable
     if(buttonSelected=="none"){
@@ -592,7 +584,36 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
         //window.location.href = "/game";
     }
 });
+*/
 
+socket.on("rescanceltourn", (data) => {
+    console.log(data)
+    numberOfDeposits = data.depositcount
+    playerListSequencial = data.playersList
+    let resLNURL = data.lnurlw
+    if(numberOfDeposits==0){
+        window.location.href = "/tournprefs";
+    }
+    else if(numberOfDeposits>0){
+        buttonSelected="none";
+        document.getElementById("currentWithdrawalPlayer").textContent = playerListSequencial[0];
+        let qrcodeContainer = document.getElementById("qrWithdrawal");
+        qrcodeContainer.innerHTML = "";
+        new QRious({
+            element: qrcodeContainer,
+            size: 800,
+            value: resLNURL
+        });
+        document.getElementById("qrWithdrawal").href = "lightning:"+resLNURL
+        document.getElementById("issuerefundsfirst").style.display = "none";
+        document.getElementById("issuerefundssecond").style.display = "block";
+        document.getElementById("backButton").style.display = "none";
+        document.getElementById("proceedButton").style.display = "none";
+        document.getElementById("sponsoredImgBraket").style.display = "none";
+    }
+})
+
+let timesWithdrawed = 0;
 socket.on('prizeWithdrawn', (data) => {
     let playerToRemove = playerListSequencial[timesWithdrawed]
     let counter = 0
