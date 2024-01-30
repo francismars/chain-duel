@@ -490,12 +490,7 @@ addEventListener("keydown", function(event) {
     }
     if (event.key === "Enter" || event.key === " ") {
         if(buttonSelected=="cancelButton"){
-            if(numberOfDeposits>0){
-                mainToBackMenu(numberOfDeposits,deposit)
-            }
-            else if(numberOfDeposits==0){
-                window.location.href = "/tournprefs";
-            }
+            mainToBackMenu(numberOfDeposits,deposit)
         }
         else if(buttonSelected=="backButton"){
             document.getElementById("buyintext").style.display = "block";
