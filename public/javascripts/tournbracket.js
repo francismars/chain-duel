@@ -37,6 +37,9 @@ socket.emit("getTournamentInfos", getTournamentInfosMSG)
 
 socket.on("resGetTournamentInfos", (data) => {
     console.log(data)
+    if(data.min) deposit = parseInt(data.min)
+    data.winners ? winnersList = data.winners : document.getElementById("bracketPayment").style.display = "flex";
+    data.depositsCount ? numberOfDeposits = data.depositsCount : numberOfDeposits = 0
     if(data.lnurlp){
         let lnurlp = data.lnurlp
         let qrcodeContainer = document.getElementById("qrTournament");
@@ -53,9 +56,11 @@ socket.on("resGetTournamentInfos", (data) => {
         changeHTMLAfterPayment()
         numberOfPlayers = playersList.length
     }
-    if(data.min) deposit = parseInt(data.min)
-    data.winners ? winnersList = data.winners : document.getElementById("bracketPayment").style.display = "flex";
-    data.depositsCount ? numberOfDeposits = data.depositsCount : numberOfDeposits = 0
+    if(data.lnurlw){
+        mainToBackMenu(numberOfDeposits,deposit)
+        playerListSequencial = data.playersList.filter((player) => player != "");
+        handleCancelTourn(numberOfDeposits,playerListSequencial,data.lnurlw)
+    }
     loadBracket();
     loadBottomInfos()
 });
@@ -129,7 +134,7 @@ function loadBracket(){
 
     elementSVG.addEventListener("load",function(){
             svgDoc = elementSVG.contentDocument
-            if(numberOfDeposits > 0) changeHTMLAfterPayment()
+            if(numberOfDeposits > 0 && playersList) changeHTMLAfterPayment()
             updateBracketWinner()
             updateNextGameText()
     });
@@ -471,18 +476,7 @@ addEventListener("keydown", function(event) {
     if (event.key === "Enter" || event.key === " ") {
         if(buttonSelected=="cancelButton"){
             if(numberOfDeposits>0){
-                document.getElementById("withdrawableuses").textContent = numberOfDeposits;
-                document.getElementById("withdrawablevaluefirst").textContent = Math.floor(deposit*0.95).toLocaleString();
-                document.getElementById("buyintext").style.display = "none";
-                document.getElementById("qrCodeDiv").style.display = "none";
-                document.getElementById("satsdeposited").style.display = "none";
-                document.getElementById("issuerefundsdiv").style.display = "block";
-                document.getElementById("backButton").textContent = "BACK";
-                document.getElementById("proceedButton").textContent = "CONFIRM";
-                document.getElementById("proceedButton").classList.remove("disabled");
-                buttonSelected="backButton"                
-                document.getElementById("withdrawablevalue").textContent = Math.floor(deposit*0.95);
-
+                mainToBackMenu(numberOfDeposits,deposit)
             }
             else if(numberOfDeposits==0){
                 window.location.href = "/tournprefs";
@@ -563,6 +557,20 @@ addEventListener("keydown", function(event) {
 
 })
 
+function mainToBackMenu(numberOfDeposits,deposit){
+    document.getElementById("withdrawableuses").textContent = numberOfDeposits;
+    document.getElementById("withdrawablevaluefirst").textContent = Math.floor(deposit*0.95).toLocaleString();
+    document.getElementById("buyintext").style.display = "none";
+    document.getElementById("qrCodeDiv").style.display = "none";
+    document.getElementById("satsdeposited").style.display = "none";
+    document.getElementById("issuerefundsdiv").style.display = "block";
+    document.getElementById("backButton").textContent = "BACK";
+    document.getElementById("proceedButton").textContent = "CONFIRM";
+    document.getElementById("proceedButton").classList.remove("disabled");
+    buttonSelected="backButton"                
+    document.getElementById("withdrawablevalue").textContent = Math.floor(deposit*0.95);
+}
+
 /*
 let timesWithdrawed = 0;
 socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_withdrawable
@@ -586,11 +594,7 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
 });
 */
 
-socket.on("rescanceltourn", (data) => {
-    console.log(data)
-    numberOfDeposits = data.depositcount
-    playerListSequencial = data.playersList
-    let resLNURL = data.lnurlw
+function handleCancelTourn(numberOfDeposits,playerListSequencial,resLNURL){
     if(numberOfDeposits==0){
         window.location.href = "/tournprefs";
     }
@@ -611,6 +615,14 @@ socket.on("rescanceltourn", (data) => {
         document.getElementById("proceedButton").style.display = "none";
         document.getElementById("sponsoredImgBraket").style.display = "none";
     }
+}
+
+socket.on("rescanceltourn", (data) => {
+    console.log(data)
+    numberOfDeposits = data.depositcount
+    playerListSequencial = data.playersList
+    let resLNURL = data.lnurlw
+    handleCancelTourn(numberOfDeposits,playerListSequencial,resLNURL)
 })
 
 let timesWithdrawed = 0;
@@ -627,6 +639,10 @@ socket.on('prizeWithdrawn', (data) => {
         window.location.href = "/tournprefs";
     }
 });
+
+function removeWithdrawnPlayersFromList(){
+
+}
 
 function highLightCurrentGameRect(svgDoc,id){
     svgDoc.getElementById(id+'_rect').style.strokeWidth = 6;
