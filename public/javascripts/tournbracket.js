@@ -35,6 +35,7 @@ let deposit = parseInt(params.get("deposit"));
 let getTournamentInfosMSG = {"buyin": deposit, "players":numberOfPlayers}
 socket.emit("getTournamentInfos", getTournamentInfosMSG)
 
+let timesWithdrawed = 0;
 socket.on("resGetTournamentInfos", (data) => {
     console.log(data)
     if(data.min) deposit = parseInt(data.min)
@@ -58,6 +59,20 @@ socket.on("resGetTournamentInfos", (data) => {
     }
     if(data.lnurlw){
         mainToBackMenu(numberOfDeposits,deposit)
+        if(data.withdrawals){
+            timesWithdrawed = data.withdrawals
+            let found = 0
+            let i=0
+            for(let i=0;i<playersList.length;i++){
+                if(playersList[i]!="") {
+                    playersList[i]=""
+                    found++
+                }
+                if(found==data.withdrawals){
+                    break
+                }
+            }
+        }
         playerListSequencial = data.playersList.filter((player) => player != "");
         handleCancelTourn(numberOfDeposits,playerListSequencial,data.lnurlw)
     }
@@ -625,7 +640,7 @@ socket.on("rescanceltourn", (data) => {
     handleCancelTourn(numberOfDeposits,playerListSequencial,resLNURL)
 })
 
-let timesWithdrawed = 0;
+
 socket.on('prizeWithdrawn', (data) => {
     let playerToRemove = playerListSequencial[timesWithdrawed]
     let counter = 0
@@ -639,10 +654,6 @@ socket.on('prizeWithdrawn', (data) => {
         window.location.href = "/tournprefs";
     }
 });
-
-function removeWithdrawnPlayersFromList(){
-
-}
 
 function highLightCurrentGameRect(svgDoc,id){
     svgDoc.getElementById(id+'_rect').style.strokeWidth = 6;
