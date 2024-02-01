@@ -58,7 +58,8 @@ addEventListener("keydown", function(event) {
                 }
                 else if (controllersActive && selected=="MainMenuButton"){
                     if(playersSats[0]==0&&playersSats[1]==0){
-                        window.location.href = "/";
+                      document.getElementById("cancelGame").classList.remove('hide');
+                      //window.location.href = "/";
                     }
                 }
           break;

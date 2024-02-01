@@ -365,7 +365,7 @@ Bottom bar with game data for bracket screen and game screen
 
 
 
-#loading.overlay{
+.overlay{
   width: 100vw;
   height: 100vh;
   display: flex;
@@ -391,6 +391,42 @@ Bottom bar with game data for bracket screen and game screen
 #loading.overlay.hide{
   opacity: 0;
 }
+
+
+
+
+.warning{
+  width: 30%;
+  /* height: 30%; */
+  background: #000;
+  text-align: center;
+  box-shadow: #ffffff6b 0 0 5vw;
+}
+
+.warning-inner{
+  padding: 6vw 6vw 3vw 6vw;
+}
+
+.warning-title {
+  font-size: 3vw;
+}
+
+.warning-text {
+  font-size: 1.2vw;
+}
+
+.warning-actions {
+    display: flex;
+}
+.warning .button {
+  width: 100%;
+}
+.warning .button.half {
+  width: 50%;
+}
+
+
+
 
 
 .animateIn{

@@ -179,6 +179,31 @@
   </div>
 
 
+  <div class="overlay hide" id="cancelGame">
+    <div class="warning">
+      <div class="warning-inner">
+        <h2 class="warning-title condensed">Cancel Game?</h2>
+        <div class="warning-text">
+          Are you sure you want to leave?
+        </div>
+      </div>
+      <div class="warning-actions">
+        <button class="button half" id="cancelGameAbort" type="button">No</button>
+        <button class="button half" id="cancelGameConfirm" type="button">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hide" id="inProgress">
+    <div class="warning">
+      <h2 class="condensed">Tournament in Progress</h2>
+      <div>
+        Can't start a new game until tournament is completed.
+      </div>
+      <button class="button" id="finishTournament" type="button">Finish Tournament</button>
+    </div>
+  </div>
+
 </body>
 <script  type="module" src="javascripts/gameMenu.js"></script>
 <script  type="module" src="javascripts/value.js"></script>
