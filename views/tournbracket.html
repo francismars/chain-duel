@@ -29,7 +29,7 @@
     <div id="bracket">
       <div class="pages">
         <div id="page-1" class="page">
-          <div class="page-inner" id="pageinner">
+          <div class="page-inner hide" id="pageinner">
 
             <div class="tournament-header">
               <div class="label">Tournament Lobby</div>
@@ -113,7 +113,7 @@
       <button class="button claimSatsButton" id="claimSatsButton" type="button"><span>Claim Sats</span></button>
   </div>
 
-  <div class="bracketDetails">
+  <div class="bracketDetails hide" id="bracketDetails">
 
     <div class="bracketDetail" id="bracketDetailPlayers">
       <div class="label">
@@ -146,8 +146,9 @@
   </div>
 
 
-
-
+  <div class="overlay" id="loading">
+    <img src="images/loading.gif">
+  </div>
 
   <audio id="audio" autoplay loop>
     <!--
