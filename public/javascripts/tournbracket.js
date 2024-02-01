@@ -77,7 +77,11 @@ socket.on("resGetTournamentInfos", (data) => {
         handleCancelTourn(numberOfDeposits,playerListSequencial,data.lnurlw)
     }
     loadBracket();
-    loadBottomInfos()
+    loadBottomInfos();
+    document.getElementById("pageinner").classList.remove('hide');
+    document.getElementById("bracketDetails").classList.remove('hide');
+    document.getElementById("loading").classList.add('hide');
+
 });
 
 socket.on("updatePayments", body => {
@@ -518,6 +522,7 @@ addEventListener("keydown", function(event) {
             buttonSelected="startGameButton"
         }
         else if(buttonSelected=="confirmButton"){
+            document.getElementById("loading").classList.remove('hide');
             socket.emit('canceltournament')
             // Disable Keyboard
             // Loading Overlay
@@ -633,6 +638,7 @@ socket.on("rescanceltourn", (data) => {
     playerListSequencial = data.playersList
     let resLNURL = data.lnurlw
     handleCancelTourn(numberOfDeposits,playerListSequencial,resLNURL)
+    document.getElementById("loading").classList.add('hide');
 })
 
 
