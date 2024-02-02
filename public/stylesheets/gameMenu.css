@@ -97,8 +97,12 @@ body{
     margin-left: auto;
     */
     animation: glowing 2000ms infinite;
-
 }
+
+#cancelGameAbort, #cancelGameConfirm{
+  animation: glowing 0ms infinite;
+}
+
 
 #mainmenubutton:hover, #startgame:hover {
     background-color: white;

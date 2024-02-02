@@ -38,6 +38,11 @@ addEventListener("keydown", function(event) {
                 selected="MainMenuButton";
             }
             */
+            if (selected=="cancelGameConfirmButton"){
+                document.getElementById("cancelGameAbort").style.animationDuration  = "2s";
+                document.getElementById("cancelGameConfirm").style.animationDuration  = "0s";
+                selected="cancelGameAbortButton";
+            }
             break;
         case "d":
         case "ArrowRight":
@@ -48,6 +53,11 @@ addEventListener("keydown", function(event) {
                 selected="StartGame";
             }
             */
+            if (selected=="cancelGameAbortButton" && playersSats[0]==0 && playersSats[1]==0){
+                document.getElementById("cancelGameAbort").style.animationDuration  = "0s";
+                document.getElementById("cancelGameConfirm").style.animationDuration  = "2s";
+                selected="cancelGameConfirmButton";
+            }
             break;
         case " ":
         case "Enter":
@@ -59,14 +69,24 @@ addEventListener("keydown", function(event) {
                 else if (controllersActive && selected=="MainMenuButton"){
                     if(playersSats[0]==0&&playersSats[1]==0){
                       document.getElementById("cancelGame").classList.remove('hide');
+                      document.getElementById("cancelGameAbort").style.animationDuration  = "2s";
+                      document.getElementById("mainmenubutton").style.animationDuration  = "0s";
+                      selected="cancelGameAbortButton";
                       //window.location.href = "/";
                     }
                 }
+                else if (selected=="cancelGameAbortButton"){
+                    document.getElementById("cancelGame").classList.add('hide');
+                    document.getElementById("cancelGameAbort").style.animationDuration  = "0s";
+                    document.getElementById("mainmenubutton").style.animationDuration  = "2s";
+                    selected="MainMenuButton"
+                }
+                else if (selected=="cancelGameConfirmButton"){
+                    socket.emit("cancelp2p");
+                    window.location.href = "/";
+                }
           break;
     }
-});
-
-addEventListener("keydown", function(event) {
     switch (event.code) {
         case "ControlLeft":
             if(controllersActive) document.getElementById("player1card").classList.add("expanded");
