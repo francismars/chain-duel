@@ -38,7 +38,7 @@ addEventListener("keydown", function(event) {
                 selected="MainMenuButton";
             }
             */
-            if (selected=="cancelGameConfirmButton"){
+            if (selected=="cancelGameConfirmButton" && controllersActive){
                 document.getElementById("cancelGameAbort").style.animationDuration  = "2s";
                 document.getElementById("cancelGameConfirm").style.animationDuration  = "0s";
                 selected="cancelGameAbortButton";
@@ -81,9 +81,12 @@ addEventListener("keydown", function(event) {
                     document.getElementById("mainmenubutton").style.animationDuration  = "2s";
                     selected="MainMenuButton"
                 }
-                else if (selected=="cancelGameConfirmButton"){
-                    socket.emit("cancelp2p");
-                    window.location.href = "/";
+                else if (selected=="cancelGameConfirmButton" && playersSats[0]==0 && playersSats[1]==0 && controllersActive){
+                    if(playersSats[0]==0&&playersSats[1]==0){
+                        controllersActive = false;
+                        socket.emit("cancelp2p");
+                        window.location.href = "/";
+                    }
                 }
           break;
     }
@@ -155,10 +158,10 @@ socket.on("resGetGameMenuInfos", body => {
                 value: payLink.lnurlp
               });
             document.getElementById("qrcode2Link").href = "lightning:"+payLink.lnurlp
-            controllersActive = true; 
         }
     }
     document.getElementById("loading").classList.add('hide');
+    controllersActive = true; 
 })
 
 socket.on("updatePayments", body => {
