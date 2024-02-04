@@ -305,12 +305,22 @@ body{
     width: 50vw;
     background: #000;
     filter: grayscale(1);
+
 }
 
 .expanded .qrcodeContainer img {
-    border: 10px solid #fff;
+    border: 3vw solid #fff;
+    border-top: 0.5vw solid #fff;
     box-shadow: white 0px 0px 100px;
 }
+
+#player1card.expanded .qrcodeContainer img {
+    border-right: 0.5vw solid #fff;
+}
+#player2card.expanded .qrcodeContainer img {
+    border-left: 0.5vw solid #fff;
+}
+
 
 
 .deposit-message, #player1info, #player2info, .sats-label, #player1sats, #player2sats, .playerSquare{
