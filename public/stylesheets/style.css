@@ -404,7 +404,7 @@ Bottom bar with game data for bracket screen and game screen
 }
 
 .warning-inner{
-  padding: 6vw 6vw 3vw 6vw;
+  padding: 8vw 6vw 6vw 6vw;
 }
 
 .warning-title {
@@ -420,6 +420,8 @@ Bottom bar with game data for bracket screen and game screen
 }
 .warning .button {
   width: 100%;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 .warning .button.half {
   width: 50%;
