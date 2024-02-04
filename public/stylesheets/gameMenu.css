@@ -271,6 +271,12 @@ body{
 
 
 
+.qrcode.blur {
+  filter: blur(10px);
+}
+
+
+
 
 .qrcodeContainer {
     position: relative;
