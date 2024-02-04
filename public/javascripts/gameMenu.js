@@ -71,6 +71,8 @@ addEventListener("keydown", function(event) {
                       document.getElementById("cancelGame").classList.remove('hide');
                       document.getElementById("cancelGameAbort").style.animationDuration  = "2s";
                       document.getElementById("mainmenubutton").style.animationDuration  = "0s";
+                      document.getElementById("qrcode1").classList.add('blur');
+                      document.getElementById("qrcode2").classList.add('blur');
                       selected="cancelGameAbortButton";
                       //window.location.href = "/";
                     }
@@ -79,6 +81,8 @@ addEventListener("keydown", function(event) {
                     document.getElementById("cancelGame").classList.add('hide');
                     document.getElementById("cancelGameAbort").style.animationDuration  = "0s";
                     document.getElementById("mainmenubutton").style.animationDuration  = "2s";
+                    document.getElementById("qrcode1").classList.remove('blur');
+                    document.getElementById("qrcode2").classList.remove('blur');
                     selected="MainMenuButton"
                 }
                 else if (selected=="cancelGameConfirmButton" && playersSats[0]==0 && playersSats[1]==0 && controllersActive){
