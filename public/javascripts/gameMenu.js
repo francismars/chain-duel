@@ -138,34 +138,39 @@ socket.emit("getGameMenuInfos");
 
 socket.on("resGetGameMenuInfos", body => {
     //console.log(body)
-    payLinks = body
-    for(let payLink of body){        
-        if(payLink.description=="Player1"){
-            document.getElementById("mindepP1").innerText = parseInt(payLink.min).toLocaleString()
-            let qrcodeContainer = document.getElementById("qrcode1");
-            qrcodeContainer.innerHTML = "";
-            new QRious({
-                element: qrcodeContainer,
-                size: 800,
-                value: payLink.lnurlp
-              });
-            document.getElementById("qrcode1Link").href = "lightning:"+payLink.lnurlp
-
-        };
-        if(payLink.description=="Player2"){
-            document.getElementById("mindepP2").innerText = parseInt(payLink.min).toLocaleString()
-            let qrcodeContainer = document.getElementById("qrcode2");
-            qrcodeContainer.innerHTML = "";
-            new QRious({
-                element: qrcodeContainer,
-                size: 800,
-                value: payLink.lnurlp
-              });
-            document.getElementById("qrcode2Link").href = "lightning:"+payLink.lnurlp
-        }
+    if(body.lnurlw){
+        window.location.href = "/postgame";
     }
-    document.getElementById("loading").classList.add('hide');
-    controllersActive = true; 
+    else{
+        payLinks = body
+        for(let payLink of body){        
+            if(payLink.description=="Player1"){
+                document.getElementById("mindepP1").innerText = parseInt(payLink.min).toLocaleString()
+                let qrcodeContainer = document.getElementById("qrcode1");
+                qrcodeContainer.innerHTML = "";
+                new QRious({
+                    element: qrcodeContainer,
+                    size: 800,
+                    value: payLink.lnurlp
+                  });
+                document.getElementById("qrcode1Link").href = "lightning:"+payLink.lnurlp
+    
+            };
+            if(payLink.description=="Player2"){
+                document.getElementById("mindepP2").innerText = parseInt(payLink.min).toLocaleString()
+                let qrcodeContainer = document.getElementById("qrcode2");
+                qrcodeContainer.innerHTML = "";
+                new QRious({
+                    element: qrcodeContainer,
+                    size: 800,
+                    value: payLink.lnurlp
+                  });
+                document.getElementById("qrcode2Link").href = "lightning:"+payLink.lnurlp
+            }
+        }
+        document.getElementById("loading").classList.add('hide');
+        controllersActive = true; 
+    }
 })
 
 socket.on("updatePayments", body => {
