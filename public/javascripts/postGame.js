@@ -45,19 +45,21 @@ let maxWithdrawable;
 let totalPrize;
 let playersList
 let tournamentMode
-socket.on("resPostGameInfoRequest", (duelInfos) =>{
+socket.on("resPostGameInfoRequest", (postgameInfos) =>{
     // { "Player2": { "value": 100, "name": "bnm" }, "Player1": { "value": 100, "name": "xcv" }, "winners": ["Player 1"] }
-    console.log(duelInfos)
-    let winnerP = String(duelInfos.winners.slice(-1));
-    if(winnerP == "Player1" || winnerP == "Player2") gameWinner = winnerP;
-    if(duelInfos.playersList){
+    console.log(postgameInfos)
+    if(postgameInfos.winners){ 
+        let winnerP = String(postgameInfos.winners.slice(-1));
+        if(winnerP == "Player1" || winnerP == "Player2") gameWinner = winnerP;
+    }
+    if(postgameInfos.playersList){
         tournamentMode = true
-        playersList = [...duelInfos.playersList]
-        let winnersList = [...duelInfos.winners]
+        playersList = [...postgameInfos.playersList]
+        let winnersList = [...postgameInfos.winners]
         let playersListNames = buildWinnerNamesList(playersList, winnersList)
         winnerName = String(playersListNames.slice(-1));
-        P1SatsDeposit = duelInfos.min;
-        P2SatsDeposit = duelInfos.min;
+        P1SatsDeposit = postgameInfos.min;
+        P2SatsDeposit = postgameInfos.min;
         totalDeposit = parseInt(P1SatsDeposit)*playersList.length;
         totalPrize = Math.floor(totalDeposit)*0.95;
         document.getElementById("doubleornotthingbutton").style.display = "none";
@@ -72,12 +74,12 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
             }
         } else gameWinner="Player 1";
     }
-    else{
+    if(postgameInfos.Player1){
         tournamentMode = false
-        p1Name = duelInfos.Player1.name;
-        p2Name = duelInfos.Player2.name;
-        P1SatsDeposit = duelInfos.Player1.value;
-        P2SatsDeposit = duelInfos.Player2.value;        
+        p1Name = postgameInfos.Player1.name;
+        p2Name = postgameInfos.Player2.name;
+        P1SatsDeposit = postgameInfos.Player1.value;
+        P2SatsDeposit = postgameInfos.Player2.value;        
         totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit)
         totalPrize = Math.floor(totalDeposit);
         if (gameWinner!=null){
@@ -92,6 +94,11 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
             }
         } else gameWinner="Player 1";
     }
+    if(postgameInfos.lnurlw){
+        menu2CSS();
+        qrRevealed = 1;
+        handleLNURLW(postgameInfos.lnurlw)
+    }
 
     if(winnerName!=null){
         document.getElementById("winner").innerText = winnerName.toUpperCase()+" WINS";
@@ -105,14 +112,12 @@ socket.on("resPostGameInfoRequest", (duelInfos) =>{
         document.getElementById("designerFee").innerText  = "("+designerFee.toLocaleString()+" sats)";
     }
 
-    
-
     if (totalPrize!=null){
-        document.getElementById("postGame").classList.remove('empty');
-        document.getElementById("loading").classList.add('hide');
-        controllersActive = true;
         document.getElementById("prize").innerText  = parseInt(totalPrize).toLocaleString()+" SATS";
     }
+    document.getElementById("postGame").classList.remove('empty');
+    document.getElementById("loading").classList.add('hide');
+    controllersActive = true;
 })
 
 //let withdrawalURL = sessionStorage.getItem('LNURL');
@@ -305,22 +310,26 @@ socket.on('prizeWithdrawn', () => {
 
 let resCreateWithdrawal = false;
 socket.on('resCreateWithdrawalPostGame', (data) => {
-    if(resCreateWithdrawal == false){
-      let withdrawalURL = data;
-      let qrcodeContainer = document.getElementById("qrCode1");
-      qrcodeContainer.innerHTML = "";
-      new QRious({
-          size: 800,
-          element: qrcodeContainer,
-          value: withdrawalURL
-      });
-      document.getElementById("qrcodeLink").href = "lightning:"+withdrawalURL
-      resCreateWithdrawal = true;
-    }
-    document.getElementById("claimbutton").innerText = "BLUR QR CODE";
-    document.getElementById("qrCode1").classList.add('qrcode');
-    menu=2;
+    handleLNURLW(data)
 })
+
+function handleLNURLW(lnurlw){
+    if(resCreateWithdrawal == false){
+        let withdrawalURL = lnurlw;
+        let qrcodeContainer = document.getElementById("qrCode1");
+        qrcodeContainer.innerHTML = "";
+        new QRious({
+            size: 800,
+            element: qrcodeContainer,
+            value: withdrawalURL
+        });
+        document.getElementById("qrcodeLink").href = "lightning:"+withdrawalURL
+        resCreateWithdrawal = true;
+      }
+      document.getElementById("claimbutton").innerText = "BLUR QR CODE";
+      document.getElementById("qrCode1").classList.add('qrcode');
+      menu=2;
+}
 
 
 function menu1CSS(){
