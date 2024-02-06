@@ -329,7 +329,6 @@ function handleLNURLW(lnurlw){
       document.getElementById("claimbutton").innerText = "BLUR QR CODE";
       document.getElementById("qrCode1").classList.add('qrcode');
       menu=2;
-      document.getElementById("qrCode1").classList.remove('blur');
 }
 
 
@@ -346,6 +345,7 @@ function menu2CSS(){
     if(resCreateWithdrawal == false){
       //Update image source to loading gif
       document.getElementById("qrCode1").src = "/images/loading.gif";
+      document.getElementById("qrCode1").classList.remove('blur');
       document.getElementById("qrCode1").classList.remove('qrcode');
       document.getElementById("claimbutton").innerText = "CREATING CODE...";
       //Request LNURLw from server
