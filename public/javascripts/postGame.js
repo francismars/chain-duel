@@ -344,8 +344,8 @@ function menu2CSS(){
     document.getElementById("doubleornotthingbutton").classList.add('disabled');
     if(resCreateWithdrawal == false){
       //Update image source to loading gif
+      document.getElementById("qrCode1").src = "";
       document.getElementById("qrCode1").src = "/images/loading.gif";
-      document.getElementById("qrCode1").classList.remove('blur');
       document.getElementById("qrCode1").classList.remove('qrcode');
       document.getElementById("claimbutton").innerText = "CREATING CODE...";
       //Request LNURLw from server
@@ -354,6 +354,7 @@ function menu2CSS(){
       document.getElementById("claimbutton").innerText = "BLUR QR CODE";
       document.getElementById("qrCode1").classList.add('qrcode');
     }
+    document.getElementById("qrCode1").classList.remove('blur');
     menu=2;
 }
 
