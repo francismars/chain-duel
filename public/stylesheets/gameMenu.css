@@ -272,7 +272,7 @@ body{
 
 
 .qrcode.blur {
-  filter: blur(10px);
+  filter: blur(10px) invert(1);
 }
 
 
