@@ -48,7 +48,7 @@ let tournamentMode
 socket.on("resPostGameInfoRequest", (postgameInfos) =>{
     // { "Player2": { "value": 100, "name": "bnm" }, "Player1": { "value": 100, "name": "xcv" }, "winners": ["Player 1"] }
     console.log(postgameInfos)
-    if(postgameInfos.winners){ 
+    if(postgameInfos.winners){
         let winnerP = String(postgameInfos.winners.slice(-1));
         if(winnerP == "Player1" || winnerP == "Player2") gameWinner = winnerP;
     }
@@ -79,7 +79,7 @@ socket.on("resPostGameInfoRequest", (postgameInfos) =>{
         p1Name = postgameInfos.Player1.name;
         p2Name = postgameInfos.Player2.name;
         P1SatsDeposit = postgameInfos.Player1.value;
-        P2SatsDeposit = postgameInfos.Player2.value;        
+        P2SatsDeposit = postgameInfos.Player2.value;
         totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit)
         totalPrize = Math.floor(totalDeposit);
         if (gameWinner!=null){
@@ -329,6 +329,7 @@ function handleLNURLW(lnurlw){
       document.getElementById("claimbutton").innerText = "BLUR QR CODE";
       document.getElementById("qrCode1").classList.add('qrcode');
       menu=2;
+      document.getElementById("qrCode1").classList.remove('blur');
 }
 
 
@@ -353,7 +354,6 @@ function menu2CSS(){
       document.getElementById("claimbutton").innerText = "BLUR QR CODE";
       document.getElementById("qrCode1").classList.add('qrcode');
     }
-    document.getElementById("qrCode1").classList.remove('blur');
     menu=2;
 }
 
