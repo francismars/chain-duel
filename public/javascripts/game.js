@@ -465,6 +465,7 @@ function displayGame(){
     if(gameStarted && !gameEnded){
         if(currentScoreDistribution[0]<=0 || currentScoreDistribution[1]<=0){
             gameEnded = true;
+            socket.emit("gameFinished", winnerP)
         }
         else {
             drawCoinbase()
@@ -886,7 +887,6 @@ function updateHiglightCapture(player, content){
 
 
 function redirectWindowAfterGame(){
-    socket.emit("gameFinished", winnerP)
     if(playersList==null){
         window.location.href = "/postgame";
     }
