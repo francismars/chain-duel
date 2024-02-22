@@ -80,6 +80,7 @@ const p2FC = new Audio("./sound/P2-FC.mp3");
 const p1reset = new Audio("./sound/P1-HWAC.mp3");
 const p2reset = new Audio("./sound/P2-HWAC.mp3");
 let controllersActive = false;
+let sentWinner = false;
 
 
 let playersList;
@@ -465,7 +466,6 @@ function displayGame(){
     if(gameStarted && !gameEnded){
         if(currentScoreDistribution[0]<=0 || currentScoreDistribution[1]<=0){
             gameEnded = true;
-            socket.emit("gameFinished", winnerP)
         }
         else {
             drawCoinbase()
@@ -480,6 +480,10 @@ function displayGame(){
         }
         else if(currentScoreDistribution[1]<=0){
             winnerP="Player1"
+        }
+        if(sentWinner==false){
+            socket.emit("gameFinished", winnerP)
+            sentWinner=true
         }
         finalText(winner)
     }
