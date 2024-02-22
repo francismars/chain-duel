@@ -340,7 +340,7 @@ function changeScore(playerID){
     if(bodySnake.length==1){
         changeInPoints=Math.floor(totalPoints*0.02);
     }
-    else if(bodySnake.length==2){
+    else if(bodySnake.length==2 || bodySnake.length==3){
         changeInPoints=Math.floor(totalPoints*0.04);
     }
     else if(bodySnake.length>=4 && bodySnake.length<=6){
