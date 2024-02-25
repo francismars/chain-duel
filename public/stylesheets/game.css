@@ -1,138 +1,142 @@
 body{
-    background-color: black;
-    background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url(../images/chainduel_bg_no_sat.jpg);
+  background-color: black;
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url(../images/chainduel_bg_no_sat.jpg);
 }
 
 
 #titleCanvas{
-    margin: 0 15%;
-    left: 0;
-    right: 0;
-    background-color: transparent;
+  margin: 0 15%;
+  left: 0;
+  right: 0;
+  background-color: transparent;
 }
 
 #gameCanvas{
-    margin: 0 15%;
-    left: 0;
-    right: 0;
-    top: 28%;
-    background-color: #6969698f;
+  margin: 0 15%;
+  left: 0;
+  right: 0;
+  top: 28%;
+  background-color: #6969698f;
 
-    background-image: url(../images/game_bg.png);
-    background-size: cover;
-    background-position: center;
+  background-image: url(../images/game_bg.png);
+  background-size: cover;
+  background-position: center;
 
 }
 
+#gameCanvas.highlight {
+  background-image: url(../images/chainduel_bg_anim.png);
+}
+
 .flex.full.game {
-    display: flex;
-    justify-content: center;
-    flex-grow: unset;
-    flex-basis: fit-content;
+  display: flex;
+  justify-content: center;
+  flex-grow: unset;
+  flex-basis: fit-content;
 }
 
 
 .flex.points, .flex.players {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: baseline;
-    margin: 0.5vw 15%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0.5vw 15%;
 }
 
 .flex.players {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 
 .playerSquare {
-    width: 2cqw;
-    height: 2cqw;
-    box-shadow: 0 0 11px #ffffffb0;
+  width: 2cqw;
+  height: 2cqw;
+  box-shadow: 0 0 11px #ffffffb0;
 }
 
 #player2info .playerSquare {
-    box-shadow: 0 0 27px #000000, 0 0 27px #000000;
-    border:1px #1f1f1f solid;
-    box-shadow: 0 0 11px #ffffffb0;
+  box-shadow: 0 0 27px #000000, 0 0 27px #000000;
+  border:1px #1f1f1f solid;
+  box-shadow: 0 0 11px #ffffffb0;
 }
 
 
 #player1info, #player2info, #gameInfo{
-  font-size: 2.5cqw;
-  width: 33.3333%;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+font-size: 2.5cqw;
+width: 33.3333%;
+white-space: nowrap;
+text-overflow: ellipsis;
 }
 
 #gameInfo{
-  overflow: hidden;
+overflow: hidden;
 }
 
 #player1info {
-    color: white;
-    padding-top: 0px;
-    margin-bottom: 0px;
+  color: white;
+  padding-top: 0px;
+  margin-bottom: 0px;
 }
 
 #player2info {
-    color: white;
-    padding-top: 0px;
-    margin-bottom: 0px;
-    margin-right: 0;
-    text-align:right
+  color: white;
+  padding-top: 0px;
+  margin-bottom: 0px;
+  margin-right: 0;
+  text-align:right
 }
 
 #gameInfo{
-  text-align: center;
+text-align: center;
 }
 
 
 .white {
-    background: #fff;
+  background: #fff;
 }
 
 .black{
-  background: #000
+background: #000
 }
 
 .player-sats{
-  width: 25%;
+width: 25%;
 }
 
 .player-sats-p2{
-  text-align: right;
+text-align: right;
 }
 .player-sats span {
-  font-size: 1cqw;
+font-size: 1cqw;
 }
 
 
 #p1Points{
-    color: white;
-    margin-right: 0.1vw;
-    left: 15%;
-    top: 21%;
-    font-size: 2.5cqw;
+  color: white;
+  margin-right: 0.1vw;
+  left: 15%;
+  top: 21%;
+  font-size: 2.5cqw;
 }
 
 #p2Points{
-    color: white;
-    margin-left: 0.1vw;
-    right: 15%;
-    top: 21%;
-    font-size: 2.5cqw;
+  color: white;
+  margin-left: 0.1vw;
+  right: 15%;
+  top: 21%;
+  font-size: 2.5cqw;
 }
 
 
 .points .sponsorship {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .points .sponsored-img {
-    height: 2.1vw;
-    margin-top: 0;
-    margin-bottom: -0.2vw;
+  height: 2.1vw;
+  margin-top: 0;
+  margin-bottom: -0.2vw;
 }
 
 
@@ -145,90 +149,182 @@ body{
 
 
 .gameState{
-    margin: 0vw 15% 1vw 15%;
-    text-transform: uppercase;
-    text-align: center;
-    font-size: 0.7vw;
-    letter-spacing: 0.05em;
-    height: 3.55vw;
+  margin: 0vw 15% 1vw 15%;
+  text-transform: uppercase;
+  text-align: center;
+  font-size: 0.7vw;
+  letter-spacing: 0.05em;
+  height: 3.55vw;
 }
 
 
 #capturing{
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: -0.8vw;
-  height: 1.2vw;
+width: 100%;
+display: flex;
+justify-content: space-between;
+margin-bottom: -0.8vw;
+height: 1.2vw;
 }
 
 .capturingAmount{
-  font-weight: 900;
-  font-size: 1vw;
-  -webkit-transition: all 0.1s ease-out;
-  -moz-transition: all 0.1s ease-out;
-  -o-transition: all 0.1s ease-out;
-  transition: all 0.1s ease-out;
-  display: inline-block;
+font-weight: 900;
+font-size: 1vw;
+-webkit-transition: all 0.1s ease-out;
+-moz-transition: all 0.1s ease-out;
+-o-transition: all 0.1s ease-out;
+transition: all 0.1s ease-out;
+display: inline-block;
 }
 
 .capturingAmount.highlight{
-  font-size: 1.4vw;
-  padding: 0.05vw;
+font-size: 1.4vw;
+padding: 0.05vw;
 }
 
 #capturingP1Amount.highlight{
-  margin: -0.4vw -0.1vw 0 -0.4vw;
+margin: -0.4vw -0.1vw 0 -0.4vw;
 }
 
 #capturingP2Amount.highlight{
-  margin: -0.4vw -0.4vw 0 -0.1vw;
+margin: -0.4vw -0.4vw 0 -0.1vw;
 }
 
 #distributions{
-  width: 100%;
-  position: relative;
+width: 100%;
+position: relative;
 }
 
 #initialDistribution .distributionTitle{
-  margin-bottom: 0.2vw;
-  color: #828282;
+margin-bottom: 0.2vw;
+color: #828282;
 }
 #currentDistribution .distributionTitle{
-  position: relative;
-  z-index: 1;
-  margin-bottom: -1.38vw;
-  color: #848484;
-  font-size: 0.9vw;
+position: relative;
+z-index: 1;
+margin-bottom: -1.38vw;
+color: #848484;
+font-size: 0.9vw;
 }
 
 .distributionBarOutter{
-    width: 100%;
-    margin-bottom: 1.2vw;
+  width: 100%;
+  margin-bottom: 1.2vw;
 }
 
 #initialDistribution .distributionBar{
-  height: 0.3vw;
-  width: 50%;
-  position: absolute;
+height: 0.3vw;
+width: 50%;
+position: absolute;
 }
 
 #currentDistribution .distributionBar{
-  height: 1.7vw;
-  width: 50%;
-  position: absolute;
-  box-shadow: #ffffff36 0 0 24px;
-  -webkit-transition: width 0.15s ease-out;
-  -moz-transition: width 0.15s ease-out;
-  -o-transition: width 0.15s ease-out;
-  transition: width 0.15s ease-out;
+height: 1.7vw;
+width: 50%;
+position: absolute;
+box-shadow: #ffffff36 0 0 24px;
+-webkit-transition: width 0.15s ease-out;
+-moz-transition: width 0.15s ease-out;
+-o-transition: width 0.15s ease-out;
+transition: width 0.15s ease-out;
 }
 
 #initialDistributionP1, #currentDistributionP1 {
-  background: #fff;
+background: #fff;
 }
 
 #initialDistributionP2, #currentDistributionP2 {
-  background: #000;
-  right: 0;
+background: #000;
+right: 0;
+}
+
+
+
+
+
+#bitcoinDetails{
+display: flex;
+width: 100%;
+justify-content: center;
+gap: 4vw;
+padding: .5vw 0 .25vw 0;
+box-sizing: border-box;
+opacity: 0.3;
+transition: all 1000ms;
+}
+}
+
+
+#bitcoinDetails .detail{
+  text-align: center;
+}
+#bitcoinDetails .label{
+  opacity: 0.5;
+}
+#bitcoinDetails .value{
+  font-size: 1vw;
+  text-align: center;
+}
+#bitcoinDetails.highlight {
+animation-name: fadePop;
+animation-duration: 2000ms;
+}
+#bitcoinDetails.highlight #bitcoinblockHeight {
+animation-name: scalePop;
+animation-duration: 2000ms;
+}
+
+@keyframes fadePop {
+0% {opacity: 0.3;}
+10% {opacity: 1;}
+100% {opacity: 0.3;}
+}
+
+@keyframes scalePop {
+0% {transform: scale(1); font-weight: 400}
+10% {transform: scale(1.2); font-weight: 900}
+100% {transform: scale(1); font-weight: 400}
+}
+
+
+
+
+
+
+.player-sats{
+width: 25%;
+}
+
+.player-sats-p2{
+text-align: right;
+}
+.player-sats span {
+font-size: 1cqw;
+}
+
+
+#p1Points{
+  color: white;
+  margin-right: 0.5rem;
+  left: 15%;
+  top: 21%;
+  font-size: 2.5cqw;
+}
+
+#p2Points{
+  color: white;
+  margin-left: 0.5rem;
+  right: 15%;
+  top: 21%;
+  font-size: 2.5cqw;
+}
+
+
+.points .sponsorship {
+  margin-bottom: 0;
+}
+
+.points .sponsored-img {
+  height: 2.1vw;
+  margin-top: 0;
+  margin-bottom: -0.2vw;
 }

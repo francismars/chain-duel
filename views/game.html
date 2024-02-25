@@ -80,7 +80,75 @@
             </div>
           </div>
           <canvas id="gameCanvas"></canvas>
+
+
+
+
+
+        <div id="bitcoinDetails">
+          <div class="detail">
+            <div class="label">
+              Latest Block
+            </div>
+            <div class="value" id="bitcoinblockHeight">
+            000000
+            </div>
+          </div>
+
+          <div class="detail">
+            <div class="label">
+              When
+            </div>
+            <div class="value" id="bitcoinblockTimeAgo">
+              0 secs ago
+            </div>
+          </div>
+<div class="detail">
+            <div class="label">
+              Size
+            </div>
+            <div class="value">
+              <span id="bitcoinblockSize">0.00 Mb</span>
+            </div>
+          </div>
+          <div class="detail">
+            <div class="label">
+              TX count
+            </div>
+            <div class="value" id="bitcoinblockTXcount">
+              0000
+            </div>
+          </div>
+          <div class="detail hide">
+            <div class="label">
+              Found by
+            </div>
+            <div class="value" id="bitcoinblockMiner">
+              Miner
+            </div>
+          </div>
+          <div class="detail">
+            <div class="label">
+              Median fee
+            </div>
+            <div class="value">
+              <span id="bitcoinAvgFee">00</span> <span class="unit">sat/vb</span>
+            </div>
+          </div>
+
+          <div class="detail hide">
+            <div class="label">
+              Capture
+            </div>
+            <div class="value" id="capture">
+              0%
+            </div>
+          </div>
         </div>
+      </div>
+
+
+
     </div>
 
 
@@ -126,7 +194,9 @@
         <source src="/sound/chain_duel_1.ogg" type="audio/ogg"/>
         <source src="/sound/chain_duel_1.mp3" type="audio/mpeg"/>
       -->
-      <source src="/sound/chain_duel_produced_game.m4a" type="audio/x-m4a">
+      <!--
+        <source src="/sound/chain_duel_produced_game.m4a" type="audio/x-m4a">
+      -->
     </audio>
 
 
@@ -138,4 +208,7 @@
 </body>
 <script type="module" src="javascripts/game.js"></script>
 <script type="module" src="javascripts/value.js"></script>
+
+<script src="https://mempool.space/mempool.js"></script>
+<script type="module" src="javascripts/mempool.js"></script>
 </html>

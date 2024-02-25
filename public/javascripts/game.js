@@ -206,6 +206,29 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     controllersActive = true
 })
 
+function loadDummyGame(){
+    P1Name = "Sats Eater 👻"
+    P2Name = "BigToshi 🌊"
+    playersList= [P1Name, P2Name]
+    initialScoreDistribution = [10000,10000];
+    totalPoints = initialScoreDistribution[0] + initialScoreDistribution[1]
+    currentScoreDistribution = [10000,10000];
+    percentageInitialP1 = ((initialScoreDistribution[0] * 100) / totalPoints);
+    percentageInitialP2 = ((initialScoreDistribution[1] * 100) / totalPoints);
+    document.getElementById("player1name").innerText = P1Name;
+    document.getElementById("player2name").innerText = P2Name;
+
+    document.getElementById("initialDistributionP1").style.width = percentageInitialP1+"%";
+    document.getElementById("initialDistributionP2").style.width = percentageInitialP2+"%";
+    updateState();
+
+    window.requestAnimationFrame(draw);
+    document.getElementById("loading").classList.add('hide');
+    document.getElementById("gameContainer").classList.remove('hide');
+    controllersActive = true
+
+}
+
 /*
 // P2P vs Tournament Game Name
 let playerListParsed = JSON.parse(sessionStorage.getItem("PlayerList"));
@@ -302,9 +325,16 @@ function resetP2(){
     p2reset.play();
 }
 
-function createNewCoinbase(){
+export function createNewCoinbase(feeValue=-1){
     let newValueAccepted = false;
-    while(newValueAccepted==false){
+    let cbReward
+    let attempt = 0;
+    if(feeValue<15) cbReward = 2;
+    else if(feeValue>=15 && feeValue<45) cbReward = 4;
+    else if(feeValue>=45 && feeValue<135) cbReward = 8;
+    else if(feeValue>=135 && feeValue<405) cbReward = 16;   
+    else if(feeValue>=405) cbReward = 32;                              
+    while(newValueAccepted==false && attempt < 1000){
         let foundCollision = false;
         let maxX = gameCols;
         let maxY = gameRows;
@@ -326,32 +356,45 @@ function createNewCoinbase(){
         if(p2HeadPos[0]==newX && p2HeadPos[1]==newY){
             foundCollision = true;
         }
+        coinbasePos.map(cb => {
+            if(cb[0]==newX && cb[1]==newY){
+                foundCollision = true;
+            }
+        })
         if(foundCollision==false){
             newValueAccepted = true;
-            coinbasePos.push([newX,newY]);
+            let cbPos = [newX,newY]
+            if(feeValue!=-1) cbPos.push(cbReward) // Math.floor(Math.random() * (5 - 1 + 1) + 1)
+            coinbasePos.push(cbPos)
         }
+        attempt++
     }
 }
 
-function changeScore(playerID){
+function changeScore(playerID,cbPos){
     let changeInPoints = 0;
     let bodySnake;
-    if(playerID=="P1"){ bodySnake = p1BodyPos }
-    if(playerID=="P2"){ bodySnake = p2BodyPos }
-    if(bodySnake.length==1){
-        changeInPoints=Math.floor(totalPoints*0.02);
+    if(!cbPos[2]){
+        if(playerID=="P1"){ bodySnake = p1BodyPos }
+        if(playerID=="P2"){ bodySnake = p2BodyPos }
+        if(bodySnake.length==1){
+            changeInPoints=Math.floor(totalPoints*0.02);
+        }
+        else if(bodySnake.length==2 || bodySnake.length==3){
+            changeInPoints=Math.floor(totalPoints*0.04);
+        }
+        else if(bodySnake.length>=4 && bodySnake.length<=6){
+            changeInPoints=Math.floor(totalPoints*0.08);
+        }
+        else if(bodySnake.length>=7 && bodySnake.length<=10){
+            changeInPoints=Math.floor(totalPoints*0.16);
+        }
+        else if(bodySnake.length>=11){
+            changeInPoints=Math.floor(totalPoints*0.32);
+        }
     }
-    else if(bodySnake.length==2 || bodySnake.length==3){
-        changeInPoints=Math.floor(totalPoints*0.04);
-    }
-    else if(bodySnake.length>=4 && bodySnake.length<=6){
-        changeInPoints=Math.floor(totalPoints*0.08);
-    }
-    else if(bodySnake.length>=7 && bodySnake.length<=10){
-        changeInPoints=Math.floor(totalPoints*0.16);
-    }
-    else if(bodySnake.length>=11){
-        changeInPoints=Math.floor(totalPoints*0.32);
+    else if(cbPos[2]){
+        changeInPoints=Math.floor(totalPoints*cbPos[2]/100);
     }
     if(changeInPoints<1){ changeInPoints=1; }
     pushToTakenValuesArray(playerID, changeInPoints, p1HeadPos, p2HeadPos);
@@ -646,22 +689,21 @@ function drawCountdown(){
 }
 
 function captureCoinbase(){
-
     for(let i=0;i<coinbasePos.length;i++){
         if(p1HeadPos[0]==coinbasePos[i][0] && p1HeadPos[1]==coinbasePos[i][1]){
-            changeScore("P1");
+            changeScore("P1",coinbasePos[i]);
             increaseBody("P1");
+            if(!coinbasePos[i][2]) createNewCoinbase()
             coinbasePos.splice(i, 1);
-            createNewCoinbase();
             p1FC.pause();
             p1FC.currentTime = 0;
             p1FC.play();
         }
         else if(p2HeadPos[0]==coinbasePos[i][0] && p2HeadPos[1]==coinbasePos[i][1]){
-            changeScore("P2");
+            changeScore("P2",coinbasePos[i]);
             increaseBody("P2");
+            if(!coinbasePos[i][2]) createNewCoinbase()
             coinbasePos.splice(i, 1);
-            createNewCoinbase();
             p2FC.pause();
             p2FC.currentTime = 0;
             p2FC.play();
@@ -671,16 +713,53 @@ function captureCoinbase(){
 }
 
 function drawCoinbase(){
+    //console.log(coinbasePos)
     for(let i=0;i<coinbasePos.length;i++){
         ctxGame.beginPath();
-        ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, (rowSize/2)-rowSize/5.4, 0, 2 * Math.PI, false);
+        let cbRadius = (rowSize/2)-rowSize/5.4
+        ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, cbRadius, 0, 2 * Math.PI, false);
         ctxGame.fillStyle = "white";
-        ctxGame.shadowColor='white';
+        ctxGame.shadowColor='white';  
         ctxGame.shadowOffsetX=0;
         ctxGame.shadowOffsetY=0;
         ctxGame.shadowBlur=20;
         ctxGame.fill();
         ctxGame.shadowColor = "transparent";
+        if(coinbasePos[i][2]){
+            let cbReward = coinbasePos[i][2]
+            let transparencyAdder = 1
+            let circleCount
+            if(cbReward==2) circleCount = 1
+            else if(cbReward==4) circleCount = 2
+            else if(cbReward==8) circleCount = 3
+            else if(cbReward==16) circleCount = 4
+            else if(cbReward==32) circleCount = 5
+            for(let j=(circleCount);j>0;j--){
+                ctxGame.beginPath();
+                ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, (cbRadius+(j*rowSize*0.33)), 0, 2 * Math.PI, false);
+                let transparency = 0.04+(transparencyAdder/15)
+                ctxGame.strokeStyle = 'rgba(255,255,255,'+transparency+')';
+                ctxGame.stroke();
+                transparencyAdder++
+            }
+            /*
+            ctxGame.beginPath();
+            ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, 2*(rowSize/3), 0, 2 * Math.PI, false);
+            ctxGame.strokeStyle = 'rgba(255,255,255,0.48)';
+            ctxGame.stroke();
+            ctxGame.beginPath();
+            ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, 3.2*(rowSize/3), 0, 2 * Math.PI, false);
+            ctxGame.strokeStyle = 'rgba(255,255,255,0.28)';
+            ctxGame.stroke();
+            ctxGame.beginPath();
+            ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, 4.4*(rowSize/3), 0, 2 * Math.PI, false);
+            ctxGame.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctxGame.stroke();
+            */
+        }
+        else{
+    
+        }
     }
 }
 
