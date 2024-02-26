@@ -101,11 +101,13 @@ let dummyBlockData={
 }
 
 /*
+dummyBlockData.extras.medianFee = 10;
 setTimeout(() => {
     setInterval(() => {
-        newBlockTriggered(dummyBlockData)
-    }, 3000)
-}, 6000)
+        newBlockTriggered(dummyBlockData);
+        dummyBlockData.extras.medianFee = dummyBlockData.extras.medianFee + 15;
+    }, 5000)
+}, 5000)
 */
 
 
