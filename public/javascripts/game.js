@@ -786,9 +786,6 @@ function drawCoinbase(){
             ctxGame.stroke();
             */
         }
-        else{
-    
-        }
     }
 }
 
