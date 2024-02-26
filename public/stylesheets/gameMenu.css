@@ -292,7 +292,7 @@ body{
     position: absolute;
     bottom: 0;
     box-sizing: border-box;
-    border: 0px solid #fff;
+    border: 0px solid #0000;
     -webkit-transition: all .15s ease-in;
     -moz-transition: all .15s ease-in;
     -o-transition: all .15s ease-in;
@@ -301,26 +301,55 @@ body{
 }
 
 
+
+
+.expanded{
+  background: #000;
+}
 .expanded .qrcodeContainer {
     width: 50vw;
     background: #000;
-    filter: grayscale(1);
-
+    filter: grayscale(0);
 }
 
-.expanded .qrcodeContainer img {
+.expanded .qrcodeContainer .qrcode {
     border: 3vw solid #fff;
     border-top: 0.5vw solid #fff;
-    box-shadow: white 0px 0px 100px;
+    box-shadow: #fff 0px 0px 100px;
 }
 
-#player1card.expanded .qrcodeContainer img {
+.expanded .qrcodeContainer .qrcodeDecoration {
+    border: 3vw solid #0000;
+    border-top: 0.5vw solid #0000;
+}
+
+
+#player1card.expanded .qrcodeContainer .qrcode {
     border-right: 0.5vw solid #fff;
 }
-#player2card.expanded .qrcodeContainer img {
-    border-left: 0.5vw solid #fff;
+#player1card.expanded .qrcodeContainer .qrcodeDecoration {
+    border-right: 0.5vw solid #0000;
 }
 
+#player2card.expanded .qrcodeContainer .qrcode {
+    border-right: 0.5vw solid #fff;
+}
+#player2card.expanded .qrcodeContainer .qrcodeDecoration {
+    border-left: 0.5vw solid #0000;
+}
+
+
+
+.qrcodeDecoration {
+    height: auto;
+    width: 100%;
+    border: 0px solid #0000;
+    box-shadow: none;
+}
+.expanded .qrcodeContainer .qrcodeDecoration {
+    box-shadow: none;
+    border-color: #0000;
+}
 
 
 .deposit-message, #player1info, #player2info, .sats-label, #player1sats, #player2sats, .playerSquare{
