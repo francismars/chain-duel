@@ -758,11 +758,11 @@ function drawCoinbase(){
             let cbReward = coinbasePos[i][2]
             let transparencyAdder = 1
             let circleCount
-            if(cbReward==2) circleCount = 1
-            else if(cbReward==4) circleCount = 2
-            else if(cbReward==8) circleCount = 3
-            else if(cbReward==16) circleCount = 4
-            else if(cbReward==32) circleCount = 5
+            if(cbReward==2) circleCount = 2
+            else if(cbReward==4) circleCount = 3
+            else if(cbReward==8) circleCount = 4
+            else if(cbReward==16) circleCount = 5
+            else if(cbReward==32) circleCount = 6
             for(let j=(circleCount);j>0;j--){
                 ctxGame.beginPath();
                 ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, (cbRadius+(j*rowSize*0.38)), 0, 2 * Math.PI, false);
