@@ -87,11 +87,11 @@ const beepCD2 = new Audio("./sound/Beep2.m4a");
 let p1FC = new Audio("./sound/P1-FC-a.aac");
 let p2FC = new Audio("./sound/P2-FC-a.aac");
 
-const capture2 = new Audio("./sound/P-FC_2.aac");
-const capture4 = new Audio("./sound/P-FC_4.aac");
-const capture8 = new Audio("./sound/P-FC_8.aac");
-const capture16 = new Audio("./sound/P-FC_16.aac");
-const capture32 = new Audio("./sound/P-FC_32.aac");
+const capture2Sound = new Audio("./sound/P-FC_2.aac");
+const capture4Sound = new Audio("./sound/P-FC_4.aac");
+const capture8Sound = new Audio("./sound/P-FC_8.aac");
+const capture16Sound = new Audio("./sound/P-FC_16.aac");
+const capture32Sound = new Audio("./sound/P-FC_32.aac");
 
 
 //const p1reset = new Audio("./sound/P1-HWAC.mp3");
@@ -152,7 +152,6 @@ socket.on("resGetDuelInfos", (duelInfos) => {
         P2Name=duelInfos["Player2"].name;
         SatsP1=parseInt(duelInfos["Player1"].value);
         SatsP2=parseInt(duelInfos["Player2"].value);
-    
         if(duelInfos["winners"]){
           let winner = duelInfos["winners"].slice(-1);
           let winnersCount = duelInfos["winners"].length;
@@ -714,11 +713,11 @@ function captureCoinbase(){
             increaseBody("P1");
             if(!coinbasePos[i][2]) createNewCoinbase()
             coinbasePos.splice(i, 1);
-            if (p1BodyPos.length == 1) p1FC = capture2;
-            else if (p1BodyPos.length == 2) p1FC = capture4;
-            else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1FC = capture8;
-            else if (p1BodyPos.length >= 8 && p1BodyPos.length < 16) p1FC = capture16;
-            else if (p1BodyPos.length >= 16) p1FC = capture32;
+            if (p1BodyPos.length == 1) p1FC = capture2Sound;
+            else if (p1BodyPos.length == 2) p1FC = capture4Sound;
+            else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1FC = capture8Sound;
+            else if (p1BodyPos.length >= 8 && p1BodyPos.length < 16) p1FC = capture16Sound;
+            else if (p1BodyPos.length >= 16) p1FC = capture32Sound;
             p1FC.pause();
             p1FC.currentTime = 0;
             p1FC.play();
@@ -728,11 +727,11 @@ function captureCoinbase(){
             increaseBody("P2");
             if(!coinbasePos[i][2]) createNewCoinbase()
             coinbasePos.splice(i, 1);
-            if (p2BodyPos.length == 1) p2FC = capture2;
-            else if (p2BodyPos.length == 2) p2FC = capture4;
-            else if (p2BodyPos.length >= 3 && p2BodyPos.length < 8) p2FC = capture8;
-            else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2FC = capture16;
-            else if (p2BodyPos.length >= 16) p2FC = capture32;
+            if (p2BodyPos.length == 1) p2FC = capture2Sound;
+            else if (p2BodyPos.length == 2) p2FC = capture4Sound;
+            else if (p2BodyPos.length >= 3 && p2BodyPos.length < 8) p2FC = capture8Sound;
+            else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2FC = capture16Sound;
+            else if (p2BodyPos.length >= 16) p2FC = capture32Sound;
             p2FC.pause();
             p2FC.currentTime = 0;
             p2FC.play();
