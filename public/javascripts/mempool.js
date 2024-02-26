@@ -1,5 +1,5 @@
 import { createNewCoinbase } from "./game.js";
-const blockFound = new Audio("./sound/P1-FC.mp3");
+const blockFound = new Audio("./sound/MAINNET_BLOCK.aac");
 
 // Get latest block hash
 const { bitcoin: { blocks } } = mempoolJS({
