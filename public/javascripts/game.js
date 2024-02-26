@@ -763,8 +763,8 @@ function drawCoinbase(){
             else if(cbReward==32) circleCount = 5
             for(let j=(circleCount);j>0;j--){
                 ctxGame.beginPath();
-                ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, (cbRadius+(j*rowSize*0.33)), 0, 2 * Math.PI, false);
-                let transparency = 0.04+(transparencyAdder/15)
+                ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, (cbRadius+(j*rowSize*0.38)), 0, 2 * Math.PI, false);
+                let transparency = (0.1/circleCount)+(transparencyAdder/20)
                 ctxGame.strokeStyle = 'rgba(255,255,255,'+transparency+')';
                 ctxGame.stroke();
                 transparencyAdder++
