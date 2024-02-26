@@ -69,18 +69,35 @@ const stepSpeed = 1000/10
 let counterStart = 0;
 let winnerP = "";
 let intervalStep = setInterval(step, stepSpeed);
-const beepCD1 = new Audio("./sound/Beep1.m4a");
-const beepCD2 = new Audio("./sound/Beep2.m4a");
 let beep1Played = false;
 let beep2Played = false;
 let beep3Played = false;
 let beep4Played = false;
-const p1FC = new Audio("./sound/P1-FC.mp3");
-const p2FC = new Audio("./sound/P2-FC.mp3");
-const p1reset = new Audio("./sound/P1-HWAC.mp3");
-const p2reset = new Audio("./sound/P2-HWAC.mp3");
 let controllersActive = false;
 let sentWinner = false;
+
+
+// Sound Effects
+const beepCD1 = new Audio("./sound/Beep1.m4a");
+const beepCD2 = new Audio("./sound/Beep2.m4a");
+
+
+//const p1FC = new Audio("./sound/P1-FC.mp3");
+//const p2FC = new Audio("./sound/P2-FC.mp3");
+let p1FC = new Audio("./sound/P1-FC-a.aac");
+let p2FC = new Audio("./sound/P2-FC-a.aac");
+
+const capture2 = new Audio("./sound/P-FC_2.aac");
+const capture4 = new Audio("./sound/P-FC_4.aac");
+const capture8 = new Audio("./sound/P-FC_8.aac");
+const capture16 = new Audio("./sound/P-FC_16.aac");
+const capture32 = new Audio("./sound/P-FC_32.aac");
+
+
+//const p1reset = new Audio("./sound/P1-HWAC.mp3");
+//const p2reset = new Audio("./sound/P2-HWAC.mp3");
+const p1reset = new Audio("./sound/P1-HWAC.aac");
+const p2reset = new Audio("./sound/P2-HWAC.aac");
 
 
 let playersList;
@@ -695,6 +712,11 @@ function captureCoinbase(){
             increaseBody("P1");
             if(!coinbasePos[i][2]) createNewCoinbase()
             coinbasePos.splice(i, 1);
+            if (p1BodyPos.length == 1) p1FC = capture2;
+            else if (p1BodyPos.length == 2) p1FC = capture4;
+            else if (p1BodyPos.length >= 3 && p1BodyPos.length < 8) p1FC = capture8;
+            else if (p1BodyPos.length >= 8 && p1BodyPos.length < 16) p1FC = capture16;
+            else if (p1BodyPos.length >= 16) p1FC = capture32;
             p1FC.pause();
             p1FC.currentTime = 0;
             p1FC.play();
@@ -704,6 +726,11 @@ function captureCoinbase(){
             increaseBody("P2");
             if(!coinbasePos[i][2]) createNewCoinbase()
             coinbasePos.splice(i, 1);
+            if (p2BodyPos.length == 1) p2FC = capture2;
+            else if (p2BodyPos.length == 2) p2FC = capture4;
+            else if (p2BodyPos.length >= 3 && p2BodyPos.length < 8) p2FC = capture8;
+            else if (p2BodyPos.length >= 8 && p2BodyPos.length < 16) p2FC = capture16;
+            else if (p2BodyPos.length >= 16) p2FC = capture32;
             p2FC.pause();
             p2FC.currentTime = 0;
             p2FC.play();
