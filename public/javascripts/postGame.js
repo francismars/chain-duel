@@ -1,8 +1,8 @@
 import { listenToGamepads } from "./gamepads.js";
 
 // Variables for Tournament Specifics
-let tournamentSponsorImageUrl = ""
-let tournamentPlaceName = ""
+let tournamentSponsorImageUrl = "/images/sponsors/bitbox.png"
+let tournamentPlaceName = "Bitcoin Atlantis 2024"
 
 let serverIP;
 let serverPORT;
