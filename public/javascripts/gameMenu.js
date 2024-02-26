@@ -185,7 +185,11 @@ socket.on("updatePayments", body => {
                 console.log("Player1 Name: " + playerData.name)
                 p1Name=(playerData.name).trim()
             }
-            playersSats[0] = playerData.value
+            playersSats[0] = playerData.value;
+            document.getElementById("qrcode1Decoration").classList.remove('hide');
+            setTimeout(function() {
+                document.getElementById("qrcode1Decoration").classList.add('hide');
+            }, 1000);
         }
         if(key == "Player2"){
             console.log(`P2 has ${(playerData.value)} sats`);
@@ -193,7 +197,11 @@ socket.on("updatePayments", body => {
                 console.log("Player2 Name: " + playerData.name)
                 p2Name=(playerData.name).trim()
             }
-            playersSats[1] = playerData.value
+            playersSats[1] = playerData.value;
+            document.getElementById("qrcode2Decoration").classList.remove('hide');
+            setTimeout(function() {
+                document.getElementById("qrcode2Decoration").classList.add('hide');
+            }, 1000);
         }
         if(key == "winners"){
             console.log(`This is DoN number ${playerData.length}. Previous winner was ${(playerData.slice(-1))}`);
