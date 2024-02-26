@@ -343,48 +343,50 @@ function resetP2(){
 }
 
 export function createNewCoinbase(feeValue=-1){
-    let newValueAccepted = false;
-    let cbReward
-    let attempt = 0;
-    if(feeValue<15) cbReward = 2;
-    else if(feeValue>=15 && feeValue<45) cbReward = 4;
-    else if(feeValue>=45 && feeValue<135) cbReward = 8;
-    else if(feeValue>=135 && feeValue<405) cbReward = 16;   
-    else if(feeValue>=405) cbReward = 32;                              
-    while(newValueAccepted==false && attempt < 1000){
-        let foundCollision = false;
-        let maxX = gameCols;
-        let maxY = gameRows;
-        let newX = Math.floor(Math.random() * maxX);
-        let newY = Math.floor(Math.random() * maxY);
-        for(let i=0;i<p1BodyPos.length;i++){
-            if(p1BodyPos[i][0]==newX && p1BodyPos[i][1]==newY){
-                foundCollision = true;
-            }
-        }
-        if(p1HeadPos[0]==newX && p1HeadPos[1]==newY){
-            foundCollision = true;
-        }
-        for(let i=0;i<p2BodyPos.length;i++){
-            if(p2BodyPos[i][0]==newX && p2BodyPos[i][1]==newY){
-                foundCollision = true;
-            }
-        }
-        if(p2HeadPos[0]==newX && p2HeadPos[1]==newY){
-            foundCollision = true;
-        }
-        coinbasePos.map(cb => {
-            if(cb[0]==newX && cb[1]==newY){
-                foundCollision = true;
-            }
-        })
-        if(foundCollision==false){
-            newValueAccepted = true;
-            let cbPos = [newX,newY]
-            if(feeValue!=-1) cbPos.push(cbReward) // Math.floor(Math.random() * (5 - 1 + 1) + 1)
-            coinbasePos.push(cbPos)
-        }
-        attempt++
+    if(gameStarted && !gameEnded){
+      let newValueAccepted = false;
+      let cbReward
+      let attempt = 0;
+      if(feeValue<15) cbReward = 2;
+      else if(feeValue>=15 && feeValue<45) cbReward = 4;
+      else if(feeValue>=45 && feeValue<135) cbReward = 8;
+      else if(feeValue>=135 && feeValue<405) cbReward = 16;
+      else if(feeValue>=405) cbReward = 32;
+      while(newValueAccepted==false && attempt < 1000){
+          let foundCollision = false;
+          let maxX = gameCols;
+          let maxY = gameRows;
+          let newX = Math.floor(Math.random() * maxX);
+          let newY = Math.floor(Math.random() * maxY);
+          for(let i=0;i<p1BodyPos.length;i++){
+              if(p1BodyPos[i][0]==newX && p1BodyPos[i][1]==newY){
+                  foundCollision = true;
+              }
+          }
+          if(p1HeadPos[0]==newX && p1HeadPos[1]==newY){
+              foundCollision = true;
+          }
+          for(let i=0;i<p2BodyPos.length;i++){
+              if(p2BodyPos[i][0]==newX && p2BodyPos[i][1]==newY){
+                  foundCollision = true;
+              }
+          }
+          if(p2HeadPos[0]==newX && p2HeadPos[1]==newY){
+              foundCollision = true;
+          }
+          coinbasePos.map(cb => {
+              if(cb[0]==newX && cb[1]==newY){
+                  foundCollision = true;
+              }
+          })
+          if(foundCollision==false){
+              newValueAccepted = true;
+              let cbPos = [newX,newY]
+              if(feeValue!=-1) cbPos.push(cbReward) // Math.floor(Math.random() * (5 - 1 + 1) + 1)
+              coinbasePos.push(cbPos)
+          }
+          attempt++
+      }
     }
 }
 
