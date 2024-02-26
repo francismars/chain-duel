@@ -17,7 +17,7 @@ document.getElementById("bitcoinblockHeight").textContent = JSON.stringify(block
 document.getElementById("bitcoinblockSize").textContent = convertSize(blockData.size);
 document.getElementById("bitcoinblockTXcount").textContent = blockData.tx_count;
 document.getElementById("bitcoinblockMiner").textContent = blockData.extras.pool.name;
-document.getElementById("bitcoinAvgFee").textContent = Math.round(blockData.extras.medianFee);
+document.getElementById("bitcoinAvgFee").textContent = Math.round(blockData.extras.medianFee)+" sat/vb";
 document.getElementById("bitcoinblockTimeAgo").textContent = covertTimeAgo(timestamp);
 setInterval(function() {
     document.getElementById("bitcoinblockTimeAgo").textContent = covertTimeAgo(timestamp);
@@ -135,7 +135,7 @@ function updateDOM(blockInfo){
     document.getElementById("bitcoinblockHeight").textContent = blockInfo.height;
     document.getElementById("bitcoinblockSize").textContent = convertSize(blockInfo.size);
     document.getElementById("bitcoinblockTXcount").textContent = blockInfo.tx_count;
-    document.getElementById("bitcoinAvgFee").textContent = Math.round(blockInfo.extras.medianFee);
+    document.getElementById("bitcoinAvgFee").textContent = Math.round(blockInfo.extras.medianFee)+" sat/vb";
     //document.getElementById("bitcoinblockMiner").textContent = blockInfo.extras.pool.name;
     //document.getElementById("capture").textContent = Math.round((blockInfo.extras.medianFee/2)) + "%";
     document.getElementById("bitcoinblockTimeAgo").textContent = covertTimeAgo(timestamp);
