@@ -143,7 +143,7 @@ socket.on("resGetGameMenuInfos", body => {
     }
     else{
         payLinks = body
-        for(let payLink of body){        
+        for(let payLink of body){
             if(payLink.description=="Player1"){
                 document.getElementById("mindepP1").innerText = parseInt(payLink.min).toLocaleString()
                 let qrcodeContainer = document.getElementById("qrcode1");
@@ -154,7 +154,7 @@ socket.on("resGetGameMenuInfos", body => {
                     value: payLink.lnurlp
                   });
                 document.getElementById("qrcode1Link").href = "lightning:"+payLink.lnurlp
-    
+
             };
             if(payLink.description=="Player2"){
                 document.getElementById("mindepP2").innerText = parseInt(payLink.min).toLocaleString()
@@ -169,9 +169,11 @@ socket.on("resGetGameMenuInfos", body => {
             }
         }
         document.getElementById("loading").classList.add('hide');
-        controllersActive = true; 
+        controllersActive = true;
     }
 })
+
+let qrsLoaded = true;
 
 socket.on("updatePayments", body => {
     console.log(body)
@@ -179,29 +181,41 @@ socket.on("updatePayments", body => {
     for(let key in playersData){
         let playerData = playersData[key]
         console.log(playerData)
-        if(key == "Player1"){
+        if(key == "Player1" && playerData.value != playersSats[0]){
             console.log(`P1 has ${(playerData.value)} sats`);
             if(playerData.name!=null && playerData.name!=""){
                 console.log("Player1 Name: " + playerData.name)
                 p1Name=(playerData.name).trim()
             }
             playersSats[0] = playerData.value;
-            document.getElementById("qrcode1Decoration").classList.remove('hide');
-            setTimeout(function() {
-                document.getElementById("qrcode1Decoration").classList.add('hide');
-            }, 1000);
+            if(qrsLoaded == true){
+              document.getElementById("qrcode1Decoration").classList.remove('hide');
+              document.getElementById("player1satsContainer").classList.add('highlight');
+              document.getElementById("player1info").classList.add('highlight');
+              setTimeout(function() {
+                  document.getElementById("qrcode1Decoration").classList.add('hide');
+                  document.getElementById("player1satsContainer").classList.remove('highlight');
+                  document.getElementById("player1info").classList.remove('highlight');
+              }, 1200);
+            }
         }
-        if(key == "Player2"){
+        if(key == "Player2" && playerData.value != playersSats[1]){
             console.log(`P2 has ${(playerData.value)} sats`);
             if(playerData.name!=null && playerData.name!=""){
                 console.log("Player2 Name: " + playerData.name)
                 p2Name=(playerData.name).trim()
             }
             playersSats[1] = playerData.value;
-            document.getElementById("qrcode2Decoration").classList.remove('hide');
-            setTimeout(function() {
-                document.getElementById("qrcode2Decoration").classList.add('hide');
-            }, 1000);
+            if(qrsLoaded == true){
+              document.getElementById("qrcode2Decoration").classList.remove('hide');
+              document.getElementById("player2satsContainer").classList.add('highlight');
+              document.getElementById("player2info").classList.add('highlight');
+              setTimeout(function() {
+                  document.getElementById("qrcode2Decoration").classList.add('hide');
+                  document.getElementById("player2satsContainer").classList.remove('highlight');
+                  document.getElementById("player2info").classList.remove('highlight');
+              }, 1200);
+            }
         }
         if(key == "winners"){
             console.log(`This is DoN number ${playerData.length}. Previous winner was ${(playerData.slice(-1))}`);
@@ -212,6 +226,8 @@ socket.on("updatePayments", body => {
         }
         changeTextAfterPayment()
     }
+
+    qrsLoaded = true;
 });
 
 function changeTextAfterPayment(){

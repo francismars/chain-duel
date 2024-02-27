@@ -271,6 +271,37 @@ body{
 
 
 
+
+.player-square-name {
+  display: flex;
+}
+
+
+#player1satsContainer.highlight, #player1info.highlight {
+  animation-name: scalePopLeft;
+  animation-duration: 1200ms;
+  animation-timing-function: ease-out;
+}
+@keyframes scalePopLeft {
+  0% {transform: scale(1) translateX(0);}
+  10% {transform: scale(1.3) translate(2vw,-0.5vw);}
+  100% {transform: scale(1) translateX(0vw);}
+}
+
+#player2satsContainer.highlight, #player2info.highlight  {
+  animation-name: scalePopRight;
+  animation-duration: 1200ms;
+}
+@keyframes scalePopRight {
+  0% {transform: scale(1) translateX(0);}
+  10% {transform: scale(1.3) translate(-2vw,-0.5vw);}
+  100% {transform: scale(1) translateX(0vw);}
+}
+
+
+
+
+
 .qrcode.blur {
   filter: blur(10px) invert(1);
 }
