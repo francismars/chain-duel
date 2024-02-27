@@ -173,7 +173,7 @@ socket.on("resGetGameMenuInfos", body => {
     }
 })
 
-let qrsLoaded = true;
+let qrsLoaded = false;
 
 socket.on("updatePayments", body => {
     console.log(body)
