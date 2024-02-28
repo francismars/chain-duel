@@ -173,48 +173,46 @@ socket.on("resGetGameMenuInfos", body => {
     }
 })
 
-let qrsLoaded = false;
-
 socket.on("updatePayments", body => {
     console.log(body)
     let playersData = body
     for(let key in playersData){
         let playerData = playersData[key]
         console.log(playerData)
-        if(key == "Player1" && playerData.value != playersSats[0]){
+        if(key == "Player1"){
             console.log(`P1 has ${(playerData.value)} sats`);
             if(playerData.name!=null && playerData.name!=""){
                 console.log("Player1 Name: " + playerData.name)
                 p1Name=(playerData.name).trim()
             }
-            playersSats[0] = playerData.value;
-            if(qrsLoaded == true){
-              document.getElementById("qrcode1Decoration").classList.remove('hide');
-              document.getElementById("player1satsContainer").classList.add('highlight');
-              document.getElementById("player1info").classList.add('highlight');
-              setTimeout(function() {
-                  document.getElementById("qrcode1Decoration").classList.add('hide');
-                  document.getElementById("player1satsContainer").classList.remove('highlight');
-                  document.getElementById("player1info").classList.remove('highlight');
-              }, 1200);
+            if(playersSats[0]!=playerData.value){
+                playersSats[0] = playerData.value;
+                document.getElementById("qrcode1Decoration").classList.remove('hide');
+                document.getElementById("player1satsContainer").classList.add('highlight');
+                document.getElementById("player1info").classList.add('highlight');
+                setTimeout(function() {
+                    document.getElementById("qrcode1Decoration").classList.add('hide');
+                    document.getElementById("player1satsContainer").classList.remove('highlight');
+                    document.getElementById("player1info").classList.remove('highlight');
+                }, 1200);
             }
         }
-        if(key == "Player2" && playerData.value != playersSats[1]){
+        if(key == "Player2"){
             console.log(`P2 has ${(playerData.value)} sats`);
             if(playerData.name!=null && playerData.name!=""){
                 console.log("Player2 Name: " + playerData.name)
                 p2Name=(playerData.name).trim()
-            }
-            playersSats[1] = playerData.value;
-            if(qrsLoaded == true){
-              document.getElementById("qrcode2Decoration").classList.remove('hide');
-              document.getElementById("player2satsContainer").classList.add('highlight');
-              document.getElementById("player2info").classList.add('highlight');
-              setTimeout(function() {
-                  document.getElementById("qrcode2Decoration").classList.add('hide');
-                  document.getElementById("player2satsContainer").classList.remove('highlight');
-                  document.getElementById("player2info").classList.remove('highlight');
-              }, 1200);
+            } 
+            if(playersSats[1]!=playerData.value){
+                playersSats[1] = playerData.value;
+                document.getElementById("qrcode2Decoration").classList.remove('hide');
+                document.getElementById("player2satsContainer").classList.add('highlight');
+                document.getElementById("player2info").classList.add('highlight');
+                setTimeout(function() {
+                    document.getElementById("qrcode2Decoration").classList.add('hide');
+                    document.getElementById("player2satsContainer").classList.remove('highlight');
+                    document.getElementById("player2info").classList.remove('highlight');
+                }, 1200);
             }
         }
         if(key == "winners"){
