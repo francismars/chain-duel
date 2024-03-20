@@ -30,9 +30,9 @@ const { bitcoin: { websocket } } = mempoolJS({
 const ws = websocket.initClient({
   options: ['blocks','stats', 'mempool-blocks', 'live-2h-chart'],
 });
-ws.addEventListener('message', function incoming({data}) {
+ws.addEventListener('message', function incoming(data) {
     //console.log(data)
-    const res = JSON.parse(data.toString());
+    const res = data;
     if (res.block) {
         //console.log("NEW BLOCK");
         //console.log(res.block);
@@ -113,9 +113,9 @@ setTimeout(() => {
 
 function newBlockTriggered(blockData){
     highlightCanvaS()
-    createNewCoinbase(blockData.extras.medianFee)
+    blockData.extras.medianFee ? createNewCoinbase(blockData.extras.medianFee) : console.log("Mempool didn't send blockData.extras.medianFee")
     playBlockFoundSounds()
-    updateDOM(blockData)
+    updateDOM(blockData) 
     highlightFooter()
 }
 
@@ -127,20 +127,22 @@ function highlightCanvaS(){
 }
 
 function playBlockFoundSounds(){
+  if(blockFound.readyState == 4){
     blockFound.pause();
     blockFound.currentTime = 0;
     blockFound.play();
+  }
 }
 
 function updateDOM(blockInfo){
-    timestamp = blockInfo.timestamp;
-    document.getElementById("bitcoinblockHeight").textContent = blockInfo.height;
-    document.getElementById("bitcoinblockSize").textContent = convertSize(blockInfo.size);
-    document.getElementById("bitcoinblockTXcount").textContent = blockInfo.tx_count;
-    document.getElementById("bitcoinAvgFee").textContent = Math.round(blockInfo.extras.medianFee)+" sat/vb";
-    //document.getElementById("bitcoinblockMiner").textContent = blockInfo.extras.pool.name;
-    //document.getElementById("capture").textContent = Math.round((blockInfo.extras.medianFee/2)) + "%";
-    document.getElementById("bitcoinblockTimeAgo").textContent = covertTimeAgo(timestamp);
+  blockInfo.timestamp ? timestamp = blockInfo.timestamp : console.log("Mempool didn't send blockInfo.timestamp")
+  blockInfo.height ? document.getElementById("bitcoinblockHeight").textContent = blockInfo.height : console.log("Mempool didn't send blockInfo.height")
+  blockInfo.size ? document.getElementById("bitcoinblockSize").textContent = convertSize(blockInfo.size) : console.log("Mempool didn't send blockInfo.size")
+  blockInfo.tx_count ? document.getElementById("bitcoinblockTXcount").textContent = blockInfo.tx_count : console.log("Mempool didn't send blockInfo.tx_count")
+  blockInfo.extras.medianFee ? document.getElementById("bitcoinAvgFee").textContent = Math.round(blockInfo.extras.medianFee)+" sat/vb" : console.log("Mempool didn't send blockInfo.extras.medianFee")
+  //document.getElementById("bitcoinblockMiner").textContent = blockInfo.extras.pool.name;
+  //document.getElementById("capture").textContent = Math.round((blockInfo.extras.medianFee/2)) + "%";
+  document.getElementById("bitcoinblockTimeAgo").textContent = covertTimeAgo(timestamp);
 }
 
 function highlightFooter(){
