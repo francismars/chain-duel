@@ -33,13 +33,13 @@ function loadHSHtml(highscores){
 
 
           var winnerName, winnerSats, loserName, loserSats;
-          if(highscores[i].winner=="Player 1"){
+          if(highscores[i].winner=="Player1"){
             winnerName = highscores[i].p1Name
             winnerSats = highscores[i].p1sats
             loserName = highscores[i].p2Name
             loserSats = highscores[i].p2sats
           }
-          else if(highscores[i].winner=="Player 2"){
+          else if(highscores[i].winner=="Player2"){
             loserName = highscores[i].p1Name
             loserSats = highscores[i].p1sats
             winnerName = highscores[i].p2Name
