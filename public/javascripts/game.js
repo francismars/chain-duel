@@ -76,11 +76,13 @@ let beep4Played = false;
 let controllersActive = false;
 let sentWinner = false;
 
+// Game Music
+const gameMusic = new Audio("./sound/chain_duel_produced_game.m4a");
+gameMusic.play();
 
 // Sound Effects
 const beepCD1 = new Audio("./sound/Beep1.m4a");
 const beepCD2 = new Audio("./sound/Beep2.m4a");
-
 
 //const p1FC = new Audio("./sound/P1-FC.mp3");
 //const p2FC = new Audio("./sound/P2-FC.mp3");
@@ -92,7 +94,6 @@ const capture4Sound = new Audio("./sound/P-FC_4.aac");
 const capture8Sound = new Audio("./sound/P-FC_8.aac");
 const capture16Sound = new Audio("./sound/P-FC_16.aac");
 const capture32Sound = new Audio("./sound/P-FC_32.aac");
-
 
 //const p1reset = new Audio("./sound/P1-HWAC.mp3");
 //const p2reset = new Audio("./sound/P2-HWAC.mp3");
