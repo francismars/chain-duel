@@ -79,6 +79,7 @@ let sentWinner = false;
 // Game Music
 const gameMusic = new Audio("./sound/chain_duel_produced_game.m4a");
 gameMusic.play();
+gameMusic.loop=true;
 
 // Sound Effects
 const beepCD1 = new Audio("./sound/Beep1.m4a");
