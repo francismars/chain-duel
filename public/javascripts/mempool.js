@@ -28,7 +28,7 @@ const { bitcoin: { websocket } } = mempoolJS({
   hostname: 'mempool.space'
 });
 const ws = websocket.initClient({
-  options: ['blocks','stats', 'mempool-blocks', 'live-2h-chart'],
+  options: ['blocks'],
 });
 ws.addEventListener('message', function incoming({data}) {
   const res = JSON.parse(data.toString());
