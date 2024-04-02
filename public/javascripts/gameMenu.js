@@ -224,8 +224,6 @@ socket.on("updatePayments", body => {
         }
         changeTextAfterPayment()
     }
-
-    qrsLoaded = true;
 });
 
 function changeTextAfterPayment(){
