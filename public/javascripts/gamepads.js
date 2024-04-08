@@ -16,22 +16,23 @@ export function listenToGamepads() {
 
 
         // Code for GAMEPAD
-
-        if(gamepad1.buttons[12].pressed==true){
-          window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'w'}));
-        }
-        if(gamepad1.buttons[13].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'s'}));
-        }
-        if(gamepad1.buttons[14].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'a'}));
-        }
-        if(gamepad1.buttons[15].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
-        }
-
-        if(gamepad1.buttons[12].pressed==false && gamepad1.buttons[13].pressed==false && gamepad1.buttons[14].pressed==false && gamepad1.buttons[15].pressed==false){
-          window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'w'}));
+        if(gamepad1.buttons[12] && gamepad1.buttons[13] && gamepad1.buttons[14] && gamepad1.buttons[15]){
+            if(gamepad1.buttons[12].pressed==true){
+                window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'w'}));
+              }
+              if(gamepad1.buttons[13].pressed==true){
+                  window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'s'}));
+              }
+              if(gamepad1.buttons[14].pressed==true){
+                  window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'a'}));
+              }
+              if(gamepad1.buttons[15].pressed==true){
+                  window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
+              }
+      
+              if(gamepad1.buttons[12].pressed==false && gamepad1.buttons[13].pressed==false && gamepad1.buttons[14].pressed==false && gamepad1.buttons[15].pressed==false){
+                window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'w'}));
+              }
         }
 
         // CODE FOR ARCADE CONTROLLER
@@ -53,11 +54,9 @@ export function listenToGamepads() {
             window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'d'}));
         }
 
-	      //console.log(gamepad1.axes[0])
-	      //console.log(gamepad1.axes[1])
-        if(gamepad1.axes[0]==0.003921627998352051 && gamepad1.axes[1]==0.003921627998352051 /* && gamepad1.axes[9]==3.2857141494750977 */){
+        if(gamepad1.axes[0]==0.003921627998352051 && gamepad1.axes[1]==-0.003921568393707275 /* && gamepad1.axes[9]==3.2857141494750977 */){
             window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'w'}));
-        }
+        }       
 
         //console.log("9 == "+ gamepad1.axes[9])
 
@@ -113,23 +112,24 @@ export function listenToGamepads() {
         }
 
         // Code for GAMEPAD
-        if(gamepad2.buttons[12].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
-        }
-        if(gamepad2.buttons[13].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
-        }
-        if(gamepad2.buttons[14].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
-        }
-        if(gamepad2.buttons[15].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
-        }
+        if(gamepad2.buttons[12] && gamepad2.buttons[13] && gamepad2.buttons[14] && gamepad2.buttons[15]){
+            if(gamepad2.buttons[12].pressed==true){
+                window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowUp'}));
+            }
+            if(gamepad2.buttons[13].pressed==true){
+                window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowDown'}));
+            }
+            if(gamepad2.buttons[14].pressed==true){
+                window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowLeft'}));
+            }
+            if(gamepad2.buttons[15].pressed==true){
+                window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'ArrowRight'}));
+            }
 
-        if(gamepad2.buttons[12].pressed==false && gamepad2.buttons[13].pressed==false && gamepad2.buttons[14].pressed==false && gamepad2.buttons[15].pressed==false){
-          window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'ArrowUp'}));
+            if(gamepad2.buttons[12].pressed==false && gamepad2.buttons[13].pressed==false && gamepad2.buttons[14].pressed==false && gamepad2.buttons[15].pressed==false){
+            window.dispatchEvent(new KeyboardEvent('keyup',  {'key':'ArrowUp'}));
+            }
         }
-
 
 
         // CODE FOR ARCADE CONTROLLER
