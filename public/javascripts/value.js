@@ -79,7 +79,7 @@ if (document.getElementsByClassName("sponsored-img") != null){
 if (document.getElementById("split1") != null){
   if (document.getElementById("split1").length != 0){
     const split1 = document.getElementById("split1");
-    split1.innerHTML = "<b>2%</b> <span id='hostFee'></span> to the host (Naomi)";
+    split1.innerHTML = "<b>2%</b> <span id='hostFee'></span> to the host (@chainduel)";
   }
 }
 
