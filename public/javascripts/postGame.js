@@ -164,7 +164,7 @@ function pressUp(){
 }
 
 function pressDown(){
-    if(menu==1 && activeButtonMenu1==0 && controllersActive){
+    if(menu==1 && activeButtonMenu1==0 && controllersActive && qrRevealed==0){
         document.getElementById("doubleornotthingbutton").style.animationDuration  = "2s";
         document.getElementById("claimbutton").style.animationDuration  = "0s";
         activeButtonMenu1=1;
