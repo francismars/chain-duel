@@ -42,8 +42,8 @@ let larguraTitle = titleCanvas.width;
 let alturaTitle = titleCanvas.height;
 let ctxTitle = titleCanvas.getContext("2d");
 */
-let gameCols = 51;
-let gameRows = 25;
+const gameCols = 51;
+const gameRows = 25;
 let gameCanvas = document.getElementById("gameCanvas");
 gameCanvas.width = window.innerWidth*(0.7);
 gameCanvas.height = window.innerWidth*(0.35);
@@ -75,6 +75,7 @@ let beep3Played = false;
 let beep4Played = false;
 let controllersActive = false;
 let sentWinner = false;
+let practiceMode = false;
 
 // Game Music
 const gameMusic = new Audio("./sound/chain_duel_produced_game.m4a");
@@ -224,6 +225,8 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     controllersActive = true
 })
 
+// loadDummyGame()
+
 function loadDummyGame(){
     P1Name = "Sats Eater 👻"
     P2Name = "BigToshi 🌊"
@@ -245,6 +248,7 @@ function loadDummyGame(){
     document.getElementById("gameContainer").classList.remove('hide');
     controllersActive = true
 
+    practiceMode = true
 }
 
 /*
@@ -300,6 +304,7 @@ function draw(){
 
 function step(){
     if(gameStarted && !gameEnded){
+        if(practiceMode) decideP2Dir()
         movePlayers()
         checkCollisions()
         captureCoinbase()
@@ -1023,7 +1028,7 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "ARROWLEFT":
-            if(gameStarted==true){
+            if(gameStarted==true && practiceMode==false){
                 if(p2Dir == "Up" || p2Dir == "Down" || p2Dir == ""){
                     p2DirWanted = "Left"
                 }
@@ -1033,7 +1038,7 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "ARROWRIGHT":
-            if(gameStarted==true){
+            if(gameStarted==true && practiceMode==false){
                 if(p2Dir == "Up" || p2Dir == "Down"){
                     p2DirWanted = "Right"
                 }
@@ -1043,7 +1048,7 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "ARROWUP":
-            if(gameStarted==true){
+            if(gameStarted==true && practiceMode==false){
                 if(p2Dir == "Left" || p2Dir == "Right"){
                     p2DirWanted = "Up"
                 }
@@ -1053,7 +1058,7 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "ARROWDOWN":
-            if(gameStarted==true){
+            if(gameStarted==true && practiceMode==false){
                 if(p2Dir == "Left" || p2Dir == "Right"){
                     p2DirWanted = "Down"
                 }
@@ -1149,3 +1154,118 @@ addEventListener("keyup", function(event) {
             break;
     }
 });
+
+function decideP2Dir(){
+    let pathP2 = findPathP2()
+    if(pathP2[1][0] == p2HeadPos[0]){
+        if(pathP2[1][1] > p2HeadPos[1]) {
+            if(p2Dir == "Left" || p2Dir == "Right"){
+                p2DirWanted = "Down"
+            } 
+        }
+        if(pathP2[1][1] < p2HeadPos[1]) {
+            if(p2Dir == "Left" || p2Dir == "Right"){
+                p2DirWanted = "Up"
+            }
+        }
+    }
+    else if(pathP2[1][1] == p2HeadPos[1]){
+        if(pathP2[1][0] > p2HeadPos[0]) {
+            if(p2Dir == "Up" || p2Dir == "Down"){
+                p2DirWanted = "Right"
+            }
+        }
+        if(pathP2[1][0] < p2HeadPos[0]) {
+            if(p2Dir == "Up" || p2Dir == "Down" || p2Dir == ""){
+                p2DirWanted = "Left"
+            }
+        }
+    }
+}
+
+function findPathP2(){ // A* Algorithm
+    let openSet = []
+    openSet.push(p2HeadPos)
+    let cameFrom = {}
+    let gScore = {}
+    gScore[p2HeadPos]=0
+    let fScore = {}
+    let xDist = (p2HeadPos[0]-coinbasePos[0][0])
+    let yDist = (p2HeadPos[1]-coinbasePos[0][1])
+    fScore[p2HeadPos]=Math.hypot(xDist, yDist)
+    while(openSet.length>0){
+        let minDis = Infinity
+        let current
+        for(let i in openSet){
+            let node = openSet[i]
+            if(fScore[node]){
+                if(fScore[node]<minDis){
+                    current = node
+                    minDis = fScore[node]
+                }
+            }
+        }
+        if(current[0]===coinbasePos[0][0] && current[1]===coinbasePos[0][1]){
+            return reconstruct_path(cameFrom, current)
+        }
+
+        let pos = openSet.indexOf(current)
+        openSet.splice(pos, 1)
+        for(let x=-1;x<=1;x++){
+            for(let y=-1;y<=1;y++){
+                if(((x!=0 && y==0) || (y!=0 && x==0))){
+                    if(current[0]+x>=0 && current[0]+x<gameCols && current[1]+y>=0 && current[1]+y<gameRows){
+                        if(collisionP1(current[0]+x,current[1]+y)==false){
+                            if(current in gScore){
+                                let tentative_gScore = (gScore[current]) + 1
+                                let neighbor=[(current[0])+x,(current[1])+y]
+                                if(!(neighbor in gScore)){
+                                    gScore[neighbor] = Infinity
+                                } 
+                                if(tentative_gScore < gScore[neighbor]){
+                                    cameFrom[neighbor] = [current[0],current[1]]
+                                    gScore[neighbor] = tentative_gScore
+                                    fScore[neighbor] = tentative_gScore + Math.hypot(neighbor[0]-coinbasePos[0][0], neighbor[1]-coinbasePos[0][1])
+                                    if(openSet.indexOf(neighbor)==-1){
+                                        openSet.push(neighbor)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return "Failure"
+}
+
+function reconstruct_path(cameFrom, current){
+    let total_path = [current]
+    while(cameFrom[current]){
+        current = cameFrom[current]
+        total_path.unshift(current)
+        
+    }
+    return total_path
+}
+
+
+function collisionP1(x,y){
+    if(p1HeadPos[0]==x && p1HeadPos[1]==y){
+        return true
+    }
+    for(let posIndex in p1BodyPos){
+        let posBody=p1BodyPos[posIndex]
+        if(posBody[0]==x && posBody[1]==y){
+            return true
+        }
+    }
+    for(let posIndex in p2BodyPos){
+        let posBody=p2BodyPos[posIndex]
+        if(posBody[0]==x && posBody[1]==y){
+            return true
+        }
+    }
+    return false
+}
