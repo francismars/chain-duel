@@ -7,12 +7,15 @@ addEventListener("keydown", function(event) {
         window.location.href = "/gamemenu";
       }
       else if(menu==2){
-        window.location.href = "/tournprefs";
+        window.location.href = "/practicemenu";
       }
       else if(menu==3){
-        window.location.href = "/highscores";
+        window.location.href = "/tournprefs";
       }
       else if(menu==4){
+        window.location.href = "/highscores";
+      }
+      else if(menu==5){
         window.location.href = "/about";
       }
     }
@@ -20,15 +23,20 @@ addEventListener("keydown", function(event) {
       if(menu==1){
         menu = 2;
         document.getElementById("startgame").style.animationDuration  = "0s";
-        document.getElementById("starttourn").style.animationDuration  = "2s";
+        document.getElementById("startpractice").style.animationDuration  = "2s";
       }
       else if(menu==2){
         menu = 3;
-        document.getElementById("starttourn").style.animationDuration  = "0s";
-        document.getElementById("highscoresbutton").style.animationDuration  = "2s";
+        document.getElementById("startpractice").style.animationDuration  = "0s";
+        document.getElementById("starttourn").style.animationDuration  = "2s";
       }
       else if(menu==3){
         menu = 4;
+        document.getElementById("starttourn").style.animationDuration  = "0s";
+        document.getElementById("highscoresbutton").style.animationDuration  = "2s"; 
+      }
+      else if(menu==4){
+        menu = 5;
         document.getElementById("highscoresbutton").style.animationDuration  = "0s";
         document.getElementById("aboutbutton").style.animationDuration  = "2s"; 
       }
@@ -37,15 +45,20 @@ addEventListener("keydown", function(event) {
       if(menu==2){
         menu = 1;
         document.getElementById("startgame").style.animationDuration  = "2s";
-        document.getElementById("starttourn").style.animationDuration  = "0s";
+        document.getElementById("startpractice").style.animationDuration  = "0s";
       }
       else if(menu==3){
         menu = 2;
-        document.getElementById("highscoresbutton").style.animationDuration  = "0s";
-        document.getElementById("starttourn").style.animationDuration  = "2s";
+        document.getElementById("starttourn").style.animationDuration  = "0s";
+        document.getElementById("startpractice").style.animationDuration  = "2s";
       }
       else if(menu==4){
         menu = 3;
+        document.getElementById("highscoresbutton").style.animationDuration  = "0s";
+        document.getElementById("starttourn").style.animationDuration  = "2s";
+      }
+      else if(menu==5){
+        menu = 4;
         document.getElementById("aboutbutton").style.animationDuration  = "0s";
         document.getElementById("highscoresbutton").style.animationDuration  = "2s";
       }
