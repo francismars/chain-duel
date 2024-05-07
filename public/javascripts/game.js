@@ -149,7 +149,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
         SatsP1=parseInt(duelInfos.min);
         SatsP2=SatsP1;
     }
-    else{
+    else if(duelInfos.Player2){
         console.log("P2P Mode")
         P1Name=duelInfos["Player1"].name;
         P2Name=duelInfos["Player2"].name;
@@ -165,6 +165,15 @@ socket.on("resGetDuelInfos", (duelInfos) => {
         }else{
           document.getElementById("gameInfo").textContent = "P2P"
         }
+    }
+    else{
+        console.log("Practice Mode")
+        P1Name=duelInfos["Player1"].name;
+        P2Name = "BigToshi 🌊"
+        SatsP1=parseInt(duelInfos["Player1"].value);
+        SatsP2=SatsP1
+        document.getElementById("gameInfo").textContent = "Practice"
+        practiceMode = true
     }
     document.getElementById("player1name").innerText = P1Name;
     document.getElementById("player2name").innerText = P2Name;
@@ -225,7 +234,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     controllersActive = true
 })
 
-// loadDummyGame()
+//loadDummyGame()
 
 function loadDummyGame(){
     P1Name = "Sats Eater 👻"

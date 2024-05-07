@@ -1,0 +1,219 @@
+<html>
+<head>
+<link rel="stylesheet" href="stylesheets/style.css">
+<link rel="stylesheet" href="stylesheets/practicemenu.css">
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js" integrity="sha384-Gr6Lu2Ajx28mzwyVR8CFkULdCU7kMlZ9UthllibdOSo6qAiN+yXNHqtgdTvFXMT4" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<link rel="apple-touch-icon" sizes="180x180" href="/images/favicon_package/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon_package/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon_package/favicon-16x16.png">
+<link rel="manifest" href="/images/favicon_package/site.webmanifest">
+<link rel="mask-icon" href="/images/favicon_package/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="apple-mobile-web-app-title" content="Chain Duel">
+<meta name="application-name" content="Chain Duel">
+<meta name="msapplication-TileColor" content="#cccccc">
+<meta name="theme-color" content="#ffffff">
+<title>Chain Duel</title>
+</head>
+<body>
+  <header id="brand">
+      <h2 id="chain">CHAIN</h2>
+      <h2 id="duel">DUEL</h2>
+  </header>
+  <div class="flex full">
+    <div>
+    <!-- hack to center the next div on the page -->
+    </div>
+    <div>
+        <div>
+
+          <div class="sponsorship" id="sponsorshipGameMenu">
+            <div class="sponsored-by-label label" id="sponsoredByLabelGameMenu"></div>
+            <img src="" class="sponsored-img" id="sponsoredImgGameMenu" />
+          </div>
+
+          <h2 id="gameMenuTitle" class="hero-outline condensed">PRACTICE</h2>
+          <p id="titleslogan">Rules</p>
+        </div>
+        <div id="centerSection">
+            <div id="gameCard">
+              <p class="ruleTitle">1. Stake your sats</p>
+              <p class="gameDescription grey">Deposit your sats, play, redeem.</p>
+              <p class="gameDescription grey">Cycle ends when one chain hits zero sats.</p>
+              <p class="gameDescription grey">Double or nothing to up the stakes.</p>
+              <p class="gameDescription grey">Winner takes all!</p>
+            </div>
+            <div id="gameCard">
+              <p class="ruleTitle">2. Longer chains collect more sats</p>
+              <p class="gameDescription grey">Capture coinbases to grow your chain and collect more value.</p>
+              <p>
+              <table class="gameDescription grey rewards">
+                <tr>
+                  <td class="reward-blocks">Chain Length</td>
+                  <td class="reward-percent"><b>Reward</b><td>
+                </tr>
+                <tr>
+                  <td class="reward-blocks">2 blocks</td><!-- +0 -->
+                  <td class="reward-percent"><b>2%</b></td>
+                </tr>
+                <tr>
+                  <td class="reward-blocks">3 blocks</td><!-- +1 -->
+                  <td class="reward-percent"><b>4%</b></td>
+                </tr>
+                <tr>
+                  <td class="reward-blocks">5 blocks</td><!-- +2 -->
+                  <td class="reward-percent"><b>8%</b></td>
+                </tr>
+                <tr>
+                  <td class="reward-blocks">8 blocks</td><!-- +3 -->
+                  <td class="reward-percent"><b>16%</b></td>
+                </tr>
+                <tr>
+                  <td class="reward-blocks">12+ blocks</td><!-- +4 -->
+                  <td class="reward-percent"><b>32%</b></td>
+                </tr>
+              </table>
+            </p>
+            </div>
+            <div id="gameCard">
+              <p class="ruleTitle">3. Reset/respawn</p>
+              <p class="gameDescription grey">Avoid mistakes or risk losing your proof-of-work.</p>
+              <p class="gameDescription grey">Hitting walls or the other chain resets to genesis block.</p>
+              <p class="gameDescription grey">Head-to-head collisions reset both chains.</p>
+            </div>
+
+            <!--
+            <div id="gameCard">
+                <div id="gameImage"><img src="images/rule1.gif"/></div>
+                <p class="ruleTitle">Longest Chain</p>
+                <p class="gameDescription grey">2 block long chain captures 2% of the Sats. 3 blocks length capture 4%, 4-7 length 8%, 8-15 length 16%, 16+ length 32%.</p>
+            </div>
+            <div id="gameCard">
+                <div id="gameImage"><img src="images/Rule2.jpg"/></div>
+                <p class="ruleTitle">Protocol Limits</p>
+                <p class="gameDescription grey">Touching the other chain, or the walls, resets your chainsize to 2 blocks. Head-on collisions resets both chains.</p>
+            </div>
+            <div id="gameCard">
+                <div id="gameImage"><img src="images/Rule3.jpg"/></div>
+                <p class="ruleTitle">Trending to Zero</p>
+                <p class="gameDescription grey">Game ends when a player reaches zero Sats.</p>
+            </div>
+          -->
+        </div>
+
+        <div id="gameButtons">
+            <button class="button" id="mainmenubutton" type="button">MAIN MENU</button>
+            <button class="button disabled" id="startgame" type="button">READY TO START</button>
+        </div>
+    </div>
+    <div id="bottomInfo">
+        <div id="player1card">
+            <div id="qrcodeContainer1" class="qrcodeContainer">
+              <a id="qrcode1Link" href="">
+                <image id="qrcode1" class="qrcode"></image>
+                <image id="qrcode1Decoration" class="qrcodeDecoration hide" src="/images/qr_lightning.gif">
+              </a>
+            </div>
+            <div id="player1cardinfo" class="player-card-info">
+                <div class="player-sats" id="player1satsContainer">
+                  <span id="player1sats">0</span> <span class="grey sats-label">sats</span>
+                </div>
+                <div class="condensed">
+                  <div class="inline playerSquare white"></div>
+                  <div id="player1info" class="inline">Player 1</div>
+                </div>
+                <div class="deposit-message">
+                  Deposit between <b><span id="mindepP1">10,000</span></b> and <b>10,000,000</b> sats
+                  <br>
+                  Set player name on the payment note
+                  <br>
+                  LNURL compatible wallet required
+                  <br>
+                  Allows for multiple deposits
+                </div>
+            </div>
+        </div>
+        <!--
+        <div id="prizeinfocard">
+            <div id="prizevaluesats" class="condensed">0</div>
+            <div id="prizeinfosats">Total Prize (sats)</div>
+            <div id="splits">
+              <span id="rules1">host 2% (0 sats)</span> • <span id="rules2">developer 2% (0 sats)</span> • <span id="rules3">designer 1% (0 sats)</span>
+            </div>
+            <div id="leaderboard"><p id="leaderboard-inner"><span id="leaderboardSats">0</span> sats qualifies for highscore</p></div>
+        </div>
+        <div id="player2card">
+            <div id="player2cardinfo" class="player-card-info">
+                <div class="player-sats" id="player2satsContainer">
+                  <span class="grey sats-label">sats</span> <span id="player2sats">0</span>
+                </div>
+
+                <div class="condensed">
+                  <div id="player2info" class="inline">Player 2</div>
+                  <div class="inline playerSquare black"></div>
+                </div>
+                <div class="deposit-message">
+                  Deposit between <b><span id="mindepP2">10,000</span></b> and <b>10,000,000</b> sats
+                  <br>
+                  Set player name on the payment note
+                  <br>
+                  LNURL compatible wallet required
+                  <br>
+                  Allows for multiple deposits
+                </div>
+            </div>
+            <div id="qrcodeContainer2" class="qrcodeContainer">
+              <a id="qrcode2Link" href="">
+                <image id="qrcode2" class="qrcode"></image>
+                <image id="qrcode2Decoration" class="qrcodeDecoration hide" src="/images/qr_lightning.gif">
+              </a>
+            </div>
+        </div>
+      -->
+    </div>
+  </div>
+
+  <audio id="audio" autoplay loop>
+    <!--
+      <source src="/sound/chain_duel_1.ogg" type="audio/ogg"/>
+      <source src="/sound/chain_duel_1.mp3" type="audio/mpeg"/>
+    -->
+      <source src="/sound/chain_duel_produced_menu.m4a" type="audio/x-m4a">
+
+  </audio>
+
+
+  <div class="overlay" id="loading">
+    <img src="images/loading.gif">
+  </div>
+
+
+  <div class="overlay hide" id="cancelGame">
+    <div class="warning">
+      <div class="warning-inner">
+        <h2 class="warning-title condensed">Cancel Game?</h2>
+        <div class="warning-text">
+          Are you sure you want to leave?
+        </div>
+      </div>
+      <div class="warning-actions">
+        <button class="button half" id="cancelGameAbort" type="button">No</button>
+        <button class="button half" id="cancelGameConfirm" type="button">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hide" id="inProgress">
+    <div class="warning">
+      <h2 class="condensed">Tournament in Progress</h2>
+      <div>
+        Can't start a new game until tournament is completed.
+      </div>
+      <button class="button" id="finishTournament" type="button">Finish Tournament</button>
+    </div>
+  </div>
+
+</body>
+<script  type="module" src="javascripts/practicemenu.js"></script>
+<script  type="module" src="javascripts/value.js"></script>
+</html>

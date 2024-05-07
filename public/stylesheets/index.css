@@ -60,7 +60,7 @@ body {
     animation: glowing 2000ms infinite;
 }
 
-#aboutbutton, #highscoresbutton, #starttourn{
+#aboutbutton, #highscoresbutton, #starttourn, #startpractice{
     animation: glowing 0ms infinite;
 }
 

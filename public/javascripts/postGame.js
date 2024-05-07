@@ -77,10 +77,22 @@ socket.on("resPostGameInfoRequest", (postgameInfos) =>{
     if(postgameInfos.Player1){
         tournamentMode = false
         p1Name = postgameInfos.Player1.name;
-        p2Name = postgameInfos.Player2.name;
         P1SatsDeposit = postgameInfos.Player1.value;
-        P2SatsDeposit = postgameInfos.Player2.value;
-        totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit)
+        if(postgameInfos.Player2){ // P2P
+            p2Name = postgameInfos.Player2.name;
+            P2SatsDeposit = postgameInfos.Player2.value;
+            totalDeposit = parseInt(P1SatsDeposit)+parseInt(P2SatsDeposit)
+        }
+        else if(!(postgameInfos.Player2)){ // PRACTICE
+            p2Name =  "BigToshi 🌊"
+            totalDeposit = parseInt(P1SatsDeposit)
+            document.getElementById("fees").style.display = "none";
+            document.getElementById("winner").style.display = "none"; 
+            document.getElementById("claimText").style.display = "none"; 
+            document.getElementById("claimbutton").innerText = "END PRACTICE";
+            document.getElementById("doubleornotthingbutton").innerText = "PRACTICE AGAIN";
+
+        }        
         totalPrize = Math.floor(totalDeposit);
         if (gameWinner!=null){
             if(gameWinner=="Player1" && p1Name!=null){
@@ -179,7 +191,9 @@ function pressContinue(){
         }
         else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
             socket.emit("doubleornothing")
-            window.location.href = "/gamemenu";
+            let nextLocation
+            P2SatsDeposit ? nextLocation = "/gamemenu" : nextLocation = "/practicemenu"
+            window.location.href = nextLocation
         }
         else if(menu==2){
             menu1CSS();
@@ -198,7 +212,7 @@ function pressContinue(){
 addEventListener("keydown", function(event) {
     switch (event.key) {
         case " ":
-            if(gameWinner=="Player1" && (menu==1 || menu==2)){
+            if((gameWinner=="Player1" || !P2SatsDeposit) && (menu==1 || menu==2)){
                 pressContinue();
             }
             if(menu==3){
@@ -206,7 +220,7 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "Enter":
-            if(gameWinner=="Player2" && (menu==1 || menu==2)){
+            if((gameWinner=="Player2" || !P2SatsDeposit) && (menu==1 || menu==2)){
                 pressContinue();
             }
             if(menu==3){
@@ -214,22 +228,22 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "s":
-            if(gameWinner=="Player1" && (menu==1 || menu==2) && tournamentMode==false){
+            if((gameWinner=="Player1" || !P2SatsDeposit) && (menu==1 || menu==2) && tournamentMode==false){
                 pressDown()
             }
             break;
         case "ArrowDown":
-            if(gameWinner=="Player2" && (menu==1 || menu==2) && tournamentMode==false){
+            if((gameWinner=="Player2" || !P2SatsDeposit) && (menu==1 || menu==2) && tournamentMode==false){
                 pressDown()
             }
             break;
         case "w":
-            if(gameWinner=="Player1" && (menu==1 || menu==2)){
+            if((gameWinner=="Player1" || !P2SatsDeposit) && (menu==1 || menu==2)){
                 pressUp()
             }
             break;
         case "ArrowUp":
-            if(gameWinner=="Player2" && (menu==1 || menu==2)){
+            if((gameWinner=="Player2" || !P2SatsDeposit) && (menu==1 || menu==2)){
                 pressUp()
             }
             break;
@@ -310,7 +324,10 @@ socket.on('prizeWithdrawn', () => {
 
 let resCreateWithdrawal = false;
 socket.on('resCreateWithdrawalPostGame', (data) => {
-    handleLNURLW(data)
+    if(data=="pass"){
+        window.location.href = "/";
+    }
+    else handleLNURLW(data)
 })
 
 function handleLNURLW(lnurlw){
