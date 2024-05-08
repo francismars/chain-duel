@@ -1,13 +1,13 @@
 import { listenToGamepads } from "./gamepads.js";
 
-let menu = 1;
+let menu = 2;
 addEventListener("keydown", function(event) {
     if (event.key === "Enter" || event.key === " ") {
       if(menu==1){
-        window.location.href = "/gamemenu";
+        window.location.href = "/practicemenu";
       }
       else if(menu==2){
-        window.location.href = "/practicemenu";
+        window.location.href = "/gamemenu";
       }
       else if(menu==3){
         window.location.href = "/tournprefs";
@@ -22,12 +22,12 @@ addEventListener("keydown", function(event) {
     if (event.key === "ArrowDown" || event.key === "s"){
       if(menu==1){
         menu = 2;
-        document.getElementById("startgame").style.animationDuration  = "0s";
-        document.getElementById("startpractice").style.animationDuration  = "2s";
+        document.getElementById("startpractice").style.animationDuration  = "0s";
+        document.getElementById("startgame").style.animationDuration  = "2s";
       }
       else if(menu==2){
         menu = 3;
-        document.getElementById("startpractice").style.animationDuration  = "0s";
+        document.getElementById("startgame").style.animationDuration  = "0s";
         document.getElementById("starttourn").style.animationDuration  = "2s";
       }
       else if(menu==3){
@@ -44,13 +44,13 @@ addEventListener("keydown", function(event) {
     if (event.key === "ArrowUp" || event.key === "w"){
       if(menu==2){
         menu = 1;
-        document.getElementById("startgame").style.animationDuration  = "2s";
-        document.getElementById("startpractice").style.animationDuration  = "0s";
+        document.getElementById("startpractice").style.animationDuration  = "2s";
+        document.getElementById("startgame").style.animationDuration  = "0s";
       }
       else if(menu==3){
         menu = 2;
         document.getElementById("starttourn").style.animationDuration  = "0s";
-        document.getElementById("startpractice").style.animationDuration  = "2s";
+        document.getElementById("startgame").style.animationDuration  = "2s";
       }
       else if(menu==4){
         menu = 3;
