@@ -118,10 +118,9 @@ let currentCaptureP2 = "2%";
 
 function buildWinnerNamesList(playersList, winnersList){
     let playersListCopy = [...playersList]
-    for(let i=0;i<winnersList.length;i++){
-        let winner = winnersList[i]
+    winnersList.map(winner => 
         winner=="Player1" ? playersListCopy.push(playersListCopy[(2*i)]) : playersListCopy.push(playersListCopy[(2*i)+1])
-    }
+    )
     return playersListCopy
 }
 
@@ -256,8 +255,6 @@ function loadDummyGame(){
     document.getElementById("loading").classList.add('hide');
     document.getElementById("gameContainer").classList.remove('hide');
     controllersActive = true
-
-    practiceMode = true
 }
 
 /*
@@ -1024,15 +1021,14 @@ let controllerTestP2Direction = ""
 addEventListener("keydown", function(event) {
     switch (event.key.toUpperCase()) {
         case " ":
-            if(gameEnded==true && winnerP=="Player1"){
+            if(gameEnded==true && (winnerP=="Player1" || practiceMode==true)){
                 redirectWindowAfterGame();
             }
         case "ENTER":
             if(controllersActive && gameStarted==false){
                 countdownStart = true;
-
             }
-            if(gameEnded==true && winnerP == "Player2"){
+            if(gameEnded==true && (winnerP == "Player2" || practiceMode==true)){
                 redirectWindowAfterGame();
             }
             break;
