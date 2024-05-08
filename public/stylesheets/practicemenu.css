@@ -148,6 +148,7 @@ body{
     padding: 1cqw;
     box-sizing: border-box;
     justify-content: space-around;
+    max-height: 12vw;
 }
 
 
@@ -155,8 +156,10 @@ body{
 
 #player1card{
     display: inline-flex;
-    width: 33%;
+    width: 53%;
     align-items: flex-end;
+    justify-content: center;
+    /* flex-direction: row; */
 }
 
 #qrcode1{
@@ -171,13 +174,32 @@ body{
   flex-direction: column;
   justify-content: flex-end;
   height: 100%;
+  /* padding-left: 1cqw; */
+  text-align: center;
+  width: 40%;
+  transition: all;
+}
+
+
+.expanded .player-card-info{
+  width: 0%;
 }
 
 
 #player1cardinfo{
-    padding-left: 1cqw;
+    /* padding-right: 3cqw; */
     /* padding-top: 3cqw; */
+    text-align: center;
+    width: 40%;
 }
+
+.expanded #player1cardinfo{
+    padding-right: 0cqw;
+    /* padding-top: 3cqw; */
+    text-align: center;
+    width: 0%;
+}
+
 #player1sats{
     color: white;
     font-size: 2cqw;
@@ -307,7 +329,7 @@ body{
 
 .qrcodeContainer {
     position: relative;
-    width: 10vw;
+    width: 20%;
     height: 10vw;
     -webkit-transition: all .15s ease-in;
     -moz-transition: all .15s ease-in;
@@ -331,10 +353,10 @@ body{
 
 
 .expanded{
-  background: #000;
+  /* background: #000; */
 }
 .expanded .qrcodeContainer {
-    width: 50vw;
+    width: 30vw;
     background: #000;
     filter: grayscale(0);
 }
@@ -353,7 +375,10 @@ body{
 
 #player1card.expanded .qrcodeContainer .qrcode {
     border-right: 0.5vw solid #fff;
+    border-left: 0.5vw solid #fff;
 }
+
+img#qrcode1 {}
 #player1card.expanded .qrcodeContainer .qrcodeDecoration {
     border-right: 0.5vw solid #0000;
 }
@@ -383,7 +408,7 @@ body{
   -webkit-transition: all .15s ease-in;
   -moz-transition: all .15s ease-in;
   -o-transition: all .15s ease-in;
-  transition: all .15s ease-in;
+  transition: all .15s cubic-bezier(0.42, 0, 0, 0.99);
 }
 
 .expanded #player1info, .expanded #player2info,
@@ -397,6 +422,7 @@ body{
   font-size: 0.8cqw;
   opacity: 0.5;
   margin-top: 0.7cqw;
+  /* transition: all; */
 }
 
 .expanded .deposit-message{
@@ -438,7 +464,7 @@ body{
 
 
 .playerSquare.white{
-  margin-right:0.5vw
+  /* margin-right:0.5vw; */
 }
 .playerSquare.black{
   margin-left:0.5vw
