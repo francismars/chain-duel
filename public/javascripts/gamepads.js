@@ -10,9 +10,12 @@ export function listenToGamepads() {
     }
     if(gamepad1!=null){
         gamepad1 = navigator.getGamepads()[0];
-        if(gamepad1.buttons[0].pressed==true || gamepad1.buttons[1].pressed==true || gamepad1.buttons[2].pressed==true || gamepad1.buttons[3].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':' '}));
+        if(gamepad1.buttons[0] && gamepad1.buttons[1] && gamepad1.buttons[2] && gamepad1.buttons[3]){
+            if(gamepad1.buttons[0].pressed==true || gamepad1.buttons[1].pressed==true || gamepad1.buttons[2].pressed==true || gamepad1.buttons[3].pressed==true){
+                window.dispatchEvent(new KeyboardEvent('keydown',  {'key':' '}));
+            }
         }
+
 
 
         // Code for GAMEPAD
@@ -107,8 +110,10 @@ export function listenToGamepads() {
     }
     else if(gamepad2!=null){
         gamepad2 = navigator.getGamepads()[1];
-        if(gamepad2.buttons[0].pressed==true || gamepad2.buttons[1].pressed==true || gamepad2.buttons[2].pressed==true || gamepad2.buttons[3].pressed==true){
-            window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
+        if(gamepad2.buttons[0] && gamepad2.buttons[1] && gamepad2.buttons[2] && gamepad2.buttons[3]){
+            if(gamepad2.buttons[0].pressed==true || gamepad2.buttons[1].pressed==true || gamepad2.buttons[2].pressed==true || gamepad2.buttons[3].pressed==true){
+                window.dispatchEvent(new KeyboardEvent('keydown',  {'key':'Enter'}));
+            }
         }
 
         // Code for GAMEPAD
@@ -189,11 +194,12 @@ export function listenToGamepads() {
         }
 
         // Expand QR Code on game menu Player 2
-        if(gamepad2.buttons[6].pressed==true || gamepad2.buttons[7].pressed==true){
-          window.dispatchEvent(new KeyboardEvent('keydown',  {'code':'ControlRight'}));
-        }else{
-          window.dispatchEvent(new KeyboardEvent('keyup',  {'code':'ControlRight'}));
+        if(gamepad2.buttons[6] && gamepad2.buttons[7]){
+            if(gamepad2.buttons[6].pressed==true || gamepad2.buttons[7].pressed==true){
+                window.dispatchEvent(new KeyboardEvent('keydown',  {'code':'ControlRight'}));
+              }else{
+                window.dispatchEvent(new KeyboardEvent('keyup',  {'code':'ControlRight'}));
+              }
         }
-
     }
 }
