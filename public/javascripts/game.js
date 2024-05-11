@@ -118,9 +118,10 @@ let currentCaptureP2 = "2%";
 
 function buildWinnerNamesList(playersList, winnersList){
     let playersListCopy = [...playersList]
-    winnersList.map(winner => 
+    for(let i=0;i<winnersList.length;i++){
+        let winner = winnersList[i]
         winner=="Player1" ? playersListCopy.push(playersListCopy[(2*i)]) : playersListCopy.push(playersListCopy[(2*i)+1])
-    )
+    }
     return playersListCopy
 }
 
