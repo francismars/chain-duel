@@ -130,6 +130,7 @@ socket.on("resPostGameInfoRequest", (postgameInfos) =>{
     document.getElementById("postGame").classList.remove('empty');
     document.getElementById("loading").classList.add('hide');
     controllersActive = true;
+    console.log(P2SatsDeposit)
 })
 
 //let withdrawalURL = sessionStorage.getItem('LNURL');
@@ -192,7 +193,7 @@ function pressContinue(){
         else if(menu==1 && activeButtonMenu1==1 && qrRevealed==0){
             socket.emit("doubleornothing")
             let nextLocation
-            P2SatsDeposit ? nextLocation = "/gamemenu" : nextLocation = "/practicemenu"
+            P2SatsDeposit!=null ? nextLocation = "/gamemenu" : nextLocation = "/practicemenu"
             window.location.href = nextLocation
         }
         else if(menu==2){
@@ -212,7 +213,7 @@ function pressContinue(){
 addEventListener("keydown", function(event) {
     switch (event.key) {
         case " ":
-            if((gameWinner=="Player1" || !P2SatsDeposit) && (menu==1 || menu==2)){
+            if((gameWinner=="Player1" || P2SatsDeposit==null) && (menu==1 || menu==2)){
                 pressContinue();
             }
             if(menu==3){
@@ -220,7 +221,7 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "Enter":
-            if((gameWinner=="Player2" || !P2SatsDeposit) && (menu==1 || menu==2)){
+            if((gameWinner=="Player2" || P2SatsDeposit==null) && (menu==1 || menu==2)){
                 pressContinue();
             }
             if(menu==3){
@@ -228,22 +229,22 @@ addEventListener("keydown", function(event) {
             }
             break;
         case "s":
-            if((gameWinner=="Player1" || !P2SatsDeposit) && (menu==1 || menu==2) && tournamentMode==false){
+            if((gameWinner=="Player1" || P2SatsDeposit==null) && (menu==1 || menu==2) && tournamentMode==false){
                 pressDown()
             }
             break;
         case "ArrowDown":
-            if((gameWinner=="Player2" || !P2SatsDeposit) && (menu==1 || menu==2) && tournamentMode==false){
+            if((gameWinner=="Player2" || P2SatsDeposit==null) && (menu==1 || menu==2) && tournamentMode==false){
                 pressDown()
             }
             break;
         case "w":
-            if((gameWinner=="Player1" || !P2SatsDeposit) && (menu==1 || menu==2)){
+            if((gameWinner=="Player1" || P2SatsDeposit==null) && (menu==1 || menu==2)){
                 pressUp()
             }
             break;
         case "ArrowUp":
-            if((gameWinner=="Player2" || !P2SatsDeposit) && (menu==1 || menu==2)){
+            if((gameWinner=="Player2" || P2SatsDeposit==null) && (menu==1 || menu==2)){
                 pressUp()
             }
             break;
