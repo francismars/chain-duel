@@ -43,6 +43,11 @@ addEventListener("keydown", function(event) {
                 document.getElementById("cancelGameConfirm").style.animationDuration  = "0s";
                 selected="cancelGameAbortButton";
             }
+            else if(selected=="nostrGameConfirm"){
+              selected="nostrGameAbout";
+              document.getElementById("nostrGameAbort").style.animationDuration  = "2s";
+              document.getElementById("nostrGameConfirm").style.animationDuration  = "0s";
+            }
             break;
         case "d":
         case "ArrowRight":
@@ -57,6 +62,11 @@ addEventListener("keydown", function(event) {
                 document.getElementById("cancelGameAbort").style.animationDuration  = "0s";
                 document.getElementById("cancelGameConfirm").style.animationDuration  = "2s";
                 selected="cancelGameConfirmButton";
+            }
+            else if (selected=="nostrGameAbort"){
+                selected="nostrGameConfirm";
+                document.getElementById("nostrGameAbort").style.animationDuration  = "0s";
+                document.getElementById("nostrGameConfirm").style.animationDuration  = "2s";
             }
             break;
         case " ":
@@ -92,14 +102,28 @@ addEventListener("keydown", function(event) {
                         window.location.href = "/";
                     }
                 }
+                else if (selected=="nostrGameAbort"){
+                    document.getElementById("nostrIntro").classList.add('hide');
+                }
+                else if (selected=="nostrGameConfirm"){
+                    document.getElementById("nostrIntro").classList.add('hide');
+                    nostrInit()
+                }
+          break;
+        case "x":
+          document.getElementById("nostrIntro").classList.remove('hide');
+          document.getElementById("nostrGameAbort").style.animationDuration  = "2s";
+          selected="nostrGameAbort";
           break;
     }
     switch (event.code) {
         case "ControlLeft":
             if(controllersActive) document.getElementById("player1card").classList.add("expanded");
+            if(controllersActive) document.getElementById("qrcodeContainerNostr").classList.add("expanded");
             break;
         case "ControlRight":
             if(controllersActive) document.getElementById("player2card").classList.add("expanded");
+            if(controllersActive) document.getElementById("qrcodeContainerNostr").classList.add("expanded");
             break;
     }
 });
@@ -108,9 +132,11 @@ addEventListener("keyup", function(event) {
     switch (event.code) {
       case "ControlLeft":
         if(controllersActive) document.getElementById("player1card").classList.remove("expanded");
+        if(controllersActive) document.getElementById("qrcodeContainerNostr").classList.remove("expanded");
         break;
       case "ControlRight":
         if(controllersActive) document.getElementById("player2card").classList.remove("expanded");
+        if(controllersActive) document.getElementById("qrcodeContainerNostr").classList.remove("expanded");
         break;
     }
 });
@@ -202,7 +228,7 @@ socket.on("updatePayments", body => {
             if(playerData.name!=null && playerData.name!=""){
                 console.log("Player2 Name: " + playerData.name)
                 p2Name=(playerData.name).trim()
-            } 
+            }
             if(playersSats[1]!=playerData.value){
                 playersSats[1] = playerData.value;
                 document.getElementById("qrcode2Decoration").classList.remove('hide');
@@ -270,4 +296,24 @@ fetch('./files/highscores.json')
 
 function updateLastHighscoreValue(lastHighscore){
     document.getElementById("leaderboardSats").innerText = (lastHighscore+1).toLocaleString();
+}
+
+
+
+
+
+function nostrInit(){
+
+  document.getElementById("lnurlPanel").classList.add('hide');
+  document.getElementById("nostrPanel").classList.remove('hide');
+
+  let eventURL = "https://next.nostrudel.ninja/#/n/nevent1qqsvgaxl0ua8zrfeneu2t4d6gjm8627ezs2vhks6z47rzzvzjz6h8aspzamhxue69uhhyetvv9ujuurjd9kkzmpwdejhgtcpz9mhxue69uhkummnw3ezuamfdejj7qg4waehxw309aex2mrp0yhxgctdw4eju6t09uq36amnwvaz7tmwdaehgu3wd46hg6tw09mkzmrvv46zucm0d5hsygpd6aam8w0t3wufp5w2ndhrhzne6kpa9v5sd4hp56cqy6w72wtrcvtmw92x";
+  let qrcodeContainer = document.getElementById("qrcodeNostr");
+  qrcodeContainer.innerHTML = "";
+  new QRious({
+      element: qrcodeContainer,
+      size: 800,
+      value: eventURL
+    });
+  document.getElementById("qrcodeLinkNostr").href = eventURL;
 }

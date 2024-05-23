@@ -106,7 +106,10 @@
             <button class="button disabled" id="startgame" type="button">READY TO START</button>
         </div>
     </div>
-    <div id="bottomInfo">
+
+
+    <!-- LNURL Panel -->
+    <div class="bottomInfo" id="lnurlPanel">
         <div id="player1card">
             <div id="qrcodeContainer1" class="qrcodeContainer">
               <a id="qrcode1Link" href="">
@@ -120,7 +123,7 @@
                 </div>
                 <div class="condensed">
                   <div class="inline playerSquare white"></div>
-                  <div id="player1info" class="inline">Player 1</div>
+                  <div id="player1info" class="player1info inline">Player 1</div>
                 </div>
                 <div class="deposit-message">
                   Deposit between <b><span id="mindepP1">10,000</span></b> and <b>10,000,000</b> sats
@@ -133,7 +136,7 @@
                 </div>
             </div>
         </div>
-        <div id="prizeinfocard">
+        <div class="prizeinfocard">
             <div id="prizevaluesats" class="condensed">0</div>
             <div id="prizeinfosats">Total Prize (sats)</div>
             <div id="splits">
@@ -148,7 +151,7 @@
                 </div>
 
                 <div class="condensed">
-                  <div id="player2info" class="inline">Player 2</div>
+                  <div id="player2info" class="player2info inline">Player 2</div>
                   <div class="inline playerSquare black"></div>
                 </div>
                 <div class="deposit-message">
@@ -169,6 +172,63 @@
             </div>
         </div>
     </div>
+
+
+    <!-- NOSTR Panel -->
+    <div class="bottomInfo hide" id="nostrPanel">
+        <div id="player1card">
+            <div id="player1cardinfo" class="player-card-info">
+                <div class="player-sats" id="player1satsContainer">
+                  <span id="player1sats">0</span> <span class="grey sats-label">sats</span>
+                </div>
+                <div class="condensed">
+                  <div class="inline playerSquare white"></div>
+                  <img class="inline playerImg" id="player1Img" src="https://raw.githubusercontent.com/francismars/chain-duel/main/public/images/loading.gif" />
+                  <div id="nostrPlayer1info" class="player1info inline">Player 1</div>
+                </div>
+                <div class="deposit-message">
+                  Zap min 3000 sats
+                  <br />
+                  First 2 players to pay get the slot
+                  <br />
+                  Extra or below the min is donation
+                </div>
+            </div>
+        </div>
+        <div class="prizeinfocard">
+          <div id="qrcodeContainerNostr" class="qrcodeContainer">
+            <a id="qrcodeLinkNostr" href="" target="_blank">
+              <image id="qrcodeNostr" class="qrcode"></image>
+              <image id="qrcodeNostrDecoration" class="qrcodeDecoration hide" src="/images/qr_lightning.gif">
+            </a>
+          </div>
+        </div>
+        <div id="player2card">
+            <div id="player2cardinfo" class="player-card-info">
+                <div class="player-sats" id="player2satsContainer">
+                  <span class="grey sats-label">sats</span> <span id="player2sats">0</span>
+                </div>
+
+                <div class="condensed">
+                  <div id="nostrPlayer2info" class="player2info inline">Player 2</div>
+                  <img class="inline playerImg" id="player2Img" src="https://raw.githubusercontent.com/francismars/chain-duel/main/public/images/loading.gif" />
+                  <div class="inline playerSquare black"></div>
+                </div>
+                <div class="deposit-message">
+                  Zap min 3000 sats
+                  <br />
+                  First 2 players to pay get the slot
+                  <br />
+                  Extra or below the min is donation
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
   </div>
 
   <audio id="audio" autoplay loop>
@@ -210,6 +270,52 @@
       <button class="button" id="finishTournament" type="button">Finish Tournament</button>
     </div>
   </div>
+
+
+
+  <div class="overlay hide" id="nostrIntro">
+    <div class="warning">
+
+      <div class="warning-inner">
+        <h2 class="warning-title condensed">Public Game</h2>
+
+        <div class="warning-text">
+          Do you want to enter the
+          <br>
+          game via NOSTR zaps?
+        </div>
+
+        <div class="player-agreement-container">
+          <div class="player-agreement" id="player1Agreement">
+            Player 1
+          </div>
+          <div class="player-agreement" id="player2Agreement">
+            Player 2
+          </div>
+        </div>
+
+        <div class="warning-text" id="prePublishing">
+          GM!
+          <br>
+          Zap the event a minimum of <span id="minimum">5000</span>
+          <br>
+          to enter the game.
+        </div>
+
+
+      </div>
+
+      <div class="warning-actions">
+        <button class="button half" id="nostrGameAbort" type="button">Cancel</button>
+        <button class="button half" id="nostrGameConfirm" type="button">Create Event</button>
+      </div>
+
+    </div>
+  </div>
+
+
+
+
 
 </body>
 <script  type="module" src="javascripts/gameMenu.js"></script>
