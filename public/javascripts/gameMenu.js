@@ -44,7 +44,7 @@ addEventListener("keydown", function(event) {
                 selected="cancelGameAbortButton";
             }
             else if(selected=="nostrGameConfirm"){
-              selected="nostrGameAbout";
+              selected="nostrGameAbort";
               document.getElementById("nostrGameAbort").style.animationDuration  = "2s";
               document.getElementById("nostrGameConfirm").style.animationDuration  = "0s";
             }
@@ -104,6 +104,7 @@ addEventListener("keydown", function(event) {
                 }
                 else if (selected=="nostrGameAbort"){
                     document.getElementById("nostrIntro").classList.add('hide');
+                    selected="MainMenuButton";
                 }
                 else if (selected=="nostrGameConfirm"){
                     document.getElementById("nostrIntro").classList.add('hide');
@@ -163,36 +164,50 @@ function redirectToGame(){
 socket.emit("getGameMenuInfos");
 
 socket.on("resGetGameMenuInfos", body => {
-    //console.log(body)
+    console.log(body)
     if(body.lnurlw){
         window.location.href = "/postgame";
     }
     else{
         payLinks = body
-        for(let payLink of body){
-            if(payLink.description=="Player1"){
-                document.getElementById("mindepP1").innerText = parseInt(payLink.min).toLocaleString()
-                let qrcodeContainer = document.getElementById("qrcode1");
-                qrcodeContainer.innerHTML = "";
-                new QRious({
-                    element: qrcodeContainer,
-                    size: 800,
-                    value: payLink.lnurlp
-                  });
-                document.getElementById("qrcode1Link").href = "lightning:"+payLink.lnurlp
-
-            };
-            if(payLink.description=="Player2"){
-                document.getElementById("mindepP2").innerText = parseInt(payLink.min).toLocaleString()
-                let qrcodeContainer = document.getElementById("qrcode2");
-                qrcodeContainer.innerHTML = "";
-                new QRious({
-                    element: qrcodeContainer,
-                    size: 800,
-                    value: payLink.lnurlp
-                  });
-                document.getElementById("qrcode2Link").href = "lightning:"+payLink.lnurlp
+        if(body.length>=2){
+            for(let payLink of body){
+                if(payLink.description=="Player1"){
+                    document.getElementById("mindepP1").innerText = parseInt(payLink.min).toLocaleString()
+                    let qrcodeContainer = document.getElementById("qrcode1");
+                    qrcodeContainer.innerHTML = "";
+                    new QRious({
+                        element: qrcodeContainer,
+                        size: 800,
+                        value: payLink.lnurlp
+                      });
+                    document.getElementById("qrcode1Link").href = "lightning:"+payLink.lnurlp
+    
+                };
+                if(payLink.description=="Player2"){
+                    document.getElementById("mindepP2").innerText = parseInt(payLink.min).toLocaleString()
+                    let qrcodeContainer = document.getElementById("qrcode2");
+                    qrcodeContainer.innerHTML = "";
+                    new QRious({
+                        element: qrcodeContainer,
+                        size: 800,
+                        value: payLink.lnurlp
+                      });
+                    document.getElementById("qrcode2Link").href = "lightning:"+payLink.lnurlp
+                }
             }
+        }
+        else if(body.length<2){
+            let nostrinfo = body[0] 
+            //document.getElementById("mindepP2").innerText = parseInt(nostrinfo.min).toLocaleString()
+            let qrcodeContainer = document.getElementById("qrcodeNostr");
+            qrcodeContainer.innerHTML = "";
+            new QRious({
+                element: qrcodeContainer,
+                size: 800,
+                value: "nostr:"+nostrinfo.note1
+              });
+            document.getElementById("qrcodeNostr").href = "nostr:"+nostrinfo.note1          
         }
         document.getElementById("loading").classList.add('hide');
         controllersActive = true;
@@ -303,17 +318,18 @@ function updateLastHighscoreValue(lastHighscore){
 
 
 function nostrInit(){
+    socket.emit("getGameMenuInfosNostr");
 
-  document.getElementById("lnurlPanel").classList.add('hide');
-  document.getElementById("nostrPanel").classList.remove('hide');
+    document.getElementById("lnurlPanel").classList.add('hide');
+    document.getElementById("nostrPanel").classList.remove('hide');
 
-  let eventURL = "https://next.nostrudel.ninja/#/n/nevent1qqsvgaxl0ua8zrfeneu2t4d6gjm8627ezs2vhks6z47rzzvzjz6h8aspzamhxue69uhhyetvv9ujuurjd9kkzmpwdejhgtcpz9mhxue69uhkummnw3ezuamfdejj7qg4waehxw309aex2mrp0yhxgctdw4eju6t09uq36amnwvaz7tmwdaehgu3wd46hg6tw09mkzmrvv46zucm0d5hsygpd6aam8w0t3wufp5w2ndhrhzne6kpa9v5sd4hp56cqy6w72wtrcvtmw92x";
-  let qrcodeContainer = document.getElementById("qrcodeNostr");
-  qrcodeContainer.innerHTML = "";
-  new QRious({
-      element: qrcodeContainer,
-      size: 800,
-      value: eventURL
+    let eventURL = "nostr:nevent1qqsvgaxl0ua8zrfeneu2t4d6gjm8627ezs2vhks6z47rzzvzjz6h8aspzamhxue69uhhyetvv9ujuurjd9kkzmpwdejhgtcpz9mhxue69uhkummnw3ezuamfdejj7qg4waehxw309aex2mrp0yhxgctdw4eju6t09uq36amnwvaz7tmwdaehgu3wd46hg6tw09mkzmrvv46zucm0d5hsygpd6aam8w0t3wufp5w2ndhrhzne6kpa9v5sd4hp56cqy6w72wtrcvtmw92x";
+    let qrcodeContainer = document.getElementById("qrcodeNostr");
+    qrcodeContainer.innerHTML = "";
+    new QRious({
+        element: qrcodeContainer,
+        size: 800,
+        value: eventURL
     });
-  document.getElementById("qrcodeLinkNostr").href = eventURL;
+    document.getElementById("qrcodeLinkNostr").href = eventURL;
 }
