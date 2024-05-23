@@ -11,6 +11,9 @@ let payLinks = [];
 let intervalStart = setInterval(listenToGamepads, 1000/10);
 let sessionID = sessionStorage.getItem("sessionID");
 let controllersActive = false;
+let gameType
+let player1image
+let player2image
 
 await fetch('/loadconfig', {
     method: 'GET'
@@ -108,6 +111,7 @@ addEventListener("keydown", function(event) {
                 }
                 else if (selected=="nostrGameConfirm"){
                     document.getElementById("nostrIntro").classList.add('hide');
+                    socket.emit("getGameMenuInfosNostr");
                     nostrInit()
                 }
           break;
@@ -165,6 +169,9 @@ socket.emit("getGameMenuInfos");
 
 socket.on("resGetGameMenuInfos", body => {
     console.log(body)
+    if(body[0] && body[0].mode){
+        gameType = body[0].mode
+    }
     if(body.lnurlw){
         window.location.href = "/postgame";
     }
@@ -197,7 +204,7 @@ socket.on("resGetGameMenuInfos", body => {
                 }
             }
         }
-        else if(body.length<2){
+        else if(gameType="P2P Nostr"){
             let nostrinfo = body[0] 
             //document.getElementById("mindepP2").innerText = parseInt(nostrinfo.min).toLocaleString()
             let qrcodeContainer = document.getElementById("qrcodeNostr");
@@ -216,6 +223,12 @@ socket.on("resGetGameMenuInfos", body => {
 
 socket.on("updatePayments", body => {
     console.log(body)
+    if(body.gamemode){
+        gameType = body.gamemode
+        if(gameType=="P2P Nostr"){
+            nostrInit()
+        }
+    }
     let playersData = body
     for(let key in playersData){
         let playerData = playersData[key]
@@ -237,6 +250,9 @@ socket.on("updatePayments", body => {
                     document.getElementById("player1info").classList.remove('highlight');
                 }, 1200);
             }
+            if(playerData.image){
+                player1image = playerData.image
+            }
         }
         if(key == "Player2"){
             console.log(`P2 has ${(playerData.value)} sats`);
@@ -255,6 +271,9 @@ socket.on("updatePayments", body => {
                     document.getElementById("player2info").classList.remove('highlight');
                 }, 1200);
             }
+            if(playerData.image){
+                player2image = playerData.image
+            }
         }
         if(key == "winners"){
             console.log(`This is DoN number ${playerData.length}. Previous winner was ${(playerData.slice(-1))}`);
@@ -263,20 +282,35 @@ socket.on("updatePayments", body => {
                 document.getElementById("gameMenuTitle").textContent = "P2P*"+donMultiple
               }
         }
-        changeTextAfterPayment()
+        changeTextAfterPayment(gameType)
     }
 });
 
-function changeTextAfterPayment(){
-    document.getElementById("player2sats").innerText = playersSats[1].toLocaleString()
-    document.getElementById("player1sats").innerText = playersSats[0].toLocaleString()
+function changeTextAfterPayment(type){
+    let p1SatsId, p2SatsId, p1InfoId, p2InfoId
+    if(type=="P2P"){
+        p1SatsId = "player1sats"
+        p2SatsId = "player2sats"
+        p1InfoId = "player1info"
+        p2InfoId = "player2info"
+    }
+    else if(type=="P2P Nostr"){
+        p1SatsId = "nostrPlayer1sats"
+        p2SatsId = "nostrPlayer2sats"
+        p1InfoId = "nostrPlayer1info"
+        p2InfoId = "nostrPlayer2info"
+        if(player1image!=null) document.getElementById("player1Img").src = player1image
+        if(player2image!=null) document.getElementById("player2Img").src = player2image
+    }
+    document.getElementById(p1SatsId).innerText = playersSats[0].toLocaleString()
+    document.getElementById(p2SatsId).innerText = playersSats[1].toLocaleString()
     let totalPrize = playersSats[0] + playersSats[1]
     document.getElementById("prizevaluesats").innerText = totalPrize.toLocaleString()
     document.getElementById("rules1").innerText = "host 2% ("+Math.floor(totalPrize*0.02).toLocaleString()+" sats)"
     document.getElementById("rules2").innerText = "developer 2% ("+Math.floor(totalPrize*0.02).toLocaleString()+" sats)"
     document.getElementById("rules3").innerText = "designer 1% ("+Math.floor(totalPrize*0.01).toLocaleString()+" sats)"
-    document.getElementById("player1info").innerText = p1Name
-    document.getElementById("player2info").innerText = p2Name
+    document.getElementById(p1InfoId).innerText = p1Name
+    document.getElementById(p2InfoId).innerText = p2Name
     if(playersSats[0]!=0 || playersSats[1]!=0){
         document.getElementById("mainmenubutton").classList.add("disabled");
         document.getElementById("mainmenubutton").style.animationDuration  = "0s";
@@ -318,7 +352,7 @@ function updateLastHighscoreValue(lastHighscore){
 
 
 function nostrInit(){
-    socket.emit("getGameMenuInfosNostr");
+    
 
     document.getElementById("lnurlPanel").classList.add('hide');
     document.getElementById("nostrPanel").classList.remove('hide');
