@@ -368,12 +368,13 @@ function nostrInit(){
 }
 
 function initiatenostrqr(){
+    let value = "nevent1qqsv9mvv28pr32fufwzlpsrhlaqjpdx7uy5vgl6eyv00n7rr5j3x7gspz4mhxue69uhhyetvv9ujuerpd46hxtnfduhszythwden5te0dehhxarj9emkjmn99uq3wamnwvaz7tmjv4kxz7fwwpexjmtpdshxuet59uq36amnwvaz7tmwdaehgu3wd46hg6tw09mkzmrvv46zucm0d5hsygpd6aam8w0t3wufp5w2ndhrhzne6kpa9chainduelchainduelchainduel"
     let qrcodeContainer = document.getElementById("qrcodeNostr");
     qrcodeContainer.innerHTML = "";
     new QRious({
         element: qrcodeContainer,
         size: 800,
-        value: "#"
+        value: value
     });
-    document.getElementById("qrcodeLinkNostr").href = "#"
+    document.getElementById("qrcodeLinkNostr").href = "nostr:"+value
 }
