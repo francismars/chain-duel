@@ -179,8 +179,9 @@ socket.on("resGetGameMenuInfos", body => {
     }
     else{
         payLinks = body
-        if(gameType="P2P"){
+        if(gameType=="P2P"){
             for(let payLink of body){
+                document.getElementById("nostrmin").innerText = parseInt(payLink.min).toLocaleString()
                 if(payLink.description=="Player1"){
                     document.getElementById("mindepP1").innerText = parseInt(payLink.min).toLocaleString()
                     let qrcodeContainer = document.getElementById("qrcode1");
@@ -206,7 +207,7 @@ socket.on("resGetGameMenuInfos", body => {
                 }
             }
         }
-        else if(gameType="P2P Nostr"){
+        else if(gameType=="P2P Nostr"){
             let nostrinfo = body[0]
             document.getElementById("nostrmindepP1").innerText = parseInt(parseInt(nostrinfo.min).toLocaleString()).toLocaleString();
             document.getElementById("nostrmindepP2").innerText = parseInt(parseInt(nostrinfo.min).toLocaleString()).toLocaleString();
@@ -358,7 +359,7 @@ function updateLastHighscoreValue(lastHighscore){
 function nostrInit(){
     document.getElementById("lnurlPanel").classList.add('hide');
     document.getElementById("nostrPanel").classList.remove('hide');
-    let eventURL = "nostr:nevent1qvzqqqqqqypzqtwh0wemn6uthzgdrj5mdcac57w4s0ft9yrddcdxkqpxnhjnjc7rqqsvh6hv0xmtm96gyl0gafrku9v4v42yk5qrq2k8s6av8fvzglxdzacyxnngl";
+    let eventURL = "#";
     let qrcodeContainer = document.getElementById("qrcodeNostr");
     qrcodeContainer.innerHTML = "";
     new QRious({
