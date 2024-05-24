@@ -153,6 +153,15 @@ socket.on("resGetDuelInfos", (duelInfos) => {
         console.log("P2P Mode")
         P1Name=duelInfos["Player1"].name;
         P2Name=duelInfos["Player2"].name;
+        if(duelInfos["Player1"].image!=null) {
+            document.getElementById("player1Img").src = duelInfos["Player1"].image
+            document.getElementById("player1Img").classList.remove('hide');
+
+        }
+        if(duelInfos["Player2"].image!=null){
+            document.getElementById("player2Img").src = duelInfos["Player2"].image
+            document.getElementById("player2Img").classList.remove('hide');
+        } 
         SatsP1=parseInt(duelInfos["Player1"].value);
         SatsP2=parseInt(duelInfos["Player2"].value);
         if(duelInfos["winners"]){
