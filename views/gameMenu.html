@@ -305,20 +305,17 @@
         </div>
 
         <div class="player-agreement-container">
-          <div class="player-agreement" id="player1Agreement">
-            Player 1
+          <div class="player-agreement disabled" id="player1Agreement">
+            ⃝ Player 1
           </div>
-          <div class="player-agreement" id="player2Agreement">
-            Player 2
+          <div class="player-agreement disabled" id="player2Agreement">
+            ⃝ Player 2
           </div>
         </div>
 
         <div class="warning-text" id="prePublishing">
-          GM!
-          <br>
-          Zap the event a minimum of <span id="minimum">5000</span>
-          <br>
-          to enter the game.
+          <div class="condensed">GM!</div>
+          Zap the event a minimum of <span id="nostrmin">0000</span> to enter the game.
         </div>
 
 
@@ -326,7 +323,7 @@
 
       <div class="warning-actions">
         <button class="button half" id="nostrGameAbort" type="button">Cancel</button>
-        <button class="button half" id="nostrGameConfirm" type="button">Create Event</button>
+        <button class="button half disabled" id="nostrGameConfirm" type="button">Create Event</button>
       </div>
 
     </div>

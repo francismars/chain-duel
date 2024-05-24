@@ -450,6 +450,23 @@ body{
 
 /* NOSTR */
 
+
+
+.player-agreement-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-agreement{
+    padding: 1vw;
+}
+
+#prePublishing{
+  padding: 1vw;
+}
+
+
 #nostrPanel {
   position: relative;
 }
@@ -496,7 +513,6 @@ body{
 
 #qrcodeContainerNostr{
   position: absolute;
-  bottom: 0.5vw;
   box-sizing: border-box;
   border: solid 0vw #000;
 }
