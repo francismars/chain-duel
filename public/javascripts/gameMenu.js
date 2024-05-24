@@ -211,8 +211,8 @@ socket.on("resGetGameMenuInfos", body => {
         }
         else if(gameType=="P2P Nostr"){
             let nostrinfo = body[0]
-            document.getElementById("nostrmindepP1").innerText = parseInt(parseInt(nostrinfo.min).toLocaleString()).toLocaleString();
-            document.getElementById("nostrmindepP2").innerText = parseInt(parseInt(nostrinfo.min).toLocaleString()).toLocaleString();
+            document.getElementById("nostrmindepP1").innerText = parseInt(nostrinfo.min).toLocaleString();
+            document.getElementById("nostrmindepP2").innerText = parseInt(nostrinfo.min).toLocaleString();
             let qrcodeContainer = document.getElementById("qrcodeNostr");
             qrcodeContainer.innerHTML = "";
             new QRious({
