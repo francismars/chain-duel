@@ -14,6 +14,7 @@ let controllersActive = false;
 let gameType
 let player1image
 let player2image
+let gameMenu = "P2P"
 
 await fetch('/loadconfig', {
     method: 'GET'
@@ -229,8 +230,9 @@ socket.on("updatePayments", body => {
     console.log(body)
     if(body.gamemode){
         gameType = body.gamemode
-        if(gameType=="P2P Nostr"){
+        if(gameMenu = "P2P" && gameType=="P2P Nostr"){
             nostrInit()
+            socket.emit("getGameMenuInfosNostr");
         }
     }
     let playersData = body
@@ -360,12 +362,16 @@ function nostrInit(){
     document.getElementById("lnurlPanel").classList.add('hide');
     document.getElementById("nostrPanel").classList.remove('hide');
     let eventURL = "#";
-    let qrcodeContainer = document.getElementById("qrcodeNostr");
-    qrcodeContainer.innerHTML = "";
-    new QRious({
-        element: qrcodeContainer,
-        size: 800,
-        value: eventURL
-    });
+
     document.getElementById("qrcodeLinkNostr").href = eventURL;
+    gameMenu = "P2P Nostr"
 }
+
+
+let qrcodeContainer = document.getElementById("qrcodeNostr");
+qrcodeContainer.innerHTML = "";
+new QRious({
+    element: qrcodeContainer,
+    size: 800,
+    value: eventURL
+});
