@@ -189,7 +189,7 @@ socket.on("resGetGameMenuInfos", body => {
                         value: payLink.lnurlp
                       });
                     document.getElementById("qrcode1Link").href = "lightning:"+payLink.lnurlp
-    
+
                 };
                 if(payLink.description=="Player2"){
                     document.getElementById("mindepP2").innerText = parseInt(payLink.min).toLocaleString()
@@ -205,7 +205,7 @@ socket.on("resGetGameMenuInfos", body => {
             }
         }
         else if(gameType="P2P Nostr"){
-            let nostrinfo = body[0] 
+            let nostrinfo = body[0]
             //document.getElementById("mindepP2").innerText = parseInt(nostrinfo.min).toLocaleString()
             let qrcodeContainer = document.getElementById("qrcodeNostr");
             qrcodeContainer.innerHTML = "";
@@ -214,7 +214,7 @@ socket.on("resGetGameMenuInfos", body => {
                 size: 800,
                 value: "nostr:"+nostrinfo.note1
               });
-            document.getElementById("qrcodeNostr").href = "nostr:"+nostrinfo.note1          
+            document.getElementById("qrcodeNostr").href = "nostr:"+nostrinfo.note1
         }
         document.getElementById("loading").classList.add('hide');
         controllersActive = true;
@@ -244,10 +244,12 @@ socket.on("updatePayments", body => {
                 document.getElementById("qrcode1Decoration").classList.remove('hide');
                 document.getElementById("player1satsContainer").classList.add('highlight');
                 document.getElementById("player1info").classList.add('highlight');
+                document.getElementById("qrcodeNostrDecoration").classList.remove('hide');
                 setTimeout(function() {
                     document.getElementById("qrcode1Decoration").classList.add('hide');
                     document.getElementById("player1satsContainer").classList.remove('highlight');
                     document.getElementById("player1info").classList.remove('highlight');
+                    document.getElementById("qrcodeNostrDecoration").classList.add('hide');
                 }, 1200);
             }
             if(playerData.image){
@@ -265,10 +267,12 @@ socket.on("updatePayments", body => {
                 document.getElementById("qrcode2Decoration").classList.remove('hide');
                 document.getElementById("player2satsContainer").classList.add('highlight');
                 document.getElementById("player2info").classList.add('highlight');
+                document.getElementById("qrcodeNostrDecoration").classList.remove('hide');
                 setTimeout(function() {
                     document.getElementById("qrcode2Decoration").classList.add('hide');
                     document.getElementById("player2satsContainer").classList.remove('highlight');
                     document.getElementById("player2info").classList.remove('highlight');
+                    document.getElementById("qrcodeNostrDecoration").classList.add('hide');
                 }, 1200);
             }
             if(playerData.image){
@@ -352,12 +356,15 @@ function updateLastHighscoreValue(lastHighscore){
 
 
 function nostrInit(){
-    
+
+
 
     document.getElementById("lnurlPanel").classList.add('hide');
     document.getElementById("nostrPanel").classList.remove('hide');
+    document.getElementById("nostrmindepP1").innerText = parseInt(5000).toLocaleString();
+    document.getElementById("nostrmindepP2").innerText = parseInt(5000).toLocaleString();
 
-    let eventURL = "nostr:nevent1qqsvgaxl0ua8zrfeneu2t4d6gjm8627ezs2vhks6z47rzzvzjz6h8aspzamhxue69uhhyetvv9ujuurjd9kkzmpwdejhgtcpz9mhxue69uhkummnw3ezuamfdejj7qg4waehxw309aex2mrp0yhxgctdw4eju6t09uq36amnwvaz7tmwdaehgu3wd46hg6tw09mkzmrvv46zucm0d5hsygpd6aam8w0t3wufp5w2ndhrhzne6kpa9v5sd4hp56cqy6w72wtrcvtmw92x";
+    let eventURL = "nostr:nevent1qvzqqqqqqypzqtwh0wemn6uthzgdrj5mdcac57w4s0ft9yrddcdxkqpxnhjnjc7rqqsvh6hv0xmtm96gyl0gafrku9v4v42yk5qrq2k8s6av8fvzglxdzacyxnngl";
     let qrcodeContainer = document.getElementById("qrcodeNostr");
     qrcodeContainer.innerHTML = "";
     new QRious({
