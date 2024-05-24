@@ -113,6 +113,7 @@ addEventListener("keydown", function(event) {
                     document.getElementById("nostrIntro").classList.add('hide');
                     socket.emit("getGameMenuInfosNostr");
                     nostrInit()
+                    selected="MainMenuButton"
                 }
           break;
         case "x":
@@ -171,13 +172,14 @@ socket.on("resGetGameMenuInfos", body => {
     console.log(body)
     if(body[0] && body[0].mode){
         gameType = body[0].mode
+        console.log(gameType)
     }
     if(body.lnurlw){
         window.location.href = "/postgame";
     }
     else{
         payLinks = body
-        if(body.length>=2){
+        if(gameType="P2P"){
             for(let payLink of body){
                 if(payLink.description=="Player1"){
                     document.getElementById("mindepP1").innerText = parseInt(payLink.min).toLocaleString()
@@ -206,7 +208,8 @@ socket.on("resGetGameMenuInfos", body => {
         }
         else if(gameType="P2P Nostr"){
             let nostrinfo = body[0]
-            //document.getElementById("mindepP2").innerText = parseInt(nostrinfo.min).toLocaleString()
+            document.getElementById("nostrmindepP1").innerText = parseInt(parseInt(nostrinfo.min).toLocaleString()).toLocaleString();
+            document.getElementById("nostrmindepP2").innerText = parseInt(parseInt(nostrinfo.min).toLocaleString()).toLocaleString();
             let qrcodeContainer = document.getElementById("qrcodeNostr");
             qrcodeContainer.innerHTML = "";
             new QRious({
@@ -352,18 +355,9 @@ function updateLastHighscoreValue(lastHighscore){
 }
 
 
-
-
-
 function nostrInit(){
-
-
-
     document.getElementById("lnurlPanel").classList.add('hide');
     document.getElementById("nostrPanel").classList.remove('hide');
-    document.getElementById("nostrmindepP1").innerText = parseInt(5000).toLocaleString();
-    document.getElementById("nostrmindepP2").innerText = parseInt(5000).toLocaleString();
-
     let eventURL = "nostr:nevent1qvzqqqqqqypzqtwh0wemn6uthzgdrj5mdcac57w4s0ft9yrddcdxkqpxnhjnjc7rqqsvh6hv0xmtm96gyl0gafrku9v4v42yk5qrq2k8s6av8fvzglxdzacyxnngl";
     let qrcodeContainer = document.getElementById("qrcodeNostr");
     qrcodeContainer.innerHTML = "";
