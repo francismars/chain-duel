@@ -132,3 +132,13 @@ body{
 .blur{
   filter: blur(10px);
 }
+
+
+.playerInfoGroup{
+  margin: auto;
+}
+.playerImg {
+    width: 3vw;
+    margin-bottom: -0.5vw;
+    border-radius:1000px
+}

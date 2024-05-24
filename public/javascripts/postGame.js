@@ -87,23 +87,34 @@ socket.on("resPostGameInfoRequest", (postgameInfos) =>{
             p2Name =  "BigToshi 🌊"
             totalDeposit = parseInt(P1SatsDeposit)
             document.getElementById("fees").style.display = "none";
-            document.getElementById("winner").style.display = "none"; 
-            document.getElementById("claimText").style.display = "none"; 
+            document.getElementById("winner").style.display = "none";
+            document.getElementById("claimText").style.display = "none";
             document.getElementById("claimbutton").innerText = "END PRACTICE";
             document.getElementById("doubleornotthingbutton").innerText = "PRACTICE AGAIN";
 
-        }        
+        }
         totalPrize = Math.floor(totalDeposit);
         if (gameWinner!=null){
             if(gameWinner=="Player1" && p1Name!=null){
                 winnerName = p1Name
+                if(postgameInfos.Player1.image!=null) {
+                    document.getElementById("playerImg").src = postgameInfos.Player1.image
+                    document.getElementById("playerImg").classList.remove('hide');
+                }
             }
             else if(gameWinner=="Player2" && p2Name!=null){
                 winnerName = p2Name
+                if(postgameInfos.Player2.image!=null) {
+                    document.getElementById("playerImg").src = postgameInfos.Player2.image
+                    document.getElementById("playerImg").classList.remove('hide');
+                }
             }
             if(winnerName!=null){
                 document.getElementById("winner").innerText = winnerName.toUpperCase()+" WINS";
             }
+
+
+
         } else gameWinner="Player 1";
     }
     if(postgameInfos.lnurlw){
