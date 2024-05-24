@@ -342,3 +342,11 @@ font-size: 1cqw;
   margin-top: 0;
   margin-bottom: -0.2vw;
 }
+
+
+
+.playerImg {
+    width: 3vw;
+    margin-bottom:-.5vw;
+    border-radius:1000px
+}
