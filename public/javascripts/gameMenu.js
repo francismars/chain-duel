@@ -230,7 +230,7 @@ socket.on("updatePayments", body => {
     console.log(body)
     if(body.gamemode){
         gameType = body.gamemode
-        if(gameMenu = "P2P" && gameType=="P2P Nostr"){
+        if(gameMenu == "P2P" && gameType=="P2P Nostr"){
             nostrInit()
             socket.emit("getGameMenuInfosNostr");
         }
