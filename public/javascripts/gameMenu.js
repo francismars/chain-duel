@@ -31,6 +31,8 @@ if(sessionID){
 }
 socket.connect();
 
+initiatenostrqr()
+
 addEventListener("keydown", function(event) {
     switch (event.key) {
         case "a":
@@ -112,7 +114,6 @@ addEventListener("keydown", function(event) {
                 }
                 else if (selected=="nostrGameConfirm"){
                     document.getElementById("nostrIntro").classList.add('hide');
-                    socket.emit("getGameMenuInfosNostr");
                     nostrInit()
                     selected="MainMenuButton"
                 }
@@ -219,7 +220,7 @@ socket.on("resGetGameMenuInfos", body => {
                 size: 800,
                 value: "nostr:"+nostrinfo.note1
               });
-            document.getElementById("qrcodeNostr").href = "nostr:"+nostrinfo.note1
+            document.getElementById("qrcodeLinkNostr").href = "nostr:"+nostrinfo.note1
         }
         document.getElementById("loading").classList.add('hide');
         controllersActive = true;
@@ -232,7 +233,6 @@ socket.on("updatePayments", body => {
         gameType = body.gamemode
         if(gameMenu == "P2P" && gameType=="P2P Nostr"){
             nostrInit()
-            socket.emit("getGameMenuInfosNostr");
         }
     }
     let playersData = body
@@ -359,19 +359,21 @@ function updateLastHighscoreValue(lastHighscore){
 
 
 function nostrInit(){
+    document.getElementById("loading").classList.remove('hide');
+    controllersActive = false;
     document.getElementById("lnurlPanel").classList.add('hide');
     document.getElementById("nostrPanel").classList.remove('hide');
-    let eventURL = "#";
-
-    document.getElementById("qrcodeLinkNostr").href = eventURL;
     gameMenu = "P2P Nostr"
+    socket.emit("getGameMenuInfosNostr");
 }
 
-
-let qrcodeContainer = document.getElementById("qrcodeNostr");
-qrcodeContainer.innerHTML = "";
-new QRious({
-    element: qrcodeContainer,
-    size: 800,
-    value: eventURL
-});
+function initiatenostrqr(){
+    let qrcodeContainer = document.getElementById("qrcodeNostr");
+    qrcodeContainer.innerHTML = "";
+    new QRious({
+        element: qrcodeContainer,
+        size: 800,
+        value: "#"
+    });
+    document.getElementById("qrcodeLinkNostr").href = "#"
+}
