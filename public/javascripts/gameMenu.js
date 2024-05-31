@@ -227,6 +227,11 @@ socket.on("resGetGameMenuInfos", body => {
     }
 })
 
+socket.on('zapReceived', data => {
+    console.log(data)
+})
+
+
 socket.on("updatePayments", body => {
     console.log(body)
     if(body.gamemode){
