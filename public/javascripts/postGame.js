@@ -104,7 +104,7 @@ socket.on("resPostGameInfoRequest", (postgameInfos) =>{
             }
             else if(gameWinner=="Player2" && p2Name!=null){
                 winnerName = p2Name
-                if(postgameInfos.Player2.image!=null) {
+                if(postgameInfos.Player2 && postgameInfos.Player2.image) {
                     document.getElementById("playerImg").src = postgameInfos.Player2.image
                     document.getElementById("playerImg").classList.remove('hide');
                 }
