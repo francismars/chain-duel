@@ -161,7 +161,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
         if(duelInfos["Player2"].image!=null){
             document.getElementById("player2Img").src = duelInfos["Player2"].image
             document.getElementById("player2Img").classList.remove('hide');
-        } 
+        }
         SatsP1=parseInt(duelInfos["Player1"].value);
         SatsP2=parseInt(duelInfos["Player2"].value);
         if(duelInfos["winners"]){
@@ -243,7 +243,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     controllersActive = true
 })
 
-//loadDummyGame()
+loadDummyGame()
 
 function loadDummyGame(){
     P1Name = "Sats Eater 👻"
@@ -770,7 +770,7 @@ function drawCoinbase(){
         let cbRadius = (rowSize/2)-rowSize/5.4
         ctxGame.arc((colSize*coinbasePos[i][0])+colSize/2, (rowSize*coinbasePos[i][1])+rowSize/2, cbRadius, 0, 2 * Math.PI, false);
         ctxGame.fillStyle = "white";
-        ctxGame.shadowColor='white';  
+        ctxGame.shadowColor='white';
         ctxGame.shadowOffsetX=0;
         ctxGame.shadowOffsetY=0;
         ctxGame.shadowBlur=20;
@@ -1176,7 +1176,7 @@ function decideP2Dir(){
         if(pathP2[1][1] > p2HeadPos[1]) {
             if(p2Dir == "Left" || p2Dir == "Right"){
                 p2DirWanted = "Down"
-            } 
+            }
         }
         if(pathP2[1][1] < p2HeadPos[1]) {
             if(p2Dir == "Left" || p2Dir == "Right"){
@@ -1236,7 +1236,7 @@ function findPathP2(){ // A* Algorithm
                                 let neighbor=[(current[0])+x,(current[1])+y]
                                 if(!(neighbor in gScore)){
                                     gScore[neighbor] = Infinity
-                                } 
+                                }
                                 if(tentative_gScore < gScore[neighbor]){
                                     cameFrom[neighbor] = [current[0],current[1]]
                                     gScore[neighbor] = tentative_gScore
@@ -1260,7 +1260,7 @@ function reconstruct_path(cameFrom, current){
     while(cameFrom[current]){
         current = cameFrom[current]
         total_path.unshift(current)
-        
+
     }
     return total_path
 }
@@ -1283,4 +1283,108 @@ function collisionP1(x,y){
         }
     }
     return false
+}
+
+
+
+// In game ZAP message display
+
+const zapMessages = document.getElementById("zapMessages");
+
+let sampleData = [
+  {amount: '10000', content: 'Finish Him ☠️', username: 'username', profile: 'https://www.gravatar.com/avatar/bafb1e7adf5b7878a1900a586d396687?s=48&d=identicon&r=PG'},
+  {amount: '10000', content: "This is the best duel I've seen so far. I hope the full blocks always win!", username: 'username', profile: 'https://nostr.build/i/8cd2fc3d7e6637dc26c6e80b5e1b6ccb4a1e5ba5f2bec67904fe6912a23a85be.jpg'},
+  {amount: '1000', content: 'This is why I dont play 🔥', username: 'username', profile: 'https://raw.githubusercontent.com/francismars/chain-duel/main/public/images/loading.gif'},
+  {amount: '500', content: 'Great Game!', username: 'The Anatomy of Bitcoin', profile: 'https://pbs.twimg.com/profile_images/1586524289515376642/GtVNgUUw_400x400.jpg'},
+  {amount: '21', content: '', username: 'User', profile: 'https://image.nostr.build/7b3da0011c199b6b62cd7faa352bcb69feec70520aa20f696dc3d9ca1cbe8c2a.jpg'},
+  {amount: '10', content: "LET'S GO!!", username: 'hodlcuban', profile: 'https://nostr.build/i/nostr.build_7f47150407efdd4e6f9f0bf5cbf7f683c7d0cd5704125ebfc1faef6fa5985457.gif'},
+  {amount: '10000', content: "", username: 'hodlcuban', profile: 'https://nostr.build/i/nostr.build_7f47150407efdd4e6f9f0bf5cbf7f683c7d0cd5704125ebfc1faef6fa5985457.gif'}
+]
+let b = setInterval(func , 5000);
+let increment = 0;
+function func(){
+  addMessage("sample"+increment, sampleData[  Math.floor(Math.random() * 7)  ]);
+  increment++
+}
+
+
+function addMessage(id, data){
+
+  let newZapMessage = document.createElement('div');
+  newZapMessage.classList.add("zapMessage");
+  newZapMessage.setAttribute("id", id);
+  newZapMessage.classList.add("hidden");
+
+  let amountVal = parseInt(data.amount);
+  if (amountVal < 50 && amountVal <= 499){
+    newZapMessage.style.transform = "scale(.6)";
+  }else if(amountVal >= 500 && amountVal <= 1999){
+    newZapMessage.style.transform = "scale(.7)";
+  }else if(amountVal >= 2000 && amountVal <= 4999){
+    newZapMessage.style.transform = "scale(0.8)";
+  }else if(amountVal >= 5000 && amountVal <= 9999){
+    newZapMessage.style.transform = "scale(0.9)";
+  }else{
+    newZapMessage.style.transform = "scale(1)";
+  }
+
+
+
+  let zapMessageInner = document.createElement('div');
+  zapMessageInner.classList.add("zapMessageInner");
+
+  let newZapMessageImg = document.createElement('img');
+  newZapMessageImg.setAttribute("src", data.profile);
+
+  let newZapMessageText = document.createElement('div');
+  newZapMessageText.classList.add("zapText");
+
+    let newZapMessageContent = document.createElement('div');
+    newZapMessageContent.classList.add("zapContent");
+    newZapMessageContent.classList.add("condensed");
+    newZapMessageContent.append(data.content);
+
+    let newZapMessageAmount = document.createElement('div');
+    newZapMessageAmount.classList.add("zapAmount");
+    newZapMessageAmount.append(amountVal.toLocaleString() + " sats");
+
+    let newZapMessageUser = document.createElement('div');
+    newZapMessageUser.classList.add("zapUser");
+    newZapMessageUser.append(data.username);
+
+    newZapMessageText.append(newZapMessageUser);
+    newZapMessageText.append(newZapMessageContent);
+    newZapMessageText.append(newZapMessageAmount);
+
+  zapMessageInner.append(newZapMessageImg);
+  zapMessageInner.append(newZapMessageText);
+
+  newZapMessage.append(zapMessageInner);
+  zapMessages.append(newZapMessage);
+  move(id);
+}
+
+
+function move(elementID) {
+  let ease = 8;
+  let interval = elementID;
+  let messageEl = document.getElementById(elementID);
+  let pos = 18;
+  clearInterval(interval);
+  interval = setInterval(frame, 1);
+  function frame() {
+    if (pos <= -1) {
+      clearInterval(interval);
+      messageEl.remove()
+    } else {
+      pos = pos-(0.0005*ease);
+      ease = ease + 0.001;
+      messageEl.style.top = pos + 'vw';
+      //messageEl.style.left = 0 + 'px';
+
+      if (pos <= 17.50){
+        messageEl.classList.remove("hidden");
+      }
+    }
+  }
 }
