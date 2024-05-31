@@ -243,7 +243,7 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     controllersActive = true
 })
 
-loadDummyGame()
+//loadDummyGame()
 
 function loadDummyGame(){
     P1Name = "Sats Eater 👻"
@@ -1288,24 +1288,13 @@ function collisionP1(x,y){
 
 
 // In game ZAP message display
-
 const zapMessages = document.getElementById("zapMessages");
-
-let sampleData = [
-  {amount: '10000', content: 'Finish Him ☠️', username: 'username', profile: 'https://www.gravatar.com/avatar/bafb1e7adf5b7878a1900a586d396687?s=48&d=identicon&r=PG'},
-  {amount: '10000', content: "This is the best duel I've seen so far. I hope the full blocks always win!", username: 'username', profile: 'https://nostr.build/i/8cd2fc3d7e6637dc26c6e80b5e1b6ccb4a1e5ba5f2bec67904fe6912a23a85be.jpg'},
-  {amount: '1000', content: 'This is why I dont play 🔥', username: 'username', profile: 'https://raw.githubusercontent.com/francismars/chain-duel/main/public/images/loading.gif'},
-  {amount: '500', content: 'Great Game!', username: 'The Anatomy of Bitcoin', profile: 'https://pbs.twimg.com/profile_images/1586524289515376642/GtVNgUUw_400x400.jpg'},
-  {amount: '21', content: '', username: 'User', profile: 'https://image.nostr.build/7b3da0011c199b6b62cd7faa352bcb69feec70520aa20f696dc3d9ca1cbe8c2a.jpg'},
-  {amount: '10', content: "LET'S GO!!", username: 'hodlcuban', profile: 'https://nostr.build/i/nostr.build_7f47150407efdd4e6f9f0bf5cbf7f683c7d0cd5704125ebfc1faef6fa5985457.gif'},
-  {amount: '10000', content: "", username: 'hodlcuban', profile: 'https://nostr.build/i/nostr.build_7f47150407efdd4e6f9f0bf5cbf7f683c7d0cd5704125ebfc1faef6fa5985457.gif'}
-]
-let b = setInterval(func , 5000);
 let increment = 0;
-function func(){
-  addMessage("sample"+increment, sampleData[  Math.floor(Math.random() * 7)  ]);
-  increment++
-}
+
+socket.on('zapReceived', data => {
+    addMessage("sample"+increment, data);
+    increment++
+})
 
 
 function addMessage(id, data){
