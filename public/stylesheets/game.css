@@ -46,6 +46,7 @@ body{
 
 .flex.players {
   margin-bottom: 0;
+  position: relative;
 }
 
 
@@ -349,4 +350,92 @@ font-size: 1cqw;
     width: 3vw;
     margin-bottom:-.5vw;
     border-radius:1000px
+}
+
+
+
+
+
+
+
+
+
+
+#zapMessages{
+  position: absolute;
+  width: 70vw;
+  height: 20vw;
+  /* background: red; */
+  margin: auto;
+  bottom: 0;
+}
+
+
+.zapMessage{
+  position: absolute;
+  width: 40vw;
+  left: 15vw;
+  height: 3vw;
+  display: flex;
+}
+
+
+.zapMessage .zapMessageInner{
+  background: #fff;
+  color: #000;
+  min-width: 5vw;
+  height: 3vw;
+  font-weight: 400;
+  display: flex;
+  flex-wrap: wrap;
+  margin: auto;
+  border-radius: 1000px;
+  padding:0.5vw 1vw 0.5vw 0.5vw;
+  box-sizing:border-box;
+  transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: scale(1);
+  opacity: 1;
+}
+
+
+.zapMessage.hidden .zapMessageInner{
+  transform: scale(0);
+  opacity: 0;
+}
+
+
+
+.zapMessage img{
+  border-radius: 1000px;
+  width: 2vw;
+  height: 2vw;
+}
+
+.zapText{
+  padding-left: 0.35vw;
+  line-height: 0.45vw;
+  display:flex;
+  flex-direction:column;
+  justify-content: center;
+}
+
+.zapUser{
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 0.5vw;
+  margin-top: -0.0vw;
+}
+
+.zapContent{
+  letter-spacing:0.01vw;
+  font-size: 1.3vw;
+  margin-top: 0.001vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 26vw;
+}
+
+.zapAmount{
+  font-size: 0.5vw;
 }
