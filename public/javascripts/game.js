@@ -1305,18 +1305,19 @@ function addMessage(id, data){
   newZapMessage.classList.add("hidden");
 
   let amountVal = parseInt(data.amount);
-  if (amountVal < 50 && amountVal <= 499){
-    newZapMessage.style.transform = "scale(.6)";
-  }else if(amountVal >= 500 && amountVal <= 1999){
-    newZapMessage.style.transform = "scale(.7)";
-  }else if(amountVal >= 2000 && amountVal <= 4999){
-    newZapMessage.style.transform = "scale(0.8)";
-  }else if(amountVal >= 5000 && amountVal <= 9999){
-    newZapMessage.style.transform = "scale(0.9)";
-  }else{
+  if (amountVal > 0 && amountVal <= 499){
     newZapMessage.style.transform = "scale(1)";
+  }else if(amountVal >= 500 && amountVal <= 1999){
+    newZapMessage.style.transform = "scale(1.2)";
+  }else if(amountVal >= 2000 && amountVal <= 4999){
+    newZapMessage.style.transform = "scale(1.4)";
+  }else if(amountVal >= 5000 && amountVal <= 9999){
+    newZapMessage.style.transform = "scale(1.6)";
+  }else{
+    newZapMessage.style.transform = "scale(2)";
   }
 
+  console.log(data);
 
 
   let zapMessageInner = document.createElement('div');
