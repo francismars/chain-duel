@@ -3,16 +3,16 @@ let sponsorImage = "";
 
 //sponsorImage = "/images/sponsors/bitcoin_magazine.svg";
 //sponsorImage = "/images/sponsors/piratehash.png";
-//sponsorImage = "/images/sponsors/bitbox.png";
+sponsorImage = "/images/sponsors/bitbox.png";
 //sponsorImage = "/images/sponsors/relai_bg.png";
 //sponsorImage = "/images/sponsors/build_the_builders.png";
 //sponsorImage = "/images/sponsors/bitcoin_amsterdam.png";
-sponsorImage = "/images/sponsors/amityage_color.png";
+//sponsorImage = "/images/sponsors/amityage_color.png";
 
 
 
 // Global Sponsorship
-let sponsorshipSwitch = 0;
+let sponsorshipSwitch = 1;
 if (document.getElementsByClassName("sponsorship") != null){
   if (document.getElementsByClassName("sponsorship").length != 0){
     const sponsorship = document.getElementsByClassName("sponsorship");
