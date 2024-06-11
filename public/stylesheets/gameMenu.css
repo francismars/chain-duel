@@ -517,8 +517,8 @@ body{
   border: solid 0vw #000;
 }
 #qrcodeContainerNostr.expanded{
-  width: 30vw;
-  height: 30vw;
+  width: 50vw;
+  height: 50vw;
   border: solid 1vw #000;
 }
 
