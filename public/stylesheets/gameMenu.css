@@ -528,3 +528,11 @@ body{
     font-size: 2cqw;
     padding-bottom: 0px;
 }
+
+
+#gameCodeNostr {
+    position: absolute;
+    top: -10px;
+    letter-spacing: 10px;
+    text-align: center;
+}

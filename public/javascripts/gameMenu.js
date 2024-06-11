@@ -221,6 +221,8 @@ socket.on("resGetGameMenuInfos", body => {
                 value: "nostr:"+nostrinfo.note1
               });
             document.getElementById("qrcodeLinkNostr").href = "nostr:"+nostrinfo.note1
+            let gameCodeNostr = document.getElementById("gameCodeNostr");
+            gameCodeNostr.innerText = nostrinfo.emojis
         }
         document.getElementById("loading").classList.add('hide');
         controllersActive = true;
