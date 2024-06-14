@@ -81,7 +81,6 @@ addEventListener("keydown", function(event) {
                     document.getElementById("cancelGameAbort").style.animationDuration  = "0s";
                     document.getElementById("mainmenubutton").style.animationDuration  = "2s";
                     document.getElementById("qrcode1").classList.remove('blur');
-                    document.getElementById("qrcode2").classList.remove('blur');
                     selected="MainMenuButton"
                 }
                 else if (selected=="cancelGameConfirmButton" && playersSats[0]==0 && controllersActive){
@@ -97,9 +96,11 @@ addEventListener("keydown", function(event) {
         case "ControlLeft":
             if(controllersActive) document.getElementById("player1card").classList.add("expanded");
             break;
+        /*
         case "ControlRight":
             if(controllersActive) document.getElementById("player2card").classList.add("expanded");
             break;
+        */
     }
 });
 
