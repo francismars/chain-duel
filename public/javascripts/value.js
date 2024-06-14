@@ -54,7 +54,7 @@ if (document.getElementById("sponsorshipGame").length != 0){
 if (document.getElementsByClassName("sponsored-by-label") != null){
   if (document.getElementsByClassName("sponsored-by-label").length != 0){
     const sponsoredLabel = document.getElementsByClassName("sponsored-by-label");
-    sponsoredLabel[0].innerHTML = "Hosted by";
+    sponsoredLabel[0].innerHTML = "Sponsored by";
     //sponsoredLabel[0].innerHTML = "50,000 sats * 16 BUY IN MATCH <span id='sponsorship-amount'>800,000</span> sats prize donated by";
   }
 }
