@@ -12,7 +12,7 @@ sponsorImage = "/images/sponsors/bitbox.png";
 
 
 // Global Sponsorship
-let sponsorshipSwitch = 1;
+let sponsorshipSwitch = 0;
 if (document.getElementsByClassName("sponsorship") != null){
   if (document.getElementsByClassName("sponsorship").length != 0){
     const sponsorship = document.getElementsByClassName("sponsorship");
