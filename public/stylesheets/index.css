@@ -95,9 +95,10 @@ body {
   position: fixed;
   bottom: 0;
   width: 100%;
-  border: 8px #000 solid;
+  /* border: 8px #000 solid; */
   box-sizing: border-box;
   border-left: 0;
   border-right: 0;
   box-shadow: #ffffff3d 0 0 80px;
+  background: #000000d4;
 }
