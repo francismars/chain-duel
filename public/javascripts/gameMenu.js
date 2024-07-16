@@ -220,7 +220,7 @@ socket.on("resGetGameMenuInfos", body => {
                 size: 800,
                 value: "nostr:"+nostrinfo.note1
               });
-            document.getElementById("qrcodeLinkNostr").href = "nostr:"+nostrinfo.note1
+            document.getElementById("qrcodeLinkNostr").href = "https://next.nostrudel.ninja/#/n/"+nostrinfo.note1
             let gameCodeNostr = document.getElementById("gameCodeNostr");
             gameCodeNostr.innerText = nostrinfo.emojis
         }
