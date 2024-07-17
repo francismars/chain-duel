@@ -439,3 +439,18 @@ font-size: 1cqw;
 .zapAmount{
   font-size: 0.5vw;
 }
+
+
+
+#sponsorshipGame {
+    box-shadow: #ffffff21 0px 0px 50px 30px;
+    background: #ffffff1a;
+    border-radius: 1000px;
+    padding: 0 10px 0px 10px;
+}
+
+#sponsoredImgBraket {
+    height: 3vw;
+    margin-bottom: -0.4vw;
+    margin-top: -0.4vw;
+}
