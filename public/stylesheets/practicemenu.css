@@ -428,6 +428,7 @@ img#qrcode1 {}
 .expanded .deposit-message{
   font-size: 0px;
   margin-top: 0;
+  opacity: 0
 }
 
 .playerSquare{
@@ -475,4 +476,13 @@ img#qrcode1 {}
     letter-spacing: 0.01em;
     margin:0;
     line-height:1.1em
+}
+
+
+.expanded .practice-teaser .condensed{
+    letter-spacing: 0.01em;
+    margin:0;
+    line-height:1.1em;
+    font-size: 0;
+    opacity: 0
 }
