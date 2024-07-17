@@ -360,7 +360,7 @@ body{
 }
 
 #player2card.expanded .qrcodeContainer .qrcode {
-    border-right: 0.5vw solid #fff;
+    border-left: 0.5vw solid #fff;
 }
 #player2card.expanded .qrcodeContainer .qrcodeDecoration {
     border-left: 0.5vw solid #0000;
