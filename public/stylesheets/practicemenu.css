@@ -469,3 +469,10 @@ img#qrcode1 {}
 .playerSquare.black{
   margin-left:0.5vw
 }
+
+
+.practice-teaser .condensed{
+    letter-spacing: 0.01em;
+    margin:0;
+    line-height:1.1em
+}
