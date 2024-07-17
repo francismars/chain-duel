@@ -217,7 +217,7 @@ header{
     position:static;
     margin-bottom: 1%;
     text-align: center;
-    font-size: 8cqw;
+    font-size: 6cqw;
     -webkit-text-stroke-width: 1px;
     -webkit-text-fill-color: transparent;
     -webkit-text-stroke-color: white;
@@ -347,13 +347,13 @@ Bottom bar with game data for bracket screen and game screen
 
 .sponsorship{
   display: none;
-  margin-bottom: 2%;
+  margin-bottom: 1%;
 }
 
 .sponsored-img{
-  height: 4vw;
+  height: 3.5vw;
   margin: auto;
-  margin-top: 0.8vw;
+  margin-top: 0.5vw;
   display:block;
 }
 
