@@ -101,4 +101,5 @@ body {
   border-right: 0;
   box-shadow: #ffffff3d 0 0 80px;
   background: #000000d4;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 42%, rgb(40 40 40) 94%);
 }
