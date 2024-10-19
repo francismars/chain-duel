@@ -1,11 +1,11 @@
 const hideSponsorInfo = false
 const sponsorshipSwitch = true;
 
-const sponsorText =  "Sponsored by" //"50,000 sats * 16 BUY IN MATCH <span id='sponsorship-amount'>800,000</span> sats prize donated by";
-const sponsorName = "@onthebrinkie"
+const sponsorText =  "Hosted by" //"50,000 sats * 16 BUY IN MATCH <span id='sponsorship-amount'>800,000</span> sats prize donated by";
+const sponsorName = "@dusanmatuska"
 const imageList = ["bitcoin_magazine.svg", "piratehash.png", "bitbox.png", "relai_bg.png", "build_the_builders.png", 
                    "bitcoin_amsterdam.png", "amityage_color.png", "piratehash_animated.png"]
-const sponsorImage = "/images/sponsors/"+imageList[7];
+const sponsorImage = "/images/sponsors/"+imageList[6];
 
 // Global Sponsorship
 if (document.getElementsByClassName("sponsorship") != null){
