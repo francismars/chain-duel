@@ -5,7 +5,7 @@ const sponsorText =  "Sponsored by" //"50,000 sats * 16 BUY IN MATCH <span id='s
 const sponsorName = "@chainduel"
 const imageList = ["bitcoin_magazine.svg", "piratehash.png", "bitbox.png", "relai_bg.png", "build_the_builders.png", 
                    "bitcoin_amsterdam.png", "amityage_color.png", "piratehash_animated.png"]
-const sponsorImage = "/images/sponsors/"+imageList[2];
+const sponsorImage = "/images/sponsors/"+imageList[7];
 
 // Global Sponsorship
 if (document.getElementsByClassName("sponsorship") != null){
