@@ -1,65 +1,112 @@
 <html>
-    <head>
-        <link rel="stylesheet" href="stylesheets/style.css">
-        <link rel="stylesheet" href="stylesheets/index.css">
-        <script type="module" src="javascripts/index.js"></script>
-        <script type="module" src="javascripts/value.js"></script>
-        <title>Chain Duel</title>
-        <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon_package/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon_package/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon_package/favicon-16x16.png">
-        <link rel="manifest" href="/images/favicon_package/site.webmanifest">
-        <link rel="mask-icon" href="/images/favicon_package/safari-pinned-tab.svg" color="#5bbad5">
-        <meta name="apple-mobile-web-app-title" content="Chain Duel">
-        <meta name="application-name" content="Chain Duel">
-        <meta name="msapplication-TileColor" content="#cccccc">
-        <meta name="theme-color" content="#ffffff">
+  <head>
+    <link rel="stylesheet" href="stylesheets/style.css" />
+    <link rel="stylesheet" href="stylesheets/index.css" />
+    <script type="module" src="javascripts/index.js"></script>
+    <script type="module" src="javascripts/value.js"></script>
+    <title>Chain Duel</title>
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/images/favicon_package/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/images/favicon_package/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/images/favicon_package/favicon-16x16.png"
+    />
+    <link rel="manifest" href="/images/favicon_package/site.webmanifest" />
+    <link
+      rel="mask-icon"
+      href="/images/favicon_package/safari-pinned-tab.svg"
+      color="#5bbad5"
+    />
+    <meta name="apple-mobile-web-app-title" content="Chain Duel" />
+    <meta name="application-name" content="Chain Duel" />
+    <meta name="msapplication-TileColor" content="#cccccc" />
+    <meta name="theme-color" content="#ffffff" />
 
-        <meta property="og:title" content="Chain Duel ⚡️ Beta Tester" />
-        <meta property="og:description" content="Compete for sats" />
-        <meta property="og:image" content="https://game.chainduel.net/images/og_image_game.jpg" />
+    <meta property="og:title" content="Chain Duel ⚡️ Beta Tester" />
+    <meta property="og:description" content="Compete for sats" />
+    <meta
+      property="og:image"
+      content="https://game.chainduel.net/images/og_image_game.jpg"
+    />
+  </head>
+  <body>
+    <div class="flex full flex-center">
+      <div class="sponsorship" id="sponsorship-index">
+        <div
+          class="sponsored-by-label label"
+          id="sponsored-by-label-index"
+        ></div>
+        <img src="" class="sponsored-img" id="sponsored-img-index" />
+      </div>
 
-    </head>
-    <body>
-        <div class="flex full flex-center">
-
-          <div class="sponsorship" id="sponsorship-index">
-            <div class="sponsored-by-label label" id="sponsored-by-label-index"></div>
-            <img src="" class="sponsored-img" id="sponsored-img-index" />
-          </div>
-
-          <!--
+      <!--
           <img id="logo" src="/images/bitcoin_magazine.svg" alt="Bitcoin Magazine logo">
           <p id="presents">presents</p>
           -->
 
-          <h1 id="chainduel">CHAIN DUEL</h1>
-          <p id="slogan">KEEPING ONE BLOCK AHEAD</p>
-          <div>
-              <button class="button" id="startpractice" type="button">PRACTICE</button>
-              <button class="button" id="startgame" type="button">P2P</button>
-              <button class="button" id="starttourn" type="button">TOURNAMENT</button>
-              <button class="button" id="highscoresbutton" type="button">HIGHSCORES</button>
-              <div class="double-button">
-                <button class="button" id="aboutbutton" type="button">ABOUT</button>
-                <button onclick="location.href='/config';" class="button disabled" id="highscoresbutton" type="button"><span id="backendStatusHome" class="backend-status on">•</span>CONFIG</button>
-              </div>
-          </div>
-          <div id="bottomInfo">
-              <p id="splits"><span id="split1">2% to the host (@chainduel)</span> · <span id="split2">2% to the developer (@francismars)</span> · <span id="split3">1% to the designer (@bitcoinanatomy)</span></p>
-              <p id="version">Version 0.021 Beta — Support at t.me/chainduel</p> <!--- — github.com/francismars/chain-duel</p>-->
-          </div>
+      <h1 id="chainduel">CHAIN DUEL</h1>
+      <p id="slogan">KEEPING ONE BLOCK AHEAD</p>
+      <div>
+        <button class="button" id="startpractice" type="button">
+          PRACTICE
+        </button>
+        <div class="double-button">
+          <button class="button" id="startgame" type="button">P2P</button>
+          <button class="button" id="startgamenostr" type="button">
+            P2P NOSTR
+          </button>
         </div>
+        <button class="button" id="starttourn" type="button">TOURNAMENT</button>
+        <button class="button" id="highscoresbutton" type="button">
+          HIGHSCORES
+        </button>
+        <div class="double-button">
+          <button class="button" id="aboutbutton" type="button">ABOUT</button>
+          <button
+            onclick="location.href='/config';"
+            class="button disabled"
+            id="highscoresbutton"
+            type="button"
+          >
+            <span id="backendStatusHome" class="backend-status on">•</span
+            >CONFIG
+          </button>
+        </div>
+      </div>
+      <div id="bottomInfo">
+        <p id="splits">
+          <span id="split1">2% to the host (@chainduel)</span> ·
+          <span id="split2">2% to the developer (@francismars)</span> ·
+          <span id="split3">1% to the designer (@bitcoinanatomy)</span>
+        </p>
+        <p id="version">Version 0.021 Beta — Support at t.me/chainduel</p>
+        <!--- — github.com/francismars/chain-duel</p>-->
+      </div>
+    </div>
 
-        <img id="announcement" style="display: none" src="images/announcement/bitcoin2024_announcement_v2.png">
+    <img
+      id="announcement"
+      style="display: none"
+      src="images/announcement/bitcoin2024_announcement_v2.png"
+    />
 
-        <audio id="audio" autoplay loop>
-        <!--
+    <audio id="audio" autoplay loop>
+      <!--
           <source src="/sound/chain_duel_1.ogg" type="audio/ogg"/>
           <source src="/sound/chain_duel_1.mp3" type="audio/mpeg"/>
         -->
-          <source src="/sound/chain_duel_produced_menu.m4a" type="audio/x-m4a">
-
-        </audio>
-    </body>
+      <source src="/sound/chain_duel_produced_menu.m4a" type="audio/x-m4a" />
+    </audio>
+  </body>
 </html>

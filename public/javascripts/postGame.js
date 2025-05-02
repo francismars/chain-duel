@@ -58,7 +58,7 @@ socket.on("resPostGameInfoRequest", (postgameInfos) => {
     let winnerP = String(postgameInfos.winners.slice(-1));
     if (winnerP == "Player 1" || winnerP == "Player 2") gameWinner = winnerP;
   }
-  if (postgameInfos.gamemode == "TOURNAMENT") {
+  if (postgameInfos.mode == "TOURNAMENT") {
     tournamentMode = true;
     if (postgameInfos.players) {
       playersList = Array(postgameInfos.numbeOfPlayers).fill("");
@@ -87,16 +87,20 @@ socket.on("resPostGameInfoRequest", (postgameInfos) => {
       }
     } else gameWinner = "Player 1";
   }
-  if (postgameInfos.gamemode == "PRACTICE" || postgameInfos.gamemode == "P2P") {
+  if (
+    postgameInfos.mode == "PRACTICE" ||
+    postgameInfos.mode == "P2P" ||
+    postgameInfos.mode == "P2PNOSTR"
+  ) {
     tournamentMode = false;
     p1Name = postgameInfos.players["Player 1"].name;
     P1SatsDeposit = postgameInfos.players["Player 1"].value;
-    if (postgameInfos.gamemode == "P2P") {
+    if (postgameInfos.mode == "P2P" || postgameInfos.mode == "P2PNOSTR") {
       // P2P
       p2Name = postgameInfos.players["Player 2"].name;
       P2SatsDeposit = postgameInfos.players["Player 2"].value;
       totalDeposit = parseInt(P1SatsDeposit) + parseInt(P2SatsDeposit);
-    } else if (postgameInfos.gamemode == "PRACTICE") {
+    } else if (postgameInfos.mode == "PRACTICE") {
       // PRACTICE
       p2Name = "BigToshi 🌊";
       totalDeposit = parseInt(P1SatsDeposit);
@@ -111,19 +115,19 @@ socket.on("resPostGameInfoRequest", (postgameInfos) => {
     if (gameWinner != null) {
       if (gameWinner == "Player 1" && p1Name != null) {
         winnerName = p1Name;
-        if (postgameInfos.players["Player 1"].image != null) {
+        if (postgameInfos.players["Player 1"].picture != null) {
           document.getElementById("playerImg").src =
-            postgameInfos.players["Player 1"].image;
+            postgameInfos.players["Player 1"].picture;
           document.getElementById("playerImg").classList.remove("hide");
         }
       } else if (gameWinner == "Player 2" && p2Name != null) {
         winnerName = p2Name;
         if (
           postgameInfos.players["Player 2"] &&
-          postgameInfos.players["Player 2"].image
+          postgameInfos.players["Player 2"].picture
         ) {
           document.getElementById("playerImg").src =
-            postgameInfos.players["Player 2"].image;
+            postgameInfos.players["Player 2"].picture;
           document.getElementById("playerImg").classList.remove("hide");
         }
       }

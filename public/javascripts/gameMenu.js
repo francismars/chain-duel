@@ -7,6 +7,10 @@ let playersSats = [0, 0];
 let numberofCreates = 0;
 let p1Name = "Player 1";
 let p2Name = "Player 2";
+let prevWinner = null;
+let prevLoser = null;
+let winnerSats = null;
+let loserSats = null;
 let payLinks = [];
 let intervalStart = setInterval(listenToGamepads, 1000 / 10);
 let sessionID = sessionStorage.getItem("sessionID");
@@ -136,9 +140,9 @@ addEventListener("keydown", function (event) {
       }
       break;
     case "x":
-      document.getElementById("nostrIntro").classList.remove("hide");
-      document.getElementById("nostrGameAbort").style.animationDuration = "2s";
-      selected = "nostrGameAbort";
+      //document.getElementById("nostrIntro").classList.remove("hide");
+      //document.getElementById("nostrGameAbort").style.animationDuration = "2s";
+      //selected = "nostrGameAbort";
       break;
   }
   switch (event.code) {
@@ -200,17 +204,27 @@ function redirectToGame() {
   window.location.href = "/game";
 }
 
-socket.emit("getGameMenuInfos");
+const urlToParse = location.search;
+const params = new URLSearchParams(urlToParse);
+const nostr = params.get("nostr");
+
+if (!nostr) {
+  console.log("getGameMenuInfos");
+  socket.emit("getGameMenuInfos");
+} else {
+  console.log("nostrInit");
+  nostrInit();
+}
 
 socket.on("resGetGameMenuInfos", (body) => {
   console.log(body);
-  if (body[0] && body[0].mode) {
-    gameType = body[0].mode;
-    console.log(gameType);
-  }
   if (body.lnurlw) {
     window.location.href = "/postgame";
   } else {
+    if (body.slice(-1)[0] && body.slice(-1)[0].mode) {
+      gameType = body.slice(-1)[0].mode;
+      console.log(gameType);
+    }
     payLinks = body;
     if (gameType == "P2P") {
       for (let payLink of body) {
@@ -247,13 +261,15 @@ socket.on("resGetGameMenuInfos", (body) => {
             "lightning:" + payLink.lnurlp;
         }
       }
-    } else if (gameType == "P2P Nostr") {
-      let nostrinfo = body[0];
+    } else if (gameType == "P2PNOSTR") {
+      let nostrinfo = body.slice(-1)[0];
+      console.log("INFOS OF NOSTR");
+      console.log(nostrinfo);
       document.getElementById("nostrmindepP1").innerText = parseInt(
-        nostrinfo.min
+        prevWinner && prevWinner == "Player 1" ? 1 : nostrinfo.min
       ).toLocaleString();
       document.getElementById("nostrmindepP2").innerText = parseInt(
-        nostrinfo.min
+        prevWinner && prevWinner == "Player 2" ? 1 : nostrinfo.min
       ).toLocaleString();
       let qrcodeContainer = document.getElementById("qrcodeNostr");
       qrcodeContainer.innerHTML = "";
@@ -266,6 +282,9 @@ socket.on("resGetGameMenuInfos", (body) => {
         "https://next.nostrudel.ninja/#/n/" + nostrinfo.note1;
       let gameCodeNostr = document.getElementById("gameCodeNostr");
       gameCodeNostr.innerText = nostrinfo.emojis;
+      document.getElementById("lnurlPanel").classList.add("hide");
+      document.getElementById("nostrPanel").classList.remove("hide");
+      gameMenu = "P2PNOSTR";
     }
     document.getElementById("loading").classList.add("hide");
     controllersActive = true;
@@ -278,17 +297,17 @@ socket.on("zapReceived", (data) => {
 
 socket.on("updatePayments", (body) => {
   console.log(body);
-  if (body.gamemode) {
-    gameType = body.gamemode;
-    if (gameMenu == "P2P" && gameType == "P2P Nostr") {
+  if (body.mode) {
+    gameType = body.mode;
+    if (gameMenu == "P2P" && gameType == "P2PNostr") {
       nostrInit();
     }
   }
   if (body.winners) {
+    prevWinner = body.winners.slice(-1)[0];
+    prevLoser = prevWinner == "Player 1" ? "Player 2" : "Player 1";
     console.log(
-      `This is DoN number ${
-        body.winners.length
-      }. Previous winner was ${body.winners.slice(-1)}`
+      `This is DoN number ${body.winners.length}. Previous winner was ${prevWinner}`
     );
     if (body.winners.length != null) {
       let donMultiple = Math.pow(2, body.winners.length);
@@ -300,6 +319,11 @@ socket.on("updatePayments", (body) => {
   for (let key in playersData) {
     let playerData = playersData[key];
     console.log(key);
+    if (key == prevWinner) {
+      winnerSats = playerData.value;
+    } else if (key == prevLoser) {
+      loserSats = playerData.value;
+    }
     if (key == "Player 1") {
       console.log(`P1 has ${playerData.value} sats`);
       if (playerData.name != null && playerData.name != "") {
@@ -327,8 +351,8 @@ socket.on("updatePayments", (body) => {
             .classList.add("hide");
         }, 1200);
       }
-      if (playerData.image) {
-        player1image = playerData.image;
+      if (playerData.picture) {
+        player1image = playerData.picture;
       }
     }
     if (key == "Player 2") {
@@ -358,8 +382,8 @@ socket.on("updatePayments", (body) => {
             .classList.add("hide");
         }, 1200);
       }
-      if (playerData.image) {
-        player2image = playerData.image;
+      if (playerData.picture) {
+        player2image = playerData.picture;
       }
     }
     changeTextAfterPayment(gameType);
@@ -373,7 +397,7 @@ function changeTextAfterPayment(type) {
     p2SatsId = "player2sats";
     p1InfoId = "player1info";
     p2InfoId = "player2info";
-  } else if (type == "P2P Nostr") {
+  } else if (type == "P2PNOSTR") {
     p1SatsId = "nostrPlayer1sats";
     p2SatsId = "nostrPlayer2sats";
     p1InfoId = "nostrPlayer1info";
@@ -402,7 +426,10 @@ function changeTextAfterPayment(type) {
     document.getElementById("mainmenubutton").classList.add("disabled");
     document.getElementById("mainmenubutton").style.animationDuration = "0s";
   }
-  if (playersSats[0] != 0 && playersSats[1] != 0) {
+  if (
+    (prevWinner && loserSats >= winnerSats) ||
+    (!prevWinner && playersSats[0] != 0 && playersSats[1] != 0)
+  ) {
     document.getElementById("startgame").classList.remove("disabled");
     document.getElementById("startgame").style.animationDuration = "2s";
     selected = "StartGame";
@@ -441,7 +468,7 @@ function nostrInit() {
   controllersActive = false;
   document.getElementById("lnurlPanel").classList.add("hide");
   document.getElementById("nostrPanel").classList.remove("hide");
-  gameMenu = "P2P Nostr";
+  gameMenu = "P2PNOSTR";
   socket.emit("getGameMenuInfosNostr");
 }
 
