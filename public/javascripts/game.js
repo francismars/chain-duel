@@ -124,7 +124,7 @@ function buildWinnerNamesList(playersList, winnersList) {
   let playersListCopy = [...playersList];
   for (let i = 0; i < winnersList.length; i++) {
     let winner = winnersList[i];
-    winner == "Player1"
+    winner == "Player 1"
       ? playersListCopy.push(playersListCopy[2 * i])
       : playersListCopy.push(playersListCopy[2 * i + 1]);
   }
@@ -133,7 +133,7 @@ function buildWinnerNamesList(playersList, winnersList) {
 
 socket.on("resGetDuelInfos", (duelInfos) => {
   console.log(duelInfos);
-  if (duelInfos.gamemode == "TOURNAMENT") {
+  if (duelInfos.mode == "TOURNAMENT") {
     console.log("Tournament Mode");
     if (!duelInfos.players) {
       console.log("No players assigned, exiting...");
@@ -168,12 +168,14 @@ socket.on("resGetDuelInfos", (duelInfos) => {
     console.log("P2P Mode");
     P1Name = duelInfos.players["Player 1"].name;
     P2Name = duelInfos.players["Player 2"].name;
-    if (duelInfos.players["Player 1"].image != null) {
-      document.getElementById("player1Img").src = duelInfos["Player1"].image;
+    if (duelInfos.players["Player 1"].picture != null) {
+      document.getElementById("player1Img").src =
+        duelInfos.players["Player 1"].picture;
       document.getElementById("player1Img").classList.remove("hide");
     }
-    if (duelInfos.players["Player 2"].image != null) {
-      document.getElementById("player2Img").src = duelInfos["Player2"].image;
+    if (duelInfos.players["Player 2"].picture != null) {
+      document.getElementById("player2Img").src =
+        duelInfos.players["Player 2"].picture;
       document.getElementById("player2Img").classList.remove("hide");
     }
     SatsP1 = parseInt(duelInfos.players["Player 1"].value);
@@ -183,10 +185,11 @@ socket.on("resGetDuelInfos", (duelInfos) => {
       let winnersCount = duelInfos["winners"].length;
       if (winnersCount) {
         let donText = "*" + Math.pow(2, winnersCount);
-        document.getElementById("gameInfo").textContent = "P2P" + donText;
+        document.getElementById("gameInfo").textContent =
+          duelInfos.mode + donText;
       }
     } else {
-      document.getElementById("gameInfo").textContent = "P2P";
+      document.getElementById("gameInfo").textContent = duelInfos.mode;
     }
   } else {
     console.log("Practice Mode");

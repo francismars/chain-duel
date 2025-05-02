@@ -76,22 +76,25 @@ socket.on("resGetTournamentInfos", (data) => {
   }
   if (data.lnurlw) {
     mainToBackMenu(numberOfDeposits, deposit);
-    if (data.withdrawals) {
-      timesWithdrawed = data.withdrawals;
-      let found = 0;
-      let i = 0;
-      for (let i = 0; i < playersList.length; i++) {
-        if (playersList[i] != "") {
-          playersList[i] = "";
-          found++;
-        }
-        if (found == data.withdrawals) {
-          break;
+    if (data.claimedCount) {
+      timesWithdrawed = data.claimedCount;
+      for (let i = 0; i < timesWithdrawed; i++) {
+        for (let j = 0; j < playersList.length; j++) {
+          if (playersList[j] != "") {
+            console.log("Removing player " + playersList[j]);
+            playersList[j] = "";
+            break;
+          }
         }
       }
     }
-    playerListSequencial = data.playersList.filter((player) => player != "");
-    handleCancelTourn(numberOfDeposits, playerListSequencial, data.lnurlw);
+    playerListSequencial = playersList.filter((player) => player != "");
+    handleCancelTourn(
+      numberOfDeposits,
+      playerListSequencial,
+      data.lnurlw,
+      data.claimedCount
+    );
   }
   loadBracket();
   loadBottomInfos();
@@ -754,11 +757,20 @@ socket.on('rescreateWithdrawal', (data) => { // data.id data.lnurl data.max_with
 });
 */
 
-function handleCancelTourn(numberOfDeposits, playerListSequencial, resLNURL) {
+function handleCancelTourn(
+  numberOfDeposits,
+  playerListSequencial,
+  resLNURL,
+  claimCount
+) {
+  console.log("handleCancelTourn", numberOfDeposits, playerListSequencial);
+  console.log("resLNURL", resLNURL);
+  console.log("claimCount", claimCount);
   if (numberOfDeposits == 0) {
     window.location.href = "/tournprefs";
   } else if (numberOfDeposits > 0) {
     buttonSelected = "none";
+    let currentWithdrawalPlayer = claimCount ?? 0;
     document.getElementById("currentWithdrawalPlayer").textContent =
       playerListSequencial[0];
     let qrcodeContainer = document.getElementById("qrWithdrawal");
@@ -780,22 +792,24 @@ function handleCancelTourn(numberOfDeposits, playerListSequencial, resLNURL) {
 socket.on("rescanceltourn", (data) => {
   console.log(data);
   numberOfDeposits = data.depositcount;
-  playerListSequencial = data.playersList;
+  playerListSequencial = playersList.filter((player) => player != "");
   let resLNURL = data.lnurlw;
-  handleCancelTourn(numberOfDeposits, playerListSequencial, resLNURL);
+  handleCancelTourn(numberOfDeposits, playerListSequencial, resLNURL, 0);
   document.getElementById("loading").classList.add("hide");
 });
 
 socket.on("prizeWithdrawn", (data) => {
-  let playerToRemove = playerListSequencial[timesWithdrawed];
-  let counter = 0;
-  while (playersList[counter] != playerToRemove && counter < numberOfPlayers) {
-    counter++;
-  }
-  changeNameText(svgDoc, initialPositions[counter], "");
   timesWithdrawed++;
+  for (let j = 0; j < playersList.length; j++) {
+    if (playersList[j] != "") {
+      console.log("Removing player " + playersList[j]);
+      changeNameText(svgDoc, initialPositions[j], "");
+      playersList[j] = "";
+      break;
+    }
+  }
   document.getElementById("currentWithdrawalPlayer").textContent =
-    playerListSequencial[timesWithdrawed];
+    playersList.filter((player) => player != "")[0];
   if (timesWithdrawed == numberOfDeposits) {
     window.location.href = "/tournprefs";
   }
@@ -829,6 +843,7 @@ function highLightWinnerSquare(svgDoc, id) {
 
 function changeNameText(svgDoc, id, name) {
   if (svgDoc) {
+    console.log("Changing name text to " + name);
     svgDoc.getElementById(id + "_name").textContent = name;
     svgDoc.getElementById(id + "_name").style.opacity = "1";
   }

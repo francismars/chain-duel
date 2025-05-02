@@ -1,47 +1,50 @@
 body {
-  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.2)), url(../images/chainduel_bg.jpg);
+  background-image: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.7),
+      rgba(0, 0, 0, 0.2)
+    ),
+    url(../images/chainduel_bg.jpg);
 }
 
-#logo{
-    height: auto;
-    width: 20cqw;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: 0px;
-    margin-top: 2%;
-    /* display:none */
+#logo {
+  height: auto;
+  width: 20cqw;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0px;
+  margin-top: 2%;
+  /* display:none */
 }
 
-#presents{
-    margin-top: 15px;
-    text-align: center;
-    color: white;
-    font-size: 0.8cqw;
-    font-weight: 300;
-    text-transform: uppercase;
-    letter-spacing: 0.1rem;
-    /* display:none */
+#presents {
+  margin-top: 15px;
+  text-align: center;
+  color: white;
+  font-size: 0.8cqw;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+  /* display:none */
 }
 
-#chainduel{
-    text-align: center;
-    color: white;
-    font-size: 14cqw;
-    letter-spacing: -0.03em;
-    margin-bottom: 0px;
-    margin-top: 0px;
+#chainduel {
+  text-align: center;
+  color: white;
+  font-size: 14cqw;
+  letter-spacing: -0.03em;
+  margin-bottom: 0px;
+  margin-top: 0px;
 }
 
-#slogan{
-    margin-top: 0px;
-    text-align: center;
-    color: white;
-    letter-spacing: 0.1rem;
-    font-size: 0.8cqw;
+#slogan {
+  margin-top: 0px;
+  text-align: center;
+  color: white;
+  letter-spacing: 0.1rem;
+  font-size: 0.8cqw;
 }
-
-
 
 /*
 #startgame:hover {
@@ -55,41 +58,41 @@ body {
 }
 */
 
-
 #startgame {
-    animation: glowing 2000ms infinite;
+  animation: glowing 2000ms infinite;
 }
 
-#aboutbutton, #highscoresbutton, #starttourn, #startpractice{
-    animation: glowing 0ms infinite;
+#aboutbutton,
+#highscoresbutton,
+#starttourn,
+#startpractice,
+#startgamenostr {
+  animation: glowing 0ms infinite;
 }
 
-#bottomInfo{
-    display: absolute;
-    bottom: 0px;
-    right: 0px;
+#bottomInfo {
+  display: absolute;
+  bottom: 0px;
+  right: 0px;
 }
 
-
-
-#splits, #version{
-    margin-top: 0;
-    text-align: center;
-    color: grey;
-    font-size: 0.8cqw;
-    letter-spacing: 0.03rem;
-    line-height: 1.4rem;
+#splits,
+#version {
+  margin-top: 0;
+  text-align: center;
+  color: grey;
+  font-size: 0.8cqw;
+  letter-spacing: 0.03rem;
+  line-height: 1.4rem;
 }
 
-#splits{
-    margin-top: 3%;
+#splits {
+  margin-top: 3%;
 }
-
 
 #buttonlink {
-    all: unset;
+  all: unset;
 }
-
 
 #announcement {
   position: fixed;
@@ -101,5 +104,10 @@ body {
   border-right: 0;
   box-shadow: #ffffff3d 0 0 80px;
   background: #000000d4;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 42%, rgb(40 40 40) 94%);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 42%,
+    rgb(40 40 40) 94%
+  );
 }
