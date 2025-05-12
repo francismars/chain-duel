@@ -1,14 +1,18 @@
 function editHostName() {
   const hostNameDiv = document.getElementById("hostName");
   const currentHostName = hostNameDiv.textContent.trim();
-  hostNameDiv.innerHTML = `<input type="text" id="hostNameInput" value="${currentHostName}">`;
+  hostNameDiv.innerHTML = `<input type="text" id="hostNameInput" value="${currentHostName}" class="${hostNameDiv.className}">`;
   const button = document.getElementById("hostNameChange");
   button.textContent = "Save";
   button.onclick = () => saveHostName();
-
   // Add event listener to cancel editing when clicking outside
   document.addEventListener("click", cancelHostNameEdit);
   const hostNameInput = document.getElementById("hostNameInput");
+  hostNameInput.focus();
+  hostNameInput.setSelectionRange(
+    currentHostName.length,
+    currentHostName.length
+  );
   hostNameInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       saveHostName();
@@ -56,10 +60,13 @@ function editHostLNAddress() {
   const button = document.getElementById("hostLNAddressChange");
   button.textContent = "Save";
   button.onclick = () => saveHostLNAddress();
-
-  // Add event listener to cancel editing when clicking outside
   document.addEventListener("click", cancelHostLNAddressEdit);
   const hostLNAddressInput = document.getElementById("hostLNAddressInput");
+  hostLNAddressInput.focus();
+  hostLNAddressInput.setSelectionRange(
+    currentHostLNAddress.length,
+    currentHostLNAddress.length
+  );
   hostLNAddressInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       saveHostLNAddress();
@@ -107,3 +114,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("hostName").textContent = savedHostName;
   document.getElementById("hostLNAddress").textContent = savedHostLNAddress;
 });
+
+function resetConfig() {
+  localStorage.removeItem("hostName");
+  localStorage.removeItem("hostLNAddress");
+  document.getElementById("hostName").textContent = "empty";
+  document.getElementById("hostLNAddress").textContent = "empty";
+  console.log("Configuration has been reset.");
+}

@@ -1,9 +1,11 @@
 body {
-  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.2)), url(../images/chainduel_bg.jpg);
+  background-image: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.7),
+      rgba(0, 0, 0, 0.2)
+    ),
+    url(../images/chainduel_bg.jpg);
 }
-
-
-
 
 .config-row {
   display: flex;
@@ -13,27 +15,34 @@ body {
   height: 4vw;
 }
 
-.config-row.disabled{
+.config-row.disabled {
   opacity: 0.3;
 }
 
 .config-row-text .label {
-    text-align: left;
+  text-align: left;
 }
 
 .config-row button {
-    margin-right: 0;
-    height: 2.5vw;
+  margin-right: 0;
+  height: 2.5vw;
 }
 
+#hostNameInput,
+#hostLNAddressInput {
+  background: transparent; /* Transparent background */
+  border: none; /* Remove border */
+  outline: none; /* Remove focus outline */
+  font-size: inherit; /* Match the font size of the parent element */
+  font-family: inherit; /* Match the font family of the parent element */
+  color: inherit; /* Match the text color of the parent element */
+  width: 100%; /* Ensure it takes the full width of the parent */
+  padding: 0; /* Remove padding */
+}
 
 .value {
-    font-size: 1.5vw;
+  font-size: 1.5vw;
 }
-
-
-
-
 
 .config-overlay {
   display: flex;
@@ -45,29 +54,26 @@ body {
   align-items: center;
   justify-content: center;
   background: #00000070;
-  transition: all .35s ease-in-out;
-  -moz-transition: all .35s ease-in-out;
-  -webkit-transition: all .35s ease-in-out;
+  transition: all 0.35s ease-in-out;
+  -moz-transition: all 0.35s ease-in-out;
+  -webkit-transition: all 0.35s ease-in-out;
   opacity: 1;
 }
 
-.config-overlay.hide{
+.config-overlay.hide {
   opacity: 0;
   display: none;
 }
 
-
-
 .config-overlay-inner {
-    width: 30vw;
-    background: #000;
-    padding: 5vw;
-    text-align: center;
-    box-shadow: #ffffff36 0 0 6vw;
+  width: 30vw;
+  background: #000;
+  padding: 5vw;
+  text-align: center;
+  box-shadow: #ffffff36 0 0 6vw;
 }
 
-
 .config-overlay .double-button {
-    width:100%;
-    margin-top:1vw
+  width: 100%;
+  margin-top: 1vw;
 }
