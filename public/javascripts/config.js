@@ -5,7 +5,6 @@ function editHostName() {
   const button = document.getElementById("hostNameChange");
   button.textContent = "Save";
   button.onclick = () => saveHostName();
-  // Add event listener to cancel editing when clicking outside
   document.addEventListener("click", cancelHostNameEdit);
   const hostNameInput = document.getElementById("hostNameInput");
   hostNameInput.focus();
@@ -25,12 +24,15 @@ function saveHostName() {
   const newHostName = hostNameInput.value.trim();
   localStorage.setItem("hostName", newHostName);
   const hostNameDiv = document.getElementById("hostName");
-  hostNameDiv.textContent = newHostName || "empty";
+  hostNameDiv.textContent = newHostName || "default";
   const button = document.getElementById("hostNameChange");
   button.textContent = "Change";
   button.onclick = () => editHostName();
-
-  // Remove the event listener after saving
+  if (newHostName == "default" || newHostName == "") {
+    localStorage.removeItem("hostName");
+    hostNameInput.textContent = "default";
+    return;
+  }
   document.removeEventListener("click", cancelHostNameEdit);
 }
 
@@ -42,13 +44,11 @@ function cancelHostNameEdit(event) {
     event.target.id !== "hostNameChange"
   ) {
     const hostNameDiv = document.getElementById("hostName");
-    const savedHostName = localStorage.getItem("hostName") || "empty";
+    const savedHostName = localStorage.getItem("hostName") || "default";
     hostNameDiv.textContent = savedHostName;
     const button = document.getElementById("hostNameChange");
     button.textContent = "Change";
     button.onclick = () => editHostName();
-
-    // Remove the event listener after canceling
     document.removeEventListener("click", cancelHostNameEdit);
   }
 }
@@ -79,12 +79,15 @@ function saveHostLNAddress() {
   const newHostLNAddress = hostLNAddressInput.value.trim();
   localStorage.setItem("hostLNAddress", newHostLNAddress);
   const hostLNAddressDiv = document.getElementById("hostLNAddress");
-  hostLNAddressDiv.textContent = newHostLNAddress || "empty";
+  hostLNAddressDiv.textContent = newHostLNAddress || "default";
   const button = document.getElementById("hostLNAddressChange");
   button.textContent = "Change";
   button.onclick = () => editHostLNAddress();
-
-  // Remove the event listener after saving
+  if (newHostLNAddress == "default" || newHostLNAddress == "") {
+    localStorage.removeItem("hostLNAddress");
+    newHostLNAddress.textContent = "default";
+    return;
+  }
   document.removeEventListener("click", cancelHostLNAddressEdit);
 }
 
@@ -96,21 +99,19 @@ function cancelHostLNAddressEdit(event) {
     event.target.id !== "hostLNAddressChange"
   ) {
     const hostLNAddressDiv = document.getElementById("hostLNAddress");
-    const savedHostLNAddress = localStorage.getItem("hostLNAddress") || "empty";
+    const savedHostLNAddress =
+      localStorage.getItem("hostLNAddress") || "default";
     hostLNAddressDiv.textContent = savedHostLNAddress;
     const button = document.getElementById("hostLNAddressChange");
     button.textContent = "Change";
     button.onclick = () => editHostLNAddress();
-
-    // Remove the event listener after canceling
     document.removeEventListener("click", cancelHostLNAddressEdit);
   }
 }
 
-// Load saved values on page load
 document.addEventListener("DOMContentLoaded", () => {
-  const savedHostName = localStorage.getItem("hostName") || "empty";
-  const savedHostLNAddress = localStorage.getItem("hostLNAddress") || "empty";
+  const savedHostName = localStorage.getItem("hostName") || "default";
+  const savedHostLNAddress = localStorage.getItem("hostLNAddress") || "default";
   document.getElementById("hostName").textContent = savedHostName;
   document.getElementById("hostLNAddress").textContent = savedHostLNAddress;
 });
@@ -118,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function resetConfig() {
   localStorage.removeItem("hostName");
   localStorage.removeItem("hostLNAddress");
-  document.getElementById("hostName").textContent = "empty";
-  document.getElementById("hostLNAddress").textContent = "empty";
+  document.getElementById("hostName").textContent = "default";
+  document.getElementById("hostLNAddress").textContent = "default";
   console.log("Configuration has been reset.");
 }
