@@ -150,7 +150,8 @@ function redirectToGame() {
   window.location.href = "/game";
 }
 
-socket.emit("getPracticeMenuInfos");
+const storedHostLNAddress = localStorage.getItem("hostLNAddress") || null;
+socket.emit("getPracticeMenuInfos", { LNAddress: storedHostLNAddress });
 
 socket.on("resGetPracticeMenuInfos", (body) => {
   console.log(body);

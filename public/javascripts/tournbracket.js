@@ -35,7 +35,12 @@ const params = new URLSearchParams(urlToParse);
 
 let numberOfPlayers = parseInt(params.get("players"));
 let deposit = parseInt(params.get("deposit"));
-let getTournamentInfosMSG = { buyin: deposit, players: numberOfPlayers };
+const storedHostLNAddress = localStorage.getItem("hostLNAddress") || null;
+let getTournamentInfosMSG = {
+  buyin: deposit,
+  players: numberOfPlayers,
+  hostLNAddress: storedHostLNAddress,
+};
 socket.emit("getTournamentInfos", getTournamentInfosMSG);
 
 let timesWithdrawed = 0;
