@@ -30,7 +30,7 @@ function saveHostName() {
   button.onclick = () => editHostName();
   if (newHostName == "default" || newHostName == "") {
     localStorage.removeItem("hostName");
-    hostNameInput.textContent = "default";
+    hostNameDiv.textContent = "default";
     return;
   }
   document.removeEventListener("click", cancelHostNameEdit);
@@ -83,9 +83,14 @@ function saveHostLNAddress() {
   const button = document.getElementById("hostLNAddressChange");
   button.textContent = "Change";
   button.onclick = () => editHostLNAddress();
-  if (newHostLNAddress == "default" || newHostLNAddress == "") {
+  const lightningAddressRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (
+    newHostLNAddress == "default" ||
+    newHostLNAddress == "" ||
+    !lightningAddressRegex.test(newHostLNAddress)
+  ) {
     localStorage.removeItem("hostLNAddress");
-    newHostLNAddress.textContent = "default";
+    hostLNAddressDiv.textContent = "default";
     return;
   }
   document.removeEventListener("click", cancelHostLNAddressEdit);
