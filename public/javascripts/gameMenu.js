@@ -208,9 +208,13 @@ const urlToParse = location.search;
 const params = new URLSearchParams(urlToParse);
 const nostr = params.get("nostr");
 
+const storedHostLNAddress = localStorage.getItem("hostLNAddress") || null;
+if (storedHostLNAddress)
+  console.log(`Found Custom Host LN Address: ${storedHostLNAddress}`);
+
 if (!nostr) {
   console.log("getGameMenuInfos");
-  socket.emit("getGameMenuInfos");
+  socket.emit("getGameMenuInfos", { LNAddress: storedHostLNAddress });
 } else {
   console.log("nostrInit");
   nostrInit();
@@ -469,7 +473,7 @@ function nostrInit() {
   document.getElementById("lnurlPanel").classList.add("hide");
   document.getElementById("nostrPanel").classList.remove("hide");
   gameMenu = "P2PNOSTR";
-  socket.emit("getGameMenuInfosNostr");
+  socket.emit("getGameMenuInfosNostr", { LNAddress: storedHostLNAddress });
 }
 
 function initiatenostrqr() {

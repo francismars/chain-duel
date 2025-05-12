@@ -2,7 +2,8 @@ const hideSponsorInfo = false;
 const sponsorshipSwitch = true;
 
 const sponsorText = "Sponsored by"; //"50,000 sats * 16 BUY IN MATCH <span id='sponsorship-amount'>800,000</span> sats prize donated by";
-const sponsorName = "@chainduel";
+const storedHostName = localStorage.getItem("hostName");
+const sponsorName = storedHostName || "@chainduel";
 const imageList = [
   "bitcoin_magazine.svg",
   "piratehash.png",
