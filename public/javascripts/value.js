@@ -14,7 +14,7 @@ const imageList = [
   "amityage_color.png",
   "piratehash_animated.png",
 ];
-const sponsorImage = "/images/sponsors/" + imageList[7];
+const sponsorImage = "/images/sponsors/" + imageList[2];
 
 // Global Sponsorship
 if (document.getElementsByClassName("sponsorship") != null) {
