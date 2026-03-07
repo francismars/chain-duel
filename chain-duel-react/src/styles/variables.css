@@ -1,0 +1,16 @@
+/* CSS Variables - matching legacy styles */
+:root {
+  /* Colors */
+  --bg-gradient: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.2));
+  
+  /* Typography */
+  --font-chainduel: 'BureauGrotesque', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  /* Spacing */
+  --margin-horizontal: 15%;
+  
+  /* Game */
+  --game-cols: 51;
+  --game-rows: 25;
+}

@@ -1,0 +1,21 @@
+/* Sponsorship component styles */
+
+.sponsorship {
+  display: block;
+}
+
+.sponsored-by-label {
+  color: white;
+  text-align: center;
+  margin-bottom: 0px;
+  font-size: 0.8cqw;
+  text-transform: uppercase;
+  letter-spacing: 0.03rem;
+}
+
+.sponsored-img {
+  display: block;
+  margin: 0 auto;
+  max-width: 200px;
+  height: auto;
+}

@@ -1,0 +1,83 @@
+#brand {
+  position: fixed;
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+#chain {
+  color: white;
+  margin-top: 0%;
+  margin-left: 1%;
+  text-align: left;
+  font-size: 2.5cqw;
+}
+
+#duel {
+  color: white;
+  margin-top: 0%;
+  text-align: right;
+  font-size: 2.5cqw;
+  margin-right: 1%;
+}
+
+.hero-outline {
+  position: static;
+  margin-bottom: 1%;
+  text-align: center;
+  font-size: 6cqw;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: white;
+}
+
+#tournprefs {
+  width: 100%;
+  padding-top: 4rem;
+}
+
+#mainmenubutton {
+  animation: glowing 2000ms infinite;
+}
+
+.amount-preference {
+  width: 25%;
+  display: flex;
+  margin: auto;
+  justify-content: space-between;
+  text-transform: uppercase;
+  column-gap: 0;
+}
+
+.amount-preference .button {
+  display: inline-block;
+}
+
+.button.increment {
+  width: 3vw;
+  height: 3vw;
+  text-align: center;
+  margin: 0;
+}
+
+.value-display {
+  width: 50%;
+  text-align: center;
+}
+
+.value-display h1 {
+  font-size: 3.5vw;
+}
+
+#depositValue {
+  display: inline;
+}
+
+#decreasePlayersButton,
+#increasePlayersButton,
+#increaseDepositButton,
+#decreaseDepositButton,
+#continueButton {
+  animation: glowing 0ms infinite;
+}

@@ -1,0 +1,228 @@
+/* Shared layout and rules for Practice + P2P game setup pages */
+
+.game-setup-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-setup-page .flex.full {
+  flex: 1;
+  min-height: 100vh;
+  padding-top: 4rem;
+}
+
+.game-setup-page .flex-spacer {
+  flex-shrink: 0;
+  min-height: 0;
+}
+
+.game-setup-page .game-setup-main {
+  flex-shrink: 0;
+}
+
+.game-setup-page #brand {
+  position: fixed;
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.game-setup-page #chain {
+  color: white;
+  margin-top: 0;
+  margin-left: 1%;
+  text-align: left;
+  font-size: 2.5cqw;
+}
+
+.game-setup-page #duel {
+  color: white;
+  margin-top: 0;
+  text-align: right;
+  font-size: 2.5cqw;
+  margin-right: 1%;
+}
+
+#titleslogan {
+  color: white;
+  text-align: center;
+  margin-bottom: 1%;
+  margin-top: 1%;
+  font-size: 1.5cqw;
+  font-weight: 300;
+}
+
+#centerSection {
+  display: flex;
+  justify-content: center;
+}
+
+#gameCard {
+  margin-left: 20px;
+  margin-right: 20px;
+  width: 25%;
+  display: block;
+}
+
+.ruleTitle {
+  color: white;
+  text-align: center;
+  margin-bottom: 0;
+  font-size: 0.8cqw;
+  text-transform: uppercase;
+  letter-spacing: 0.03rem;
+}
+
+.gameDescription {
+  text-align: center;
+  font-size: 0.9cqw;
+}
+
+.rewards {
+  margin: auto;
+  width: 60%;
+}
+.reward-blocks {
+  text-align: left;
+}
+.reward-percent {
+  text-align: right;
+}
+
+#gameButtons {
+  padding-top: 3cqw;
+  display: flex;
+  margin: auto;
+  justify-content: center;
+  gap: 21px;
+}
+
+#gameButtons .button {
+  margin: 0;
+}
+
+.game-setup-status {
+  text-align: center;
+  margin-top: 1rem;
+  min-height: 1.5rem;
+  font-size: 0.9cqw;
+}
+
+#mainmenubutton {
+  animation: glowing 2000ms infinite;
+}
+
+#cancelGameAbort,
+#cancelGameConfirm {
+  animation: glowing 0ms infinite;
+}
+
+#mainmenubutton:hover,
+#startgame:hover {
+  background-color: white;
+  color: white;
+}
+
+#mainmenubutton.disabled:hover,
+#startgame.disabled:hover {
+  background-color: transparent;
+  color: white;
+}
+
+#startgame {
+  animation: glowing 0ms infinite;
+}
+
+#bottomInfo {
+  display: inline-flex;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1cqw;
+  border-top: 1px solid rgba(255, 255, 255, 0.19);
+  padding: 1cqw;
+  box-sizing: border-box;
+  justify-content: space-around;
+  align-items: flex-end;
+  max-height: 12vw;
+  flex-shrink: 0;
+}
+
+#gameMenuTitle.hero-outline {
+  position: static;
+  margin-bottom: 1%;
+  text-align: center;
+  font-size: 6cqw;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: white;
+}
+
+/* Overlay and warning */
+.overlay {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: rgba(0, 0, 0, 0.8);
+  position: fixed;
+  top: 0;
+  left: 0;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.35s ease-in-out;
+  opacity: 1;
+  z-index: 10;
+}
+
+#loading.overlay img {
+  display: block;
+  width: 7vw;
+  height: 7vw;
+}
+
+#loading.overlay.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.overlay.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.warning {
+  width: 30%;
+  background: #000;
+  text-align: center;
+  box-shadow: 0 0 5vw rgba(255, 255, 255, 0.42);
+}
+
+.warning-inner {
+  padding: 8vw 6vw 6vw 6vw;
+}
+
+.warning-title {
+  font-size: 3vw;
+}
+
+.warning-text {
+  font-size: 1.2vw;
+}
+
+.warning-actions {
+  display: flex;
+}
+
+.warning .button {
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.warning .button.half {
+  width: 50%;
+}

@@ -1,0 +1,75 @@
+/* Index page styles - matching legacy exactly */
+
+#chainduel {
+  text-align: center;
+  color: white;
+  font-size: 14cqw;
+  letter-spacing: -0.03em;
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+
+#slogan {
+  margin-top: 0px;
+  text-align: center;
+  color: white;
+  letter-spacing: 0.1rem;
+  font-size: 0.8cqw;
+}
+
+#startgame {
+  animation: glowing 2000ms infinite;
+}
+
+#aboutbutton,
+#highscoresbutton,
+#starttourn,
+#startpractice,
+#startgamenostr {
+  animation: glowing 0ms infinite;
+}
+
+#bottomInfo {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 100%;
+  text-align: center;
+}
+
+#splits,
+#version {
+  margin-top: 0;
+  text-align: center;
+  color: grey;
+  font-size: 0.8cqw;
+  letter-spacing: 0.03rem;
+  line-height: 1.4rem;
+}
+
+#splits {
+  margin-top: 3%;
+}
+
+.backend-status.on {
+  color: #00ff00;
+  display: inline-block;
+  margin-right: 0.2em;
+}
+
+#announcement {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border-left: 0;
+  border-right: 0;
+  box-shadow: #ffffff3d 0 0 80px;
+  background: #000000d4;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 42%,
+    rgb(40 40 40) 94%
+  );
+}
