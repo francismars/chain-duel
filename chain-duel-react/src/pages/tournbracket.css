@@ -1,0 +1,92 @@
+#brand {
+  position: fixed;
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+#chain {
+  color: white;
+  margin-top: 0%;
+  margin-left: 1%;
+  text-align: left;
+  font-size: 2.5cqw;
+}
+
+#duel {
+  color: white;
+  margin-top: 0%;
+  text-align: right;
+  font-size: 2.5cqw;
+  margin-right: 1%;
+}
+
+#bracket {
+  margin: -4vw 1vw 0 1vw;
+  width: 100%;
+}
+
+.pages {
+  position: relative;
+  height: 40vw;
+}
+
+.page {
+  position: absolute;
+  font-size: 1.3vw;
+  height: 100%;
+  width: 100%;
+  text-align: center;
+}
+
+.page-inner {
+  display: grid;
+  height: 80%;
+  align-items: center;
+  text-align: center;
+  align-content: center;
+}
+
+.tournament-header {
+  margin: 0 0 -3cqw 0;
+}
+
+#tournament-name.hero-outline {
+  font-size: 5cqw;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: white;
+}
+
+.tournbracketSVG {
+  max-width: 85%;
+  margin: 0 auto;
+}
+
+.bracketDetails {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  gap: 3rem;
+  margin-top: -3vw;
+}
+
+.bracketDetail .value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.buttonsDiv {
+  display: flex;
+  gap: 0.6rem;
+}
+
+#backButton {
+  animation: glowing 2000ms infinite;
+}
+
+#proceedButton {
+  animation: glowing 0ms infinite;
+}

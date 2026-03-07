@@ -1,0 +1,139 @@
+body {
+  background-color: black;
+}
+
+#brand {
+  position: fixed;
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+#chain {
+  color: white;
+  margin-top: 0%;
+  margin-left: 1%;
+  text-align: left;
+  font-size: 2.5cqw;
+}
+
+#duel {
+  color: white;
+  margin-top: 0%;
+  text-align: right;
+  font-size: 2.5cqw;
+  margin-right: 1%;
+}
+
+#gameOver {
+  position: static;
+  margin-top: 0%;
+  margin-bottom: 0%;
+  text-align: center;
+  font-size: 3cqw;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: white;
+}
+
+#winner {
+  position: static;
+  margin-top: 0%;
+  text-align: center;
+  font-size: 3cqw;
+  color: white;
+  padding-top: 0%;
+  margin-bottom: 0%;
+}
+
+#fees {
+  width: 100%;
+  text-align: center;
+  font-size: 0.8cqw;
+  margin-top: 0.2%;
+}
+
+#claimReq1 {
+  margin-top: -1%;
+  font-size: 1cqw;
+}
+
+#prize {
+  position: static;
+  margin: 2rem 0;
+  text-align: center;
+  font-size: 8cqw;
+  color: white;
+  padding-top: 0%;
+  margin-bottom: 0%;
+  text-shadow: 0 0 25px white;
+}
+
+#claimText {
+  position: static;
+  text-align: center;
+  font-size: 1.5cqw;
+  color: white;
+  margin: 20px 0 0 0;
+}
+
+#buttonsDiv {
+  display: flex;
+  flex-direction: column;
+}
+
+#startnewbutton {
+  display: none;
+  animation: glowing 0ms infinite;
+}
+
+#claimbutton {
+  margin-bottom: 1%;
+  animation: glowing 2000ms infinite;
+}
+
+#doubleornotthingbutton {
+  margin-top: 0;
+  animation: glowing 0ms infinite;
+}
+
+#qrcodeLink {
+  display: flex;
+}
+
+#qrCode1 {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1%;
+  margin-bottom: 3%;
+  height: 13cqw;
+  width: 13cqw;
+}
+
+.blur {
+  filter: blur(10px);
+}
+
+.playerInfoGroup {
+  margin: auto;
+}
+
+.playerImg {
+  width: 3vw;
+  margin-bottom: -0.5vw;
+  border-radius: 1000px;
+}
+
+#socialFollow {
+  margin-top: 2cqw;
+  text-align: center;
+  font-size: 0.8cqw;
+  opacity: 0.8;
+}
+
+.social-icon {
+  height: 1.1cqw;
+  width: auto;
+  vertical-align: middle;
+}

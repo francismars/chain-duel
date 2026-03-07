@@ -1,0 +1,185 @@
+/* Highscores page styles - matching legacy exactly */
+
+#brand {
+  position: fixed;
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#chain {
+  color: white;
+  margin-top: 0%;
+  margin-left: 1%;
+  text-align: left;
+  font-size: 2.5cqw;
+}
+
+#duel {
+  color: white;
+  margin-top: 0%;
+  text-align: right;
+  font-size: 2.5cqw;
+  margin-right: 1%;
+}
+
+#page-title {
+  font-size: 3cqw;
+}
+
+#highscoresList {
+  width: 70%;
+  padding-bottom: 2vw;
+  box-sizing: border-box;
+}
+
+.rankStyle {
+  font-size: 3.8vw;
+  margin: 0px;
+  width: 7%;
+  text-align: left;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: grey;
+}
+
+.score-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  border-bottom: 1px solid #ffffff2b;
+  padding-top: 0.5vw;
+  align-items: center;
+  padding-bottom: 0.5vw;
+  letter-spacing: 0;
+}
+
+.score-row-last {
+  border-bottom: 0px;
+}
+
+#prevButton {
+  animation: glowing 0ms infinite;
+}
+
+#nextButton {
+  animation: glowing 0ms infinite;
+}
+
+.satsLabelStyle {
+  font-family: 'inter', sans-serif;
+  text-transform: uppercase;
+  font-size: 0.7cqw;
+  margin-left: 10px;
+  color: grey;
+}
+
+.winnerInfo {
+  width: 30%;
+  text-align: left;
+}
+
+.winnerNameStyle {
+  text-align: left;
+  font-size: 2.4vw;
+  margin-bottom: 0px;
+  letter-spacing: 0.03rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.winnerSatsStyle {
+  font-size: 1.2vw;
+  margin: 0;
+}
+
+.satsWinnerLabelStyle,
+.satsLoserLabelStyle {
+  padding-left: 5px;
+}
+
+.VSLabelStyle {
+  font-size: 2cqw;
+  color: grey;
+  width: 15%;
+  margin: 0;
+}
+
+.loserinfo {
+  width: 27%;
+  text-align: left;
+}
+
+.loserNameStyle {
+  text-align: left;
+  font-size: 1.5cqw;
+  color: grey;
+  margin-bottom: 0;
+  letter-spacing: 0.01rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loserSatsStyle {
+  font-size: 1vw;
+  color: grey;
+  margin: 0;
+}
+
+.prizeinfo {
+  text-align: right;
+  width: 25%;
+}
+
+.prizeSatsStyle {
+  margin-bottom: 0px;
+  font-size: 3vw;
+  margin-top: 2px;
+}
+
+#mainmenubutton {
+  animation: glowing 2000ms infinite;
+}
+
+.sponsor img {
+  max-height: 1.52vw;
+  padding: 2% 0 0;
+}
+
+.sponsor {
+  text-align: left;
+  width: 30%;
+}
+
+.sponsor span {
+  font-size: 0.8vw;
+  opacity: 0.5;
+  margin: 0;
+  display: block;
+}
+
+.tournStyle {
+  width: 11%;
+  font-size: 2vw;
+  margin: 0;
+}
+
+.tournNameStyle {
+  font-size: 1vw;
+  color: grey;
+  margin: 0;
+}
+
+.button {
+  margin-top: 0.5%;
+  width: 15%;
+  padding: 0.5%;
+}
+
+.double-button {
+  width: 15%;
+}

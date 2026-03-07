@@ -1,0 +1,105 @@
+body {
+  background-color: black;
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
+    url('/images/chainduel_bg_no_sat.jpg');
+}
+
+#brand {
+  position: fixed;
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+#chain {
+  color: white;
+  margin-top: 0%;
+  margin-left: 1%;
+  text-align: left;
+  font-size: 2.5cqw;
+}
+
+#duel {
+  color: white;
+  margin-top: 0%;
+  text-align: right;
+  font-size: 2.5cqw;
+  margin-right: 1%;
+}
+
+.flex.full.game {
+  display: flex;
+  justify-content: center;
+}
+
+.flex.points,
+.flex.players {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0.5vw 15%;
+}
+
+.playerSquare {
+  width: 2cqw;
+  height: 2cqw;
+  box-shadow: 0 0 11px #ffffffb0;
+}
+
+#player1info,
+#player2info,
+#gameInfo {
+  font-size: 2.5cqw;
+  width: 33.3333%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#gameInfo {
+  text-align: center;
+}
+
+#player2info {
+  text-align: right;
+}
+
+.player-sats {
+  width: 25%;
+}
+
+.player-sats-p2 {
+  text-align: right;
+}
+
+#p1Points,
+#p2Points {
+  color: white;
+  font-size: 2.5cqw;
+}
+
+#gameCanvas {
+  margin: 0 15%;
+  left: 0;
+  right: 0;
+  top: 28%;
+  width: 70vw;
+  height: 39vw;
+  background-color: #6969698f;
+  background-image: url('/images/game_bg.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.game-shell-note {
+  text-align: center;
+  margin: 1rem auto;
+  max-width: 70vw;
+  font-size: 0.9cqw;
+  opacity: 0.8;
+}
+
+#mainmenubutton {
+  animation: glowing 2000ms infinite;
+}
