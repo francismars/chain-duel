@@ -4,16 +4,17 @@
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
   width: 53%;
   min-width: 0;
   gap: 1.5cqw;
+  padding: 1vw;
 }
 
 .practice-page #player1card .player-card-info,
 .practice-page #player1card #player1cardinfo {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
 }
 
@@ -41,6 +42,7 @@
 
 #player1cardinfo {
   text-align: center;
+  align-items: center;
 }
 
 .expanded #player1cardinfo {
@@ -120,6 +122,8 @@
   box-sizing: border-box;
   max-width: 100%;
   max-height: 100%;
+  min-width: 0;
+  min-height: 0;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -130,6 +134,8 @@
 .qrcodeContainer .qrcode {
   max-width: 100%;
   max-height: 100%;
+  min-width: 0;
+  min-height: 0;
   width: auto;
   height: auto;
   filter: invert(1);
@@ -217,7 +223,7 @@
 }
 
 .practice-page #player1card .deposit-message {
-  text-align: left;
+  text-align: center;
 }
 
 .practice-teaser h1 {

@@ -33,9 +33,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 300px;
+  gap: 1vw;
+  width: 30vw;
   margin: 1.5rem auto 0;
 }
 
