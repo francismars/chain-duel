@@ -76,39 +76,46 @@ export default function TournamentPrefs() {
           navigate('/');
         } else if (buttonSelected === 'continueButton') {
           navigate(`/tournbracket?players=${playersNumber}&deposit=${deposit}`);
-        } else if (buttonSelected === 'decreasePlayersButton') {
+        } else if (buttonSelected === 'decreasePlayersButton' && playersNumber > 4) {
           decreasePlayers();
-        } else if (buttonSelected === 'increasePlayersButton') {
+        } else if (buttonSelected === 'increasePlayersButton' && playersNumber < 16) {
           increasePlayers();
-        } else if (buttonSelected === 'decreaseDepositButton') {
+        } else if (buttonSelected === 'decreaseDepositButton' && deposit > 10000) {
           decreaseDeposit();
-        } else if (buttonSelected === 'increaseDepositButton') {
+        } else if (buttonSelected === 'increaseDepositButton' && deposit < 100000) {
           increaseDeposit();
         }
       }
 
+      /* Grid: left col [ - players, - deposit, MAIN MENU ], right col [ + players, + deposit, Continue ] */
       if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
         if (buttonSelected === 'mainMenuButton') {
-          setButtonSelected('continueButton');
+          setButtonSelected('decreaseDepositButton');
         } else if (buttonSelected === 'continueButton') {
           setButtonSelected('increaseDepositButton');
-        } else if (buttonSelected === 'increaseDepositButton') {
-          setButtonSelected('increasePlayersButton');
         } else if (buttonSelected === 'decreaseDepositButton') {
           setButtonSelected('decreasePlayersButton');
+        } else if (buttonSelected === 'increaseDepositButton') {
+          setButtonSelected('increasePlayersButton');
+        } else if (buttonSelected === 'decreasePlayersButton') {
+          setButtonSelected('mainMenuButton');
+        } else if (buttonSelected === 'increasePlayersButton') {
+          setButtonSelected('continueButton');
         }
       }
       if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
-        if (buttonSelected === 'increasePlayersButton') {
-          setButtonSelected('increaseDepositButton');
-        } else if (buttonSelected === 'decreasePlayersButton') {
+        if (buttonSelected === 'decreasePlayersButton') {
           setButtonSelected('decreaseDepositButton');
+        } else if (buttonSelected === 'increasePlayersButton') {
+          setButtonSelected('increaseDepositButton');
+        } else if (buttonSelected === 'decreaseDepositButton') {
+          setButtonSelected('mainMenuButton');
         } else if (buttonSelected === 'increaseDepositButton') {
           setButtonSelected('continueButton');
-        } else if (buttonSelected === 'decreaseDepositButton') {
-          setButtonSelected('continueButton');
+        } else if (buttonSelected === 'mainMenuButton') {
+          setButtonSelected('decreasePlayersButton');
         } else if (buttonSelected === 'continueButton') {
-          setButtonSelected('mainMenuButton');
+          setButtonSelected('increasePlayersButton');
         }
       }
       if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
@@ -116,6 +123,8 @@ export default function TournamentPrefs() {
           setButtonSelected('decreasePlayersButton');
         } else if (buttonSelected === 'increaseDepositButton') {
           setButtonSelected('decreaseDepositButton');
+        } else if (buttonSelected === 'continueButton') {
+          setButtonSelected('mainMenuButton');
         }
       }
       if (
@@ -127,6 +136,8 @@ export default function TournamentPrefs() {
           setButtonSelected('increasePlayersButton');
         } else if (buttonSelected === 'decreaseDepositButton') {
           setButtonSelected('increaseDepositButton');
+        } else if (buttonSelected === 'mainMenuButton') {
+          setButtonSelected('continueButton');
         }
       }
     };
@@ -136,7 +147,7 @@ export default function TournamentPrefs() {
   }, [buttonSelected, playersNumber, deposit, navigate]);
 
   return (
-    <div className="flex full flex-center tournprefs-page">
+    <div className="tournprefs-page">
       <header id="brand">
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
@@ -153,24 +164,33 @@ export default function TournamentPrefs() {
             <div className="amount-preference">
               <Button
                 ref={decreasePlayersRef}
-                className="increment"
+                className={`increment ${playersNumber <= 4 ? 'disabled' : ''}`}
                 id="decreasePlayersButton"
                 type="button"
                 onClick={decreasePlayers}
+                aria-label="Decrease number of players"
+                disabled={playersNumber <= 4}
               >
-                -
+                <svg className="increment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
               </Button>
               <div className="value-display">
                 <h1 id="numberOfPlayers">{playersNumber}</h1>
               </div>
               <Button
                 ref={increasePlayersRef}
-                className="increment"
+                className={`increment ${playersNumber >= 16 ? 'disabled' : ''}`}
                 id="increasePlayersButton"
                 type="button"
                 onClick={increasePlayers}
+                aria-label="Increase number of players"
+                disabled={playersNumber >= 16}
               >
-                +
+                <svg className="increment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
               </Button>
             </div>
           </div>
@@ -179,47 +199,58 @@ export default function TournamentPrefs() {
             <div className="amount-preference">
               <Button
                 ref={decreaseDepositRef}
-                className="increment"
+                className={`increment ${deposit <= 10000 ? 'disabled' : ''}`}
                 id="decreaseDepositButton"
                 type="button"
                 onClick={decreaseDeposit}
+                aria-label="Decrease buy in"
+                disabled={deposit <= 10000}
               >
-                -
+                <svg className="increment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
               </Button>
               <div className="value-display">
                 <h1 id="depositValue">{deposit.toLocaleString()}</h1>
               </div>
               <Button
                 ref={increaseDepositRef}
-                className="increment"
+                className={`increment ${deposit >= 100000 ? 'disabled' : ''}`}
                 id="increaseDepositButton"
                 type="button"
                 onClick={increaseDeposit}
+                aria-label="Increase buy in"
+                disabled={deposit >= 100000}
               >
-                +
+                <svg className="increment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
               </Button>
             </div>
           </div>
         </div>
 
-        <Button
-          ref={continueRef}
-          id="continueButton"
-          type="button"
-          onClick={() =>
-            navigate(`/tournbracket?players=${playersNumber}&deposit=${deposit}`)
-          }
-        >
-          Continue
-        </Button>
-        <Button
-          ref={mainMenuRef}
-          id="mainmenubutton"
-          type="button"
-          onClick={() => navigate('/')}
-        >
-          MAIN MENU
-        </Button>
+        <div className="double-button">
+          <Button
+            ref={mainMenuRef}
+            id="mainmenubutton"
+            type="button"
+            onClick={() => navigate('/')}
+          >
+            MAIN MENU
+          </Button>
+          <Button
+            ref={continueRef}
+            id="continueButton"
+            type="button"
+            onClick={() =>
+              navigate(`/tournbracket?players=${playersNumber}&deposit=${deposit}`)
+            }
+          >
+            Continue
+          </Button>
+        </div>
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
