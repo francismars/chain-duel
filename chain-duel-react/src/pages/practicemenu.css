@@ -19,8 +19,8 @@
 
 .practice-page #player1card .qrcodeContainer {
   flex: 0 0 auto;
-  width: 12vw;
-  max-width: 120px;
+  width: 14vw;
+  max-width: 140px;
   overflow: hidden;
 }
 
@@ -94,11 +94,11 @@
 
 .qrcodeContainer {
   position: relative;
-  width: 12vw;
-  max-width: 120px;
-  height: 12vw;
-  max-height: 120px;
-  min-height: 64px;
+  width: 14vw;
+  max-width: 140px;
+  height: 14vw;
+  max-height: 140px;
+  min-height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,6 +123,8 @@
   width: auto;
   height: auto;
   object-fit: contain;
+  filter: invert(1);
+  mix-blend-mode: screen;
 }
 
 .qrcodeContainer .qrcode {
@@ -130,6 +132,8 @@
   max-height: 100%;
   width: auto;
   height: auto;
+  filter: invert(1);
+  mix-blend-mode: screen;
 }
 
 .qrcodeContainer .qrcode-placeholder {

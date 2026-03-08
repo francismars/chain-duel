@@ -321,7 +321,8 @@ export default function GameMenu() {
         <div id="player2card">
           <div id="player2cardinfo" className="player-card-info">
             <div id="player2satsContainer" className={`player-sats ${highlightP2 ? 'highlight' : ''}`}>
-              <span className="grey sats-label">sats</span> <span id="player2sats">{fmt(player2Sats)}</span>
+              <span id="player2sats">{fmt(player2Sats)}</span>
+              <span className="grey sats-label">sats</span>
             </div>
             <div className="condensed">
               <div id="player2info" className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}>

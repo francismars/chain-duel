@@ -26,6 +26,12 @@
   width: 33%;
   flex-shrink: 0;
   gap: 1cqw;
+  min-width: 0;
+}
+
+/* Keep QR from shrinking so it never overlaps the info column */
+.gamemenu-page #player2card .qrcodeContainer {
+  flex-shrink: 0;
 }
 
 .gamemenu-page .prizeinfocard {
@@ -107,15 +113,16 @@
   margin-top: 0.5cqw;
 }
 
-/* Player 2: info column – all elements right-aligned (mirror of player 1) */
+/* Player 2: info column first, then QR; right-aligned so it mirrors P1 visually */
 #player2cardinfo {
   padding-left: 0;
   padding-right: 0;
   text-align: right;
   justify-content: flex-start;
   align-items: flex-end;
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
 }
 
 .gamemenu-page #player2cardinfo #player2satsContainer,
@@ -151,6 +158,14 @@
   flex-wrap: nowrap;
 }
 
+.gamemenu-page #player1satsContainer {
+  justify-content: flex-start;
+}
+
+.gamemenu-page #player2satsContainer {
+  justify-content: flex-end;
+}
+
 #player2sats,
 #player1sats {
   color: white;
@@ -172,11 +187,11 @@
 
 .gamemenu-page .qrcodeContainer {
   position: relative;
-  width: 9vw;
-  max-width: 100px;
-  height: 9vw;
-  max-height: 100px;
-  min-height: 64px;
+  width: 11vw;
+  max-width: 120px;
+  height: 11vw;
+  max-height: 120px;
+  min-height: 72px;
   flex-shrink: 0;
   overflow: hidden;
   display: flex;
@@ -202,6 +217,8 @@
   width: auto;
   height: auto;
   object-fit: contain;
+  filter: invert(1);
+  mix-blend-mode: screen;
 }
 
 .gamemenu-page .qrcodeContainer .qrcode {
@@ -209,6 +226,8 @@
   max-height: 100%;
   width: auto;
   height: auto;
+  filter: invert(1);
+  mix-blend-mode: screen;
 }
 
 #player1satsContainer.highlight,
