@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
@@ -30,17 +30,10 @@ export default function TournamentLobby() {
 
   const numberOfPlayers = Math.max(2, parseInt(params.get('players') || '4', 10) || 4);
   const deposit = Math.max(10000, parseInt(params.get('deposit') || '10000', 10) || 10000);
+  const finalPrize = Math.floor(numberOfPlayers * deposit * 0.95);
+  const paidCount = Object.keys(playersPaid).length;
 
   useGamepad(true);
-
-  const playerRows = useMemo(
-    () =>
-      Array.from({ length: numberOfPlayers }, (_, i) => ({
-        key: `player${i + 1}`,
-        label: `Player${i + 1}:`,
-      })),
-    [numberOfPlayers]
-  );
 
   useEffect(() => {
     if (backRef.current) {
@@ -114,67 +107,101 @@ export default function TournamentLobby() {
   }, [buttonSelected, playersPaid, numberOfPlayers, deposit, navigate]);
 
   const qrValue = payLink?.lnurl || payLink?.lnurlp || '';
-  const canProceed = Object.keys(playersPaid).length >= numberOfPlayers;
+  const canProceed = paidCount >= numberOfPlayers;
 
   return (
-    <div className="flex full flex-center tournlobby-page">
-      <header id="brand">
+    <div className="tournlobby-page">
+      <header id="brand" className="tournlobby-header">
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
       </header>
 
-      <div id="about">
-        <div className="pages">
-          <div id="page-1" className="page">
-            <h1>Tournament Lobby</h1>
-            <h3>
-              Players: <span id="numberOfPlayers">{numberOfPlayers}</span> · Buy In:{' '}
-              <span id="buyIn">{deposit.toLocaleString()}</span> sats
-            </h3>
-            <div className="page-inner" id="pageinner">
-              <div className="qrCodeDiv" id="qrCodeDiv">
-                {qrValue ? (
-                  <QRCodeSVG id="qrTournament" value={qrValue} size={120} />
-                ) : (
-                  <div id="qrTournament" className="qr-placeholder" />
-                )}
-              </div>
-              <div className="playersListDiv" id="playersListDiv">
-                {playerRows.map((row) => (
-                  <div key={row.key}>
-                    <p>{row.label}</p>
-                    <p id={`namePlayer${row.key.replace('player', '')}`}>
-                      {playersPaid[row.key] || ''}
-                    </p>
-                  </div>
-                ))}
-              </div>
+      <div className="tournlobby-middle">
+        <div className="tournlobby-modal">
+          <div className="tournlobby-header-title">
+            <div className="label">Tournament Lobby</div>
+            <h1 className="hero-outline">The Merkle Tree</h1>
+          </div>
+
+          <div className="tournlobby-deposit-card">
+            <div className="tournlobby-deposit-header">
+              <span className="tournlobby-deposit-label">Buy In (per player)</span>
+              <span className="tournlobby-deposit-amount">
+                {deposit.toLocaleString()} <span className="sats-label">sats</span>
+              </span>
+            </div>
+            <p className="tournlobby-deposit-note">Set player name on the payment note</p>
+
+            <div className="tournlobby-qr-wrap" id="qrCodeDiv">
+              {qrValue ? (
+                <QRCodeSVG
+                  id="qrTournament"
+                  value={qrValue}
+                  size={220}
+                  level="M"
+                  includeMargin={false}
+                  className="tournlobby-qr"
+                />
+              ) : (
+                <div id="qrTournament" className="tournlobby-qr-placeholder" />
+              )}
+            </div>
+
+            <div className="tournlobby-deposit-status">
+              {paidCount > 0
+                ? `${paidCount} / ${numberOfPlayers} players paid`
+                : '0 sats deposited'}
+            </div>
+
+            <div className="tournlobby-buttons">
+              <Button
+                ref={backRef}
+                className={paidCount > 0 ? 'disabled' : ''}
+                id="backButton"
+                type="button"
+                onClick={() => navigate('/tournprefs')}
+              >
+                Cancel
+              </Button>
+              <Button
+                ref={proceedRef}
+                className={canProceed ? '' : 'disabled'}
+                id="proceedButton"
+                type="button"
+                onClick={() => {
+                  if (!canProceed) return;
+                  sessionStorage.setItem('Players', JSON.stringify(playersPaid));
+                  navigate(`/tournbracket?players=${numberOfPlayers}&deposit=${deposit}`);
+                }}
+              >
+                Start
+              </Button>
             </div>
           </div>
         </div>
+      </div>
 
-        <Button
-          ref={proceedRef}
-          className={canProceed ? '' : 'disabled'}
-          id="proceedButton"
-          type="button"
-          onClick={() => {
-            if (!canProceed) return;
-            sessionStorage.setItem('Players', JSON.stringify(playersPaid));
-            navigate(`/tournbracket?players=${numberOfPlayers}&deposit=${deposit}`);
-          }}
-        >
-          Proceed
-        </Button>
-        <Button
-          ref={backRef}
-          className={Object.keys(playersPaid).length > 0 ? 'disabled' : ''}
-          id="backButton"
-          type="button"
-          onClick={() => navigate('/tournprefs')}
-        >
-          Back
-        </Button>
+      <div className="tournlobby-bottom">
+        <div className="tournlobby-details" id="bracketDetails">
+          <div className="tournlobby-detail">
+            <div className="label">Players</div>
+            <div className="value">
+              <span id="numberOfPlayers">{numberOfPlayers}</span>
+            </div>
+          </div>
+          <div className="tournlobby-detail">
+            <div className="label">Final Prize</div>
+            <div className="value">
+              <span id="finalPrize">{finalPrize.toLocaleString()}</span> <span>sats</span>
+            </div>
+          </div>
+          <div className="tournlobby-detail">
+            <div className="label">Buy In</div>
+            <div className="value">
+              <span id="buyIn">{deposit.toLocaleString()}</span> <span>sats</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
