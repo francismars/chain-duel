@@ -1,8 +1,10 @@
 .corner-controls {
   position: fixed;
-  bottom: 1rem;
-  right: 1rem;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
+  flex-direction: column;
   gap: 0.35rem;
   z-index: 100;
 }
@@ -43,12 +45,13 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* Tooltip */
+/* Tooltip – show on the right of each icon */
 .corner-btn::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: calc(100% + 6px);
-  right: 0;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
   background: rgba(0, 0, 0, 0.85);
   color: rgba(255, 255, 255, 0.9);
   font-family: 'Inter', sans-serif;
@@ -60,11 +63,10 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   pointer-events: none;
   opacity: 0;
-  transform: translateY(3px);
   transition: opacity 0.15s, transform 0.15s;
 }
 
 .corner-btn:hover::after {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(-50%) translateX(0);
 }
