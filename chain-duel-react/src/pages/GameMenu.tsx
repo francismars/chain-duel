@@ -6,6 +6,7 @@ import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { GameSetupLayout } from '@/components/layout/GameSetupLayout';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
+import { useAudio, SFX } from '@/contexts/AudioContext';
 import type { LNURLP, SerializedGameInfo } from '@/types/socket';
 import { parseMenuResponse } from '@/lib/menuAdapters';
 import './gamemenu.css';
@@ -21,6 +22,7 @@ export default function GameMenu() {
   const [searchParams] = useSearchParams();
   const useNostr = searchParams.get('nostr') === 'true';
   const { socket, connected } = useSocket();
+  const { playSfx } = useAudio();
   const [loading, setLoading] = useState(true);
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
   const [player1Sats, setPlayer1Sats] = useState(0);
@@ -143,6 +145,7 @@ export default function GameMenu() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
+        playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
           if (player1Sats !== 0 && player2Sats !== 0) navigate('/game');
         } else if (buttonSelected === 'mainMenuButton') {
@@ -161,15 +164,21 @@ export default function GameMenu() {
         }
       }
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-        if (buttonSelected === 'cancelGameConfirm') setButtonSelected('cancelGameAbort');
+        if (buttonSelected === 'cancelGameConfirm') {
+          playSfx(SFX.MENU_SELECT);
+          setButtonSelected('cancelGameAbort');
+        }
       }
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-        if (buttonSelected === 'cancelGameAbort') setButtonSelected('cancelGameConfirm');
+        if (buttonSelected === 'cancelGameAbort') {
+          playSfx(SFX.MENU_SELECT);
+          setButtonSelected('cancelGameConfirm');
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [buttonSelected, player1Sats, player2Sats, socket, navigate]);
+  }, [buttonSelected, player1Sats, player2Sats, socket, navigate, playSfx]);
 
   const p1PayLink = payLinks?.find((p) => p.description === 'Player 1');
   const p2PayLink = payLinks?.find((p) => p.description === 'Player 2');
@@ -189,7 +198,14 @@ export default function GameMenu() {
         <p className="center" style={{ padding: '2rem' }}>
           P2P NOSTR mode is not yet implemented in the React app. Use LNURL P2P from the main menu.
         </p>
-        <button type="button" className="button" onClick={() => navigate('/')}>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            playSfx(SFX.MENU_CONFIRM);
+            navigate('/');
+          }}
+        >
           MAIN MENU
         </button>
       </div>
@@ -204,6 +220,7 @@ export default function GameMenu() {
         mainMenuDisabled={mainMenuDisabled}
         canStart={canStart}
         onMainMenu={() => {
+          playSfx(SFX.MENU_CONFIRM);
           if (player1Sats === 0 && player2Sats === 0) {
             setShowCancelOverlay(true);
             setButtonSelected('cancelGameAbort');
@@ -211,15 +228,20 @@ export default function GameMenu() {
             navigate('/');
           }
         }}
-        onStart={() => navigate('/game')}
+        onStart={() => {
+          playSfx(SFX.MENU_CONFIRM);
+          navigate('/game');
+        }}
         loading={loading}
         showCancelOverlay={showCancelOverlay}
         statusMessage={statusMessage}
         onCancelAbort={() => {
+          playSfx(SFX.MENU_CONFIRM);
           setShowCancelOverlay(false);
           setButtonSelected('mainMenuButton');
         }}
         onCancelConfirm={() => {
+          playSfx(SFX.MENU_CONFIRM);
           socket?.emit('cancelp2p');
           navigate('/', { replace: true });
         }}

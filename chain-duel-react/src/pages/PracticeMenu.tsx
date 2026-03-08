@@ -6,6 +6,7 @@ import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { GameSetupLayout } from '@/components/layout/GameSetupLayout';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
+import { useAudio, SFX } from '@/contexts/AudioContext';
 import type { LNURLP, SerializedGameInfo } from '@/types/socket';
 import { parseMenuResponse } from '@/lib/menuAdapters';
 import './practicemenu.css';
@@ -21,6 +22,7 @@ type ButtonSelected =
 export default function PracticeMenu() {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
+  const { playSfx } = useAudio();
   const [loading, setLoading] = useState(true);
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
   const [player1Sats, setPlayer1Sats] = useState(0);
@@ -152,6 +154,7 @@ export default function PracticeMenu() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
+        playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
           if (player1Sats !== 0) {
             navigate('/game');
@@ -173,11 +176,13 @@ export default function PracticeMenu() {
       }
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         if (buttonSelected === 'cancelGameConfirm') {
+          playSfx(SFX.MENU_SELECT);
           setButtonSelected('cancelGameAbort');
         }
       }
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
         if (buttonSelected === 'cancelGameAbort') {
+          playSfx(SFX.MENU_SELECT);
           setButtonSelected('cancelGameConfirm');
         }
       }
@@ -200,7 +205,7 @@ export default function PracticeMenu() {
       window.removeEventListener('keydown', handleKeyDownControl);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [buttonSelected, player1Sats, socket, navigate]);
+  }, [buttonSelected, player1Sats, socket, navigate, playSfx]);
 
   const player1PayLink = payLinks?.find((p) => p.description === 'Player 1');
   const minDeposit = player1PayLink?.min ?? 250;
@@ -219,6 +224,7 @@ export default function PracticeMenu() {
         mainMenuDisabled={mainMenuDisabled}
         canStart={canStart}
         onMainMenu={() => {
+          playSfx(SFX.MENU_CONFIRM);
           if (player1Sats === 0) {
             setShowCancelOverlay(true);
             setButtonSelected('cancelGameAbort');
@@ -226,15 +232,20 @@ export default function PracticeMenu() {
             navigate('/');
           }
         }}
-        onStart={() => navigate('/game')}
+        onStart={() => {
+          playSfx(SFX.MENU_CONFIRM);
+          navigate('/game');
+        }}
         loading={loading}
         showCancelOverlay={showCancelOverlay}
         statusMessage={statusMessage}
         onCancelAbort={() => {
+          playSfx(SFX.MENU_CONFIRM);
           setShowCancelOverlay(false);
           setButtonSelected('mainMenuButton');
         }}
         onCancelConfirm={() => {
+          playSfx(SFX.MENU_CONFIRM);
           socket?.emit('cancelp2p');
           navigate('/', { replace: true });
         }}
@@ -253,8 +264,8 @@ export default function PracticeMenu() {
               className={`player-sats ${highlightP1 ? 'highlight' : ''}`}
             >
               <span id="player1sats">{player1Sats.toLocaleString()}</span>
+              <span className="grey sats-label">sats</span>
             </div>
-            <span className="grey sats-label">sats</span>
             <div className="condensed">
               <div className="inline playerSquare white" />
               <div

@@ -1,4 +1,5 @@
-/* Shared layout and rules for Practice + P2P game setup pages */
+/* Shared layout for Practice + P2P game setup pages.
+   Template: top = header brand, middle = game setup, bottom = bottom info. */
 
 .game-setup-page {
   min-height: 100vh;
@@ -7,28 +8,37 @@
   flex-direction: column;
 }
 
-.game-setup-page .flex.full {
-  flex: 1;
-  min-height: 100vh;
-  padding-top: 4rem;
+/* Top: header brand */
+.game-setup-page .game-setup-header {
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.game-setup-page .flex-spacer {
-  flex-shrink: 0;
+/* Middle: game setup (rules, buttons) – fills space, content centered */
+.game-setup-page .game-setup-middle {
+  flex: 1;
   min-height: 0;
+  padding-top: 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .game-setup-page .game-setup-main {
   flex-shrink: 0;
 }
 
-.game-setup-page #brand {
-  position: fixed;
-  margin-top: 1rem;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Bottom: bottom info (player card(s), prize) */
+.game-setup-page .game-setup-bottom {
+  flex-shrink: 0;
 }
 
 .game-setup-page #chain {
@@ -138,7 +148,7 @@
 }
 
 #bottomInfo {
-  display: inline-flex;
+  display: flex;
   width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -146,10 +156,11 @@
   border-top: 1px solid rgba(255, 255, 255, 0.19);
   padding: 1cqw;
   box-sizing: border-box;
-  justify-content: space-around;
-  align-items: flex-end;
+  justify-content: center;
+  align-items: center;
   max-height: 12vw;
   flex-shrink: 0;
+  min-height: 0;
 }
 
 #gameMenuTitle.hero-outline {

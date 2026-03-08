@@ -132,7 +132,7 @@ h3 {
   width: 25%;
   justify-content: space-between;
   height: 3vw;
-  gap: 4%;
+  gap: 2%;
 }
 
 .double-button .button {
@@ -140,6 +140,9 @@ h3 {
   width: 49%;
   height: 100%;
   padding: 3.5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @keyframes glowing {
