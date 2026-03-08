@@ -162,9 +162,7 @@
   box-sizing: border-box;
   justify-content: center;
   align-items: center;
-  max-height: 12vw;
   flex-shrink: 0;
-  min-height: 0;
 }
 
 #gameMenuTitle.hero-outline {
