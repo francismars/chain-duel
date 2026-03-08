@@ -77,10 +77,11 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
         configRef.current = { serverIP: config.IP, serverPORT: config.PORT };
       }
 
-      // Get socket connection
+      // Get socket connection (may be existing and already connected when navigating)
       const nextSocket = getSocket(configRef.current!);
       socketRef.current = nextSocket;
       setSocket(nextSocket);
+      setConnected(nextSocket.connected);
 
       // Set up event handlers
       // Remove previous lifecycle listeners from this hook instance before re-attaching.
