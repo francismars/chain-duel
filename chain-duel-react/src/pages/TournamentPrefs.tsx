@@ -21,7 +21,7 @@ export default function TournamentPrefs() {
   const [playersNumber, setPlayersNumber] = useState(4);
   const [deposit, setDeposit] = useState(10000);
   const [buttonSelected, setButtonSelected] =
-    useState<SelectedButton>('mainMenuButton');
+    useState<SelectedButton>('continueButton');
 
   const mainMenuRef = useRef<HTMLButtonElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
