@@ -1,6 +1,6 @@
 /**
  * Shared layout for Practice and P2P game setup pages.
- * Renders: header, rules section, MAIN MENU / READY TO START, bottom slot, loading + cancel overlays.
+ * Template: top = header brand, middle = game setup (rules + buttons), bottom = bottom info (player/prize).
  */
 import { RefObject, ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
@@ -54,13 +54,14 @@ export function GameSetupLayout({
 }: GameSetupLayoutProps) {
   return (
     <div className={`game-setup-page ${pageClass}`}>
-      <header id="brand">
+      {/* Top: header brand */}
+      <header id="brand" className="game-setup-header">
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
       </header>
 
-      <div className="flex full">
-        <div className="flex-spacer" aria-hidden />
+      {/* Middle: game setup (rules, buttons) */}
+      <div className="game-setup-middle">
         <div className="game-setup-main">
           <div>
             <Sponsorship id="sponsorshipGameMenu" />
@@ -96,8 +97,11 @@ export function GameSetupLayout({
             </Button>
           </div>
         </div>
+      </div>
 
-        <div id="bottomInfo">{children}</div>
+      {/* Bottom: bottom info (player card(s), prize, etc.) */}
+      <div id="bottomInfo" className="game-setup-bottom">
+        {children}
       </div>
 
       <div className={`overlay ${loading ? '' : 'hide'}`} id="loading">

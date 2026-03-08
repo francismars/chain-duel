@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useGamepad } from '@/hooks/useGamepad';
+import { useAudio, SFX } from '@/contexts/AudioContext';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
@@ -12,6 +13,7 @@ type MenuState = 1 | 2 | 2.1 | 3 | 4 | 5;
 
 export default function Index() {
   const navigate = useNavigate();
+  const { playSfx } = useAudio();
   const [menu, setMenu] = useState<MenuState>(2);
   const [hostName, setHostName] = useState<string>('@chainduel');
   const startPracticeRef = useRef<HTMLButtonElement>(null);
@@ -69,6 +71,7 @@ export default function Index() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
+        playSfx(SFX.MENU_CONFIRM);
         if (menu === 1) {
           navigate('/practicemenu');
         } else if (menu === 2) {
@@ -87,12 +90,16 @@ export default function Index() {
       if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
         event.preventDefault();
         if (menu === 1) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(2);
         } else if (menu === 2 || menu === 2.1) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(3);
         } else if (menu === 3) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(4);
         } else if (menu === 4) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(5);
         }
       }
@@ -100,12 +107,16 @@ export default function Index() {
       if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
         event.preventDefault();
         if (menu === 2 || menu === 2.1) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(1);
         } else if (menu === 3) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(2);
         } else if (menu === 4) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(3);
         } else if (menu === 5) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(4);
         }
       }
@@ -113,6 +124,7 @@ export default function Index() {
       if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
         event.preventDefault();
         if (menu === 2) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(2.1);
         }
       }
@@ -120,6 +132,7 @@ export default function Index() {
       if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
         event.preventDefault();
         if (menu === 2.1) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(2);
         }
       }
@@ -127,7 +140,7 @@ export default function Index() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [menu, navigate]);
+  }, [menu, navigate, playSfx]);
 
   return (
     <div className="flex full flex-center">
@@ -136,11 +149,14 @@ export default function Index() {
       <h1 id="chainduel">CHAIN DUEL</h1>
       <p id="slogan">KEEPING ONE BLOCK AHEAD</p>
 
-      <div>
+      <div className="menu-buttons">
         <Button
           ref={startPracticeRef}
           id="startpractice"
-          onClick={() => navigate('/practicemenu')}
+          onClick={() => {
+            playSfx(SFX.MENU_CONFIRM);
+            navigate('/practicemenu');
+          }}
         >
           PRACTICE
         </Button>
@@ -149,14 +165,20 @@ export default function Index() {
           <Button
             ref={startGameRef}
             id="startgame"
-            onClick={() => navigate('/gamemenu')}
+            onClick={() => {
+              playSfx(SFX.MENU_CONFIRM);
+              navigate('/gamemenu');
+            }}
           >
             P2P
           </Button>
           <Button
             ref={startGameNostrRef}
             id="startgamenostr"
-            onClick={() => navigate('/gamemenu?nostr=true')}
+            onClick={() => {
+              playSfx(SFX.MENU_CONFIRM);
+              navigate('/gamemenu?nostr=true');
+            }}
           >
             P2P NOSTR
           </Button>
@@ -165,7 +187,10 @@ export default function Index() {
         <Button
           ref={startTournRef}
           id="starttourn"
-          onClick={() => navigate('/tournprefs')}
+          onClick={() => {
+            playSfx(SFX.MENU_CONFIRM);
+            navigate('/tournprefs');
+          }}
         >
           TOURNAMENT
         </Button>
@@ -173,7 +198,10 @@ export default function Index() {
         <Button
           ref={highscoresRef}
           id="highscoresbutton"
-          onClick={() => navigate('/highscores')}
+          onClick={() => {
+            playSfx(SFX.MENU_CONFIRM);
+            navigate('/highscores');
+          }}
         >
           HIGHSCORES
         </Button>
@@ -182,13 +210,19 @@ export default function Index() {
           <Button
             ref={aboutRef}
             id="aboutbutton"
-            onClick={() => navigate('/about')}
+            onClick={() => {
+              playSfx(SFX.MENU_CONFIRM);
+              navigate('/about');
+            }}
           >
             ABOUT
           </Button>
           <Button
             className="disabled"
-            onClick={() => navigate('/config')}
+            onClick={() => {
+              playSfx(SFX.MENU_CONFIRM);
+              navigate('/config');
+            }}
             id="highscoresbutton"
           >
             <span id="backendStatusHome" className="backend-status on">•</span>

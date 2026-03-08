@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AudioProvider } from './contexts/AudioContext';
+import { CornerControls } from './components/ui/CornerControls';
 import Index from './pages/Index';
 import GameMenu from './pages/GameMenu';
 import PracticeMenu from './pages/PracticeMenu';
@@ -17,6 +18,7 @@ function App() {
   return (
     <AudioProvider>
       <BrowserRouter>
+        <CornerControls />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/gamemenu" element={<GameMenu />} />
