@@ -1,28 +1,53 @@
-#brand {
+/* Tournament prefs – single screen, no scroll, centered content */
+
+.tournprefs-page {
   position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding-top: 4rem;
+}
+
+.tournprefs-page #brand {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   margin-top: 1rem;
   width: 100%;
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
-#chain {
+.tournprefs-page #chain {
   color: white;
-  margin-top: 0%;
+  margin: 0;
   margin-left: 1%;
   text-align: left;
   font-size: 2.5cqw;
 }
 
-#duel {
+.tournprefs-page #duel {
   color: white;
-  margin-top: 0%;
+  margin: 0;
   text-align: right;
   font-size: 2.5cqw;
   margin-right: 1%;
 }
 
-.hero-outline {
+.tournprefs-page #tournprefs {
+  width: 100%;
+  max-width: 90vw;
+  text-align: center;
+  padding: 0 2rem;
+  box-sizing: border-box;
+}
+
+.tournprefs-page .hero-outline {
   position: static;
   margin-bottom: 1%;
   text-align: center;
@@ -32,52 +57,81 @@
   -webkit-text-stroke-color: white;
 }
 
-#tournprefs {
+.tournprefs-page .choice {
+  margin-bottom: 0.75rem;
+}
+
+.tournprefs-page .choice .label {
+  margin-bottom: 0.5rem;
+}
+
+.tournprefs-page .amount-preference {
   width: 100%;
-  padding-top: 4rem;
-}
-
-#mainmenubutton {
-  animation: glowing 2000ms infinite;
-}
-
-.amount-preference {
-  width: 25%;
+  max-width: 28vw;
+  min-width: 200px;
   display: flex;
-  margin: auto;
+  margin: 0 auto;
   justify-content: space-between;
-  text-transform: uppercase;
-  column-gap: 0;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.amount-preference .button {
-  display: inline-block;
+.tournprefs-page .amount-preference .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.button.increment {
+.tournprefs-page .button.increment {
   width: 3vw;
   height: 3vw;
-  text-align: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
 }
 
-.value-display {
-  width: 50%;
+.tournprefs-page .button.increment .increment-icon {
+  width: 40%;
+  height: 40%;
+}
+
+.tournprefs-page .value-display {
+  flex: 1;
+  min-width: 0;
   text-align: center;
 }
 
-.value-display h1 {
-  font-size: 3.5vw;
+.tournprefs-page .value-display h1 {
+  font-size: clamp(1.5rem, 3.5vw, 4rem);
+  margin: 0;
 }
 
-#depositValue {
+.tournprefs-page #depositValue {
   display: inline;
 }
 
-#decreasePlayersButton,
-#increasePlayersButton,
-#increaseDepositButton,
-#decreaseDepositButton,
-#continueButton {
+.tournprefs-page .mb-10 {
+  margin-bottom: 0.5rem;
+}
+
+.tournprefs-page .mb-30 {
+  padding-top: 2vw;
+  margin-bottom: 2rem;
+}
+
+.tournprefs-page #mainmenubutton {
+  animation: glowing 2000ms infinite;
+}
+
+.tournprefs-page #decreasePlayersButton,
+.tournprefs-page #increasePlayersButton,
+.tournprefs-page #increaseDepositButton,
+.tournprefs-page #decreaseDepositButton,
+.tournprefs-page #continueButton {
   animation: glowing 0ms infinite;
 }
