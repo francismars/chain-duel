@@ -6,12 +6,12 @@
   margin-right: auto;
   color: white;
   background-color: transparent;
-  border: 1px solid white;
+  border: 0.1vw solid rgba(255, 255, 255, 0.5);
   width: 25%;
   height: 3vw;
   font-size: 0.8cqw;
   padding: 1%;
-  letter-spacing: 0.1rem;
+  letter-spacing: 0.1vw;
   text-transform: uppercase;
   cursor: pointer;
   font-family: 'Inter', sans-serif;

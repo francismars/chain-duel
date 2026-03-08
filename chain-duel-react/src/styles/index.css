@@ -149,14 +149,17 @@ h3 {
   0% {
     background-color: rgb(255 255 255 / 15%);
     box-shadow: 0 0 15px rgb(255 255 255);
+    border-color: #fff;
   }
   50% {
     background-color: rgb(255 255 255 / 30%);
     box-shadow: 0 0 35px rgb(255 255 255);
+    border-color: #fff;
   }
   100% {
     background-color: rgb(255 255 255 / 15%);
     box-shadow: 0 0 15px rgb(255 255 255);
+    border-color: #fff;
   }
 }
 

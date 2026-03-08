@@ -16,6 +16,7 @@
 .sponsored-img {
   display: block;
   margin: 0 auto;
-  max-width: 21vw;
+  max-width: 16vw;
+  margin-bottom: 1vw;
   height: auto;
 }
