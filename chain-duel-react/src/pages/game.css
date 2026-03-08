@@ -52,7 +52,6 @@ body {
 #player2info,
 #gameInfo {
   font-size: 2.5cqw;
-  width: 33.3333%;
   white-space: nowrap;
   text-overflow: ellipsis;
 }

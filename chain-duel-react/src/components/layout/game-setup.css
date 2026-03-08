@@ -2,10 +2,12 @@
    Template: top = header brand, middle = game setup, bottom = bottom info. */
 
 .game-setup-page {
+  height: 100vh;
   min-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Top: header brand */
@@ -22,14 +24,16 @@
   align-items: center;
 }
 
-/* Middle: game setup (rules, buttons) – fills space, content centered */
+/* Middle: game setup (rules, buttons) – height = viewport minus header area minus bottom info */
 .game-setup-page .game-setup-middle {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
+  max-height: calc(100vh - 16vw);
   padding-top: 4rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow: auto;
 }
 
 .game-setup-page .game-setup-main {
