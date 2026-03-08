@@ -31,6 +31,9 @@ export default function GameMenu() {
   const [p2Name, setP2Name] = useState('Player 2');
   const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('mainMenuButton');
   const [showCancelOverlay, setShowCancelOverlay] = useState(false);
+  const [player1CardExpanded, setPlayer1CardExpanded] = useState(false);
+  const [player2CardExpanded, setPlayer2CardExpanded] = useState(false);
+  const [qrBackdropVisible, setQrBackdropVisible] = useState(false);
   const [highlightP1, setHighlightP1] = useState(false);
   const [highlightP2, setHighlightP2] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
@@ -40,6 +43,8 @@ export default function GameMenu() {
   const cancelGameAbortRef = useRef<HTMLButtonElement>(null);
   const cancelGameConfirmRef = useRef<HTMLButtonElement>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const expandKeyUpTimeRef = useRef<{ left?: number; right?: number }>({});
+  const backdropTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useGamepad(true);
 
@@ -176,8 +181,45 @@ export default function GameMenu() {
         }
       }
     };
+    const EXPAND_DEBOUNCE_MS = 180;
+    const SCALE_DOWN_MS = 250;
+    const handleKeyDownExpand = (e: KeyboardEvent) => {
+      const now = Date.now();
+      if (e.code === 'ControlLeft') {
+        if (now - (expandKeyUpTimeRef.current.left ?? 0) < EXPAND_DEBOUNCE_MS) return;
+        if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
+        setPlayer1CardExpanded(true);
+        setQrBackdropVisible(true);
+      }
+      if (e.code === 'ControlRight') {
+        if (now - (expandKeyUpTimeRef.current.right ?? 0) < EXPAND_DEBOUNCE_MS) return;
+        if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
+        setPlayer2CardExpanded(true);
+        setQrBackdropVisible(true);
+      }
+    };
+    const handleKeyUpExpand = (e: KeyboardEvent) => {
+      const now = Date.now();
+      if (e.code === 'ControlLeft') {
+        expandKeyUpTimeRef.current.left = now;
+        setPlayer1CardExpanded(false);
+        backdropTimeoutRef.current = setTimeout(() => setQrBackdropVisible(false), SCALE_DOWN_MS);
+      }
+      if (e.code === 'ControlRight') {
+        expandKeyUpTimeRef.current.right = now;
+        setPlayer2CardExpanded(false);
+        backdropTimeoutRef.current = setTimeout(() => setQrBackdropVisible(false), SCALE_DOWN_MS);
+      }
+    };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDownExpand);
+    window.addEventListener('keyup', handleKeyUpExpand);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDownExpand);
+      window.removeEventListener('keyup', handleKeyUpExpand);
+      if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
+    };
   }, [buttonSelected, player1Sats, player2Sats, socket, navigate, playSfx]);
 
   const p1PayLink = payLinks?.find((p) => p.description === 'Player 1');
@@ -250,7 +292,10 @@ export default function GameMenu() {
         cancelGameAbortRef={cancelGameAbortRef}
         cancelGameConfirmRef={cancelGameConfirmRef}
       >
-        <div id="player1card">
+        {qrBackdropVisible && (
+          <div className="qr-expand-backdrop" aria-hidden />
+        )}
+        <div id="player1card" className={player1CardExpanded ? 'expanded' : ''}>
           <div id="qrcodeContainer1" className="qrcodeContainer">
             <a
               id="qrcode1Link"
@@ -318,7 +363,7 @@ export default function GameMenu() {
           </div>
         </div>
 
-        <div id="player2card">
+        <div id="player2card" className={player2CardExpanded ? 'expanded' : ''}>
           <div id="player2cardinfo" className="player-card-info">
             <div id="player2satsContainer" className={`player-sats ${highlightP2 ? 'highlight' : ''}`}>
               <span id="player2sats">{fmt(player2Sats)}</span>

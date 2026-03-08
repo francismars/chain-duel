@@ -1,11 +1,26 @@
 /* P2P game menu – LNURL panel (layout shared in game-setup.css) */
 
-/* Bottom bar: player 1 left, prize center, player 2 right */
+.qr-expand-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 49;
+  pointer-events: none;
+}
+
+/* Bottom bar – layout preserved when QR scales (no position change) */
 .gamemenu-page #bottomInfo {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: stretch;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.gamemenu-page #player1card,
+.gamemenu-page #player2card {
+  position: relative;
 }
 
 .gamemenu-page #player1card {
@@ -16,6 +31,7 @@
   width: 33%;
   flex-shrink: 0;
   gap: 1cqw;
+  min-height: 0;
 }
 
 .gamemenu-page #player2card {
@@ -27,6 +43,7 @@
   flex-shrink: 0;
   gap: 1cqw;
   min-width: 0;
+  min-height: 0;
 }
 
 /* Keep QR from shrinking so it never overlaps the info column */
@@ -192,11 +209,10 @@
   max-height: 120px;
   min-height: 72px;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible; /* keep visible so scale-down isn’t clipped when .expanded is removed */
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease-in;
 }
 
 .gamemenu-page .qrcodeContainer a {
@@ -231,6 +247,37 @@
   height: auto;
   filter: invert(1);
   mix-blend-mode: screen;
+}
+
+/* Same origin in both states so scale-down animates correctly */
+.gamemenu-page #player1card .qrcodeContainer .qrcode {
+  transform: scale(1);
+  transform-origin: bottom left;
+  border: 0 solid transparent;
+  transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out, border 0.25s ease-in-out;
+}
+
+.gamemenu-page #player2card .qrcodeContainer .qrcode {
+  transform: scale(1);
+  transform-origin: bottom right;
+  border: 0 solid transparent;
+  transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out, border 0.25s ease-in-out;
+}
+
+/* Hold Control (or L1/L2): scale QR in place – layout unchanged, player info stays visible */
+.gamemenu-page #player1card.expanded .qrcodeContainer,
+.gamemenu-page #player2card.expanded .qrcodeContainer {
+  z-index: 50;
+}
+
+.gamemenu-page #player1card.expanded .qrcodeContainer .qrcode {
+  transform: scale(4);
+  border: 0.2vw solid #fff;
+}
+
+.gamemenu-page #player2card.expanded .qrcodeContainer .qrcode {
+  transform: scale(4);
+  border: 0.2vw solid #fff;
 }
 
 #player1satsContainer.highlight,
