@@ -30,6 +30,7 @@ export default function PracticeMenu() {
   const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('mainMenuButton');
   const [showCancelOverlay, setShowCancelOverlay] = useState(false);
   const [playerCardExpanded, setPlayerCardExpanded] = useState(false);
+  const [qrBackdropVisible, setQrBackdropVisible] = useState(false);
   const [highlightP1, setHighlightP1] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
 
@@ -37,6 +38,8 @@ export default function PracticeMenu() {
   const startGameButtonRef = useRef<HTMLButtonElement>(null);
   const cancelGameAbortRef = useRef<HTMLButtonElement>(null);
   const cancelGameConfirmRef = useRef<HTMLButtonElement>(null);
+  const expandKeyUpTimeRef = useRef<number>(0);
+  const backdropTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useGamepad(true);
 
@@ -187,14 +190,22 @@ export default function PracticeMenu() {
         }
       }
     };
+    const EXPAND_DEBOUNCE_MS = 180;
+    const SCALE_DOWN_MS = 250;
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'ControlLeft') {
+        expandKeyUpTimeRef.current = Date.now();
         setPlayerCardExpanded(false);
+        if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
+        backdropTimeoutRef.current = setTimeout(() => setQrBackdropVisible(false), SCALE_DOWN_MS);
       }
     };
     const handleKeyDownControl = (e: KeyboardEvent) => {
       if (e.code === 'ControlLeft') {
+        if (Date.now() - expandKeyUpTimeRef.current < EXPAND_DEBOUNCE_MS) return;
+        if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
         setPlayerCardExpanded(true);
+        setQrBackdropVisible(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -204,6 +215,7 @@ export default function PracticeMenu() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keydown', handleKeyDownControl);
       window.removeEventListener('keyup', handleKeyUp);
+      if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
     };
   }, [buttonSelected, player1Sats, socket, navigate, playSfx]);
 
@@ -254,6 +266,12 @@ export default function PracticeMenu() {
         cancelGameAbortRef={cancelGameAbortRef}
         cancelGameConfirmRef={cancelGameConfirmRef}
       >
+        {qrBackdropVisible && (
+          <div
+            className="qr-expand-backdrop"
+            aria-hidden
+          />
+        )}
         <div
           id="player1card"
           className={playerCardExpanded ? 'expanded' : ''}

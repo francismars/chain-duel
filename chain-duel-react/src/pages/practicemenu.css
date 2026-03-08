@@ -1,5 +1,13 @@
 /* Practice menu page – specific styles (layout shared in game-setup.css) */
 
+.qr-expand-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 49;
+  pointer-events: none;
+}
+
 .practice-page #player1card {
   display: flex;
   flex-direction: row;
@@ -22,7 +30,7 @@
   flex: 0 0 auto;
   width: 14vw;
   max-width: 140px;
-  overflow: hidden;
+  overflow: visible; /* so scale-down isn’t clipped */
 }
 
 .player-card-info {
@@ -36,19 +44,9 @@
   transition: all;
 }
 
-.expanded .player-card-info {
-  width: 0%;
-}
-
 #player1cardinfo {
   text-align: center;
   align-items: center;
-}
-
-.expanded #player1cardinfo {
-  padding-right: 0;
-  text-align: center;
-  width: 0%;
 }
 
 #player1satsContainer {
@@ -142,6 +140,23 @@
   mix-blend-mode: screen;
 }
 
+/* Hold Ctrl (or L1/L2): scale QR in place from bottom – no position change */
+.practice-page #player1card .qrcodeContainer .qrcode {
+  transform: scale(1);
+  transform-origin: bottom center;
+  transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out;
+}
+
+.practice-page #player1card.expanded .qrcodeContainer {
+  z-index: 50;
+}
+
+.practice-page #player1card.expanded .qrcodeContainer .qrcode {
+  transform: scale(4);
+  transform-origin: bottom center;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
 .qrcodeContainer .qrcode-placeholder {
   max-width: 100%;
   max-height: 100%;
@@ -150,27 +165,6 @@
   background: #333;
 }
 
-.expanded .qrcodeContainer {
-  width: 30vw;
-  background: #000;
-  filter: grayscale(0);
-}
-
-.expanded .qrcodeContainer .qrcode {
-  border: 3vw solid #fff;
-  border-top: 0.5vw solid #fff;
-  box-shadow: 0 0 100px #fff;
-}
-
-.expanded .qrcodeContainer .qrcodeDecoration {
-  border: 3vw solid transparent;
-  border-top: 0.5vw solid transparent;
-}
-
-#player1card.expanded .qrcodeContainer .qrcode {
-  border-right: 0.5vw solid #fff;
-  border-left: 0.5vw solid #fff;
-}
 
 .qrcodeDecoration {
   height: auto;
@@ -187,11 +181,6 @@
   transition: all 0.15s cubic-bezier(0.42, 0, 0, 0.99);
 }
 
-.expanded #player1info,
-.expanded #player1sats,
-.expanded .sats-label {
-  font-size: 0;
-}
 
 .deposit-message {
   font-size: 0.8cqw;
@@ -199,11 +188,6 @@
   margin-top: 0.7cqw;
 }
 
-.expanded .deposit-message {
-  font-size: 0;
-  margin-top: 0;
-  opacity: 0;
-}
 
 .playerSquare {
   width: 2cqw;
@@ -211,10 +195,6 @@
   box-shadow: 0 0 11px rgba(255, 255, 255, 0.69);
 }
 
-.expanded .playerSquare {
-  width: 0;
-  height: 0;
-}
 
 .practice-teaser .condensed {
   letter-spacing: 0.01em;
@@ -234,10 +214,3 @@
   font-size: 1.3vw;
 }
 
-.expanded .practice-teaser .condensed {
-  letter-spacing: 0.01em;
-  margin: 0;
-  line-height: 1.1em;
-  font-size: 0;
-  opacity: 0;
-}
