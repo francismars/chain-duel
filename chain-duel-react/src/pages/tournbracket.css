@@ -1,92 +1,434 @@
-#brand {
+/* Tournament bracket – top / middle / bottom layout, no scroll */
+
+.tournbracket-page {
   position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Top: header brand */
+.tournbracket-page .tournbracket-header {
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   margin-top: 1rem;
   width: 100%;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  z-index: 1;
 }
 
-#chain {
+.tournbracket-page #chain {
   color: white;
-  margin-top: 0%;
+  margin: 0;
   margin-left: 1%;
   text-align: left;
   font-size: 2.5cqw;
 }
 
-#duel {
+.tournbracket-page #duel {
   color: white;
-  margin-top: 0%;
+  margin: 0;
   text-align: right;
   font-size: 2.5cqw;
   margin-right: 1%;
 }
 
-#bracket {
-  margin: -4vw 1vw 0 1vw;
-  width: 100%;
-}
-
-.pages {
-  position: relative;
-  height: 40vw;
-}
-
-.page {
-  position: absolute;
-  font-size: 1.3vw;
-  height: 100%;
-  width: 100%;
-  text-align: center;
-}
-
-.page-inner {
-  display: grid;
-  height: 80%;
+/* Middle: bracket content */
+.tournbracket-page .tournbracket-middle {
+  flex: 1 1 0;
+  min-height: 0;
+  padding-top: 4rem;
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.tournbracket-page #bracket {
+  width: 100%;
+  max-width: 95vw;
+  padding: 0 1vw;
+  box-sizing: border-box;
   text-align: center;
-  align-content: center;
 }
 
-.tournament-header {
-  margin: 0 0 -3cqw 0;
+.tournbracket-page .tournament-header {
+  margin: 0 0 0.5rem 0;
 }
 
-#tournament-name.hero-outline {
+.tournbracket-page #tournament-name.hero-outline {
   font-size: 5cqw;
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: white;
+  margin: 0 0 0.25rem 0;
 }
 
-.tournbracketSVG {
+.tournbracket-page .tournbracketSVG {
   max-width: 85%;
+  max-height: 35vh;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Inlined bracket SVG: same sizing as img, use app font for text */
+.tournbracket-page .tournbracketSVG-inline {
+  font-family: 'Inter', sans-serif;
+}
+
+.tournbracket-page .tournbracketSVG-inline svg {
+  max-width: 100%;
+  max-height: 35vh;
+  width: auto;
+  height: auto;
+  display: block;
   margin: 0 auto;
 }
 
-.bracketDetails {
-  display: flex;
-  width: 100%;
-  justify-content: center;
-  gap: 3rem;
-  margin-top: -3vw;
+.tournbracket-page .tournbracketSVG-inline text {
+  font-family: 'Inter', sans-serif;
 }
 
-.bracketDetail .value {
+/* Condensed "WINNER" label in bracket */
+.tournbracket-page .tournbracketSVG-inline #Winner_name {
+  font-stretch: condensed;
+}
+
+/* Payment panel (legacy bracketPayment): centered on screen, QR + Cancel/Start */
+.tournbracket-page .bracketPayment {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30%;
+  min-width: 200px;
+  max-width: 320px;
+  background: #000;
+  box-sizing: border-box;
+  box-shadow: 0 0 100px rgba(255, 255, 255, 0.15);
+  text-align: center;
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 2;
+  padding: 1vw;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Sponsor at top of payment modal */
+.tournbracket-page .bracketPayment .bracketPayment-sponsor {
+  flex-shrink: 0;
+  margin-bottom: 1vw;
+  border-bottom: 1px solid #444;
+  padding-bottom: 1vw;
+}
+
+.tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-by-label {
+  font-size: 0.65rem;
+  opacity: 0.8;
+}
+
+.tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-img {
+  max-width: 60%;
+  height: auto;
+  max-height: 2.5rem;
+  margin-top: 0.25rem;
+}
+
+.tournbracket-page .bracketPayment .bracketPaymentInner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   gap: 0.5rem;
 }
 
-.buttonsDiv {
-  display: flex;
-  gap: 0.6rem;
+.tournbracket-page .bracketPayment .buyintext .label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  opacity: 0.7;
 }
 
-#backButton {
+.tournbracket-page .bracketPayment .mb-10 { margin-bottom: 0.5rem; }
+.tournbracket-page .bracketPayment .mt-10 { margin-top: 0.5rem; }
+
+/* paymentComplete: label/note fade out (matches legacy) */
+.tournbracket-page .bracketPayment.paymentComplete #buyinDepositLabel,
+.tournbracket-page .bracketPayment.paymentComplete #paymentNote {
+  font-size: 0;
+  margin: 0;
+  transition: font-size 0.5s ease-out;
+}
+
+/* Checkmark shown when all players paid */
+.tournbracket-page .bracketPayment .qrTournamentCheck {
+  display: block;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+}
+
+/* Lightning gif overlay on QR when payment received (matches legacy qrcodeDecoration) */
+.tournbracket-page .bracketPayment .qrcodeDecoration {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* scalePop animation on sats deposited (matches legacy) */
+.tournbracket-page .bracketPayment .deposited.highlight {
+  animation: scalePop 1200ms ease-out;
+}
+
+@keyframes scalePop {
+  0%   { transform: scale(1); }
+  10%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* Issue-refunds confirmation (view 2) */
+.tournbracket-page .bracketPayment .issuerefundsdiv {
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+.tournbracket-page .bracketPayment .issuerefundsdiv h2 {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tournbracket-page .bracketPayment .issuerefundsdiv #issuerefundsfirst {
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+}
+
+.tournbracket-page .bracketPayment .issuerefundsdiv #issuerefundsfirst b {
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Per-player withdrawal QR (view 3) */
+.tournbracket-page .bracketPayment .issuerefundssecond .qrcode {
+  filter: invert(1);
+}
+
+.tournbracket-page .bracketPayment .issuerefundssecond {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tournbracket-page .bracketPayment .issuerefundssecond #currentWithdrawalPlayer {
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  margin: 0;
+}
+
+.tournbracket-page .bracketPayment #buyinvalue {
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  display: inline;
+  margin: 0;
+}
+
+.tournbracket-page .bracketPayment .qrCodeDiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tournbracket-page .bracketPayment .qrCodeDiv .qrcode {
+  display: block;
+  width: 15vw;
+  height: 15vw;
+  max-width: 140px;
+  max-height: 140px;
+  background: #fff;
+  padding: 4px;
+}
+
+.tournbracket-page .bracketPayment .qr-placeholder {
+  width: 15vw;
+  height: 15vw;
+  max-width: 140px;
+  max-height: 140px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.tournbracket-page .bracketPayment .deposited {
+  font-size: 0.85rem;
+}
+
+.tournbracket-page .bracketPayment .deposited .label {
+  opacity: 0.7;
+}
+
+.tournbracket-page .bracketPayment .buttonsDiv {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.tournbracket-page .bracketPayment .buttonsDiv .button {
+  flex: 1;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+}
+
+.tournbracket-page .bracketPayment #backButton {
   animation: glowing 2000ms infinite;
 }
 
-#proceedButton {
+.tournbracket-page .bracketPayment #proceedButton {
   animation: glowing 0ms infinite;
+}
+
+/* Bottom: details strip only (match legacy – no buttons here) */
+.tournbracket-page .tournbracket-bottom {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+}
+
+/* Details bar: full width, border-top, three equal columns with dividers (legacy .bracketDetails) */
+.tournbracket-page .bracketDetails {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.21);
+  box-sizing: border-box;
+}
+
+.tournbracket-page .bracketDetail {
+  width: 25%;
+  padding: 1vw;
+  box-sizing: border-box;
+  border-right: 1px solid rgba(255, 255, 255, 0.21);
+}
+
+.tournbracket-page .bracketDetail:last-child {
+  border-right: none;
+}
+
+.tournbracket-page .bracketDetail .label {
+  font-size: 1vw;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 0.25rem;
+}
+
+.tournbracket-page .bracketDetail .value {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  align-items: flex-end;
+  gap: 0.2vw;
+  padding-left: 1.5vw;
+}
+
+.tournbracket-page .bracketDetail .value.players {
+  padding-left: 0;
+}
+
+.tournbracket-page .bracketDetail .value h3 {
+  font-size: 3vw;
+  margin: 0;
+}
+
+/* ── Next-game panel (tournament in progress) ── */
+.tournbracket-page .nextGameDiv {
+  width: 100%;
+  position: fixed;
+  bottom: 8.2vw;
+  padding: 1vw;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.tournbracket-page .nextGameDiv p.label {
+  font-size: 1vw;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin: 0 0 0.5vw;
+}
+
+.tournbracket-page #nextGameName {
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: white;
+  font-size: 2.5vw;
+  margin: 0;
+}
+
+.tournbracket-page #nextGamePlayers {
+  display: flex;
+  margin: 0.5vw auto 1vw;
+  justify-content: center;
+  gap: 1vw;
+  align-items: center;
+  font-size: 1.5vw;
+}
+
+.tournbracket-page .playerName {
+  font-size: 4vw;
+}
+
+.tournbracket-page .playerSquare {
+  width: 3cqw;
+  height: 3cqw;
+  box-shadow: 0 0 19px #ffffffb0;
+}
+
+.tournbracket-page .playerSquare.white { background: #fff; }
+.tournbracket-page .playerSquare.black { background: #000; border: 1px solid #fff; }
+
+.tournbracket-page .nextGameButton {
+  animation: glowing 2000ms infinite;
+  height: 3vw;
+  width: 25%;
+}
+
+/* ── Tournament finished panel ── */
+.tournbracket-page .tournFinishedDiv {
+  width: 100%;
+  position: fixed;
+  bottom: 4vw;
+  padding: 1vw;
+  box-sizing: border-box;
+  text-align: center;
+  background: radial-gradient(#000000b3, #000000a1, #00000061, #00000000, #00000000);
+}
+
+.tournbracket-page .tournFinishedDiv h2 {
+  font-size: 2.5vw;
+  margin: 0;
+}
+
+.tournbracket-page #winnerName {
+  font-size: 7vw;
+}
+
+.tournbracket-page .claimSatsButton {
+  animation: glowing 2000ms infinite;
+  width: 26%;
 }
