@@ -23,6 +23,16 @@ Use this checklist for desktop and mobile parity verification against legacy pag
 - Focus-highlight animation follows selected control
 - Responsive wrap behavior preserves legacy hierarchy
 
+## Game Page Specific Checks
+
+- `PRESS BUTTON TO START` is visible before countdown starts.
+- Countdown (`3`, `2`, `1`, `LFG`) appears on top of the canvas during start flow.
+- Both player pieces and body segments are visible and moving after game starts.
+- Coinbase marker is visible and updates after captures/block-triggered spawns.
+- Winner text appears (`<PLAYER> WINS!`) and continue prompt is readable.
+- Zap message pills animate in/out with readable user/content/amount.
+- Bitcoin footer values update and highlight animation triggers on new block.
+
 ## Required Artifacts
 
 - Before/after screenshots for each breakpoint

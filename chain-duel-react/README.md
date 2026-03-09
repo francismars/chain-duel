@@ -45,4 +45,17 @@ src/
 
 ## Status
 
-🚧 **In Progress** - Phase 1: Project Setup
+🚧 **In Progress** - Active migration with playable game page
+
+### Game Page Migration Status
+
+- `src/pages/Game.tsx` now includes a legacy-style HUD, game state bars, points row, bitcoin footer, zap overlay, and loading overlay behavior.
+- `src/game/engine/*` contains headless game logic for movement, collisions, captures, scoring, and winner detection.
+- `src/game/render/*` provides Pixi-first rendering with a Canvas2D fallback for environments where Pixi init is unavailable.
+- `src/game/audio/*` and `src/game/io/*` handle in-game sound effects and mempool block feed behavior.
+
+### Local Testing Mode (Temporary)
+
+- For faster local testing, `GameMenu` and `PracticeMenu` currently allow entering `/game` without payment deposits.
+- `/game` includes a local fallback bootstrap if backend duel payload is missing, so loading does not block manual testing.
+- Before production release, restore mandatory payment gating and remove test bypass behavior.

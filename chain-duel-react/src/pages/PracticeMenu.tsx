@@ -11,8 +11,6 @@ import type { LNURLP, SerializedGameInfo } from '@/types/socket';
 import { parseMenuResponse } from '@/lib/menuAdapters';
 import './practicemenu.css';
 
-const MINDEPOSIT = 150;
-
 type ButtonSelected =
   | 'mainMenuButton'
   | 'startgame'
@@ -27,7 +25,7 @@ export default function PracticeMenu() {
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
   const [player1Sats, setPlayer1Sats] = useState(0);
   const [p1Name, setP1Name] = useState('Player 1');
-  const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('mainMenuButton');
+  const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('startgame');
   const [showCancelOverlay, setShowCancelOverlay] = useState(false);
   const [playerCardExpanded, setPlayerCardExpanded] = useState(false);
   const [qrBackdropVisible, setQrBackdropVisible] = useState(false);
@@ -145,13 +143,6 @@ export default function PracticeMenu() {
     }
   }, [buttonSelected]);
 
-  // Auto-select READY TO START when deposit meets minimum
-  useEffect(() => {
-    if (player1Sats >= MINDEPOSIT) {
-      setButtonSelected('startgame');
-    }
-  }, [player1Sats]);
-
   // Keyboard and gamepad
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -159,16 +150,9 @@ export default function PracticeMenu() {
         e.preventDefault();
         playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
-          if (player1Sats !== 0) {
-            navigate('/game');
-          }
+          navigate('/game');
         } else if (buttonSelected === 'mainMenuButton') {
-          if (player1Sats === 0) {
-            setShowCancelOverlay(true);
-            setButtonSelected('cancelGameAbort');
-          } else {
-            navigate('/');
-          }
+          navigate('/');
         } else if (buttonSelected === 'cancelGameAbort') {
           setShowCancelOverlay(false);
           setButtonSelected('mainMenuButton');
@@ -225,8 +209,8 @@ export default function PracticeMenu() {
     ? minDeposit.toLocaleString()
     : String(minDeposit);
   const lnurlp = player1PayLink?.lnurlp ?? '';
-  const canStart = player1Sats >= MINDEPOSIT;
-  const mainMenuDisabled = player1Sats >= MINDEPOSIT;
+  const canStart = true;
+  const mainMenuDisabled = false;
 
   return (
     <>
@@ -237,12 +221,7 @@ export default function PracticeMenu() {
         canStart={canStart}
         onMainMenu={() => {
           playSfx(SFX.MENU_CONFIRM);
-          if (player1Sats === 0) {
-            setShowCancelOverlay(true);
-            setButtonSelected('cancelGameAbort');
-          } else {
-            navigate('/');
-          }
+          navigate('/');
         }}
         onStart={() => {
           playSfx(SFX.MENU_CONFIRM);
