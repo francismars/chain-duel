@@ -423,7 +423,6 @@ export default function TournamentBracket() {
     };
     // connected intentionally excluded: matching PostGame.tsx pattern where listeners
     // outlive connection-state changes, preventing the race window where events are missed.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, urlDeposit, numberOfPlayersFromUrl, navigate]);
 
   function handleCancel() {

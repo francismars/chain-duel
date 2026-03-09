@@ -18,7 +18,7 @@ This matrix maps legacy pages/scripts to React pages and tracks parity status.
 | `views/about.html` | `public/javascripts/about.js` | `src/pages/About.tsx` | In progress | Verify sponsor blocks and responsive wrap behavior |
 | `views/practicemenu.html` | `public/javascripts/practicemenu.js` | `src/pages/PracticeMenu.tsx` | In progress | Final visual parity pass and controller overlay behavior |
 | `views/gamemenu.html` | `public/javascripts/gameMenu.js` | `src/pages/GameMenu.tsx` | In progress | NOSTR panel parity and full keyboard/controller path parity |
-| `views/game.html` | `public/javascripts/game.js` | `src/pages/Game.tsx` | Not started | Full game loop, canvas, audio, socket state |
+| `views/game.html` | `public/javascripts/game.js` | `src/pages/Game.tsx` | In progress | Core gameplay/rendering migrated; final visual parity polish + production payment gating still pending |
 | `views/postgame.html` | `public/javascripts/postGame.js` | `src/pages/PostGame.tsx` | Not started | Withdraw flow, redirect logic, result details |
 | `views/tournprefs.html` | `public/javascripts/tournprefs.js` | `src/pages/TournamentPrefs.tsx` | Not started | Tournament setup controls and validation |
 | `views/tournlobby.html` | `public/javascripts/tournlobby.js` | `src/pages/TournamentLobby.tsx` | Not started | Lobby state machine, ready/claim flow |
@@ -40,7 +40,8 @@ This matrix maps legacy pages/scripts to React pages and tracks parity status.
 | `public/stylesheets/style.css` | `src/styles/index.css` | In progress |
 | `public/stylesheets/practicemenu.css` | `src/pages/practicemenu.css` + `src/components/layout/game-setup.css` | In progress |
 | `public/stylesheets/gameMenu.css` | `src/pages/gamemenu.css` + `src/components/layout/game-setup.css` | In progress |
-| tournament/game/postgame css files | page css equivalents | Not started |
+| `public/stylesheets/game.css` | `src/pages/game.css` | In progress |
+| tournament/postgame css files | page css equivalents | Not started |
 
 ## Acceptance Checklist (Per Page)
 

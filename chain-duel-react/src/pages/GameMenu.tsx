@@ -29,7 +29,7 @@ export default function GameMenu() {
   const [player2Sats, setPlayer2Sats] = useState(0);
   const [p1Name, setP1Name] = useState('Player 1');
   const [p2Name, setP2Name] = useState('Player 2');
-  const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('mainMenuButton');
+  const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('startgame');
   const [showCancelOverlay, setShowCancelOverlay] = useState(false);
   const [player1CardExpanded, setPlayer1CardExpanded] = useState(false);
   const [player2CardExpanded, setPlayer2CardExpanded] = useState(false);
@@ -141,25 +141,14 @@ export default function GameMenu() {
   }, [buttonSelected]);
 
   useEffect(() => {
-    if (player1Sats !== 0 && player2Sats !== 0) {
-      setButtonSelected('startgame');
-    }
-  }, [player1Sats, player2Sats]);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
-          if (player1Sats !== 0 && player2Sats !== 0) navigate('/game');
+          navigate('/game');
         } else if (buttonSelected === 'mainMenuButton') {
-          if (player1Sats === 0 && player2Sats === 0) {
-            setShowCancelOverlay(true);
-            setButtonSelected('cancelGameAbort');
-          } else {
-            navigate('/');
-          }
+          navigate('/');
         } else if (buttonSelected === 'cancelGameAbort') {
           setShowCancelOverlay(false);
           setButtonSelected('mainMenuButton');
@@ -231,8 +220,8 @@ export default function GameMenu() {
   const hostCut = Math.floor(totalPrize * 0.02);
   const devCut = Math.floor(totalPrize * 0.02);
   const designCut = Math.floor(totalPrize * 0.01);
-  const canStart = player1Sats !== 0 && player2Sats !== 0;
-  const mainMenuDisabled = player1Sats !== 0 || player2Sats !== 0;
+  const canStart = true;
+  const mainMenuDisabled = false;
 
   if (useNostr) {
     return (
@@ -263,12 +252,7 @@ export default function GameMenu() {
         canStart={canStart}
         onMainMenu={() => {
           playSfx(SFX.MENU_CONFIRM);
-          if (player1Sats === 0 && player2Sats === 0) {
-            setShowCancelOverlay(true);
-            setButtonSelected('cancelGameAbort');
-          } else {
-            navigate('/');
-          }
+          navigate('/');
         }}
         onStart={() => {
           playSfx(SFX.MENU_CONFIRM);

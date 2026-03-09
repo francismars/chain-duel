@@ -7,6 +7,7 @@
 - `npm run test` passes
 - Socket connection smoke verified against marspay
 - Payment menu flows verified (`P2P`, `Practice`)
+- Temporary local test bypasses removed (payment required again for production mode)
 
 ## Parity Gate
 
@@ -20,6 +21,7 @@
 - All required static assets present under `public/`
 - Environment variables documented in `.env.example`
 - Fallback strategy documented for socket config
+- Game fallback boot behavior documented and reviewed for production defaults
 - Rollback plan: keep legacy chain-duel deployment available until first stable production window
 
 ## Rollback Plan

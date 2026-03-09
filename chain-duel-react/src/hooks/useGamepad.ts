@@ -101,6 +101,61 @@ export function useGamepad(enabled: boolean = true) {
         }
       }
 
+      if (gamepad2) {
+        if (
+          gamepad2.buttons[0]?.pressed ||
+          gamepad2.buttons[1]?.pressed ||
+          gamepad2.buttons[2]?.pressed ||
+          gamepad2.buttons[3]?.pressed
+        ) {
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+          );
+        }
+
+        if (gamepad2.buttons[12]?.pressed) {
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true })
+          );
+        }
+        if (gamepad2.buttons[13]?.pressed) {
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+          );
+        }
+        if (gamepad2.buttons[14]?.pressed) {
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })
+          );
+        }
+        if (gamepad2.buttons[15]?.pressed) {
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+          );
+        }
+
+        if (gamepad2.axes[1] < -0.6) {
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true })
+          );
+        }
+        if (gamepad2.axes[1] > 0.6) {
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+          );
+        }
+        if (gamepad2.axes[0] < -0.6) {
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })
+          );
+        }
+        if (gamepad2.axes[0] > 0.6) {
+          window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+          );
+        }
+      }
+
       // Gamepad 2 – expand QR for Player 2 (ControlRight), matching legacy
       if (gamepad2?.buttons[6] !== undefined && gamepad2?.buttons[7] !== undefined) {
         const expandP2 = gamepad2.buttons[6].pressed || gamepad2.buttons[7].pressed;

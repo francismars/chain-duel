@@ -31,6 +31,8 @@ body {
 .flex.full.game {
   display: flex;
   justify-content: center;
+  flex-grow: unset;
+  flex-basis: fit-content;
 }
 
 .flex.points,
@@ -42,25 +44,41 @@ body {
   margin: 0.5vw 15%;
 }
 
+.flex.players {
+  margin-bottom: 0;
+  position: relative;
+}
+
 .playerSquare {
   width: 2cqw;
   height: 2cqw;
   box-shadow: 0 0 11px #ffffffb0;
 }
 
+#player2info .playerSquare {
+  border: 1px #1f1f1f solid;
+}
+
 #player1info,
 #player2info,
 #gameInfo {
   font-size: 2.5cqw;
+  width: 33.3333%;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 #gameInfo {
+  overflow: hidden;
   text-align: center;
 }
 
+#player1info {
+  color: white;
+}
+
 #player2info {
+  color: white;
   text-align: right;
 }
 
@@ -72,33 +90,353 @@ body {
   text-align: right;
 }
 
-#p1Points,
+.player-sats span {
+  font-size: 1cqw;
+}
+
+#p1Points {
+  color: white;
+  margin-right: 0.5rem;
+  font-size: 2.5cqw;
+}
+
 #p2Points {
   color: white;
+  margin-left: 0.5rem;
   font-size: 2.5cqw;
 }
 
 #gameCanvas {
   margin: 0 15%;
-  left: 0;
-  right: 0;
-  top: 28%;
   width: 70vw;
-  height: 39vw;
+  height: 35vw;
   background-color: #6969698f;
   background-image: url('/images/game_bg.png');
   background-size: cover;
   background-position: center;
 }
 
-.game-shell-note {
+#gameCanvasHost,
+#gameCanvas canvas {
+  width: 100%;
+  height: 100%;
+}
+
+#gameCanvas.highlight {
+  background-image: url('/images/chainduel_bg_anim.png');
+}
+
+.playerImg {
+  width: 3vw;
+  margin-bottom: -0.5vw;
+  border-radius: 1000px;
+}
+
+.gameState {
+  margin: 0vw 15% 1vw 15%;
+  text-transform: uppercase;
   text-align: center;
-  margin: 1rem auto;
-  max-width: 70vw;
-  font-size: 0.9cqw;
-  opacity: 0.8;
+  font-size: 0.7vw;
+  letter-spacing: 0.05em;
+  height: 3.55vw;
+}
+
+#capturing {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: -0.8vw;
+  height: 1.2vw;
+}
+
+.capturingAmount {
+  font-weight: 900;
+  font-size: 1vw;
+  transition: all 0.1s ease-out;
+  display: inline-block;
+}
+
+.capturingAmount.highlight {
+  font-size: 1.4vw;
+  padding: 0.05vw;
+}
+
+#distributions {
+  width: 100%;
+  position: relative;
+}
+
+#initialDistribution .distributionTitle {
+  margin-bottom: 0.2vw;
+  color: #828282;
+}
+
+#currentDistribution .distributionTitle {
+  position: relative;
+  z-index: 1;
+  margin-bottom: -1.38vw;
+  color: #848484;
+  font-size: 0.9vw;
+}
+
+.distributionBarOutter {
+  width: 100%;
+  margin-bottom: 1.2vw;
+}
+
+#initialDistribution .distributionBar {
+  height: 0.3vw;
+  width: 50%;
+  position: absolute;
+}
+
+#currentDistribution .distributionBar {
+  height: 1.7vw;
+  width: 50%;
+  position: absolute;
+  box-shadow: #ffffff36 0 0 24px;
+  transition: width 0.15s ease-out;
+}
+
+#initialDistributionP1,
+#currentDistributionP1 {
+  background: #fff;
+}
+
+#initialDistributionP2,
+#currentDistributionP2 {
+  background: #000;
+  right: 0;
+}
+
+#bitcoinDetails {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  gap: 4vw;
+  padding: 1vw 0 0.25vw 0;
+  box-sizing: border-box;
+  transition: all 1000ms;
+}
+
+#bitcoinDetails .detail {
+  text-align: center;
+}
+
+#bitcoinDetails .label {
+  opacity: 0.2;
+}
+
+#bitcoinDetails .value {
+  font-size: 1vw;
+  text-align: center;
+  width: 7vw;
+  opacity: 0.4;
+  padding-top: 0.25vw;
+}
+
+#bitcoinDetails.highlight .value {
+  animation-name: scalePop;
+  animation-duration: 2000ms;
+}
+
+#bitcoinDetails.highlight #bitcoinblockHeight {
+  animation-delay: 0ms;
+}
+
+#bitcoinDetails.highlight #bitcoinblockTimeAgo {
+  animation-delay: 60ms;
+}
+
+#bitcoinDetails.highlight #bitcoinblockSize {
+  animation-delay: 120ms;
+}
+
+#bitcoinDetails.highlight #bitcoinblockTXcount {
+  animation-delay: 180ms;
+}
+
+#bitcoinDetails.highlight #bitcoinAvgFee {
+  animation-delay: 240ms;
+}
+
+@keyframes scalePop {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  10% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+}
+
+#zapMessages {
+  position: absolute;
+  width: 70vw;
+  height: 20vw;
+  margin: auto;
+  bottom: 0;
+}
+
+.zapMessage {
+  position: absolute;
+  width: 40vw;
+  left: 15vw;
+  height: 3vw;
+  display: flex;
+}
+
+.zapMessage .zapMessageInner {
+  background: #fff;
+  color: #000;
+  min-width: 5vw;
+  height: 3vw;
+  font-weight: 400;
+  display: flex;
+  flex-wrap: wrap;
+  margin: auto;
+  border-radius: 1000px;
+  padding: 0.5vw 1vw 0.5vw 0.5vw;
+  box-sizing: border-box;
+  transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: scale(1);
+  opacity: 1;
+}
+
+.zapMessage.hidden .zapMessageInner {
+  transform: scale(0);
+  opacity: 0;
+}
+
+.zapMessage img {
+  border-radius: 1000px;
+  width: 2vw;
+  height: 2vw;
+}
+
+.zapText {
+  padding-left: 0.35vw;
+  line-height: 0.45vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.zapUser {
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 0.5vw;
+}
+
+.zapContent {
+  letter-spacing: 0.01vw;
+  font-size: 1.3vw;
+  margin-top: 0.001vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 26vw;
+}
+
+.zapAmount {
+  font-size: 0.5vw;
+}
+
+#sponsorshipGame {
+  box-shadow: #ffffff21 0 0 50px 30px;
+  background: #ffffff1a;
+  border-radius: 1000px;
+  padding: 0 10px;
+}
+
+#sponsoredImgBraket {
+  height: 3vw;
+  margin-bottom: -0.4vw;
+  margin-top: -0.4vw;
+}
+
+.bracketDetails {
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  border-top: 1px solid #ffffff36;
+}
+
+.bracketDetail {
+  width: 25%;
+  padding: 1vw;
+  box-sizing: border-box;
+  border-right: 1px solid #ffffff36;
+}
+
+.in-game .bracketDetail {
+  padding: 0.5vw;
+}
+
+.bracketDetail:last-child {
+  border-right: none;
+}
+
+.bracketDetail .label {
+  font-size: 0.8vw;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.bracketDetail .value {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  align-items: flex-end;
+  gap: 0.2vw;
+  padding-left: 1.5vw;
+}
+
+.bracketDetail .value.players {
+  padding-left: 0;
+}
+
+.bracketDetail .value h3 {
+  font-size: 2vw;
+  margin-bottom: 0;
+}
+
+.overlay {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: #000000cc;
+  position: fixed;
+  top: 0;
+  left: 0;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.35s ease-in-out;
+  opacity: 1;
+  z-index: 10;
+}
+
+#loading.overlay img {
+  display: block;
+  width: 7vw;
+  height: 7vw;
+}
+
+#loading.overlay.hide,
+.overlay.hide {
+  opacity: 0;
+  pointer-events: none;
 }
 
 #mainmenubutton {
   animation: glowing 2000ms infinite;
+  margin-top: 1vw;
 }
