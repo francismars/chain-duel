@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
@@ -18,6 +18,9 @@ interface PostGameInfoResponse extends SerializedGameInfo {
   numbeOfPlayers?: number;
 }
 
+const PLACEHOLDER_WITHDRAWAL_URL =
+  'MARSURL1DP68GURN8GHJ7MRWVF5HGUEWV3HK5MEWWP6Z7AMFW35XGUNPWUHKZURF9AMRZTMVDE6HYMP0V438Y7NKXUE5S5TFG9X9GE2509N5VMN0G46S0WQJQ4';
+
 export default function PostGame() {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
@@ -34,9 +37,11 @@ export default function PostGame() {
   const [p2Deposit, setP2Deposit] = useState(0);
   const [totalPrize, setTotalPrize] = useState(0);
   const [lnurlw, setLnurlw] = useState<string>('');
-  const [qrValue, setQrValue] = useState<string>('');
+  const [qrValue, setQrValue] = useState<string>(PLACEHOLDER_WITHDRAWAL_URL);
   const [tournamentMode, setTournamentMode] = useState(false);
+  const [gameMode, setGameMode] = useState<string>('');
   const [prizeClaimed, setPrizeClaimed] = useState(false);
+  const [creatingWithdrawal, setCreatingWithdrawal] = useState(false);
 
   useGamepad(true);
 
@@ -83,10 +88,14 @@ export default function PostGame() {
       return;
     }
     if (menu === 2) {
+      setCreatingWithdrawal(false);
       setMenu(1);
       return;
     }
     if (!lnurlw) {
+      setCreatingWithdrawal(true);
+      setQrValue('');
+      setMenu(2);
       socket.emit('createWithdrawalPostGame');
     } else {
       setQrValue(lnurlw);
@@ -118,6 +127,7 @@ export default function PostGame() {
       } else {
         setTournamentMode(false);
       }
+      setGameMode(info.mode ?? '');
 
       const p1N = p1?.name?.trim() || 'Player 1';
       const p2N = p2?.name?.trim() || (info.mode === 'PRACTICE' ? 'BigToshi 🌊' : 'Player 2');
@@ -146,6 +156,7 @@ export default function PostGame() {
       if (info.lnurlw) {
         setLnurlw(info.lnurlw);
         setQrValue(info.lnurlw);
+        setCreatingWithdrawal(false);
         setMenu(2);
       }
 
@@ -165,6 +176,7 @@ export default function PostGame() {
       } else {
         setLnurlw(data);
         setQrValue(data);
+        setCreatingWithdrawal(false);
         setMenu(2);
       }
     };
@@ -183,13 +195,16 @@ export default function PostGame() {
   const developerFee = Math.floor((p1Deposit + p2Deposit) * 0.02);
   const designerFee = Math.floor((p1Deposit + p2Deposit) * 0.01);
   const hostFee = developerFee;
+  const practiceMode = gameMode === 'PRACTICE';
 
   const claimButtonText = useMemo(() => {
     if (menu === 3) return 'HIGHSCORES';
-    if (menu === 2) return 'BLUR QR CODE';
+    if (menu === 2) return creatingWithdrawal ? 'CREATING CODE...' : 'BLUR QR CODE';
+    if (practiceMode) return 'END PRACTICE';
     if (tournamentMode) return 'CLAIM TOURNAMENT PRIZE';
     return 'SWEEP VIA LNURL';
-  }, [menu, tournamentMode]);
+  }, [menu, tournamentMode, practiceMode, creatingWithdrawal]);
+  const qrHref = lnurlw ? `lightning:${lnurlw}` : undefined;
 
   const onMainMenu = () => {
     if (menu === 3) {
@@ -248,37 +263,37 @@ export default function PostGame() {
               src={winnerPicture || '/images/loading.gif'}
               alt=""
             />
-            <h1 id="winner" className="inline">
+            <h1 id="winner" className="inline" style={{ display: practiceMode ? 'none' : undefined }}>
               {winnerName} WINS
             </h1>
           </div>
         </div>
 
-        {tournamentMode ? null : (
+        {tournamentMode || practiceMode ? null : (
           <div id="fees">
             <span id="split1">
-              2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span> to the Sponsor
+              2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span> to the Sponsor (@piratehash)
             </span>{' '}
             ·{' '}
             <span id="split2">
-              2% <span id="developerFee">({developerFee.toLocaleString()} sats)</span> to the
-              developer
+              2% <span id="developerFee">({developerFee.toLocaleString()} sats)</span> to the developer
+              (@francismars)
             </span>{' '}
             ·{' '}
             <span id="split3">
-              1% <span id="designerFee">({designerFee.toLocaleString()} sats)</span> to the
-              designer
+              1% <span id="designerFee">({designerFee.toLocaleString()} sats)</span> to the designer
+              (@bitcoinanatomy)
             </span>
           </div>
         )}
 
         <h1 id="prize">{totalPrize.toLocaleString()} SATS{prizeClaimed ? ' CLAIMED' : ''}</h1>
-        <p id="claimText" style={{ display: menu === 3 ? 'none' : undefined }}>
+        <p id="claimText" style={{ display: menu === 3 || practiceMode ? 'none' : undefined }}>
           CLAIM YOUR WINNINGS
         </p>
-        <a id="qrcodeLink" href={qrValue ? `lightning:${qrValue}` : undefined}>
+        <a id="qrcodeLink" href={qrHref}>
           {menu === 3 ? null : qrValue ? (
-            <QRCodeSVG className={`qrcode ${menu === 1 ? 'blur' : ''}`} id="qrCode1" value={qrValue} size={260} />
+            <QRCodeCanvas className={`qrcode ${menu === 1 ? 'blur' : ''}`} id="qrCode1" value={qrValue} size={800} />
           ) : (
             <img
               className={`qrcode ${menu === 1 ? 'blur' : ''}`}
@@ -314,7 +329,7 @@ export default function PostGame() {
               style={{ animationDuration: activeButtonMenu1 === 1 ? '2s' : '0s' }}
               onClick={onDoubleOrNothing}
             >
-              {p2Deposit > 0 ? 'DOUBLE OR NOTHING' : 'PRACTICE AGAIN'}
+              {practiceMode ? 'PRACTICE AGAIN' : p2Deposit > 0 ? 'DOUBLE OR NOTHING' : 'PRACTICE AGAIN'}
             </Button>
           )}
           {menu === 3 ? (

@@ -65,9 +65,7 @@ export default function TournamentLobby() {
         const currentCount = Object.keys(prev).length;
         if (currentCount >= numberOfPlayers) return prev;
         const nextIndex = currentCount + 1;
-        const comment = Array.isArray(data.comment)
-          ? String(data.comment[0] ?? '').trim()
-          : String(data.comment ?? '').trim();
+        const comment = normalizeInvoiceComment(data.comment);
         const name = comment !== '' ? comment : `Player ${nextIndex}`;
         const next = { ...prev, [`player${nextIndex}`]: name };
         if (Object.keys(next).length === numberOfPlayers) {
@@ -207,4 +205,16 @@ export default function TournamentLobby() {
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </div>
   );
+}
+
+function normalizeInvoiceComment(comment: unknown): string {
+  if (Array.isArray(comment)) {
+    if (comment.length === 1) {
+      return String(comment[0] ?? '').trim();
+    }
+    // Some backends emit comment as char array; join to recover full name.
+    const joined = comment.map((part) => String(part ?? '')).join('').trim();
+    return joined;
+  }
+  return String(comment ?? '').trim();
 }
