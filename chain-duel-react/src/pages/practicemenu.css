@@ -12,25 +12,40 @@
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  align-items: center;
-  justify-content: flex-start;
+  align-items: flex-end;
+  justify-content: center;
   width: 53%;
   min-width: 0;
-  gap: 1.5cqw;
-  padding: 1vw;
+  gap: 0;
+  padding: 0;
 }
 
 .practice-page #player1card .player-card-info,
 .practice-page #player1card #player1cardinfo {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 auto;
+  width: 40%;
+  min-width: 40%;
 }
 
 .practice-page #player1card .qrcodeContainer {
   flex: 0 0 auto;
-  width: 14vw;
-  max-width: 140px;
-  overflow: visible; /* so scale-down isn’t clipped */
+  width: 20%;
+  height: 10vw;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+}
+
+.practice-page #bottomInfo {
+  justify-content: space-around;
+  max-height: 12vw;
+}
+
+.practice-page #gameButtons .button {
+  width: 25%;
+  height: 3vw;
+  font-size: 0.8cqw;
+  margin: 0;
 }
 
 .player-card-info {
@@ -50,10 +65,7 @@
 }
 
 #player1satsContainer {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.35em;
-  flex-wrap: nowrap;
+  display: block;
 }
 
 #player1sats {
@@ -94,15 +106,11 @@
 
 .qrcodeContainer {
   position: relative;
-  width: 14vw;
-  max-width: 140px;
-  height: 14vw;
-  max-height: 140px;
-  min-height: 72px;
+  width: 20%;
+  height: 10vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   transition: all 0.15s ease-in;
 }
 
@@ -118,26 +126,27 @@
 .qrcodeContainer svg {
   display: block;
   box-sizing: border-box;
-  max-width: 100%;
-  max-height: 100%;
-  min-width: 0;
-  min-height: 0;
-  width: auto;
+  width: 100%;
   height: auto;
-  object-fit: contain;
+  position: absolute;
+  bottom: 0;
+}
+
+.qrcodeContainer canvas {
+  display: block;
+  box-sizing: border-box;
+  width: 100% !important;
+  height: 100% !important;
   filter: invert(1);
   mix-blend-mode: screen;
 }
 
 .qrcodeContainer .qrcode {
-  max-width: 100%;
-  max-height: 100%;
-  min-width: 0;
-  min-height: 0;
-  width: auto;
+  width: 100%;
   height: auto;
   filter: invert(1);
   mix-blend-mode: screen;
+  z-index: 1;
 }
 
 /* Hold Ctrl (or L1/L2): scale QR in place from bottom – no position change */
@@ -169,8 +178,15 @@
 .qrcodeDecoration {
   height: auto;
   width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
   border: 0 solid transparent;
   box-shadow: none;
+  filter: none;
+  mix-blend-mode: normal;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .deposit-message,
@@ -204,6 +220,7 @@
 
 .practice-page #player1card .deposit-message {
   text-align: center;
+  line-height: 1.2;
 }
 
 .practice-teaser h1 {
@@ -212,5 +229,6 @@
 
 .practice-teaser h3 {
   font-size: 1.3vw;
+  line-height: 1.05;
 }
 
