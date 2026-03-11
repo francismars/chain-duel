@@ -138,8 +138,10 @@ export class PixiGameRenderer {
       this.renderFallback(state);
       return;
     }
-    const width = renderer.width;
-    const height = renderer.height;
+    // Use CSS pixel size of the host (legacy-like responsive behavior),
+    // not renderer backing-store size which changes with resolution/DPR.
+    const width = this.host?.clientWidth ?? renderer.width;
+    const height = this.host?.clientHeight ?? renderer.height;
     if (width <= 0 || height <= 0) {
       this.resize();
       return;
