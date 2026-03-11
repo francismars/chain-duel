@@ -20,6 +20,8 @@ export interface PointChange {
   value: number;
   p1Pos: GridPos;
   p2Pos: GridPos;
+  p1YOffsetPx: number;
+  p2YOffsetPx: number;
   alpha: number;
 }
 

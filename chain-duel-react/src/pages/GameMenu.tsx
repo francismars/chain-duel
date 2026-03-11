@@ -29,7 +29,7 @@ export default function GameMenu() {
   const [player2Sats, setPlayer2Sats] = useState(0);
   const [p1Name, setP1Name] = useState('Player 1');
   const [p2Name, setP2Name] = useState('Player 2');
-  const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('startgame');
+  const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('mainMenuButton');
   const [showCancelOverlay, setShowCancelOverlay] = useState(false);
   const [player1CardExpanded, setPlayer1CardExpanded] = useState(false);
   const [player2CardExpanded, setPlayer2CardExpanded] = useState(false);
@@ -37,6 +37,14 @@ export default function GameMenu() {
   const [highlightP1, setHighlightP1] = useState(false);
   const [highlightP2, setHighlightP2] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
+  const [gameMenuTitle, setGameMenuTitle] = useState<string>('P2P');
+  const [prevWinner, setPrevWinner] = useState<string | null>(null);
+  const [winnerSats, setWinnerSats] = useState<number>(0);
+  const [loserSats, setLoserSats] = useState<number>(0);
+  const [nostrCode, setNostrCode] = useState<string>('');
+  const [nostrNote1, setNostrNote1] = useState<string>('');
+  const [nostrMinP1, setNostrMinP1] = useState<number>(1);
+  const [nostrMinP2, setNostrMinP2] = useState<number>(1);
 
   const mainMenuButtonRef = useRef<HTMLButtonElement>(null);
   const startGameButtonRef = useRef<HTMLButtonElement>(null);
@@ -77,6 +85,15 @@ export default function GameMenu() {
       }
       const links = parsed.payLinks;
       setPayLinks(links.length > 0 ? links : null);
+      if (parsed.modeMeta?.mode) {
+        setGameMenuTitle(parsed.modeMeta.mode);
+      }
+      if (parsed.nostrMeta) {
+        setNostrCode(parsed.nostrMeta.emojis);
+        setNostrNote1(parsed.nostrMeta.note1);
+        setNostrMinP1(parsed.nostrMeta.min);
+        setNostrMinP2(parsed.nostrMeta.min);
+      }
       setStatusMessage(
         links.length > 0 ? '' : 'Waiting for payment links from backend...'
       );
@@ -91,6 +108,12 @@ export default function GameMenu() {
   useEffect(() => {
     if (!socket) return;
     const handler = (body: SerializedGameInfo) => {
+      if (body.winners && body.winners.length > 0) {
+        const latestWinner = body.winners.slice(-1)[0];
+        setPrevWinner(latestWinner);
+        const donMultiple = 2 ** body.winners.length;
+        setGameMenuTitle(`P2P*${donMultiple}`);
+      }
       const players = body.players ?? {};
       const p1 = players['Player 1'];
       const p2 = players['Player 2'];
@@ -112,13 +135,21 @@ export default function GameMenu() {
           highlightTimeoutRef.current = setTimeout(() => setHighlightP2(false), 1200);
         }
       }
+
+      if (prevWinner) {
+        const loser = prevWinner === 'Player 1' ? 'Player 2' : 'Player 1';
+        const winnerValue = players[prevWinner]?.value ?? 0;
+        const loserValue = players[loser]?.value ?? 0;
+        setWinnerSats(winnerValue);
+        setLoserSats(loserValue);
+      }
     };
     socket.on('updatePayments', handler);
     return () => {
       socket.off('updatePayments', handler);
       if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
     };
-  }, [socket]);
+  }, [socket, prevWinner]);
 
   useEffect(() => {
     if (!socket) return;
@@ -141,14 +172,29 @@ export default function GameMenu() {
   }, [buttonSelected]);
 
   useEffect(() => {
+    const canStartNow = prevWinner ? loserSats >= winnerSats : player1Sats !== 0 && player2Sats !== 0;
+    if (canStartNow) {
+      setButtonSelected('startgame');
+    }
+  }, [player1Sats, player2Sats, prevWinner, loserSats, winnerSats]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const canStartNow = prevWinner ? loserSats >= winnerSats : player1Sats !== 0 && player2Sats !== 0;
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
-          navigate('/game');
+          if (canStartNow) {
+            navigate('/game');
+          }
         } else if (buttonSelected === 'mainMenuButton') {
-          navigate('/');
+          if (player1Sats === 0 && player2Sats === 0) {
+            setShowCancelOverlay(true);
+            setButtonSelected('cancelGameAbort');
+          } else {
+            navigate('/');
+          }
         } else if (buttonSelected === 'cancelGameAbort') {
           setShowCancelOverlay(false);
           setButtonSelected('mainMenuButton');
@@ -209,7 +255,7 @@ export default function GameMenu() {
       window.removeEventListener('keyup', handleKeyUpExpand);
       if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
     };
-  }, [buttonSelected, player1Sats, player2Sats, socket, navigate, playSfx]);
+  }, [buttonSelected, player1Sats, player2Sats, socket, navigate, playSfx, prevWinner, loserSats, winnerSats]);
 
   const p1PayLink = payLinks?.find((p) => p.description === 'Player 1');
   const p2PayLink = payLinks?.find((p) => p.description === 'Player 2');
@@ -220,39 +266,24 @@ export default function GameMenu() {
   const hostCut = Math.floor(totalPrize * 0.02);
   const devCut = Math.floor(totalPrize * 0.02);
   const designCut = Math.floor(totalPrize * 0.01);
-  const canStart = true;
-  const mainMenuDisabled = false;
-
-  if (useNostr) {
-    return (
-      <div className="game-setup-page gamemenu-page">
-        <p className="center" style={{ padding: '2rem' }}>
-          P2P NOSTR mode is not yet implemented in the React app. Use LNURL P2P from the main menu.
-        </p>
-        <button
-          type="button"
-          className="button"
-          onClick={() => {
-            playSfx(SFX.MENU_CONFIRM);
-            navigate('/');
-          }}
-        >
-          MAIN MENU
-        </button>
-      </div>
-    );
-  }
+  const canStart = prevWinner ? loserSats >= winnerSats : player1Sats !== 0 && player2Sats !== 0;
+  const mainMenuDisabled = player1Sats !== 0 || player2Sats !== 0;
 
   return (
     <>
       <GameSetupLayout
-        title="P2P"
+        title={gameMenuTitle}
         pageClass="gamemenu-page"
         mainMenuDisabled={mainMenuDisabled}
         canStart={canStart}
         onMainMenu={() => {
           playSfx(SFX.MENU_CONFIRM);
-          navigate('/');
+          if (player1Sats === 0 && player2Sats === 0) {
+            setShowCancelOverlay(true);
+            setButtonSelected('cancelGameAbort');
+          } else {
+            navigate('/');
+          }
         }}
         onStart={() => {
           playSfx(SFX.MENU_CONFIRM);
@@ -319,7 +350,7 @@ export default function GameMenu() {
               </div>
             </div>
             <div className="deposit-message">
-              Deposit between <b>{fmt(minP1)}</b> and <b>10,000,000</b> sats
+              Deposit between <b>{fmt(useNostr ? nostrMinP1 : minP1)}</b> and <b>10,000,000</b> sats
               <br />
               Set player name on the payment note
               <br />
@@ -347,6 +378,32 @@ export default function GameMenu() {
           </div>
         </div>
 
+        {useNostr && nostrNote1 && (
+          <div className="prizeinfocard">
+            <div className="label">NOSTR GAME EVENT</div>
+            <div id="qrcodeContainerNostr" className="qrcodeContainer">
+              <a
+                id="qrcodeLinkNostr"
+                href={`https://next.nostrudel.ninja/#/n/${nostrNote1}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <QRCodeSVG
+                  id="qrcodeNostr"
+                  className="qrcode"
+                  value={`nostr:${nostrNote1}`}
+                  size={180}
+                  level="M"
+                  includeMargin={false}
+                />
+              </a>
+            </div>
+            <div id="gameCodeNostr" className="condensed">
+              {nostrCode}
+            </div>
+          </div>
+        )}
+
         <div id="player2card" className={player2CardExpanded ? 'expanded' : ''}>
           <div id="player2cardinfo" className="player-card-info">
             <div id="player2satsContainer" className={`player-sats ${highlightP2 ? 'highlight' : ''}`}>
@@ -360,7 +417,7 @@ export default function GameMenu() {
               <div className="inline playerSquare black" />
             </div>
             <div className="deposit-message">
-              Deposit between <b>{fmt(minP2)}</b> and <b>10,000,000</b> sats
+              Deposit between <b>{fmt(useNostr ? nostrMinP2 : minP2)}</b> and <b>10,000,000</b> sats
               <br />
               Set player name on the payment note
               <br />

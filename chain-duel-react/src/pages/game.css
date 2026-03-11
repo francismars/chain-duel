@@ -2,6 +2,8 @@ body {
   background-color: black;
   background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
     url('/images/chainduel_bg_no_sat.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
 #brand {
@@ -33,6 +35,7 @@ body {
   justify-content: center;
   flex-grow: unset;
   flex-basis: fit-content;
+  min-height: 100vh;
 }
 
 .flex.points,
@@ -56,7 +59,9 @@ body {
 }
 
 #player2info .playerSquare {
+  box-shadow: 0 0 27px #000000, 0 0 27px #000000;
   border: 1px #1f1f1f solid;
+  box-shadow: 0 0 11px #ffffffb0;
 }
 
 #player1info,
@@ -75,11 +80,20 @@ body {
 
 #player1info {
   color: white;
+  padding-top: 0;
+  margin-bottom: 0;
 }
 
 #player2info {
   color: white;
+  padding-top: 0;
+  margin-bottom: 0;
+  margin-right: 0;
   text-align: right;
+}
+
+#player2name {
+  margin-right: 0.4vw;
 }
 
 .player-sats {
@@ -96,13 +110,13 @@ body {
 
 #p1Points {
   color: white;
-  margin-right: 0.5rem;
+  margin-right: 0.1vw;
   font-size: 2.5cqw;
 }
 
 #p2Points {
   color: white;
-  margin-left: 0.5rem;
+  margin-left: 0.1vw;
   font-size: 2.5cqw;
 }
 
@@ -354,10 +368,12 @@ body {
   padding: 0 10px;
 }
 
-#sponsoredImgBraket {
+#sponsorshipGame .sponsored-img {
   height: 3vw;
-  margin-bottom: -0.4vw;
+  width: auto;
+  max-width: none;
   margin-top: -0.4vw;
+  margin-bottom: -0.4vw;
 }
 
 .bracketDetails {
@@ -436,7 +452,3 @@ body {
   pointer-events: none;
 }
 
-#mainmenubutton {
-  animation: glowing 2000ms infinite;
-  margin-top: 1vw;
-}

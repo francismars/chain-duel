@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
+import { Sponsorship } from '@/components/ui/Sponsorship';
 import {
   canContinueAfterGame,
   createGameState,
@@ -20,7 +20,6 @@ import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
 import { PlayerRole, type SerializedGameInfo } from '@/types/socket';
 import { SocketValidators } from '@/lib/socketValidation';
-import '@/components/ui/Button.css';
 import './game.css';
 
 interface ZapMessage {
@@ -59,6 +58,8 @@ export default function Game() {
   const frameRef = useRef<number | null>(null);
   const winnerSentRef = useRef(false);
   const localBootRef = useRef(false);
+  const captureP1Ref = useRef('2%');
+  const captureP2Ref = useRef('2%');
 
   const [loading, setLoading] = useState(true);
   const [player1Name, setPlayer1Name] = useState('Player 1');
@@ -70,6 +71,8 @@ export default function Game() {
   const [gameInfo, setGameInfo] = useState('');
   const [captureP1, setCaptureP1] = useState('2%');
   const [captureP2, setCaptureP2] = useState('2%');
+  const [captureP1Highlight, setCaptureP1Highlight] = useState(false);
+  const [captureP2Highlight, setCaptureP2Highlight] = useState(false);
   const [initialP1Width, setInitialP1Width] = useState(50);
   const [initialP2Width, setInitialP2Width] = useState(50);
   const [currentP1Width, setCurrentP1Width] = useState(50);
@@ -88,7 +91,7 @@ export default function Game() {
     localBootRef.current = true;
     const state = createGameState({
       p1Name: 'Player 1',
-      p2Name: 'BigToshi',
+      p2Name: 'BigToshi 🌊',
       p1Points: 1000,
       p2Points: 1000,
       modeLabel: 'Practice',
@@ -98,7 +101,7 @@ export default function Game() {
     stateRef.current = state;
     winnerSentRef.current = false;
     setPlayer1Name('Player 1');
-    setPlayer2Name('BigToshi');
+    setPlayer2Name('BigToshi 🌊');
     setP1Points(1000);
     setP2Points(1000);
     setGameInfo('Practice');
@@ -107,6 +110,8 @@ export default function Game() {
     const hud = getHudState(state);
     setCaptureP1(hud.captureP1);
     setCaptureP2(hud.captureP2);
+    captureP1Ref.current = hud.captureP1;
+    captureP2Ref.current = hud.captureP2;
     setInitialP1Width(hud.initialWidthP1);
     setInitialP2Width(hud.initialWidthP2);
     setCurrentP1Width(hud.currentWidthP1);
@@ -114,6 +119,23 @@ export default function Game() {
     setLoading(false);
     audioRef.current?.startMusic();
   };
+
+  useEffect(() => {
+    const previousImage = document.body.style.backgroundImage;
+    const previousSize = document.body.style.backgroundSize;
+    const previousPosition = document.body.style.backgroundPosition;
+
+    document.body.style.backgroundImage =
+      "linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url('/images/chainduel_bg_no_sat.jpg')";
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
+
+    return () => {
+      document.body.style.backgroundImage = previousImage;
+      document.body.style.backgroundSize = previousSize;
+      document.body.style.backgroundPosition = previousPosition;
+    };
+  }, []);
 
   useEffect(() => {
     if (!socket || !connected) {
@@ -160,6 +182,8 @@ export default function Game() {
       const hud = getHudState(state);
       setCaptureP1(hud.captureP1);
       setCaptureP2(hud.captureP2);
+      captureP1Ref.current = hud.captureP1;
+      captureP2Ref.current = hud.captureP2;
       setInitialP1Width(hud.initialWidthP1);
       setInitialP2Width(hud.initialWidthP2);
       setCurrentP1Width(hud.currentWidthP1);
@@ -173,10 +197,6 @@ export default function Game() {
       const data = validated.data;
       const p1 = data.players['Player 1'];
       const p2 = data.players['Player 2'];
-      if (stateRef.current) {
-        if (p1?.value != null) stateRef.current.score[0] = p1.value;
-        if (p2?.value != null) stateRef.current.score[1] = p2.value;
-      }
       if (p1?.value != null) setP1Points(Math.floor(p1.value));
       if (p2?.value != null) setP2Points(Math.floor(p2.value));
     };
@@ -236,8 +256,18 @@ export default function Game() {
       const hud = getHudState(state);
       setP1Points(hud.p1Points);
       setP2Points(hud.p2Points);
+      if (hud.captureP1 !== captureP1Ref.current) {
+        setCaptureP1Highlight(true);
+        window.setTimeout(() => setCaptureP1Highlight(false), 100);
+      }
+      if (hud.captureP2 !== captureP2Ref.current) {
+        setCaptureP2Highlight(true);
+        window.setTimeout(() => setCaptureP2Highlight(false), 100);
+      }
       setCaptureP1(hud.captureP1);
       setCaptureP2(hud.captureP2);
+      captureP1Ref.current = hud.captureP1;
+      captureP2Ref.current = hud.captureP2;
       setCurrentP1Width(hud.currentWidthP1);
       setCurrentP2Width(hud.currentWidthP2);
 
@@ -434,14 +464,14 @@ export default function Game() {
           <div className="gameState">
             <div id="capturing">
               <div id="capturingP1">
-                <span id="capturingP1Amount" className="capturingAmount">
+                <span id="capturingP1Amount" className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}>
                   {captureP1}
                 </span>{' '}
                 capture
               </div>
               <div id="capturingP2">
                 capture{' '}
-                <span id="capturingP2Amount" className="capturingAmount">
+                <span id="capturingP2Amount" className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}>
                   {captureP2}
                 </span>
               </div>
@@ -468,6 +498,7 @@ export default function Game() {
               </span>{' '}
               <span className="grey">sats</span>
             </div>
+            <Sponsorship id="sponsorshipGame" showLabel={false} />
             <div className="player-sats player-sats-p2">
               <span className="grey">sats</span>{' '}
               <span id="p2Points" className="condensed">
@@ -519,9 +550,6 @@ export default function Game() {
             </div>
           </div>
 
-          <Button id="mainmenubutton" onClick={() => navigate('/')}>
-            MAIN MENU
-          </Button>
         </div>
       </div>
 
@@ -570,13 +598,34 @@ function resolveDuelInfo(data: SerializedGameInfo): {
   const p2 = data.players['Player 2'];
   const mode = data.mode?.toUpperCase();
   if (mode === 'TOURNAMENT') {
+    const assignedPlayers = data.players ?? {};
+    const numberOfPlayers = Object.keys(assignedPlayers).length;
+    const playersList = Array(Math.max(2, numberOfPlayers)).fill('');
+    for (const key of Object.keys(assignedPlayers)) {
+      const idx = Number.parseInt(key.replace('Player ', ''), 10) - 1;
+      if (idx >= 0 && idx < playersList.length) {
+        playersList[idx] = assignedPlayers[key]?.name ?? '';
+      }
+    }
     const winners = data.winners ?? [];
-    const numberOfPlayers = Object.keys(data.players).length;
+    let tournamentP1 = p1?.name || 'Player 1';
+    let tournamentP2 = p2?.name || 'Player 2';
+    if (winners.length + 1 < numberOfPlayers) {
+      if (winners.length < numberOfPlayers / 2) {
+        tournamentP1 = playersList[2 * winners.length] || tournamentP1;
+        tournamentP2 = playersList[2 * winners.length + 1] || tournamentP2;
+      } else {
+        const winnerNames = buildWinnerNamesList(playersList, winners);
+        tournamentP1 = winnerNames[2 * winners.length] || tournamentP1;
+        tournamentP2 = winnerNames[2 * winners.length + 1] || tournamentP2;
+      }
+    }
+    const startSats = Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10));
     return {
-      p1Name: p1?.name || 'Player 1',
-      p2Name: p2?.name || 'Player 2',
-      p1Points: Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10)),
-      p2Points: Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10)),
+      p1Name: tournamentP1,
+      p2Name: tournamentP2,
+      p1Points: startSats,
+      p2Points: startSats,
       gameLabel: `GAME ${winners.length + 1} of ${Math.max(1, numberOfPlayers - 1)}`,
       isTournament: true,
       practiceMode: false,
@@ -587,7 +636,7 @@ function resolveDuelInfo(data: SerializedGameInfo): {
   if (!p2) {
     return {
       p1Name: p1?.name || 'Player 1',
-      p2Name: 'BigToshi',
+      p2Name: 'BigToshi 🌊',
       p1Points: Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10)),
       p2Points: Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10)),
       gameLabel: 'Practice',
@@ -611,6 +660,19 @@ function resolveDuelInfo(data: SerializedGameInfo): {
     p1Picture: p1?.picture ?? '',
     p2Picture: p2?.picture ?? '',
   };
+}
+
+function buildWinnerNamesList(playersList: string[], winnersList: string[]): string[] {
+  const playersListCopy = [...playersList];
+  for (let i = 0; i < winnersList.length; i += 1) {
+    const winner = winnersList[i];
+    if (winner === 'Player 1') {
+      playersListCopy.push(playersListCopy[2 * i] ?? '');
+    } else {
+      playersListCopy.push(playersListCopy[2 * i + 1] ?? '');
+    }
+  }
+  return playersListCopy;
 }
 
 function parseZap(payload: unknown): Omit<ZapMessage, 'id' | 'top' | 'hidden'> | null {
