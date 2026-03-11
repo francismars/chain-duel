@@ -7,7 +7,7 @@
 - `npm run test` passes
 - Socket connection smoke verified against marspay
 - Payment menu flows verified (`P2P`, `Practice`)
-- Temporary local test bypasses removed (payment required again for production mode)
+- Local fallback/bootstrap behavior reviewed for production policy (enabled intentionally or dev-only guarded)
 
 ## Parity Gate
 

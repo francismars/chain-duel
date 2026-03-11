@@ -12,26 +12,27 @@ This matrix maps legacy pages/scripts to React pages and tracks parity status.
 
 | Legacy view | Legacy script | React page | Status | Primary gaps |
 |---|---|---|---|---|
-| `views/index.html` | `public/javascripts/index.js` | `src/pages/Index.tsx` | In progress | Verify responsive geometry and all keyboard edge states |
-| `views/config.html` | `public/javascripts/config.js` | `src/pages/Config.tsx` | In progress | Verify all form validation/error states and legacy micro-spacing |
-| `views/highscores.html` | `public/javascripts/highscores.js` | `src/pages/Highscores.tsx` | In progress | Verify pagination parity and typography spacing |
-| `views/about.html` | `public/javascripts/about.js` | `src/pages/About.tsx` | In progress | Verify sponsor blocks and responsive wrap behavior |
-| `views/practicemenu.html` | `public/javascripts/practicemenu.js` | `src/pages/PracticeMenu.tsx` | In progress | Final visual parity pass and controller overlay behavior |
-| `views/gamemenu.html` | `public/javascripts/gameMenu.js` | `src/pages/GameMenu.tsx` | In progress | NOSTR panel parity and full keyboard/controller path parity |
-| `views/game.html` | `public/javascripts/game.js` | `src/pages/Game.tsx` | In progress | Core gameplay/rendering migrated; final visual parity polish + production payment gating still pending |
-| `views/postgame.html` | `public/javascripts/postGame.js` | `src/pages/PostGame.tsx` | Not started | Withdraw flow, redirect logic, result details |
-| `views/tournprefs.html` | `public/javascripts/tournprefs.js` | `src/pages/TournamentPrefs.tsx` | Not started | Tournament setup controls and validation |
-| `views/tournlobby.html` | `public/javascripts/tournlobby.js` | `src/pages/TournamentLobby.tsx` | Not started | Lobby state machine, ready/claim flow |
-| `views/tournbracket.html` | `public/javascripts/tournbracket.js` | `src/pages/TournamentBracket.tsx` | Not started | Bracket render/update parity and controls |
+| `views/index.html` | `public/javascripts/index.js` | `src/pages/Index.tsx` | In progress | Final responsive/spacing parity and full input edge-path sweep |
+| `views/config.html` | `public/javascripts/config.js` | `src/pages/Config.tsx` | In progress | Validation/error microcopy and spacing parity sweep |
+| `views/highscores.html` | `public/javascripts/highscores.js` | `src/pages/Highscores.tsx` | In progress | Pagination/row typography fine-tuning |
+| `views/about.html` | `public/javascripts/about.js` | `src/pages/About.tsx` | In progress | Text block spacing and responsive wrap parity |
+| `views/practicemenu.html` | `public/javascripts/practicemenu.js` | `src/pages/PracticeMenu.tsx` | In progress | Minor visual parity and timeout-state polish |
+| `views/gamemenu.html` | `public/javascripts/gameMenu.js` | `src/pages/GameMenu.tsx` | In progress | NOSTR variant parity and remaining keyboard/controller edge paths |
+| `views/game.html` | `public/javascripts/game.js` | `src/pages/Game.tsx` | In progress | Final pixel parity (windowed/fullscreen) and overlay typography polish |
+| `views/postgame.html` | `public/javascripts/postGame.js` | `src/pages/PostGame.tsx` | In progress | Final visual parity and withdrawal-path edge states |
+| `views/tournprefs.html` | `public/javascripts/tournprefs.js` | `src/pages/TournamentPrefs.tsx` | In progress | Final spacing/input parity verification |
+| `views/tournlobby.html` | `public/javascripts/tournlobby.js` | `src/pages/TournamentLobby.tsx` | In progress | Lobby claim/proceed edge-state verification |
+| `views/tournbracket.html` | `public/javascripts/tournbracket.js` | `src/pages/TournamentBracket.tsx` | In progress | Bracket details spacing and control parity sweep |
+| `views/demo.html` | `public/javascripts/demo.js` | _No React route_ | Not started | Demo route/page not migrated |
 
 ## Shared Contract Parity
 
 | Area | Status | Notes |
 |---|---|---|
-| Socket event typing (`src/types/socket.ts`) | In progress | Core events typed, still need mode-specific runtime guards |
-| Runtime validation (`src/lib/socketValidation.ts`) | In progress | Wired but not consistently used in page handlers |
-| Config loading (`src/lib/config.ts`) | In progress | Supports env socket URL and legacy fallback; needs final fallback UX |
-| Socket lifecycle (`src/hooks/useSocket.ts`) | In progress | Stabilized; needs stress test across all pages/modes |
+| Socket event typing (`src/types/socket.ts`) | In progress | Broadly typed; continue tightening mode-specific contracts |
+| Runtime validation (`src/lib/socketValidation.ts`) | In progress | In use on game flows; extend consistently across all socket handlers |
+| Config loading (`src/lib/config.ts`) | In progress | Env-first socket URL path implemented; fallback UX still polishable |
+| Socket lifecycle (`src/hooks/useSocket.ts`) | In progress | Stable in current usage; needs longer-session soak tests |
 
 ## CSS Parity
 
@@ -41,7 +42,7 @@ This matrix maps legacy pages/scripts to React pages and tracks parity status.
 | `public/stylesheets/practicemenu.css` | `src/pages/practicemenu.css` + `src/components/layout/game-setup.css` | In progress |
 | `public/stylesheets/gameMenu.css` | `src/pages/gamemenu.css` + `src/components/layout/game-setup.css` | In progress |
 | `public/stylesheets/game.css` | `src/pages/game.css` | In progress |
-| tournament/postgame css files | page css equivalents | Not started |
+| tournament/postgame css files | page css equivalents | In progress |
 
 ## Acceptance Checklist (Per Page)
 

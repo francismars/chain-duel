@@ -38,3 +38,8 @@ Use this checklist for desktop and mobile parity verification against legacy pag
 - Before/after screenshots for each breakpoint
 - Annotated diff list for each page
 - Signed-off parity status: `pass`, `minor delta accepted`, or `blocked`
+
+## Current Known Deltas (Audit Snapshot)
+
+- `Game` page still under active pixel-tuning for typography/spacing parity across windowed and fullscreen modes.
+- Non-game pages are largely migrated; remaining work is mostly micro-spacing and edge-state visual parity.

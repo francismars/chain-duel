@@ -21,7 +21,7 @@ React target:
 | Header | Fixed `CHAIN / DUEL` bar | Implemented |
 | Players row | Player names + optional avatar + square indicators | Implemented |
 | Game state bars | Capturing percentages + initial/current distribution bars | Implemented |
-| Score row | Left/right sats and centered sponsorship badge | Implemented (sponsorship content still needs final parity polish) |
+| Score row | Left/right sats and centered sponsorship badge | Implemented (minor spacing polish still in progress) |
 | Canvas stage | 70vw x 35-39vw centered board with background image | Implemented |
 | Bitcoin footer | Latest block fields + highlight animation on block update | Implemented |
 | Zap overlay | Floating pill notifications over players row | Implemented |
@@ -31,7 +31,7 @@ React target:
 
 | Capability | Legacy behavior | React status |
 |---|---|---|
-| Session bootstrap | `getDuelInfos`, set names/values/mode, reveal screen | Implemented with local fallback boot when duel payload is missing |
+| Session bootstrap | `getDuelInfos`, set names/values/mode, reveal screen | Implemented (includes local fallback boot when duel payload is missing) |
 | Modes | Tournament, P2P, Practice setup behavior | Implemented |
 | Start flow | `Space/Enter` starts countdown then game | Implemented |
 | Core loop | Render loop + 10 fps simulation tick | Implemented |
@@ -55,6 +55,6 @@ React target:
 
 ## Open Items Before Production
 
-- Re-enable mandatory payment gating in `GameMenu` and `PracticeMenu` (local bypass is temporary).
-- Run final pixel-level visual parity pass against legacy captures.
+- Final pixel-level visual parity pass against legacy captures (windowed + fullscreen).
 - Confirm socket and mempool behavior against production backend under sustained sessions.
+- Decide whether local game bootstrap fallback remains enabled in production or is guarded behind env/dev mode.
