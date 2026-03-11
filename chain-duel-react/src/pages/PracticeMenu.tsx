@@ -1,7 +1,7 @@
 // Practice menu page – practice mode setup
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { GameSetupLayout } from '@/components/layout/GameSetupLayout';
 import { useSocket } from '@/hooks/useSocket';
@@ -281,8 +281,8 @@ export default function PracticeMenu() {
               className={`player-sats ${highlightP1 ? 'highlight' : ''}`}
             >
               <span id="player1sats">{player1Sats.toLocaleString()}</span>
-              <span className="grey sats-label">sats</span>
             </div>
+            <span className="grey sats-label">sats</span>
             <div className="condensed">
               <div className="inline playerSquare white" />
               <div
@@ -302,11 +302,11 @@ export default function PracticeMenu() {
               rel="noopener noreferrer"
             >
               {lnurlp ? (
-                <QRCodeSVG
+                <QRCodeCanvas
                   id="qrcode1"
                   className="qrcode"
                   value={lnurlp}
-                  size={200}
+                  size={800}
                   level="M"
                   includeMargin={false}
                 />
