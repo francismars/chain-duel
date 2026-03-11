@@ -45,17 +45,23 @@ src/
 
 ## Status
 
-🚧 **In Progress** - Active migration with playable game page
+🚧 **In Progress** - Major page migration is implemented; final parity polish remains.
 
-### Game Page Migration Status
+### Implemented
 
-- `src/pages/Game.tsx` now includes a legacy-style HUD, game state bars, points row, bitcoin footer, zap overlay, and loading overlay behavior.
-- `src/game/engine/*` contains headless game logic for movement, collisions, captures, scoring, and winner detection.
-- `src/game/render/*` provides Pixi-first rendering with a Canvas2D fallback for environments where Pixi init is unavailable.
-- `src/game/audio/*` and `src/game/io/*` handle in-game sound effects and mempool block feed behavior.
+- Core routes implemented in React: `Index`, `Config`, `Highscores`, `About`, `PracticeMenu`, `GameMenu`, `Game`, `PostGame`, `TournamentPrefs`, `TournamentLobby`, `TournamentBracket`.
+- Game engine/render/audio/io stack implemented under `src/game/*` with Pixi renderer + Canvas fallback.
+- Socket/config/env flow implemented (`VITE_SOCKET_URL` primary path, legacy `/loadconfig` fallback where applicable).
+- Payment-gated entry logic is active (`PracticeMenu` requires min sats; `GameMenu` requires both players funded).
 
-### Local Testing Mode (Temporary)
+### Remaining / In Parity Polish
 
-- For faster local testing, `GameMenu` and `PracticeMenu` currently allow entering `/game` without payment deposits.
-- `/game` includes a local fallback bootstrap if backend duel payload is missing, so loading does not block manual testing.
-- Before production release, restore mandatory payment gating and remove test bypass behavior.
+- Pixel-level visual parity pass (windowed and fullscreen) is still in progress on `Game`, then other pages.
+- Final keyboard/gamepad edge-case parity validation across all routes.
+- Legacy `demo` view is not exposed as a React route.
+- Legacy tournament menu behavior from `tournmenu.js` is partially consolidated into tournament pages and still needs explicit parity sign-off.
+
+### Notes For Testing
+
+- `/game` still has a local bootstrap fallback if duel payload is unavailable, so loading does not hard-block local UI testing.
+- Keep `VITE_SOCKET_URL` configured in `.env` for backend-integrated flows.
