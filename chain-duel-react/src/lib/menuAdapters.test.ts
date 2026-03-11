@@ -6,6 +6,8 @@ describe('parseMenuResponse', () => {
     const result = parseMenuResponse({ lnurlw: 'lnurlw://abc' });
     expect(result.hasLnurlw).toBe(true);
     expect(result.payLinks).toEqual([]);
+    expect(result.modeMeta).toBeNull();
+    expect(result.nostrMeta).toBeNull();
   });
 
   it('filters only lnurlp entries from mixed arrays', () => {
@@ -20,11 +22,27 @@ describe('parseMenuResponse', () => {
     expect(result.payLinks).toHaveLength(2);
     expect(result.payLinks[0].description).toBe('Player 1');
     expect(result.payLinks[1].description).toBe('Player 2');
+    expect(result.modeMeta?.mode).toBe('P2P');
   });
 
   it('returns empty for unknown shapes', () => {
-    expect(parseMenuResponse(null)).toEqual({ hasLnurlw: false, payLinks: [] });
-    expect(parseMenuResponse('x')).toEqual({ hasLnurlw: false, payLinks: [] });
-    expect(parseMenuResponse({})).toEqual({ hasLnurlw: false, payLinks: [] });
+    expect(parseMenuResponse(null)).toEqual({
+      hasLnurlw: false,
+      payLinks: [],
+      modeMeta: null,
+      nostrMeta: null,
+    });
+    expect(parseMenuResponse('x')).toEqual({
+      hasLnurlw: false,
+      payLinks: [],
+      modeMeta: null,
+      nostrMeta: null,
+    });
+    expect(parseMenuResponse({})).toEqual({
+      hasLnurlw: false,
+      payLinks: [],
+      modeMeta: null,
+      nostrMeta: null,
+    });
   });
 });

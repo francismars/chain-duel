@@ -97,22 +97,28 @@ export function setWantedDirection(
 ): void {
   const snake = player === 'P1' ? state.p1 : state.p2;
   if (!state.gameStarted) {
-    snake.dirWanted = dir;
+    if (player === 'P1') {
+      if (dir === 'Right') {
+        snake.dirWanted = dir;
+      }
+    } else if (player === 'P2') {
+      if (dir === 'Left') {
+        snake.dirWanted = dir;
+      }
+    }
     return;
   }
-  if (
-    (dir === 'Left' || dir === 'Right') &&
-    (snake.dir === 'Up' || snake.dir === 'Down' || snake.dir === '')
-  ) {
-    snake.dirWanted = dir;
+  if (player === 'P1') {
+    if (dir === 'Left' && (snake.dir === 'Up' || snake.dir === 'Down')) snake.dirWanted = 'Left';
+    if (dir === 'Right' && (snake.dir === 'Up' || snake.dir === 'Down' || snake.dir === '')) snake.dirWanted = 'Right';
+    if (dir === 'Up' && (snake.dir === 'Left' || snake.dir === 'Right')) snake.dirWanted = 'Up';
+    if (dir === 'Down' && (snake.dir === 'Left' || snake.dir === 'Right')) snake.dirWanted = 'Down';
     return;
   }
-  if (
-    (dir === 'Up' || dir === 'Down') &&
-    (snake.dir === 'Left' || snake.dir === 'Right' || snake.dir === '')
-  ) {
-    snake.dirWanted = dir;
-  }
+  if (dir === 'Left' && (snake.dir === 'Up' || snake.dir === 'Down' || snake.dir === '')) snake.dirWanted = 'Left';
+  if (dir === 'Right' && (snake.dir === 'Up' || snake.dir === 'Down')) snake.dirWanted = 'Right';
+  if (dir === 'Up' && (snake.dir === 'Left' || snake.dir === 'Right')) snake.dirWanted = 'Up';
+  if (dir === 'Down' && (snake.dir === 'Left' || snake.dir === 'Right')) snake.dirWanted = 'Down';
 }
 
 export function stepGame(state: GameState): TickResult {
@@ -141,8 +147,6 @@ export function stepGame(state: GameState): TickResult {
       state.countdownStart = false;
     }
   }
-
-  fadePointChanges(state);
 
   return {
     winnerChanged: prevWinner !== state.winnerPlayer && state.winnerPlayer !== null,
@@ -332,6 +336,8 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
     value: safeChange,
     p1Pos: [state.p1.head[0], state.p1.head[1]],
     p2Pos: [state.p2.head[0], state.p2.head[1]],
+    p1YOffsetPx: 0,
+    p2YOffsetPx: 0,
     alpha: 1,
   });
 
@@ -387,17 +393,6 @@ function hasCollisionAt(state: GameState, pos: GridPos): boolean {
 
 function samePos(a: GridPos, b: GridPos): boolean {
   return a[0] === b[0] && a[1] === b[1];
-}
-
-function fadePointChanges(state: GameState): void {
-  state.pointChanges = state.pointChanges
-    .map((change) => ({
-      ...change,
-      p1Pos: [change.p1Pos[0], change.p1Pos[1] - 0.06] as GridPos,
-      p2Pos: [change.p2Pos[0], change.p2Pos[1] - 0.06] as GridPos,
-      alpha: change.alpha - 0.1 / 6,
-    }))
-    .filter((change) => change.alpha > 0);
 }
 
 export function canContinueAfterGame(state: GameState, key: string): boolean {

@@ -20,9 +20,10 @@ const sponsorImage = `/images/sponsors/${imageList[2]}`;
 export interface SponsorshipProps {
   id: string;
   className?: string;
+  showLabel?: boolean;
 }
 
-export function Sponsorship({ id, className = '' }: SponsorshipProps) {
+export function Sponsorship({ id, className = '', showLabel = true }: SponsorshipProps) {
   const [show] = useState(SPONSORSHIP_SWITCH && !HIDE_SPONSOR_INFO);
 
   if (!show) {
@@ -31,9 +32,11 @@ export function Sponsorship({ id, className = '' }: SponsorshipProps) {
 
   return (
     <div className={`sponsorship ${className}`} id={id}>
-      <div className="sponsored-by-label label" id={`sponsored-by-label-${id}`}>
-        {sponsorText}
-      </div>
+      {showLabel ? (
+        <div className="sponsored-by-label label" id={`sponsored-by-label-${id}`}>
+          {sponsorText}
+        </div>
+      ) : null}
       <img src={sponsorImage} className="sponsored-img" alt="Sponsor" id={`sponsored-img-${id}`} />
     </div>
   );
