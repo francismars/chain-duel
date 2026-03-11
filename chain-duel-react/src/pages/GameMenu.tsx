@@ -45,6 +45,7 @@ export default function GameMenu() {
   const [nostrNote1, setNostrNote1] = useState<string>('');
   const [nostrMinP1, setNostrMinP1] = useState<number>(1);
   const [nostrMinP2, setNostrMinP2] = useState<number>(1);
+  const [leaderboardThreshold, setLeaderboardThreshold] = useState<number>(1);
 
   const mainMenuButtonRef = useRef<HTMLButtonElement>(null);
   const startGameButtonRef = useRef<HTMLButtonElement>(null);
@@ -161,6 +162,36 @@ export default function GameMenu() {
       socket.off('session', handler);
     };
   }, [socket]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadLeaderboardThreshold = async () => {
+      try {
+        const response = await fetch('/files/highscores.json');
+        if (!response.ok) return;
+        const highscores = (await response.json()) as Array<{
+          p1sats?: number;
+          p2sats?: number;
+          prize?: number;
+        }>;
+        if (!Array.isArray(highscores) || highscores.length === 0) return;
+
+        const ordered = [...highscores].sort((a, b) => Number(b.prize ?? 0) - Number(a.prize ?? 0));
+        const last = ordered[ordered.length - 1];
+        const threshold = Number(last?.p1sats ?? 0) + Number(last?.p2sats ?? 0) + 1;
+        if (mounted && Number.isFinite(threshold) && threshold > 0) {
+          setLeaderboardThreshold(threshold);
+        }
+      } catch {
+        // Keep default fallback threshold when file cannot be loaded.
+      }
+    };
+
+    void loadLeaderboardThreshold();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     [mainMenuButtonRef, startGameButtonRef, cancelGameAbortRef, cancelGameConfirmRef].forEach((ref, i) => {
@@ -373,7 +404,7 @@ export default function GameMenu() {
           </div>
           <div id="leaderboard">
             <p id="leaderboard-inner">
-              <span id="leaderboardSats">{fmt(totalPrize + 1)}</span> sats qualifies for highscore
+              <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span> sats qualifies for highscore
             </p>
           </div>
         </div>
@@ -407,8 +438,8 @@ export default function GameMenu() {
         <div id="player2card" className={player2CardExpanded ? 'expanded' : ''}>
           <div id="player2cardinfo" className="player-card-info">
             <div id="player2satsContainer" className={`player-sats ${highlightP2 ? 'highlight' : ''}`}>
-              <span id="player2sats">{fmt(player2Sats)}</span>
               <span className="grey sats-label">sats</span>
+              <span id="player2sats">{fmt(player2Sats)}</span>
             </div>
             <div className="condensed">
               <div id="player2info" className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}>

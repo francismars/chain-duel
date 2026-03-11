@@ -54,6 +54,18 @@ body {
   margin-top: 0.2%;
 }
 
+#hostFee,
+#developerFee,
+#claimReq1,
+#designerFee {
+  position: static;
+  margin-top: 0%;
+  text-align: center;
+  color: white;
+  padding-top: 0%;
+  margin-bottom: 0%;
+}
+
 #claimReq1 {
   margin-top: -1%;
   font-size: 1cqw;
@@ -78,9 +90,18 @@ body {
   margin: 20px 0 0 0;
 }
 
+#postGame {
+  min-height: 100vh;
+  justify-content: center;
+}
+
 #buttonsDiv {
   display: flex;
   flex-direction: column;
+}
+
+#buttonsDiv .button {
+  width: 25%;
 }
 
 #startnewbutton {
@@ -91,11 +112,15 @@ body {
 #claimbutton {
   margin-bottom: 1%;
   animation: glowing 2000ms infinite;
+  border-color: #ffffff;
+  border-width: 1.2px;
 }
 
 #doubleornotthingbutton {
   margin-top: 0;
   animation: glowing 0ms infinite;
+  border-color: #ffffff;
+  border-width: 1.2px;
 }
 
 #qrcodeLink {
@@ -109,6 +134,18 @@ body {
   margin-bottom: 3%;
   height: 13cqw;
   width: 13cqw;
+}
+
+#qrcodeLink canvas#qrCode1 {
+  width: 13cqw !important;
+  height: 13cqw !important;
+  max-width: 13cqw;
+  max-height: 13cqw;
+}
+
+.qrcode {
+  filter: invert(1);
+  mix-blend-mode: screen;
 }
 
 .blur {
@@ -126,14 +163,13 @@ body {
 }
 
 #socialFollow {
-  margin-top: 2cqw;
+  margin-top: 0.8cqw;
   text-align: center;
-  font-size: 0.8cqw;
-  opacity: 0.8;
+  font-size: 1cqw;
 }
 
 .social-icon {
-  height: 1.1cqw;
-  width: auto;
-  vertical-align: middle;
+  display: inline-block;
+  height: 1.5cqw;
+  margin-bottom: -0.5cqw;
 }
