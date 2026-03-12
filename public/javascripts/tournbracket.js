@@ -237,11 +237,11 @@ else if(playerListParsed==null){
 */
 
 let svgDoc;
-const BRACKET_SVG_FILE_BY_PLAYERS = {
-  4: "4_player.svg",
-  8: "8_player.svg",
-  16: "16_player.svg",
-  32: "32_player.svg",
+const BRACKET_FILE_STEM_BY_PLAYERS = {
+  4: "4_player",
+  8: "8_player",
+  16: "16_player",
+  32: "32_player",
 };
 
 function getBracketElementByPlayers(players) {
@@ -252,24 +252,36 @@ function getBracketElementByPlayers(players) {
   return null;
 }
 
-function getBracketSvgPaths(players) {
-  const fileName = BRACKET_SVG_FILE_BY_PLAYERS[players];
-  if (!fileName) return [];
+function getBracketAssetPaths(players) {
+  const fileStem = BRACKET_FILE_STEM_BY_PLAYERS[players];
+  if (!fileStem) return [];
   const pathname = window.location.pathname || "";
   const pathPrefix = pathname.endsWith("/")
     ? pathname.slice(0, -1)
     : pathname.slice(0, pathname.lastIndexOf("/"));
   const candidates = [
-    `/images/tournament/svg/${fileName}`,
-    `images/tournament/svg/${fileName}`,
-    `../images/tournament/svg/${fileName}`,
-    `${pathPrefix}/images/tournament/svg/${fileName}`,
+    `/images/tournament/svg/${fileStem}.svg`,
+    `images/tournament/svg/${fileStem}.svg`,
+    `../images/tournament/svg/${fileStem}.svg`,
+    `${pathPrefix}/images/tournament/svg/${fileStem}.svg`,
+    `/images/tournament/${fileStem}.html`,
+    `images/tournament/${fileStem}.html`,
+    `../images/tournament/${fileStem}.html`,
+    `${pathPrefix}/images/tournament/${fileStem}.html`,
   ];
   return [...new Set(candidates)];
 }
 
-function setupBracketFromLoadedSvg(elementSVG) {
-  svgDoc = elementSVG.contentDocument;
+function createSvgContext(root) {
+  return {
+    getElementById(id) {
+      return root.querySelector(`[id="${id}"]`);
+    },
+  };
+}
+
+function setupBracketFromContext(context) {
+  svgDoc = context;
   if (!svgDoc) return false;
   if (numberOfDeposits > 0 && playersList) changeHTMLAfterPayment();
   updateBracketWinner();
@@ -277,9 +289,64 @@ function setupBracketFromLoadedSvg(elementSVG) {
   return true;
 }
 
+function setupBracketFromLoadedSvgObject(elementSVG) {
+  if (!elementSVG || !elementSVG.contentDocument) return false;
+  return setupBracketFromContext(elementSVG.contentDocument);
+}
+
+function extractSvgFromMarkup(markup) {
+  const htmlDoc = new DOMParser().parseFromString(markup, "text/html");
+  const svgFromHtml = htmlDoc.querySelector("svg");
+  if (svgFromHtml) return svgFromHtml;
+
+  const svgDocParsed = new DOMParser().parseFromString(markup, "image/svg+xml");
+  if (
+    svgDocParsed &&
+    svgDocParsed.documentElement &&
+    svgDocParsed.documentElement.nodeName.toLowerCase() == "svg"
+  ) {
+    return svgDocParsed.documentElement;
+  }
+  return null;
+}
+
+function attachInlineSvg(elementSVG, svgNode) {
+  const importedSvg = document.importNode(svgNode, true);
+  importedSvg.id = elementSVG.id;
+  importedSvg.className = elementSVG.className;
+  importedSvg.style.display = "block";
+  elementSVG.replaceWith(importedSvg);
+  return setupBracketFromContext(createSvgContext(importedSvg));
+}
+
+async function tryInlineBracketFallback(elementSVG, candidatePaths) {
+  for (const path of candidatePaths) {
+    try {
+      const cacheBust = `cb=${Date.now()}`;
+      const joinChar = path.includes("?") ? "&" : "?";
+      const response = await fetch(`${path}${joinChar}${cacheBust}`);
+      if (!response.ok) continue;
+      const markup = await response.text();
+      const svgNode = extractSvgFromMarkup(markup);
+      if (!svgNode) continue;
+      if (attachInlineSvg(elementSVG, svgNode)) {
+        return true;
+      }
+    } catch (_error) {
+      // Keep trying other paths.
+    }
+  }
+  return false;
+}
+
 function tryLoadBracketSvg(elementSVG, candidatePaths, index) {
   if (index >= candidatePaths.length) {
-    console.error("Unable to load bracket SVG for players:", numberOfPlayers);
+    tryInlineBracketFallback(elementSVG, candidatePaths).then((loaded) => {
+      if (!loaded) {
+        console.error("Unable to load bracket SVG for players:", numberOfPlayers);
+        console.error("Paths attempted:", candidatePaths);
+      }
+    });
     return;
   }
   const path = candidatePaths[index];
@@ -301,16 +368,27 @@ function loadBracket() {
     console.error("Unsupported bracket size:", numberOfPlayers);
     return;
   }
+
+  if (elementSVG.tagName && elementSVG.tagName.toLowerCase() == "svg") {
+    setupBracketFromContext(createSvgContext(elementSVG));
+    return;
+  }
+
   elementSVG.style.display = "block";
+  const candidatePaths = getBracketAssetPaths(numberOfPlayers);
 
-  if (setupBracketFromLoadedSvg(elementSVG)) return;
+  // Prefer inline SVG fetch in production: avoids object/embed policy issues.
+  tryInlineBracketFallback(elementSVG, candidatePaths).then((loadedInline) => {
+    if (loadedInline) return;
 
-  elementSVG.addEventListener("load", function () {
-    setupBracketFromLoadedSvg(elementSVG);
+    if (setupBracketFromLoadedSvgObject(elementSVG)) return;
+
+    elementSVG.addEventListener("load", function () {
+      setupBracketFromLoadedSvgObject(elementSVG);
+    });
+
+    tryLoadBracketSvg(elementSVG, candidatePaths, 0);
   });
-
-  const candidatePaths = getBracketSvgPaths(numberOfPlayers);
-  tryLoadBracketSvg(elementSVG, candidatePaths, 0);
 }
 
 function loadBottomInfos() {
