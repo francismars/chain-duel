@@ -339,10 +339,24 @@ async function tryInlineBracketFallback(elementSVG, candidatePaths) {
   return false;
 }
 
+function showBracketImageFallback(elementSVG, candidatePaths) {
+  const svgPath = candidatePaths.find((path) => path.includes("/svg/") && path.endsWith(".svg"));
+  if (!svgPath) return false;
+  const fallbackImg = document.createElement("img");
+  fallbackImg.id = `${elementSVG.id}_img_fallback`;
+  fallbackImg.className = elementSVG.className;
+  fallbackImg.alt = "Tournament bracket";
+  fallbackImg.style.display = "block";
+  fallbackImg.src = `${svgPath}${svgPath.includes("?") ? "&" : "?"}cb=${Date.now()}`;
+  elementSVG.replaceWith(fallbackImg);
+  return true;
+}
+
 function tryLoadBracketSvg(elementSVG, candidatePaths, index) {
   if (index >= candidatePaths.length) {
     tryInlineBracketFallback(elementSVG, candidatePaths).then((loaded) => {
       if (!loaded) {
+        showBracketImageFallback(elementSVG, candidatePaths);
         console.error("Unable to load bracket SVG for players:", numberOfPlayers);
         console.error("Paths attempted:", candidatePaths);
       }
