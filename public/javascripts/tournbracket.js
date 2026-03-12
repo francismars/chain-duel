@@ -237,11 +237,11 @@ else if(playerListParsed==null){
 */
 
 let svgDoc;
-const BRACKET_FILE_STEM_BY_PLAYERS = {
-  4: "4_player",
-  8: "8_player",
-  16: "16_player",
-  32: "32_player",
+const BRACKET_FILE_BY_PLAYERS = {
+  4: "4_player.svg",
+  8: "8_player.svg",
+  16: "16_player.svg",
+  32: "32_player.svg",
 };
 
 function getBracketElementByPlayers(players) {
@@ -252,24 +252,10 @@ function getBracketElementByPlayers(players) {
   return null;
 }
 
-function getBracketAssetPaths(players) {
-  const fileStem = BRACKET_FILE_STEM_BY_PLAYERS[players];
-  if (!fileStem) return [];
-  const pathname = window.location.pathname || "";
-  const pathPrefix = pathname.endsWith("/")
-    ? pathname.slice(0, -1)
-    : pathname.slice(0, pathname.lastIndexOf("/"));
-  const candidates = [
-    `/images/tournament/svg/${fileStem}.svg`,
-    `images/tournament/svg/${fileStem}.svg`,
-    `../images/tournament/svg/${fileStem}.svg`,
-    `${pathPrefix}/images/tournament/svg/${fileStem}.svg`,
-    `/images/tournament/${fileStem}.html`,
-    `images/tournament/${fileStem}.html`,
-    `../images/tournament/${fileStem}.html`,
-    `${pathPrefix}/images/tournament/${fileStem}.html`,
-  ];
-  return [...new Set(candidates)];
+function getBracketSvgPath(players) {
+  const fileName = BRACKET_FILE_BY_PLAYERS[players];
+  if (!fileName) return null;
+  return `/images/tournament/svg/${fileName}`;
 }
 
 function createSvgContext(root) {
@@ -322,64 +308,19 @@ function attachInlineSvg(elementSVG, svgNode) {
   return setupBracketFromContext(createSvgContext(importedSvg));
 }
 
-async function tryInlineBracketFallback(elementSVG, candidatePaths) {
-  for (const path of candidatePaths) {
-    try {
-      const cacheBust = `cb=${Date.now()}`;
-      const joinChar = path.includes("?") ? "&" : "?";
-      const response = await fetch(`${path}${joinChar}${cacheBust}`);
-      if (!response.ok) continue;
-      const markup = await response.text();
-      const svgNode = extractSvgFromMarkup(markup);
-      if (!svgNode) {
-        console.warn("Bracket fallback: response has no <svg> root", path);
-        continue;
-      }
-      if (attachInlineSvg(elementSVG, svgNode)) {
-        return true;
-      }
-    } catch (error) {
-      console.warn("Bracket fallback load failed:", path, error);
-    }
+async function tryInlineBracketLoad(elementSVG, svgPath) {
+  try {
+    const cacheBust = `cb=${Date.now()}`;
+    const joinChar = svgPath.includes("?") ? "&" : "?";
+    const response = await fetch(`${svgPath}${joinChar}${cacheBust}`);
+    if (!response.ok) return false;
+    const markup = await response.text();
+    const svgNode = extractSvgFromMarkup(markup);
+    if (!svgNode) return false;
+    return attachInlineSvg(elementSVG, svgNode);
+  } catch (_error) {
+    return false;
   }
-  return false;
-}
-
-function showBracketImageFallback(elementSVG, candidatePaths) {
-  const svgPath = candidatePaths.find((path) => path.includes("/svg/") && path.endsWith(".svg"));
-  if (!svgPath) return false;
-  const fallbackImg = document.createElement("img");
-  fallbackImg.id = `${elementSVG.id}_img_fallback`;
-  fallbackImg.className = elementSVG.className;
-  fallbackImg.alt = "Tournament bracket";
-  fallbackImg.style.display = "block";
-  fallbackImg.src = `${svgPath}${svgPath.includes("?") ? "&" : "?"}cb=${Date.now()}`;
-  elementSVG.replaceWith(fallbackImg);
-  return true;
-}
-
-function tryLoadBracketSvg(elementSVG, candidatePaths, index) {
-  if (index >= candidatePaths.length) {
-    tryInlineBracketFallback(elementSVG, candidatePaths).then((loaded) => {
-      if (!loaded) {
-        showBracketImageFallback(elementSVG, candidatePaths);
-        console.error("Unable to load bracket SVG for players:", numberOfPlayers);
-        console.error("Paths attempted:", candidatePaths);
-      }
-    });
-    return;
-  }
-  const path = candidatePaths[index];
-  const cacheBust = `cb=${Date.now()}`;
-  const joinChar = path.includes("?") ? "&" : "?";
-  elementSVG.setAttribute("data", `${path}${joinChar}${cacheBust}`);
-
-  // Give each candidate a short window; if not loaded, try next path.
-  setTimeout(() => {
-    if (!elementSVG.contentDocument || !elementSVG.contentDocument.documentElement) {
-      tryLoadBracketSvg(elementSVG, candidatePaths, index + 1);
-    }
-  }, 1200);
 }
 
 function loadBracket() {
@@ -395,19 +336,25 @@ function loadBracket() {
   }
 
   elementSVG.style.display = "block";
-  const candidatePaths = getBracketAssetPaths(numberOfPlayers);
+  const svgPath = getBracketSvgPath(numberOfPlayers);
+  if (!svgPath) {
+    console.error("Missing bracket asset path for players:", numberOfPlayers);
+    return;
+  }
 
-  // Prefer inline SVG fetch in production: avoids object/embed policy issues.
-  tryInlineBracketFallback(elementSVG, candidatePaths).then((loadedInline) => {
+  // Prefer inline SVG fetch to avoid object/embed runtime differences.
+  tryInlineBracketLoad(elementSVG, svgPath).then((loadedInline) => {
     if (loadedInline) return;
 
     if (setupBracketFromLoadedSvgObject(elementSVG)) return;
 
     elementSVG.addEventListener("load", function () {
       setupBracketFromLoadedSvgObject(elementSVG);
-    });
+    }, { once: true });
 
-    tryLoadBracketSvg(elementSVG, candidatePaths, 0);
+    const cacheBust = `cb=${Date.now()}`;
+    const joinChar = svgPath.includes("?") ? "&" : "?";
+    elementSVG.setAttribute("data", `${svgPath}${joinChar}${cacheBust}`);
   });
 }
 
