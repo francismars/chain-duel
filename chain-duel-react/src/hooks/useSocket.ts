@@ -67,6 +67,11 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
     ServerToClientEvents,
     ClientToServerEvents
   > | null>(null);
+  const lifecycleHandlersRef = useRef<{
+    connect?: () => void;
+    disconnect?: () => void;
+    connectError?: (err: Error) => void;
+  }>({});
   const configRef = useRef<SocketConfig | null>(null);
 
   const connect = useCallback(async () => {
@@ -83,28 +88,41 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
       setSocket(nextSocket);
       setConnected(nextSocket.connected);
 
-      // Set up event handlers
-      // Remove previous lifecycle listeners from this hook instance before re-attaching.
-      nextSocket.off('connect');
-      nextSocket.off('disconnect');
-      nextSocket.off('connect_error');
+      // Remove only handlers attached by this hook instance.
+      if (lifecycleHandlersRef.current.connect) {
+        nextSocket.off('connect', lifecycleHandlersRef.current.connect);
+      }
+      if (lifecycleHandlersRef.current.disconnect) {
+        nextSocket.off('disconnect', lifecycleHandlersRef.current.disconnect);
+      }
+      if (lifecycleHandlersRef.current.connectError) {
+        nextSocket.off('connect_error', lifecycleHandlersRef.current.connectError);
+      }
 
-      nextSocket.on('connect', () => {
+      const onSocketConnect = () => {
         setConnected(true);
         setError(null);
         onConnect?.();
-      });
+      };
 
-      nextSocket.on('disconnect', () => {
+      const onSocketDisconnect = () => {
         setConnected(false);
         onDisconnect?.();
-      });
+      };
 
-      nextSocket.on('connect_error', (err) => {
+      const onSocketConnectError = (err: Error) => {
         const error = new Error(`Socket connection error: ${err.message}`);
         setError(error);
         onError?.(error);
-      });
+      };
+
+      lifecycleHandlersRef.current.connect = onSocketConnect;
+      lifecycleHandlersRef.current.disconnect = onSocketDisconnect;
+      lifecycleHandlersRef.current.connectError = onSocketConnectError;
+
+      nextSocket.on('connect', onSocketConnect);
+      nextSocket.on('disconnect', onSocketDisconnect);
+      nextSocket.on('connect_error', onSocketConnectError);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error');
       setError(error);
@@ -127,9 +145,15 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
     return () => {
       // Cleanup only lifecycle listeners owned by this hook.
       if (socketRef.current) {
-        socketRef.current.off('connect');
-        socketRef.current.off('disconnect');
-        socketRef.current.off('connect_error');
+        if (lifecycleHandlersRef.current.connect) {
+          socketRef.current.off('connect', lifecycleHandlersRef.current.connect);
+        }
+        if (lifecycleHandlersRef.current.disconnect) {
+          socketRef.current.off('disconnect', lifecycleHandlersRef.current.disconnect);
+        }
+        if (lifecycleHandlersRef.current.connectError) {
+          socketRef.current.off('connect_error', lifecycleHandlersRef.current.connectError);
+        }
       }
     };
   }, [autoConnect, connect]);

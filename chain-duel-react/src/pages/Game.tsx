@@ -286,10 +286,12 @@ export default function Game() {
       if ((prevP2Head[0] !== 44 || prevP2Head[1] !== 12) && state.p2.head[0] === 44 && state.p2.head[1] === 12) {
         audio?.playReset('P2');
       }
-      if (result.winnerChanged && result.winnerPlayer && socket && !winnerSentRef.current) {
+      // Legacy behavior: emit winner once whenever game has ended and winner is known.
+      // Do not depend only on transition flags to avoid missed emits.
+      if (state.gameFinished && state.winnerPlayer && socket && !winnerSentRef.current) {
         socket.emit(
           'gameFinished',
-          result.winnerPlayer === 'P1' ? PlayerRole.Player1 : PlayerRole.Player2
+          state.winnerPlayer === 'P1' ? PlayerRole.Player1 : PlayerRole.Player2
         );
         winnerSentRef.current = true;
       }
@@ -374,7 +376,17 @@ export default function Game() {
       }
 
       if (canContinueAfterGame(state, event.key)) {
-        navigate(state.meta.isTournament ? '/tournbracket' : '/postgame');
+        if (!winnerSentRef.current && state.winnerPlayer && socket) {
+          socket.emit(
+            'gameFinished',
+            state.winnerPlayer === 'P1' ? PlayerRole.Player1 : PlayerRole.Player2
+          );
+          winnerSentRef.current = true;
+        }
+        // Give websocket emit a brief moment before route change.
+        window.setTimeout(() => {
+          navigate(state.meta.isTournament ? '/tournbracket' : '/postgame');
+        }, 80);
         return;
       }
 
@@ -407,7 +419,7 @@ export default function Game() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [navigate]);
+  }, [navigate, socket]);
 
   return (
     <>

@@ -51,43 +51,61 @@ export default function GameMenu() {
   const startGameButtonRef = useRef<HTMLButtonElement>(null);
   const cancelGameAbortRef = useRef<HTMLButtonElement>(null);
   const cancelGameConfirmRef = useRef<HTMLButtonElement>(null);
-  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const highlightTimeoutP1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const highlightTimeoutP2Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   const expandKeyUpTimeRef = useRef<{ left?: number; right?: number }>({});
   const backdropTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuInfoRetryRef = useRef(0);
 
   useGamepad(true);
 
   useEffect(() => {
-    if (!socket || !connected) return;
-    const hostLNAddress = localStorage.getItem('hostLNAddress');
-    const hostInfo = hostLNAddress ? { LNAddress: hostLNAddress } : undefined;
-    // Ensure listeners are attached before requesting menu infos.
-    const emitTimer = setTimeout(() => {
-      if (useNostr) {
-        socket.emit('getGameMenuInfosNostr', hostInfo);
-      } else {
-        socket.emit('getGameMenuInfos', hostInfo);
-      }
-    }, 0);
-    const fallback = setTimeout(() => setLoading(false), 12000);
-    return () => {
-      clearTimeout(emitTimer);
-      clearTimeout(fallback);
+    if (!socket) return;
+    const onAny = (event: string, ...args: unknown[]) => {
+      console.log('[GameMenu] onAny event:', event, args);
     };
-  }, [socket, connected, useNostr]);
+    socket.onAny(onAny);
+    return () => {
+      socket.offAny(onAny);
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (!socket) return;
+    const hostLNAddress = localStorage.getItem('hostLNAddress');
+    const hostInfo = hostLNAddress ? { LNAddress: hostLNAddress } : undefined;
+    const requestMenuInfos = () => {
+      console.log('[GameMenu] requesting menu infos', {
+        useNostr,
+        hostInfo,
+        connected: socket.connected,
+        id: socket.id,
+      });
+      if (useNostr) {
+        if (hostInfo) socket.emit('getGameMenuInfosNostr', hostInfo);
+        else socket.emit('getGameMenuInfosNostr');
+      } else {
+        if (hostInfo) socket.emit('getGameMenuInfos', hostInfo);
+        else socket.emit('getGameMenuInfos');
+      }
+    };
     const handler = (body: unknown) => {
+      console.log('[GameMenu] resGetGameMenuInfos raw payload:', body);
       const parsed = parseMenuResponse(body);
+      console.log('[GameMenu] resGetGameMenuInfos parsed:', parsed);
       if (parsed.hasLnurlw) {
         navigate('/postgame', { replace: true });
         return;
       }
       const links = parsed.payLinks;
       setPayLinks(links.length > 0 ? links : null);
+      if (links.length > 0) {
+        menuInfoRetryRef.current = 0;
+      }
       if (parsed.modeMeta?.mode) {
-        setGameMenuTitle(parsed.modeMeta.mode);
+        const winnersCount = parsed.modeMeta.winnersCount ?? 0;
+        const donMultiple = winnersCount > 0 ? `*${2 ** winnersCount}` : '';
+        setGameMenuTitle(`${parsed.modeMeta.mode}${donMultiple}`);
       }
       if (parsed.nostrMeta) {
         setNostrCode(parsed.nostrMeta.emojis);
@@ -99,18 +117,31 @@ export default function GameMenu() {
         links.length > 0 ? '' : 'Waiting for payment links from backend...'
       );
       setLoading(false);
+      if (links.length === 0 && menuInfoRetryRef.current < 3) {
+        menuInfoRetryRef.current += 1;
+        setTimeout(() => {
+          requestMenuInfos();
+        }, 1000);
+      }
     };
     socket.on('resGetGameMenuInfos', handler);
+    socket.on('connect', requestMenuInfos);
+    const emitTimer = setTimeout(requestMenuInfos, 0);
+    const fallback = setTimeout(() => setLoading(false), 12000);
     return () => {
       socket.off('resGetGameMenuInfos', handler);
+      socket.off('connect', requestMenuInfos);
+      clearTimeout(emitTimer);
+      clearTimeout(fallback);
     };
-  }, [socket, navigate]);
+  }, [socket, navigate, useNostr]);
 
   useEffect(() => {
     if (!socket) return;
     const handler = (body: SerializedGameInfo) => {
+      console.log('[GameMenu] updatePayments payload:', body);
+      const latestWinner = body.winners?.length ? body.winners.slice(-1)[0] : null;
       if (body.winners && body.winners.length > 0) {
-        const latestWinner = body.winners.slice(-1)[0];
         setPrevWinner(latestWinner);
         const donMultiple = 2 ** body.winners.length;
         setGameMenuTitle(`P2P*${donMultiple}`);
@@ -119,27 +150,28 @@ export default function GameMenu() {
       const p1 = players['Player 1'];
       const p2 = players['Player 2'];
       if (p1) {
-        if (p1.name != null && p1.name.trim() !== '') setP1Name(p1.name.trim());
+        setP1Name((prev) => resolvePlayerName(p1, prev || 'Player 1'));
         if (p1.value !== undefined) {
           setPlayer1Sats(p1.value);
-          if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+          if (highlightTimeoutP1Ref.current) clearTimeout(highlightTimeoutP1Ref.current);
           setHighlightP1(true);
-          highlightTimeoutRef.current = setTimeout(() => setHighlightP1(false), 1200);
+          highlightTimeoutP1Ref.current = setTimeout(() => setHighlightP1(false), 1200);
         }
       }
       if (p2) {
-        if (p2.name != null && p2.name.trim() !== '') setP2Name(p2.name.trim());
+        setP2Name((prev) => resolvePlayerName(p2, prev || 'Player 2'));
         if (p2.value !== undefined) {
           setPlayer2Sats(p2.value);
-          if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+          if (highlightTimeoutP2Ref.current) clearTimeout(highlightTimeoutP2Ref.current);
           setHighlightP2(true);
-          highlightTimeoutRef.current = setTimeout(() => setHighlightP2(false), 1200);
+          highlightTimeoutP2Ref.current = setTimeout(() => setHighlightP2(false), 1200);
         }
       }
 
-      if (prevWinner) {
-        const loser = prevWinner === 'Player 1' ? 'Player 2' : 'Player 1';
-        const winnerValue = players[prevWinner]?.value ?? 0;
+      const effectiveWinner = latestWinner ?? prevWinner;
+      if (effectiveWinner) {
+        const loser = effectiveWinner === 'Player 1' ? 'Player 2' : 'Player 1';
+        const winnerValue = players[effectiveWinner]?.value ?? 0;
         const loserValue = players[loser]?.value ?? 0;
         setWinnerSats(winnerValue);
         setLoserSats(loserValue);
@@ -148,7 +180,8 @@ export default function GameMenu() {
     socket.on('updatePayments', handler);
     return () => {
       socket.off('updatePayments', handler);
-      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+      if (highlightTimeoutP1Ref.current) clearTimeout(highlightTimeoutP1Ref.current);
+      if (highlightTimeoutP2Ref.current) clearTimeout(highlightTimeoutP2Ref.current);
     };
   }, [socket, prevWinner]);
 
@@ -203,7 +236,9 @@ export default function GameMenu() {
   }, [buttonSelected]);
 
   useEffect(() => {
-    const canStartNow = prevWinner ? loserSats >= winnerSats : player1Sats !== 0 && player2Sats !== 0;
+    const canStartNow = prevWinner
+      ? winnerSats > 0 && loserSats >= winnerSats
+      : player1Sats !== 0 && player2Sats !== 0;
     if (canStartNow) {
       setButtonSelected('startgame');
     }
@@ -288,8 +323,12 @@ export default function GameMenu() {
     };
   }, [buttonSelected, player1Sats, player2Sats, socket, navigate, playSfx, prevWinner, loserSats, winnerSats]);
 
-  const p1PayLink = payLinks?.find((p) => p.description === 'Player 1');
-  const p2PayLink = payLinks?.find((p) => p.description === 'Player 2');
+  const p1PayLink =
+    payLinks?.find((p) => /player\s*1/i.test(String(p.description ?? ''))) ??
+    payLinks?.[0];
+  const p2PayLink =
+    payLinks?.find((p) => /player\s*2/i.test(String(p.description ?? ''))) ??
+    payLinks?.[1];
   const minP1 = p1PayLink?.min ?? 10000;
   const minP2 = p2PayLink?.min ?? 10000;
   const fmt = (n: number) => n.toLocaleString();
@@ -297,7 +336,9 @@ export default function GameMenu() {
   const hostCut = Math.floor(totalPrize * 0.02);
   const devCut = Math.floor(totalPrize * 0.02);
   const designCut = Math.floor(totalPrize * 0.01);
-  const canStart = prevWinner ? loserSats >= winnerSats : player1Sats !== 0 && player2Sats !== 0;
+  const canStart = prevWinner
+    ? winnerSats > 0 && loserSats >= winnerSats
+    : player1Sats !== 0 && player2Sats !== 0;
   const mainMenuDisabled = player1Sats !== 0 || player2Sats !== 0;
 
   return (
@@ -490,4 +531,35 @@ export default function GameMenu() {
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </>
   );
+}
+
+function resolvePlayerName(
+  player: SerializedGameInfo['players'][string] | undefined,
+  fallback: string
+): string {
+  if (!player) return fallback;
+  const direct = String(player.name ?? '').trim();
+  if (direct.length > 1) return direct;
+
+  const payments = (player as { payments?: unknown }).payments;
+  const fromPayment = extractNameFromPayments(payments);
+  if (fromPayment) return fromPayment;
+
+  return direct || fallback;
+}
+
+function extractNameFromPayments(payments: unknown): string {
+  if (!Array.isArray(payments)) return '';
+  for (let i = payments.length - 1; i >= 0; i -= 1) {
+    const payment = payments[i] as { note?: unknown } | null | undefined;
+    const note = payment?.note;
+    if (typeof note === 'string' && note.trim() !== '') {
+      return note.trim();
+    }
+    if (Array.isArray(note)) {
+      const joined = note.map((part) => String(part ?? '')).join('').trim();
+      if (joined !== '') return joined;
+    }
+  }
+  return '';
 }
