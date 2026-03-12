@@ -237,25 +237,80 @@ else if(playerListParsed==null){
 */
 
 let svgDoc;
+const BRACKET_SVG_FILE_BY_PLAYERS = {
+  4: "4_player.svg",
+  8: "8_player.svg",
+  16: "16_player.svg",
+  32: "32_player.svg",
+};
+
+function getBracketElementByPlayers(players) {
+  if (players == 4) return document.getElementById("bracket4players");
+  if (players == 8) return document.getElementById("bracket8players");
+  if (players == 16) return document.getElementById("bracket16players");
+  if (players == 32) return document.getElementById("bracket32players");
+  return null;
+}
+
+function getBracketSvgPaths(players) {
+  const fileName = BRACKET_SVG_FILE_BY_PLAYERS[players];
+  if (!fileName) return [];
+  const pathname = window.location.pathname || "";
+  const pathPrefix = pathname.endsWith("/")
+    ? pathname.slice(0, -1)
+    : pathname.slice(0, pathname.lastIndexOf("/"));
+  const candidates = [
+    `/images/tournament/svg/${fileName}`,
+    `images/tournament/svg/${fileName}`,
+    `../images/tournament/svg/${fileName}`,
+    `${pathPrefix}/images/tournament/svg/${fileName}`,
+  ];
+  return [...new Set(candidates)];
+}
+
+function setupBracketFromLoadedSvg(elementSVG) {
+  svgDoc = elementSVG.contentDocument;
+  if (!svgDoc) return false;
+  if (numberOfDeposits > 0 && playersList) changeHTMLAfterPayment();
+  updateBracketWinner();
+  updateNextGameText();
+  return true;
+}
+
+function tryLoadBracketSvg(elementSVG, candidatePaths, index) {
+  if (index >= candidatePaths.length) {
+    console.error("Unable to load bracket SVG for players:", numberOfPlayers);
+    return;
+  }
+  const path = candidatePaths[index];
+  const cacheBust = `cb=${Date.now()}`;
+  const joinChar = path.includes("?") ? "&" : "?";
+  elementSVG.setAttribute("data", `${path}${joinChar}${cacheBust}`);
+
+  // Give each candidate a short window; if not loaded, try next path.
+  setTimeout(() => {
+    if (!elementSVG.contentDocument || !elementSVG.contentDocument.documentElement) {
+      tryLoadBracketSvg(elementSVG, candidatePaths, index + 1);
+    }
+  }, 1200);
+}
+
 function loadBracket() {
-  let elementSVG;
-  if (numberOfPlayers == 4) {
-    elementSVG = document.getElementById("bracket4players");
-  } else if (numberOfPlayers == 8) {
-    elementSVG = document.getElementById("bracket8players");
-  } else if (numberOfPlayers == 16) {
-    elementSVG = document.getElementById("bracket16players");
-  } else if (numberOfPlayers == 32) {
-    elementSVG = document.getElementById("bracket32players");
+  let elementSVG = getBracketElementByPlayers(numberOfPlayers);
+  if (!elementSVG) {
+    console.error("Unsupported bracket size:", numberOfPlayers);
+    return;
   }
   elementSVG.style.display = "block";
 
+  if (setupBracketFromLoadedSvg(elementSVG)) return;
+
   elementSVG.addEventListener("load", function () {
-    svgDoc = elementSVG.contentDocument;
-    if (numberOfDeposits > 0 && playersList) changeHTMLAfterPayment();
-    updateBracketWinner();
-    updateNextGameText();
+    setupBracketFromLoadedSvg(elementSVG);
   });
+
+  const candidatePaths = getBracketSvgPaths(numberOfPlayers);
+  tryLoadBracketSvg(elementSVG, candidatePaths, 0);
 }
 
 function loadBottomInfos() {
