@@ -33,19 +33,51 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
     return { payLinks: [], hasLnurlw: true, modeMeta: null, nostrMeta: null };
   }
 
-  if (!Array.isArray(body)) {
+  let items: unknown[] = [];
+  if (Array.isArray(body)) {
+    items = body;
+  } else if (body && typeof body === 'object') {
+    const candidate = body as Record<string, unknown>;
+    if (Array.isArray(candidate.data)) {
+      items = candidate.data;
+    } else if (Array.isArray(candidate.payLinks)) {
+      items = candidate.payLinks;
+    } else {
+      const objectValues = Object.values(candidate);
+      if (objectValues.length > 0 && objectValues.every((v) => v && typeof v === 'object')) {
+        items = objectValues;
+      }
+    }
+  }
+
+  if (items.length === 0) {
     return { payLinks: [], hasLnurlw: false, modeMeta: null, nostrMeta: null };
   }
 
-  const payLinks = body.filter(
-    (item): item is LNURLP =>
-      item !== null &&
-      typeof item === 'object' &&
-      'lnurlp' in item &&
-      typeof (item as LNURLP).lnurlp === 'string'
-  );
+  const payLinks: LNURLP[] = items
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const src = item as Record<string, unknown>;
+      const lnurlp =
+        typeof src.lnurlp === 'string'
+          ? src.lnurlp
+          : typeof src.lnurl === 'string'
+            ? src.lnurl
+            : '';
+      if (!lnurlp) return null;
+      return {
+        id: String(src.id ?? ''),
+        lnurlp,
+        description: String(src.description ?? ''),
+        min: Number(src.min ?? 0),
+        mode: typeof src.mode === 'string' ? (src.mode as LNURLP['mode']) : undefined,
+        hostLNAddress:
+          typeof src.hostLNAddress === 'string' ? src.hostLNAddress : undefined,
+      } satisfies LNURLP;
+    })
+    .filter((entry): entry is LNURLP => entry !== null);
 
-  const modeMetaItem = body.find(
+  const modeMetaItem = items.find(
     (item) =>
       item !== null &&
       typeof item === 'object' &&
@@ -53,7 +85,7 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
       typeof (item as { mode?: unknown }).mode === 'string'
   ) as { mode?: string; winners?: unknown[] } | undefined;
 
-  const nostrMetaItem = body.find(
+  const nostrMetaItem = items.find(
     (item) =>
       item !== null &&
       typeof item === 'object' &&

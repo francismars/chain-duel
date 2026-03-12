@@ -46,9 +46,21 @@ export default function PostGame() {
   useGamepad(true);
 
   useEffect(() => {
-    if (!socket || !connected) return;
-    socket.emit('postGameInfoRequest');
-  }, [socket, connected]);
+    if (!socket) return;
+    const requestPostGameInfo = () => {
+      socket.emit('postGameInfoRequest');
+    };
+    // Request immediately and again on connect to avoid lifecycle race conditions.
+    const emitTimer = window.setTimeout(requestPostGameInfo, 0);
+    socket.on('connect', requestPostGameInfo);
+    // Do not keep the page blocked forever when backend does not answer.
+    const fallbackTimer = window.setTimeout(() => setLoading(false), 12000);
+    return () => {
+      window.clearTimeout(emitTimer);
+      window.clearTimeout(fallbackTimer);
+      socket.off('connect', requestPostGameInfo);
+    };
+  }, [socket]);
 
   const updateHighscores = useCallback(async () => {
     try {
@@ -105,9 +117,18 @@ export default function PostGame() {
 
   const onDoubleOrNothing = useCallback(() => {
     if (!socket) return;
+    if (menu !== 1 || tournamentMode || prizeClaimed || loading) return;
+    console.log('[PostGame] emitting doubleornothing', {
+      connected: socket.connected,
+      id: socket.id,
+      mode: gameMode,
+    });
     socket.emit('doubleornothing');
-    navigate(p2Deposit > 0 ? '/gamemenu' : '/practicemenu');
-  }, [socket, p2Deposit, navigate]);
+    // Keep legacy full-page navigation, but allow one frame for websocket frame flush.
+    window.setTimeout(() => {
+      window.location.href = gameMode === 'PRACTICE' ? '/practicemenu' : '/gamemenu';
+    }, 120);
+  }, [socket, menu, tournamentMode, prizeClaimed, loading, gameMode]);
 
   useEffect(() => {
     if (!socket) return;
@@ -196,6 +217,7 @@ export default function PostGame() {
   const designerFee = Math.floor((p1Deposit + p2Deposit) * 0.01);
   const hostFee = developerFee;
   const practiceMode = gameMode === 'PRACTICE';
+  const canDoubleOrNothing = menu === 1 && !tournamentMode && !prizeClaimed && !loading;
 
   const claimButtonText = useMemo(() => {
     if (menu === 3) return 'HIGHSCORES';
@@ -325,11 +347,12 @@ export default function PostGame() {
           {menu === 3 ? null : (
             <Button
               id="doubleornotthingbutton"
-              className={menu === 2 || tournamentMode ? 'disabled' : ''}
+              className={canDoubleOrNothing ? '' : 'disabled'}
+              disabled={!canDoubleOrNothing}
               style={{ animationDuration: activeButtonMenu1 === 1 ? '2s' : '0s' }}
               onClick={onDoubleOrNothing}
             >
-              {practiceMode ? 'PRACTICE AGAIN' : p2Deposit > 0 ? 'DOUBLE OR NOTHING' : 'PRACTICE AGAIN'}
+              {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
             </Button>
           )}
           {menu === 3 ? (
