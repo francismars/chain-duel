@@ -313,7 +313,10 @@ function extractSvgFromMarkup(markup) {
 function attachInlineSvg(elementSVG, svgNode) {
   const importedSvg = document.importNode(svgNode, true);
   importedSvg.id = elementSVG.id;
-  importedSvg.className = elementSVG.className;
+  const objectClass =
+    elementSVG.getAttribute("class") ||
+    (typeof elementSVG.className == "string" ? elementSVG.className : "");
+  if (objectClass) importedSvg.setAttribute("class", objectClass);
   importedSvg.style.display = "block";
   elementSVG.replaceWith(importedSvg);
   return setupBracketFromContext(createSvgContext(importedSvg));
@@ -328,12 +331,15 @@ async function tryInlineBracketFallback(elementSVG, candidatePaths) {
       if (!response.ok) continue;
       const markup = await response.text();
       const svgNode = extractSvgFromMarkup(markup);
-      if (!svgNode) continue;
+      if (!svgNode) {
+        console.warn("Bracket fallback: response has no <svg> root", path);
+        continue;
+      }
       if (attachInlineSvg(elementSVG, svgNode)) {
         return true;
       }
-    } catch (_error) {
-      // Keep trying other paths.
+    } catch (error) {
+      console.warn("Bracket fallback load failed:", path, error);
     }
   }
   return false;
