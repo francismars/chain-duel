@@ -56,7 +56,7 @@
 .tournbracket-page #bracket {
   width: 100%;
   max-width: none;
-  margin: -4vw 1vw 0 1vw;
+  margin: -5.2vw 1vw 0 1vw;
   padding: 0;
   box-sizing: border-box;
   text-align: center;
@@ -64,6 +64,7 @@
 
 .tournbracket-page .tournament-header {
   margin: 0 0 -3cqw 0;
+  transform: translateY(-1.8vw);
 }
 
 .tournbracket-page #tournament-name.hero-outline {
@@ -71,11 +72,11 @@
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: white;
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.1rem 0;
 }
 
 .tournbracket-page .tournbracketSVG {
-  max-width: 85%;
+  max-width: 90%;
   max-height: 35vh;
   width: auto;
   height: auto;
@@ -89,7 +90,7 @@
 }
 
 .tournbracket-page .tournbracketSVG-inline svg {
-  max-width: 100%;
+  max-width: 106%;
   max-height: 35vh;
   width: auto;
   height: auto;
@@ -98,18 +99,39 @@
 }
 
 .tournbracket-page .tournbracketSVG-inline text {
-  font-family: 'Inter', sans-serif;
+  font-family: BureauGrotesque-OneFive, BureauGrotesque;
+  text-anchor: middle;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 /* Condensed "WINNER" label in bracket */
 .tournbracket-page .tournbracketSVG-inline #Winner_name {
   font-stretch: condensed;
+  text-anchor: middle !important;
+  font-weight: 700;
+}
+
+.tournbracket-page .tournbracketSVG-inline #Winner_name tspan {
+  text-anchor: middle;
+}
+
+/* Match legacy: game labels are Inter and start-aligned. */
+.tournbracket-page .tournbracketSVG-inline text[id^="G"]:not([id*="_"]) {
+  text-anchor: start;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+}
+
+/* Player slot and winner labels should look bolder like legacy render. */
+.tournbracket-page .tournbracketSVG-inline text[id$="_name"] {
+  font-weight: 700;
 }
 
 /* Payment panel (legacy bracketPayment): centered on screen, QR + Cancel/Start */
 .tournbracket-page .bracketPayment {
   position: absolute;
-  bottom: 8.2vw;
+  bottom: 7.2vw;
   left: 50%;
   transform: none;
   width: 30%;
@@ -129,10 +151,12 @@
 
 /* Sponsor at top of payment modal */
 .tournbracket-page .bracketPayment .bracketPayment-sponsor {
+  display: block;
   flex-shrink: 0;
   margin-bottom: 0;
   border-bottom: none;
   padding-bottom: 0;
+  line-height: 0;
 }
 
 .tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-by-label {
@@ -140,9 +164,13 @@
 }
 
 .tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-img {
-  margin-top: -2vw;
-  height: 2.5vw;
-  margin-bottom: 2vw;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1.05vw;
+  height: 2.25vw;
+  margin-bottom: 1.55vw;
+  max-width: none;
   max-height: none;
   width: auto;
 }
@@ -160,6 +188,13 @@
   font-size: 0.8vw;
   text-transform: uppercase;
   opacity: 0.7;
+}
+
+.tournbracket-page .bracketPayment .buyintext #satsLabel.sats-label-inline {
+  font-size: 0.8vw;
+  letter-spacing: 0.03rem;
+  opacity: 0.7;
+  text-transform: lowercase;
 }
 
 .tournbracket-page .bracketPayment .mb-10 { margin-bottom: 0.5rem; }
@@ -374,6 +409,14 @@
 .tournbracket-page .bracketDetail .value h3 {
   font-size: 3vw;
   margin: 0;
+}
+
+.tournbracket-page .bracketDetail .value .sats-bottom {
+  font-size: 1vw;
+  opacity: 0.72;
+  letter-spacing: 0.02rem;
+  text-transform: lowercase;
+  line-height: 1.1;
 }
 
 /* ── Next-game panel (tournament in progress) ── */

@@ -565,7 +565,7 @@ export default function Game() {
         </div>
       </div>
 
-      <div className={`bracketDetails in-game ${isTournament ? '' : 'hide'}`}>
+      <div className="bracketDetails in-game hide">
         <div className="bracketDetail" id="bracketDetailPlayers">
           <div className="label">Players</div>
           <div className="value players">

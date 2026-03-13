@@ -105,8 +105,10 @@ export default function TournamentBracket() {
   const [payLink, setPayLink] = useState<string | null>(null);
   const [playersPaid, setPlayersPaid] = useState<Record<string, { name?: string }>>({});
   const [showPaymentPanel, setShowPaymentPanel] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [highlightDeposit, setHighlightDeposit] = useState(false);
   const [preStartReady, setPreStartReady] = useState(false);
+  const firstPayloadLoadedRef = useRef(false);
 
   // In-progress tournament state
   const [winnersList, setWinnersList] = useState<string[]>([]);
@@ -126,14 +128,18 @@ export default function TournamentBracket() {
 
   const numberOfPlayersFromUrl = Math.max(4, parseInt(params.get('players') || '4', 10) || 4);
   const [numberOfPlayers, setNumberOfPlayers] = useState(numberOfPlayersFromUrl);
-  const urlDeposit = Math.max(10000, parseInt(params.get('deposit') || '10000', 10) || 10000);
+  const parsedDeposit = parseInt(params.get('deposit') || '10000', 10);
+  const urlDeposit = Number.isFinite(parsedDeposit) && parsedDeposit > 0 ? parsedDeposit : 10000;
+  const [deposit, setDeposit] = useState(urlDeposit);
 
   // Reset all server-derived state whenever URL params change
   useEffect(() => {
     setNumberOfPlayers(numberOfPlayersFromUrl);
+    setDeposit(urlDeposit);
     setPayLink(null);
     setPlayersPaid({});
     setShowPaymentPanel(false);
+    setLoading(true);
     setPanelView('payment');
     setWithdrawLnurl(null);
     setPlayerListSequential([]);
@@ -141,11 +147,11 @@ export default function TournamentBracket() {
     setHighlightDeposit(false);
     setWinnersList([]);
     setPreStartReady(false);
+    firstPayloadLoadedRef.current = false;
     timesWithdrawnRef.current = 0;
   }, [urlDeposit, numberOfPlayersFromUrl]);
 
-  // URL is the source of truth for deposit
-  const deposit = urlDeposit;
+  // Displayed buy-in follows URL by default, then backend min when provided.
   const finalPrize = Math.floor(numberOfPlayers * deposit * 0.95);
   const paidCount = Object.keys(playersPaid).length;
   const canStart = paidCount >= numberOfPlayers;
@@ -320,6 +326,8 @@ export default function TournamentBracket() {
     };
 
     const onInfos = (data: unknown) => {
+      firstPayloadLoadedRef.current = true;
+      setLoading(false);
       const d = data as {
         lnurlp?: string;
         lnurlw?: string;
@@ -332,6 +340,9 @@ export default function TournamentBracket() {
       };
       // Server may know the authoritative player count
       if (d.gameInfo?.numberOfPlayers) setNumberOfPlayers(d.gameInfo.numberOfPlayers);
+      if (d.min != null && Number.isFinite(Number(d.min))) {
+        setDeposit(parseInt(String(d.min), 10));
+      }
       if (d.lnurlp) setPayLink(d.lnurlp);
       if (d.gameInfo?.players) setPlayersPaid(d.gameInfo.players);
 
@@ -339,6 +350,7 @@ export default function TournamentBracket() {
         // Tournament in progress – hide payment panel, show next-game / finished UI
         setWinnersList(d.gameInfo.winners as string[]);
         setPreStartReady(false);
+        setShowPaymentPanel(false);
       } else {
         // No winners yet – show payment panel (tournament not started)
         setShowPaymentPanel(true);
@@ -365,6 +377,8 @@ export default function TournamentBracket() {
     const onPayments = (data: unknown) => {
       const d = data as { players?: Record<string, { name?: string }> };
       if (d.players) {
+        firstPayloadLoadedRef.current = true;
+        setLoading(false);
         setPlayersPaid(d.players);
         // Lightning animation on the deposits counter (matches legacy)
         setHighlightDeposit(true);
@@ -373,6 +387,7 @@ export default function TournamentBracket() {
     };
 
     const onCancelTourn = (data: unknown) => {
+      setLoading(false);
       const d = data as { depositcount: number; lnurlw?: string };
       if (d.depositcount === 0 || !d.lnurlw) {
         navigate('/tournprefs');
@@ -389,6 +404,7 @@ export default function TournamentBracket() {
     };
 
     const onPrizeWithdrawn = () => {
+      setLoading(false);
       timesWithdrawnRef.current += 1;
       setPlayerListSequential((prev) => {
         const next = prev.slice(1);
@@ -401,6 +417,7 @@ export default function TournamentBracket() {
     // socket to the tournament room. Only fires on (re)connect; the initial emit
     // is handled below (guarded by s.connected to avoid double-firing).
     const onReconnect = () => {
+      if (!firstPayloadLoadedRef.current) setLoading(true);
       const hostLNAddr = localStorage.getItem('hostLNAddress') || undefined;
       s.emit('getTournamentInfos', { buyin: urlDeposit, players: numberOfPlayersFromUrl, hostLNAddress: hostLNAddr });
     };
@@ -418,7 +435,11 @@ export default function TournamentBracket() {
       s.emit('getTournamentInfos', { buyin: urlDeposit, players: numberOfPlayersFromUrl, hostLNAddress });
     }
 
+    // Legacy-like loading overlay with safety timeout.
+    const loadingTimer = window.setTimeout(() => setLoading(false), 12000);
+
     return () => {
+      window.clearTimeout(loadingTimer);
       s.off('resGetTournamentInfos', onInfos);
       s.off('updatePayments', onPayments);
       s.off('rescanceltourn', onCancelTourn);
@@ -430,12 +451,10 @@ export default function TournamentBracket() {
   }, [socket, urlDeposit, numberOfPlayersFromUrl, navigate]);
 
   function handleCancel() {
-    if (paidCount === 0) {
-      navigate('/tournprefs');
-    } else {
-      setPanelView('confirm-cancel');
-      setFocusedBtn('left');
-    }
+    // Legacy behavior: Cancel always opens the refund confirmation view first.
+    // If there are 0 deposits, backend responds and navigates back to tournprefs.
+    setPanelView('confirm-cancel');
+    setFocusedBtn('left');
   }
 
   function handleBackToPayment() {
@@ -445,8 +464,29 @@ export default function TournamentBracket() {
 
   function handleConfirmCancel() {
     if (!socket) return;
-    const s = socket as unknown as { emit: (event: string) => void };
-    s.emit('canceltournament');
+    // Legacy shows loading while waiting for rescanceltourn.
+    setLoading(true);
+    const s = socket as unknown as {
+      emit: (event: string) => void;
+      connected?: boolean;
+      connect?: () => void;
+      once?: (event: 'connect', cb: () => void) => void;
+    };
+
+    const emitCancel = () => {
+      // Keep this log until parity is fully stabilized.
+      console.log('[TournamentBracket] emitting canceltournament');
+      s.emit('canceltournament');
+    };
+
+    if (s.connected) {
+      emitCancel();
+      return;
+    }
+
+    console.log('[TournamentBracket] socket not connected, waiting connect for canceltournament');
+    s.once?.('connect', emitCancel);
+    s.connect?.();
   }
 
   function handleStartTournament() {
@@ -540,24 +580,26 @@ export default function TournamentBracket() {
 
       <div className="tournbracket-middle">
         <div id="bracket">
-          <div className="tournament-header">
-            <div className="label">Tournament Lobby</div>
-            <h1 id="tournament-name" className="hero-outline">
-              The Merkle Tree
-            </h1>
-            <Sponsorship id="sponsorshipBraket" />
+          <div className={loading ? 'hide' : ''} id="pageinner">
+            <div className="tournament-header">
+              <div className="label">Tournament Lobby</div>
+              <h1 id="tournament-name" className="hero-outline">
+                The Merkle Tree
+              </h1>
+              <Sponsorship id="sponsorshipBraket" />
+            </div>
+            {svgMarkup ? (
+              <div
+                ref={svgWrapperRef}
+                className="tournbracketSVG tournbracketSVG-inline"
+                role="img"
+                aria-label="Tournament bracket"
+                dangerouslySetInnerHTML={{ __html: svgMarkup }}
+              />
+            ) : (
+              <img src={bracketSvg} alt="Tournament bracket" className="tournbracketSVG" />
+            )}
           </div>
-          {svgMarkup ? (
-            <div
-              ref={svgWrapperRef}
-              className="tournbracketSVG tournbracketSVG-inline"
-              role="img"
-              aria-label="Tournament bracket"
-              dangerouslySetInnerHTML={{ __html: svgMarkup }}
-            />
-          ) : (
-            <img src={bracketSvg} alt="Tournament bracket" className="tournbracketSVG" />
-          )}
         </div>
       </div>
 
@@ -578,7 +620,7 @@ export default function TournamentBracket() {
                     ) : (
                       <>
                         <h3 className="buyinvalue" id="buyinvalue">{deposit.toLocaleString()}</h3>{' '}
-                        <span className="label" id="satsLabel">sats</span>
+                        <span className="label sats-label-inline" id="satsLabel">sats</span>
                       </>
                     )}
                   </div>
@@ -595,7 +637,7 @@ export default function TournamentBracket() {
                       alt="All players paid"
                     />
                   ) : payLink ? (
-                    <a id="qrTournamentLink" href={`lightning:${payLink}`} target="_blank" rel="noopener noreferrer" style={{ position: 'relative', display: 'inline-block' }}>
+                    <a id="qrTournamentLink" href={`lightning:${payLink}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block' }}>
                       <QRCodeCanvas id="qrTournament" value={payLink} size={800} level="M" className="qrcode" />
                       {highlightDeposit && (
                         <img
@@ -731,7 +773,7 @@ export default function TournamentBracket() {
       )}
 
       <div className="tournbracket-bottom">
-        <div className="bracketDetails" id="bracketDetails">
+        <div className={`bracketDetails${loading ? ' hide' : ''}`} id="bracketDetails">
           <div className="bracketDetail" id="bracketDetailPlayers">
             <div className="label">Players</div>
             <div className="value players">
@@ -741,16 +783,20 @@ export default function TournamentBracket() {
           <div className="bracketDetail" id="bracketDetailFinalPrize">
             <div className="label">Final Prize</div>
             <div className="value">
-              <h3 id="bracketFinalPrize">{finalPrize.toLocaleString()}</h3> <span>sats</span>
+              <h3 id="bracketFinalPrize">{finalPrize.toLocaleString()}</h3> <span className="sats-bottom">sats</span>
             </div>
           </div>
           <div className="bracketDetail" id="bracketDetailBuyIn">
             <div className="label">Buy In</div>
             <div className="value">
-              <h3 id="buyinvalue2">{deposit.toLocaleString()}</h3> <span>sats</span>
+              <h3 id="buyinvalue2">{deposit.toLocaleString()}</h3> <span className="sats-bottom">sats</span>
             </div>
           </div>
         </div>
+      </div>
+
+      <div className={`overlay${loading ? '' : ' hide'}`} id="loading">
+        <img src="/images/loading.gif" alt="Loading" />
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
