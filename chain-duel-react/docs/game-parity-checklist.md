@@ -26,6 +26,7 @@ React target:
 | Bitcoin footer | Latest block fields + highlight animation on block update | Implemented |
 | Zap overlay | Floating pill notifications over players row | Implemented |
 | Loading overlay | Full-screen overlay with loading gif | Implemented with backend timeout fallback |
+| Tournament bottom strip during match | Hidden in active gameplay | Implemented (React now keeps this hidden, matching legacy) |
 
 ## Functional Parity Contract
 

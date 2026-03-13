@@ -53,15 +53,20 @@ src/
 - Game engine/render/audio/io stack implemented under `src/game/*` with Pixi renderer + Canvas fallback.
 - Socket/config/env flow implemented (`VITE_SOCKET_URL` primary path, legacy `/loadconfig` fallback where applicable).
 - Payment-gated entry logic is active (`PracticeMenu` requires min sats; `GameMenu` requires both players funded).
+- Tournament flow parity has advanced substantially:
+  - `TournamentBracket` now uses legacy-style loading overlay timing, cancel/confirm flow, and stricter QR/deposit rendering behavior.
+  - `Game` no longer shows the tournament bottom strip during active match flow (matching legacy hidden state).
+  - `PostGame` tournament mode now hides the DoN button, shows fee split text, and uses legacy tournament prize math (`buy-in * players * 0.95`).
 
 ### Remaining / In Parity Polish
 
-- Pixel-level visual parity pass (windowed and fullscreen) is still in progress on `Game`, then other pages.
+- Pixel-level visual parity pass (windowed and fullscreen) is still in progress, with the largest open deltas in `TournamentBracket` micro-layout (title/modal/logo/typography spacing) and final `Game` typography polish.
 - Final keyboard/gamepad edge-case parity validation across all routes.
 - Legacy `demo` view is not exposed as a React route.
-- Legacy tournament menu behavior from `tournmenu.js` is partially consolidated into tournament pages and still needs explicit parity sign-off.
+- Tournament pages are functionally migrated but still need final visual sign-off against legacy screenshots.
 
 ### Notes For Testing
 
 - `/game` still has a local bootstrap fallback if duel payload is unavailable, so loading does not hard-block local UI testing.
 - Keep `VITE_SOCKET_URL` configured in `.env` for backend-integrated flows.
+- For tournament payout parity, ensure backend uses fee-adjusted withdrawal math on postgame (`gross tournament pool * 0.95`) so frontend and backend totals match.
