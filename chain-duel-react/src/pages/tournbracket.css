@@ -41,26 +41,29 @@
 
 /* Middle: bracket content */
 .tournbracket-page .tournbracket-middle {
-  flex: 1 1 0;
-  min-height: 0;
-  padding-top: 4rem;
+  flex: 1 1 auto;
+  min-height: 100vh;
+  padding-top: 0;
+  width: 100vw;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .tournbracket-page #bracket {
   width: 100%;
-  max-width: 95vw;
-  padding: 0 1vw;
+  max-width: none;
+  margin: -4vw 1vw 0 1vw;
+  padding: 0;
   box-sizing: border-box;
   text-align: center;
 }
 
 .tournbracket-page .tournament-header {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 -3cqw 0;
 }
 
 .tournbracket-page #tournament-name.hero-outline {
@@ -105,61 +108,70 @@
 
 /* Payment panel (legacy bracketPayment): centered on screen, QR + Cancel/Start */
 .tournbracket-page .bracketPayment {
-  position: fixed;
-  top: 50%;
+  position: absolute;
+  bottom: 8.2vw;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: none;
   width: 30%;
-  min-width: 200px;
-  max-width: 320px;
+  height: 38vw;
+  margin-left: -15%;
   background: #000;
   box-sizing: border-box;
-  box-shadow: 0 0 100px rgba(255, 255, 255, 0.15);
+  box-shadow: #fff 0 0 100px;
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   z-index: 2;
-  padding: 1vw;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0;
+  border: none;
 }
 
 /* Sponsor at top of payment modal */
 .tournbracket-page .bracketPayment .bracketPayment-sponsor {
   flex-shrink: 0;
-  margin-bottom: 1vw;
-  border-bottom: 1px solid #444;
-  padding-bottom: 1vw;
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-by-label {
-  font-size: 0.65rem;
-  opacity: 0.8;
+  display: none;
 }
 
 .tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-img {
-  max-width: 60%;
-  height: auto;
-  max-height: 2.5rem;
-  margin-top: 0.25rem;
+  margin-top: -2vw;
+  height: 2.5vw;
+  margin-bottom: 2vw;
+  max-height: none;
+  width: auto;
 }
 
 .tournbracket-page .bracketPayment .bracketPaymentInner {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: stretch;
+  gap: 0;
+  height: 100%;
 }
 
 .tournbracket-page .bracketPayment .buyintext .label {
-  font-size: 0.8rem;
+  font-size: 0.8vw;
   text-transform: uppercase;
   opacity: 0.7;
 }
 
 .tournbracket-page .bracketPayment .mb-10 { margin-bottom: 0.5rem; }
 .tournbracket-page .bracketPayment .mt-10 { margin-top: 0.5rem; }
+
+.tournbracket-page .bracketPayment #buyinp {
+  margin: 0;
+}
+
+.tournbracket-page .bracketPayment #paymentNote {
+  margin-top: 0.5rem;
+}
 
 /* paymentComplete: label/note fade out (matches legacy) */
 .tournbracket-page .bracketPayment.paymentComplete #buyinDepositLabel,
@@ -172,18 +184,18 @@
 /* Checkmark shown when all players paid */
 .tournbracket-page .bracketPayment .qrTournamentCheck {
   display: block;
-  width: 140px;
-  height: 140px;
+  width: 15vw;
+  height: 15vw;
   margin: 0 auto;
 }
 
 /* Lightning gif overlay on QR when payment received (matches legacy qrcodeDecoration) */
 .tournbracket-page .bracketPayment .qrcodeDecoration {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  top: 11.5vw;
+  left: 6vw;
+  width: 18vw;
+  height: 17vw;
   pointer-events: none;
 }
 
@@ -241,8 +253,9 @@
 }
 
 .tournbracket-page .bracketPayment #buyinvalue {
-  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-size: 3vw;
   display: inline;
+  padding-left: 1vw;
   margin: 0;
 }
 
@@ -256,10 +269,15 @@
   display: block;
   width: 15vw;
   height: 15vw;
-  max-width: 140px;
-  max-height: 140px;
+  max-width: none;
+  max-height: none;
   background: #fff;
-  padding: 4px;
+  padding: 0;
+}
+
+.tournbracket-page .bracketPayment .qrCodeDiv canvas.qrcode {
+  width: 15vw !important;
+  height: 15vw !important;
 }
 
 .tournbracket-page .bracketPayment .qr-placeholder {
@@ -272,24 +290,29 @@
 }
 
 .tournbracket-page .bracketPayment .deposited {
-  font-size: 0.85rem;
+  font-size: 0.8vw;
 }
 
 .tournbracket-page .bracketPayment .deposited .label {
   opacity: 0.7;
 }
 
+.tournbracket-page .bracketPayment .deposited .depositedvalue {
+  font-size: 0.8vw;
+}
+
 .tournbracket-page .bracketPayment .buttonsDiv {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: 0;
+  margin-top: 0;
   width: 100%;
 }
 
 .tournbracket-page .bracketPayment .buttonsDiv .button {
-  flex: 1;
+  width: 100%;
+  height: 100%;
   margin: 0;
-  padding: 0.5rem 0.75rem;
+  padding: 3%;
 }
 
 .tournbracket-page .bracketPayment #backButton {
@@ -302,16 +325,14 @@
 
 /* Bottom: details strip only (match legacy – no buttons here) */
 .tournbracket-page .tournbracket-bottom {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 0;
+  display: contents;
 }
 
 /* Details bar: full width, border-top, three equal columns with dividers (legacy .bracketDetails) */
 .tournbracket-page .bracketDetails {
   width: 100%;
+  position: absolute;
+  bottom: 0;
   display: flex;
   justify-content: center;
   text-align: center;

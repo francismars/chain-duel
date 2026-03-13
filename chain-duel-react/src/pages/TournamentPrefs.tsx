@@ -21,7 +21,7 @@ export default function TournamentPrefs() {
   const [playersNumber, setPlayersNumber] = useState(4);
   const [deposit, setDeposit] = useState(10000);
   const [buttonSelected, setButtonSelected] =
-    useState<SelectedButton>('continueButton');
+    useState<SelectedButton>('mainMenuButton');
 
   const mainMenuRef = useRef<HTMLButtonElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
@@ -87,35 +87,30 @@ export default function TournamentPrefs() {
         }
       }
 
-      /* Grid: left col [ - players, - deposit, MAIN MENU ], right col [ + players, + deposit, Continue ] */
+      /* Legacy navigation graph:
+         choices on top, CONTINUE in middle, MAIN MENU at bottom */
       if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
         if (buttonSelected === 'mainMenuButton') {
-          setButtonSelected('decreaseDepositButton');
+          setButtonSelected('continueButton');
         } else if (buttonSelected === 'continueButton') {
           setButtonSelected('increaseDepositButton');
-        } else if (buttonSelected === 'decreaseDepositButton') {
-          setButtonSelected('decreasePlayersButton');
         } else if (buttonSelected === 'increaseDepositButton') {
           setButtonSelected('increasePlayersButton');
-        } else if (buttonSelected === 'decreasePlayersButton') {
-          setButtonSelected('mainMenuButton');
-        } else if (buttonSelected === 'increasePlayersButton') {
-          setButtonSelected('continueButton');
+        } else if (buttonSelected === 'decreaseDepositButton') {
+          setButtonSelected('decreasePlayersButton');
         }
       }
       if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
-        if (buttonSelected === 'decreasePlayersButton') {
-          setButtonSelected('decreaseDepositButton');
-        } else if (buttonSelected === 'increasePlayersButton') {
+        if (buttonSelected === 'increasePlayersButton') {
           setButtonSelected('increaseDepositButton');
-        } else if (buttonSelected === 'decreaseDepositButton') {
-          setButtonSelected('mainMenuButton');
+        } else if (buttonSelected === 'decreasePlayersButton') {
+          setButtonSelected('decreaseDepositButton');
         } else if (buttonSelected === 'increaseDepositButton') {
           setButtonSelected('continueButton');
-        } else if (buttonSelected === 'mainMenuButton') {
-          setButtonSelected('decreasePlayersButton');
+        } else if (buttonSelected === 'decreaseDepositButton') {
+          setButtonSelected('continueButton');
         } else if (buttonSelected === 'continueButton') {
-          setButtonSelected('increasePlayersButton');
+          setButtonSelected('mainMenuButton');
         }
       }
       if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
@@ -123,8 +118,6 @@ export default function TournamentPrefs() {
           setButtonSelected('decreasePlayersButton');
         } else if (buttonSelected === 'increaseDepositButton') {
           setButtonSelected('decreaseDepositButton');
-        } else if (buttonSelected === 'continueButton') {
-          setButtonSelected('mainMenuButton');
         }
       }
       if (
@@ -136,8 +129,6 @@ export default function TournamentPrefs() {
           setButtonSelected('increasePlayersButton');
         } else if (buttonSelected === 'decreaseDepositButton') {
           setButtonSelected('increaseDepositButton');
-        } else if (buttonSelected === 'mainMenuButton') {
-          setButtonSelected('continueButton');
         }
       }
     };
@@ -231,26 +222,24 @@ export default function TournamentPrefs() {
           </div>
         </div>
 
-        <div className="double-button">
-          <Button
-            ref={mainMenuRef}
-            id="mainmenubutton"
-            type="button"
-            onClick={() => navigate('/')}
-          >
-            MAIN MENU
-          </Button>
-          <Button
-            ref={continueRef}
-            id="continueButton"
-            type="button"
-            onClick={() =>
-              navigate(`/tournbracket?players=${playersNumber}&deposit=${deposit}`)
-            }
-          >
-            Continue
-          </Button>
-        </div>
+        <Button
+          ref={continueRef}
+          id="continueButton"
+          type="button"
+          onClick={() =>
+            navigate(`/tournbracket?players=${playersNumber}&deposit=${deposit}`)
+          }
+        >
+          Continue
+        </Button>
+        <Button
+          ref={mainMenuRef}
+          id="mainmenubutton"
+          type="button"
+          onClick={() => navigate('/')}
+        >
+          MAIN MENU
+        </Button>
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />

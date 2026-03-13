@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding-top: 4rem;
+  padding-top: 0;
 }
 
 .tournprefs-page #brand {
@@ -41,9 +41,9 @@
 
 .tournprefs-page #tournprefs {
   width: 100%;
-  max-width: 90vw;
+  max-width: 100vw;
   text-align: center;
-  padding: 0 2rem;
+  padding: 0;
   box-sizing: border-box;
 }
 
@@ -66,14 +66,13 @@
 }
 
 .tournprefs-page .amount-preference {
-  width: 100%;
-  max-width: 28vw;
-  min-width: 200px;
+  width: 25%;
   display: flex;
   margin: 0 auto;
   justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
+  text-transform: uppercase;
+  column-gap: 0;
 }
 
 .tournprefs-page .amount-preference .button {
@@ -86,12 +85,9 @@
 .tournprefs-page .button.increment {
   width: 3vw;
   height: 3vw;
-  min-width: 36px;
-  min-height: 36px;
   padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
+  display: inline-block;
   margin: 0;
 }
 
@@ -101,13 +97,12 @@
 }
 
 .tournprefs-page .value-display {
-  flex: 1;
-  min-width: 0;
+  width: 50%;
   text-align: center;
 }
 
 .tournprefs-page .value-display h1 {
-  font-size: clamp(1.5rem, 3.5vw, 4rem);
+  font-size: 3.5vw;
   margin: 0;
 }
 
@@ -121,7 +116,12 @@
 
 .tournprefs-page .mb-30 {
   padding-top: 2vw;
-  margin-bottom: 2rem;
+  margin-bottom: 3vw;
+}
+
+.tournprefs-page #continueButton,
+.tournprefs-page #mainmenubutton {
+  width: 25%;
 }
 
 .tournprefs-page #mainmenubutton {

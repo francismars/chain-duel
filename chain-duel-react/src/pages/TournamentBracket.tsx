@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -106,6 +106,7 @@ export default function TournamentBracket() {
   const [playersPaid, setPlayersPaid] = useState<Record<string, { name?: string }>>({});
   const [showPaymentPanel, setShowPaymentPanel] = useState(false);
   const [highlightDeposit, setHighlightDeposit] = useState(false);
+  const [preStartReady, setPreStartReady] = useState(false);
 
   // In-progress tournament state
   const [winnersList, setWinnersList] = useState<string[]>([]);
@@ -139,6 +140,7 @@ export default function TournamentBracket() {
     setFocusedBtn('left');
     setHighlightDeposit(false);
     setWinnersList([]);
+    setPreStartReady(false);
     timesWithdrawnRef.current = 0;
   }, [urlDeposit, numberOfPlayersFromUrl]);
 
@@ -212,7 +214,8 @@ export default function TournamentBracket() {
 
   // Apply bracket winner highlighting to inlined SVG (matches legacy updateBracketWinner)
   useEffect(() => {
-    if (!svgWrapperRef.current || !svgMarkup || winnersList.length === 0) return;
+    if (!svgWrapperRef.current || !svgMarkup) return;
+    if (winnersList.length === 0 && !preStartReady) return;
     const svgEl = svgWrapperRef.current;
 
     const highLight = (id: string) => {
@@ -305,7 +308,7 @@ export default function TournamentBracket() {
       const gEl = svgEl.querySelector<SVGElement>(`#G${nextIdx + 1}`);
       if (gEl) { gEl.style.opacity = '1'; gEl.style.fontWeight = '900'; }
     }
-  }, [winnersList, svgMarkup, numberOfPlayers, playersList]);
+  }, [winnersList, svgMarkup, numberOfPlayers, playersList, preStartReady]);
 
   useEffect(() => {
     if (!socket) return;
@@ -335,6 +338,7 @@ export default function TournamentBracket() {
       if (d.gameInfo?.winners && d.gameInfo.winners.length > 0) {
         // Tournament in progress – hide payment panel, show next-game / finished UI
         setWinnersList(d.gameInfo.winners as string[]);
+        setPreStartReady(false);
       } else {
         // No winners yet – show payment panel (tournament not started)
         setShowPaymentPanel(true);
@@ -447,6 +451,11 @@ export default function TournamentBracket() {
 
   function handleStartTournament() {
     if (!canStart) return;
+    // Legacy behavior: first move from payment panel to "UP NEXT".
+    setPreStartReady(true);
+  }
+
+  function handleStartNextGame() {
     const names = Object.fromEntries(
       Object.entries(playersPaid).map(([k, v]) => [
         k,
@@ -454,10 +463,6 @@ export default function TournamentBracket() {
       ])
     );
     sessionStorage.setItem('Players', JSON.stringify(names));
-    navigate('/game');
-  }
-
-  function handleStartNextGame() {
     navigate('/game');
   }
 
@@ -474,16 +479,17 @@ export default function TournamentBracket() {
   // Focus glow on the active single-button overlays
   useEffect(() => {
     if (startGameBtnRef.current) {
-      startGameBtnRef.current.style.animationDuration = tournamentPhase === 'next-game' ? '2s' : '0s';
+      startGameBtnRef.current.style.animationDuration =
+        tournamentPhase === 'next-game' || preStartReady ? '2s' : '0s';
     }
     if (claimBtnRef.current) {
       claimBtnRef.current.style.animationDuration = tournamentPhase === 'finished' ? '2s' : '0s';
     }
-  }, [tournamentPhase]);
+  }, [tournamentPhase, preStartReady]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     // Tournament in progress: only Enter/Space to start next game
-    if (tournamentPhase === 'next-game') {
+    if (tournamentPhase === 'next-game' || preStartReady) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         handleStartNextGame();
@@ -518,7 +524,7 @@ export default function TournamentBracket() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panelView, focusedBtn, canStart, paidCount, tournamentPhase, navigate]);
+  }, [panelView, focusedBtn, canStart, paidCount, tournamentPhase, navigate, preStartReady]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -556,16 +562,16 @@ export default function TournamentBracket() {
       </div>
 
       {/* ── Payment collection panel ── */}
-      {showPaymentPanel && tournamentPhase === 'payment' && (
+      {showPaymentPanel && tournamentPhase === 'payment' && !preStartReady && (
         <div className={`bracketPayment${canStart ? ' paymentComplete' : ''}`} id="bracketPayment">
-          <Sponsorship id="sponsorshipBracketPayment" className="bracketPayment-sponsor" />
+          <Sponsorship id="sponsorshipBracketPayment" className="bracketPayment-sponsor" showLabel={false} />
           <div className="bracketPaymentInner">
 
             {/* View 1: normal payment / QR check-in */}
             {panelView === 'payment' && (
               <>
                 <div className="buyintext" id="buyintext">
-                  <div className="label mb-10" id="buyinDepositLabel">Buy In (per player)</div>
+                  <div className="label mb-10" id="buyinDepositLabel">BUY IN DEPOSIT</div>
                   <div id="buyinp">
                     {canStart ? (
                       <h3 className="buyinvalue" id="buyinvalue">LET'S GO</h3>
@@ -590,7 +596,7 @@ export default function TournamentBracket() {
                     />
                   ) : payLink ? (
                     <a id="qrTournamentLink" href={`lightning:${payLink}`} target="_blank" rel="noopener noreferrer" style={{ position: 'relative', display: 'inline-block' }}>
-                      <QRCodeSVG id="qrTournament" value={payLink} size={140} level="M" className="qrcode" />
+                      <QRCodeCanvas id="qrTournament" value={payLink} size={800} level="M" className="qrcode" />
                       {highlightDeposit && (
                         <img
                           id="qrcodeDecoration"
@@ -608,7 +614,7 @@ export default function TournamentBracket() {
                   <b className="depositedvalue" id="depositedvalue">
                     {(deposit * paidCount).toLocaleString()}
                   </b>{' '}
-                  <span className="label">sats deposited</span>
+                  <span className="label">SATS DEPOSITED</span>
                 </div>
               </>
             )}
@@ -636,7 +642,7 @@ export default function TournamentBracket() {
                   {playerListSequential[0] ?? ''}
                 </h1>
                 <a id="qrWithdrawalLink" href={`lightning:${withdrawLnurl}`} target="_blank" rel="noopener noreferrer">
-                  <QRCodeSVG id="qrWithdrawal" value={withdrawLnurl} size={140} level="M" className="qrcode" />
+                  <QRCodeCanvas id="qrWithdrawal" value={withdrawLnurl} size={800} level="M" className="qrcode" />
                 </a>
                 <div>
                   <b className="label" id="withdrawablevalue">{refundPerPlayer.toLocaleString()}</b>{' '}
@@ -682,7 +688,7 @@ export default function TournamentBracket() {
       )}
 
       {/* ── Tournament in progress: next game panel (matches legacy nextGameDiv) ── */}
-      {tournamentPhase === 'next-game' && (
+      {(tournamentPhase === 'next-game' || preStartReady) && (
         <div className="nextGameDiv" id="nextGameDiv">
           <p className="label">UP NEXT</p>
           <h2 id="nextGameName" className="mb-0">
