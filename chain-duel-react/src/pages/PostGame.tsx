@@ -36,6 +36,7 @@ export default function PostGame() {
   const [p1Deposit, setP1Deposit] = useState(0);
   const [p2Deposit, setP2Deposit] = useState(0);
   const [totalPrize, setTotalPrize] = useState(0);
+  const [tournamentPlayers, setTournamentPlayers] = useState(0);
   const [lnurlw, setLnurlw] = useState<string>('');
   const [qrValue, setQrValue] = useState<string>(PLACEHOLDER_WITHDRAWAL_URL);
   const [tournamentMode, setTournamentMode] = useState(false);
@@ -162,8 +163,19 @@ export default function PostGame() {
       setP1Deposit(p1S);
       setP2Deposit(p2S);
 
+      const tournamentPlayers = Math.max(
+        2,
+        Number.isFinite(Number(info.numbeOfPlayers))
+          ? Number(info.numbeOfPlayers)
+          : Object.keys(players).length || 2
+      );
+      setTournamentPlayers(tournamentPlayers);
       const rawTotal = info.mode === 'PRACTICE' ? p1S : p1S + p2S;
-      const prize = info.mode === 'TOURNAMENT' ? Math.floor(rawTotal * 0.95) : Math.floor(rawTotal);
+      // Legacy tournament payout: buy-in per player * total players * 95%.
+      const prize =
+        info.mode === 'TOURNAMENT'
+          ? Math.floor(p1S * tournamentPlayers * 0.95)
+          : Math.floor(rawTotal);
       setTotalPrize(prize);
 
       const winnerN = winnerP === 'Player 1' ? p1N : p2N;
@@ -213,8 +225,12 @@ export default function PostGame() {
     };
   }, [socket, navigate, updateHighscores]);
 
-  const developerFee = Math.floor((p1Deposit + p2Deposit) * 0.02);
-  const designerFee = Math.floor((p1Deposit + p2Deposit) * 0.01);
+  const feeBase =
+    gameMode === 'TOURNAMENT'
+      ? p1Deposit * Math.max(2, tournamentPlayers)
+      : p1Deposit + p2Deposit;
+  const developerFee = Math.floor(feeBase * 0.02);
+  const designerFee = Math.floor(feeBase * 0.01);
   const hostFee = developerFee;
   const practiceMode = gameMode === 'PRACTICE';
   const canDoubleOrNothing = menu === 1 && !tournamentMode && !prizeClaimed && !loading;
@@ -291,7 +307,7 @@ export default function PostGame() {
           </div>
         </div>
 
-        {tournamentMode || practiceMode ? null : (
+        {practiceMode ? null : (
           <div id="fees">
             <span id="split1">
               2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span> to the Sponsor (@piratehash)
@@ -339,12 +355,17 @@ export default function PostGame() {
         >
           <Button
             id="claimbutton"
-            style={{ animationDuration: menu === 3 ? (activeButtonMenu3 === 0 ? '2s' : '0s') : (activeButtonMenu1 === 0 ? '2s' : '0s') }}
+            style={{
+              animationDuration:
+                menu === 3 ? (activeButtonMenu3 === 0 ? '2s' : '0s') : (activeButtonMenu1 === 0 ? '2s' : '0s'),
+              marginLeft: menu === 3 ? '0px' : undefined,
+              marginRight: menu === 3 ? '0px' : undefined,
+            }}
             onClick={onClaim}
           >
             {claimButtonText}
           </Button>
-          {menu === 3 ? null : (
+          {menu === 3 || tournamentMode ? null : (
             <Button
               id="doubleornotthingbutton"
               className={canDoubleOrNothing ? '' : 'disabled'}
@@ -358,7 +379,12 @@ export default function PostGame() {
           {menu === 3 ? (
             <Button
               id="startnewbutton"
-              style={{ display: 'block', animationDuration: activeButtonMenu3 === 1 ? '2s' : '0s' }}
+              style={{
+                display: 'block',
+                animationDuration: activeButtonMenu3 === 1 ? '2s' : '0s',
+                marginLeft: '0px',
+                marginRight: '0px',
+              }}
               onClick={onMainMenu}
             >
               RETURN TO MAIN MENU
