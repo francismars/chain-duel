@@ -41,5 +41,6 @@ Use this checklist for desktop and mobile parity verification against legacy pag
 
 ## Current Known Deltas (Audit Snapshot)
 
+- `TournamentBracket` remains under active micro-tuning: title vs modal vertical relationship, sponsor logo placement inside deposit modal, and sats label typography.
 - `Game` page still under active pixel-tuning for typography/spacing parity across windowed and fullscreen modes.
-- Non-game pages are largely migrated; remaining work is mostly micro-spacing and edge-state visual parity.
+- `PostGame` tournament behavior parity is functionally aligned (payout math, fee text visibility, DoN hidden), with minor spacing polish still open after withdrawal state transitions.

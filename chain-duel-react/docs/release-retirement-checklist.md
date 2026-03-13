@@ -8,6 +8,7 @@
 - Socket connection smoke verified against marspay
 - Payment menu flows verified (`P2P`, `Practice`)
 - Local fallback/bootstrap behavior reviewed for production policy (enabled intentionally or dev-only guarded)
+- Tournament postgame payout parity verified end-to-end (frontend displayed prize and backend LNURLw amount both fee-adjusted at `*0.95`)
 
 ## Parity Gate
 
