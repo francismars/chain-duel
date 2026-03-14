@@ -1,0 +1,10 @@
+export const PRACTICE_MIN_DEPOSIT_SATS = 150;
+export const P2P_DEFAULT_MIN_DEPOSIT_SATS = 10_000;
+export const TOURNAMENT_DEFAULT_BUY_IN_SATS = 10_000;
+export const TOURNAMENT_MIN_PLAYERS = 4;
+export const SATS_DISPLAY_MAX = 10_000_000;
+
+export const PAYOUT_POOL_RATIO = 0.95;
+export const HOST_FEE_RATIO = 0.02;
+export const DEVELOPER_FEE_RATIO = 0.02;
+export const DESIGNER_FEE_RATIO = 0.01;

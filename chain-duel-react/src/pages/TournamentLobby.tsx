@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
+import { asSocketBoundary } from '@/shared/socket/socketBoundary';
+import {
+  TOURNAMENT_DEFAULT_BUY_IN_SATS,
+  TOURNAMENT_MIN_PLAYERS,
+} from '@/shared/constants/payment';
+import { computeFinalPrize } from '@/features/tournament/bracketModel';
 import '@/components/ui/Button.css';
 import './tournlobby.css';
 
@@ -28,9 +34,16 @@ export default function TournamentLobby() {
   const proceedRef = useRef<HTMLButtonElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
 
-  const numberOfPlayers = Math.max(2, parseInt(params.get('players') || '4', 10) || 4);
-  const deposit = Math.max(10000, parseInt(params.get('deposit') || '10000', 10) || 10000);
-  const finalPrize = Math.floor(numberOfPlayers * deposit * 0.95);
+  const numberOfPlayers = Math.max(
+    TOURNAMENT_MIN_PLAYERS,
+    parseInt(params.get('players') || String(TOURNAMENT_MIN_PLAYERS), 10) || TOURNAMENT_MIN_PLAYERS
+  );
+  const deposit = Math.max(
+    TOURNAMENT_DEFAULT_BUY_IN_SATS,
+    parseInt(params.get('deposit') || String(TOURNAMENT_DEFAULT_BUY_IN_SATS), 10) ||
+      TOURNAMENT_DEFAULT_BUY_IN_SATS
+  );
+  const finalPrize = computeFinalPrize(numberOfPlayers, deposit);
   const paidCount = Object.keys(playersPaid).length;
 
   useGamepad(true);
@@ -48,11 +61,8 @@ export default function TournamentLobby() {
 
   useEffect(() => {
     if (!socket || !connected) return;
-    const anySocket = socket as unknown as {
-      emit: (event: string, payload?: unknown) => void;
-      on: (event: string, cb: (data: unknown) => void) => void;
-      off: (event: string, cb: (data: unknown) => void) => void;
-    };
+    const anySocket = asSocketBoundary(socket);
+    if (!anySocket) return;
 
     const onPaylink = (body: unknown) => {
       const data = body as TournamentPayLink;

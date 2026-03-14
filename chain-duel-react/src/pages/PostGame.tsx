@@ -6,6 +6,13 @@ import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
 import type { SerializedGameInfo } from '@/types/socket';
+import {
+  DEVELOPER_FEE_RATIO,
+  DESIGNER_FEE_RATIO,
+  PAYOUT_POOL_RATIO,
+} from '@/shared/constants/payment';
+import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
+import { createLogger } from '@/shared/utils/logger';
 import '@/components/ui/Button.css';
 import './postgame.css';
 
@@ -22,8 +29,9 @@ const PLACEHOLDER_WITHDRAWAL_URL =
   'MARSURL1DP68GURN8GHJ7MRWVF5HGUEWV3HK5MEWWP6Z7AMFW35XGUNPWUHKZURF9AMRZTMVDE6HYMP0V438Y7NKXUE5S5TFG9X9GE2509N5VMN0G46S0WQJQ4';
 
 export default function PostGame() {
+  const logger = useMemo(() => createLogger('PostGame'), []);
   const navigate = useNavigate();
-  const { socket, connected } = useSocket();
+  const { socket } = useSocket();
   const [loading, setLoading] = useState(true);
   const [menu, setMenu] = useState<MenuState>(1);
   const [activeButtonMenu1, setActiveButtonMenu1] = useState<ActiveButtonMenu1>(0);
@@ -55,7 +63,7 @@ export default function PostGame() {
     const emitTimer = window.setTimeout(requestPostGameInfo, 0);
     socket.on('connect', requestPostGameInfo);
     // Do not keep the page blocked forever when backend does not answer.
-    const fallbackTimer = window.setTimeout(() => setLoading(false), 12000);
+    const fallbackTimer = window.setTimeout(() => setLoading(false), LOADING_FALLBACK_TIMEOUT_MS);
     return () => {
       window.clearTimeout(emitTimer);
       window.clearTimeout(fallbackTimer);
@@ -119,7 +127,7 @@ export default function PostGame() {
   const onDoubleOrNothing = useCallback(() => {
     if (!socket) return;
     if (menu !== 1 || tournamentMode || prizeClaimed || loading) return;
-    console.log('[PostGame] emitting doubleornothing', {
+    logger.debug('emitting doubleornothing', {
       connected: socket.connected,
       id: socket.id,
       mode: gameMode,
@@ -129,7 +137,7 @@ export default function PostGame() {
     window.setTimeout(() => {
       window.location.href = gameMode === 'PRACTICE' ? '/practicemenu' : '/gamemenu';
     }, 120);
-  }, [socket, menu, tournamentMode, prizeClaimed, loading, gameMode]);
+  }, [socket, menu, tournamentMode, prizeClaimed, loading, gameMode, logger]);
 
   useEffect(() => {
     if (!socket) return;
@@ -174,7 +182,7 @@ export default function PostGame() {
       // Legacy tournament payout: buy-in per player * total players * 95%.
       const prize =
         info.mode === 'TOURNAMENT'
-          ? Math.floor(p1S * tournamentPlayers * 0.95)
+          ? Math.floor(p1S * tournamentPlayers * PAYOUT_POOL_RATIO)
           : Math.floor(rawTotal);
       setTotalPrize(prize);
 
@@ -229,8 +237,8 @@ export default function PostGame() {
     gameMode === 'TOURNAMENT'
       ? p1Deposit * Math.max(2, tournamentPlayers)
       : p1Deposit + p2Deposit;
-  const developerFee = Math.floor(feeBase * 0.02);
-  const designerFee = Math.floor(feeBase * 0.01);
+  const developerFee = Math.floor(feeBase * DEVELOPER_FEE_RATIO);
+  const designerFee = Math.floor(feeBase * DESIGNER_FEE_RATIO);
   const hostFee = developerFee;
   const practiceMode = gameMode === 'PRACTICE';
   const canDoubleOrNothing = menu === 1 && !tournamentMode && !prizeClaimed && !loading;

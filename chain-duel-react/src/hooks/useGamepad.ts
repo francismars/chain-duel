@@ -17,11 +17,9 @@ export function useGamepad(enabled: boolean = true) {
     const pollGamepads = () => {
       const gamepads = navigator.getGamepads();
       if (gamepad1 === null && gamepads[0]) {
-        console.log('Gamepad 1 connected');
         gamepad1 = gamepads[0];
       }
       if (gamepad2 === null && gamepads[1]) {
-        console.log('Gamepad 2 connected');
         gamepad2 = gamepads[1];
       }
 

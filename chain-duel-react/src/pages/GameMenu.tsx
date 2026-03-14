@@ -1,5 +1,5 @@
 // P2P game menu page – two players LNURL setup
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -8,7 +8,22 @@ import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useAudio, SFX } from '@/contexts/AudioContext';
 import type { LNURLP, SerializedGameInfo } from '@/types/socket';
-import { parseMenuResponse } from '@/lib/menuAdapters';
+import { useMenuSocketInfo } from '@/features/setup-menu/hooks/useMenuSocketInfo';
+import type { MenuParseResult } from '@/lib/menuAdapters';
+import { useSessionPersistence } from '@/shared/hooks/useSessionPersistence';
+import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
+import { createLogger } from '@/shared/utils/logger';
+import {
+  HIGHLIGHT_FLASH_TIMEOUT_MS,
+} from '@/shared/constants/timeouts';
+import {
+  DEVELOPER_FEE_RATIO,
+  DESIGNER_FEE_RATIO,
+  HOST_FEE_RATIO,
+  P2P_DEFAULT_MIN_DEPOSIT_SATS,
+  SATS_DISPLAY_MAX,
+} from '@/shared/constants/payment';
+import { QR_CODE_CARD_SIZE } from '@/shared/constants/ui';
 import './gamemenu.css';
 
 type ButtonSelected =
@@ -18,10 +33,11 @@ type ButtonSelected =
   | 'cancelGameConfirm';
 
 export default function GameMenu() {
+  const logger = useMemo(() => createLogger('GameMenu'), []);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const useNostr = searchParams.get('nostr') === 'true';
-  const { socket, connected } = useSocket();
+  const { socket } = useSocket();
   const { playSfx } = useAudio();
   const [loading, setLoading] = useState(true);
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
@@ -47,61 +63,32 @@ export default function GameMenu() {
   const [nostrMinP2, setNostrMinP2] = useState<number>(1);
   const [leaderboardThreshold, setLeaderboardThreshold] = useState<number>(1);
 
-  const mainMenuButtonRef = useRef<HTMLButtonElement>(null);
-  const startGameButtonRef = useRef<HTMLButtonElement>(null);
-  const cancelGameAbortRef = useRef<HTMLButtonElement>(null);
-  const cancelGameConfirmRef = useRef<HTMLButtonElement>(null);
+  const lastKnownP1SatsRef = useRef(0);
+  const lastKnownP2SatsRef = useRef(0);
   const highlightTimeoutP1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimeoutP2Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const expandKeyUpTimeRef = useRef<{ left?: number; right?: number }>({});
-  const backdropTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const menuInfoRetryRef = useRef(0);
 
   useGamepad(true);
 
   useEffect(() => {
     if (!socket) return;
     const onAny = (event: string, ...args: unknown[]) => {
-      console.log('[GameMenu] onAny event:', event, args);
+      logger.debug('onAny event', event, args);
     };
     socket.onAny(onAny);
     return () => {
       socket.offAny(onAny);
     };
-  }, [socket]);
+  }, [logger, socket]);
 
-  useEffect(() => {
-    if (!socket) return;
-    const hostLNAddress = localStorage.getItem('hostLNAddress');
-    const hostInfo = hostLNAddress ? { LNAddress: hostLNAddress } : undefined;
-    const requestMenuInfos = () => {
-      console.log('[GameMenu] requesting menu infos', {
-        useNostr,
-        hostInfo,
-        connected: socket.connected,
-        id: socket.id,
-      });
-      if (useNostr) {
-        if (hostInfo) socket.emit('getGameMenuInfosNostr', hostInfo);
-        else socket.emit('getGameMenuInfosNostr');
-      } else {
-        if (hostInfo) socket.emit('getGameMenuInfos', hostInfo);
-        else socket.emit('getGameMenuInfos');
-      }
-    };
-    const handler = (body: unknown) => {
-      console.log('[GameMenu] resGetGameMenuInfos raw payload:', body);
-      const parsed = parseMenuResponse(body);
-      console.log('[GameMenu] resGetGameMenuInfos parsed:', parsed);
+  const handleMenuParsed = useCallback(
+    (parsed: MenuParseResult) => {
       if (parsed.hasLnurlw) {
         navigate('/postgame', { replace: true });
         return;
       }
       const links = parsed.payLinks;
       setPayLinks(links.length > 0 ? links : null);
-      if (links.length > 0) {
-        menuInfoRetryRef.current = 0;
-      }
       if (parsed.modeMeta?.mode) {
         const winnersCount = parsed.modeMeta.winnersCount ?? 0;
         const donMultiple = winnersCount > 0 ? `*${2 ** winnersCount}` : '';
@@ -113,33 +100,30 @@ export default function GameMenu() {
         setNostrMinP1(parsed.nostrMeta.min);
         setNostrMinP2(parsed.nostrMeta.min);
       }
-      setStatusMessage(
-        links.length > 0 ? '' : 'Waiting for payment links from backend...'
-      );
+      setStatusMessage(links.length > 0 ? '' : 'Waiting for payment links from backend...');
       setLoading(false);
-      if (links.length === 0 && menuInfoRetryRef.current < 3) {
-        menuInfoRetryRef.current += 1;
-        setTimeout(() => {
-          requestMenuInfos();
-        }, 1000);
-      }
-    };
-    socket.on('resGetGameMenuInfos', handler);
-    socket.on('connect', requestMenuInfos);
-    const emitTimer = setTimeout(requestMenuInfos, 0);
-    const fallback = setTimeout(() => setLoading(false), 12000);
-    return () => {
-      socket.off('resGetGameMenuInfos', handler);
-      socket.off('connect', requestMenuInfos);
-      clearTimeout(emitTimer);
-      clearTimeout(fallback);
-    };
-  }, [socket, navigate, useNostr]);
+    },
+    [navigate]
+  );
+
+  const handleMenuLoadingTimeout = useCallback(() => {
+    setLoading(false);
+  }, []);
+
+  useMenuSocketInfo({
+    socket,
+    connected: true,
+    requestEvent: useNostr ? 'getGameMenuInfosNostr' : 'getGameMenuInfos',
+    responseEvent: 'resGetGameMenuInfos',
+    maxRetries: 3,
+    onParsed: handleMenuParsed,
+    onLoadingTimeout: handleMenuLoadingTimeout,
+  });
 
   useEffect(() => {
     if (!socket) return;
     const handler = (body: SerializedGameInfo) => {
-      console.log('[GameMenu] updatePayments payload:', body);
+      logger.debug('updatePayments payload', body);
       const latestWinner = body.winners?.length ? body.winners.slice(-1)[0] : null;
       if (body.winners && body.winners.length > 0) {
         setPrevWinner(latestWinner);
@@ -152,19 +136,35 @@ export default function GameMenu() {
       if (p1) {
         setP1Name((prev) => resolvePlayerName(p1, prev || 'Player 1'));
         if (p1.value !== undefined) {
-          setPlayer1Sats(p1.value);
-          if (highlightTimeoutP1Ref.current) clearTimeout(highlightTimeoutP1Ref.current);
-          setHighlightP1(true);
-          highlightTimeoutP1Ref.current = setTimeout(() => setHighlightP1(false), 1200);
+          const nextP1Sats = Number(p1.value);
+          const didP1Change = nextP1Sats !== lastKnownP1SatsRef.current;
+          setPlayer1Sats(nextP1Sats);
+          if (didP1Change) {
+            lastKnownP1SatsRef.current = nextP1Sats;
+            if (highlightTimeoutP1Ref.current) clearTimeout(highlightTimeoutP1Ref.current);
+            setHighlightP1(true);
+            highlightTimeoutP1Ref.current = setTimeout(
+              () => setHighlightP1(false),
+              HIGHLIGHT_FLASH_TIMEOUT_MS
+            );
+          }
         }
       }
       if (p2) {
         setP2Name((prev) => resolvePlayerName(p2, prev || 'Player 2'));
         if (p2.value !== undefined) {
-          setPlayer2Sats(p2.value);
-          if (highlightTimeoutP2Ref.current) clearTimeout(highlightTimeoutP2Ref.current);
-          setHighlightP2(true);
-          highlightTimeoutP2Ref.current = setTimeout(() => setHighlightP2(false), 1200);
+          const nextP2Sats = Number(p2.value);
+          const didP2Change = nextP2Sats !== lastKnownP2SatsRef.current;
+          setPlayer2Sats(nextP2Sats);
+          if (didP2Change) {
+            lastKnownP2SatsRef.current = nextP2Sats;
+            if (highlightTimeoutP2Ref.current) clearTimeout(highlightTimeoutP2Ref.current);
+            setHighlightP2(true);
+            highlightTimeoutP2Ref.current = setTimeout(
+              () => setHighlightP2(false),
+              HIGHLIGHT_FLASH_TIMEOUT_MS
+            );
+          }
         }
       }
 
@@ -183,18 +183,9 @@ export default function GameMenu() {
       if (highlightTimeoutP1Ref.current) clearTimeout(highlightTimeoutP1Ref.current);
       if (highlightTimeoutP2Ref.current) clearTimeout(highlightTimeoutP2Ref.current);
     };
-  }, [socket, prevWinner]);
+  }, [socket, prevWinner, logger]);
 
-  useEffect(() => {
-    if (!socket) return;
-    const handler = ({ sessionID }: { sessionID: string; userID: string }) => {
-      sessionStorage.setItem('sessionID', sessionID);
-    };
-    socket.on('session', handler);
-    return () => {
-      socket.off('session', handler);
-    };
-  }, [socket]);
+  useSessionPersistence(socket);
 
   useEffect(() => {
     let mounted = true;
@@ -225,15 +216,6 @@ export default function GameMenu() {
       mounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    [mainMenuButtonRef, startGameButtonRef, cancelGameAbortRef, cancelGameConfirmRef].forEach((ref, i) => {
-      const key = (['mainMenuButton', 'startgame', 'cancelGameAbort', 'cancelGameConfirm'] as const)[i];
-      if (ref.current) {
-        ref.current.style.animationDuration = buttonSelected === key ? '2s' : '0s';
-      }
-    });
-  }, [buttonSelected]);
 
   useEffect(() => {
     const canStartNow = prevWinner
@@ -282,46 +264,20 @@ export default function GameMenu() {
         }
       }
     };
-    const EXPAND_DEBOUNCE_MS = 180;
-    const SCALE_DOWN_MS = 250;
-    const handleKeyDownExpand = (e: KeyboardEvent) => {
-      const now = Date.now();
-      if (e.code === 'ControlLeft') {
-        if (now - (expandKeyUpTimeRef.current.left ?? 0) < EXPAND_DEBOUNCE_MS) return;
-        if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
-        setPlayer1CardExpanded(true);
-        setQrBackdropVisible(true);
-      }
-      if (e.code === 'ControlRight') {
-        if (now - (expandKeyUpTimeRef.current.right ?? 0) < EXPAND_DEBOUNCE_MS) return;
-        if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
-        setPlayer2CardExpanded(true);
-        setQrBackdropVisible(true);
-      }
-    };
-    const handleKeyUpExpand = (e: KeyboardEvent) => {
-      const now = Date.now();
-      if (e.code === 'ControlLeft') {
-        expandKeyUpTimeRef.current.left = now;
-        setPlayer1CardExpanded(false);
-        backdropTimeoutRef.current = setTimeout(() => setQrBackdropVisible(false), SCALE_DOWN_MS);
-      }
-      if (e.code === 'ControlRight') {
-        expandKeyUpTimeRef.current.right = now;
-        setPlayer2CardExpanded(false);
-        backdropTimeoutRef.current = setTimeout(() => setQrBackdropVisible(false), SCALE_DOWN_MS);
-      }
-    };
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keydown', handleKeyDownExpand);
-    window.addEventListener('keyup', handleKeyUpExpand);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keydown', handleKeyDownExpand);
-      window.removeEventListener('keyup', handleKeyUpExpand);
-      if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
     };
   }, [buttonSelected, player1Sats, player2Sats, socket, navigate, playSfx, prevWinner, loserSats, winnerSats]);
+
+  useQrExpandState({
+    dualControls: true,
+    onExpandedChange: (expanded) => {
+      if (typeof expanded.left === 'boolean') setPlayer1CardExpanded(expanded.left);
+      if (typeof expanded.right === 'boolean') setPlayer2CardExpanded(expanded.right);
+    },
+    onBackdropVisibleChange: setQrBackdropVisible,
+  });
 
   const p1PayLink =
     payLinks?.find((p) => /player\s*1/i.test(String(p.description ?? ''))) ??
@@ -329,13 +285,13 @@ export default function GameMenu() {
   const p2PayLink =
     payLinks?.find((p) => /player\s*2/i.test(String(p.description ?? ''))) ??
     payLinks?.[1];
-  const minP1 = p1PayLink?.min ?? 10000;
-  const minP2 = p2PayLink?.min ?? 10000;
+  const minP1 = p1PayLink?.min ?? P2P_DEFAULT_MIN_DEPOSIT_SATS;
+  const minP2 = p2PayLink?.min ?? P2P_DEFAULT_MIN_DEPOSIT_SATS;
   const fmt = (n: number) => n.toLocaleString();
   const totalPrize = player1Sats + player2Sats;
-  const hostCut = Math.floor(totalPrize * 0.02);
-  const devCut = Math.floor(totalPrize * 0.02);
-  const designCut = Math.floor(totalPrize * 0.01);
+  const hostCut = Math.floor(totalPrize * HOST_FEE_RATIO);
+  const devCut = Math.floor(totalPrize * DEVELOPER_FEE_RATIO);
+  const designCut = Math.floor(totalPrize * DESIGNER_FEE_RATIO);
   const canStart = prevWinner
     ? winnerSats > 0 && loserSats >= winnerSats
     : player1Sats !== 0 && player2Sats !== 0;
@@ -374,10 +330,7 @@ export default function GameMenu() {
           socket?.emit('cancelp2p');
           navigate('/', { replace: true });
         }}
-        mainMenuButtonRef={mainMenuButtonRef}
-        startGameButtonRef={startGameButtonRef}
-        cancelGameAbortRef={cancelGameAbortRef}
-        cancelGameConfirmRef={cancelGameConfirmRef}
+        selectedButton={buttonSelected}
       >
         {qrBackdropVisible && (
           <div className="qr-expand-backdrop" aria-hidden />
@@ -395,7 +348,7 @@ export default function GameMenu() {
                   id="qrcode1"
                   className="qrcode"
                   value={p1PayLink.lnurlp}
-                  size={180}
+                  size={QR_CODE_CARD_SIZE}
                   level="M"
                   includeMargin={false}
                 />
@@ -422,7 +375,7 @@ export default function GameMenu() {
               </div>
             </div>
             <div className="deposit-message">
-              Deposit between <b>{fmt(useNostr ? nostrMinP1 : minP1)}</b> and <b>10,000,000</b> sats
+              Deposit between <b>{fmt(useNostr ? nostrMinP1 : minP1)}</b> and <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
               <br />
               Set player name on the payment note
               <br />
@@ -464,7 +417,7 @@ export default function GameMenu() {
                   id="qrcodeNostr"
                   className="qrcode"
                   value={`nostr:${nostrNote1}`}
-                  size={180}
+                  size={QR_CODE_CARD_SIZE}
                   level="M"
                   includeMargin={false}
                 />
@@ -489,7 +442,7 @@ export default function GameMenu() {
               <div className="inline playerSquare black" />
             </div>
             <div className="deposit-message">
-              Deposit between <b>{fmt(useNostr ? nostrMinP2 : minP2)}</b> and <b>10,000,000</b> sats
+              Deposit between <b>{fmt(useNostr ? nostrMinP2 : minP2)}</b> and <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
               <br />
               Set player name on the payment note
               <br />

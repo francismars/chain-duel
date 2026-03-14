@@ -2,12 +2,15 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 
-interface MigrationFallbackProps {
+interface FeatureUnavailableFallbackProps {
   title: string;
   subtitle: string;
 }
 
-export function MigrationFallback({ title, subtitle }: MigrationFallbackProps) {
+export function FeatureUnavailableFallback({
+  title,
+  subtitle,
+}: FeatureUnavailableFallbackProps) {
   const navigate = useNavigate();
 
   return (

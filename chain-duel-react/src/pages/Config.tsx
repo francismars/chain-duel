@@ -146,7 +146,6 @@ export default function Config() {
     localStorage.removeItem('hostLNAddress');
     setHostName('default');
     setHostLNAddress('default');
-    console.log('Configuration has been reset.');
   };
 
   const handleHostNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

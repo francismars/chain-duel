@@ -89,14 +89,15 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
       setConnected(nextSocket.connected);
 
       // Remove only handlers attached by this hook instance.
-      if (lifecycleHandlersRef.current.connect) {
-        nextSocket.off('connect', lifecycleHandlersRef.current.connect);
+      const lifecycleHandlers = lifecycleHandlersRef.current;
+      if (lifecycleHandlers.connect) {
+        nextSocket.off('connect', lifecycleHandlers.connect);
       }
-      if (lifecycleHandlersRef.current.disconnect) {
-        nextSocket.off('disconnect', lifecycleHandlersRef.current.disconnect);
+      if (lifecycleHandlers.disconnect) {
+        nextSocket.off('disconnect', lifecycleHandlers.disconnect);
       }
-      if (lifecycleHandlersRef.current.connectError) {
-        nextSocket.off('connect_error', lifecycleHandlersRef.current.connectError);
+      if (lifecycleHandlers.connectError) {
+        nextSocket.off('connect_error', lifecycleHandlers.connectError);
       }
 
       const onSocketConnect = () => {
@@ -141,18 +142,20 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
     if (autoConnect) {
       connect();
     }
+    const handlers = lifecycleHandlersRef.current;
 
     return () => {
       // Cleanup only lifecycle listeners owned by this hook.
-      if (socketRef.current) {
-        if (lifecycleHandlersRef.current.connect) {
-          socketRef.current.off('connect', lifecycleHandlersRef.current.connect);
+      const socketCurrent = socketRef.current;
+      if (socketCurrent) {
+        if (handlers.connect) {
+          socketCurrent.off('connect', handlers.connect);
         }
-        if (lifecycleHandlersRef.current.disconnect) {
-          socketRef.current.off('disconnect', lifecycleHandlersRef.current.disconnect);
+        if (handlers.disconnect) {
+          socketCurrent.off('disconnect', handlers.disconnect);
         }
-        if (lifecycleHandlersRef.current.connectError) {
-          socketRef.current.off('connect_error', lifecycleHandlersRef.current.connectError);
+        if (handlers.connectError) {
+          socketCurrent.off('connect_error', handlers.connectError);
         }
       }
     };

@@ -2,7 +2,7 @@
  * Shared layout for Practice and P2P game setup pages.
  * Template: top = header brand, middle = game setup (rules + buttons), bottom = bottom info (player/prize).
  */
-import { RefObject, ReactNode } from 'react';
+import { RefObject, ReactNode, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { RulesSection } from './RulesSection';
@@ -26,10 +26,11 @@ export interface GameSetupLayoutProps {
   onCancelAbort: () => void;
   onCancelConfirm: () => void;
   statusMessage?: string;
-  mainMenuButtonRef: RefObject<HTMLButtonElement>;
-  startGameButtonRef: RefObject<HTMLButtonElement>;
-  cancelGameAbortRef: RefObject<HTMLButtonElement>;
-  cancelGameConfirmRef: RefObject<HTMLButtonElement>;
+  selectedButton?: 'mainMenuButton' | 'startgame' | 'cancelGameAbort' | 'cancelGameConfirm';
+  mainMenuButtonRef?: RefObject<HTMLButtonElement>;
+  startGameButtonRef?: RefObject<HTMLButtonElement>;
+  cancelGameAbortRef?: RefObject<HTMLButtonElement>;
+  cancelGameConfirmRef?: RefObject<HTMLButtonElement>;
   /** Bottom panel: player card(s), prize, etc. */
   children: ReactNode;
 }
@@ -46,12 +47,43 @@ export function GameSetupLayout({
   onCancelAbort,
   onCancelConfirm,
   statusMessage,
+  selectedButton,
   mainMenuButtonRef,
   startGameButtonRef,
   cancelGameAbortRef,
   cancelGameConfirmRef,
   children,
 }: GameSetupLayoutProps) {
+  const internalMainRef = useRef<HTMLButtonElement>(null);
+  const internalStartRef = useRef<HTMLButtonElement>(null);
+  const internalAbortRef = useRef<HTMLButtonElement>(null);
+  const internalConfirmRef = useRef<HTMLButtonElement>(null);
+
+  const refs = useMemo(
+    () => ({
+      mainMenuButton: mainMenuButtonRef ?? internalMainRef,
+      startgame: startGameButtonRef ?? internalStartRef,
+      cancelGameAbort: cancelGameAbortRef ?? internalAbortRef,
+      cancelGameConfirm: cancelGameConfirmRef ?? internalConfirmRef,
+    }),
+    [mainMenuButtonRef, startGameButtonRef, cancelGameAbortRef, cancelGameConfirmRef]
+  );
+
+  useEffect(() => {
+    if (!selectedButton) return;
+    const durations: Record<string, string> = {
+      mainMenuButton: selectedButton === 'mainMenuButton' ? '2s' : '0s',
+      startgame: selectedButton === 'startgame' ? '2s' : '0s',
+      cancelGameAbort: selectedButton === 'cancelGameAbort' ? '2s' : '0s',
+      cancelGameConfirm: selectedButton === 'cancelGameConfirm' ? '2s' : '0s',
+    };
+    (Object.keys(refs) as Array<keyof typeof refs>).forEach((key) => {
+      const node = refs[key].current;
+      if (!node) return;
+      node.style.animationDuration = durations[key];
+    });
+  }, [refs, selectedButton]);
+
   return (
     <div className={`game-setup-page ${pageClass}`}>
       {/* Top: header brand */}
@@ -78,7 +110,7 @@ export function GameSetupLayout({
 
           <div id="gameButtons">
             <Button
-              ref={mainMenuButtonRef}
+              ref={refs.mainMenuButton}
               id="mainmenubutton"
               type="button"
               className={mainMenuDisabled ? 'disabled' : ''}
@@ -87,7 +119,7 @@ export function GameSetupLayout({
               MAIN MENU
             </Button>
             <Button
-              ref={startGameButtonRef}
+              ref={refs.startgame}
               id="startgame"
               type="button"
               className={canStart ? '' : 'disabled'}
@@ -119,7 +151,7 @@ export function GameSetupLayout({
           </div>
           <div className="warning-actions">
             <Button
-              ref={cancelGameAbortRef}
+              ref={refs.cancelGameAbort}
               className="button half"
               id="cancelGameAbort"
               type="button"
@@ -128,7 +160,7 @@ export function GameSetupLayout({
               No
             </Button>
             <Button
-              ref={cancelGameConfirmRef}
+              ref={refs.cancelGameConfirm}
               className="button half"
               id="cancelGameConfirm"
               type="button"

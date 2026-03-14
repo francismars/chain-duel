@@ -1,5 +1,5 @@
 // Practice menu page – practice mode setup
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -7,11 +7,20 @@ import { GameSetupLayout } from '@/components/layout/GameSetupLayout';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useAudio, SFX } from '@/contexts/AudioContext';
-import type { LNURLP, SerializedGameInfo } from '@/types/socket';
-import { parseMenuResponse } from '@/lib/menuAdapters';
+import type { LNURLP, PlayerInfo, SerializedGameInfo } from '@/types/socket';
+import { useMenuSocketInfo } from '@/features/setup-menu/hooks/useMenuSocketInfo';
+import type { MenuParseResult } from '@/lib/menuAdapters';
+import { useSessionPersistence } from '@/shared/hooks/useSessionPersistence';
+import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
+import {
+  HIGHLIGHT_FLASH_TIMEOUT_MS,
+} from '@/shared/constants/timeouts';
+import {
+  PRACTICE_MIN_DEPOSIT_SATS,
+  SATS_DISPLAY_MAX,
+} from '@/shared/constants/payment';
+import { QR_CODE_PANEL_SIZE } from '@/shared/constants/ui';
 import './practicemenu.css';
-
-const MINDEPOSIT = 150;
 
 type ButtonSelected =
   | 'mainMenuButton'
@@ -34,36 +43,13 @@ export default function PracticeMenu() {
   const [highlightP1, setHighlightP1] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
 
-  const mainMenuButtonRef = useRef<HTMLButtonElement>(null);
-  const startGameButtonRef = useRef<HTMLButtonElement>(null);
-  const cancelGameAbortRef = useRef<HTMLButtonElement>(null);
-  const cancelGameConfirmRef = useRef<HTMLButtonElement>(null);
-  const expandKeyUpTimeRef = useRef<number>(0);
-  const backdropTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastKnownP1SatsRef = useRef(0);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useGamepad(true);
 
-  // Request practice menu infos when socket is connected
-  useEffect(() => {
-    if (!socket || !connected) return;
-    const hostLNAddress = localStorage.getItem('hostLNAddress');
-    const hostInfo = hostLNAddress ? { LNAddress: hostLNAddress } : undefined;
-    // Ensure listeners are attached before requesting menu infos.
-    const emitTimer = setTimeout(() => {
-      socket.emit('getPracticeMenuInfos', hostInfo);
-    }, 0);
-    const fallback = setTimeout(() => setLoading(false), 12000);
-    return () => {
-      clearTimeout(emitTimer);
-      clearTimeout(fallback);
-    };
-  }, [socket, connected]);
-
-  // Handle resGetPracticeMenuInfos
-  useEffect(() => {
-    if (!socket) return;
-    const handler = (body: unknown) => {
-      const parsed = parseMenuResponse(body);
+  const handleMenuParsed = useCallback(
+    (parsed: MenuParseResult) => {
       if (parsed.hasLnurlw) {
         navigate('/postgame', { replace: true });
         return;
@@ -71,20 +57,27 @@ export default function PracticeMenu() {
       if (parsed.payLinks.length > 0) {
         setPayLinks(parsed.payLinks);
         setStatusMessage('');
-        setLoading(false);
       } else {
         setPayLinks(null);
         setStatusMessage('Waiting for payment links from backend...');
-        setLoading(false);
       }
-    };
-    socket.on('resGetPracticeMenuInfos', handler);
-    return () => {
-      socket.off('resGetPracticeMenuInfos', handler);
-    };
-  }, [socket, navigate]);
+      setLoading(false);
+    },
+    [navigate]
+  );
 
-  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleMenuLoadingTimeout = useCallback(() => {
+    setLoading(false);
+  }, []);
+
+  useMenuSocketInfo({
+    socket,
+    connected,
+    requestEvent: 'getPracticeMenuInfos',
+    responseEvent: 'resGetPracticeMenuInfos',
+    onParsed: handleMenuParsed,
+    onLoadingTimeout: handleMenuLoadingTimeout,
+  });
 
   // Handle updatePayments
   useEffect(() => {
@@ -93,14 +86,20 @@ export default function PracticeMenu() {
       const players = body.players ?? {};
       const p1 = players['Player 1'];
       if (p1) {
-        if (p1.name != null && p1.name.trim() !== '') {
-          setP1Name(p1.name.trim());
-        }
+        setP1Name((prev) => resolvePracticeName(p1, prev || 'Player 1'));
         if (p1.value !== undefined) {
-          setPlayer1Sats(p1.value);
-          if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
-          setHighlightP1(true);
-          highlightTimeoutRef.current = setTimeout(() => setHighlightP1(false), 1200);
+          const nextSats = Number(p1.value);
+          const didValueChange = nextSats !== lastKnownP1SatsRef.current;
+          setPlayer1Sats(nextSats);
+          if (didValueChange) {
+            lastKnownP1SatsRef.current = nextSats;
+            if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+            setHighlightP1(true);
+            highlightTimeoutRef.current = setTimeout(
+              () => setHighlightP1(false),
+              HIGHLIGHT_FLASH_TIMEOUT_MS
+            );
+          }
         }
       }
     };
@@ -111,42 +110,10 @@ export default function PracticeMenu() {
     };
   }, [socket]);
 
-  // Session persistence
-  useEffect(() => {
-    if (!socket) return;
-    const handler = ({
-      sessionID,
-    }: { sessionID: string; userID: string }) => {
-      sessionStorage.setItem('sessionID', sessionID);
-    };
-    socket.on('session', handler);
-    return () => {
-      socket.off('session', handler);
-    };
-  }, [socket]);
-
-  // Button animation based on selection
-  useEffect(() => {
-    if (mainMenuButtonRef.current) {
-      mainMenuButtonRef.current.style.animationDuration =
-        buttonSelected === 'mainMenuButton' ? '2s' : '0s';
-    }
-    if (startGameButtonRef.current) {
-      startGameButtonRef.current.style.animationDuration =
-        buttonSelected === 'startgame' ? '2s' : '0s';
-    }
-    if (cancelGameAbortRef.current) {
-      cancelGameAbortRef.current.style.animationDuration =
-        buttonSelected === 'cancelGameAbort' ? '2s' : '0s';
-    }
-    if (cancelGameConfirmRef.current) {
-      cancelGameConfirmRef.current.style.animationDuration =
-        buttonSelected === 'cancelGameConfirm' ? '2s' : '0s';
-    }
-  }, [buttonSelected]);
+  useSessionPersistence(socket);
 
   useEffect(() => {
-    if (player1Sats >= MINDEPOSIT) {
+    if (player1Sats >= PRACTICE_MIN_DEPOSIT_SATS) {
       setButtonSelected('startgame');
     }
   }, [player1Sats]);
@@ -158,7 +125,7 @@ export default function PracticeMenu() {
         e.preventDefault();
         playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
-          if (player1Sats >= MINDEPOSIT) {
+          if (player1Sats >= PRACTICE_MIN_DEPOSIT_SATS) {
             navigate('/game');
           }
         } else if (buttonSelected === 'mainMenuButton') {
@@ -189,34 +156,18 @@ export default function PracticeMenu() {
         }
       }
     };
-    const EXPAND_DEBOUNCE_MS = 180;
-    const SCALE_DOWN_MS = 250;
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'ControlLeft') {
-        expandKeyUpTimeRef.current = Date.now();
-        setPlayerCardExpanded(false);
-        if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
-        backdropTimeoutRef.current = setTimeout(() => setQrBackdropVisible(false), SCALE_DOWN_MS);
-      }
-    };
-    const handleKeyDownControl = (e: KeyboardEvent) => {
-      if (e.code === 'ControlLeft') {
-        if (Date.now() - expandKeyUpTimeRef.current < EXPAND_DEBOUNCE_MS) return;
-        if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
-        setPlayerCardExpanded(true);
-        setQrBackdropVisible(true);
-      }
-    };
+
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keydown', handleKeyDownControl);
-    window.addEventListener('keyup', handleKeyUp);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keydown', handleKeyDownControl);
-      window.removeEventListener('keyup', handleKeyUp);
-      if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
     };
   }, [buttonSelected, player1Sats, socket, navigate, playSfx]);
+
+  useQrExpandState({
+    dualControls: false,
+    onExpandedChange: (expanded) => setPlayerCardExpanded(Boolean(expanded.left)),
+    onBackdropVisibleChange: setQrBackdropVisible,
+  });
 
   const player1PayLink = payLinks?.find((p) => p.description === 'Player 1');
   const minDeposit = player1PayLink?.min ?? 250;
@@ -224,8 +175,8 @@ export default function PracticeMenu() {
     ? minDeposit.toLocaleString()
     : String(minDeposit);
   const lnurlp = player1PayLink?.lnurlp ?? '';
-  const canStart = player1Sats >= MINDEPOSIT;
-  const mainMenuDisabled = player1Sats >= MINDEPOSIT;
+  const canStart = player1Sats >= PRACTICE_MIN_DEPOSIT_SATS;
+  const mainMenuDisabled = player1Sats >= PRACTICE_MIN_DEPOSIT_SATS;
 
   return (
     <>
@@ -260,10 +211,7 @@ export default function PracticeMenu() {
           socket?.emit('cancelp2p');
           navigate('/', { replace: true });
         }}
-        mainMenuButtonRef={mainMenuButtonRef}
-        startGameButtonRef={startGameButtonRef}
-        cancelGameAbortRef={cancelGameAbortRef}
-        cancelGameConfirmRef={cancelGameConfirmRef}
+        selectedButton={buttonSelected}
       >
         {qrBackdropVisible && (
           <div
@@ -306,7 +254,7 @@ export default function PracticeMenu() {
                   id="qrcode1"
                   className="qrcode"
                   value={lnurlp}
-                  size={800}
+                  size={QR_CODE_PANEL_SIZE}
                   level="M"
                   includeMargin={false}
                 />
@@ -331,7 +279,7 @@ export default function PracticeMenu() {
             </div>
             <div className="deposit-message">
               Deposit between <b><span id="mindepP1_">{minDepositFormatted}</span></b> and{' '}
-              <b>10,000,000</b> sats
+              <b>{SATS_DISPLAY_MAX.toLocaleString()}</b> sats
               <br />
               Set player name on the payment note
               <br />
@@ -346,4 +294,16 @@ export default function PracticeMenu() {
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </>
   );
+}
+
+function resolvePracticeName(player: PlayerInfo | undefined, fallback: string) {
+  if (!player) return fallback;
+  const direct = String(player.name ?? '').trim();
+  if (direct) return direct;
+  if (!Array.isArray(player.payments)) return fallback;
+  for (let i = player.payments.length - 1; i >= 0; i -= 1) {
+    const note = player.payments[i]?.note;
+    if (typeof note === 'string' && note.trim() !== '') return note.trim();
+  }
+  return fallback;
 }
