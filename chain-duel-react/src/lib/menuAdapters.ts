@@ -55,7 +55,7 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
   }
 
   const payLinks: LNURLP[] = items
-    .map((item) => {
+    .map((item): LNURLP | null => {
       if (!item || typeof item !== 'object') return null;
       const src = item as Record<string, unknown>;
       const lnurlp =
@@ -73,7 +73,7 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
         mode: typeof src.mode === 'string' ? (src.mode as LNURLP['mode']) : undefined,
         hostLNAddress:
           typeof src.hostLNAddress === 'string' ? src.hostLNAddress : undefined,
-      } satisfies LNURLP;
+      };
     })
     .filter((entry): entry is LNURLP => entry !== null);
 

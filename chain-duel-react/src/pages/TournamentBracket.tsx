@@ -6,6 +6,19 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
+import {
+  computeBracketState,
+  computeFinalPrize,
+  computeRefundPerPlayer,
+  INITIAL_POSITIONS,
+} from '@/features/tournament/bracketModel';
+import { useTournamentSocketEvents } from '@/features/tournament/hooks/useTournamentSocketEvents';
+import { asSocketBoundary } from '@/shared/socket/socketBoundary';
+import {
+  TOURNAMENT_DEFAULT_BUY_IN_SATS,
+  TOURNAMENT_MIN_PLAYERS,
+} from '@/shared/constants/payment';
+import { createLogger } from '@/shared/utils/logger';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import './tournbracket.css';
@@ -15,84 +28,10 @@ function stripSvgStyle(svgText: string): string {
   return svgText.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
 }
 
-// Maps player slot index → SVG element id prefix (matches legacy initialPositions array).
-// First numberOfPlayers entries = initial player slots (G1_P1..G{n/2}_P2).
-// Next entries = advancing winner slots used in updateBracketWinner.
-// Full array (62 entries) supports up to 32-player brackets.
-const INITIAL_POSITIONS = [
-  'G1_P1','G1_P2','G2_P1','G2_P2','G3_P1','G3_P2','G4_P1','G4_P2',
-  'G5_P1','G5_P2','G6_P1','G6_P2','G7_P1','G7_P2','G8_P1','G8_P2',
-  'G9_P1','G9_P2','G10_P1','G10_P2','G11_P1','G11_P2','G12_P1','G12_P2',
-  'G13_P1','G13_P2','G14_P1','G14_P2','G15_P1','G15_P2','G16_P1','G16_P2',
-  'G17_P1','G17_P2','G18_P1','G18_P2','G19_P1','G19_P2','G20_P1','G20_P2',
-  'G21_P1','G21_P2','G22_P1','G22_P2','G23_P1','G23_P2','G24_P1','G24_P2',
-  'G25_P1','G25_P2','G26_P1','G26_P2','G27_P1','G27_P2','G28_P1','G28_P2',
-  'G29_P1','G29_P2','G30_P1','G30_P2','G31_P1','G31_P2',
-];
-
-/**
- * Compute next-game player names and full tournament champion from the
- * winnersList and playersList. Mirrors legacy updateBracketWinner /
- * updateNextGameText logic.
- *
- * The bracket is a power-of-2 single-elimination. WinnerNames accumulates as
- * games are played and each new round pairs adjacent accumulated winners:
- *   Round 1 (i < round1):        playersList[i*2] vs playersList[i*2+1]
- *   Later rounds (i >= round1):  WinnerNames[(i-round1)*2] vs WinnerNames[(i-round1)*2+1]
- */
-function computeBracketState(
-  playersList: string[],
-  winnersList: string[],
-  numberOfPlayers: number,
-): {
-  WinnerNames: string[];
-  nextGameNumber: number;
-  nextP1: string;
-  nextP2: string;
-  champion: string;
-} {
-  const round1 = Math.max(1, Math.floor(numberOfPlayers / 2));
-  const WinnerNames: string[] = [];
-
-  for (let i = 0; i < winnersList.length; i++) {
-    if (i + 1 >= numberOfPlayers) break;
-    const w = winnersList[i];
-    let name = '';
-    if (i < round1) {
-      name = w === 'Player 1' ? (playersList[i * 2] ?? '') : (playersList[i * 2 + 1] ?? '');
-    } else {
-      const p1i = (i - round1) * 2;
-      name = w === 'Player 1' ? (WinnerNames[p1i] ?? '') : (WinnerNames[p1i + 1] ?? '');
-    }
-    WinnerNames.push(name);
-  }
-
-  const isDone = winnersList.length >= numberOfPlayers - 1;
-  const champion = isDone ? (WinnerNames[WinnerNames.length - 1] ?? '') : '';
-  const nextIdx = winnersList.length;
-  const gameNumber = nextIdx + 1;
-
-  if (isDone) {
-    return { WinnerNames, nextGameNumber: gameNumber, nextP1: '', nextP2: '', champion };
-  }
-
-  let nextP1 = '';
-  let nextP2 = '';
-  if (nextIdx < round1) {
-    nextP1 = playersList[nextIdx * 2] ?? '';
-    nextP2 = playersList[nextIdx * 2 + 1] ?? '';
-  } else {
-    const p1i = (nextIdx - round1) * 2;
-    nextP1 = WinnerNames[p1i] ?? '';
-    nextP2 = WinnerNames[p1i + 1] ?? '';
-  }
-
-  return { WinnerNames, nextGameNumber: gameNumber, nextP1, nextP2, champion };
-}
-
 type PanelView = 'payment' | 'confirm-cancel' | 'refunding';
 
 export default function TournamentBracket() {
+  const logger = useMemo(() => createLogger('TournamentBracket'), []);
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { socket } = useSocket();
@@ -108,7 +47,6 @@ export default function TournamentBracket() {
   const [loading, setLoading] = useState(true);
   const [highlightDeposit, setHighlightDeposit] = useState(false);
   const [preStartReady, setPreStartReady] = useState(false);
-  const firstPayloadLoadedRef = useRef(false);
 
   // In-progress tournament state
   const [winnersList, setWinnersList] = useState<string[]>([]);
@@ -126,10 +64,16 @@ export default function TournamentBracket() {
   const startGameBtnRef = useRef<HTMLButtonElement>(null);
   const claimBtnRef = useRef<HTMLButtonElement>(null);
 
-  const numberOfPlayersFromUrl = Math.max(4, parseInt(params.get('players') || '4', 10) || 4);
+  const numberOfPlayersFromUrl = Math.max(
+    TOURNAMENT_MIN_PLAYERS,
+    parseInt(params.get('players') || String(TOURNAMENT_MIN_PLAYERS), 10) || TOURNAMENT_MIN_PLAYERS
+  );
   const [numberOfPlayers, setNumberOfPlayers] = useState(numberOfPlayersFromUrl);
-  const parsedDeposit = parseInt(params.get('deposit') || '10000', 10);
-  const urlDeposit = Number.isFinite(parsedDeposit) && parsedDeposit > 0 ? parsedDeposit : 10000;
+  const parsedDeposit = parseInt(params.get('deposit') || String(TOURNAMENT_DEFAULT_BUY_IN_SATS), 10);
+  const urlDeposit =
+    Number.isFinite(parsedDeposit) && parsedDeposit > 0
+      ? parsedDeposit
+      : TOURNAMENT_DEFAULT_BUY_IN_SATS;
   const [deposit, setDeposit] = useState(urlDeposit);
 
   // Reset all server-derived state whenever URL params change
@@ -147,15 +91,14 @@ export default function TournamentBracket() {
     setHighlightDeposit(false);
     setWinnersList([]);
     setPreStartReady(false);
-    firstPayloadLoadedRef.current = false;
     timesWithdrawnRef.current = 0;
   }, [urlDeposit, numberOfPlayersFromUrl]);
 
   // Displayed buy-in follows URL by default, then backend min when provided.
-  const finalPrize = Math.floor(numberOfPlayers * deposit * 0.95);
+  const finalPrize = computeFinalPrize(numberOfPlayers, deposit);
   const paidCount = Object.keys(playersPaid).length;
   const canStart = paidCount >= numberOfPlayers;
-  const refundPerPlayer = Math.floor(deposit * 0.95);
+  const refundPerPlayer = computeRefundPerPlayer(deposit);
 
   // Flat player name array by slot index (mirrors legacy playersList)
   const playersList = useMemo<string[]>(() => {
@@ -186,6 +129,85 @@ export default function TournamentBracket() {
     if (numberOfPlayers === 32) return '/images/tournament/svg/32_player.svg';
     return '/images/tournament/svg/4_player.svg';
   }, [numberOfPlayers]);
+
+  const handleTournamentInfos = useCallback(
+    (d: {
+      gameInfo?: {
+        numberOfPlayers?: number;
+        winners?: string[];
+        players?: Record<string, { name?: string }>;
+      };
+      lnurlp?: string;
+      lnurlw?: string;
+      min?: number;
+      claimedCount?: number;
+    }) => {
+      if (d.gameInfo?.numberOfPlayers) setNumberOfPlayers(d.gameInfo.numberOfPlayers);
+      if (d.min != null && Number.isFinite(Number(d.min))) {
+        setDeposit(parseInt(String(d.min), 10));
+      }
+      if (d.lnurlp) setPayLink(d.lnurlp);
+      if (d.gameInfo?.players) setPlayersPaid(d.gameInfo.players);
+
+      if (d.gameInfo?.winners && d.gameInfo.winners.length > 0) {
+        setWinnersList(d.gameInfo.winners as string[]);
+        setPreStartReady(false);
+        setShowPaymentPanel(false);
+      } else {
+        setShowPaymentPanel(true);
+      }
+
+      if (d.lnurlw) {
+        const seq = d.gameInfo?.players
+          ? Object.values(d.gameInfo.players).map((p) => p.name ?? '').filter(Boolean)
+          : [];
+        const claimed = d.claimedCount ?? 0;
+        const remaining = seq.slice(claimed);
+        if (remaining.length === 0) {
+          navigate('/tournprefs');
+        } else {
+          setPlayerListSequential(remaining);
+          setWithdrawLnurl(d.lnurlw);
+          setPanelView('refunding');
+          setShowPaymentPanel(true);
+        }
+      }
+    },
+    [navigate]
+  );
+
+  const handleTournamentPayments = useCallback((players: Record<string, { name?: string }>) => {
+    setPlayersPaid(players);
+    setHighlightDeposit(true);
+    setTimeout(() => setHighlightDeposit(false), 1200);
+  }, []);
+
+  const handleTournamentCancel = useCallback(
+    (d: { depositcount: number; lnurlw?: string }) => {
+      if (d.depositcount === 0 || !d.lnurlw) {
+        navigate('/tournprefs');
+        return;
+      }
+      setPlayersPaid((current) => {
+        const seq = Object.values(current).map((p) => p.name ?? '').filter(Boolean);
+        setPlayerListSequential(seq);
+        return current;
+      });
+      setWithdrawLnurl(d.lnurlw);
+      setShowPaymentPanel(true);
+      setPanelView('refunding');
+    },
+    [navigate]
+  );
+
+  const handlePrizeWithdrawn = useCallback(() => {
+    timesWithdrawnRef.current += 1;
+    setPlayerListSequential((prev) => {
+      const next = prev.slice(1);
+      if (next.length === 0) navigate('/tournprefs');
+      return next;
+    });
+  }, [navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -316,139 +338,16 @@ export default function TournamentBracket() {
     }
   }, [winnersList, svgMarkup, numberOfPlayers, playersList, preStartReady]);
 
-  useEffect(() => {
-    if (!socket) return;
-    const s = socket as unknown as {
-      emit: (event: string, payload?: unknown) => void;
-      on: (event: string, cb: (...args: unknown[]) => void) => void;
-      off: (event: string, cb: (...args: unknown[]) => void) => void;
-      connected: boolean;
-    };
-
-    const onInfos = (data: unknown) => {
-      firstPayloadLoadedRef.current = true;
-      setLoading(false);
-      const d = data as {
-        lnurlp?: string;
-        lnurlw?: string;
-        min?: number;
-        gameInfo?: {
-          numberOfPlayers?: number;
-          winners?: unknown[];
-          players?: Record<string, { name?: string }>;
-        };
-      };
-      // Server may know the authoritative player count
-      if (d.gameInfo?.numberOfPlayers) setNumberOfPlayers(d.gameInfo.numberOfPlayers);
-      if (d.min != null && Number.isFinite(Number(d.min))) {
-        setDeposit(parseInt(String(d.min), 10));
-      }
-      if (d.lnurlp) setPayLink(d.lnurlp);
-      if (d.gameInfo?.players) setPlayersPaid(d.gameInfo.players);
-
-      if (d.gameInfo?.winners && d.gameInfo.winners.length > 0) {
-        // Tournament in progress – hide payment panel, show next-game / finished UI
-        setWinnersList(d.gameInfo.winners as string[]);
-        setPreStartReady(false);
-        setShowPaymentPanel(false);
-      } else {
-        // No winners yet – show payment panel (tournament not started)
-        setShowPaymentPanel(true);
-      }
-
-      // lnurlw present means a cancel/refund was already in progress
-      if (d.lnurlw) {
-        const seq = d.gameInfo?.players
-          ? Object.values(d.gameInfo.players).map((p) => p.name ?? '').filter(Boolean)
-          : [];
-        const claimed = (d as { claimedCount?: number }).claimedCount ?? 0;
-        const remaining = seq.slice(claimed);
-        if (remaining.length === 0) {
-          navigate('/tournprefs');
-        } else {
-          setPlayerListSequential(remaining);
-          setWithdrawLnurl(d.lnurlw);
-          setPanelView('refunding');
-          setShowPaymentPanel(true);
-        }
-      }
-    };
-
-    const onPayments = (data: unknown) => {
-      const d = data as { players?: Record<string, { name?: string }> };
-      if (d.players) {
-        firstPayloadLoadedRef.current = true;
-        setLoading(false);
-        setPlayersPaid(d.players);
-        // Lightning animation on the deposits counter (matches legacy)
-        setHighlightDeposit(true);
-        setTimeout(() => setHighlightDeposit(false), 1200);
-      }
-    };
-
-    const onCancelTourn = (data: unknown) => {
-      setLoading(false);
-      const d = data as { depositcount: number; lnurlw?: string };
-      if (d.depositcount === 0 || !d.lnurlw) {
-        navigate('/tournprefs');
-        return;
-      }
-      setPlayersPaid((current) => {
-        const seq = Object.values(current).map((p) => p.name ?? '').filter(Boolean);
-        setPlayerListSequential(seq);
-        return current;
-      });
-      setWithdrawLnurl(d.lnurlw);
-      setShowPaymentPanel(true);
-      setPanelView('refunding');
-    };
-
-    const onPrizeWithdrawn = () => {
-      setLoading(false);
-      timesWithdrawnRef.current += 1;
-      setPlayerListSequential((prev) => {
-        const next = prev.slice(1);
-        if (next.length === 0) navigate('/tournprefs');
-        return next;
-      });
-    };
-
-    // Re-emit getTournamentInfos on reconnect so the server re-subscribes this
-    // socket to the tournament room. Only fires on (re)connect; the initial emit
-    // is handled below (guarded by s.connected to avoid double-firing).
-    const onReconnect = () => {
-      if (!firstPayloadLoadedRef.current) setLoading(true);
-      const hostLNAddr = localStorage.getItem('hostLNAddress') || undefined;
-      s.emit('getTournamentInfos', { buyin: urlDeposit, players: numberOfPlayersFromUrl, hostLNAddress: hostLNAddr });
-    };
-
-    s.on('resGetTournamentInfos', onInfos);
-    s.on('updatePayments', onPayments);
-    s.on('rescanceltourn', onCancelTourn);
-    s.on('prizeWithdrawn', onPrizeWithdrawn);
-    s.on('connect', onReconnect);
-
-    // Emit immediately when already connected; otherwise let onReconnect handle
-    // the first connect event to avoid double-firing (buffered emit + connect handler).
-    const hostLNAddress = localStorage.getItem('hostLNAddress') || undefined;
-    if (s.connected) {
-      s.emit('getTournamentInfos', { buyin: urlDeposit, players: numberOfPlayersFromUrl, hostLNAddress });
-    }
-
-    // Legacy-like loading overlay with safety timeout.
-    const loadingTimer = window.setTimeout(() => setLoading(false), 12000);
-
-    return () => {
-      window.clearTimeout(loadingTimer);
-      s.off('resGetTournamentInfos', onInfos);
-      s.off('updatePayments', onPayments);
-      s.off('rescanceltourn', onCancelTourn);
-      s.off('prizeWithdrawn', onPrizeWithdrawn);
-      s.off('connect', onReconnect);
-    };
-    // connected intentionally excluded: matching PostGame.tsx pattern where listeners
-    // outlive connection-state changes, preventing the race window where events are missed.
-  }, [socket, urlDeposit, numberOfPlayersFromUrl, navigate]);
+  useTournamentSocketEvents({
+    socket,
+    urlDeposit,
+    numberOfPlayersFromUrl,
+    onLoading: setLoading,
+    onInfos: handleTournamentInfos,
+    onPayments: handleTournamentPayments,
+    onCancel: handleTournamentCancel,
+    onPrizeWithdrawn: handlePrizeWithdrawn,
+  });
 
   function handleCancel() {
     // Legacy behavior: Cancel always opens the refund confirmation view first.
@@ -463,19 +362,13 @@ export default function TournamentBracket() {
   }
 
   function handleConfirmCancel() {
-    if (!socket) return;
+    const s = asSocketBoundary(socket);
+    if (!s) return;
     // Legacy shows loading while waiting for rescanceltourn.
     setLoading(true);
-    const s = socket as unknown as {
-      emit: (event: string) => void;
-      connected?: boolean;
-      connect?: () => void;
-      once?: (event: 'connect', cb: () => void) => void;
-    };
 
     const emitCancel = () => {
-      // Keep this log until parity is fully stabilized.
-      console.log('[TournamentBracket] emitting canceltournament');
+      logger.debug('emitting canceltournament');
       s.emit('canceltournament');
     };
 
@@ -484,7 +377,7 @@ export default function TournamentBracket() {
       return;
     }
 
-    console.log('[TournamentBracket] socket not connected, waiting connect for canceltournament');
+    logger.debug('socket not connected, waiting connect for canceltournament');
     s.once?.('connect', emitCancel);
     s.connect?.();
   }

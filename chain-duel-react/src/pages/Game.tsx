@@ -1,25 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import {
-  canContinueAfterGame,
   createGameState,
   createNewCoinbase,
   getHudState,
-  getMetaFromDuel,
-  setWantedDirection,
-  startCountdown,
-  stepGame,
 } from '@/game/engine';
 import type { GameState } from '@/game/engine/types';
-import { STEP_SPEED_MS } from '@/game/engine/constants';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { startMempoolFeed, type BitcoinDetails } from '@/game/io/mempool';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
-import { PlayerRole, type SerializedGameInfo } from '@/types/socket';
-import { SocketValidators } from '@/lib/socketValidation';
+import { useAudio } from '@/contexts/AudioContext';
+import { PlayerRole } from '@/types/socket';
+import { useGameSocketEvents } from '@/features/game/hooks/useGameSocketEvents';
+import { useGameRenderBridge } from '@/features/game/hooks/useGameRenderBridge';
+import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
+import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import './game.css';
 
 interface ZapMessage {
@@ -45,6 +43,7 @@ const DEFAULT_BITCOIN_DETAILS: BitcoinDetails = {
 export default function Game() {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
+  const { stop } = useAudio();
   useGamepad(true);
 
   const stateRef = useRef<GameState | null>(null);
@@ -54,8 +53,6 @@ export default function Game() {
     audioRef.current = new GameAudioSystem();
   }
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const gameLoopRef = useRef<number | null>(null);
-  const frameRef = useRef<number | null>(null);
   const winnerSentRef = useRef(false);
   const localBootRef = useRef(false);
   const captureP1Ref = useRef('2%');
@@ -80,13 +77,12 @@ export default function Game() {
   const [bitcoin, setBitcoin] = useState<BitcoinDetails>(DEFAULT_BITCOIN_DETAILS);
   const [footerHighlight, setFooterHighlight] = useState(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
-  const [isTournament, setIsTournament] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
 
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
   const canShowP2Image = useMemo(() => player2Img.length > 0, [player2Img]);
 
-  const bootstrapLocalGame = () => {
+  const bootstrapLocalGame = useCallback(() => {
     if (localBootRef.current) return;
     localBootRef.current = true;
     const state = createGameState({
@@ -105,7 +101,6 @@ export default function Game() {
     setP1Points(1000);
     setP2Points(1000);
     setGameInfo('Practice');
-    setIsTournament(false);
 
     const hud = getHudState(state);
     setCaptureP1(hud.captureP1);
@@ -118,7 +113,12 @@ export default function Game() {
     setCurrentP2Width(hud.currentWidthP2);
     setLoading(false);
     audioRef.current?.startMusic();
-  };
+  }, []);
+
+  useEffect(() => {
+    // Ensure menu background music is stopped when entering gameplay.
+    stop();
+  }, [stop]);
 
   useEffect(() => {
     const previousImage = document.body.style.backgroundImage;
@@ -143,20 +143,31 @@ export default function Game() {
         if (loading && !stateRef.current) {
           bootstrapLocalGame();
         }
-      }, 1200);
+      }, GAME_BOOTSTRAP_TIMEOUT_MS);
       return () => window.clearTimeout(noSocketTimer);
     }
     socket.emit('getDuelInfos');
-  }, [socket, connected, loading]);
+  }, [socket, connected, loading, bootstrapLocalGame]);
 
-  useEffect(() => {
+  const emitWinner = useCallback((winner: 'P1' | 'P2') => {
     if (!socket) return;
-    const onDuel = (payload: unknown) => {
-      const validated = SocketValidators.resGetDuelInfos(payload);
-      if (!validated.success) return;
-      localBootRef.current = true;
-      const data = validated.data;
-      const info = resolveDuelInfo(data);
+    socket.emit(
+      'gameFinished',
+      winner === 'P1' ? PlayerRole.Player1 : PlayerRole.Player2
+    );
+  }, [socket]);
+
+  const handleSetGameHeader = useCallback(
+    (info: {
+      p1Name: string;
+      p2Name: string;
+      p1Picture: string;
+      p2Picture: string;
+      p1Points: number;
+      p2Points: number;
+      gameLabel: string;
+      isTournament: boolean;
+    }) => {
       setPlayer1Name(info.p1Name);
       setPlayer2Name(info.p2Name);
       setPlayer1Img(info.p1Picture);
@@ -164,22 +175,19 @@ export default function Game() {
       setP1Points(info.p1Points);
       setP2Points(info.p2Points);
       setGameInfo(info.gameLabel);
-      setIsTournament(info.isTournament);
+    },
+    []
+  );
 
-      const meta = getMetaFromDuel(data.mode);
-      const state = createGameState({
-        p1Name: info.p1Name,
-        p2Name: info.p2Name,
-        p1Points: info.p1Points,
-        p2Points: info.p2Points,
-        modeLabel: info.gameLabel,
-        practiceMode: meta.practiceMode || info.practiceMode,
-        isTournament: info.isTournament,
-      });
-      stateRef.current = state;
-      winnerSentRef.current = false;
-
-      const hud = getHudState(state);
+  const handleHudSync = useCallback(
+    (hud: {
+      captureP1: string;
+      captureP2: string;
+      initialWidthP1: number;
+      initialWidthP2: number;
+      currentWidthP1: number;
+      currentWidthP2: number;
+    }) => {
       setCaptureP1(hud.captureP1);
       setCaptureP2(hud.captureP2);
       captureP1Ref.current = hud.captureP1;
@@ -188,132 +196,103 @@ export default function Game() {
       setInitialP2Width(hud.initialWidthP2);
       setCurrentP1Width(hud.currentWidthP1);
       setCurrentP2Width(hud.currentWidthP2);
-      setLoading(false);
-      audioRef.current?.startMusic();
-    };
-    const onUpdate = (payload: unknown) => {
-      const validated = SocketValidators.updatePayments(payload);
-      if (!validated.success) return;
-      const data = validated.data;
-      const p1 = data.players['Player 1'];
-      const p2 = data.players['Player 2'];
-      if (p1?.value != null) setP1Points(Math.floor(p1.value));
-      if (p2?.value != null) setP2Points(Math.floor(p2.value));
-    };
-    const onZap = (payload: unknown) => {
-      const data = parseZap(payload);
-      if (!data) return;
-      setZapMessages((prev) => [
-        ...prev,
-        {
-          ...data,
-          id: `zap-${Date.now()}-${prev.length}`,
-          top: 18,
-          hidden: true,
-        },
-      ]);
-    };
-    socket.on('resGetDuelInfos', onDuel);
-    socket.on('updatePayments', onUpdate);
-    socket.on('zapReceived', onZap);
-    const duelTimeout = window.setTimeout(() => {
-      if (loading && !stateRef.current) {
-        bootstrapLocalGame();
-      }
-    }, 2000);
-    return () => {
-      window.clearTimeout(duelTimeout);
-      socket.off('resGetDuelInfos', onDuel);
-      socket.off('updatePayments', onUpdate);
-      socket.off('zapReceived', onZap);
-    };
-  }, [socket, loading]);
+    },
+    []
+  );
 
-  useEffect(() => {
-    if (!hostRef.current || !stateRef.current || loading) return;
-    let mounted = true;
-    const audio = audioRef.current;
-    const renderer = new PixiGameRenderer();
-    rendererRef.current = renderer;
-    void renderer.mount(hostRef.current).then(() => {
-      if (!mounted) return;
-      renderer.resize();
-      const onResize = () => renderer.resize();
-      window.addEventListener('resize', onResize);
-      return () => window.removeEventListener('resize', onResize);
-    });
+  const handleLoadingResolved = useCallback(() => {
+    setLoading(false);
+    audioRef.current?.startMusic();
+  }, []);
 
-    gameLoopRef.current = window.setInterval(() => {
-      const state = stateRef.current;
-      if (!state) return;
-      const prevCountdown = state.countdownTicks;
-      const prevP1Len = state.p1.body.length;
-      const prevP2Len = state.p2.body.length;
-      const prevP1Head = [...state.p1.head] as [number, number];
-      const prevP2Head = [...state.p2.head] as [number, number];
+  const handlePointsUpdated = useCallback((data: {
+    players: Record<string, { value?: number }>;
+  }) => {
+    const p1 = data.players['Player 1'];
+    const p2 = data.players['Player 2'];
+    if (p1?.value != null) setP1Points(Math.floor(p1.value));
+    if (p2?.value != null) setP2Points(Math.floor(p2.value));
+  }, []);
 
-      const result = stepGame(state);
-      const hud = getHudState(state);
-      setP1Points(hud.p1Points);
-      setP2Points(hud.p2Points);
-      if (hud.captureP1 !== captureP1Ref.current) {
-        setCaptureP1Highlight(true);
-        window.setTimeout(() => setCaptureP1Highlight(false), 100);
-      }
-      if (hud.captureP2 !== captureP2Ref.current) {
-        setCaptureP2Highlight(true);
-        window.setTimeout(() => setCaptureP2Highlight(false), 100);
-      }
-      setCaptureP1(hud.captureP1);
-      setCaptureP2(hud.captureP2);
-      captureP1Ref.current = hud.captureP1;
-      captureP2Ref.current = hud.captureP2;
-      setCurrentP1Width(hud.currentWidthP1);
-      setCurrentP2Width(hud.currentWidthP2);
+  const handleZapReceived = useCallback((data: {
+    username: string;
+    content: string;
+    amount: number;
+    profile: string;
+    scale: number;
+  }) => {
+    setZapMessages((prev) => [
+      ...prev,
+      {
+        ...data,
+        id: `zap-${Date.now()}-${prev.length}`,
+        top: 18,
+        hidden: true,
+      },
+    ]);
+  }, []);
 
-      if (state.countdownStart && state.countdownTicks !== prevCountdown) {
-        audio?.playCountdownTick(state.countdownTicks);
-      }
-      if (state.p1.body.length > prevP1Len) {
-        audio?.playCapture(state.p1.body.length);
-      }
-      if (state.p2.body.length > prevP2Len) {
-        audio?.playCapture(state.p2.body.length);
-      }
-      if ((prevP1Head[0] !== 6 || prevP1Head[1] !== 12) && state.p1.head[0] === 6 && state.p1.head[1] === 12) {
-        audio?.playReset('P1');
-      }
-      if ((prevP2Head[0] !== 44 || prevP2Head[1] !== 12) && state.p2.head[0] === 44 && state.p2.head[1] === 12) {
-        audio?.playReset('P2');
-      }
-      // Legacy behavior: emit winner once whenever game has ended and winner is known.
-      // Do not depend only on transition flags to avoid missed emits.
-      if (state.gameFinished && state.winnerPlayer && socket && !winnerSentRef.current) {
-        socket.emit(
-          'gameFinished',
-          state.winnerPlayer === 'P1' ? PlayerRole.Player1 : PlayerRole.Player2
-        );
-        winnerSentRef.current = true;
-      }
-    }, STEP_SPEED_MS);
+  const createRenderer = useCallback(() => new PixiGameRenderer(), []);
 
-    const frame = () => {
-      const state = stateRef.current;
-      if (state && rendererRef.current) {
-        rendererRef.current.render(state);
-      }
-      frameRef.current = window.requestAnimationFrame(frame);
-    };
-    frameRef.current = window.requestAnimationFrame(frame);
+  const handleHudTick = useCallback((hud: {
+    p1Points: number;
+    p2Points: number;
+    captureP1: string;
+    captureP2: string;
+    currentWidthP1: number;
+    currentWidthP2: number;
+  }) => {
+    setP1Points(hud.p1Points);
+    setP2Points(hud.p2Points);
+    setCaptureP1(hud.captureP1);
+    setCaptureP2(hud.captureP2);
+    setCurrentP1Width(hud.currentWidthP1);
+    setCurrentP2Width(hud.currentWidthP2);
+  }, []);
 
-    return () => {
-      mounted = false;
-      if (gameLoopRef.current) window.clearInterval(gameLoopRef.current);
-      if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
-      renderer.destroy();
-      audio?.stopAll();
-    };
-  }, [loading, socket]);
+  const handleCaptureChanged = useCallback((side: 'P1' | 'P2') => {
+    if (side === 'P1') {
+      setCaptureP1Highlight(true);
+      window.setTimeout(() => setCaptureP1Highlight(false), 100);
+      return;
+    }
+    setCaptureP2Highlight(true);
+    window.setTimeout(() => setCaptureP2Highlight(false), 100);
+  }, []);
+
+  const handleNavigateAfterFinish = useCallback((isTourn: boolean) => {
+    navigate(isTourn ? '/tournbracket' : '/postgame');
+  }, [navigate]);
+
+  useGameSocketEvents({
+    socket,
+    loading,
+    stateRef,
+    localBootRef,
+    winnerSentRef,
+    onSetGameHeader: handleSetGameHeader,
+    onHudSync: handleHudSync,
+    onLoadingResolved: handleLoadingResolved,
+    onBootstrapFallback: bootstrapLocalGame,
+    onPointsUpdated: handlePointsUpdated,
+    onZapReceived: handleZapReceived,
+  });
+
+  useGameRenderBridge({
+    loading,
+    socket,
+    stateRef,
+    rendererRef,
+    audioRef,
+    hostRef,
+    winnerSentRef,
+    captureP1Ref,
+    captureP2Ref,
+    createRenderer,
+    emitWinner,
+    onHudTick: handleHudTick,
+    onCaptureChanged: handleCaptureChanged,
+  });
 
   useEffect(() => {
     if (loading || !stateRef.current) return;
@@ -356,70 +335,12 @@ export default function Game() {
     return () => window.clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const state = stateRef.current;
-      if (!state) return;
-      const key = event.key.toUpperCase();
-      const isStartKey =
-        key === ' ' ||
-        key === 'ENTER' ||
-        key === 'SPACE' ||
-        key === 'SPACEBAR' ||
-        event.code === 'Space' ||
-        event.code === 'Enter' ||
-        event.code === 'NumpadEnter';
-
-      if (!state.gameStarted && isStartKey) {
-        event.preventDefault();
-        startCountdown(state);
-      }
-
-      if (canContinueAfterGame(state, event.key)) {
-        if (!winnerSentRef.current && state.winnerPlayer && socket) {
-          socket.emit(
-            'gameFinished',
-            state.winnerPlayer === 'P1' ? PlayerRole.Player1 : PlayerRole.Player2
-          );
-          winnerSentRef.current = true;
-        }
-        // Give websocket emit a brief moment before route change.
-        window.setTimeout(() => {
-          navigate(state.meta.isTournament ? '/tournbracket' : '/postgame');
-        }, 80);
-        return;
-      }
-
-      switch (key) {
-        case 'A':
-          setWantedDirection(state, 'P1', 'Left');
-          break;
-        case 'D':
-          setWantedDirection(state, 'P1', 'Right');
-          break;
-        case 'W':
-          setWantedDirection(state, 'P1', 'Up');
-          break;
-        case 'S':
-          setWantedDirection(state, 'P1', 'Down');
-          break;
-        case 'ARROWLEFT':
-          if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Left');
-          break;
-        case 'ARROWRIGHT':
-          if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Right');
-          break;
-        case 'ARROWUP':
-          if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Up');
-          break;
-        case 'ARROWDOWN':
-          if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Down');
-          break;
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [navigate, socket]);
+  useGameInputBindings({
+    stateRef,
+    winnerSentRef,
+    onEmitWinner: emitWinner,
+    onNavigateAfterFinish: handleNavigateAfterFinish,
+  });
 
   return (
     <>
@@ -593,111 +514,4 @@ export default function Game() {
       </div>
     </>
   );
-}
-
-function resolveDuelInfo(data: SerializedGameInfo): {
-  p1Name: string;
-  p2Name: string;
-  p1Points: number;
-  p2Points: number;
-  gameLabel: string;
-  isTournament: boolean;
-  practiceMode: boolean;
-  p1Picture: string;
-  p2Picture: string;
-} {
-  const p1 = data.players['Player 1'];
-  const p2 = data.players['Player 2'];
-  const mode = data.mode?.toUpperCase();
-  if (mode === 'TOURNAMENT') {
-    const assignedPlayers = data.players ?? {};
-    const numberOfPlayers = Object.keys(assignedPlayers).length;
-    const playersList = Array(Math.max(2, numberOfPlayers)).fill('');
-    for (const key of Object.keys(assignedPlayers)) {
-      const idx = Number.parseInt(key.replace('Player ', ''), 10) - 1;
-      if (idx >= 0 && idx < playersList.length) {
-        playersList[idx] = assignedPlayers[key]?.name ?? '';
-      }
-    }
-    const winners = data.winners ?? [];
-    let tournamentP1 = p1?.name || 'Player 1';
-    let tournamentP2 = p2?.name || 'Player 2';
-    if (winners.length + 1 < numberOfPlayers) {
-      if (winners.length < numberOfPlayers / 2) {
-        tournamentP1 = playersList[2 * winners.length] || tournamentP1;
-        tournamentP2 = playersList[2 * winners.length + 1] || tournamentP2;
-      } else {
-        const winnerNames = buildWinnerNamesList(playersList, winners);
-        tournamentP1 = winnerNames[2 * winners.length] || tournamentP1;
-        tournamentP2 = winnerNames[2 * winners.length + 1] || tournamentP2;
-      }
-    }
-    const startSats = Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10));
-    return {
-      p1Name: tournamentP1,
-      p2Name: tournamentP2,
-      p1Points: startSats,
-      p2Points: startSats,
-      gameLabel: `GAME ${winners.length + 1} of ${Math.max(1, numberOfPlayers - 1)}`,
-      isTournament: true,
-      practiceMode: false,
-      p1Picture: p1?.picture ?? '',
-      p2Picture: p2?.picture ?? '',
-    };
-  }
-  if (!p2) {
-    return {
-      p1Name: p1?.name || 'Player 1',
-      p2Name: 'BigToshi 🌊',
-      p1Points: Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10)),
-      p2Points: Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10)),
-      gameLabel: 'Practice',
-      isTournament: false,
-      practiceMode: true,
-      p1Picture: p1?.picture ?? '',
-      p2Picture: '',
-    };
-  }
-  const baseLabel = data.mode || 'P2P';
-  const donRound = data.winners?.length ?? 0;
-  const donText = donRound > 0 ? `*${2 ** donRound}` : '';
-  return {
-    p1Name: p1?.name || 'Player 1',
-    p2Name: p2?.name || 'Player 2',
-    p1Points: Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10)),
-    p2Points: Math.floor(Number.parseInt(String(p2?.value ?? 1000), 10)),
-    gameLabel: `${baseLabel}${donText}`,
-    isTournament: false,
-    practiceMode: false,
-    p1Picture: p1?.picture ?? '',
-    p2Picture: p2?.picture ?? '',
-  };
-}
-
-function buildWinnerNamesList(playersList: string[], winnersList: string[]): string[] {
-  const playersListCopy = [...playersList];
-  for (let i = 0; i < winnersList.length; i += 1) {
-    const winner = winnersList[i];
-    if (winner === 'Player 1') {
-      playersListCopy.push(playersListCopy[2 * i] ?? '');
-    } else {
-      playersListCopy.push(playersListCopy[2 * i + 1] ?? '');
-    }
-  }
-  return playersListCopy;
-}
-
-function parseZap(payload: unknown): Omit<ZapMessage, 'id' | 'top' | 'hidden'> | null {
-  if (!payload || typeof payload !== 'object') return null;
-  const source = payload as Record<string, unknown>;
-  const amount = Number.parseInt(String(source.amount ?? 0), 10);
-  const scale =
-    amount > 9999 ? 2 : amount >= 5000 ? 1.6 : amount >= 2000 ? 1.4 : amount >= 500 ? 1.2 : 1;
-  return {
-    username: String(source.username ?? 'zapper'),
-    content: String(source.content ?? ''),
-    amount: Number.isFinite(amount) ? amount : 0,
-    profile: String(source.profile ?? '/images/loading.gif'),
-    scale,
-  };
 }
