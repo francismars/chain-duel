@@ -135,7 +135,11 @@ export default function PostGame() {
     socket.emit('doubleornothing');
     // Keep legacy full-page navigation, but allow one frame for websocket frame flush.
     window.setTimeout(() => {
-      window.location.href = gameMode === 'PRACTICE' ? '/practicemenu' : '/gamemenu';
+      if (gameMode === 'PRACTICE') {
+        window.location.href = '/practicemenu';
+        return;
+      }
+      window.location.href = gameMode === 'P2PNOSTR' ? '/gamemenu?nostr=true' : '/gamemenu';
     }, 120);
   }, [socket, menu, tournamentMode, prizeClaimed, loading, gameMode, logger]);
 

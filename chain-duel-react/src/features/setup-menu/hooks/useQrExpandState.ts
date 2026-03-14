@@ -46,6 +46,12 @@ export function useQrExpandState({
   );
 
   useEffect(() => {
+    const resetAll = () => {
+      onExpandedChange({ left: false, right: false });
+      if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
+      onBackdropVisibleChange(false);
+    };
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'ControlLeft') show('left');
       if (dualControls && e.code === 'ControlRight') show('right');
@@ -53,14 +59,30 @@ export function useQrExpandState({
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'ControlLeft') hide('left');
       if (dualControls && e.code === 'ControlRight') hide('right');
+      if (e.key === 'Control' || !e.ctrlKey) {
+        resetAll();
+      }
+    };
+    const onWindowBlur = () => {
+      // Prevent sticky expanded state when keyup is lost after focus changes.
+      resetAll();
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') {
+        resetAll();
+      }
     };
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onWindowBlur);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onWindowBlur);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
     };
-  }, [dualControls, hide, show]);
+  }, [dualControls, hide, onBackdropVisibleChange, onExpandedChange, show]);
 }

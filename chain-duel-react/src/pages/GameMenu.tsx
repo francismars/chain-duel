@@ -36,7 +36,8 @@ export default function GameMenu() {
   const logger = useMemo(() => createLogger('GameMenu'), []);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const useNostr = searchParams.get('nostr') === 'true';
+  const useNostrFromQuery = searchParams.get('nostr') === 'true';
+  const [isNostrMode, setIsNostrMode] = useState(useNostrFromQuery);
   const { socket } = useSocket();
   const { playSfx } = useAudio();
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,8 @@ export default function GameMenu() {
   const [nostrNote1, setNostrNote1] = useState<string>('');
   const [nostrMinP1, setNostrMinP1] = useState<number>(1);
   const [nostrMinP2, setNostrMinP2] = useState<number>(1);
+  const [player1Image, setPlayer1Image] = useState<string>('');
+  const [player2Image, setPlayer2Image] = useState<string>('');
   const [leaderboardThreshold, setLeaderboardThreshold] = useState<number>(1);
 
   const lastKnownP1SatsRef = useRef(0);
@@ -90,17 +93,25 @@ export default function GameMenu() {
       const links = parsed.payLinks;
       setPayLinks(links.length > 0 ? links : null);
       if (parsed.modeMeta?.mode) {
+        const mode = parsed.modeMeta.mode;
+        const isNostrModeMeta = /nostr/i.test(mode);
         const winnersCount = parsed.modeMeta.winnersCount ?? 0;
         const donMultiple = winnersCount > 0 ? `*${2 ** winnersCount}` : '';
-        setGameMenuTitle(`${parsed.modeMeta.mode}${donMultiple}`);
+        // Legacy keeps P2P label even when the panel switches to Nostr mode.
+        setGameMenuTitle(`${isNostrModeMeta ? 'P2P' : mode}${donMultiple}`);
+        if (isNostrModeMeta) {
+          setIsNostrMode(true);
+        }
       }
       if (parsed.nostrMeta) {
+        setIsNostrMode(true);
         setNostrCode(parsed.nostrMeta.emojis);
         setNostrNote1(parsed.nostrMeta.note1);
         setNostrMinP1(parsed.nostrMeta.min);
         setNostrMinP2(parsed.nostrMeta.min);
       }
-      setStatusMessage(links.length > 0 ? '' : 'Waiting for payment links from backend...');
+      const isNostrPayload = Boolean(parsed.nostrMeta) || Boolean(parsed.modeMeta?.mode && /nostr/i.test(parsed.modeMeta.mode));
+      setStatusMessage(isNostrPayload ? '' : links.length > 0 ? '' : 'Waiting for payment links from backend...');
       setLoading(false);
     },
     [navigate]
@@ -113,7 +124,7 @@ export default function GameMenu() {
   useMenuSocketInfo({
     socket,
     connected: true,
-    requestEvent: useNostr ? 'getGameMenuInfosNostr' : 'getGameMenuInfos',
+    requestEvent: useNostrFromQuery ? 'getGameMenuInfosNostr' : 'getGameMenuInfos',
     responseEvent: 'resGetGameMenuInfos',
     maxRetries: 3,
     onParsed: handleMenuParsed,
@@ -124,6 +135,17 @@ export default function GameMenu() {
     if (!socket) return;
     const handler = (body: SerializedGameInfo) => {
       logger.debug('updatePayments payload', body);
+      if (typeof body.mode === 'string' && /nostr/i.test(body.mode)) {
+        setIsNostrMode(true);
+        // Legacy flow can emit updatePayments without re-sending nostr menu metadata.
+        // Ensure we fetch note1/emojis payload when switching into Nostr mode.
+        if (!nostrNote1) {
+          const hostLNAddress = localStorage.getItem('hostLNAddress');
+          const hostInfo = hostLNAddress ? { LNAddress: hostLNAddress } : undefined;
+          if (hostInfo) socket.emit('getGameMenuInfosNostr', hostInfo);
+          else socket.emit('getGameMenuInfosNostr');
+        }
+      }
       const latestWinner = body.winners?.length ? body.winners.slice(-1)[0] : null;
       if (body.winners && body.winners.length > 0) {
         setPrevWinner(latestWinner);
@@ -135,6 +157,9 @@ export default function GameMenu() {
       const p2 = players['Player 2'];
       if (p1) {
         setP1Name((prev) => resolvePlayerName(p1, prev || 'Player 1'));
+        if (typeof p1.picture === 'string' && p1.picture.trim() !== '') {
+          setPlayer1Image(p1.picture);
+        }
         if (p1.value !== undefined) {
           const nextP1Sats = Number(p1.value);
           const didP1Change = nextP1Sats !== lastKnownP1SatsRef.current;
@@ -152,6 +177,9 @@ export default function GameMenu() {
       }
       if (p2) {
         setP2Name((prev) => resolvePlayerName(p2, prev || 'Player 2'));
+        if (typeof p2.picture === 'string' && p2.picture.trim() !== '') {
+          setPlayer2Image(p2.picture);
+        }
         if (p2.value !== undefined) {
           const nextP2Sats = Number(p2.value);
           const didP2Change = nextP2Sats !== lastKnownP2SatsRef.current;
@@ -183,7 +211,7 @@ export default function GameMenu() {
       if (highlightTimeoutP1Ref.current) clearTimeout(highlightTimeoutP1Ref.current);
       if (highlightTimeoutP2Ref.current) clearTimeout(highlightTimeoutP2Ref.current);
     };
-  }, [socket, prevWinner, logger]);
+  }, [socket, prevWinner, logger, nostrNote1]);
 
   useSessionPersistence(socket);
 
@@ -301,7 +329,7 @@ export default function GameMenu() {
     <>
       <GameSetupLayout
         title={gameMenuTitle}
-        pageClass="gamemenu-page"
+        pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}`}
         mainMenuDisabled={mainMenuDisabled}
         canStart={canStart}
         onMainMenu={() => {
@@ -335,150 +363,226 @@ export default function GameMenu() {
         {qrBackdropVisible && (
           <div className="qr-expand-backdrop" aria-hidden />
         )}
-        <div id="player1card" className={player1CardExpanded ? 'expanded' : ''}>
-          <div id="qrcodeContainer1" className="qrcodeContainer">
-            <a
-              id="qrcode1Link"
-              href={p1PayLink?.lnurlp ? `lightning:${p1PayLink.lnurlp}` : undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {p1PayLink?.lnurlp ? (
-                <QRCodeSVG
-                  id="qrcode1"
-                  className="qrcode"
-                  value={p1PayLink.lnurlp}
-                  size={QR_CODE_CARD_SIZE}
-                  level="M"
-                  includeMargin={false}
-                />
-              ) : (
-                <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
-              )}
-              <img
-                id="qrcode1Decoration"
-                className={`qrcodeDecoration ${highlightP1 ? '' : 'hide'}`}
-                src="/images/qr_lightning.gif"
-                alt=""
-              />
-            </a>
-          </div>
-          <div id="player1cardinfo" className="player-card-info">
-            <div id="player1satsContainer" className={`player-sats ${highlightP1 ? 'highlight' : ''}`}>
-              <span id="player1sats">{fmt(player1Sats)}</span>{' '}
-              <span className="grey sats-label">sats</span>
-            </div>
-            <div className="condensed">
-              <div className="inline playerSquare white" />
-              <div id="player1info" className={`player1info inline ${highlightP1 ? 'highlight' : ''}`}>
-                {p1Name}
+        {isNostrMode ? (
+          <>
+            <div id="player1card" className={player1CardExpanded ? 'expanded' : ''}>
+              <div id="player1cardinfo" className="player-card-info">
+                <div id="player1satsContainer" className={`player-sats ${highlightP1 ? 'highlight' : ''}`}>
+                  <span id="nostrPlayer1sats">{fmt(player1Sats)}</span>{' '}
+                  <span className="grey sats-label">sats</span>
+                </div>
+                <div className="condensed">
+                  <div className="inline playerSquare white" />
+                  <img className="inline playerImg" id="player1Img" src={player1Image || '/images/loading.gif'} alt="" />
+                  <div id="nostrPlayer1info" className={`player1info inline ${highlightP1 ? 'highlight' : ''}`}>
+                    {p1Name}
+                  </div>
+                </div>
+                <div className="deposit-message">
+                  Zap min <span id="nostrmindepP1">{fmt(nostrMinP1)}</span> sats
+                  <br />
+                  First 2 players to pay get the slot
+                  <br />
+                  Below the minimum is donation
+                </div>
               </div>
             </div>
-            <div className="deposit-message">
-              Deposit between <b>{fmt(useNostr ? nostrMinP1 : minP1)}</b> and <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
-              <br />
-              Set player name on the payment note
-              <br />
-              LNURL compatible wallet required
-              <br />
-              Allows for multiple deposits
+
+            <div className="nostrLine">
+              <div>
+                <div className="condensed">Zap</div>
+                <div className="label">Seen on</div>
+                <div className="label">nostr.wine</div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="prizeinfocard">
-          <div id="prizevaluesats" className="condensed">
-            {fmt(totalPrize)}
-          </div>
-          <div id="prizeinfosats">Total Prize (sats)</div>
-          <div id="splits">
-            <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
-            <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
-            <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
-          </div>
-          <div id="leaderboard">
-            <p id="leaderboard-inner">
-              <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span> sats qualifies for highscore
-            </p>
-          </div>
-        </div>
-
-        {useNostr && nostrNote1 && (
-          <div className="prizeinfocard">
-            <div className="label">NOSTR GAME EVENT</div>
-            <div id="qrcodeContainerNostr" className="qrcodeContainer">
-              <a
-                id="qrcodeLinkNostr"
-                href={`https://next.nostrudel.ninja/#/n/${nostrNote1}`}
-                target="_blank"
-                rel="noopener noreferrer"
+            <div className="prizeinfocard nostr-center-card">
+              <div id="gameCodeNostr">{nostrCode}</div>
+              <div
+                id="qrcodeContainerNostr"
+                className={`qrcodeContainer ${player1CardExpanded || player2CardExpanded ? 'expanded' : ''}`}
               >
-                <QRCodeSVG
-                  id="qrcodeNostr"
-                  className="qrcode"
-                  value={`nostr:${nostrNote1}`}
-                  size={QR_CODE_CARD_SIZE}
-                  level="M"
-                  includeMargin={false}
-                />
-              </a>
-            </div>
-            <div id="gameCodeNostr" className="condensed">
-              {nostrCode}
-            </div>
-          </div>
-        )}
-
-        <div id="player2card" className={player2CardExpanded ? 'expanded' : ''}>
-          <div id="player2cardinfo" className="player-card-info">
-            <div id="player2satsContainer" className={`player-sats ${highlightP2 ? 'highlight' : ''}`}>
-              <span className="grey sats-label">sats</span>
-              <span id="player2sats">{fmt(player2Sats)}</span>
-            </div>
-            <div className="condensed">
-              <div id="player2info" className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}>
-                {p2Name}
+                <a
+                  id="qrcodeLinkNostr"
+                  href={nostrNote1 ? `https://next.nostrudel.ninja/#/n/${nostrNote1}` : undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {nostrNote1 ? (
+                    <QRCodeSVG
+                      id="qrcodeNostr"
+                      className="qrcode"
+                      value={`nostr:${nostrNote1}`}
+                      size={QR_CODE_CARD_SIZE}
+                      level="M"
+                      includeMargin={false}
+                    />
+                  ) : (
+                    <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
+                  )}
+                  <img
+                    id="qrcodeNostrDecoration"
+                    className={`qrcodeDecoration ${highlightP1 || highlightP2 ? '' : 'hide'}`}
+                    src="/images/qr_lightning.gif"
+                    alt=""
+                  />
+                </a>
               </div>
-              <div className="inline playerSquare black" />
             </div>
-            <div className="deposit-message">
-              Deposit between <b>{fmt(useNostr ? nostrMinP2 : minP2)}</b> and <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
-              <br />
-              Set player name on the payment note
-              <br />
-              LNURL compatible wallet required
-              <br />
-              Allows for multiple deposits
+
+            <div className="nostrLine right">
+              <div>
+                <div className="condensed">Me!</div>
+                <div className="label">Event</div>
+                <div className="label">note1XXX</div>
+              </div>
             </div>
-          </div>
-          <div id="qrcodeContainer2" className="qrcodeContainer">
-            <a
-              id="qrcode2Link"
-              href={p2PayLink?.lnurlp ? `lightning:${p2PayLink.lnurlp}` : undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {p2PayLink?.lnurlp ? (
-                <QRCodeSVG
-                  id="qrcode2"
-                  className="qrcode"
-                  value={p2PayLink.lnurlp}
-                  size={180}
-                  level="M"
-                  includeMargin={false}
-                />
-              ) : (
-                <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
-              )}
-              <img
-                id="qrcode2Decoration"
-                className={`qrcodeDecoration ${highlightP2 ? '' : 'hide'}`}
-                src="/images/qr_lightning.gif"
-                alt=""
-              />
-            </a>
-          </div>
-        </div>
+
+            <div id="player2card" className={player2CardExpanded ? 'expanded' : ''}>
+              <div id="player2cardinfo" className="player-card-info">
+                <div id="player2satsContainer" className={`player-sats ${highlightP2 ? 'highlight' : ''}`}>
+                  <span className="grey sats-label">sats</span>
+                  <span id="nostrPlayer2sats">{fmt(player2Sats)}</span>
+                </div>
+                <div className="condensed">
+                  <div id="nostrPlayer2info" className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}>
+                    {p2Name}
+                  </div>
+                  <img className="inline playerImg" id="player2Img" src={player2Image || '/images/loading.gif'} alt="" />
+                  <div className="inline playerSquare black" />
+                </div>
+                <div className="deposit-message">
+                  Zap min <span id="nostrmindepP2">{fmt(nostrMinP2)}</span> sats
+                  <br />
+                  First 2 players to pay get the slot
+                  <br />
+                  Below the minimum is donation
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div id="player1card" className={player1CardExpanded ? 'expanded' : ''}>
+              <div id="qrcodeContainer1" className="qrcodeContainer">
+                <a
+                  id="qrcode1Link"
+                  href={p1PayLink?.lnurlp ? `lightning:${p1PayLink.lnurlp}` : undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {p1PayLink?.lnurlp ? (
+                    <QRCodeSVG
+                      id="qrcode1"
+                      className="qrcode"
+                      value={p1PayLink.lnurlp}
+                      size={QR_CODE_CARD_SIZE}
+                      level="M"
+                      includeMargin={false}
+                    />
+                  ) : (
+                    <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
+                  )}
+                  <img
+                    id="qrcode1Decoration"
+                    className={`qrcodeDecoration ${highlightP1 ? '' : 'hide'}`}
+                    src="/images/qr_lightning.gif"
+                    alt=""
+                  />
+                </a>
+              </div>
+              <div id="player1cardinfo" className="player-card-info">
+                <div id="player1satsContainer" className={`player-sats ${highlightP1 ? 'highlight' : ''}`}>
+                  <span id="player1sats">{fmt(player1Sats)}</span>{' '}
+                  <span className="grey sats-label">sats</span>
+                </div>
+                <div className="condensed">
+                  <div className="inline playerSquare white" />
+                  <div id="player1info" className={`player1info inline ${highlightP1 ? 'highlight' : ''}`}>
+                    {p1Name}
+                  </div>
+                </div>
+                <div className="deposit-message">
+                  Deposit between <b>{fmt(minP1)}</b> and <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
+                  <br />
+                  Set player name on the payment note
+                  <br />
+                  LNURL compatible wallet required
+                  <br />
+                  Allows for multiple deposits
+                </div>
+              </div>
+            </div>
+
+            <div className="prizeinfocard">
+              <div id="prizevaluesats" className="condensed">
+                {fmt(totalPrize)}
+              </div>
+              <div id="prizeinfosats">Total Prize (sats)</div>
+              <div id="splits">
+                <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
+                <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
+                <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
+              </div>
+              <div id="leaderboard">
+                <p id="leaderboard-inner">
+                  <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span> sats qualifies for highscore
+                </p>
+              </div>
+            </div>
+
+            <div id="player2card" className={player2CardExpanded ? 'expanded' : ''}>
+              <div id="player2cardinfo" className="player-card-info">
+                <div id="player2satsContainer" className={`player-sats ${highlightP2 ? 'highlight' : ''}`}>
+                  <span className="grey sats-label">sats</span>
+                  <span id="player2sats">{fmt(player2Sats)}</span>
+                </div>
+                <div className="condensed">
+                  <div id="player2info" className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}>
+                    {p2Name}
+                  </div>
+                  <div className="inline playerSquare black" />
+                </div>
+                <div className="deposit-message">
+                  Deposit between <b>{fmt(minP2)}</b> and <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
+                  <br />
+                  Set player name on the payment note
+                  <br />
+                  LNURL compatible wallet required
+                  <br />
+                  Allows for multiple deposits
+                </div>
+              </div>
+              <div id="qrcodeContainer2" className="qrcodeContainer">
+                <a
+                  id="qrcode2Link"
+                  href={p2PayLink?.lnurlp ? `lightning:${p2PayLink.lnurlp}` : undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {p2PayLink?.lnurlp ? (
+                    <QRCodeSVG
+                      id="qrcode2"
+                      className="qrcode"
+                      value={p2PayLink.lnurlp}
+                      size={180}
+                      level="M"
+                      includeMargin={false}
+                    />
+                  ) : (
+                    <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
+                  )}
+                  <img
+                    id="qrcode2Decoration"
+                    className={`qrcodeDecoration ${highlightP2 ? '' : 'hide'}`}
+                    src="/images/qr_lightning.gif"
+                    alt=""
+                  />
+                </a>
+              </div>
+            </div>
+          </>
+        )}
       </GameSetupLayout>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
