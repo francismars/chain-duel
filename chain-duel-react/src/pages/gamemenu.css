@@ -378,3 +378,78 @@
   z-index: 2;
   pointer-events: none;
 }
+
+/* Legacy Nostr panel parity */
+.gamemenu-page.is-nostr #bottomInfo {
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0;
+}
+
+.gamemenu-page.is-nostr #player1card,
+.gamemenu-page.is-nostr #player2card {
+  width: 30%;
+  min-width: 0;
+}
+
+.gamemenu-page.is-nostr #player1cardinfo,
+.gamemenu-page.is-nostr #player2cardinfo {
+  height: auto;
+}
+
+.gamemenu-page.is-nostr #player1satsContainer,
+.gamemenu-page.is-nostr #player2satsContainer {
+  margin-bottom: 0.25cqw;
+}
+
+.gamemenu-page.is-nostr .nostrLine {
+  width: 7%;
+  text-align: center;
+  align-self: center;
+  opacity: 0.95;
+}
+
+.gamemenu-page.is-nostr .nostrLine.right {
+  text-align: center;
+}
+
+.gamemenu-page.is-nostr .nostr-center-card {
+  width: 16%;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5cqw;
+}
+
+.gamemenu-page.is-nostr #gameCodeNostr {
+  font-size: 2.1cqw;
+  line-height: 1;
+}
+
+.gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer {
+  width: 9vw;
+  height: 10vw;
+}
+
+.gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer.expanded {
+  z-index: 50;
+}
+
+.gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer .qrcode {
+  transform: scale(1);
+  transform-origin: bottom center;
+  border: 0 solid transparent;
+  transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out, border 0.25s ease-in-out;
+}
+
+.gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer.expanded .qrcode {
+  transform: scale(4);
+  border: 0.2vw solid #fff;
+}
+
+.gamemenu-page.is-nostr .playerImg {
+  width: 2cqw;
+  height: 2cqw;
+  object-fit: cover;
+  margin: 0 0.4vw;
+  border-radius: 2px;
+}
