@@ -25,6 +25,11 @@ interface PostGameInfoResponse extends SerializedGameInfo {
   numbeOfPlayers?: number;
 }
 
+interface TournamentWinnerIdentity {
+  name: string;
+  picture: string;
+}
+
 const PLACEHOLDER_WITHDRAWAL_URL =
   'MARSURL1DP68GURN8GHJ7MRWVF5HGUEWV3HK5MEWWP6Z7AMFW35XGUNPWUHKZURF9AMRZTMVDE6HYMP0V438Y7NKXUE5S5TFG9X9GE2509N5VMN0G46S0WQJQ4';
 
@@ -44,7 +49,6 @@ export default function PostGame() {
   const [p1Deposit, setP1Deposit] = useState(0);
   const [p2Deposit, setP2Deposit] = useState(0);
   const [totalPrize, setTotalPrize] = useState(0);
-  const [tournamentPlayers, setTournamentPlayers] = useState(0);
   const [lnurlw, setLnurlw] = useState<string>('');
   const [qrValue, setQrValue] = useState<string>(PLACEHOLDER_WITHDRAWAL_URL);
   const [tournamentMode, setTournamentMode] = useState(false);
@@ -156,7 +160,7 @@ export default function PostGame() {
         | 'Player 2';
       setWinnerPlayer(winnerP);
 
-      if (info.mode === 'TOURNAMENT') {
+      if (info.mode === 'TOURNAMENT' || info.mode === 'TOURNAMENTNOSTR') {
         setTournamentMode(true);
       } else {
         setTournamentMode(false);
@@ -175,28 +179,31 @@ export default function PostGame() {
       setP1Deposit(p1S);
       setP2Deposit(p2S);
 
-      const tournamentPlayers = Math.max(
-        2,
-        Number.isFinite(Number(info.numbeOfPlayers))
-          ? Number(info.numbeOfPlayers)
-          : Object.keys(players).length || 2
+      const tournamentDepositsTotal = Object.values(players).reduce(
+        (sum, player) => sum + Number(player?.value ?? 0),
+        0
       );
-      setTournamentPlayers(tournamentPlayers);
       const rawTotal = info.mode === 'PRACTICE' ? p1S : p1S + p2S;
-      // Legacy tournament payout: buy-in per player * total players * 95%.
+      // Tournament payout follows backend logic: total tournament deposits * 95%.
       const prize =
-        info.mode === 'TOURNAMENT'
-          ? Math.floor(p1S * tournamentPlayers * PAYOUT_POOL_RATIO)
+        info.mode === 'TOURNAMENT' || info.mode === 'TOURNAMENTNOSTR'
+          ? Math.floor(tournamentDepositsTotal * PAYOUT_POOL_RATIO)
           : Math.floor(rawTotal);
       setTotalPrize(prize);
 
-      const winnerN = winnerP === 'Player 1' ? p1N : p2N;
-      setWinnerName(winnerN.toUpperCase());
-      const winnerPic =
-        winnerP === 'Player 1'
-          ? p1?.picture || ''
-          : p2?.picture || '';
-      setWinnerPicture(winnerPic);
+      if (info.mode === 'TOURNAMENT' || info.mode === 'TOURNAMENTNOSTR') {
+        const tournamentWinner = resolveTournamentWinnerIdentity(info);
+        setWinnerName(tournamentWinner.name.toUpperCase());
+        setWinnerPicture(tournamentWinner.picture);
+      } else {
+        const winnerN = winnerP === 'Player 1' ? p1N : p2N;
+        setWinnerName(winnerN.toUpperCase());
+        const winnerPic =
+          winnerP === 'Player 1'
+            ? p1?.picture || ''
+            : p2?.picture || '';
+        setWinnerPicture(winnerPic);
+      }
 
       if (info.lnurlw) {
         setLnurlw(info.lnurlw);
@@ -238,8 +245,8 @@ export default function PostGame() {
   }, [socket, navigate, updateHighscores]);
 
   const feeBase =
-    gameMode === 'TOURNAMENT'
-      ? p1Deposit * Math.max(2, tournamentPlayers)
+    gameMode === 'TOURNAMENT' || gameMode === 'TOURNAMENTNOSTR'
+      ? Math.floor(totalPrize / PAYOUT_POOL_RATIO)
       : p1Deposit + p2Deposit;
   const developerFee = Math.floor(feeBase * DEVELOPER_FEE_RATIO);
   const designerFee = Math.floor(feeBase * DESIGNER_FEE_RATIO);
@@ -420,4 +427,73 @@ export default function PostGame() {
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </>
   );
+}
+
+function resolveTournamentWinnerIdentity(info: PostGameInfoResponse): TournamentWinnerIdentity {
+  const players = info.players ?? {};
+  const winners = info.winners ?? [];
+  const numberOfPlayers = Math.max(
+    2,
+    Number.isFinite(Number(info.numberOfPlayers))
+      ? Number(info.numberOfPlayers)
+      : Object.keys(players).length || 2
+  );
+  if (winners.length === 0) {
+    return { name: players['Player 1']?.name?.trim() || 'Player 1', picture: players['Player 1']?.picture || '' };
+  }
+
+  const entrantsNames: string[] = Array(numberOfPlayers).fill('');
+  const entrantsPictures: string[] = Array(numberOfPlayers).fill('');
+  for (const [role, player] of Object.entries(players)) {
+    const idx = Number.parseInt(role.replace('Player ', ''), 10) - 1;
+    if (idx < 0 || idx >= numberOfPlayers) continue;
+    entrantsNames[idx] = player?.name?.trim() || role;
+    entrantsPictures[idx] = player?.picture || '';
+  }
+
+  const winnerNames = buildTournamentProgression(
+    entrantsNames,
+    winners as Array<'Player 1' | 'Player 2'>,
+    numberOfPlayers,
+    ''
+  );
+  const winnerPictures = buildTournamentProgression(
+    entrantsPictures,
+    winners as Array<'Player 1' | 'Player 2'>,
+    numberOfPlayers,
+    ''
+  );
+  const championIdx = winnerNames.length - 1;
+  const championName = winnerNames[championIdx] || info.champion || 'Player 1';
+  const championPicture = winnerPictures[championIdx] || '';
+  return { name: championName, picture: championPicture };
+}
+
+function buildTournamentProgression<T>(
+  entrants: T[],
+  winners: Array<'Player 1' | 'Player 2'>,
+  numberOfPlayers: number,
+  fallback: T
+): T[] {
+  const round1Games = Math.max(1, Math.floor(numberOfPlayers / 2));
+  const progression: T[] = [];
+  for (let i = 0; i < winners.length; i += 1) {
+    if (i + 1 >= numberOfPlayers) break;
+    const winnerRole = winners[i];
+    let winnerValue = fallback;
+    if (i < round1Games) {
+      winnerValue =
+        winnerRole === 'Player 1'
+          ? entrants[i * 2] ?? fallback
+          : entrants[i * 2 + 1] ?? fallback;
+    } else {
+      const p1i = (i - round1Games) * 2;
+      winnerValue =
+        winnerRole === 'Player 1'
+          ? progression[p1i] ?? fallback
+          : progression[p1i + 1] ?? fallback;
+    }
+    progression.push(winnerValue);
+  }
+  return progression;
 }

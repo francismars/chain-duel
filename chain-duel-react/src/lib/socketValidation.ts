@@ -7,6 +7,7 @@ import { z } from 'zod';
 import {
   ResGetGameMenuInfosSchema,
   ResGetTournamentInfosSchema,
+  ResGetTournamentInfosNostrSchema,
   ResPostGameInfoRequestSchema,
   ResCancelTournamentSchema,
   SessionDataSchema,
@@ -62,6 +63,13 @@ export const SocketValidators = {
 
   resGetDuelInfos: (data: unknown) =>
     validateSocketEvent(SerializedGameInfoSchema, data, 'resGetDuelInfos'),
+
+  resGetTournamentInfosNostr: (data: unknown) =>
+    validateSocketEvent(
+      ResGetTournamentInfosNostrSchema,
+      data,
+      'resGetTournamentInfosNostr'
+    ),
 
   resPostGameInfoRequest: (data: unknown) =>
     validateSocketEvent(

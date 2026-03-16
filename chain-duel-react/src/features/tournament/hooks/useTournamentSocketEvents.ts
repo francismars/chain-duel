@@ -6,21 +6,32 @@ interface TournamentInfosPayload {
   gameInfo?: {
     numberOfPlayers?: number;
     winners?: string[];
-    players?: Record<string, { name?: string }>;
+    players?: Record<string, { name?: string; picture?: string; fallbackLabel?: string }>;
   };
   lnurlp?: string;
   lnurlw?: string;
   min?: number;
   claimedCount?: number;
+  nostrMeta?: {
+    note1: string;
+    emojis: string;
+    min: number;
+    mode: string;
+    playersNeeded: number;
+    currentAdmissions: number;
+  };
 }
 
 interface UseTournamentSocketEventsArgs {
   socket: unknown;
   urlDeposit: number;
   numberOfPlayersFromUrl: number;
+  isNostrTournament: boolean;
   onLoading: (loading: boolean) => void;
   onInfos: (data: TournamentInfosPayload) => void;
-  onPayments: (players: Record<string, { name?: string }>) => void;
+  onPayments: (
+    players: Record<string, { name?: string; picture?: string; fallbackLabel?: string }>
+  ) => void;
   onCancel: (data: { depositcount: number; lnurlw?: string }) => void;
   onPrizeWithdrawn: () => void;
 }
@@ -29,6 +40,7 @@ export function useTournamentSocketEvents({
   socket,
   urlDeposit,
   numberOfPlayersFromUrl,
+  isNostrTournament,
   onLoading,
   onInfos,
   onPayments,
@@ -41,7 +53,7 @@ export function useTournamentSocketEvents({
 
     const emitTournamentInfos = () => {
       const hostLNAddress = localStorage.getItem('hostLNAddress') || undefined;
-      s.emit('getTournamentInfos', {
+      s.emit(isNostrTournament ? 'getTournamentInfosNostr' : 'getTournamentInfos', {
         buyin: urlDeposit,
         players: numberOfPlayersFromUrl,
         hostLNAddress,
@@ -49,7 +61,9 @@ export function useTournamentSocketEvents({
     };
 
     const onInfosEvent = (payload: unknown) => {
-      const parsed = SocketBoundaryParsers.tournamentInfos(payload);
+      const parsed = isNostrTournament
+        ? SocketBoundaryParsers.tournamentInfosNostr(payload)
+        : SocketBoundaryParsers.tournamentInfos(payload);
       if (!parsed) return;
       onLoading(false);
       onInfos(parsed);
@@ -57,7 +71,9 @@ export function useTournamentSocketEvents({
 
     const onPaymentsEvent = (payload: unknown) => {
       if (!payload || typeof payload !== 'object') return;
-      const source = payload as { players?: Record<string, { name?: string }> };
+      const source = payload as {
+        players?: Record<string, { name?: string; picture?: string; fallbackLabel?: string }>;
+      };
       if (!source.players) return;
       onLoading(false);
       onPayments(source.players);
@@ -75,8 +91,14 @@ export function useTournamentSocketEvents({
       emitTournamentInfos();
     };
 
-    s.on('resGetTournamentInfos', onInfosEvent);
+    s.on(
+      isNostrTournament ? 'resGetTournamentInfosNostr' : 'resGetTournamentInfos',
+      onInfosEvent
+    );
     s.on('updatePayments', onPaymentsEvent);
+    if (isNostrTournament) {
+      s.on('updatePaymentsNostrTournament', onPaymentsEvent);
+    }
     s.on('rescanceltourn', onCancelEvent);
     s.on('prizeWithdrawn', onPrizeWithdrawn);
     s.on('connect', onReconnect);
@@ -90,14 +112,21 @@ export function useTournamentSocketEvents({
 
     return () => {
       window.clearTimeout(loadingTimer);
-      s.off('resGetTournamentInfos', onInfosEvent);
+      s.off(
+        isNostrTournament ? 'resGetTournamentInfosNostr' : 'resGetTournamentInfos',
+        onInfosEvent
+      );
       s.off('updatePayments', onPaymentsEvent);
+      if (isNostrTournament) {
+        s.off('updatePaymentsNostrTournament', onPaymentsEvent);
+      }
       s.off('rescanceltourn', onCancelEvent);
       s.off('prizeWithdrawn', onPrizeWithdrawn);
       s.off('connect', onReconnect);
     };
   }, [
     numberOfPlayersFromUrl,
+    isNostrTournament,
     onCancel,
     onInfos,
     onLoading,

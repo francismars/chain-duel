@@ -24,6 +24,7 @@
 #aboutbutton,
 #highscoresbutton,
 #starttourn,
+#starttournnostr,
 #startpractice,
 #startgamenostr {
   animation: glowing 0ms infinite;
