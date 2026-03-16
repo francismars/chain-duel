@@ -261,7 +261,12 @@ export default function Game() {
   }, []);
 
   const handleNavigateAfterFinish = useCallback((isTourn: boolean) => {
-    navigate(isTourn ? '/tournbracket' : '/postgame');
+    if (isTourn) {
+      const mode = sessionStorage.getItem('tournamentMode');
+      navigate(mode === 'tournamentnostr' ? '/tournbracket?mode=tournamentnostr' : '/tournbracket');
+      return;
+    }
+    navigate('/postgame');
   }, [navigate]);
 
   useGameSocketEvents({

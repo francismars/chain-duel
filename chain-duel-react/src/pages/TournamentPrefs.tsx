@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -18,6 +18,8 @@ type SelectedButton =
 
 export default function TournamentPrefs() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isNostrTournament = searchParams.get('mode') === 'tournamentnostr';
   const [playersNumber, setPlayersNumber] = useState(4);
   const [deposit, setDeposit] = useState(10000);
   const [buttonSelected, setButtonSelected] =
@@ -75,7 +77,8 @@ export default function TournamentPrefs() {
         if (buttonSelected === 'mainMenuButton') {
           navigate('/');
         } else if (buttonSelected === 'continueButton') {
-          navigate(`/tournbracket?players=${playersNumber}&deposit=${deposit}`);
+          const modeSuffix = isNostrTournament ? '&mode=tournamentnostr' : '';
+          navigate(`/tournbracket?players=${playersNumber}&deposit=${deposit}${modeSuffix}`);
         } else if (buttonSelected === 'decreasePlayersButton' && playersNumber > 4) {
           decreasePlayers();
         } else if (buttonSelected === 'increasePlayersButton' && playersNumber < 16) {
@@ -227,7 +230,11 @@ export default function TournamentPrefs() {
           id="continueButton"
           type="button"
           onClick={() =>
-            navigate(`/tournbracket?players=${playersNumber}&deposit=${deposit}`)
+            navigate(
+              `/tournbracket?players=${playersNumber}&deposit=${deposit}${
+                isNostrTournament ? '&mode=tournamentnostr' : ''
+              }`
+            )
           }
         >
           Continue

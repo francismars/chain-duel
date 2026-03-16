@@ -9,7 +9,7 @@ import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
 
-type MenuState = 1 | 2 | 2.1 | 3 | 4 | 5;
+type MenuState = 1 | 2 | 2.1 | 3 | 3.1 | 4 | 5;
 
 export default function Index() {
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ export default function Index() {
   const startGameRef = useRef<HTMLButtonElement>(null);
   const startGameNostrRef = useRef<HTMLButtonElement>(null);
   const startTournRef = useRef<HTMLButtonElement>(null);
+  const startTournNostrRef = useRef<HTMLButtonElement>(null);
   const highscoresRef = useRef<HTMLButtonElement>(null);
   const aboutRef = useRef<HTMLButtonElement>(null);
 
@@ -54,6 +55,10 @@ export default function Index() {
         startTournRef.current.style.animationDuration =
           menu === 3 ? '2s' : '0s';
       }
+      if (startTournNostrRef.current) {
+        startTournNostrRef.current.style.animationDuration =
+          menu === 3.1 ? '2s' : '0s';
+      }
       if (highscoresRef.current) {
         highscoresRef.current.style.animationDuration =
           menu === 4 ? '2s' : '0s';
@@ -80,6 +85,8 @@ export default function Index() {
           navigate('/gamemenu?nostr=true');
         } else if (menu === 3) {
           navigate('/tournprefs');
+        } else if (menu === 3.1) {
+          navigate('/tournprefs?mode=tournamentnostr');
         } else if (menu === 4) {
           navigate('/highscores');
         } else if (menu === 5) {
@@ -92,10 +99,13 @@ export default function Index() {
         if (menu === 1) {
           playSfx(SFX.MENU_SELECT);
           setMenu(2);
-        } else if (menu === 2 || menu === 2.1) {
+        } else if (menu === 2) {
           playSfx(SFX.MENU_SELECT);
           setMenu(3);
-        } else if (menu === 3) {
+        } else if (menu === 2.1) {
+          playSfx(SFX.MENU_SELECT);
+          setMenu(3.1);
+        } else if (menu === 3 || menu === 3.1) {
           playSfx(SFX.MENU_SELECT);
           setMenu(4);
         } else if (menu === 4) {
@@ -112,6 +122,9 @@ export default function Index() {
         } else if (menu === 3) {
           playSfx(SFX.MENU_SELECT);
           setMenu(2);
+        } else if (menu === 3.1) {
+          playSfx(SFX.MENU_SELECT);
+          setMenu(2.1);
         } else if (menu === 4) {
           playSfx(SFX.MENU_SELECT);
           setMenu(3);
@@ -126,6 +139,9 @@ export default function Index() {
         if (menu === 2) {
           playSfx(SFX.MENU_SELECT);
           setMenu(2.1);
+        } else if (menu === 3) {
+          playSfx(SFX.MENU_SELECT);
+          setMenu(3.1);
         }
       }
 
@@ -134,6 +150,9 @@ export default function Index() {
         if (menu === 2.1) {
           playSfx(SFX.MENU_SELECT);
           setMenu(2);
+        } else if (menu === 3.1) {
+          playSfx(SFX.MENU_SELECT);
+          setMenu(3);
         }
       }
     };
@@ -184,16 +203,28 @@ export default function Index() {
           </Button>
         </div>
 
-        <Button
-          ref={startTournRef}
-          id="starttourn"
-          onClick={() => {
-            playSfx(SFX.MENU_CONFIRM);
-            navigate('/tournprefs');
-          }}
-        >
-          TOURNAMENT
-        </Button>
+        <div className="double-button">
+          <Button
+            ref={startTournRef}
+            id="starttourn"
+            onClick={() => {
+              playSfx(SFX.MENU_CONFIRM);
+              navigate('/tournprefs');
+            }}
+          >
+            TOURNAMENT
+          </Button>
+          <Button
+            ref={startTournNostrRef}
+            id="starttournnostr"
+            onClick={() => {
+              playSfx(SFX.MENU_CONFIRM);
+              navigate('/tournprefs?mode=tournamentnostr');
+            }}
+          >
+            TOURNAMENT NOSTR
+          </Button>
+        </div>
 
         <Button
           ref={highscoresRef}

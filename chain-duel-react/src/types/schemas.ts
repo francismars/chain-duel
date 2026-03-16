@@ -21,6 +21,10 @@ export const PlayerInfoSchema = z.object({
   payments: z.array(PaymentSchema).optional(),
   picture: z.string().optional(),
   id: z.string().optional(),
+  participantId: z.string().optional(),
+  isAnon: z.boolean().optional(),
+  nostrPubkey: z.string().optional(),
+  fallbackLabel: z.string().optional(),
 });
 
 export const SerializedGameInfoSchema = z.object({
@@ -80,6 +84,22 @@ export const ResGetTournamentInfosSchema = z.object({
   lnurlp: z.string().optional(),
   lnurlw: z.string().optional(),
   min: z.number().optional(),
+  claimedCount: z.number().optional(),
+});
+
+export const TournamentNostrMetaSchema = z.object({
+  note1: z.string(),
+  emojis: z.string(),
+  min: z.number(),
+  mode: z.string(),
+  playersNeeded: z.number(),
+  currentAdmissions: z.number(),
+});
+
+export const ResGetTournamentInfosNostrSchema = z.object({
+  gameInfo: SerializedGameInfoSchema.optional(),
+  nostrMeta: TournamentNostrMetaSchema,
+  lnurlw: z.string().optional(),
   claimedCount: z.number().optional(),
 });
 

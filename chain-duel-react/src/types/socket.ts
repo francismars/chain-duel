@@ -12,6 +12,7 @@ export enum GameMode {
   P2PNOSTR = 'P2PNOSTR',
   PRACTICE = 'PRACTICE',
   TOURNAMENT = 'TOURNAMENT',
+  TOURNAMENTNOSTR = 'TOURNAMENTNOSTR',
 }
 
 export enum PlayerRole {
@@ -48,6 +49,10 @@ export interface PlayerInfo {
   payments?: Payment[];
   picture?: string;
   id?: string;
+  participantId?: string;
+  isAnon?: boolean;
+  nostrPubkey?: string;
+  fallbackLabel?: string;
 }
 
 /**
@@ -93,6 +98,16 @@ export interface Kind1 {
   min: number;
   mode: string;
   hostLNAddress?: string;
+  numberOfPlayers?: number;
+}
+
+export interface TournamentNostrMeta {
+  note1: string;
+  emojis: string;
+  min: number;
+  mode: string;
+  playersNeeded: number;
+  currentAdmissions: number;
 }
 
 // ============================================================================
@@ -106,6 +121,11 @@ export interface ClientToServerEvents {
   getPracticeMenuInfos: (hostInfo?: { LNAddress: string }) => void;
   getGameMenuInfosNostr: (hostInfo?: { LNAddress: string }) => void;
   getTournamentInfos: (data?: {
+    buyin: number;
+    players: number;
+    hostLNAddress?: string;
+  }) => void;
+  getTournamentInfosNostr: (data?: {
     buyin: number;
     players: number;
     hostLNAddress?: string;
@@ -144,6 +164,12 @@ export interface ServerToClientEvents {
     min?: number;
     claimedCount?: number;
   }) => void;
+  resGetTournamentInfosNostr: (data: {
+    gameInfo?: SerializedGameInfo;
+    nostrMeta: TournamentNostrMeta;
+    lnurlw?: string;
+    claimedCount?: number;
+  }) => void;
 
   // Game responses
   resGetDuelInfos: (data: SerializedGameInfo) => void;
@@ -154,6 +180,7 @@ export interface ServerToClientEvents {
 
   // Payment updates
   updatePayments: (data: SerializedGameInfo) => void;
+  updatePaymentsNostrTournament: (data: SerializedGameInfo) => void;
 
   // Tournament cancellation
   rescanceltourn: (data: {

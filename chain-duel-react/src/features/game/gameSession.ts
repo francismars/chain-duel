@@ -24,40 +24,66 @@ export function resolveDuelInfo(data: SerializedGameInfo): DuelResolvedInfo {
   const p1 = data.players['Player 1'];
   const p2 = data.players['Player 2'];
   const mode = data.mode?.toUpperCase();
-  if (mode === 'TOURNAMENT') {
+  if (mode === 'TOURNAMENT' || mode === 'TOURNAMENTNOSTR') {
     const assignedPlayers = data.players ?? {};
     const numberOfPlayers = Object.keys(assignedPlayers).length;
     const playersList = Array(Math.max(2, numberOfPlayers)).fill('');
+    const playersPictures = Array(Math.max(2, numberOfPlayers)).fill('');
+    const playersValues = Array(Math.max(2, numberOfPlayers)).fill(0);
     for (const key of Object.keys(assignedPlayers)) {
       const idx = Number.parseInt(key.replace('Player ', ''), 10) - 1;
       if (idx >= 0 && idx < playersList.length) {
         playersList[idx] = assignedPlayers[key]?.name ?? '';
+        playersPictures[idx] = assignedPlayers[key]?.picture ?? '';
+        playersValues[idx] = Number.parseInt(
+          String(assignedPlayers[key]?.value ?? 0),
+          10
+        );
       }
     }
     const winners = data.winners ?? [];
     let tournamentP1 = p1?.name || 'Player 1';
     let tournamentP2 = p2?.name || 'Player 2';
+    let tournamentP1Picture = p1?.picture ?? '';
+    let tournamentP2Picture = p2?.picture ?? '';
+    let tournamentStartSats = Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10));
     if (winners.length + 1 < numberOfPlayers) {
-      if (winners.length < numberOfPlayers / 2) {
-        tournamentP1 = playersList[2 * winners.length] || tournamentP1;
-        tournamentP2 = playersList[2 * winners.length + 1] || tournamentP2;
+      const round1Games = Math.max(1, Math.floor(numberOfPlayers / 2));
+      if (winners.length < round1Games) {
+        const p1Idx = 2 * winners.length;
+        const p2Idx = p1Idx + 1;
+        tournamentP1 = playersList[p1Idx] || tournamentP1;
+        tournamentP2 = playersList[p2Idx] || tournamentP2;
+        tournamentP1Picture = playersPictures[p1Idx] || tournamentP1Picture;
+        tournamentP2Picture = playersPictures[p2Idx] || tournamentP2Picture;
+        tournamentStartSats = Math.floor(playersValues[p1Idx] || tournamentStartSats);
       } else {
-        const winnerNames = buildWinnerNamesList(playersList, winners);
-        tournamentP1 = winnerNames[2 * winners.length] || tournamentP1;
-        tournamentP2 = winnerNames[2 * winners.length + 1] || tournamentP2;
+        const winnerNames = buildWinnerProgression(playersList, winners, numberOfPlayers, '');
+        const winnerPictures = buildWinnerProgression(
+          playersPictures,
+          winners,
+          numberOfPlayers,
+          ''
+        );
+        const winnerValues = buildWinnerProgression(playersValues, winners, numberOfPlayers, 0);
+        const p1i = (winners.length - round1Games) * 2;
+        tournamentP1 = winnerNames[p1i] || tournamentP1;
+        tournamentP2 = winnerNames[p1i + 1] || tournamentP2;
+        tournamentP1Picture = winnerPictures[p1i] || tournamentP1Picture;
+        tournamentP2Picture = winnerPictures[p1i + 1] || tournamentP2Picture;
+        tournamentStartSats = Math.floor(winnerValues[p1i] || tournamentStartSats);
       }
     }
-    const startSats = Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10));
     return {
       p1Name: tournamentP1,
       p2Name: tournamentP2,
-      p1Points: startSats,
-      p2Points: startSats,
+      p1Points: tournamentStartSats,
+      p2Points: tournamentStartSats,
       gameLabel: `GAME ${winners.length + 1} of ${Math.max(1, numberOfPlayers - 1)}`,
       isTournament: true,
       practiceMode: false,
-      p1Picture: p1?.picture ?? '',
-      p2Picture: p2?.picture ?? '',
+      p1Picture: tournamentP1Picture,
+      p2Picture: tournamentP2Picture,
     };
   }
   if (!p2) {
@@ -104,15 +130,31 @@ export function parseZap(payload: unknown): ParsedZap | null {
   };
 }
 
-function buildWinnerNamesList(playersList: string[], winnersList: string[]): string[] {
-  const playersListCopy = [...playersList];
+function buildWinnerProgression<T>(
+  entrants: T[],
+  winnersList: string[],
+  numberOfPlayers: number,
+  fallback: T
+): T[] {
+  const round1Games = Math.max(1, Math.floor(numberOfPlayers / 2));
+  const winnerProgression: T[] = [];
   for (let i = 0; i < winnersList.length; i += 1) {
+    if (i + 1 >= numberOfPlayers) break;
     const winner = winnersList[i];
-    if (winner === 'Player 1') {
-      playersListCopy.push(playersListCopy[2 * i] ?? '');
+    let winnerValue: T = fallback;
+    if (i < round1Games) {
+      winnerValue =
+        winner === 'Player 1'
+          ? entrants[i * 2] ?? fallback
+          : entrants[i * 2 + 1] ?? fallback;
     } else {
-      playersListCopy.push(playersListCopy[2 * i + 1] ?? '');
+      const p1i = (i - round1Games) * 2;
+      winnerValue =
+        winner === 'Player 1'
+          ? winnerProgression[p1i] ?? fallback
+          : winnerProgression[p1i + 1] ?? fallback;
     }
+    winnerProgression.push(winnerValue);
   }
-  return playersListCopy;
+  return winnerProgression;
 }

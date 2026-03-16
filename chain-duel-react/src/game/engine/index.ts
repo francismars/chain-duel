@@ -511,7 +511,7 @@ function reconstructPath(cameFrom: Map<string, string>, current: GridPos): GridP
 
 export function getMetaFromDuel(mode: string): Pick<GameMeta, 'modeLabel' | 'practiceMode' | 'isTournament'> {
   const normalized = mode?.toUpperCase() ?? 'P2P';
-  if (normalized === 'TOURNAMENT') {
+  if (normalized === 'TOURNAMENT' || normalized === 'TOURNAMENTNOSTR') {
     return { modeLabel: mode, practiceMode: false, isTournament: true };
   }
   if (normalized === 'PRACTICE') {

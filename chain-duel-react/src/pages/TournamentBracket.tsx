@@ -30,10 +30,18 @@ function stripSvgStyle(svgText: string): string {
 
 type PanelView = 'payment' | 'confirm-cancel' | 'refunding';
 
+type TournamentPlayerIdentity = {
+  name?: string;
+  value?: number;
+  picture?: string;
+  fallbackLabel?: string;
+};
+
 export default function TournamentBracket() {
   const logger = useMemo(() => createLogger('TournamentBracket'), []);
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const isNostrTournament = params.get('mode') === 'tournamentnostr';
   const { socket } = useSocket();
 
   useGamepad(true);
@@ -42,7 +50,9 @@ export default function TournamentBracket() {
   const svgWrapperRef = useRef<HTMLDivElement>(null);
 
   const [payLink, setPayLink] = useState<string | null>(null);
-  const [playersPaid, setPlayersPaid] = useState<Record<string, { name?: string }>>({});
+  const [playersPaid, setPlayersPaid] = useState<Record<string, TournamentPlayerIdentity>>({});
+  const [nostrNote1, setNostrNote1] = useState<string>('');
+  const [nostrCode, setNostrCode] = useState<string>('');
   const [showPaymentPanel, setShowPaymentPanel] = useState(false);
   const [loading, setLoading] = useState(true);
   const [highlightDeposit, setHighlightDeposit] = useState(false);
@@ -55,6 +65,9 @@ export default function TournamentBracket() {
   const [panelView, setPanelView] = useState<PanelView>('payment');
   const [withdrawLnurl, setWithdrawLnurl] = useState<string | null>(null);
   const [playerListSequential, setPlayerListSequential] = useState<string[]>([]);
+  const [avatarOverlays, setAvatarOverlays] = useState<
+    Array<{ key: string; left: number; top: number; imageUrl: string; label: string }>
+  >([]);
   const timesWithdrawnRef = useRef(0);
 
   // Keyboard-focused button: 'left' = Cancel/Back, 'right' = Start/Confirm
@@ -91,8 +104,11 @@ export default function TournamentBracket() {
     setHighlightDeposit(false);
     setWinnersList([]);
     setPreStartReady(false);
+    setNostrNote1('');
+    setNostrCode('');
+    setAvatarOverlays([]);
     timesWithdrawnRef.current = 0;
-  }, [urlDeposit, numberOfPlayersFromUrl]);
+  }, [urlDeposit, numberOfPlayersFromUrl, isNostrTournament]);
 
   // Displayed buy-in follows URL by default, then backend min when provided.
   const finalPrize = computeFinalPrize(numberOfPlayers, deposit);
@@ -105,7 +121,7 @@ export default function TournamentBracket() {
     const arr: string[] = Array(Math.max(numberOfPlayers, 4)).fill('');
     for (const [key, v] of Object.entries(playersPaid)) {
       const idx = parseInt(key.replace('Player ', '')) - 1;
-      if (idx >= 0 && idx < arr.length) arr[idx] = v?.name ?? '';
+      if (idx >= 0 && idx < arr.length) arr[idx] = resolveIdentityLabel(v, key);
     }
     return arr;
   }, [playersPaid, numberOfPlayers]);
@@ -135,19 +151,30 @@ export default function TournamentBracket() {
       gameInfo?: {
         numberOfPlayers?: number;
         winners?: string[];
-        players?: Record<string, { name?: string }>;
+        players?: Record<string, TournamentPlayerIdentity>;
       };
       lnurlp?: string;
       lnurlw?: string;
       min?: number;
       claimedCount?: number;
+      nostrMeta?: {
+        note1: string;
+        emojis: string;
+        min: number;
+      };
     }) => {
       if (d.gameInfo?.numberOfPlayers) setNumberOfPlayers(d.gameInfo.numberOfPlayers);
-      if (d.min != null && Number.isFinite(Number(d.min))) {
-        setDeposit(parseInt(String(d.min), 10));
+      const incomingMin =
+        d.min != null ? Number(d.min) : d.nostrMeta?.min != null ? Number(d.nostrMeta.min) : null;
+      if (incomingMin != null && Number.isFinite(incomingMin)) {
+        setDeposit(parseInt(String(incomingMin), 10));
       }
       if (d.lnurlp) setPayLink(d.lnurlp);
       if (d.gameInfo?.players) setPlayersPaid(d.gameInfo.players);
+      if (d.nostrMeta) {
+        setNostrNote1(d.nostrMeta.note1);
+        setNostrCode(d.nostrMeta.emojis);
+      }
 
       if (d.gameInfo?.winners && d.gameInfo.winners.length > 0) {
         setWinnersList(d.gameInfo.winners as string[]);
@@ -176,7 +203,7 @@ export default function TournamentBracket() {
     [navigate]
   );
 
-  const handleTournamentPayments = useCallback((players: Record<string, { name?: string }>) => {
+  const handleTournamentPayments = useCallback((players: Record<string, TournamentPlayerIdentity>) => {
     setPlayersPaid(players);
     setHighlightDeposit(true);
     setTimeout(() => setHighlightDeposit(false), 1200);
@@ -239,6 +266,37 @@ export default function TournamentBracket() {
       }
     }
   }, [playersPaid, svgMarkup]);
+
+  useEffect(() => {
+    if (!svgWrapperRef.current || !svgMarkup || !isNostrTournament) {
+      setAvatarOverlays([]);
+      return;
+    }
+    const wrapperRect = svgWrapperRef.current.getBoundingClientRect();
+    const nextOverlays: Array<{
+      key: string;
+      left: number;
+      top: number;
+      imageUrl: string;
+      label: string;
+    }> = [];
+    for (const [key, player] of Object.entries(playersPaid)) {
+      const idx = parseInt(key.replace('Player ', '')) - 1;
+      const posId = INITIAL_POSITIONS[idx];
+      if (!posId) continue;
+      const nameEl = svgWrapperRef.current.querySelector<SVGElement>(`#${posId}_name`);
+      if (!nameEl) continue;
+      const rect = nameEl.getBoundingClientRect();
+      nextOverlays.push({
+        key,
+        left: rect.left - wrapperRect.left - 20,
+        top: rect.top - wrapperRect.top - 8,
+        imageUrl: player.picture || '/images/loading.gif',
+        label: resolveIdentityLabel(player, key),
+      });
+    }
+    setAvatarOverlays(nextOverlays);
+  }, [playersPaid, svgMarkup, isNostrTournament]);
 
   // Apply bracket winner highlighting to inlined SVG (matches legacy updateBracketWinner)
   useEffect(() => {
@@ -342,6 +400,7 @@ export default function TournamentBracket() {
     socket,
     urlDeposit,
     numberOfPlayersFromUrl,
+    isNostrTournament,
     onLoading: setLoading,
     onInfos: handleTournamentInfos,
     onPayments: handleTournamentPayments,
@@ -396,6 +455,10 @@ export default function TournamentBracket() {
       ])
     );
     sessionStorage.setItem('Players', JSON.stringify(names));
+    sessionStorage.setItem(
+      'tournamentMode',
+      isNostrTournament ? 'tournamentnostr' : 'tournament'
+    );
     navigate('/game');
   }
 
@@ -481,17 +544,40 @@ export default function TournamentBracket() {
               </h1>
               <Sponsorship id="sponsorshipBraket" />
             </div>
-            {svgMarkup ? (
-              <div
-                ref={svgWrapperRef}
-                className="tournbracketSVG tournbracketSVG-inline"
-                role="img"
-                aria-label="Tournament bracket"
-                dangerouslySetInnerHTML={{ __html: svgMarkup }}
-              />
-            ) : (
-              <img src={bracketSvg} alt="Tournament bracket" className="tournbracketSVG" />
-            )}
+            <div style={{ position: 'relative' }}>
+              {svgMarkup ? (
+                <div
+                  ref={svgWrapperRef}
+                  className="tournbracketSVG tournbracketSVG-inline"
+                  role="img"
+                  aria-label="Tournament bracket"
+                  dangerouslySetInnerHTML={{ __html: svgMarkup }}
+                />
+              ) : (
+                <img src={bracketSvg} alt="Tournament bracket" className="tournbracketSVG" />
+              )}
+              {isNostrTournament &&
+                avatarOverlays.map((overlay) => (
+                  <div
+                    key={overlay.key}
+                    style={{
+                      position: 'absolute',
+                      left: `${overlay.left}px`,
+                      top: `${overlay.top}px`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <img
+                      src={overlay.imageUrl}
+                      alt={overlay.label}
+                      style={{ width: '16px', height: '16px', borderRadius: '50%' }}
+                    />
+                  </div>
+                ))}
+            </div>
           </div>
         </div>
       </div>
@@ -518,7 +604,11 @@ export default function TournamentBracket() {
                     )}
                   </div>
                   {!canStart && (
-                    <div className="label mt-10" id="paymentNote">Set player name on payment note</div>
+                    <div className="label mt-10" id="paymentNote">
+                      {isNostrTournament
+                        ? 'Zap the Nostr event to claim your slot'
+                        : 'Set player name on payment note'}
+                    </div>
                   )}
                 </div>
                 <div className="qrCodeDiv mt-10" id="qrCodeDiv">
@@ -529,6 +619,31 @@ export default function TournamentBracket() {
                       className="qrTournamentCheck"
                       alt="All players paid"
                     />
+                  ) : isNostrTournament && nostrNote1 ? (
+                    <a
+                      id="qrTournamentLink"
+                      href={`https://next.nostrudel.ninja/#/n/${nostrNote1}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'inline-block' }}
+                    >
+                      <QRCodeCanvas
+                        id="qrTournament"
+                        value={`nostr:${nostrNote1}`}
+                        size={800}
+                        level="M"
+                        className="qrcode"
+                      />
+                      {nostrCode ? <div className="label mt-10">{nostrCode}</div> : null}
+                      {highlightDeposit && (
+                        <img
+                          id="qrcodeDecoration"
+                          className="qrcodeDecoration"
+                          src="/images/qr_lightning.gif"
+                          alt=""
+                        />
+                      )}
+                    </a>
                   ) : payLink ? (
                     <a id="qrTournamentLink" href={`lightning:${payLink}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block' }}>
                       <QRCodeCanvas id="qrTournament" value={payLink} size={800} level="M" className="qrcode" />
@@ -547,10 +662,27 @@ export default function TournamentBracket() {
                 </div>
                 <div className={`deposited mt-10${highlightDeposit ? ' highlight' : ''}`} id="satsdeposited">
                   <b className="depositedvalue" id="depositedvalue">
-                    {(deposit * paidCount).toLocaleString()}
+                    {(isNostrTournament
+                      ? Object.values(playersPaid).reduce((sum, player) => sum + (player.value ?? 0), 0)
+                      : deposit * paidCount
+                    ).toLocaleString()}
                   </b>{' '}
                   <span className="label">SATS DEPOSITED</span>
                 </div>
+                {isNostrTournament && paidCount > 0 && (
+                  <div className="mt-10" style={{ maxHeight: '140px', overflowY: 'auto' }}>
+                    {Object.entries(playersPaid).map(([key, player]) => (
+                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img
+                          src={player.picture || '/images/loading.gif'}
+                          alt={resolveIdentityLabel(player, key)}
+                          style={{ width: '22px', height: '22px', borderRadius: '50%' }}
+                        />
+                        <span className="label">{resolveIdentityLabel(player, key)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
 
@@ -695,4 +827,11 @@ export default function TournamentBracket() {
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </div>
   );
+}
+
+function resolveIdentityLabel(player: TournamentPlayerIdentity | undefined, fallbackRole: string): string {
+  if (!player) return fallbackRole;
+  if (player.name && player.name.trim() !== '') return player.name;
+  if (player.fallbackLabel && player.fallbackLabel.trim() !== '') return player.fallbackLabel;
+  return fallbackRole;
 }

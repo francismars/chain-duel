@@ -42,6 +42,8 @@ export const SocketBoundaryParsers = {
     parseWithValidator(payload, SocketValidators.updatePayments),
   tournamentInfos: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.resGetTournamentInfos),
+  tournamentInfosNostr: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resGetTournamentInfosNostr),
   cancelTournament: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.rescanceltourn),
 };
