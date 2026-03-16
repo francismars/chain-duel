@@ -65,9 +65,6 @@ export default function TournamentBracket() {
   const [panelView, setPanelView] = useState<PanelView>('payment');
   const [withdrawLnurl, setWithdrawLnurl] = useState<string | null>(null);
   const [playerListSequential, setPlayerListSequential] = useState<string[]>([]);
-  const [avatarOverlays, setAvatarOverlays] = useState<
-    Array<{ key: string; left: number; top: number; imageUrl: string; label: string }>
-  >([]);
   const timesWithdrawnRef = useRef(0);
 
   // Keyboard-focused button: 'left' = Cancel/Back, 'right' = Start/Confirm
@@ -106,7 +103,6 @@ export default function TournamentBracket() {
     setPreStartReady(false);
     setNostrNote1('');
     setNostrCode('');
-    setAvatarOverlays([]);
     timesWithdrawnRef.current = 0;
   }, [urlDeposit, numberOfPlayersFromUrl, isNostrTournament]);
 
@@ -251,6 +247,10 @@ export default function TournamentBracket() {
   useEffect(() => {
     if (!svgWrapperRef.current || !svgMarkup) return;
     const svgEl = svgWrapperRef.current;
+    const svgRoot = svgEl.querySelector('svg');
+    if (!svgRoot) return;
+    const oldAvatars = svgRoot.querySelectorAll<SVGImageElement>('image[data-avatar="true"]');
+    oldAvatars.forEach((node) => node.remove());
     const paid = playersPaid;
     for (const key of Object.keys(paid)) {
       const idx = parseInt(key.replace('Player ', '')) - 1;
@@ -258,44 +258,63 @@ export default function TournamentBracket() {
       if (!posId) continue;
       const nameEl = svgEl.querySelector<SVGElement>(`#${posId}_name`);
       if (nameEl) {
-        const name = paid[key]?.name ?? '';
+        const name = resolveIdentityLabel(paid[key], key);
         const tspan = nameEl.querySelector('tspan');
         if (tspan) tspan.textContent = name;
         else nameEl.textContent = name;
         nameEl.style.opacity = '1';
       }
-    }
-  }, [playersPaid, svgMarkup]);
+      if (isNostrTournament && nameEl) {
+        const textNode = nameEl as unknown as SVGGraphicsElement | null;
+        if (!textNode) continue;
+        const originalTransform = nameEl.getAttribute('data-original-transform');
+        if (!originalTransform) {
+          const currentTransform = nameEl.getAttribute('transform') ?? '';
+          nameEl.setAttribute('data-original-transform', currentTransform);
+        } else {
+          nameEl.setAttribute('transform', originalTransform);
+        }
+        const baseBBox = textNode.getBBox();
+        const avatarSize = Math.max(12, Math.round(baseBBox.height));
+        const gap = 4;
+        const shift = (avatarSize + gap) / 2;
 
-  useEffect(() => {
-    if (!svgWrapperRef.current || !svgMarkup || !isNostrTournament) {
-      setAvatarOverlays([]);
-      return;
+        const transformAttr = nameEl.getAttribute('transform') ?? '';
+        const match = transformAttr.match(
+          /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
+        );
+        if (match) {
+          const x = Number.parseFloat(match[1]);
+          const y = Number.parseFloat(match[2]);
+          nameEl.setAttribute('transform', `translate(${x + shift} ${y})`);
+        }
+
+        const alignedBBox = textNode.getBBox();
+        const alignedTransform = nameEl.getAttribute('transform') ?? '';
+        const alignedMatch = alignedTransform.match(
+          /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
+        );
+        if (!alignedMatch) continue;
+        const tx = Number.parseFloat(alignedMatch[1]);
+        const ty = Number.parseFloat(alignedMatch[2]);
+        const picture = paid[key]?.picture;
+        const imageHref =
+          picture && picture.trim() !== '' ? picture : '/images/social/Nostr.png';
+        const avatar = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        avatar.setAttribute('data-avatar', 'true');
+        avatar.setAttribute('x', `${tx + alignedBBox.x - avatarSize - gap}`);
+        avatar.setAttribute(
+          'y',
+          `${ty + alignedBBox.y + (alignedBBox.height - avatarSize) / 2}`
+        );
+        avatar.setAttribute('width', `${avatarSize}`);
+        avatar.setAttribute('height', `${avatarSize}`);
+        avatar.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+        avatar.setAttributeNS('http://www.w3.org/1999/xlink', 'href', imageHref);
+        avatar.setAttribute('href', imageHref);
+        nameEl.parentNode?.appendChild(avatar);
+      }
     }
-    const wrapperRect = svgWrapperRef.current.getBoundingClientRect();
-    const nextOverlays: Array<{
-      key: string;
-      left: number;
-      top: number;
-      imageUrl: string;
-      label: string;
-    }> = [];
-    for (const [key, player] of Object.entries(playersPaid)) {
-      const idx = parseInt(key.replace('Player ', '')) - 1;
-      const posId = INITIAL_POSITIONS[idx];
-      if (!posId) continue;
-      const nameEl = svgWrapperRef.current.querySelector<SVGElement>(`#${posId}_name`);
-      if (!nameEl) continue;
-      const rect = nameEl.getBoundingClientRect();
-      nextOverlays.push({
-        key,
-        left: rect.left - wrapperRect.left - 20,
-        top: rect.top - wrapperRect.top - 8,
-        imageUrl: player.picture || '/images/loading.gif',
-        label: resolveIdentityLabel(player, key),
-      });
-    }
-    setAvatarOverlays(nextOverlays);
   }, [playersPaid, svgMarkup, isNostrTournament]);
 
   // Apply bracket winner highlighting to inlined SVG (matches legacy updateBracketWinner)
@@ -556,27 +575,6 @@ export default function TournamentBracket() {
               ) : (
                 <img src={bracketSvg} alt="Tournament bracket" className="tournbracketSVG" />
               )}
-              {isNostrTournament &&
-                avatarOverlays.map((overlay) => (
-                  <div
-                    key={overlay.key}
-                    style={{
-                      position: 'absolute',
-                      left: `${overlay.left}px`,
-                      top: `${overlay.top}px`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    <img
-                      src={overlay.imageUrl}
-                      alt={overlay.label}
-                      style={{ width: '16px', height: '16px', borderRadius: '50%' }}
-                    />
-                  </div>
-                ))}
             </div>
           </div>
         </div>
@@ -669,20 +667,6 @@ export default function TournamentBracket() {
                   </b>{' '}
                   <span className="label">SATS DEPOSITED</span>
                 </div>
-                {isNostrTournament && paidCount > 0 && (
-                  <div className="mt-10" style={{ maxHeight: '140px', overflowY: 'auto' }}>
-                    {Object.entries(playersPaid).map(([key, player]) => (
-                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <img
-                          src={player.picture || '/images/loading.gif'}
-                          alt={resolveIdentityLabel(player, key)}
-                          style={{ width: '22px', height: '22px', borderRadius: '50%' }}
-                        />
-                        <span className="label">{resolveIdentityLabel(player, key)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </>
             )}
 
