@@ -13,6 +13,7 @@ export enum GameMode {
   PRACTICE = 'PRACTICE',
   TOURNAMENT = 'TOURNAMENT',
   TOURNAMENTNOSTR = 'TOURNAMENTNOSTR',
+  ONLINE = 'ONLINE',
 }
 
 export enum PlayerRole {
@@ -110,6 +111,81 @@ export interface TournamentNostrMeta {
   currentAdmissions: number;
 }
 
+export interface OnlineNostrMeta {
+  note1: string;
+  emojis: string;
+  min: number;
+  mode: string;
+}
+
+export interface OnlineInputState {
+  up?: boolean;
+  down?: boolean;
+  left?: boolean;
+  right?: boolean;
+}
+
+export interface OnlineRoomSnapshot {
+  tick: number;
+  phase: 'lobby' | 'playing' | 'finished' | 'cancelled';
+  state: any;
+  hud: {
+    p1Points: number;
+    p2Points: number;
+    captureP1: string;
+    captureP2: string;
+    initialWidthP1: number;
+    initialWidthP2: number;
+    currentWidthP1: number;
+    currentWidthP2: number;
+  };
+}
+
+export interface OnlineSeatState {
+  role: PlayerRole.Player1 | PlayerRole.Player2;
+  sessionID?: string;
+  socketID?: string;
+  status: 'open' | 'paid';
+  paidAmount?: number;
+  paidAt?: number;
+  name?: string;
+  picture?: string;
+  pubkey?: string;
+}
+
+export interface OnlineRoomState {
+  roomId: string;
+  roomCode: string;
+  hostSessionID: string;
+  buyin: number;
+  phase: 'lobby' | 'playing' | 'finished' | 'cancelled';
+  kind1EventId?: string;
+  nostrMeta?: OnlineNostrMeta;
+  seats: Record<string, OnlineSeatState>;
+  spectators: string[];
+  snapshot: OnlineRoomSnapshot;
+  postGame?: {
+    winnerRole?: PlayerRole.Player1 | PlayerRole.Player2;
+    winnerSessionID?: string;
+    winnerName: string;
+    winnerPicture?: string;
+    winnerPoints: number;
+    totalPrize: number;
+    lnurlw?: string;
+    doubleOrNothingVotes: number;
+  };
+}
+
+export interface OnlineRoomListItem {
+  roomId: string;
+  roomCode: string;
+  buyin: number;
+  createdAt: number;
+  phase: 'lobby' | 'playing' | 'finished' | 'cancelled';
+  playersPaid: number;
+  seatsTotal: number;
+}
+
 // ============================================================================
 // Socket Event Payloads
 // ============================================================================
@@ -143,6 +219,21 @@ export interface ClientToServerEvents {
   // Cancel events
   cancelp2p: () => void;
   canceltournament: () => void;
+
+  // Online mode events
+  createOnlineRoom: (payload?: { buyin?: number; hostLNAddress?: string }) => void;
+  listOnlineRooms: () => void;
+  joinOnlineRoom: (payload: { roomId: string }) => void;
+  joinOnlineRoomByCode: (payload: { roomCode: string }) => void;
+  spectateOnlineRoom: (payload: { roomId: string }) => void;
+  leaveOnlineRoom: (payload?: { roomId?: string }) => void;
+  cancelOnlineRoom: (payload: { roomId: string }) => void;
+  getOnlineRoomState: (payload: { roomId: string }) => void;
+  roomInput: (payload: { roomId: string; input: OnlineInputState }) => void;
+  startOnlineGame: (payload: { roomId: string }) => void;
+  getOnlinePostGame: (payload: { roomId: string }) => void;
+  createOnlineWithdrawal: (payload: { roomId: string }) => void;
+  onlineDoubleOrNothing: (payload: { roomId: string }) => void;
 }
 
 // Server -> Client Events
@@ -191,4 +282,56 @@ export interface ServerToClientEvents {
   // Nostr events
   zapReceived: (data: unknown) => void;
   prizeWithdrawn: () => void;
+
+  // Online mode events
+  resCreateOnlineRoom: (data: {
+    roomId: string;
+    roomCode: string;
+    joinPin: string;
+    pinExpiresAt: number;
+    nostrMeta?: OnlineNostrMeta;
+    room: OnlineRoomState;
+  }) => void;
+  resListOnlineRooms: (data: { rooms: OnlineRoomListItem[] }) => void;
+  resJoinOnlineRoom: (data: {
+    roomId: string;
+    roomCode: string;
+    joinPin: string;
+    pinExpiresAt: number;
+    nostrMeta?: OnlineNostrMeta;
+    room: OnlineRoomState;
+  }) => void;
+  onlineRoomUpdated: (data: OnlineRoomState) => void;
+  onlineRoomSnapshot: (data: { roomId: string; snapshot: OnlineRoomSnapshot }) => void;
+  onlineSeatAssigned: (data: {
+    roomId: string;
+    playerRole: PlayerRole.Player1 | PlayerRole.Player2;
+    sessionId: string;
+  }) => void;
+  onlinePinInvalid: (data: { reason: string }) => void;
+  resOnlinePostGameInfo: (data: {
+    roomId: string;
+    phase: 'finished';
+    p1Name: string;
+    p2Name: string;
+    p1Picture?: string;
+    p2Picture?: string;
+    p1Points: number;
+    p2Points: number;
+    winnerRole?: PlayerRole.Player1 | PlayerRole.Player2;
+    winnerSessionID?: string;
+    winnerName: string;
+    winnerPicture?: string;
+    winnerPoints: number;
+    totalPrize: number;
+    lnurlw?: string;
+    doubleOrNothingVotes: number;
+  }) => void;
+  resCreateOnlineWithdrawal: (data: { roomId: string; lnurlw: string }) => void;
+  onlineDoubleOrNothingUpdate: (data: {
+    roomId: string;
+    votes: number;
+    required: number;
+    agreed: boolean;
+  }) => void;
 }

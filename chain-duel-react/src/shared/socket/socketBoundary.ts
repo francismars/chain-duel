@@ -46,4 +46,24 @@ export const SocketBoundaryParsers = {
     parseWithValidator(payload, SocketValidators.resGetTournamentInfosNostr),
   cancelTournament: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.rescanceltourn),
+  createOnlineRoom: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resCreateOnlineRoom),
+  listOnlineRooms: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resListOnlineRooms),
+  joinOnlineRoom: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resJoinOnlineRoom),
+  onlineRoomUpdated: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.onlineRoomUpdated),
+  onlineRoomSnapshot: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.onlineRoomSnapshot),
+  onlineSeatAssigned: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.onlineSeatAssigned),
+  onlinePinInvalid: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.onlinePinInvalid),
+  onlinePostGameInfo: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resOnlinePostGameInfo),
+  createOnlineWithdrawal: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resCreateOnlineWithdrawal),
+  onlineDoubleOrNothingUpdate: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.onlineDoubleOrNothingUpdate),
 };

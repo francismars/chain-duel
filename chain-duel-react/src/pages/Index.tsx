@@ -9,7 +9,7 @@ import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
 
-type MenuState = 1 | 2 | 2.1 | 3 | 3.1 | 4 | 5;
+type MenuState = 1 | 2 | 2.1 | 3 | 3.1 | 3.2 | 4 | 5;
 
 export default function Index() {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ export default function Index() {
   const startGameNostrRef = useRef<HTMLButtonElement>(null);
   const startTournRef = useRef<HTMLButtonElement>(null);
   const startTournNostrRef = useRef<HTMLButtonElement>(null);
+  const startOnlineRef = useRef<HTMLButtonElement>(null);
   const highscoresRef = useRef<HTMLButtonElement>(null);
   const aboutRef = useRef<HTMLButtonElement>(null);
 
@@ -63,6 +64,9 @@ export default function Index() {
         highscoresRef.current.style.animationDuration =
           menu === 4 ? '2s' : '0s';
       }
+      if (startOnlineRef.current) {
+        startOnlineRef.current.style.animationDuration = menu === 3.2 ? '2s' : '0s';
+      }
       if (aboutRef.current) {
         aboutRef.current.style.animationDuration = menu === 5 ? '2s' : '0s';
       }
@@ -87,6 +91,8 @@ export default function Index() {
           navigate('/tournprefs');
         } else if (menu === 3.1) {
           navigate('/tournprefs?mode=tournamentnostr');
+        } else if (menu === 3.2) {
+          navigate('/online');
         } else if (menu === 4) {
           navigate('/highscores');
         } else if (menu === 5) {
@@ -107,6 +113,9 @@ export default function Index() {
           setMenu(3.1);
         } else if (menu === 3 || menu === 3.1) {
           playSfx(SFX.MENU_SELECT);
+          setMenu(3.2);
+        } else if (menu === 3.2) {
+          playSfx(SFX.MENU_SELECT);
           setMenu(4);
         } else if (menu === 4) {
           playSfx(SFX.MENU_SELECT);
@@ -125,9 +134,12 @@ export default function Index() {
         } else if (menu === 3.1) {
           playSfx(SFX.MENU_SELECT);
           setMenu(2.1);
-        } else if (menu === 4) {
+        } else if (menu === 3.2) {
           playSfx(SFX.MENU_SELECT);
           setMenu(3);
+        } else if (menu === 4) {
+          playSfx(SFX.MENU_SELECT);
+          setMenu(3.2);
         } else if (menu === 5) {
           playSfx(SFX.MENU_SELECT);
           setMenu(4);
@@ -142,6 +154,9 @@ export default function Index() {
         } else if (menu === 3) {
           playSfx(SFX.MENU_SELECT);
           setMenu(3.1);
+        } else if (menu === 3.1) {
+          playSfx(SFX.MENU_SELECT);
+          setMenu(3.2);
         }
       }
 
@@ -153,6 +168,9 @@ export default function Index() {
         } else if (menu === 3.1) {
           playSfx(SFX.MENU_SELECT);
           setMenu(3);
+        } else if (menu === 3.2) {
+          playSfx(SFX.MENU_SELECT);
+          setMenu(3.1);
         }
       }
     };
@@ -225,6 +243,17 @@ export default function Index() {
             TOURNAMENT NOSTR
           </Button>
         </div>
+
+        <Button
+          ref={startOnlineRef}
+          id="startonline"
+          onClick={() => {
+            playSfx(SFX.MENU_CONFIRM);
+            navigate('/online');
+          }}
+        >
+          ONLINE
+        </Button>
 
         <Button
           ref={highscoresRef}

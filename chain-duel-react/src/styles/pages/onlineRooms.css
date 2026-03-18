@@ -1,0 +1,277 @@
+.online-rooms-page {
+  width: 100vw;
+  min-height: calc(100vh - 5vw);
+  padding: 2.6vw 3vw 2vw;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vw;
+}
+
+#online-title {
+  font-size: 7.4cqw;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-shadow: 0 0 16px rgb(255 255 255 / 35%);
+}
+
+#online-subtitle {
+  text-align: center;
+  color: #d8d8d8;
+  letter-spacing: 0.06rem;
+  font-size: 0.9cqw;
+  margin-top: -0.4vw;
+}
+
+.online-layout {
+  width: min(70vw, 1200px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1vw;
+}
+
+.online-panel {
+  border: 1px solid #515151;
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 4%) 0%,
+    rgb(255 255 255 / 1%) 100%
+  );
+  border-radius: 10px;
+  padding: 1.1vw 1vw;
+  box-shadow: 0 0 28px rgb(255 255 255 / 8%);
+}
+
+.online-panel-title {
+  font-size: 1.9cqw;
+  margin: 0;
+}
+
+.online-panel-copy {
+  color: #b7b7b7;
+  font-size: 0.78cqw;
+  margin-top: 0.3vw;
+}
+
+.online-input-row {
+  margin-top: 0.7vw;
+  display: flex;
+  gap: 0.6vw;
+}
+
+.online-input {
+  flex: 1;
+  height: 3vw;
+  background: rgb(0 0 0 / 55%);
+  border: 1px solid #727272;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.82cqw;
+  letter-spacing: 0.04rem;
+  padding: 0 0.8vw;
+  text-transform: uppercase;
+}
+
+.online-input:focus {
+  outline: none;
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 22%);
+}
+
+.online-action {
+  width: 8.2vw;
+  min-width: 108px;
+  height: 3vw;
+  margin: 0;
+  padding: 0 0.6vw;
+}
+
+.online-room-list-panel {
+  width: min(70vw, 1200px);
+  margin: 0 auto;
+  border: 1px solid #515151;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 42%);
+  box-shadow: 0 0 24px rgb(255 255 255 / 7%);
+  padding: 0.9vw 1vw;
+}
+
+.online-room-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6vw;
+}
+
+.online-room-list-head h3 {
+  margin: 0;
+  font-size: 1.45cqw;
+}
+
+.online-refresh {
+  width: 8.5vw;
+  min-width: 120px;
+  margin: 0;
+}
+
+.online-room-list {
+  max-height: 40vh;
+  overflow-y: auto;
+  padding-right: 0.3vw;
+}
+
+.online-room-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #4f4f4f;
+  background: linear-gradient(90deg, rgb(255 255 255 / 2%) 0%, rgb(255 255 255 / 0%) 100%);
+  border-radius: 8px;
+  padding: 0.8vw 0.9vw;
+  margin-bottom: 0.55vw;
+}
+
+.online-room-main {
+  min-width: 40%;
+}
+
+.online-room-code {
+  font-family: 'BureauGrotesque';
+  font-size: 1.45cqw;
+  letter-spacing: 0.04em;
+}
+
+.online-room-meta {
+  display: flex;
+  gap: 0.9vw;
+  margin-top: 0.2vw;
+  color: #d1d1d1;
+  font-size: 0.78cqw;
+}
+
+.online-phase {
+  padding: 0.1vw 0.45vw;
+  border-radius: 99px;
+  border: 1px solid #7e7e7e;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.online-phase-playing {
+  border-color: #47ff76;
+  color: #47ff76;
+}
+
+.online-phase-cancelled {
+  border-color: #ff7575;
+  color: #ff7575;
+}
+
+.online-phase-finished {
+  border-color: #ffca5a;
+  color: #ffca5a;
+}
+
+.online-room-actions {
+  display: flex;
+  gap: 0.5vw;
+}
+
+.online-empty {
+  color: #afafaf;
+  text-align: center;
+  padding: 1vw;
+}
+
+.online-error {
+  width: min(70vw, 1200px);
+  margin: 0 auto;
+  color: #ff7b7b;
+  text-align: center;
+  font-size: 0.85cqw;
+}
+
+.online-footer-controls {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4vw;
+}
+
+.online-back {
+  min-width: 220px;
+}
+
+.online-controls-hint {
+  color: #9f9f9f;
+  letter-spacing: 0.03rem;
+  font-size: 0.75cqw;
+}
+
+.online-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 68%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.online-loading-card {
+  width: min(560px, 88vw);
+  border: 1px solid #fff;
+  border-radius: 10px;
+  padding: 1.3rem 1.2rem;
+  background: rgb(0 0 0 / 82%);
+  text-align: center;
+  box-shadow: 0 0 32px rgb(255 255 255 / 20%);
+}
+
+.online-loading-title {
+  font-family: 'BureauGrotesque';
+  text-transform: uppercase;
+  font-size: 1.5rem;
+  letter-spacing: 0.06rem;
+}
+
+.online-loading-copy {
+  color: #d5d5d5;
+  margin-top: 0.45rem;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 1024px) {
+  .online-layout {
+    width: 90vw;
+    grid-template-columns: 1fr;
+    gap: 2vw;
+  }
+
+  .online-room-list-panel,
+  .online-error {
+    width: 90vw;
+  }
+
+  .online-panel,
+  .online-room-list-panel {
+    padding: 12px;
+  }
+
+  .online-room-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .online-panel-title {
+    font-size: 24px;
+  }
+
+  .online-input,
+  .online-action {
+    height: 44px;
+    font-size: 12px;
+  }
+}
