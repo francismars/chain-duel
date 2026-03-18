@@ -12,6 +12,10 @@ import PostGame from './pages/PostGame';
 import Highscores from './pages/Highscores';
 import About from './pages/About';
 import Config from './pages/Config';
+import OnlineRooms from './pages/OnlineRooms';
+import OnlineRoomLobby from './pages/OnlineRoomLobby';
+import OnlineGame from './pages/OnlineGame';
+import OnlinePostGame from './pages/OnlinePostGame';
 import './styles/index.css';
 
 function App() {
@@ -31,6 +35,10 @@ function App() {
           <Route path="/highscores" element={<Highscores />} />
           <Route path="/about" element={<About />} />
           <Route path="/config" element={<Config />} />
+          <Route path="/online" element={<OnlineRooms />} />
+          <Route path="/online/lobby" element={<OnlineRoomLobby />} />
+          <Route path="/online/game" element={<OnlineGame />} />
+          <Route path="/online/postgame" element={<OnlinePostGame />} />
         </Routes>
       </BrowserRouter>
     </AudioProvider>

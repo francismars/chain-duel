@@ -5,7 +5,17 @@
 
 import { z } from 'zod';
 import {
+  OnlineDoubleOrNothingUpdateSchema,
+  OnlinePinInvalidSchema,
+  OnlineRoomSnapshotEventSchema,
+  OnlineRoomStateSchema,
+  OnlineSeatAssignedSchema,
+  ResCreateOnlineWithdrawalSchema,
+  ResCreateOnlineRoomSchema,
   ResGetGameMenuInfosSchema,
+  ResOnlinePostGameInfoSchema,
+  ResJoinOnlineRoomSchema,
+  ResListOnlineRoomsSchema,
   ResGetTournamentInfosSchema,
   ResGetTournamentInfosNostrSchema,
   ResPostGameInfoRequestSchema,
@@ -83,4 +93,34 @@ export const SocketValidators = {
 
   rescanceltourn: (data: unknown) =>
     validateSocketEvent(ResCancelTournamentSchema, data, 'rescanceltourn'),
+
+  resCreateOnlineRoom: (data: unknown) =>
+    validateSocketEvent(ResCreateOnlineRoomSchema, data, 'resCreateOnlineRoom'),
+
+  resListOnlineRooms: (data: unknown) =>
+    validateSocketEvent(ResListOnlineRoomsSchema, data, 'resListOnlineRooms'),
+
+  resJoinOnlineRoom: (data: unknown) =>
+    validateSocketEvent(ResJoinOnlineRoomSchema, data, 'resJoinOnlineRoom'),
+
+  onlineRoomUpdated: (data: unknown) =>
+    validateSocketEvent(OnlineRoomStateSchema, data, 'onlineRoomUpdated'),
+
+  onlineRoomSnapshot: (data: unknown) =>
+    validateSocketEvent(OnlineRoomSnapshotEventSchema, data, 'onlineRoomSnapshot'),
+
+  onlineSeatAssigned: (data: unknown) =>
+    validateSocketEvent(OnlineSeatAssignedSchema, data, 'onlineSeatAssigned'),
+
+  onlinePinInvalid: (data: unknown) =>
+    validateSocketEvent(OnlinePinInvalidSchema, data, 'onlinePinInvalid'),
+
+  resOnlinePostGameInfo: (data: unknown) =>
+    validateSocketEvent(ResOnlinePostGameInfoSchema, data, 'resOnlinePostGameInfo'),
+
+  resCreateOnlineWithdrawal: (data: unknown) =>
+    validateSocketEvent(ResCreateOnlineWithdrawalSchema, data, 'resCreateOnlineWithdrawal'),
+
+  onlineDoubleOrNothingUpdate: (data: unknown) =>
+    validateSocketEvent(OnlineDoubleOrNothingUpdateSchema, data, 'onlineDoubleOrNothingUpdate'),
 };

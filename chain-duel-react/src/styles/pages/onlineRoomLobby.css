@@ -1,0 +1,322 @@
+.online-lobby-page {
+  width: 100vw;
+  min-height: calc(100vh - 5vw);
+  padding: 2.4vw 3vw 2vw;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 1vw;
+}
+
+.online-lobby-page-missing {
+  align-items: center;
+  justify-content: center;
+}
+
+#online-lobby-title {
+  font-size: 6.8cqw;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-shadow: 0 0 16px rgb(255 255 255 / 28%);
+}
+
+#online-lobby-subtitle {
+  text-align: center;
+  color: #d0d0d0;
+  font-size: 0.88cqw;
+  letter-spacing: 0.05rem;
+  margin-top: -0.35vw;
+}
+
+.online-lobby-top {
+  width: min(75vw, 1260px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr;
+  gap: 1vw;
+}
+
+.online-lobby-panel {
+  border: 1px solid #565656;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 4%) 0%, rgb(255 255 255 / 1%) 100%);
+  box-shadow: 0 0 28px rgb(255 255 255 / 8%);
+  padding: 1vw;
+}
+
+.online-lobby-meta-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5vw;
+}
+
+.online-lobby-label {
+  color: #bcbcbc;
+  font-size: 0.72cqw;
+  letter-spacing: 0.05rem;
+  text-transform: uppercase;
+}
+
+.online-lobby-code {
+  font-family: 'BureauGrotesque';
+  font-size: 2.4cqw;
+  letter-spacing: 0.04em;
+  margin-top: 0.2vw;
+}
+
+.online-lobby-phase {
+  padding: 0.2vw 0.6vw;
+  border-radius: 999px;
+  border: 1px solid #8a8a8a;
+  font-size: 0.72cqw;
+  letter-spacing: 0.04rem;
+}
+
+.online-lobby-phase-playing {
+  color: #4dff7a;
+  border-color: #4dff7a;
+}
+
+.online-lobby-phase-finished {
+  color: #ffcd62;
+  border-color: #ffcd62;
+}
+
+.online-lobby-phase-cancelled {
+  color: #ff8181;
+  border-color: #ff8181;
+}
+
+.online-lobby-buyin {
+  color: #dedede;
+  font-size: 0.82cqw;
+  margin-top: 0.45vw;
+}
+
+.online-lobby-pin-card {
+  margin-top: 0.75vw;
+  border: 1px dashed #838383;
+  border-radius: 8px;
+  padding: 0.75vw;
+  background: rgb(0 0 0 / 35%);
+}
+
+.online-lobby-emojis-card {
+  margin-top: 0.75vw;
+  border: 1px dashed #787878;
+  border-radius: 8px;
+  padding: 0.75vw;
+  background: rgb(0 0 0 / 35%);
+}
+
+.online-lobby-emojis {
+  font-family: 'BureauGrotesque';
+  letter-spacing: 0.07em;
+  font-size: 1.9cqw;
+  margin-top: 0.2vw;
+}
+
+.online-lobby-pin {
+  font-family: 'BureauGrotesque';
+  letter-spacing: 0.08em;
+  font-size: 2.2cqw;
+  margin-top: 0.25vw;
+}
+
+.online-lobby-copy {
+  color: #c7c7c7;
+  font-size: 0.78cqw;
+}
+
+.online-lobby-expiry {
+  color: #a9a9a9;
+  font-size: 0.74cqw;
+  margin-top: 0.22vw;
+}
+
+.online-lobby-actions-row {
+  margin-top: 0.9vw;
+  display: flex;
+  gap: 0.5vw;
+}
+
+.online-lobby-action {
+  margin: 0;
+  width: 11vw;
+  min-width: 130px;
+}
+
+.online-lobby-panel-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7vw;
+}
+
+.online-lobby-qr {
+  border: 1px solid #fff;
+  padding: 0.55rem;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.online-lobby-kind1 {
+  width: 100%;
+  text-align: center;
+  color: #9fd0ff;
+  font-size: 0.78cqw;
+  word-break: break-all;
+}
+
+.online-lobby-kind1-pending {
+  width: 100%;
+  border: 1px dashed #6b6b6b;
+  border-radius: 8px;
+  min-height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #adadad;
+  font-size: 0.82cqw;
+}
+
+.online-lobby-error {
+  width: min(75vw, 1260px);
+  margin: 0 auto;
+  text-align: center;
+  color: #ff7b7b;
+  font-size: 0.82cqw;
+}
+
+.online-lobby-status {
+  width: min(75vw, 1260px);
+  margin: 0 auto;
+}
+
+.online-lobby-status h3 {
+  font-size: 1.35cqw;
+  margin-bottom: 0.55vw;
+}
+
+.online-lobby-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7vw;
+}
+
+.online-lobby-seat {
+  border: 1px solid #4f4f4f;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 30%);
+  padding: 0.7vw;
+}
+
+.online-lobby-seat-identity {
+  margin-top: 0.2vw;
+  display: flex;
+  align-items: center;
+  gap: 0.45vw;
+}
+
+.online-lobby-seat-avatar {
+  width: 1.6vw;
+  height: 1.6vw;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #7a7a7a;
+}
+
+.online-lobby-seat-avatar-empty {
+  background: rgb(255 255 255 / 10%);
+  border-style: dashed;
+}
+
+.online-lobby-seat-name {
+  font-family: 'BureauGrotesque';
+  font-size: 1.2cqw;
+  margin-top: 0;
+}
+
+.online-lobby-seat-meta {
+  color: #b6b6b6;
+  font-size: 0.72cqw;
+  margin-top: 0.12vw;
+}
+
+.online-lobby-bottom-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  gap: 0.6vw;
+}
+
+.online-lobby-arena {
+  min-width: 220px;
+}
+
+@media (max-width: 1024px) {
+  .online-lobby-top {
+    width: 92vw;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .online-lobby-status,
+  .online-lobby-error {
+    width: 92vw;
+  }
+
+  .online-lobby-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .online-lobby-panel {
+    padding: 12px;
+  }
+
+  #online-lobby-subtitle {
+    font-size: 12px;
+  }
+
+  .online-lobby-label,
+  .online-lobby-copy,
+  .online-lobby-expiry,
+  .online-lobby-seat-meta,
+  .online-lobby-kind1 {
+    font-size: 12px;
+  }
+
+  .online-lobby-code {
+    font-size: 28px;
+  }
+
+  .online-lobby-pin {
+    font-size: 30px;
+  }
+
+  .online-lobby-emojis {
+    font-size: 24px;
+  }
+
+  .online-lobby-seat-name {
+    font-size: 20px;
+  }
+
+  .online-lobby-seat-avatar {
+    width: 26px;
+    height: 26px;
+  }
+
+  .online-lobby-action {
+    height: 44px;
+    font-size: 12px;
+  }
+
+  .online-lobby-bottom-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+}
