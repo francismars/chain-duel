@@ -155,6 +155,8 @@ export const OnlineRoomStateSchema = z.object({
     .optional(),
   postGame: z
     .object({
+      p1Picture: z.string().optional(),
+      p2Picture: z.string().optional(),
       winnerRole: z.union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)]).optional(),
       winnerSessionID: z.string().optional(),
       winnerName: z.string(),
