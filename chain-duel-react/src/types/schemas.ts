@@ -157,6 +157,11 @@ export const OnlineRoomStateSchema = z.object({
       payoutMethod: z.enum(['withdraw_qr', 'nostr_zap']).optional(),
       payoutTarget: z.string().optional(),
       winnerLnAddress: z.string().optional(),
+      rematchRequested: z.boolean().optional(),
+      rematchRequiredAmount: z.number().optional(),
+      rematchEventId: z.string().optional(),
+      rematchNote1: z.string().optional(),
+      rematchWaitingForSessionID: z.string().optional(),
       doubleOrNothingVotes: z.number(),
     })
     .optional(),
@@ -222,6 +227,11 @@ export const ResOnlinePostGameInfoSchema = z.object({
   payoutMethod: z.enum(['withdraw_qr', 'nostr_zap']).optional(),
   payoutTarget: z.string().optional(),
   winnerLnAddress: z.string().optional(),
+  rematchRequested: z.boolean().optional(),
+  rematchRequiredAmount: z.number().optional(),
+  rematchEventId: z.string().optional(),
+  rematchNote1: z.string().optional(),
+  rematchWaitingForSessionID: z.string().optional(),
   doubleOrNothingVotes: z.number(),
 });
 

@@ -30,6 +30,7 @@ interface OnlinePostGameInfo {
   rematchRequested?: boolean;
   rematchRequiredAmount?: number;
   rematchNote1?: string;
+  rematchWaitingForSessionID?: string;
   doubleOrNothingVotes: number;
 }
 
@@ -120,8 +121,7 @@ export default function OnlinePostGame() {
       setVotes(parsed.votes);
       setRequiredVotes(parsed.required);
       if (parsed.agreed) {
-        setInfo((prev) => (prev ? { ...prev, rematchRequested: true } : prev));
-        setError('Double or Nothing accepted. Waiting for loser match payment.');
+        navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`);
       }
     };
 

@@ -96,6 +96,10 @@ export default function OnlineGame() {
     if (!socket || !roomId) {
       return;
     }
+    const requestRoomSync = () => {
+      socket.emit('spectateOnlineRoom', { roomId });
+      socket.emit('getOnlineRoomState', { roomId });
+    };
     const onSnapshot = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlineRoomSnapshot(payload);
       if (parsed && parsed.roomId === roomId) {
@@ -132,11 +136,21 @@ export default function OnlineGame() {
     };
     socket.on('onlineRoomSnapshot', onSnapshot);
     socket.on('onlineRoomUpdated', onUpdated);
-    socket.emit('spectateOnlineRoom', { roomId });
-    socket.emit('getOnlineRoomState', { roomId });
+    socket.on('connect', requestRoomSync);
+    requestRoomSync();
+    // Recovery for late socket readiness: keep requesting until first snapshot lands.
+    const resyncInterval = window.setInterval(() => {
+      if (snapshotRef.current) {
+        window.clearInterval(resyncInterval);
+        return;
+      }
+      requestRoomSync();
+    }, 1200);
     return () => {
+      window.clearInterval(resyncInterval);
       socket.off('onlineRoomSnapshot', onSnapshot);
       socket.off('onlineRoomUpdated', onUpdated);
+      socket.off('connect', requestRoomSync);
     };
   }, [roomId, socket]);
 

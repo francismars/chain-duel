@@ -178,6 +178,11 @@ export interface OnlineRoomState {
     payoutMethod?: 'withdraw_qr' | 'nostr_zap';
     payoutTarget?: string;
     winnerLnAddress?: string;
+    rematchRequested?: boolean;
+    rematchRequiredAmount?: number;
+    rematchEventId?: string;
+    rematchNote1?: string;
+    rematchWaitingForSessionID?: string;
     doubleOrNothingVotes: number;
   };
 }
@@ -337,6 +342,11 @@ export interface ServerToClientEvents {
     payoutMethod?: 'withdraw_qr' | 'nostr_zap';
     payoutTarget?: string;
     winnerLnAddress?: string;
+    rematchRequested?: boolean;
+    rematchRequiredAmount?: number;
+    rematchEventId?: string;
+    rematchNote1?: string;
+    rematchWaitingForSessionID?: string;
     doubleOrNothingVotes: number;
   }) => void;
   resCreateOnlineWithdrawal: (data: { roomId: string; lnurlw: string }) => void;

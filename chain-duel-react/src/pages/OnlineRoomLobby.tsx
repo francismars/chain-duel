@@ -20,6 +20,7 @@ export default function OnlineRoomLobby() {
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );
+  const [currentSocketID, setCurrentSocketID] = useState('');
 
   useEffect(() => {
     if (!socket || !roomId) {
@@ -60,12 +61,18 @@ export default function OnlineRoomLobby() {
       setCurrentSessionID(payload.sessionID);
       sessionStorage.setItem('sessionID', payload.sessionID);
     };
+    const refreshLocalIdentity = () => {
+      setCurrentSessionID(sessionStorage.getItem('sessionID') ?? '');
+      setCurrentSocketID(socket.id ?? '');
+    };
 
     socket.on('onlineRoomUpdated', onUpdated);
     socket.on('resJoinOnlineRoom', onJoin);
     socket.on('resCreateOnlineRoom', onCreate);
     socket.on('onlinePinInvalid', onInvalid);
     socket.on('session', onSession);
+    socket.on('connect', refreshLocalIdentity);
+    refreshLocalIdentity();
     socket.emit('getOnlineRoomState', { roomId });
     socket.emit('joinOnlineRoom', { roomId });
     return () => {
@@ -74,6 +81,7 @@ export default function OnlineRoomLobby() {
       socket.off('resCreateOnlineRoom', onCreate);
       socket.off('onlinePinInvalid', onInvalid);
       socket.off('session', onSession);
+      socket.off('connect', refreshLocalIdentity);
     };
   }, [roomId, socket]);
 
@@ -85,18 +93,54 @@ export default function OnlineRoomLobby() {
   }, [room]);
 
   const seatEntries = room ? Object.values(room.seats) : [];
+  const effectiveSessionID = currentSessionID || sessionStorage.getItem('sessionID') || '';
   const mySeat = seatEntries.find((seat) => {
     if (seat.status !== 'paid') {
       return false;
     }
-    return Boolean(seat.sessionID && seat.sessionID === currentSessionID);
+    const matchesSession = Boolean(seat.sessionID && seat.sessionID === effectiveSessionID);
+    const matchesSocket = Boolean(seat.socketID && seat.socketID === currentSocketID);
+    return matchesSession || matchesSocket;
   });
   const myReady = mySeat?.ready === true;
   const phaseLabel = (room?.phase ?? 'lobby').toUpperCase();
-  const kind1 = room?.nostrMeta?.note1 ?? '';
+  const rematchPending = Boolean(room?.postGame?.rematchRequested);
+  const rematchNote = room?.postGame?.rematchNote1 ?? '';
+  const rematchAmount = room?.postGame?.rematchRequiredAmount ?? 0;
+  const rematchWaitingForSessionID = room?.postGame?.rematchWaitingForSessionID;
+  const amILoserToPay = Boolean(rematchWaitingForSessionID && rematchWaitingForSessionID === currentSessionID);
+  const snapshotP1Name =
+    (room?.snapshot?.state as { p1Name?: string } | undefined)?.p1Name ?? 'Player 1';
+  const snapshotP2Name =
+    (room?.snapshot?.state as { p2Name?: string } | undefined)?.p2Name ?? 'Player 2';
+  const kind1 = rematchPending ? rematchNote : room?.nostrMeta?.note1 ?? '';
   const roomEmojis = room?.nostrMeta?.emojis ?? '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
+  const p1NameDisplay = rematchPending
+    ? p1?.name || snapshotP1Name
+    : p1?.name || 'Open seat';
+  const p2NameDisplay = rematchPending
+    ? p2?.name || snapshotP2Name
+    : p2?.name || 'Open seat';
+  const p1MetaDisplay = rematchPending
+    ? 'Locked for rematch'
+    : p1?.status === 'paid'
+      ? p1.ready
+        ? 'Paid · Ready'
+        : p1.disconnectedAt
+          ? 'Paid · Offline'
+          : 'Paid · Not ready'
+      : 'Waiting payment';
+  const p2MetaDisplay = rematchPending
+    ? 'Locked for rematch'
+    : p2?.status === 'paid'
+      ? p2.ready
+        ? 'Paid · Ready'
+        : p2.disconnectedAt
+          ? 'Paid · Offline'
+          : 'Paid · Not ready'
+      : 'Waiting payment';
 
   useEffect(() => {
     if (!roomId || room?.phase !== 'playing') {
@@ -118,7 +162,13 @@ export default function OnlineRoomLobby() {
       <Sponsorship id="sponsorship-online-lobby" />
 
       <h1 id="online-lobby-title">ONLINE LOBBY</h1>
-      <p id="online-lobby-subtitle">Claim your seat with PIN-in-zap and launch the duel.</p>
+      <p id="online-lobby-subtitle">
+        {rematchPending
+          ? amILoserToPay
+            ? `Double or Nothing is active. Scan and zap exactly ${Math.floor(rematchAmount)} sats to continue.`
+            : `Double or Nothing is active. Waiting for loser to zap exactly ${Math.floor(rematchAmount)} sats.`
+          : 'Claim your seat with PIN-in-zap and launch the duel.'}
+      </p>
 
       <div className="online-lobby-top">
         <section className="online-lobby-panel online-lobby-panel-main">
@@ -151,14 +201,26 @@ export default function OnlineRoomLobby() {
               <p className="online-lobby-label">SEAT STATUS</p>
               <p className="online-lobby-pin">SEAT CLAIMED</p>
               <p className="online-lobby-copy">
-                You are registered in this room. Set ready when you are prepared to start.
+                {rematchPending
+                  ? 'Rematch locked to the same players. Waiting for rematch payment.'
+                  : 'You are registered in this room. Set ready when you are prepared to start.'}
               </p>
             </div>
           ) : (
             <div className="online-lobby-pin-card">
-              <p className="online-lobby-label">YOUR PIN</p>
-              <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
-              <p className="online-lobby-copy">Paste this PIN in the zap comment.</p>
+              {rematchPending ? (
+                <>
+                  <p className="online-lobby-label">SEAT STATUS</p>
+                  <p className="online-lobby-pin">LOCKED FOR REMATCH</p>
+                  <p className="online-lobby-copy">No open seats while rematch payment is pending.</p>
+                </>
+              ) : (
+                <>
+                  <p className="online-lobby-label">YOUR PIN</p>
+                  <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
+                  <p className="online-lobby-copy">Paste this PIN in the zap comment.</p>
+                </>
+              )}
             </div>
           )}
 
@@ -167,7 +229,7 @@ export default function OnlineRoomLobby() {
         </section>
 
         <section className="online-lobby-panel online-lobby-panel-qr">
-          <p className="online-lobby-label">ROOM KIND1</p>
+          <p className="online-lobby-label">{rematchPending ? 'DOUBLE OR NOTHING KIND1' : 'ROOM KIND1'}</p>
           {kind1 ? (
             <>
               <QRCodeSVG value={`https://njump.me/${kind1}`} size={210} includeMargin className="online-lobby-qr" />
@@ -179,9 +241,18 @@ export default function OnlineRoomLobby() {
               >
                 {kind1}
               </a>
+              {rematchPending ? (
+                <p className="online-lobby-copy">
+                  {amILoserToPay
+                    ? `You must zap exactly ${Math.floor(rematchAmount)} sats on this post to start rematch.`
+                    : `Waiting for loser to zap exactly ${Math.floor(rematchAmount)} sats on this post.`}
+                </p>
+              ) : null}
             </>
           ) : (
-            <div className="online-lobby-kind1-pending">Publishing Kind1...</div>
+            <div className="online-lobby-kind1-pending">
+              {rematchPending ? 'Publishing rematch Kind1...' : 'Publishing Kind1...'}
+            </div>
           )}
         </section>
       </div>
@@ -203,17 +274,9 @@ export default function OnlineRoomLobby() {
               ) : (
                 <div className="online-lobby-seat-avatar online-lobby-seat-avatar-empty" />
               )}
-              <p className="online-lobby-seat-name">{p1?.name ?? 'Open seat'}</p>
+              <p className="online-lobby-seat-name">{p1NameDisplay}</p>
             </div>
-            <p className="online-lobby-seat-meta">
-              {p1?.status === 'paid'
-                ? p1.ready
-                  ? 'Paid · Ready'
-                  : p1.disconnectedAt
-                    ? 'Paid · Offline'
-                    : 'Paid · Not ready'
-                : 'Waiting payment'}
-            </p>
+            <p className="online-lobby-seat-meta">{p1MetaDisplay}</p>
           </div>
           <div className="online-lobby-seat">
             <p className="online-lobby-label">PLAYER 2</p>
@@ -227,17 +290,9 @@ export default function OnlineRoomLobby() {
               ) : (
                 <div className="online-lobby-seat-avatar online-lobby-seat-avatar-empty" />
               )}
-              <p className="online-lobby-seat-name">{p2?.name ?? 'Open seat'}</p>
+              <p className="online-lobby-seat-name">{p2NameDisplay}</p>
             </div>
-            <p className="online-lobby-seat-meta">
-              {p2?.status === 'paid'
-                ? p2.ready
-                  ? 'Paid · Ready'
-                  : p2.disconnectedAt
-                    ? 'Paid · Offline'
-                    : 'Paid · Not ready'
-                : 'Waiting payment'}
-            </p>
+            <p className="online-lobby-seat-meta">{p2MetaDisplay}</p>
           </div>
           <div className="online-lobby-seat">
             <p className="online-lobby-label">SPECTATORS</p>
@@ -251,11 +306,15 @@ export default function OnlineRoomLobby() {
         {mySeat ? (
           <Button
             className="online-lobby-action online-lobby-arena"
+            disabled={rematchPending}
             onClick={() => {
+              if (rematchPending) {
+                return;
+              }
               socket?.emit('onlineSetReady', { roomId, ready: !myReady });
             }}
           >
-            {myReady ? 'UNREADY' : 'MARK AS READY'}
+            {rematchPending ? 'WAITING FOR REMATCH PAYMENT' : myReady ? 'UNREADY' : 'MARK AS READY'}
           </Button>
         ) : (
           <Button
