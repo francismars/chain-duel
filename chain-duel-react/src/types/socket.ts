@@ -153,6 +153,7 @@ export interface OnlineSeatState {
   name?: string;
   picture?: string;
   pubkey?: string;
+  lnAddress?: string;
 }
 
 export interface OnlineRoomState {
@@ -174,6 +175,9 @@ export interface OnlineRoomState {
     winnerPoints: number;
     totalPrize: number;
     lnurlw?: string;
+    payoutMethod?: 'withdraw_qr' | 'nostr_zap';
+    payoutTarget?: string;
+    winnerLnAddress?: string;
     doubleOrNothingVotes: number;
   };
 }
@@ -237,6 +241,7 @@ export interface ClientToServerEvents {
   onlineSetReady: (payload: { roomId: string; ready: boolean }) => void;
   getOnlinePostGame: (payload: { roomId: string }) => void;
   createOnlineWithdrawal: (payload: { roomId: string }) => void;
+  createOnlineNostrPayout: (payload: { roomId: string }) => void;
   onlineDoubleOrNothing: (payload: { roomId: string }) => void;
 }
 
@@ -329,9 +334,18 @@ export interface ServerToClientEvents {
     winnerPoints: number;
     totalPrize: number;
     lnurlw?: string;
+    payoutMethod?: 'withdraw_qr' | 'nostr_zap';
+    payoutTarget?: string;
+    winnerLnAddress?: string;
     doubleOrNothingVotes: number;
   }) => void;
   resCreateOnlineWithdrawal: (data: { roomId: string; lnurlw: string }) => void;
+  resCreateOnlineNostrPayout: (data: {
+    roomId: string;
+    lnAddress: string;
+    amount: number;
+    ok: boolean;
+  }) => void;
   onlineDoubleOrNothingUpdate: (data: {
     roomId: string;
     votes: number;
