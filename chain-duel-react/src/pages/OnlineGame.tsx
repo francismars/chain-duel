@@ -170,10 +170,6 @@ export default function OnlineGame() {
         navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
         return;
       }
-      const isStartKey = event.key === 'Enter' || event.key === ' ';
-      if (isStartKey) {
-        socket.emit('startOnlineGame', { roomId });
-      }
       const input = keyToInput(event.key);
       if (!input) {
         return;
@@ -200,10 +196,6 @@ export default function OnlineGame() {
     };
   }, [navigate, roomId, socket]);
 
-  const canAttemptStart =
-    !snapshot?.state?.gameStarted &&
-    !snapshot?.state?.countdownStart &&
-    !snapshot?.state?.gameEnded;
   const canAttemptContinue = Boolean(snapshot?.state?.gameEnded);
 
   return (
@@ -312,8 +304,6 @@ export default function OnlineGame() {
               onClick={() => {
                 if (canAttemptContinue) {
                   navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
-                } else if (canAttemptStart) {
-                  socket?.emit('startOnlineGame', { roomId });
                 }
               }}
             />

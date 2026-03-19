@@ -126,6 +126,8 @@ export const OnlineSeatStateSchema = z.object({
   status: z.union([z.literal('open'), z.literal('paid')]),
   paidAmount: z.number().optional(),
   paidAt: z.number().optional(),
+  ready: z.boolean().optional(),
+  disconnectedAt: z.number().optional(),
   name: z.string().optional(),
   picture: z.string().optional(),
   pubkey: z.string().optional(),
@@ -164,6 +166,7 @@ export const OnlineRoomListItemSchema = z.object({
   phase: z.enum(['lobby', 'playing', 'finished', 'cancelled']),
   playersPaid: z.number(),
   seatsTotal: z.number(),
+  spectators: z.number(),
 });
 
 export const ResCreateOnlineRoomSchema = z.object({

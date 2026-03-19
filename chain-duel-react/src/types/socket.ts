@@ -148,6 +148,8 @@ export interface OnlineSeatState {
   status: 'open' | 'paid';
   paidAmount?: number;
   paidAt?: number;
+  ready?: boolean;
+  disconnectedAt?: number;
   name?: string;
   picture?: string;
   pubkey?: string;
@@ -184,6 +186,7 @@ export interface OnlineRoomListItem {
   phase: 'lobby' | 'playing' | 'finished' | 'cancelled';
   playersPaid: number;
   seatsTotal: number;
+  spectators: number;
 }
 
 // ============================================================================
@@ -231,6 +234,7 @@ export interface ClientToServerEvents {
   getOnlineRoomState: (payload: { roomId: string }) => void;
   roomInput: (payload: { roomId: string; input: OnlineInputState }) => void;
   startOnlineGame: (payload: { roomId: string }) => void;
+  onlineSetReady: (payload: { roomId: string; ready: boolean }) => void;
   getOnlinePostGame: (payload: { roomId: string }) => void;
   createOnlineWithdrawal: (payload: { roomId: string }) => void;
   onlineDoubleOrNothing: (payload: { roomId: string }) => void;
