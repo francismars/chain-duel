@@ -103,6 +103,9 @@ export default function OnlineRoomLobby() {
     return matchesSession || matchesSocket;
   });
   const myReady = mySeat?.ready === true;
+  const myRoleLabel = mySeat?.role ?? 'Spectator';
+  const isMyP1Seat = mySeat?.role === 'Player 1';
+  const isMyP2Seat = mySeat?.role === 'Player 2';
   const phaseLabel = (room?.phase ?? 'lobby').toUpperCase();
   const rematchPending = Boolean(room?.postGame?.rematchRequested);
   const rematchNote = room?.postGame?.rematchNote1 ?? '';
@@ -203,7 +206,7 @@ export default function OnlineRoomLobby() {
               <p className="online-lobby-copy">
                 {rematchPending
                   ? 'Rematch locked to the same players. Waiting for rematch payment.'
-                  : 'You are registered in this room. Set ready when you are prepared to start.'}
+                  : `You are ${myRoleLabel}. Set ready when you are prepared to start.`}
               </p>
             </div>
           ) : (
@@ -262,8 +265,10 @@ export default function OnlineRoomLobby() {
       <section className="online-lobby-panel online-lobby-status">
         <h3>ROOM STATUS</h3>
         <div className="online-lobby-status-grid">
-          <div className="online-lobby-seat">
-            <p className="online-lobby-label">PLAYER 1</p>
+          <div className={`online-lobby-seat ${isMyP1Seat ? 'online-lobby-seat-mine' : ''}`}>
+            <p className="online-lobby-label">
+              PLAYER 1 {isMyP1Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
+            </p>
             <div className="online-lobby-seat-identity">
               {p1?.status === 'paid' ? (
                 <img
@@ -278,8 +283,10 @@ export default function OnlineRoomLobby() {
             </div>
             <p className="online-lobby-seat-meta">{p1MetaDisplay}</p>
           </div>
-          <div className="online-lobby-seat">
-            <p className="online-lobby-label">PLAYER 2</p>
+          <div className={`online-lobby-seat ${isMyP2Seat ? 'online-lobby-seat-mine' : ''}`}>
+            <p className="online-lobby-label">
+              PLAYER 2 {isMyP2Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
+            </p>
             <div className="online-lobby-seat-identity">
               {p2?.status === 'paid' ? (
                 <img
@@ -301,6 +308,10 @@ export default function OnlineRoomLobby() {
           </div>
         </div>
       </section>
+
+      <div className={`online-lobby-my-role online-lobby-my-role-${mySeat ? 'player' : 'spectator'}`}>
+        YOU ARE: {myRoleLabel.toUpperCase()}
+      </div>
 
       <div className="online-lobby-bottom-actions">
         {mySeat ? (

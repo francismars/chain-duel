@@ -36,6 +36,7 @@ interface OnlinePostGameInfo {
 
 const PLACEHOLDER_LNURL =
   'MARSURL1DP68GURN8GHJ7MRWVF5HGUEWV3HK5MEWWP6Z7AMFW35XGUNPWUHKZURF9AMRZTMVDE6HYMP0V438Y7NKXUE5S5TFG9X9GE2509N5VMN0G46S0WQJQ4';
+const ONLINE_FEE_MULTIPLIER = 0.95;
 
 export default function OnlinePostGame() {
   const [searchParams] = useSearchParams();
@@ -55,6 +56,13 @@ export default function OnlinePostGame() {
   const isWinner = Boolean(info?.winnerSessionID && info.winnerSessionID === sessionID);
   const donLocked = Boolean(lnurlw || info?.payoutMethod === 'nostr_zap' || info?.rematchRequested);
   const winnerHasNostrLn = Boolean(info?.winnerLnAddress);
+  const payoutChosen = info?.payoutMethod === 'withdraw_qr' || info?.payoutMethod === 'nostr_zap';
+  const payoutStatusText =
+    info?.payoutMethod === 'withdraw_qr'
+      ? 'Winner chose Withdraw via QR. Round closed.'
+      : info?.payoutMethod === 'nostr_zap'
+        ? 'Winner chose Pay to LN address. Round closed.'
+        : '';
 
   useEffect(() => {
     if (!roomId) {
@@ -130,6 +138,25 @@ export default function OnlinePostGame() {
       if (!parsed || parsed.roomId !== roomId) {
         return;
       }
+      if (parsed.postGame) {
+        const pg = parsed.postGame;
+        setInfo((prev) =>
+          prev
+            ? {
+                ...prev,
+                payoutMethod: pg.payoutMethod,
+                payoutTarget: pg.payoutTarget,
+                rematchRequested: pg.rematchRequested,
+                rematchRequiredAmount: pg.rematchRequiredAmount,
+                rematchNote1: pg.rematchNote1,
+                rematchWaitingForSessionID: pg.rematchWaitingForSessionID,
+              }
+            : prev
+        );
+        if (pg.lnurlw) {
+          setLnurlw(pg.lnurlw);
+        }
+      }
       if (parsed.phase === 'lobby') {
         navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`);
       }
@@ -172,6 +199,19 @@ export default function OnlinePostGame() {
     }
     return PLACEHOLDER_LNURL;
   }, [creatingWithdrawal, lnurlw]);
+  const grossWinnerAmount = Math.floor(info?.winnerPoints ?? 0);
+  const netPayoutAmount = Math.floor(grossWinnerAmount * ONLINE_FEE_MULTIPLIER);
+  const feeAmount = Math.max(0, grossWinnerAmount - netPayoutAmount);
+  const p1Gross = Math.floor(info?.p1Points ?? 0);
+  const p2Gross = Math.floor(info?.p2Points ?? 0);
+  const p1DisplayAmount =
+    info?.winnerRole === 'Player 1'
+      ? Math.floor(p1Gross * ONLINE_FEE_MULTIPLIER)
+      : p1Gross;
+  const p2DisplayAmount =
+    info?.winnerRole === 'Player 2'
+      ? Math.floor(p2Gross * ONLINE_FEE_MULTIPLIER)
+      : p2Gross;
 
   return (
     <div className="online-postgame-page">
@@ -197,21 +237,24 @@ export default function OnlinePostGame() {
             <h2>{(info?.winnerName || 'WINNER').toUpperCase()} WINS</h2>
           </div>
           <p className="online-postgame-prize">
-            {Math.floor(info?.winnerPoints ?? 0).toLocaleString()} SATS
+            {netPayoutAmount.toLocaleString()} SATS
           </p>
           <p className="online-postgame-sub">
-            Total pot: {Math.floor(info?.totalPrize ?? 0).toLocaleString()} sats
+            Net payout after 5% fee
+          </p>
+          <p className="online-postgame-sub">
+            Gross winner amount: {grossWinnerAmount.toLocaleString()} sats · Fee: {feeAmount.toLocaleString()} sats
           </p>
         </div>
 
         <div className="online-postgame-scores">
           <div className="online-postgame-score-chip">
             <span className="online-postgame-score-label">{info?.p1Name ?? 'Player 1'}</span>
-            <span className="online-postgame-score-value">{Math.floor(info?.p1Points ?? 0).toLocaleString()} sats</span>
+            <span className="online-postgame-score-value">{p1DisplayAmount.toLocaleString()} sats</span>
           </div>
           <div className="online-postgame-score-chip">
             <span className="online-postgame-score-label">{info?.p2Name ?? 'Player 2'}</span>
-            <span className="online-postgame-score-value">{Math.floor(info?.p2Points ?? 0).toLocaleString()} sats</span>
+            <span className="online-postgame-score-value">{p2DisplayAmount.toLocaleString()} sats</span>
           </div>
         </div>
 
@@ -300,6 +343,9 @@ export default function OnlinePostGame() {
           </div>
         </div>
 
+        {payoutChosen ? (
+          <p className="online-postgame-error">{payoutStatusText}</p>
+        ) : null}
         {error ? <p className="online-postgame-error">Error: {error}</p> : null}
         {info?.payoutMethod === 'nostr_zap' && info.payoutTarget ? (
           <p className="online-postgame-error">
