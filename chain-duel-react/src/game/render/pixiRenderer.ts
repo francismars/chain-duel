@@ -204,17 +204,21 @@ export class PixiGameRenderer {
       }
     }
 
-    // Legacy precise values from drawPointChange():
-    // - y decreases by 1px per animation frame
-    // - alpha decreases by (0.1 / 6) per animation frame
-    state.pointChanges = state.pointChanges
-      .map((change) => ({
-        ...change,
-        p1YOffsetPx: change.p1YOffsetPx - 1,
-        p2YOffsetPx: change.p2YOffsetPx - 1,
-        alpha: change.alpha - 0.1 / 6,
-      }))
-      .filter((change) => change.alpha >= 0);
+    // Online mode receives already-decayed point-change animation from server.
+    // Applying local decay again causes repeated restart/fade artifacts.
+    if (state.meta?.modeLabel !== 'ONLINE') {
+      // Legacy precise values from drawPointChange():
+      // - y decreases by 1px per animation frame
+      // - alpha decreases by (0.1 / 6) per animation frame
+      state.pointChanges = state.pointChanges
+        .map((change) => ({
+          ...change,
+          p1YOffsetPx: change.p1YOffsetPx - 1,
+          p2YOffsetPx: change.p2YOffsetPx - 1,
+          alpha: change.alpha - 0.1 / 6,
+        }))
+        .filter((change) => change.alpha >= 0);
+    }
 
     this.startText.position.set(width / 2, height / 2);
     this.endWinnerText.position.set(width / 2, height / 2 - 15);
@@ -261,6 +265,9 @@ export class PixiGameRenderer {
     }
     if (this.fallbackCanvas && this.host) {
       this.host.removeChild(this.fallbackCanvas);
+    }
+    if (this.host) {
+      this.host.innerHTML = '';
     }
     this.fallbackCanvas = null;
     this.fallbackCtx = null;

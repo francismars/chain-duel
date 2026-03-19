@@ -17,7 +17,9 @@ export default function OnlineRoomLobby() {
   const [joinPin, setJoinPin] = useState<string>('');
   const [error, setError] = useState('');
   const roomId = searchParams.get('roomId') ?? '';
-  const sessionID = sessionStorage.getItem('sessionID') ?? '';
+  const [currentSessionID, setCurrentSessionID] = useState(
+    () => sessionStorage.getItem('sessionID') ?? ''
+  );
 
   useEffect(() => {
     if (!socket || !roomId) {
@@ -51,11 +53,19 @@ export default function OnlineRoomLobby() {
         setError(parsed.reason);
       }
     };
+    const onSession = (payload: { sessionID: string }) => {
+      if (!payload?.sessionID) {
+        return;
+      }
+      setCurrentSessionID(payload.sessionID);
+      sessionStorage.setItem('sessionID', payload.sessionID);
+    };
 
     socket.on('onlineRoomUpdated', onUpdated);
     socket.on('resJoinOnlineRoom', onJoin);
     socket.on('resCreateOnlineRoom', onCreate);
     socket.on('onlinePinInvalid', onInvalid);
+    socket.on('session', onSession);
     socket.emit('getOnlineRoomState', { roomId });
     socket.emit('joinOnlineRoom', { roomId });
     return () => {
@@ -63,6 +73,7 @@ export default function OnlineRoomLobby() {
       socket.off('resJoinOnlineRoom', onJoin);
       socket.off('resCreateOnlineRoom', onCreate);
       socket.off('onlinePinInvalid', onInvalid);
+      socket.off('session', onSession);
     };
   }, [roomId, socket]);
 
@@ -74,7 +85,12 @@ export default function OnlineRoomLobby() {
   }, [room]);
 
   const seatEntries = room ? Object.values(room.seats) : [];
-  const mySeat = seatEntries.find((seat) => seat.status === 'paid' && seat.sessionID === sessionID);
+  const mySeat = seatEntries.find((seat) => {
+    if (seat.status !== 'paid') {
+      return false;
+    }
+    return Boolean(seat.sessionID && seat.sessionID === currentSessionID);
+  });
   const myReady = mySeat?.ready === true;
   const phaseLabel = (room?.phase ?? 'lobby').toUpperCase();
   const kind1 = room?.nostrMeta?.note1 ?? '';
@@ -130,11 +146,21 @@ export default function OnlineRoomLobby() {
             </p>
           </div>
 
-          <div className="online-lobby-pin-card">
-            <p className="online-lobby-label">YOUR PIN</p>
-            <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
-            <p className="online-lobby-copy">Paste this PIN in the zap comment.</p>
-          </div>
+          {mySeat ? (
+            <div className="online-lobby-pin-card">
+              <p className="online-lobby-label">SEAT STATUS</p>
+              <p className="online-lobby-pin">SEAT CLAIMED</p>
+              <p className="online-lobby-copy">
+                You are registered in this room. Set ready when you are prepared to start.
+              </p>
+            </div>
+          ) : (
+            <div className="online-lobby-pin-card">
+              <p className="online-lobby-label">YOUR PIN</p>
+              <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
+              <p className="online-lobby-copy">Paste this PIN in the zap comment.</p>
+            </div>
+          )}
 
           <div className="online-lobby-actions-row">
           </div>
