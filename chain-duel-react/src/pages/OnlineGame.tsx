@@ -101,7 +101,7 @@ export default function OnlineGame() {
       socket.emit('getOnlineRoomState', { roomId });
     };
     const onSnapshot = (payload: unknown) => {
-      const parsed = SocketBoundaryParsers.onlineRoomSnapshot(payload);
+      const parsed = SocketBoundaryParsers.onlineRoomSnapshot(payload) ?? coerceOnlineRoomSnapshotEvent(payload);
       if (parsed && parsed.roomId === roomId) {
         setSnapshot((prev) => {
           const merged = mergeOnlineSnapshot(prev, parsed.snapshot);
@@ -111,7 +111,7 @@ export default function OnlineGame() {
       }
     };
     const onUpdated = (payload: unknown) => {
-      const parsed = SocketBoundaryParsers.onlineRoomUpdated(payload);
+      const parsed = SocketBoundaryParsers.onlineRoomUpdated(payload) ?? coerceOnlineRoomUpdated(payload);
       if (parsed && parsed.roomId === roomId) {
         setSnapshot((prev) => {
           const merged = mergeOnlineSnapshot(prev, parsed.snapshot);
@@ -377,6 +377,69 @@ export default function OnlineGame() {
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
     </>
   );
+}
+
+function coerceOnlineRoomSnapshotEvent(payload: unknown):
+  | { roomId: string; snapshot: OnlineRoomSnapshot }
+  | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+  const candidate = payload as { roomId?: unknown; snapshot?: unknown };
+  if (typeof candidate.roomId !== 'string') {
+    return null;
+  }
+  if (!candidate.snapshot || typeof candidate.snapshot !== 'object') {
+    return null;
+  }
+  return {
+    roomId: candidate.roomId,
+    snapshot: candidate.snapshot as OnlineRoomSnapshot,
+  };
+}
+
+function coerceOnlineRoomUpdated(payload: unknown):
+  | {
+      roomId: string;
+      roomCode?: string;
+      hostSessionID?: string;
+      phase?: string;
+      buyin?: number;
+      snapshot: OnlineRoomSnapshot;
+      seats: Record<string, { name?: string; picture?: string; paidAmount?: number }>;
+    }
+  | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+  const candidate = payload as {
+    roomId?: unknown;
+    roomCode?: unknown;
+    hostSessionID?: unknown;
+    phase?: unknown;
+    buyin?: unknown;
+    snapshot?: unknown;
+    seats?: unknown;
+  };
+  if (typeof candidate.roomId !== 'string') {
+    return null;
+  }
+  if (!candidate.snapshot || typeof candidate.snapshot !== 'object') {
+    return null;
+  }
+  const seats =
+    candidate.seats && typeof candidate.seats === 'object'
+      ? (candidate.seats as Record<string, { name?: string; picture?: string; paidAmount?: number }>)
+      : {};
+  return {
+    roomId: candidate.roomId,
+    roomCode: typeof candidate.roomCode === 'string' ? candidate.roomCode : undefined,
+    hostSessionID: typeof candidate.hostSessionID === 'string' ? candidate.hostSessionID : undefined,
+    phase: typeof candidate.phase === 'string' ? candidate.phase : undefined,
+    buyin: typeof candidate.buyin === 'number' ? candidate.buyin : undefined,
+    snapshot: candidate.snapshot as OnlineRoomSnapshot,
+    seats,
+  };
 }
 
 function mergeOnlineSnapshot(prev: OnlineRoomSnapshot | null, next: OnlineRoomSnapshot): OnlineRoomSnapshot {

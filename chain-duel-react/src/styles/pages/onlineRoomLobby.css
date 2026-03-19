@@ -20,6 +20,27 @@
   text-shadow: 0 0 16px rgb(255 255 255 / 28%);
 }
 
+.online-lobby-my-role {
+  width: min(75vw, 1260px);
+  margin: 0 auto;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.04);
+  padding: 0.38vw 0.65vw;
+  font-family: 'BureauGrotesque';
+  font-size: 1.05cqw;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.online-lobby-my-role-player {
+  box-shadow: 0 0 14px rgb(255 255 255 / 14%);
+}
+
+.online-lobby-my-role-spectator {
+  color: #c9c9c9;
+}
+
 #online-lobby-subtitle {
   text-align: center;
   color: #d0d0d0;
@@ -212,6 +233,24 @@
   padding: 0.7vw;
 }
 
+.online-lobby-seat-mine {
+  border-color: #f0f0f0;
+  box-shadow: 0 0 14px rgb(255 255 255 / 20%);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.online-lobby-you-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.28vw;
+  padding: 0.05vw 0.35vw;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.82);
+  color: #fff;
+  font-size: 0.6cqw;
+  letter-spacing: 0.03rem;
+}
+
 .online-lobby-seat-identity {
   margin-top: 0.2vw;
   display: flex;
@@ -293,6 +332,12 @@
     font-size: 28px;
   }
 
+  .online-lobby-my-role {
+    width: 92vw;
+    padding: 8px 10px;
+    font-size: 16px;
+  }
+
   .online-lobby-pin {
     font-size: 30px;
   }
@@ -313,6 +358,12 @@
   .online-lobby-action {
     height: 44px;
     font-size: 12px;
+  }
+
+  .online-lobby-you-tag {
+    margin-left: 4px;
+    padding: 1px 6px;
+    font-size: 10px;
   }
 
   .online-lobby-bottom-actions {
