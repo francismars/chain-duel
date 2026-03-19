@@ -186,15 +186,6 @@ export default function OnlineRooms() {
       <section className="online-room-list-panel">
         <div className="online-room-list-head">
           <h3>LIVE ROOMS</h3>
-          <Button
-            className="online-refresh"
-            onClick={() => {
-              setError('');
-              socket?.emit('listOnlineRooms');
-            }}
-          >
-            REFRESH
-          </Button>
         </div>
 
         <div className="online-room-list">
@@ -210,6 +201,7 @@ export default function OnlineRooms() {
                   <span>
                     {room.playersPaid}/{room.seatsTotal} seats
                   </span>
+                  <span>{room.spectators} spectators</span>
                   <span className={`online-phase online-phase-${room.phase}`}>
                     {formatPhase(room.phase)}
                   </span>
@@ -218,18 +210,16 @@ export default function OnlineRooms() {
               <div className="online-room-actions">
                 <Button
                   className="online-action"
-                  onClick={() => socket?.emit('joinOnlineRoom', { roomId: room.roomId })}
-                >
-                  JOIN
-                </Button>
-                <Button
-                  className="online-action"
                   onClick={() => {
-                    socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
-                    navigate(`/online/lobby?roomId=${encodeURIComponent(room.roomId)}`);
+                    if (room.phase === 'playing') {
+                      socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
+                      navigate(`/online/game?roomId=${encodeURIComponent(room.roomId)}`);
+                      return;
+                    }
+                    socket?.emit('joinOnlineRoom', { roomId: room.roomId });
                   }}
                 >
-                  SPECTATE
+                  {room.phase === 'playing' ? 'WATCH LIVE' : 'ENTER ROOM'}
                 </Button>
               </div>
             </div>

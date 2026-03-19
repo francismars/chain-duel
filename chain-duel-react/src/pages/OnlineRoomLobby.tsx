@@ -15,7 +15,6 @@ export default function OnlineRoomLobby() {
   const { socket } = useSocket({ autoConnect: true });
   const [room, setRoom] = useState<OnlineRoomState | null>(null);
   const [joinPin, setJoinPin] = useState<string>('');
-  const [pinExpiresAt, setPinExpiresAt] = useState<number>(0);
   const [error, setError] = useState('');
   const roomId = searchParams.get('roomId') ?? '';
   const sessionID = sessionStorage.getItem('sessionID') ?? '';
@@ -36,7 +35,6 @@ export default function OnlineRoomLobby() {
         return;
       }
       setJoinPin(parsed.joinPin);
-      setPinExpiresAt(parsed.pinExpiresAt);
       setRoom(parsed.room);
     };
     const onCreate = (payload: unknown) => {
@@ -45,7 +43,6 @@ export default function OnlineRoomLobby() {
         return;
       }
       setJoinPin(parsed.joinPin);
-      setPinExpiresAt(parsed.pinExpiresAt);
       setRoom(parsed.room);
     };
     const onInvalid = (payload: unknown) => {
@@ -76,12 +73,21 @@ export default function OnlineRoomLobby() {
     return Object.values(room.seats).filter((seat) => seat.status === 'paid').length;
   }, [room]);
 
-  const isHost = room?.hostSessionID === sessionID;
+  const seatEntries = room ? Object.values(room.seats) : [];
+  const mySeat = seatEntries.find((seat) => seat.status === 'paid' && seat.sessionID === sessionID);
+  const myReady = mySeat?.ready === true;
   const phaseLabel = (room?.phase ?? 'lobby').toUpperCase();
   const kind1 = room?.nostrMeta?.note1 ?? '';
   const roomEmojis = room?.nostrMeta?.emojis ?? '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
+
+  useEffect(() => {
+    if (!roomId || room?.phase !== 'playing') {
+      return;
+    }
+    navigate(`/online/game?roomId=${encodeURIComponent(roomId)}`);
+  }, [navigate, room?.phase, roomId]);
 
   if (!roomId) {
     return (
@@ -128,34 +134,9 @@ export default function OnlineRoomLobby() {
             <p className="online-lobby-label">YOUR PIN</p>
             <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
             <p className="online-lobby-copy">Paste this PIN in the zap comment.</p>
-            <p className="online-lobby-expiry">
-              Expires:{' '}
-              {pinExpiresAt ? new Date(pinExpiresAt).toLocaleTimeString() : 'Waiting...'}
-            </p>
           </div>
 
           <div className="online-lobby-actions-row">
-            <Button
-              className="online-lobby-action"
-              onClick={() => {
-                if (roomId) {
-                  socket?.emit('joinOnlineRoom', { roomId });
-                }
-              }}
-            >
-              REFRESH PIN
-            </Button>
-            {isHost ? (
-              <Button
-                className={`online-lobby-action ${paidSeats < 2 ? 'disabled' : ''}`}
-                onClick={() => {
-                  socket?.emit('startOnlineGame', { roomId });
-                }}
-                disabled={paidSeats < 2}
-              >
-                START MATCH
-              </Button>
-            ) : null}
           </div>
         </section>
 
@@ -198,7 +179,15 @@ export default function OnlineRoomLobby() {
               )}
               <p className="online-lobby-seat-name">{p1?.name ?? 'Open seat'}</p>
             </div>
-            <p className="online-lobby-seat-meta">{p1?.status === 'paid' ? 'Paid' : 'Waiting payment'}</p>
+            <p className="online-lobby-seat-meta">
+              {p1?.status === 'paid'
+                ? p1.ready
+                  ? 'Paid · Ready'
+                  : p1.disconnectedAt
+                    ? 'Paid · Offline'
+                    : 'Paid · Not ready'
+                : 'Waiting payment'}
+            </p>
           </div>
           <div className="online-lobby-seat">
             <p className="online-lobby-label">PLAYER 2</p>
@@ -214,7 +203,15 @@ export default function OnlineRoomLobby() {
               )}
               <p className="online-lobby-seat-name">{p2?.name ?? 'Open seat'}</p>
             </div>
-            <p className="online-lobby-seat-meta">{p2?.status === 'paid' ? 'Paid' : 'Waiting payment'}</p>
+            <p className="online-lobby-seat-meta">
+              {p2?.status === 'paid'
+                ? p2.ready
+                  ? 'Paid · Ready'
+                  : p2.disconnectedAt
+                    ? 'Paid · Offline'
+                    : 'Paid · Not ready'
+                : 'Waiting payment'}
+            </p>
           </div>
           <div className="online-lobby-seat">
             <p className="online-lobby-label">SPECTATORS</p>
@@ -225,25 +222,26 @@ export default function OnlineRoomLobby() {
       </section>
 
       <div className="online-lobby-bottom-actions">
-        <Button
-          className="online-lobby-action online-lobby-arena"
-          onClick={() => navigate(`/online/game?roomId=${encodeURIComponent(roomId)}`)}
-        >
-          ENTER ARENA
-        </Button>
-        <Button
-          className="online-lobby-action"
-          onClick={() => {
-            if (isHost) {
-              socket?.emit('cancelOnlineRoom', { roomId });
-            } else {
+        {mySeat ? (
+          <Button
+            className="online-lobby-action online-lobby-arena"
+            onClick={() => {
+              socket?.emit('onlineSetReady', { roomId, ready: !myReady });
+            }}
+          >
+            {myReady ? 'UNREADY' : 'MARK AS READY'}
+          </Button>
+        ) : (
+          <Button
+            className="online-lobby-action"
+            onClick={() => {
               socket?.emit('leaveOnlineRoom', { roomId });
-            }
-            navigate('/online');
-          }}
-        >
-          {isHost ? 'CANCEL ROOM' : 'LEAVE ROOM'}
-        </Button>
+              navigate('/online');
+            }}
+          >
+            LEAVE ROOM
+          </Button>
+        )}
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
