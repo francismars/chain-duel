@@ -131,6 +131,7 @@ export const OnlineSeatStateSchema = z.object({
   name: z.string().optional(),
   picture: z.string().optional(),
   pubkey: z.string().optional(),
+  lnAddress: z.string().optional(),
 });
 
 export const OnlineRoomStateSchema = z.object({
@@ -153,6 +154,9 @@ export const OnlineRoomStateSchema = z.object({
       winnerPoints: z.number(),
       totalPrize: z.number(),
       lnurlw: z.string().optional(),
+      payoutMethod: z.enum(['withdraw_qr', 'nostr_zap']).optional(),
+      payoutTarget: z.string().optional(),
+      winnerLnAddress: z.string().optional(),
       doubleOrNothingVotes: z.number(),
     })
     .optional(),
@@ -215,12 +219,22 @@ export const ResOnlinePostGameInfoSchema = z.object({
   winnerPoints: z.number(),
   totalPrize: z.number(),
   lnurlw: z.string().optional(),
+  payoutMethod: z.enum(['withdraw_qr', 'nostr_zap']).optional(),
+  payoutTarget: z.string().optional(),
+  winnerLnAddress: z.string().optional(),
   doubleOrNothingVotes: z.number(),
 });
 
 export const ResCreateOnlineWithdrawalSchema = z.object({
   roomId: z.string(),
   lnurlw: z.string(),
+});
+
+export const ResCreateOnlineNostrPayoutSchema = z.object({
+  roomId: z.string(),
+  lnAddress: z.string(),
+  amount: z.number(),
+  ok: z.boolean(),
 });
 
 export const OnlineDoubleOrNothingUpdateSchema = z.object({

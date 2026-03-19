@@ -24,6 +24,12 @@ interface OnlinePostGameInfo {
   winnerPoints: number;
   totalPrize: number;
   lnurlw?: string;
+  payoutMethod?: 'withdraw_qr' | 'nostr_zap';
+  payoutTarget?: string;
+  winnerLnAddress?: string;
+  rematchRequested?: boolean;
+  rematchRequiredAmount?: number;
+  rematchNote1?: string;
   doubleOrNothingVotes: number;
 }
 
@@ -42,9 +48,12 @@ export default function OnlinePostGame() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [creatingWithdrawal, setCreatingWithdrawal] = useState(false);
+  const [creatingNostrPayout, setCreatingNostrPayout] = useState(false);
   const [lnurlw, setLnurlw] = useState('');
 
   const isWinner = Boolean(info?.winnerSessionID && info.winnerSessionID === sessionID);
+  const donLocked = Boolean(lnurlw || info?.payoutMethod === 'nostr_zap' || info?.rematchRequested);
+  const winnerHasNostrLn = Boolean(info?.winnerLnAddress);
 
   useEffect(() => {
     if (!roomId) {
@@ -85,6 +94,24 @@ export default function OnlinePostGame() {
       }
     };
 
+    const onNostrPayout = (payload: unknown) => {
+      const parsed = SocketBoundaryParsers.createOnlineNostrPayout(payload);
+      if (!parsed || parsed.roomId !== roomId) {
+        return;
+      }
+      setCreatingNostrPayout(false);
+      setError('');
+      setInfo((prev) =>
+        prev
+          ? {
+              ...prev,
+              payoutMethod: 'nostr_zap',
+              payoutTarget: parsed.lnAddress,
+            }
+          : prev
+      );
+    };
+
     const onDonUpdate = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlineDoubleOrNothingUpdate(payload);
       if (!parsed || parsed.roomId !== roomId) {
@@ -93,7 +120,8 @@ export default function OnlinePostGame() {
       setVotes(parsed.votes);
       setRequiredVotes(parsed.required);
       if (parsed.agreed) {
-        navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`);
+        setInfo((prev) => (prev ? { ...prev, rematchRequested: true } : prev));
+        setError('Double or Nothing accepted. Waiting for loser match payment.');
       }
     };
 
@@ -113,6 +141,7 @@ export default function OnlinePostGame() {
         return;
       }
       setCreatingWithdrawal(false);
+      setCreatingNostrPayout(false);
       setError(parsed.reason);
       setLoading(false);
     };
@@ -121,6 +150,7 @@ export default function OnlinePostGame() {
     socket.on('resCreateOnlineWithdrawal', onWithdrawal);
     socket.on('onlineDoubleOrNothingUpdate', onDonUpdate);
     socket.on('onlineRoomUpdated', onRoomUpdated);
+    socket.on('resCreateOnlineNostrPayout', onNostrPayout);
     socket.on('onlinePinInvalid', onInvalid);
     return () => {
       socket.off('connect', requestInfo);
@@ -128,6 +158,7 @@ export default function OnlinePostGame() {
       socket.off('resCreateOnlineWithdrawal', onWithdrawal);
       socket.off('onlineDoubleOrNothingUpdate', onDonUpdate);
       socket.off('onlineRoomUpdated', onRoomUpdated);
+      socket.off('resCreateOnlineNostrPayout', onNostrPayout);
       socket.off('onlinePinInvalid', onInvalid);
     };
   }, [navigate, roomId, socket]);
@@ -186,37 +217,73 @@ export default function OnlinePostGame() {
 
         <div className="online-postgame-grid">
           <div className="online-postgame-actions">
+            <div className="online-postgame-payout-choice">
+              <p className="online-postgame-payout-title">Choose payout method</p>
+              <p className="online-postgame-payout-note">
+                Pick one. Once selected, the other method and Double or Nothing are locked.
+              </p>
+            </div>
+            <div className="online-postgame-payout-row">
+              <Button
+                className={`${isWinner ? '' : 'disabled'} online-postgame-btn online-postgame-btn-withdraw`}
+                disabled={!isWinner || creatingWithdrawal || donLocked}
+                onClick={() => {
+                  if (!socket || !roomId || !isWinner || donLocked) {
+                    return;
+                  }
+                  setError('');
+                  setCreatingWithdrawal(true);
+                  socket.emit('createOnlineWithdrawal', { roomId });
+                }}
+              >
+                {isWinner
+                  ? creatingWithdrawal
+                    ? 'Preparing QR...'
+                    : donLocked
+                      ? 'QR payout locked'
+                      : 'Withdraw via QR'
+                  : 'Winner only'}
+              </Button>
+              <Button
+                className={`${isWinner && winnerHasNostrLn && !donLocked ? '' : 'disabled'} online-postgame-btn online-postgame-btn-nostr`}
+                disabled={!isWinner || !winnerHasNostrLn || donLocked || creatingNostrPayout}
+                onClick={() => {
+                  if (!socket || !roomId || !isWinner || !winnerHasNostrLn || donLocked) {
+                    return;
+                  }
+                  setError('');
+                  setCreatingNostrPayout(true);
+                  socket.emit('createOnlineNostrPayout', { roomId });
+                }}
+              >
+                {creatingNostrPayout ? 'Sending to LN address...' : 'Pay to LN address'}
+              </Button>
+            </div>
             <Button
-              className={`${isWinner ? '' : 'disabled'} online-postgame-btn online-postgame-btn-withdraw`}
-              disabled={!isWinner || creatingWithdrawal}
+              className={`online-postgame-btn online-postgame-btn-don ${donLocked ? 'disabled' : ''}`}
+              disabled={donLocked}
               onClick={() => {
-                if (!socket || !roomId || !isWinner) {
-                  return;
-                }
-                setError('');
-                setCreatingWithdrawal(true);
-                socket.emit('createOnlineWithdrawal', { roomId });
-              }}
-            >
-              {isWinner ? (creatingWithdrawal ? 'CREATING WITHDRAW QR...' : 'WITHDRAW PRIZE') : 'WINNER CAN WITHDRAW'}
-            </Button>
-            <Button
-              className="online-postgame-btn online-postgame-btn-don"
-              onClick={() => {
-                if (!socket || !roomId) {
+                if (!socket || !roomId || donLocked) {
                   return;
                 }
                 setError('');
                 socket.emit('onlineDoubleOrNothing', { roomId });
               }}
             >
-              DOUBLE OR NOTHING ({votes}/{requiredVotes})
+              {donLocked
+                ? 'DOUBLE OR NOTHING LOCKED (PAYOUT STARTED)'
+                : `DOUBLE OR NOTHING (${votes}/${requiredVotes})`}
             </Button>
             <Button
               className="online-postgame-btn online-postgame-btn-back"
-              onClick={() => navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`)}
+              onClick={() => {
+                if (socket && roomId) {
+                  socket.emit('leaveOnlineRoom', { roomId });
+                }
+                navigate('/online');
+              }}
             >
-              BACK TO LOBBY
+              EXIT ROOM
             </Button>
           </div>
 
@@ -234,6 +301,11 @@ export default function OnlinePostGame() {
         </div>
 
         {error ? <p className="online-postgame-error">Error: {error}</p> : null}
+        {info?.payoutMethod === 'nostr_zap' && info.payoutTarget ? (
+          <p className="online-postgame-error">
+            Payout sent to Nostr lightning address: {info.payoutTarget}
+          </p>
+        ) : null}
       </div>
 
       <div className={`overlay ${loading ? '' : 'hide'}`} id="loading">

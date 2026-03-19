@@ -64,6 +64,8 @@ export const SocketBoundaryParsers = {
     parseWithValidator(payload, SocketValidators.resOnlinePostGameInfo),
   createOnlineWithdrawal: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.resCreateOnlineWithdrawal),
+  createOnlineNostrPayout: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resCreateOnlineNostrPayout),
   onlineDoubleOrNothingUpdate: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.onlineDoubleOrNothingUpdate),
 };

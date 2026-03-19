@@ -124,6 +124,41 @@
   flex-wrap: wrap;
 }
 
+.online-postgame-payout-choice {
+  width: 100%;
+  border: 1px solid rgb(255 255 255 / 0.24);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.03);
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.1rem;
+}
+
+.online-postgame-payout-title {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  letter-spacing: 0.08em;
+  font-size: 0.88rem;
+  color: rgb(255 255 255 / 0.96);
+  text-transform: uppercase;
+}
+
+.online-postgame-payout-note {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: rgb(222 222 222 / 0.82);
+}
+
+.online-postgame-payout-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.online-postgame-payout-row .button {
+  width: 100%;
+}
+
 .online-postgame-actions .button {
   width: 100%;
   min-width: 0;
@@ -144,6 +179,12 @@
   border-color: rgb(255 255 255 / 0.78);
   background: linear-gradient(180deg, rgb(255 255 255 / 16%) 0%, rgb(255 255 255 / 6%) 100%);
   box-shadow: 0 0 20px rgb(255 255 255 / 18%), inset 0 0 0 1px rgb(255 255 255 / 12%);
+}
+
+.online-postgame-btn-nostr {
+  border-color: rgb(255 255 255 / 0.7);
+  background: linear-gradient(180deg, rgb(255 255 255 / 14%) 0%, rgb(255 255 255 / 4%) 100%);
+  box-shadow: 0 0 18px rgb(255 255 255 / 14%), inset 0 0 0 1px rgb(255 255 255 / 10%);
 }
 
 .online-postgame-btn-don {
@@ -227,5 +268,9 @@
   .online-postgame-actions .button {
     height: 46px;
     font-size: 0.9rem;
+  }
+
+  .online-postgame-payout-row {
+    grid-template-columns: 1fr;
   }
 }
