@@ -124,6 +124,16 @@ export default function OnlineRoomLobby() {
   const roomEmojis = room?.nostrMeta?.emojis ?? '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
+  const p1AvatarSrc = isFinished
+    ? p1?.picture ||
+      room?.postGame?.p1Picture ||
+      (room?.postGame?.winnerRole === 'Player 1' ? room?.postGame?.winnerPicture : undefined)
+    : p1?.picture;
+  const p2AvatarSrc = isFinished
+    ? p2?.picture ||
+      room?.postGame?.p2Picture ||
+      (room?.postGame?.winnerRole === 'Player 2' ? room?.postGame?.winnerPicture : undefined)
+    : p2?.picture;
   const finishedSummary =
     room?.phase === 'finished'
       ? {
@@ -345,10 +355,10 @@ export default function OnlineRoomLobby() {
               PLAYER 1 {isMyP1Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
             </p>
             <div className="online-lobby-seat-identity">
-              {p1?.status === 'paid' ? (
+              {isFinished || p1?.status === 'paid' ? (
                 <img
                   className="online-lobby-seat-avatar"
-                  src={p1.picture || '/images/loading.gif'}
+                  src={p1AvatarSrc || '/images/loading.gif'}
                   alt={p1?.name || 'Player 1'}
                 />
               ) : (
@@ -363,10 +373,10 @@ export default function OnlineRoomLobby() {
               PLAYER 2 {isMyP2Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
             </p>
             <div className="online-lobby-seat-identity">
-              {p2?.status === 'paid' ? (
+              {isFinished || p2?.status === 'paid' ? (
                 <img
                   className="online-lobby-seat-avatar"
-                  src={p2.picture || '/images/loading.gif'}
+                  src={p2AvatarSrc || '/images/loading.gif'}
                   alt={p2?.name || 'Player 2'}
                 />
               ) : (
