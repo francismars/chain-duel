@@ -68,4 +68,6 @@ export const SocketBoundaryParsers = {
     parseWithValidator(payload, SocketValidators.resCreateOnlineNostrPayout),
   onlineDoubleOrNothingUpdate: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.onlineDoubleOrNothingUpdate),
+  onlineReplay: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resOnlineReplay),
 };

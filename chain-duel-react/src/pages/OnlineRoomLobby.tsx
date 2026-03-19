@@ -108,6 +108,7 @@ export default function OnlineRoomLobby() {
   const isMyP1Seat = mySeat?.role === 'Player 1';
   const isMyP2Seat = mySeat?.role === 'Player 2';
   const phaseLabel = (room?.phase ?? 'lobby').toUpperCase();
+  const isFinished = room?.phase === 'finished';
   const rematchPending = Boolean(room?.postGame?.rematchRequested);
   const rematchNote = room?.postGame?.rematchNote1 ?? '';
   const rematchAmount = room?.postGame?.rematchRequiredAmount ?? 0;
@@ -123,30 +124,53 @@ export default function OnlineRoomLobby() {
   const roomEmojis = room?.nostrMeta?.emojis ?? '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
-  const p1NameDisplay = rematchPending
+  const finishedSummary =
+    room?.phase === 'finished'
+      ? {
+          p1Name: snapshotP1Name,
+          p2Name: snapshotP2Name,
+          p1Score: Math.floor((room?.snapshot?.state as { score?: number[] } | undefined)?.score?.[0] ?? 0),
+          p2Score: Math.floor((room?.snapshot?.state as { score?: number[] } | undefined)?.score?.[1] ?? 0),
+          winner: room?.postGame?.winnerName ?? 'Winner',
+          netPrize: Math.floor((room?.postGame?.winnerPoints ?? 0) * 0.95),
+        }
+      : null;
+  const p1NameDisplay = isFinished
     ? p1?.name || snapshotP1Name
-    : p1?.name || 'Open seat';
-  const p2NameDisplay = rematchPending
+    : rematchPending
+      ? p1?.name || snapshotP1Name
+      : p1?.name || 'Open seat';
+  const p2NameDisplay = isFinished
     ? p2?.name || snapshotP2Name
-    : p2?.name || 'Open seat';
-  const p1MetaDisplay = rematchPending
-    ? 'Locked for rematch'
-    : p1?.status === 'paid'
-      ? p1.ready
-        ? 'Paid · Ready'
-        : p1.disconnectedAt
-          ? 'Paid · Offline'
-          : 'Paid · Not ready'
-      : 'Waiting payment';
-  const p2MetaDisplay = rematchPending
-    ? 'Locked for rematch'
-    : p2?.status === 'paid'
-      ? p2.ready
-        ? 'Paid · Ready'
-        : p2.disconnectedAt
-          ? 'Paid · Offline'
-          : 'Paid · Not ready'
-      : 'Waiting payment';
+    : rematchPending
+      ? p2?.name || snapshotP2Name
+      : p2?.name || 'Open seat';
+  const p1MetaDisplay = isFinished
+    ? room?.postGame?.winnerRole === 'Player 1'
+      ? 'Winner'
+      : 'Played'
+    : rematchPending
+      ? 'Locked for rematch'
+      : p1?.status === 'paid'
+        ? p1.ready
+          ? 'Paid · Ready'
+          : p1.disconnectedAt
+            ? 'Paid · Offline'
+            : 'Paid · Not ready'
+        : 'Waiting payment';
+  const p2MetaDisplay = isFinished
+    ? room?.postGame?.winnerRole === 'Player 2'
+      ? 'Winner'
+      : 'Played'
+    : rematchPending
+      ? 'Locked for rematch'
+      : p2?.status === 'paid'
+        ? p2.ready
+          ? 'Paid · Ready'
+          : p2.disconnectedAt
+            ? 'Paid · Offline'
+            : 'Paid · Not ready'
+        : 'Waiting payment';
 
   useEffect(() => {
     if (!roomId || room?.phase !== 'playing') {
@@ -169,7 +193,9 @@ export default function OnlineRoomLobby() {
 
       <h1 id="online-lobby-title">ONLINE LOBBY</h1>
       <p id="online-lobby-subtitle">
-        {rematchPending
+        {room?.phase === 'finished'
+          ? 'Session finished. View result details or watch replay from this room.'
+          : rematchPending
           ? amILoserToPay
             ? `Double or Nothing is active. Scan and zap exactly ${Math.floor(rematchAmount)} sats to continue.`
             : `Double or Nothing is active. Waiting for loser to zap exactly ${Math.floor(rematchAmount)} sats.`
@@ -192,6 +218,19 @@ export default function OnlineRoomLobby() {
             Buy-in: <b>{room?.buyin ?? 0} sats</b> · Seats paid: <b>{paidSeats}/2</b>
           </div>
 
+          {finishedSummary ? (
+            <div className="online-lobby-finished-card">
+              <p className="online-lobby-label">MATCH RESULT</p>
+              <p className="online-lobby-finished-main">
+                {finishedSummary.p1Name} {finishedSummary.p1Score} - {finishedSummary.p2Score}{' '}
+                {finishedSummary.p2Name}
+              </p>
+              <p className="online-lobby-copy">
+                Winner: <b>{finishedSummary.winner}</b> · Net prize: <b>{finishedSummary.netPrize} sats</b>
+              </p>
+            </div>
+          ) : null}
+
           <div className="online-lobby-emojis-card">
             <p className="online-lobby-label">ROOM EMOJIS</p>
             <p className="online-lobby-emojis">
@@ -207,14 +246,24 @@ export default function OnlineRoomLobby() {
               <p className="online-lobby-label">SEAT STATUS</p>
               <p className="online-lobby-pin">SEAT CLAIMED</p>
               <p className="online-lobby-copy">
-                {rematchPending
+                {isFinished
+                  ? 'Match is finished. Registration is closed for this room.'
+                  : rematchPending
                   ? 'Rematch locked to the same players. Waiting for rematch payment.'
                   : `You are ${myRoleLabel}. Set ready when you are prepared to start.`}
               </p>
             </div>
           ) : (
             <div className="online-lobby-pin-card">
-              {rematchPending ? (
+              {isFinished ? (
+                <>
+                  <p className="online-lobby-label">REGISTRATION</p>
+                  <p className="online-lobby-pin">CLOSED</p>
+                  <p className="online-lobby-copy">
+                    This room is finished. View results/replay from this room.
+                  </p>
+                </>
+              ) : rematchPending ? (
                 <>
                   <p className="online-lobby-label">SEAT STATUS</p>
                   <p className="online-lobby-pin">LOCKED FOR REMATCH</p>
@@ -340,7 +389,31 @@ export default function OnlineRoomLobby() {
       </div>
 
       <div className="online-lobby-bottom-actions">
-        {mySeat ? (
+        {room?.phase === 'finished' ? (
+          <>
+            <Button
+              className="online-lobby-action online-lobby-arena"
+              onClick={() => navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`)}
+            >
+              VIEW POSTGAME DETAILS
+            </Button>
+            <Button
+              className="online-lobby-action online-lobby-arena"
+              onClick={() => navigate(`/online/game?roomId=${encodeURIComponent(roomId)}&replay=1`)}
+            >
+              WATCH REPLAY
+            </Button>
+            <Button
+              className="online-lobby-action"
+              onClick={() => {
+                socket?.emit('leaveOnlineRoom', { roomId });
+                navigate('/online');
+              }}
+            >
+              EXIT ROOM
+            </Button>
+          </>
+        ) : mySeat ? (
           <Button
             className="online-lobby-action online-lobby-arena"
             disabled={rematchPending}

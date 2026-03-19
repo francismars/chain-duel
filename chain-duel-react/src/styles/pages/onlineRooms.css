@@ -54,6 +54,12 @@
   margin-top: 0.3vw;
 }
 
+.online-controller-hint {
+  color: #cfcfcf;
+  font-size: 0.76cqw;
+  margin-top: 0.45vw;
+}
+
 .online-input-row {
   margin-top: 0.7vw;
   display: flex;
@@ -132,6 +138,15 @@
   margin-bottom: 0.55vw;
 }
 
+.online-selected {
+  border-color: #fff !important;
+  box-shadow: 0 0 16px rgb(255 255 255 / 24%);
+}
+
+.online-room-card.online-selected {
+  background: linear-gradient(90deg, rgb(255 255 255 / 9%) 0%, rgb(255 255 255 / 2%) 100%);
+}
+
 .online-room-main {
   min-width: 40%;
 }
@@ -148,6 +163,14 @@
   margin-top: 0.2vw;
   color: #d1d1d1;
   font-size: 0.78cqw;
+  flex-wrap: wrap;
+}
+
+.online-room-result-chip {
+  border: 1px solid #7a7a7a;
+  border-radius: 999px;
+  padding: 0.1vw 0.45vw;
+  color: #fff;
 }
 
 .online-phase {
@@ -267,6 +290,15 @@
 
   .online-panel-title {
     font-size: 24px;
+  }
+
+  .online-controller-hint,
+  .online-controls-hint,
+  .online-panel-copy,
+  .online-room-meta,
+  .online-error,
+  #online-subtitle {
+    font-size: 12px;
   }
 
   .online-input,

@@ -45,3 +45,65 @@
   font-size: 0.58cqw;
   letter-spacing: 0.03rem;
 }
+
+.online-replay-controls {
+  margin-top: 0.55vw;
+  border: 1px solid #5a5a5a;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 40%);
+  padding: 0.55vw 0.65vw;
+}
+
+.online-replay-toprow {
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+}
+
+.online-replay-btn {
+  background: #111;
+  color: #fff;
+  border: 1px solid #8a8a8a;
+  border-radius: 6px;
+  padding: 0.2vw 0.6vw;
+  cursor: pointer;
+}
+
+.online-replay-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.online-replay-speed {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35vw;
+  font-size: 0.72cqw;
+  color: #d7d7d7;
+}
+
+.online-replay-speed select {
+  background: #111;
+  color: #fff;
+  border: 1px solid #888;
+  border-radius: 4px;
+}
+
+.online-replay-slider {
+  width: 100%;
+  margin-top: 0.45vw;
+}
+
+.online-replay-time {
+  margin-top: 0.2vw;
+  font-size: 0.68cqw;
+  color: #cecece;
+  text-align: right;
+}
+
+.online-replay-error {
+  margin-top: 0.3vw;
+  color: #ff8b8b;
+  font-size: 0.72cqw;
+}

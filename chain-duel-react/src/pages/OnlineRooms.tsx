@@ -3,10 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
+import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { OnlineRoomListItem } from '@/types/socket';
 import '@/styles/pages/onlineRooms.css';
+
+type NavFocus =
+  | { type: 'amount' }
+  | { type: 'create' }
+  | { type: 'room'; index: number }
+  | { type: 'back' };
+
+const BUYIN_MIN = 10;
+const BUYIN_MAX = 1_000_000;
+const BUYIN_STEP = 10;
+const BUYIN_STEP_FAST = 50;
 
 export default function OnlineRooms() {
   const navigate = useNavigate();
@@ -16,8 +28,12 @@ export default function OnlineRooms() {
   const [roomCode, setRoomCode] = useState('');
   const [error, setError] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
+  const [navFocus, setNavFocus] = useState<NavFocus>({ type: 'amount' });
   const creatingRoomRef = useRef(false);
   const pendingRoomIdRef = useRef<string | null>(null);
+  const keyRepeatRef = useRef<Record<string, number>>({});
+
+  useGamepad(true);
 
   const sortedRooms = useMemo(
     () => [...rooms].sort((a, b) => b.createdAt - a.createdAt),
@@ -35,6 +51,38 @@ export default function OnlineRooms() {
       default:
         return 'LOBBY';
     }
+  };
+
+  const parseBuyin = () => {
+    const parsed = Number.parseInt(buyin, 10);
+    if (!Number.isFinite(parsed)) return 100;
+    return Math.max(BUYIN_MIN, Math.min(BUYIN_MAX, parsed));
+  };
+
+  const updateBuyinBy = (delta: number) => {
+    const current = parseBuyin();
+    const next = Math.max(BUYIN_MIN, Math.min(BUYIN_MAX, current + delta));
+    setBuyin(String(next));
+  };
+
+  const createRoom = () => {
+    setError('');
+    setCreatingRoom(true);
+    creatingRoomRef.current = true;
+    pendingRoomIdRef.current = null;
+    socket?.emit('createOnlineRoom', {
+      buyin: parseBuyin(),
+    });
+  };
+
+  const activateRoom = (room: OnlineRoomListItem) => {
+    if (room.phase === 'playing') {
+      socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
+      navigate(`/online/game?roomId=${encodeURIComponent(room.roomId)}`);
+      return;
+    }
+    socket?.emit('joinOnlineRoom', { roomId: room.roomId });
+    navigate(`/online/lobby?roomId=${encodeURIComponent(room.roomId)}`);
   };
 
   useEffect(() => {
@@ -121,6 +169,115 @@ export default function OnlineRooms() {
     return () => window.clearTimeout(timer);
   }, [creatingRoom]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (creatingRoom) {
+        return;
+      }
+      const active = document.activeElement as HTMLElement | null;
+      const activeIsTextInput =
+        active?.tagName === 'INPUT' && !(active as HTMLInputElement).readOnly;
+      // Keep join-by-code keyboard/mouse oriented for now.
+      if (activeIsTextInput && active?.classList.contains('online-input')) {
+        return;
+      }
+
+      const key = event.key;
+      const isEnter = key === 'Enter' || key === ' ';
+      const isUp = key === 'ArrowUp' || key === 'w' || key === 'W';
+      const isDown = key === 'ArrowDown' || key === 's' || key === 'S';
+      const isLeft = key === 'ArrowLeft' || key === 'a' || key === 'A';
+      const isRight = key === 'ArrowRight' || key === 'd' || key === 'D';
+      if (!isEnter && !isUp && !isDown && !isLeft && !isRight) {
+        return;
+      }
+      event.preventDefault();
+
+      if (isLeft || isRight) {
+        if (navFocus.type === 'amount') {
+          const now = performance.now();
+          const last = keyRepeatRef.current[key] ?? 0;
+          keyRepeatRef.current[key] = now;
+          const step = now - last < 140 ? BUYIN_STEP_FAST : BUYIN_STEP;
+          updateBuyinBy(isRight ? step : -step);
+        }
+        return;
+      }
+
+      if (isUp) {
+        setNavFocus((prev) => {
+          if (prev.type === 'back') {
+            if (sortedRooms.length > 0) {
+              return { type: 'room', index: sortedRooms.length - 1 };
+            }
+            return { type: 'create' };
+          }
+          if (prev.type === 'room') {
+            if (prev.index > 0) {
+              return { type: 'room', index: prev.index - 1 };
+            }
+            return { type: 'create' };
+          }
+          if (prev.type === 'create') {
+            return { type: 'amount' };
+          }
+          return prev;
+        });
+        return;
+      }
+
+      if (isDown) {
+        setNavFocus((prev) => {
+          if (prev.type === 'amount') {
+            return { type: 'create' };
+          }
+          if (prev.type === 'create') {
+            if (sortedRooms.length > 0) {
+              return { type: 'room', index: 0 };
+            }
+            return { type: 'back' };
+          }
+          if (prev.type === 'room') {
+            if (prev.index < sortedRooms.length - 1) {
+              return { type: 'room', index: prev.index + 1 };
+            }
+            return { type: 'back' };
+          }
+          return prev;
+        });
+        return;
+      }
+
+      if (isEnter) {
+        if (navFocus.type === 'create') {
+          createRoom();
+          return;
+        }
+        if (navFocus.type === 'room') {
+          const room = sortedRooms[navFocus.index];
+          if (room) {
+            activateRoom(room);
+          }
+          return;
+        }
+        if (navFocus.type === 'back') {
+          navigate('/');
+        }
+      }
+    };
+
+    const onKeyUp = (event: KeyboardEvent) => {
+      keyRepeatRef.current[event.key] = 0;
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [creatingRoom, navFocus, navigate, sortedRooms, socket, buyin]);
+
   return (
     <div className="online-rooms-page">
       <Sponsorship id="sponsorship-online-rooms" />
@@ -132,6 +289,9 @@ export default function OnlineRooms() {
         <section className="online-panel">
           <h2 className="online-panel-title">CREATE ROOM</h2>
           <p className="online-panel-copy">Choose a buy-in and open a public room.</p>
+          <p className={`online-controller-hint ${navFocus.type === 'amount' ? 'online-selected' : ''}`}>
+            Buy-in: {parseBuyin()} sats (←/→ change)
+          </p>
           <div className="online-input-row">
             <input
               className="online-input"
@@ -141,17 +301,8 @@ export default function OnlineRooms() {
               inputMode="numeric"
             />
             <Button
-              className="online-action"
-              onClick={() => {
-                const buyinNum = Number.parseInt(buyin, 10);
-                setError('');
-                setCreatingRoom(true);
-                creatingRoomRef.current = true;
-                pendingRoomIdRef.current = null;
-                socket?.emit('createOnlineRoom', {
-                  buyin: Number.isFinite(buyinNum) ? buyinNum : 100,
-                });
-              }}
+              className={`online-action ${navFocus.type === 'create' ? 'online-selected' : ''}`}
+              onClick={createRoom}
             >
               CREATE
             </Button>
@@ -192,8 +343,13 @@ export default function OnlineRooms() {
           {sortedRooms.length === 0 ? (
             <p className="online-empty">No open rooms yet. Create one to start the arena.</p>
           ) : null}
-          {sortedRooms.map((room) => (
-            <div key={room.roomId} className="online-room-card">
+          {sortedRooms.map((room, index) => (
+            <div
+              key={room.roomId}
+              className={`online-room-card ${
+                navFocus.type === 'room' && navFocus.index === index ? 'online-selected' : ''
+              }`}
+            >
               <div className="online-room-main">
                 <p className="online-room-code">{room.roomCode}</p>
                 <p className="online-room-meta">
@@ -210,16 +366,13 @@ export default function OnlineRooms() {
               <div className="online-room-actions">
                 <Button
                   className="online-action"
-                  onClick={() => {
-                    if (room.phase === 'playing') {
-                      socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
-                      navigate(`/online/game?roomId=${encodeURIComponent(room.roomId)}`);
-                      return;
-                    }
-                    socket?.emit('joinOnlineRoom', { roomId: room.roomId });
-                  }}
+                  onClick={() => activateRoom(room)}
                 >
-                  {room.phase === 'playing' ? 'WATCH LIVE' : 'ENTER ROOM'}
+                  {room.phase === 'playing'
+                    ? 'WATCH LIVE'
+                    : room.phase === 'finished'
+                    ? 'ENTER ROOM'
+                    : 'ENTER ROOM'}
                 </Button>
               </div>
             </div>
@@ -228,7 +381,10 @@ export default function OnlineRooms() {
       </section>
 
       <div className="online-footer-controls">
-        <Button className="online-back" onClick={() => navigate('/')}>
+        <Button
+          className={`online-back ${navFocus.type === 'back' ? 'online-selected' : ''}`}
+          onClick={() => navigate('/')}
+        >
           BACK
         </Button>
         <p className="online-controls-hint">Keyboard/Gamepad: arrows + Enter</p>
