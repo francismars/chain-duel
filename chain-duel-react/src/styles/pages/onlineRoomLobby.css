@@ -115,6 +115,21 @@
   margin-top: 0.45vw;
 }
 
+.online-lobby-finished-card {
+  margin-top: 0.75vw;
+  border: 1px solid #888;
+  border-radius: 8px;
+  padding: 0.75vw;
+  background: rgb(0 0 0 / 40%);
+}
+
+.online-lobby-finished-main {
+  margin-top: 0.2vw;
+  font-family: 'BureauGrotesque';
+  font-size: 1.35cqw;
+  letter-spacing: 0.03em;
+}
+
 .online-lobby-pin-card {
   margin-top: 0.75vw;
   border: 1px dashed #838383;

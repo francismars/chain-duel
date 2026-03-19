@@ -167,6 +167,12 @@ export interface OnlineRoomState {
   seats: Record<string, OnlineSeatState>;
   spectators: string[];
   snapshot: OnlineRoomSnapshot;
+  replay?: {
+    available: boolean;
+    frameCount: number;
+    tickMs: number;
+    durationMs: number;
+  };
   postGame?: {
     winnerRole?: PlayerRole.Player1 | PlayerRole.Player2;
     winnerSessionID?: string;
@@ -196,6 +202,20 @@ export interface OnlineRoomListItem {
   playersPaid: number;
   seatsTotal: number;
   spectators: number;
+  replay?: {
+    available: boolean;
+    frameCount: number;
+    tickMs: number;
+    durationMs: number;
+  };
+  result?: {
+    winnerName: string;
+    p1Name: string;
+    p2Name: string;
+    p1Score: number;
+    p2Score: number;
+    netPrize: number;
+  };
 }
 
 // ============================================================================
@@ -248,6 +268,7 @@ export interface ClientToServerEvents {
   createOnlineWithdrawal: (payload: { roomId: string }) => void;
   createOnlineNostrPayout: (payload: { roomId: string }) => void;
   onlineDoubleOrNothing: (payload: { roomId: string }) => void;
+  getOnlineReplay: (payload: { roomId: string }) => void;
 }
 
 // Server -> Client Events
@@ -361,5 +382,10 @@ export interface ServerToClientEvents {
     votes: number;
     required: number;
     agreed: boolean;
+  }) => void;
+  resOnlineReplay: (data: {
+    roomId: string;
+    tickMs: number;
+    frames: OnlineRoomSnapshot[];
   }) => void;
 }

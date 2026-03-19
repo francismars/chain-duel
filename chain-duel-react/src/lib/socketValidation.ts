@@ -10,6 +10,7 @@ import {
   OnlineRoomSnapshotEventSchema,
   OnlineRoomStateSchema,
   OnlineSeatAssignedSchema,
+  ResOnlineReplaySchema,
   ResCreateOnlineNostrPayoutSchema,
   ResCreateOnlineWithdrawalSchema,
   ResCreateOnlineRoomSchema,
@@ -127,4 +128,7 @@ export const SocketValidators = {
 
   onlineDoubleOrNothingUpdate: (data: unknown) =>
     validateSocketEvent(OnlineDoubleOrNothingUpdateSchema, data, 'onlineDoubleOrNothingUpdate'),
+
+  resOnlineReplay: (data: unknown) =>
+    validateSocketEvent(ResOnlineReplaySchema, data, 'resOnlineReplay'),
 };

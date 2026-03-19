@@ -43,7 +43,9 @@ export default function OnlinePostGame() {
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
   const roomId = searchParams.get('roomId') ?? '';
-  const sessionID = sessionStorage.getItem('sessionID') ?? '';
+  const [currentSessionID, setCurrentSessionID] = useState(
+    () => sessionStorage.getItem('sessionID') ?? ''
+  );
   const [info, setInfo] = useState<OnlinePostGameInfo | null>(null);
   const [votes, setVotes] = useState(0);
   const [requiredVotes, setRequiredVotes] = useState(2);
@@ -53,7 +55,9 @@ export default function OnlinePostGame() {
   const [creatingNostrPayout, setCreatingNostrPayout] = useState(false);
   const [lnurlw, setLnurlw] = useState('');
 
-  const isWinner = Boolean(info?.winnerSessionID && info.winnerSessionID === sessionID);
+  const isWinner = Boolean(
+    info?.winnerSessionID && info.winnerSessionID === currentSessionID
+  );
   const donLocked = Boolean(lnurlw || info?.payoutMethod === 'nostr_zap' || info?.rematchRequested);
   const winnerHasNostrLn = Boolean(info?.winnerLnAddress);
   const payoutChosen = info?.payoutMethod === 'withdraw_qr' || info?.payoutMethod === 'nostr_zap';
@@ -76,8 +80,16 @@ export default function OnlinePostGame() {
     }
 
     const requestInfo = () => socket.emit('getOnlinePostGame', { roomId });
+    const onSession = (payload: { sessionID: string }) => {
+      if (!payload?.sessionID) {
+        return;
+      }
+      setCurrentSessionID(payload.sessionID);
+      sessionStorage.setItem('sessionID', payload.sessionID);
+    };
     requestInfo();
     socket.on('connect', requestInfo);
+    socket.on('session', onSession);
 
     const onInfo = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlinePostGameInfo(payload);
@@ -181,6 +193,7 @@ export default function OnlinePostGame() {
     socket.on('onlinePinInvalid', onInvalid);
     return () => {
       socket.off('connect', requestInfo);
+      socket.off('session', onSession);
       socket.off('resOnlinePostGameInfo', onInfo);
       socket.off('resCreateOnlineWithdrawal', onWithdrawal);
       socket.off('onlineDoubleOrNothingUpdate', onDonUpdate);

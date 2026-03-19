@@ -17,6 +17,7 @@ export default function OnlineGame() {
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
   const roomId = searchParams.get('roomId') ?? '';
+  const replayMode = searchParams.get('replay') === '1';
   const [snapshot, setSnapshot] = useState<OnlineRoomSnapshot | null>(null);
   const snapshotRef = useRef<OnlineRoomSnapshot | null>(null);
   const rendererRef = useRef<PixiGameRenderer | null>(null);
@@ -51,6 +52,13 @@ export default function OnlineGame() {
     () => sessionStorage.getItem('sessionID') ?? ''
   );
   const [currentSocketID, setCurrentSocketID] = useState('');
+  const [replayFrames, setReplayFrames] = useState<OnlineRoomSnapshot[]>([]);
+  const [replayTickMs, setReplayTickMs] = useState(100);
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [replayPlaying, setReplayPlaying] = useState(false);
+  const [replaySpeed, setReplaySpeed] = useState(1);
+  const [replayLoaded, setReplayLoaded] = useState(false);
+  const [replayError, setReplayError] = useState('');
 
   useGamepad(true);
 
@@ -119,8 +127,14 @@ export default function OnlineGame() {
     const requestRoomSync = () => {
       socket.emit('spectateOnlineRoom', { roomId });
       socket.emit('getOnlineRoomState', { roomId });
+      if (replayMode) {
+        socket.emit('getOnlineReplay', { roomId });
+      }
     };
     const onSnapshot = (payload: unknown) => {
+      if (replayMode) {
+        return;
+      }
       const parsed = SocketBoundaryParsers.onlineRoomSnapshot(payload) ?? coerceOnlineRoomSnapshotEvent(payload);
       if (parsed && parsed.roomId === roomId) {
         setSnapshot((prev) => {
@@ -133,11 +147,13 @@ export default function OnlineGame() {
     const onUpdated = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlineRoomUpdated(payload) ?? coerceOnlineRoomUpdated(payload);
       if (parsed && parsed.roomId === roomId) {
-        setSnapshot((prev) => {
-          const merged = mergeOnlineSnapshot(prev, parsed.snapshot);
-          ingestOnlinePointChanges(merged, pointAnimationsRef.current, prevPointCountByKeyRef.current);
-          return merged;
-        });
+        if (!replayMode) {
+          setSnapshot((prev) => {
+            const merged = mergeOnlineSnapshot(prev, parsed.snapshot);
+            ingestOnlinePointChanges(merged, pointAnimationsRef.current, prevPointCountByKeyRef.current);
+            return merged;
+          });
+        }
         const p1 = parsed.seats['Player 1'];
         const p2 = parsed.seats['Player 2'];
         setRoomInfo({
@@ -158,8 +174,39 @@ export default function OnlineGame() {
         });
       }
     };
+    const onReplay = (payload: unknown) => {
+      if (!replayMode) {
+        return;
+      }
+      const parsed = SocketBoundaryParsers.onlineReplay(payload);
+      if (!parsed || parsed.roomId !== roomId) {
+        return;
+      }
+      setReplayTickMs(Math.max(10, parsed.tickMs));
+      setReplayFrames(parsed.frames);
+      setReplayIndex(0);
+      setReplayPlaying(false);
+      setReplayLoaded(true);
+      setReplayError(parsed.frames.length === 0 ? 'Replay has no frames.' : '');
+      const first = parsed.frames[0] ?? null;
+      if (first) {
+        setSnapshot(first);
+      }
+    };
+    const onInvalid = (payload: unknown) => {
+      const parsed = SocketBoundaryParsers.onlinePinInvalid(payload);
+      if (!parsed || !replayMode) {
+        return;
+      }
+      if (parsed.reason === 'replay_unavailable') {
+        setReplayLoaded(true);
+        setReplayError('Replay not available for this room yet.');
+      }
+    };
     socket.on('onlineRoomSnapshot', onSnapshot);
     socket.on('onlineRoomUpdated', onUpdated);
+    socket.on('resOnlineReplay', onReplay);
+    socket.on('onlinePinInvalid', onInvalid);
     socket.on('session', onSession);
     socket.on('connect', refreshLocalIdentity);
     socket.on('connect', requestRoomSync);
@@ -167,6 +214,14 @@ export default function OnlineGame() {
     requestRoomSync();
     // Recovery for late socket readiness: keep requesting until first snapshot lands.
     const resyncInterval = window.setInterval(() => {
+      if (replayMode) {
+        if (replayLoaded) {
+          window.clearInterval(resyncInterval);
+        } else {
+          requestRoomSync();
+        }
+        return;
+      }
       if (snapshotRef.current) {
         window.clearInterval(resyncInterval);
         return;
@@ -177,11 +232,34 @@ export default function OnlineGame() {
       window.clearInterval(resyncInterval);
       socket.off('onlineRoomSnapshot', onSnapshot);
       socket.off('onlineRoomUpdated', onUpdated);
+      socket.off('resOnlineReplay', onReplay);
+      socket.off('onlinePinInvalid', onInvalid);
       socket.off('session', onSession);
       socket.off('connect', refreshLocalIdentity);
       socket.off('connect', requestRoomSync);
     };
-  }, [roomId, socket]);
+  }, [replayLoaded, replayMode, roomId, socket]);
+
+  useEffect(() => {
+    if (!replayMode || !replayPlaying || replayFrames.length === 0) {
+      return;
+    }
+    const intervalMs = Math.max(15, replayTickMs / replaySpeed);
+    const timer = window.setInterval(() => {
+      setReplayIndex((prev) => {
+        const next = Math.min(prev + 1, replayFrames.length - 1);
+        if (next >= replayFrames.length - 1) {
+          setReplayPlaying(false);
+        }
+        const frame = replayFrames[next];
+        if (frame) {
+          setSnapshot(frame);
+        }
+        return next;
+      });
+    }, intervalMs);
+    return () => window.clearInterval(timer);
+  }, [replayFrames, replayMode, replayPlaying, replaySpeed, replayTickMs]);
 
   useEffect(() => {
     const stopFeed = startMempoolFeed({
@@ -230,8 +308,11 @@ export default function OnlineGame() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (snapshotRef.current?.state?.gameEnded) {
+      if (!replayMode && snapshotRef.current?.state?.gameEnded) {
         navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
+        return;
+      }
+      if (replayMode) {
         return;
       }
       const input = keyToInput(event.key);
@@ -258,7 +339,7 @@ export default function OnlineGame() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [navigate, roomId, socket]);
+  }, [navigate, replayMode, roomId, socket]);
 
   const canAttemptContinue = Boolean(snapshot?.state?.gameEnded);
   const effectiveSessionID = currentSessionID || sessionStorage.getItem('sessionID') || '';
@@ -269,6 +350,8 @@ export default function OnlineGame() {
     (roomInfo?.p2SessionID && roomInfo.p2SessionID === effectiveSessionID) ||
     (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID);
   const myRoleLabel = isP1 ? 'PLAYER 1' : isP2 ? 'PLAYER 2' : 'SPECTATOR';
+  const replayDurationSec = replayFrames.length > 0 ? (replayFrames.length * replayTickMs) / 1000 : 0;
+  const replayPositionSec = replayFrames.length > 0 ? (replayIndex * replayTickMs) / 1000 : 0;
 
   return (
     <>
@@ -293,7 +376,8 @@ export default function OnlineGame() {
               {isP1 ? <span className="online-game-you-tag">YOU</span> : null}
             </div>
             <div id="gameInfo" className="outline condensed">
-              ONLINE {roomInfo?.roomCode ? `· ${roomInfo.roomCode}` : ''} · YOU: {myRoleLabel}
+              ONLINE {roomInfo?.roomCode ? `· ${roomInfo.roomCode}` : ''}{' '}
+              {replayMode ? '· REPLAY MODE' : `· YOU: ${myRoleLabel}`}
             </div>
             <div id="player2info" className="condensed">
               {isP2 ? <span className="online-game-you-tag">YOU</span> : null}
@@ -376,12 +460,91 @@ export default function OnlineGame() {
               id="gameCanvasHost"
               ref={setHostEl}
               onClick={() => {
-                if (canAttemptContinue) {
+                if (!replayMode && canAttemptContinue) {
                   navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
                 }
               }}
             />
           </div>
+          {replayMode ? (
+            <div className="online-replay-controls">
+              <div className="online-replay-toprow">
+                <button
+                  className="online-replay-btn"
+                  onClick={() => {
+                    if (!replayFrames.length) return;
+                    setReplayPlaying((prev) => !prev);
+                  }}
+                  disabled={!replayFrames.length}
+                >
+                  {replayPlaying ? 'PAUSE' : 'PLAY'}
+                </button>
+                <button
+                  className="online-replay-btn"
+                  onClick={() => {
+                    if (!replayFrames.length) return;
+                    setReplayPlaying(false);
+                    setReplayIndex(0);
+                    setSnapshot(replayFrames[0] ?? null);
+                  }}
+                  disabled={!replayFrames.length}
+                >
+                  RESTART
+                </button>
+                <button
+                  className="online-replay-btn"
+                  onClick={() => {
+                    setReplayPlaying(false);
+                    navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`);
+                  }}
+                >
+                  BACK TO ROOM
+                </button>
+                <button
+                  className="online-replay-btn"
+                  onClick={() => {
+                    setReplayPlaying(false);
+                    navigate('/online');
+                  }}
+                >
+                  EXIT ROOM
+                </button>
+                <label className="online-replay-speed">
+                  Speed
+                  <select
+                    value={String(replaySpeed)}
+                    onChange={(event) => setReplaySpeed(Number(event.target.value))}
+                  >
+                    <option value="0.5">0.5x</option>
+                    <option value="1">1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                  </select>
+                </label>
+              </div>
+              <input
+                className="online-replay-slider"
+                type="range"
+                min={0}
+                max={Math.max(0, replayFrames.length - 1)}
+                value={Math.min(replayIndex, Math.max(0, replayFrames.length - 1))}
+                onChange={(event) => {
+                  const idx = Number(event.target.value);
+                  setReplayPlaying(false);
+                  setReplayIndex(idx);
+                  const frame = replayFrames[idx];
+                  if (frame) {
+                    setSnapshot(frame);
+                  }
+                }}
+                disabled={!replayFrames.length}
+              />
+              <div className="online-replay-time">
+                {formatSeconds(replayPositionSec)} / {formatSeconds(replayDurationSec)}
+              </div>
+              {replayError ? <div className="online-replay-error">{replayError}</div> : null}
+            </div>
+          ) : null}
 
           <div id="bitcoinDetails">
             <div className="detail">
@@ -409,7 +572,7 @@ export default function OnlineGame() {
         </div>
       </div>
 
-      <div className={`overlay ${snapshot ? 'hide' : ''}`} id="loading">
+      <div className={`overlay ${snapshot || (replayMode && replayLoaded) ? 'hide' : ''}`} id="loading">
         <img src="/images/loading.gif" alt="Loading" />
       </div>
 
@@ -676,4 +839,11 @@ function withOnlinePointAnimations(
     ...baseState,
     pointChanges: liveAnimations,
   };
+}
+
+function formatSeconds(totalSeconds: number) {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const minutes = Math.floor(safe / 60);
+  const seconds = safe % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }

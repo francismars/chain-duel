@@ -145,6 +145,14 @@ export const OnlineRoomStateSchema = z.object({
   seats: z.record(z.string(), OnlineSeatStateSchema),
   spectators: z.array(z.string()),
   snapshot: OnlineRoomSnapshotSchema,
+  replay: z
+    .object({
+      available: z.boolean(),
+      frameCount: z.number(),
+      tickMs: z.number(),
+      durationMs: z.number(),
+    })
+    .optional(),
   postGame: z
     .object({
       winnerRole: z.union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)]).optional(),
@@ -176,6 +184,24 @@ export const OnlineRoomListItemSchema = z.object({
   playersPaid: z.number(),
   seatsTotal: z.number(),
   spectators: z.number(),
+  replay: z
+    .object({
+      available: z.boolean(),
+      frameCount: z.number(),
+      tickMs: z.number(),
+      durationMs: z.number(),
+    })
+    .optional(),
+  result: z
+    .object({
+      winnerName: z.string(),
+      p1Name: z.string(),
+      p2Name: z.string(),
+      p1Score: z.number(),
+      p2Score: z.number(),
+      netPrize: z.number(),
+    })
+    .optional(),
 });
 
 export const ResCreateOnlineRoomSchema = z.object({
@@ -252,6 +278,12 @@ export const OnlineDoubleOrNothingUpdateSchema = z.object({
   votes: z.number(),
   required: z.number(),
   agreed: z.boolean(),
+});
+
+export const ResOnlineReplaySchema = z.object({
+  roomId: z.string(),
+  tickMs: z.number(),
+  frames: z.array(OnlineRoomSnapshotSchema),
 });
 
 export const ResGetTournamentInfosNostrSchema = z.object({
