@@ -21,6 +21,7 @@ export default function OnlineRoomLobby() {
     () => sessionStorage.getItem('sessionID') ?? ''
   );
   const [currentSocketID, setCurrentSocketID] = useState('');
+  const [kind1View, setKind1View] = useState<'njump' | 'nostr'>('nostr');
 
   useEffect(() => {
     if (!socket || !roomId) {
@@ -117,6 +118,8 @@ export default function OnlineRoomLobby() {
   const snapshotP2Name =
     (room?.snapshot?.state as { p2Name?: string } | undefined)?.p2Name ?? 'Player 2';
   const kind1 = rematchPending ? rematchNote : room?.nostrMeta?.note1 ?? '';
+  const njumpUrl = kind1 ? `https://njump.me/${kind1}` : '';
+  const nostrUri = kind1 ? `nostr:${kind1}` : '';
   const roomEmojis = room?.nostrMeta?.emojis ?? '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
@@ -233,17 +236,40 @@ export default function OnlineRoomLobby() {
 
         <section className="online-lobby-panel online-lobby-panel-qr">
           <p className="online-lobby-label">{rematchPending ? 'DOUBLE OR NOTHING KIND1' : 'ROOM KIND1'}</p>
+          <div className="online-lobby-kind1-views">
+            <Button
+              className={`online-lobby-action ${kind1View === 'nostr' ? 'online-lobby-kind1-view-active' : ''}`}
+              onClick={() => setKind1View('nostr')}
+            >
+              NOSTR URI
+            </Button>
+            <Button
+              className={`online-lobby-action ${kind1View === 'njump' ? 'online-lobby-kind1-view-active' : ''}`}
+              onClick={() => setKind1View('njump')}
+            >
+              NJUMP LINK
+            </Button>
+          </div>
           {kind1 ? (
             <>
-              <QRCodeSVG value={`https://njump.me/${kind1}`} size={210} includeMargin className="online-lobby-qr" />
-              <a
-                className="online-lobby-kind1"
-                href={`https://njump.me/${kind1}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {kind1}
-              </a>
+              {kind1View === 'njump' ? (
+                <>
+                  <QRCodeSVG value={njumpUrl} size={210} includeMargin className="online-lobby-qr" />
+                  <a
+                    className="online-lobby-kind1"
+                    href={njumpUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {kind1}
+                  </a>
+                </>
+              ) : (
+                <>
+                  <QRCodeSVG value={nostrUri} size={210} includeMargin className="online-lobby-qr" />
+                  <div className="online-lobby-kind1">{nostrUri}</div>
+                </>
+              )}
               {rematchPending ? (
                 <p className="online-lobby-copy">
                   {amILoserToPay

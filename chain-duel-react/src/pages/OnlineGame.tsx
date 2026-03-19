@@ -20,7 +20,7 @@ export default function OnlineGame() {
   const [snapshot, setSnapshot] = useState<OnlineRoomSnapshot | null>(null);
   const snapshotRef = useRef<OnlineRoomSnapshot | null>(null);
   const rendererRef = useRef<PixiGameRenderer | null>(null);
-  const hostRef = useRef<HTMLDivElement | null>(null);
+  const [hostEl, setHostEl] = useState<HTMLDivElement | null>(null);
   const pointAnimationsRef = useRef<OnlinePointAnim[]>([]);
   const prevPointCountByKeyRef = useRef<Map<string, number>>(new Map());
   const [bitcoin, setBitcoin] = useState<BitcoinDetails>({
@@ -42,7 +42,15 @@ export default function OnlineGame() {
     p2Picture?: string;
     p1Paid?: number;
     p2Paid?: number;
+    p1SessionID?: string;
+    p2SessionID?: string;
+    p1SocketID?: string;
+    p2SocketID?: string;
   } | null>(null);
+  const [currentSessionID, setCurrentSessionID] = useState(
+    () => sessionStorage.getItem('sessionID') ?? ''
+  );
+  const [currentSocketID, setCurrentSocketID] = useState('');
 
   useGamepad(true);
 
@@ -56,12 +64,12 @@ export default function OnlineGame() {
   }, [snapshot]);
 
   useEffect(() => {
-    if (!hostRef.current) return;
+    if (!hostEl) return;
     const renderer = new PixiGameRenderer();
     rendererRef.current = renderer;
     let cancelled = false;
     let detachResize: (() => void) | undefined;
-    void renderer.mount(hostRef.current).then(() => {
+    void renderer.mount(hostEl).then(() => {
       if (cancelled) {
         renderer.destroy();
         return;
@@ -90,12 +98,24 @@ export default function OnlineGame() {
       window.cancelAnimationFrame(raf);
       renderer.destroy();
     };
-  }, []);
+  }, [hostEl]);
 
   useEffect(() => {
     if (!socket || !roomId) {
       return;
     }
+    const refreshLocalIdentity = () => {
+      setCurrentSessionID(sessionStorage.getItem('sessionID') ?? '');
+      setCurrentSocketID(socket.id ?? '');
+    };
+    const onSession = (payload: { sessionID: string }) => {
+      if (!payload?.sessionID) {
+        return;
+      }
+      setCurrentSessionID(payload.sessionID);
+      sessionStorage.setItem('sessionID', payload.sessionID);
+      setCurrentSocketID(socket.id ?? '');
+    };
     const requestRoomSync = () => {
       socket.emit('spectateOnlineRoom', { roomId });
       socket.emit('getOnlineRoomState', { roomId });
@@ -131,12 +151,19 @@ export default function OnlineGame() {
           p2Picture: p2?.picture,
           p1Paid: p1?.paidAmount,
           p2Paid: p2?.paidAmount,
+          p1SessionID: p1?.sessionID,
+          p2SessionID: p2?.sessionID,
+          p1SocketID: p1?.socketID,
+          p2SocketID: p2?.socketID,
         });
       }
     };
     socket.on('onlineRoomSnapshot', onSnapshot);
     socket.on('onlineRoomUpdated', onUpdated);
+    socket.on('session', onSession);
+    socket.on('connect', refreshLocalIdentity);
     socket.on('connect', requestRoomSync);
+    refreshLocalIdentity();
     requestRoomSync();
     // Recovery for late socket readiness: keep requesting until first snapshot lands.
     const resyncInterval = window.setInterval(() => {
@@ -150,6 +177,8 @@ export default function OnlineGame() {
       window.clearInterval(resyncInterval);
       socket.off('onlineRoomSnapshot', onSnapshot);
       socket.off('onlineRoomUpdated', onUpdated);
+      socket.off('session', onSession);
+      socket.off('connect', refreshLocalIdentity);
       socket.off('connect', requestRoomSync);
     };
   }, [roomId, socket]);
@@ -232,6 +261,14 @@ export default function OnlineGame() {
   }, [navigate, roomId, socket]);
 
   const canAttemptContinue = Boolean(snapshot?.state?.gameEnded);
+  const effectiveSessionID = currentSessionID || sessionStorage.getItem('sessionID') || '';
+  const isP1 =
+    (roomInfo?.p1SessionID && roomInfo.p1SessionID === effectiveSessionID) ||
+    (roomInfo?.p1SocketID && roomInfo.p1SocketID === currentSocketID);
+  const isP2 =
+    (roomInfo?.p2SessionID && roomInfo.p2SessionID === effectiveSessionID) ||
+    (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID);
+  const myRoleLabel = isP1 ? 'PLAYER 1' : isP2 ? 'PLAYER 2' : 'SPECTATOR';
 
   return (
     <>
@@ -253,11 +290,13 @@ export default function OnlineGame() {
               <div className="inline" id="player1name">
                 {roomInfo?.p1Name || 'Player 1'}
               </div>
+              {isP1 ? <span className="online-game-you-tag">YOU</span> : null}
             </div>
             <div id="gameInfo" className="outline condensed">
-              ONLINE {roomInfo?.roomCode ? `· ${roomInfo.roomCode}` : ''}
+              ONLINE {roomInfo?.roomCode ? `· ${roomInfo.roomCode}` : ''} · YOU: {myRoleLabel}
             </div>
             <div id="player2info" className="condensed">
+              {isP2 ? <span className="online-game-you-tag">YOU</span> : null}
               <div className="inline" id="player2name">
                 {roomInfo?.p2Name || 'Player 2'}
               </div>
@@ -335,7 +374,7 @@ export default function OnlineGame() {
           <div id="gameCanvas">
             <div
               id="gameCanvasHost"
-              ref={hostRef}
+              ref={setHostEl}
               onClick={() => {
                 if (canAttemptContinue) {
                   navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
@@ -406,7 +445,16 @@ function coerceOnlineRoomUpdated(payload: unknown):
       phase?: string;
       buyin?: number;
       snapshot: OnlineRoomSnapshot;
-      seats: Record<string, { name?: string; picture?: string; paidAmount?: number }>;
+      seats: Record<
+        string,
+        {
+          name?: string;
+          picture?: string;
+          paidAmount?: number;
+          sessionID?: string;
+          socketID?: string;
+        }
+      >;
     }
   | null {
   if (!payload || typeof payload !== 'object') {
@@ -429,7 +477,13 @@ function coerceOnlineRoomUpdated(payload: unknown):
   }
   const seats =
     candidate.seats && typeof candidate.seats === 'object'
-      ? (candidate.seats as Record<string, { name?: string; picture?: string; paidAmount?: number }>)
+      ? (candidate.seats as Record<string, {
+          name?: string;
+          picture?: string;
+          paidAmount?: number;
+          sessionID?: string;
+          socketID?: string;
+        }>)
       : {};
   return {
     roomId: candidate.roomId,

@@ -33,3 +33,15 @@
 .online-match-actions .button {
   min-width: 240px;
 }
+
+.online-game-you-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.35vw;
+  padding: 0.05vw 0.35vw;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.84);
+  color: #fff;
+  font-size: 0.58cqw;
+  letter-spacing: 0.03rem;
+}

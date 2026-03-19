@@ -175,6 +175,25 @@
   gap: 0.7vw;
 }
 
+.online-lobby-kind1-views {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.35vw;
+}
+
+.online-lobby-kind1-views .online-lobby-action {
+  width: 100%;
+  min-width: 0;
+  height: 2vw;
+  font-size: 0.62cqw;
+}
+
+.online-lobby-kind1-view-active {
+  border-color: #fff;
+  box-shadow: 0 0 10px rgb(255 255 255 / 24%);
+}
+
 .online-lobby-qr {
   border: 1px solid #fff;
   padding: 0.55rem;
@@ -358,6 +377,16 @@
   .online-lobby-action {
     height: 44px;
     font-size: 12px;
+  }
+
+  .online-lobby-kind1-views {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .online-lobby-kind1-views .online-lobby-action {
+    height: 36px;
+    font-size: 11px;
   }
 
   .online-lobby-you-tag {
