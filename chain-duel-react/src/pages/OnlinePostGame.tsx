@@ -151,69 +151,86 @@ export default function OnlinePostGame() {
       </header>
 
       <div className="online-postgame-card">
-        <h1 className="online-postgame-title">ONLINE GAME OVER</h1>
-        <div className="online-postgame-winner">
-          <img
-            className={`online-postgame-avatar ${info?.winnerPicture ? '' : 'hide'}`}
-            src={info?.winnerPicture || '/images/loading.gif'}
-            alt={info?.winnerName || 'Winner'}
-          />
-          <h2>{(info?.winnerName || 'WINNER').toUpperCase()} WINS</h2>
+        <div className="online-postgame-headline">
+          <p className="online-postgame-kicker">ONLINE MATCH COMPLETE</p>
+          <h1 className="online-postgame-title">VICTORY SCREEN</h1>
         </div>
 
-        <p className="online-postgame-prize">
-          {Math.floor(info?.winnerPoints ?? 0).toLocaleString()} SATS
-        </p>
-        <p className="online-postgame-sub">
-          Total pot: {Math.floor(info?.totalPrize ?? 0).toLocaleString()} sats
-        </p>
+        <div className="online-postgame-winner-panel">
+          <div className="online-postgame-winner">
+            <img
+              className={`online-postgame-avatar ${info?.winnerPicture ? '' : 'hide'}`}
+              src={info?.winnerPicture || '/images/loading.gif'}
+              alt={info?.winnerName || 'Winner'}
+            />
+            <h2>{(info?.winnerName || 'WINNER').toUpperCase()} WINS</h2>
+          </div>
+          <p className="online-postgame-prize">
+            {Math.floor(info?.winnerPoints ?? 0).toLocaleString()} SATS
+          </p>
+          <p className="online-postgame-sub">
+            Total pot: {Math.floor(info?.totalPrize ?? 0).toLocaleString()} sats
+          </p>
+        </div>
 
         <div className="online-postgame-scores">
-          <div>{info?.p1Name ?? 'Player 1'}: {Math.floor(info?.p1Points ?? 0).toLocaleString()} sats</div>
-          <div>{info?.p2Name ?? 'Player 2'}: {Math.floor(info?.p2Points ?? 0).toLocaleString()} sats</div>
+          <div className="online-postgame-score-chip">
+            <span className="online-postgame-score-label">{info?.p1Name ?? 'Player 1'}</span>
+            <span className="online-postgame-score-value">{Math.floor(info?.p1Points ?? 0).toLocaleString()} sats</span>
+          </div>
+          <div className="online-postgame-score-chip">
+            <span className="online-postgame-score-label">{info?.p2Name ?? 'Player 2'}</span>
+            <span className="online-postgame-score-value">{Math.floor(info?.p2Points ?? 0).toLocaleString()} sats</span>
+          </div>
         </div>
 
-        <div className="online-postgame-actions">
-          <Button
-            className={isWinner ? '' : 'disabled'}
-            disabled={!isWinner || creatingWithdrawal}
-            onClick={() => {
-              if (!socket || !roomId || !isWinner) {
-                return;
-              }
-              setError('');
-              setCreatingWithdrawal(true);
-              socket.emit('createOnlineWithdrawal', { roomId });
-            }}
-          >
-            {isWinner ? (creatingWithdrawal ? 'CREATING WITHDRAW QR...' : 'WITHDRAW PRIZE') : 'WINNER CAN WITHDRAW'}
-          </Button>
-          <Button
-            onClick={() => {
-              if (!socket || !roomId) {
-                return;
-              }
-              setError('');
-              socket.emit('onlineDoubleOrNothing', { roomId });
-            }}
-          >
-            DOUBLE OR NOTHING ({votes}/{requiredVotes})
-          </Button>
-          <Button onClick={() => navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`)}>
-            BACK TO LOBBY
-          </Button>
-        </div>
+        <div className="online-postgame-grid">
+          <div className="online-postgame-actions">
+            <Button
+              className={`${isWinner ? '' : 'disabled'} online-postgame-btn online-postgame-btn-withdraw`}
+              disabled={!isWinner || creatingWithdrawal}
+              onClick={() => {
+                if (!socket || !roomId || !isWinner) {
+                  return;
+                }
+                setError('');
+                setCreatingWithdrawal(true);
+                socket.emit('createOnlineWithdrawal', { roomId });
+              }}
+            >
+              {isWinner ? (creatingWithdrawal ? 'CREATING WITHDRAW QR...' : 'WITHDRAW PRIZE') : 'WINNER CAN WITHDRAW'}
+            </Button>
+            <Button
+              className="online-postgame-btn online-postgame-btn-don"
+              onClick={() => {
+                if (!socket || !roomId) {
+                  return;
+                }
+                setError('');
+                socket.emit('onlineDoubleOrNothing', { roomId });
+              }}
+            >
+              DOUBLE OR NOTHING ({votes}/{requiredVotes})
+            </Button>
+            <Button
+              className="online-postgame-btn online-postgame-btn-back"
+              onClick={() => navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`)}
+            >
+              BACK TO LOBBY
+            </Button>
+          </div>
 
-        <div className="online-postgame-qr-wrap">
-          <p className="online-postgame-qr-title">WITHDRAWAL QR</p>
-          {withdrawalValue ? (
-            <QRCodeSVG value={withdrawalValue} size={220} includeMargin className={lnurlw ? '' : 'online-postgame-qr-blur'} />
-          ) : (
-            <img src="/images/loading.gif" alt="Creating withdrawal" />
-          )}
-          <p className="online-postgame-qr-note">
-            {lnurlw ? 'Scan with a compatible wallet.' : 'Winner can reveal QR by creating withdrawal.'}
-          </p>
+          <div className="online-postgame-qr-wrap">
+            <p className="online-postgame-qr-title">WITHDRAWAL QR</p>
+            {withdrawalValue ? (
+              <QRCodeSVG value={withdrawalValue} size={220} includeMargin className={lnurlw ? '' : 'online-postgame-qr-blur'} />
+            ) : (
+              <img src="/images/loading.gif" alt="Creating withdrawal" />
+            )}
+            <p className="online-postgame-qr-note">
+              {lnurlw ? 'Scan with a compatible wallet.' : 'Winner can reveal QR by creating withdrawal.'}
+            </p>
+          </div>
         </div>
 
         {error ? <p className="online-postgame-error">Error: {error}</p> : null}
