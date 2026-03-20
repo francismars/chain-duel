@@ -127,7 +127,7 @@ export interface OnlineInputState {
 
 export interface OnlineRoomSnapshot {
   tick: number;
-  phase: 'lobby' | 'playing' | 'finished' | 'cancelled';
+  phase: 'lobby' | 'playing' | 'postgame' | 'finished' | 'cancelled';
   state: any;
   hud: {
     p1Points: number;
@@ -161,12 +161,24 @@ export interface OnlineRoomState {
   roomCode: string;
   hostSessionID: string;
   buyin: number;
-  phase: 'lobby' | 'playing' | 'finished' | 'cancelled';
+  matchRound?: number;
+  /** Present on server-serialized rooms (live + archived). */
+  createdAt?: number;
+  finishedAt?: number;
+  phase: 'lobby' | 'playing' | 'postgame' | 'finished' | 'cancelled';
   kind1EventId?: string;
   nostrMeta?: OnlineNostrMeta;
   seats: Record<string, OnlineSeatState>;
   spectators: string[];
   snapshot: OnlineRoomSnapshot;
+  result?: {
+    winnerName: string;
+    p1Name: string;
+    p2Name: string;
+    p1Score: number;
+    p2Score: number;
+    netPrize: number;
+  };
   replay?: {
     available: boolean;
     frameCount: number;
@@ -200,10 +212,15 @@ export interface OnlineRoomListItem {
   roomCode: string;
   buyin: number;
   createdAt: number;
-  phase: 'lobby' | 'playing' | 'finished' | 'cancelled';
+  finishedAt?: number;
+  phase: 'lobby' | 'playing' | 'postgame' | 'finished' | 'cancelled';
   playersPaid: number;
   seatsTotal: number;
   spectators: number;
+  /** From disk archive (vs in-memory finished). */
+  archived?: boolean;
+  matchRound?: number;
+  archiveKind?: 'match' | 'session';
   replay?: {
     available: boolean;
     frameCount: number;
@@ -257,6 +274,7 @@ export interface ClientToServerEvents {
   // Online mode events
   createOnlineRoom: (payload?: { buyin?: number; hostLNAddress?: string }) => void;
   listOnlineRooms: () => void;
+  listOnlineArchivedRooms: () => void;
   joinOnlineRoom: (payload: { roomId: string }) => void;
   joinOnlineRoomByCode: (payload: { roomCode: string }) => void;
   spectateOnlineRoom: (payload: { roomId: string }) => void;
@@ -270,7 +288,7 @@ export interface ClientToServerEvents {
   createOnlineWithdrawal: (payload: { roomId: string }) => void;
   createOnlineNostrPayout: (payload: { roomId: string }) => void;
   onlineDoubleOrNothing: (payload: { roomId: string }) => void;
-  getOnlineReplay: (payload: { roomId: string }) => void;
+  getOnlineReplay: (payload: { roomId: string; matchRound?: number }) => void;
 }
 
 // Server -> Client Events
@@ -330,6 +348,7 @@ export interface ServerToClientEvents {
     room: OnlineRoomState;
   }) => void;
   resListOnlineRooms: (data: { rooms: OnlineRoomListItem[] }) => void;
+  resListOnlineArchivedRooms: (data: { rooms: OnlineRoomListItem[] }) => void;
   resJoinOnlineRoom: (data: {
     roomId: string;
     roomCode: string;
@@ -348,7 +367,7 @@ export interface ServerToClientEvents {
   onlinePinInvalid: (data: { reason: string }) => void;
   resOnlinePostGameInfo: (data: {
     roomId: string;
-    phase: 'finished';
+    phase: 'postgame' | 'finished';
     p1Name: string;
     p2Name: string;
     p1Picture?: string;
@@ -390,6 +409,9 @@ export interface ServerToClientEvents {
   resOnlineReplay: (data: {
     roomId: string;
     tickMs: number;
-    frames: OnlineRoomSnapshot[];
+    format: 'compact-v2';
+    gzipBase64: string;
+    frameCount: number;
+    matchRound?: number;
   }) => void;
 }

@@ -105,7 +105,7 @@ export const OnlineNostrMetaSchema = z.object({
 
 export const OnlineRoomSnapshotSchema = z.object({
   tick: z.number(),
-  phase: z.enum(['lobby', 'playing', 'finished', 'cancelled']),
+  phase: z.enum(['lobby', 'playing', 'postgame', 'finished', 'cancelled']),
   state: z.object({}).passthrough(),
   hud: z.object({
     p1Points: z.number(),
@@ -139,12 +139,25 @@ export const OnlineRoomStateSchema = z.object({
   roomCode: z.string(),
   hostSessionID: z.string(),
   buyin: z.number(),
-  phase: z.enum(['lobby', 'playing', 'finished', 'cancelled']),
+  matchRound: z.number().optional(),
+  createdAt: z.number().optional(),
+  finishedAt: z.number().optional(),
+  phase: z.enum(['lobby', 'playing', 'postgame', 'finished', 'cancelled']),
   kind1EventId: z.string().optional(),
   nostrMeta: OnlineNostrMetaSchema.optional(),
   seats: z.record(z.string(), OnlineSeatStateSchema),
   spectators: z.array(z.string()),
   snapshot: OnlineRoomSnapshotSchema,
+  result: z
+    .object({
+      winnerName: z.string(),
+      p1Name: z.string(),
+      p2Name: z.string(),
+      p1Score: z.number(),
+      p2Score: z.number(),
+      netPrize: z.number(),
+    })
+    .optional(),
   replay: z
     .object({
       available: z.boolean(),
@@ -182,10 +195,14 @@ export const OnlineRoomListItemSchema = z.object({
   roomCode: z.string(),
   buyin: z.number(),
   createdAt: z.number(),
-  phase: z.enum(['lobby', 'playing', 'finished', 'cancelled']),
+  finishedAt: z.number().optional(),
+  phase: z.enum(['lobby', 'playing', 'postgame', 'finished', 'cancelled']),
   playersPaid: z.number(),
   seatsTotal: z.number(),
   spectators: z.number(),
+  archived: z.boolean().optional(),
+  matchRound: z.number().optional(),
+  archiveKind: z.enum(['match', 'session']).optional(),
   replay: z
     .object({
       available: z.boolean(),
@@ -219,6 +236,10 @@ export const ResListOnlineRoomsSchema = z.object({
   rooms: z.array(OnlineRoomListItemSchema),
 });
 
+export const ResListOnlineArchivedRoomsSchema = z.object({
+  rooms: z.array(OnlineRoomListItemSchema),
+});
+
 export const ResJoinOnlineRoomSchema = ResCreateOnlineRoomSchema;
 
 export const OnlineRoomSnapshotEventSchema = z.object({
@@ -238,7 +259,7 @@ export const OnlinePinInvalidSchema = z.object({
 
 export const ResOnlinePostGameInfoSchema = z.object({
   roomId: z.string(),
-  phase: z.literal('finished'),
+  phase: z.enum(['postgame', 'finished']),
   p1Name: z.string(),
   p2Name: z.string(),
   p1Picture: z.string().optional(),
@@ -287,7 +308,10 @@ export const OnlineDoubleOrNothingUpdateSchema = z.object({
 export const ResOnlineReplaySchema = z.object({
   roomId: z.string(),
   tickMs: z.number(),
-  frames: z.array(OnlineRoomSnapshotSchema),
+  format: z.literal('compact-v2'),
+  gzipBase64: z.string(),
+  frameCount: z.number(),
+  matchRound: z.number().optional(),
 });
 
 export const ResGetTournamentInfosNostrSchema = z.object({

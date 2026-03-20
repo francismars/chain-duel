@@ -108,14 +108,16 @@ export default function OnlineRoomLobby() {
   const isMyP1Seat = mySeat?.role === 'Player 1';
   const isMyP2Seat = mySeat?.role === 'Player 2';
   const phaseLabel = (room?.phase ?? 'lobby').toUpperCase();
-  const isFinished = room?.phase === 'finished';
+  const isSessionClosed = room?.phase === 'finished';
+  const isPostgame = room?.phase === 'postgame';
+  const isMatchEnded = isPostgame || isSessionClosed;
   const rematchPending = Boolean(room?.postGame?.rematchRequested);
   const rematchNote = room?.postGame?.rematchNote1 ?? '';
   const rematchAmount = room?.postGame?.rematchRequiredAmount ?? 0;
   const rematchWaitingForSessionID = room?.postGame?.rematchWaitingForSessionID;
   const amILoserToPay = Boolean(rematchWaitingForSessionID && rematchWaitingForSessionID === currentSessionID);
   /** Seat grid: emphasize your row in lobby; stronger when you are ready to start. */
-  const seatHighlightLobby = !isFinished && !rematchPending;
+  const seatHighlightLobby = !isSessionClosed && !rematchPending;
   const snapshotP1Name =
     (room?.snapshot?.state as { p1Name?: string } | undefined)?.p1Name ?? 'Player 1';
   const snapshotP2Name =
@@ -126,18 +128,18 @@ export default function OnlineRoomLobby() {
   const roomEmojis = room?.nostrMeta?.emojis ?? '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
-  const p1AvatarSrc = isFinished
+  const p1AvatarSrc = isMatchEnded
     ? p1?.picture ||
       room?.postGame?.p1Picture ||
       (room?.postGame?.winnerRole === 'Player 1' ? room?.postGame?.winnerPicture : undefined)
     : p1?.picture;
-  const p2AvatarSrc = isFinished
+  const p2AvatarSrc = isMatchEnded
     ? p2?.picture ||
       room?.postGame?.p2Picture ||
       (room?.postGame?.winnerRole === 'Player 2' ? room?.postGame?.winnerPicture : undefined)
     : p2?.picture;
   const finishedSummary =
-    room?.phase === 'finished'
+    isMatchEnded
       ? {
           p1Name: snapshotP1Name,
           p2Name: snapshotP2Name,
@@ -147,17 +149,17 @@ export default function OnlineRoomLobby() {
           netPrize: Math.floor((room?.postGame?.winnerPoints ?? 0) * 0.95),
         }
       : null;
-  const p1NameDisplay = isFinished
+  const p1NameDisplay = isMatchEnded
     ? p1?.name || snapshotP1Name
     : rematchPending
       ? p1?.name || snapshotP1Name
       : p1?.name || 'Open seat';
-  const p2NameDisplay = isFinished
+  const p2NameDisplay = isMatchEnded
     ? p2?.name || snapshotP2Name
     : rematchPending
       ? p2?.name || snapshotP2Name
       : p2?.name || 'Open seat';
-  const p1MetaDisplay = isFinished
+  const p1MetaDisplay = isMatchEnded
     ? room?.postGame?.winnerRole === 'Player 1'
       ? 'Winner'
       : 'Played'
@@ -170,7 +172,7 @@ export default function OnlineRoomLobby() {
             ? 'Paid · Offline'
             : 'Paid · Not ready'
         : 'Waiting payment';
-  const p2MetaDisplay = isFinished
+  const p2MetaDisplay = isMatchEnded
     ? room?.postGame?.winnerRole === 'Player 2'
       ? 'Winner'
       : 'Played'
@@ -206,12 +208,14 @@ export default function OnlineRoomLobby() {
       <h1 id="online-lobby-title">ONLINE LOBBY</h1>
       <p id="online-lobby-subtitle">
         {room?.phase === 'finished'
-          ? 'Session finished. View result details or watch replay from this room.'
-          : rematchPending
-          ? amILoserToPay
-            ? `Double or Nothing is active. Scan and zap exactly ${Math.floor(rematchAmount)} sats to continue.`
-            : `Double or Nothing is active. Waiting for loser to zap exactly ${Math.floor(rematchAmount)} sats.`
-          : 'Claim your seat with PIN-in-zap and launch the duel.'}
+          ? 'Session finished — winner closed payout. View details or replay from this room.'
+          : room?.phase === 'postgame'
+            ? 'Match ended. Open victory screen for payout, Double or Nothing, or replay.'
+            : rematchPending
+              ? amILoserToPay
+                ? `Double or Nothing is active. Scan and zap exactly ${Math.floor(rematchAmount)} sats to continue.`
+                : `Double or Nothing is active. Waiting for loser to zap exactly ${Math.floor(rematchAmount)} sats.`
+              : 'Claim your seat with PIN-in-zap and launch the duel.'}
       </p>
 
       <div className="online-lobby-top">
@@ -258,21 +262,25 @@ export default function OnlineRoomLobby() {
               <p className="online-lobby-label">SEAT STATUS</p>
               <p className="online-lobby-pin">SEAT CLAIMED</p>
               <p className="online-lobby-copy">
-                {isFinished
-                  ? 'Match is finished. Registration is closed for this room.'
-                  : rematchPending
-                  ? 'Rematch locked to the same players. Waiting for rematch payment.'
-                  : `You are ${myRoleLabel}. Set ready when you are prepared to start.`}
+                {isSessionClosed
+                  ? 'Session closed — registration is closed for this room.'
+                  : isPostgame
+                    ? 'Round ended — use postgame actions below (payout / Double or Nothing / replay).'
+                    : rematchPending
+                      ? 'Rematch locked to the same players. Waiting for rematch payment.'
+                      : `You are ${myRoleLabel}. Set ready when you are prepared to start.`}
               </p>
             </div>
           ) : (
             <div className="online-lobby-pin-card">
-              {isFinished ? (
+              {isMatchEnded ? (
                 <>
                   <p className="online-lobby-label">REGISTRATION</p>
                   <p className="online-lobby-pin">CLOSED</p>
                   <p className="online-lobby-copy">
-                    This room is finished. View results/replay from this room.
+                    {isSessionClosed
+                      ? 'Session closed. View results/replay from this room.'
+                      : 'Round ended — new seats stay closed until rematch or next lobby.'}
                   </p>
                 </>
               ) : rematchPending ? (
@@ -365,7 +373,7 @@ export default function OnlineRoomLobby() {
               PLAYER 1 {isMyP1Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
             </p>
             <div className="online-lobby-seat-identity">
-              {isFinished || p1?.status === 'paid' ? (
+              {isMatchEnded || p1?.status === 'paid' ? (
                 <img
                   className="online-lobby-seat-avatar"
                   src={p1AvatarSrc || '/images/loading.gif'}
@@ -391,7 +399,7 @@ export default function OnlineRoomLobby() {
               PLAYER 2 {isMyP2Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
             </p>
             <div className="online-lobby-seat-identity">
-              {isFinished || p2?.status === 'paid' ? (
+              {isMatchEnded || p2?.status === 'paid' ? (
                 <img
                   className="online-lobby-seat-avatar"
                   src={p2AvatarSrc || '/images/loading.gif'}
@@ -425,7 +433,7 @@ export default function OnlineRoomLobby() {
       </div>
 
       <div className="online-lobby-bottom-actions">
-        {room?.phase === 'finished' ? (
+        {room?.phase === 'postgame' || room?.phase === 'finished' ? (
           <>
             <Button
               className="online-lobby-action online-lobby-arena"
@@ -435,7 +443,13 @@ export default function OnlineRoomLobby() {
             </Button>
             <Button
               className="online-lobby-action online-lobby-arena"
-              onClick={() => navigate(`/online/game?roomId=${encodeURIComponent(roomId)}&replay=1`)}
+              onClick={() =>
+                navigate(
+                  `/online/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(
+                    String(room?.matchRound ?? 1)
+                  )}`
+                )
+              }
             >
               WATCH REPLAY
             </Button>

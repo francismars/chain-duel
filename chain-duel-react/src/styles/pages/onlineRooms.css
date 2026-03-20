@@ -105,14 +105,64 @@
 
 .online-room-list-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 0.6vw;
   margin-bottom: 0.6vw;
 }
 
 .online-room-list-head h3 {
   margin: 0;
   font-size: 1.45cqw;
+}
+
+.online-tab-row {
+  display: flex;
+  gap: 0.35vw;
+}
+
+.online-tab {
+  font-family: inherit;
+  font-size: 0.78cqw;
+  letter-spacing: 0.06em;
+  padding: 0.35vw 0.75vw;
+  border: 1px solid #6a6a6a;
+  border-radius: 0;
+  background: rgb(0 0 0 / 45%);
+  color: #ccc;
+  cursor: pointer;
+}
+
+.online-tab:hover {
+  border-color: #9a9a9a;
+  color: #fff;
+}
+
+.online-tab-active {
+  border-color: #fff !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgb(255 255 255 / 18%);
+}
+
+.online-history-result {
+  font-size: 0.72cqw;
+  color: #bdbdbd;
+  margin: 0.35vw 0 0;
+}
+
+.online-archived {
+  border: 1px solid #888;
+  padding: 0.05vw 0.35vw;
+  font-size: 0.65cqw;
+  color: #e0e0e0;
+}
+
+.online-history-actions {
+  display: flex;
+  gap: 0.45vw;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .online-refresh {
@@ -189,6 +239,11 @@
 .online-phase-cancelled {
   border-color: #ff7575;
   color: #ff7575;
+}
+
+.online-phase-postgame {
+  border-color: #8ec5ff;
+  color: #8ec5ff;
 }
 
 .online-phase-finished {

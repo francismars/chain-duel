@@ -10,7 +10,7 @@ import '@/styles/pages/onlinePostGame.css';
 
 interface OnlinePostGameInfo {
   roomId: string;
-  phase: 'finished';
+  phase: 'postgame' | 'finished';
   p1Name: string;
   p2Name: string;
   p1Picture?: string;
