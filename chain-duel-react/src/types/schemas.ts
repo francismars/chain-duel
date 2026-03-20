@@ -132,6 +132,7 @@ export const OnlineSeatStateSchema = z.object({
   picture: z.string().optional(),
   pubkey: z.string().optional(),
   lnAddress: z.string().optional(),
+  pingMs: z.number().optional(),
 });
 
 export const OnlineRoomStateSchema = z.object({

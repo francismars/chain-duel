@@ -46,6 +46,21 @@
   letter-spacing: 0.03rem;
 }
 
+.online-game-ping-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.45vw;
+  padding: 0.06vw 0.4vw;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.58cqw;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  vertical-align: middle;
+  opacity: 0.95;
+}
+
 .online-game-ping {
   font-variant-numeric: tabular-nums;
   font-size: 0.62cqw;

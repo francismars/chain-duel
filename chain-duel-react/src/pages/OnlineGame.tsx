@@ -57,6 +57,8 @@ export default function OnlineGame() {
     p2SessionID?: string;
     p1SocketID?: string;
     p2SocketID?: string;
+    p1PingMs?: number;
+    p2PingMs?: number;
   } | null>(null);
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
@@ -69,9 +71,6 @@ export default function OnlineGame() {
   const [replaySpeed, setReplaySpeed] = useState(1);
   const [replayLoaded, setReplayLoaded] = useState(false);
   const [replayError, setReplayError] = useState('');
-  /** Round-trip time to server (ms), for seated players / spectators */
-  const [latencyMs, setLatencyMs] = useState<number | null>(null);
-
   const keysHeldRef = useRef({
     up: false,
     down: false,
@@ -194,6 +193,8 @@ export default function OnlineGame() {
           p2SessionID: p2?.sessionID,
           p1SocketID: p1?.socketID,
           p2SocketID: p2?.socketID,
+          p1PingMs: typeof p1?.pingMs === 'number' ? p1.pingMs : undefined,
+          p2PingMs: typeof p2?.pingMs === 'number' ? p2.pingMs : undefined,
         });
       }
     };
@@ -312,19 +313,20 @@ export default function OnlineGame() {
   }, []);
 
   useEffect(() => {
-    if (!socket || replayMode) {
+    if (!socket || replayMode || !roomId) {
       return;
     }
     const measure = () => {
       const t0 = Date.now();
       socket.emit('pingLatency', () => {
-        setLatencyMs(Date.now() - t0);
+        const ms = Date.now() - t0;
+        socket.emit('reportOnlineRoomPing', { roomId, latencyMs: ms });
       });
     };
     measure();
     const id = window.setInterval(measure, 2500);
     return () => window.clearInterval(id);
-  }, [socket, replayMode]);
+  }, [socket, replayMode, roomId]);
 
   useEffect(() => {
     if (!socket || !roomId) {
@@ -422,7 +424,6 @@ export default function OnlineGame() {
   const isP2 =
     (roomInfo?.p2SessionID && roomInfo.p2SessionID === effectiveSessionID) ||
     (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID);
-  const myRoleLabel = isP1 ? 'PLAYER 1' : isP2 ? 'PLAYER 2' : 'SPECTATOR';
   const replayDurationSec = replayFrames.length > 0 ? (replayFrames.length * replayTickMs) / 1000 : 0;
   const replayPositionSec = replayFrames.length > 0 ? (replayIndex * replayTickMs) / 1000 : 0;
 
@@ -449,25 +450,8 @@ export default function OnlineGame() {
               {isP1 ? <span className="online-game-you-tag">YOU</span> : null}
             </div>
             <div id="gameInfo" className="outline condensed">
-              ONLINE {roomInfo?.roomCode ? `· ${roomInfo.roomCode}` : ''}{' '}
-              {replayMode ? (
-                '· REPLAY MODE'
-              ) : (
-                <>
-                  · YOU: {myRoleLabel}
-                  {latencyMs != null ? (
-                    <span
-                      className={`online-game-ping online-game-ping--${
-                        latencyMs < 90 ? 'good' : latencyMs < 180 ? 'ok' : 'high'
-                      }`}
-                      title="Round-trip time to server"
-                    >
-                      {' '}
-                      · {latencyMs}ms
-                    </span>
-                  ) : null}
-                </>
-              )}
+              ONLINE{roomInfo?.roomCode ? ` · ${roomInfo.roomCode}` : ''}
+              {replayMode ? ' · REPLAY MODE' : ''}
             </div>
             <div id="player2info" className="condensed">
               {isP2 ? <span className="online-game-you-tag">YOU</span> : null}
@@ -490,12 +474,32 @@ export default function OnlineGame() {
                   {snapshot?.hud.captureP1 ?? '2%'}
                 </span>{' '}
                 capture
+                {!replayMode && roomInfo?.p1PingMs != null ? (
+                  <span
+                    className={`online-game-ping-badge online-game-ping online-game-ping--${onlinePingAccent(
+                      roomInfo.p1PingMs
+                    )}`}
+                    title="Player 1 round-trip to server"
+                  >
+                    {roomInfo.p1PingMs}ms
+                  </span>
+                ) : null}
               </div>
               <div id="capturingP2">
                 capture{' '}
                 <span className="capturingAmount">
                   {snapshot?.hud.captureP2 ?? '2%'}
                 </span>
+                {!replayMode && roomInfo?.p2PingMs != null ? (
+                  <span
+                    className={`online-game-ping-badge online-game-ping online-game-ping--${onlinePingAccent(
+                      roomInfo.p2PingMs
+                    )}`}
+                    title="Player 2 round-trip to server"
+                  >
+                    {roomInfo.p2PingMs}ms
+                  </span>
+                ) : null}
               </div>
             </div>
 
@@ -671,6 +675,10 @@ export default function OnlineGame() {
   );
 }
 
+function onlinePingAccent(ms: number): 'good' | 'ok' | 'high' {
+  return ms < 90 ? 'good' : ms < 180 ? 'ok' : 'high';
+}
+
 function coerceOnlineRoomSnapshotEvent(payload: unknown):
   | { roomId: string; snapshot: OnlineRoomSnapshot }
   | null {
@@ -706,6 +714,7 @@ function coerceOnlineRoomUpdated(payload: unknown):
           paidAmount?: number;
           sessionID?: string;
           socketID?: string;
+          pingMs?: number;
         }
       >;
     }
@@ -736,6 +745,7 @@ function coerceOnlineRoomUpdated(payload: unknown):
           paidAmount?: number;
           sessionID?: string;
           socketID?: string;
+          pingMs?: number;
         }>)
       : {};
   return {
