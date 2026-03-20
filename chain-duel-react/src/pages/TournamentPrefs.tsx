@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useGamepad } from '@/hooks/useGamepad';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
+import {
+  CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
+  clearMenuNavigationState,
+  type MenuNavigationState,
+} from '@/shared/constants/menuNavigation';
 import './tournprefs.css';
 
 type SelectedButton =
@@ -18,6 +23,14 @@ type SelectedButton =
 
 export default function TournamentPrefs() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const suppressNextMenuConfirmRef = useRef(
+    Boolean(
+      (location.state as MenuNavigationState | null)?.[
+        CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM
+      ]
+    )
+  );
   const [searchParams] = useSearchParams();
   const isNostrTournament = searchParams.get('mode') === 'tournamentnostr';
   const [playersNumber, setPlayersNumber] = useState(4);
@@ -73,6 +86,15 @@ export default function TournamentPrefs() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Enter' || event.key === ' ') {
+        if (event.repeat) {
+          return;
+        }
+        if (suppressNextMenuConfirmRef.current) {
+          suppressNextMenuConfirmRef.current = false;
+          event.preventDefault();
+          clearMenuNavigationState(navigate, location);
+          return;
+        }
         event.preventDefault();
         if (buttonSelected === 'mainMenuButton') {
           navigate('/');
@@ -138,7 +160,7 @@ export default function TournamentPrefs() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [buttonSelected, playersNumber, deposit, navigate]);
+  }, [buttonSelected, playersNumber, deposit, navigate, location]);
 
   return (
     <div className="tournprefs-page">

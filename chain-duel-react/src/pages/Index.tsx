@@ -8,6 +8,7 @@ import { useAudio, SFX } from '@/contexts/AudioContext';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
+import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
 
 /** Vertical menu focus (P2P / Tournament each open a Lightning vs Nostr modal). */
 type MenuState = 1 | 2 | 3 | 4 | 5 | 6;
@@ -31,6 +32,24 @@ function modalHintsFor(kind: 'p2p' | 'tournament'): Record<ModalPitch, string> {
   };
 }
 
+function menuStepDown(prev: MenuState): MenuState {
+  if (prev === 1) return 2;
+  if (prev === 2) return 3;
+  if (prev === 3) return 4;
+  if (prev === 4) return 5;
+  if (prev === 5) return 6;
+  return 1;
+}
+
+function menuStepUp(prev: MenuState): MenuState {
+  if (prev === 1) return 6;
+  if (prev === 2) return 1;
+  if (prev === 3) return 2;
+  if (prev === 4) return 3;
+  if (prev === 5) return 4;
+  return 5;
+}
+
 export default function Index() {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
@@ -51,6 +70,9 @@ export default function Index() {
   const modalCancelRef = useRef<HTMLButtonElement>(null);
   const menuButtonsRootRef = useRef<HTMLDivElement>(null);
   const skipInitialMenuPopRef = useRef(true);
+  /** Synced inside setMenu updaters so Enter always matches the latest row (avoids stale closure if Down + Enter land before re-render). */
+  const menuRef = useRef<MenuState>(menu);
+  menuRef.current = menu;
 
   // Enable gamepad support
   useGamepad(true);
@@ -139,26 +161,46 @@ export default function Index() {
     [modeModal]
   );
 
+  /** 0 = Lightning, 1 = Nostr, 2 = Cancel — avoids activeElement/ref mismatches */
+  const modalNavIndexRef = useRef(0);
+
   const closeModeModal = useCallback(() => {
+    modalNavIndexRef.current = 0;
     setModeModal(null);
   }, []);
 
-  const confirmMode = useCallback(
-    (nostr: boolean) => {
-      if (modeModal === 'p2p') {
-        navigate(nostr ? '/gamemenu?nostr=true' : '/gamemenu');
-      } else if (modeModal === 'tournament') {
-        navigate(
-          nostr ? '/tournprefs?mode=tournamentnostr' : '/tournprefs'
-        );
-      }
-      setModeModal(null);
-    },
-    [modeModal, navigate]
+  /** Swallow one ghost Enter/Space on the next page when navigation was triggered by keyboard. */
+  const keyboardNavState = useMemo(
+    () => ({ [CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM]: true }),
+    []
   );
 
-  /** 0 = Lightning, 1 = Nostr, 2 = Cancel — avoids activeElement/ref mismatches */
-  const modalNavIndexRef = useRef(0);
+  const confirmMode = useCallback(
+    (nostr: boolean, opts?: { fromKeyboard?: boolean }) => {
+      const state = opts?.fromKeyboard ? keyboardNavState : undefined;
+      const navOpts = state ? { state } : undefined;
+      if (modeModal === 'p2p') {
+        navigate(
+          {
+            pathname: '/gamemenu',
+            search: nostr ? '?nostr=true' : '',
+          },
+          navOpts
+        );
+      } else if (modeModal === 'tournament') {
+        navigate(
+          {
+            pathname: '/tournprefs',
+            search: nostr ? '?mode=tournamentnostr' : '',
+          },
+          navOpts
+        );
+      }
+      modalNavIndexRef.current = 0;
+      setModeModal(null);
+    },
+    [modeModal, navigate, keyboardNavState]
+  );
 
   const focusModalSlot = useCallback((index: 0 | 1 | 2) => {
     modalNavIndexRef.current = index;
@@ -247,14 +289,18 @@ export default function Index() {
           }
           return;
         }
-        if (event.key === 'Enter' || event.key === ' ') {
+        if (event.key === 'Enter' || event.key === ' ' || event.code === 'NumpadEnter') {
+          if (event.repeat) {
+            event.preventDefault();
+            return;
+          }
           event.preventDefault();
           playSfx(SFX.MENU_CONFIRM);
           const i = modalNavIndexRef.current;
           if (i === 0) {
-            confirmMode(false);
+            confirmMode(false, { fromKeyboard: true });
           } else if (i === 1) {
-            confirmMode(true);
+            confirmMode(true, { fromKeyboard: true });
           } else {
             closeModeModal();
           }
@@ -263,22 +309,33 @@ export default function Index() {
         return;
       }
 
-      if (event.key === 'Enter' || event.key === ' ') {
+      const isConfirmKey =
+        event.key === 'Enter' ||
+        event.key === ' ' ||
+        event.code === 'NumpadEnter';
+
+      if (isConfirmKey) {
+        if (event.repeat) {
+          event.preventDefault();
+          return;
+        }
         event.preventDefault();
         playSfx(SFX.MENU_CONFIRM);
-        if (menu === 1) {
-          navigate('/practicemenu');
-        } else if (menu === 2) {
+        const row = menuRef.current;
+        if (row === 1) {
+          navigate('/practicemenu', { state: keyboardNavState });
+        } else if (row === 2) {
           setModeModal('p2p');
-        } else if (menu === 3) {
+        } else if (row === 3) {
           setModeModal('tournament');
-        } else if (menu === 4) {
-          navigate('/online');
-        } else if (menu === 5) {
-          navigate('/highscores');
-        } else if (menu === 6) {
-          navigate('/about');
+        } else if (row === 4) {
+          navigate('/online', { state: keyboardNavState });
+        } else if (row === 5) {
+          navigate('/highscores', { state: keyboardNavState });
+        } else if (row === 6) {
+          navigate('/about', { state: keyboardNavState });
         }
+        return;
       }
 
       if (
@@ -288,25 +345,13 @@ export default function Index() {
         event.key === 'S'
       ) {
         event.preventDefault();
-        if (menu === 1) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(2);
-        } else if (menu === 2) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(3);
-        } else if (menu === 3) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(4);
-        } else if (menu === 4) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(5);
-        } else if (menu === 5) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(6);
-        } else if (menu === 6) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(1);
-        }
+        playSfx(SFX.MENU_SELECT);
+        setMenu((prev) => {
+          const next = menuStepDown(prev);
+          menuRef.current = next;
+          return next;
+        });
+        return;
       }
 
       if (
@@ -316,31 +361,26 @@ export default function Index() {
         event.key === 'W'
       ) {
         event.preventDefault();
-        if (menu === 1) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(6);
-        } else if (menu === 2) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(1);
-        } else if (menu === 3) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(2);
-        } else if (menu === 4) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(3);
-        } else if (menu === 5) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(4);
-        } else if (menu === 6) {
-          playSfx(SFX.MENU_SELECT);
-          setMenu(5);
-        }
+        playSfx(SFX.MENU_SELECT);
+        setMenu((prev) => {
+          const next = menuStepUp(prev);
+          menuRef.current = next;
+          return next;
+        });
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [menu, modeModal, navigate, playSfx, closeModeModal, confirmMode, focusModalSlot]);
+  }, [
+    modeModal,
+    navigate,
+    playSfx,
+    closeModeModal,
+    confirmMode,
+    focusModalSlot,
+    keyboardNavState,
+  ]);
 
   return (
     <div className="flex full flex-center">
@@ -452,7 +492,7 @@ export default function Index() {
                   playSfx(SFX.MENU_CONFIRM);
                   navigate('/config');
                 }}
-                id="highscoresbutton"
+                id="configbuttonhome"
               >
                 <span id="backendStatusHome" className="backend-status on">•</span>
                 CONFIG

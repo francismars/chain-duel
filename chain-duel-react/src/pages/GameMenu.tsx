@@ -1,6 +1,6 @@
 // P2P game menu page – two players LNURL setup
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { GameSetupLayout } from '@/components/layout/GameSetupLayout';
@@ -24,6 +24,11 @@ import {
   SATS_DISPLAY_MAX,
 } from '@/shared/constants/payment';
 import { QR_CODE_CARD_SIZE } from '@/shared/constants/ui';
+import {
+  CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
+  clearMenuNavigationState,
+  type MenuNavigationState,
+} from '@/shared/constants/menuNavigation';
 import './gamemenu.css';
 
 type ButtonSelected =
@@ -35,6 +40,14 @@ type ButtonSelected =
 export default function GameMenu() {
   const logger = useMemo(() => createLogger('GameMenu'), []);
   const navigate = useNavigate();
+  const location = useLocation();
+  const suppressNextMenuConfirmRef = useRef(
+    Boolean(
+      (location.state as MenuNavigationState | null)?.[
+        CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM
+      ]
+    )
+  );
   const [searchParams] = useSearchParams();
   const useNostrFromQuery = searchParams.get('nostr') === 'true';
   /** URL is the source of truth so /gamemenu (no query) never stays stuck in Nostr UI after leaving ?nostr=true. */
@@ -271,6 +284,15 @@ export default function GameMenu() {
     const handleKeyDown = (e: KeyboardEvent) => {
       const canStartNow = prevWinner ? loserSats >= winnerSats : player1Sats !== 0 && player2Sats !== 0;
       if (e.key === 'Enter' || e.key === ' ') {
+        if (e.repeat) {
+          return;
+        }
+        if (suppressNextMenuConfirmRef.current) {
+          suppressNextMenuConfirmRef.current = false;
+          e.preventDefault();
+          clearMenuNavigationState(navigate, location);
+          return;
+        }
         e.preventDefault();
         playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
@@ -309,7 +331,18 @@ export default function GameMenu() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [buttonSelected, player1Sats, player2Sats, socket, navigate, playSfx, prevWinner, loserSats, winnerSats]);
+  }, [
+    buttonSelected,
+    player1Sats,
+    player2Sats,
+    socket,
+    navigate,
+    location,
+    playSfx,
+    prevWinner,
+    loserSats,
+    winnerSats,
+  ]);
 
   useQrExpandState({
     dualControls: true,
