@@ -240,6 +240,11 @@ export const ResListOnlineArchivedRoomsSchema = z.object({
   rooms: z.array(OnlineRoomListItemSchema),
 });
 
+/** Merged history: archived index + finished rooms still in RAM (same shape). */
+export const ResOnlineHistorySchema = z.object({
+  rooms: z.array(OnlineRoomListItemSchema),
+});
+
 export const ResJoinOnlineRoomSchema = ResCreateOnlineRoomSchema;
 
 export const OnlineRoomSnapshotEventSchema = z.object({

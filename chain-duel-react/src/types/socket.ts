@@ -275,6 +275,8 @@ export interface ClientToServerEvents {
   createOnlineRoom: (payload?: { buyin?: number; hostLNAddress?: string }) => void;
   listOnlineRooms: () => void;
   listOnlineArchivedRooms: () => void;
+  /** Merged history (archived + finished still in RAM). Preferred over listOnlineArchivedRooms alone. */
+  listOnlineHistory: () => void;
   joinOnlineRoom: (payload: { roomId: string }) => void;
   joinOnlineRoomByCode: (payload: { roomCode: string }) => void;
   spectateOnlineRoom: (payload: { roomId: string }) => void;
@@ -349,6 +351,7 @@ export interface ServerToClientEvents {
   }) => void;
   resListOnlineRooms: (data: { rooms: OnlineRoomListItem[] }) => void;
   resListOnlineArchivedRooms: (data: { rooms: OnlineRoomListItem[] }) => void;
+  resOnlineHistory: (data: { rooms: OnlineRoomListItem[] }) => void;
   resJoinOnlineRoom: (data: {
     roomId: string;
     roomCode: string;
