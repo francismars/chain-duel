@@ -154,6 +154,8 @@ export interface OnlineSeatState {
   picture?: string;
   pubkey?: string;
   lnAddress?: string;
+  /** Reported RTT (ms) for this seat; set by server from `reportOnlineRoomPing`. */
+  pingMs?: number;
 }
 
 export interface OnlineRoomState {
@@ -293,6 +295,8 @@ export interface ClientToServerEvents {
   getOnlineReplay: (payload: { roomId: string; matchRound?: number }) => void;
   /** Round-trip probe; last arg is ack: `emit('pingLatency', () => { ... })` */
   pingLatency: (ack: () => void) => void;
+  /** After measuring RTT, send so server can broadcast both players' ping via `onlineRoomUpdated`. */
+  reportOnlineRoomPing: (payload: { roomId: string; latencyMs: number }) => void;
 }
 
 // Server -> Client Events
