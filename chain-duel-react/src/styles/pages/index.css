@@ -38,14 +38,95 @@
   margin: 1.5rem auto 0;
 }
 
-.menu-buttons > .button,
-.menu-buttons > .double-button {
+.menu-buttons__row {
   width: 100%;
 }
 
-.menu-buttons > .button {
+.menu-buttons__row-inner {
+  width: 100%;
+  transform-origin: center center;
+}
+
+.menu-buttons__row-inner > .button,
+.menu-buttons__row-inner > .double-button {
+  width: 100%;
+}
+
+.menu-buttons__row-inner > .button {
   margin-top: 0;
   margin-bottom: 0;
+}
+
+.menu-buttons__row > .double-button.menu-buttons__double-row {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.menu-buttons__double-cell {
+  flex: 1 1 48%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.menu-buttons .menu-buttons__double-row .menu-buttons__double-cell > .button {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes index-menu-btn-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .menu-buttons.menu-buttons--stagger > .menu-buttons__row {
+    opacity: 0;
+    animation: index-menu-btn-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .menu-buttons.menu-buttons--stagger > .menu-buttons__row:nth-child(1) {
+    animation-delay: 0.06s;
+  }
+  .menu-buttons.menu-buttons--stagger > .menu-buttons__row:nth-child(2) {
+    animation-delay: 0.11s;
+  }
+  .menu-buttons.menu-buttons--stagger > .menu-buttons__row:nth-child(3) {
+    animation-delay: 0.16s;
+  }
+  .menu-buttons.menu-buttons--stagger > .menu-buttons__row:nth-child(4) {
+    animation-delay: 0.21s;
+  }
+  .menu-buttons.menu-buttons--stagger > .menu-buttons__row:nth-child(5) {
+    animation-delay: 0.26s;
+  }
+  .menu-buttons.menu-buttons--stagger > .menu-buttons__row:nth-child(6) {
+    animation-delay: 0.31s;
+  }
+
+  @keyframes index-menu-select-pop {
+    0% {
+      transform: scale(1);
+    }
+    42% {
+      transform: scale(1.048);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .menu-buttons__row-inner.menu-buttons__row-inner--pop {
+    animation: index-menu-select-pop 0.44s cubic-bezier(0.28, 0.82, 0.36, 1.08)
+      both;
+  }
 }
 
 #bottomInfo {

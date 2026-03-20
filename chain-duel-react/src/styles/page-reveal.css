@@ -1,0 +1,41 @@
+/* Route enter: subtle lift + fade. Gameplay routes: fade only (no transform on canvas). */
+
+@keyframes page-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-reveal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-reveal-scope {
+  min-height: 100vh;
+  animation: page-reveal-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-reveal-scope--gameplay {
+  animation-name: page-reveal-fade;
+  animation-duration: 0.24s;
+  animation-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-reveal-scope,
+  .page-reveal-scope--gameplay {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
