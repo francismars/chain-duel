@@ -14,6 +14,7 @@ import { useSessionPersistence } from '@/shared/hooks/useSessionPersistence';
 import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
 import {
   HIGHLIGHT_FLASH_TIMEOUT_MS,
+  SETUP_MENU_KEY_GRACE_MS,
 } from '@/shared/constants/timeouts';
 import {
   PRACTICE_MIN_DEPOSIT_SATS,
@@ -58,8 +59,13 @@ export default function PracticeMenu() {
 
   const lastKnownP1SatsRef = useRef(0);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setupMenuKeyGraceUntilRef = useRef(0);
 
   useGamepad(true);
+
+  useEffect(() => {
+    setupMenuKeyGraceUntilRef.current = performance.now() + SETUP_MENU_KEY_GRACE_MS;
+  }, []);
 
   const handleMenuParsed = useCallback(
     (parsed: MenuParseResult) => {
@@ -145,6 +151,12 @@ export default function PracticeMenu() {
           return;
         }
         e.preventDefault();
+        if (
+          buttonSelected === 'mainMenuButton' &&
+          performance.now() < setupMenuKeyGraceUntilRef.current
+        ) {
+          return;
+        }
         playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
           if (player1Sats >= PRACTICE_MIN_DEPOSIT_SATS) {
