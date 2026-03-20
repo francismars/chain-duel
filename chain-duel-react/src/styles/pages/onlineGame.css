@@ -61,6 +61,12 @@
   opacity: 0.95;
 }
 
+/** P2: badge sits left of “capture” — gap faces the center, symmetric to P1’s trailing badge */
+.online-game-ping-badge--mirror {
+  margin-left: 0;
+  margin-right: 0.45vw;
+}
+
 .online-game-ping {
   font-variant-numeric: tabular-nums;
   font-size: 0.62cqw;

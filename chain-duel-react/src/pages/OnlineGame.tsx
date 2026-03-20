@@ -486,13 +486,9 @@ export default function OnlineGame() {
                 ) : null}
               </div>
               <div id="capturingP2">
-                capture{' '}
-                <span className="capturingAmount">
-                  {snapshot?.hud.captureP2 ?? '2%'}
-                </span>
                 {!replayMode && roomInfo?.p2PingMs != null ? (
                   <span
-                    className={`online-game-ping-badge online-game-ping online-game-ping--${onlinePingAccent(
+                    className={`online-game-ping-badge online-game-ping-badge--mirror online-game-ping online-game-ping--${onlinePingAccent(
                       roomInfo.p2PingMs
                     )}`}
                     title="Player 2 round-trip to server"
@@ -500,6 +496,10 @@ export default function OnlineGame() {
                     {roomInfo.p2PingMs}ms
                   </span>
                 ) : null}
+                capture{' '}
+                <span className="capturingAmount">
+                  {snapshot?.hud.captureP2 ?? '2%'}
+                </span>
               </div>
             </div>
 
