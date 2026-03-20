@@ -1,5 +1,7 @@
 /* Route enter: subtle lift + fade. Gameplay routes: fade only (no transform on canvas). */
 
+/* End state must be `transform: none` — any non-none transform on an ancestor makes
+   `position: fixed` overlays (loading / cancel) lay out vs that box instead of the viewport. */
 @keyframes page-reveal-in {
   from {
     opacity: 0;
@@ -7,7 +9,7 @@
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
