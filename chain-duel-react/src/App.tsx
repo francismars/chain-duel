@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AudioProvider } from './contexts/AudioContext';
 import { CornerControls } from './components/ui/CornerControls';
+import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import Index from './pages/Index';
 import GameMenu from './pages/GameMenu';
 import PracticeMenu from './pages/PracticeMenu';
@@ -24,21 +25,23 @@ function App() {
       <BrowserRouter>
         <CornerControls />
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/gamemenu" element={<GameMenu />} />
-          <Route path="/practicemenu" element={<PracticeMenu />} />
-          <Route path="/tournprefs" element={<TournamentPrefs />} />
-          <Route path="/tournlobby" element={<TournamentLobby />} />
-          <Route path="/tournbracket" element={<TournamentBracket />} />
-          <Route path="/game" element={<Game />} />
-          <Route path="/postgame" element={<PostGame />} />
-          <Route path="/highscores" element={<Highscores />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/config" element={<Config />} />
-          <Route path="/online" element={<OnlineRooms />} />
-          <Route path="/online/lobby" element={<OnlineRoomLobby />} />
-          <Route path="/online/game" element={<OnlineGame />} />
-          <Route path="/online/postgame" element={<OnlinePostGame />} />
+          <Route element={<PageRevealOutlet />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/gamemenu" element={<GameMenu />} />
+            <Route path="/practicemenu" element={<PracticeMenu />} />
+            <Route path="/tournprefs" element={<TournamentPrefs />} />
+            <Route path="/tournlobby" element={<TournamentLobby />} />
+            <Route path="/tournbracket" element={<TournamentBracket />} />
+            <Route path="/game" element={<Game />} />
+            <Route path="/postgame" element={<PostGame />} />
+            <Route path="/highscores" element={<Highscores />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/config" element={<Config />} />
+            <Route path="/online" element={<OnlineRooms />} />
+            <Route path="/online/lobby" element={<OnlineRoomLobby />} />
+            <Route path="/online/game" element={<OnlineGame />} />
+            <Route path="/online/postgame" element={<OnlinePostGame />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AudioProvider>

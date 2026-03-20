@@ -49,9 +49,51 @@ export default function Index() {
   const modalLightningRef = useRef<HTMLButtonElement>(null);
   const modalNostrRef = useRef<HTMLButtonElement>(null);
   const modalCancelRef = useRef<HTMLButtonElement>(null);
+  const menuButtonsRootRef = useRef<HTMLDivElement>(null);
+  const skipInitialMenuPopRef = useRef(true);
 
   // Enable gamepad support
   useGamepad(true);
+
+  useEffect(() => {
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      return;
+    }
+    if (skipInitialMenuPopRef.current) {
+      skipInitialMenuPopRef.current = false;
+      return;
+    }
+    const root = menuButtonsRootRef.current;
+    if (!root) {
+      return;
+    }
+    const inner =
+      menu === 6
+        ? (root.querySelector(
+            '[data-menu-row="6"] [data-menu-kbd-focus]'
+          ) as HTMLElement | null)
+        : (root.querySelector(
+            `[data-menu-row="${menu}"] > .menu-buttons__row-inner`
+          ) as HTMLElement | null);
+    if (!inner) {
+      return;
+    }
+    inner.classList.remove('menu-buttons__row-inner--pop');
+    void inner.offsetWidth;
+    inner.classList.add('menu-buttons__row-inner--pop');
+    const onEnd = () => {
+      inner.classList.remove('menu-buttons__row-inner--pop');
+      inner.removeEventListener('animationend', onEnd);
+    };
+    inner.addEventListener('animationend', onEnd);
+    return () => {
+      inner.removeEventListener('animationend', onEnd);
+      inner.classList.remove('menu-buttons__row-inner--pop');
+    };
+  }, [menu]);
 
   // Load host name from localStorage
   useEffect(() => {
@@ -307,84 +349,116 @@ export default function Index() {
       <h1 id="chainduel">CHAIN DUEL</h1>
       <p id="slogan">KEEPING ONE BLOCK AHEAD</p>
 
-      <div className="menu-buttons">
-        <Button
-          ref={startPracticeRef}
-          id="startpractice"
-          onClick={() => {
-            playSfx(SFX.MENU_CONFIRM);
-            navigate('/practicemenu');
-          }}
-        >
-          PRACTICE
-        </Button>
+      <div
+        ref={menuButtonsRootRef}
+        className="menu-buttons menu-buttons--stagger"
+      >
+        <div className="menu-buttons__row" data-menu-row={1}>
+          <div className="menu-buttons__row-inner">
+            <Button
+              ref={startPracticeRef}
+              id="startpractice"
+              onClick={() => {
+                playSfx(SFX.MENU_CONFIRM);
+                navigate('/practicemenu');
+              }}
+            >
+              PRACTICE
+            </Button>
+          </div>
+        </div>
 
-        <Button
-          ref={startGameRef}
-          id="startgame"
-          onClick={() => {
-            playSfx(SFX.MENU_CONFIRM);
-            setModeModal('p2p');
-          }}
-        >
-          P2P
-        </Button>
+        <div className="menu-buttons__row" data-menu-row={2}>
+          <div className="menu-buttons__row-inner">
+            <Button
+              ref={startGameRef}
+              id="startgame"
+              onClick={() => {
+                playSfx(SFX.MENU_CONFIRM);
+                setModeModal('p2p');
+              }}
+            >
+              P2P
+            </Button>
+          </div>
+        </div>
 
-        <Button
-          ref={startTournRef}
-          id="starttourn"
-          onClick={() => {
-            playSfx(SFX.MENU_CONFIRM);
-            setModeModal('tournament');
-          }}
-        >
-          TOURNAMENT
-        </Button>
+        <div className="menu-buttons__row" data-menu-row={3}>
+          <div className="menu-buttons__row-inner">
+            <Button
+              ref={startTournRef}
+              id="starttourn"
+              onClick={() => {
+                playSfx(SFX.MENU_CONFIRM);
+                setModeModal('tournament');
+              }}
+            >
+              TOURNAMENT
+            </Button>
+          </div>
+        </div>
 
-        <Button
-          ref={startOnlineRef}
-          id="startonline"
-          onClick={() => {
-            playSfx(SFX.MENU_CONFIRM);
-            navigate('/online');
-          }}
-        >
-          ONLINE
-        </Button>
+        <div className="menu-buttons__row" data-menu-row={4}>
+          <div className="menu-buttons__row-inner">
+            <Button
+              ref={startOnlineRef}
+              id="startonline"
+              onClick={() => {
+                playSfx(SFX.MENU_CONFIRM);
+                navigate('/online');
+              }}
+            >
+              ONLINE
+            </Button>
+          </div>
+        </div>
 
-        <Button
-          ref={highscoresRef}
-          id="highscoresbutton"
-          onClick={() => {
-            playSfx(SFX.MENU_CONFIRM);
-            navigate('/highscores');
-          }}
-        >
-          HIGHSCORES
-        </Button>
+        <div className="menu-buttons__row" data-menu-row={5}>
+          <div className="menu-buttons__row-inner">
+            <Button
+              ref={highscoresRef}
+              id="highscoresbutton"
+              onClick={() => {
+                playSfx(SFX.MENU_CONFIRM);
+                navigate('/highscores');
+              }}
+            >
+              HIGHSCORES
+            </Button>
+          </div>
+        </div>
 
-        <div className="double-button">
-          <Button
-            ref={aboutRef}
-            id="aboutbutton"
-            onClick={() => {
-              playSfx(SFX.MENU_CONFIRM);
-              navigate('/about');
-            }}
-          >
-            ABOUT
-          </Button>
-          <Button
-            className="disabled"
-            onClick={() => {
-              playSfx(SFX.MENU_CONFIRM);
-              navigate('/config');
-            }}
-            id="highscoresbutton"
-          >
-            <span id="backendStatusHome" className="backend-status on">•</span>
-            CONFIG
-          </Button>
+        <div className="menu-buttons__row" data-menu-row={6}>
+          <div className="double-button menu-buttons__double-row">
+            <div
+              className="menu-buttons__row-inner menu-buttons__double-cell"
+              data-menu-kbd-focus
+            >
+              <Button
+                ref={aboutRef}
+                id="aboutbutton"
+                onClick={() => {
+                  playSfx(SFX.MENU_CONFIRM);
+                  navigate('/about');
+                }}
+              >
+                ABOUT
+              </Button>
+            </div>
+            <div className="menu-buttons__row-inner menu-buttons__double-cell">
+              <Button
+                className="disabled"
+                onClick={() => {
+                  playSfx(SFX.MENU_CONFIRM);
+                  navigate('/config');
+                }}
+                id="highscoresbutton"
+              >
+                <span id="backendStatusHome" className="backend-status on">•</span>
+                CONFIG
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 

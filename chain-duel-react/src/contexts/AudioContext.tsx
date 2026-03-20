@@ -9,6 +9,11 @@ export const SFX = {
   MENU_CONFIRM: '/sound/Beep2.m4a',
 } as const;
 
+/** Gain per SFX path (0–1). Selection uses a new Audio each play so clips can overlap and finish. */
+const SFX_VOLUME: Partial<Record<string, number>> = {
+  [SFX.MENU_SELECT]: 0.32,
+};
+
 interface BackgroundAudioContextType {
   play: (src: string, loop?: boolean) => void;
   stop: () => void;
@@ -57,7 +62,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const isMutedRef = useRef(getStoredMuted());
   // When we skip play() because muted, we still need the src so unmute can start playback
   const lastRequestedSrcRef = useRef<string | null>(null);
-  const sfxRef = useRef<HTMLAudioElement | null>(null);
 
   // Keep refs in sync with state (e.g. after hydration from localStorage)
   useEffect(() => {
@@ -68,13 +72,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const playSfx = useCallback((src: string) => {
     if (isMutedRef.current) return;
     const normalized = src.startsWith('/') ? src : `/${src}`;
-    if (!sfxRef.current) {
-      sfxRef.current = new Audio();
-    }
-    const sfx = sfxRef.current;
-    sfx.currentTime = 0;
-    sfx.src = normalized;
-    sfx.play().catch(() => {});
+    const audio = new Audio(normalized);
+    audio.volume = SFX_VOLUME[normalized] ?? 1;
+    audio.play().catch(() => {});
+    audio.addEventListener('ended', () => {
+      audio.removeAttribute('src');
+      audio.load();
+    });
   }, []);
 
   // Create music audio element once
@@ -97,11 +101,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
-      }
-      if (sfxRef.current) {
-        sfxRef.current.pause();
-        sfxRef.current.src = '';
-        sfxRef.current = null;
       }
     };
   }, []);
