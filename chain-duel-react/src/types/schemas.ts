@@ -311,6 +311,12 @@ export const OnlineDoubleOrNothingUpdateSchema = z.object({
   agreed: z.boolean(),
 });
 
+export const OnlineReplayBlockEventSchema = z.object({
+  frameIndex: z.number(),
+  blockHeight: z.number(),
+  medianFeeSatPerVb: z.number(),
+});
+
 export const ResOnlineReplaySchema = z.object({
   roomId: z.string(),
   tickMs: z.number(),
@@ -318,6 +324,7 @@ export const ResOnlineReplaySchema = z.object({
   gzipBase64: z.string(),
   frameCount: z.number(),
   matchRound: z.number().optional(),
+  blockEvents: z.array(OnlineReplayBlockEventSchema).optional(),
 });
 
 export const ResGetTournamentInfosNostrSchema = z.object({

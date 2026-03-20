@@ -4,8 +4,9 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
-import { OnlineRoomSnapshot } from '@/types/socket';
+import type { OnlineReplayBlockEvent, OnlineRoomSnapshot } from '@/types/socket';
 import { useGamepad } from '@/hooks/useGamepad';
+import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
@@ -71,6 +72,14 @@ export default function OnlineGame() {
   const [replaySpeed, setReplaySpeed] = useState(1);
   const [replayLoaded, setReplayLoaded] = useState(false);
   const [replayError, setReplayError] = useState('');
+  /** Server-recorded mempool block cosmetics, keyed by replay frame index. */
+  const [replayBlockEvents, setReplayBlockEvents] = useState<OnlineReplayBlockEvent[]>([]);
+  const audioRef = useRef<GameAudioSystem | null>(null);
+  if (!audioRef.current) {
+    audioRef.current = new GameAudioSystem();
+  }
+  const [canvasHighlight, setCanvasHighlight] = useState(false);
+  const [footerHighlight, setFooterHighlight] = useState(false);
   const keysHeldRef = useRef({
     up: false,
     down: false,
@@ -159,7 +168,8 @@ export default function OnlineGame() {
       const parsed = SocketBoundaryParsers.onlineRoomSnapshot(payload) ?? coerceOnlineRoomSnapshotEvent(payload);
       if (parsed && parsed.roomId === roomId) {
         setSnapshot((prev) => {
-          const merged = mergeOnlineSnapshot(prev, parsed.snapshot);
+          const snap = normalizeOnlineRoomSnapshot(parsed.snapshot);
+          const merged = mergeOnlineSnapshot(prev, snap);
           ingestOnlinePointChanges(merged, pointAnimationsRef.current, prevPointCountByKeyRef.current);
           return merged;
         });
@@ -211,6 +221,7 @@ export default function OnlineGame() {
           const frames = await expandOnlineReplayWire(parsed);
           setReplayTickMs(Math.max(10, parsed.tickMs));
           setReplayFrames(frames);
+          setReplayBlockEvents(parsed.blockEvents ?? []);
           setReplayIndex(0);
           setReplayPlaying(false);
           setReplayLoaded(true);
@@ -221,6 +232,7 @@ export default function OnlineGame() {
           }
         } catch {
           setReplayLoaded(true);
+          setReplayBlockEvents([]);
           setReplayError('Failed to decode replay.');
         }
       })();
@@ -294,6 +306,25 @@ export default function OnlineGame() {
   }, [replayFrames, replayMode, replayPlaying, replaySpeed, replayTickMs]);
 
   useEffect(() => {
+    if (!replayMode || replayFrames.length === 0) {
+      return;
+    }
+    const hits = replayBlockEvents.filter((e) => e.frameIndex === replayIndex);
+    if (hits.length === 0) {
+      return;
+    }
+    audioRef.current?.playBlockFound();
+    setCanvasHighlight(true);
+    setFooterHighlight(true);
+    const t1 = window.setTimeout(() => setCanvasHighlight(false), 1000);
+    const t2 = window.setTimeout(() => setFooterHighlight(false), 2000);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [replayBlockEvents, replayIndex, replayFrames.length, replayMode]);
+
+  useEffect(() => {
     const stopFeed = startMempoolFeed({
       onInit: (details) => {
         setBitcoin((prev) => ({
@@ -326,6 +357,30 @@ export default function OnlineGame() {
     measure();
     const id = window.setInterval(measure, 2500);
     return () => window.clearInterval(id);
+  }, [socket, replayMode, roomId]);
+
+  useEffect(() => {
+    if (!socket || replayMode || !roomId) {
+      return;
+    }
+    const onBitcoinBlock = (payload: {
+      roomId: string;
+      blockHeight: number;
+      medianFeeSatPerVb: number;
+    }) => {
+      if (payload.roomId !== roomId) {
+        return;
+      }
+      audioRef.current?.playBlockFound();
+      setCanvasHighlight(true);
+      setFooterHighlight(true);
+      window.setTimeout(() => setCanvasHighlight(false), 1000);
+      window.setTimeout(() => setFooterHighlight(false), 2000);
+    };
+    socket.on('onlineBitcoinBlock', onBitcoinBlock);
+    return () => {
+      socket.off('onlineBitcoinBlock', onBitcoinBlock);
+    };
   }, [socket, replayMode, roomId]);
 
   useEffect(() => {
@@ -549,7 +604,7 @@ export default function OnlineGame() {
             </div>
           </div>
 
-          <div id="gameCanvas">
+          <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
             <div
               id="gameCanvasHost"
               ref={setHostEl}
@@ -640,7 +695,7 @@ export default function OnlineGame() {
             </div>
           ) : null}
 
-          <div id="bitcoinDetails">
+          <div id="bitcoinDetails" className={footerHighlight ? 'highlight' : ''}>
             <div className="detail">
               <div className="label">Latest Block</div>
               <div className="value">{bitcoin.height}</div>
