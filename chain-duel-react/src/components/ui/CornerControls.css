@@ -48,6 +48,17 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
+.corner-btn--tv-safe-on {
+  color: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.corner-btn--tv-safe-on:hover {
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
 /* Tooltip – show on the right of each icon */
 .corner-btn::after {
   content: attr(data-tooltip);

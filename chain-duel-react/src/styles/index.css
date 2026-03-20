@@ -168,6 +168,158 @@ h3 {
   min-height: 100vh;
 }
 
+/* Overscan / fullscreen TV crop: optional inset from corner controls */
+html.tv-safe-inset {
+  --tv-safe-padding: clamp(12px, 3.5vmin, 56px);
+  --tv-safe-height: calc(100vh - 2 * var(--tv-safe-padding));
+  --tv-safe-width: calc(100vw - 2 * var(--tv-safe-padding));
+}
+
+html.tv-safe-inset body {
+  box-sizing: border-box;
+  padding: var(--tv-safe-padding);
+  min-height: 100vh;
+}
+
+html.tv-safe-inset #root {
+  min-height: var(--tv-safe-height);
+}
+
+/* `.full` / `100vh` layouts reference the viewport, not the padded body — shrink them. */
+html.tv-safe-inset .flex.full {
+  width: 100%;
+  max-width: 100%;
+  min-height: calc(var(--tv-safe-height) - 5vw);
+}
+
+/* P2P / practice shell */
+html.tv-safe-inset .game-setup-page {
+  height: var(--tv-safe-height);
+  min-height: var(--tv-safe-height);
+}
+
+html.tv-safe-inset .game-setup-page .game-setup-middle {
+  max-height: calc(var(--tv-safe-height) - 16vw);
+}
+
+/* Fixed branding (game, postgame, etc.) */
+html.tv-safe-inset #brand,
+html.tv-safe-inset .game-setup-page .game-setup-header {
+  top: calc(var(--tv-safe-padding) + 1rem);
+  left: var(--tv-safe-padding);
+  right: var(--tv-safe-padding);
+  width: auto;
+  margin-top: 0;
+}
+
+/* Menu/practice lower strip (QR row) */
+html.tv-safe-inset .game-setup-page #bottomInfo {
+  width: calc(100% - 2 * var(--tv-safe-padding));
+  margin-left: var(--tv-safe-padding);
+  margin-right: var(--tv-safe-padding);
+  margin-bottom: var(--tv-safe-padding);
+}
+
+/* Home index: absolute bottom bar + fixed announcement */
+html.tv-safe-inset .flex.full.flex-center #bottomInfo {
+  bottom: var(--tv-safe-padding);
+  left: var(--tv-safe-padding);
+  right: var(--tv-safe-padding);
+  width: auto;
+}
+
+html.tv-safe-inset #announcement {
+  bottom: var(--tv-safe-padding) !important;
+  left: var(--tv-safe-padding);
+  right: var(--tv-safe-padding);
+  width: auto !important;
+  max-width: var(--tv-safe-width);
+  box-sizing: border-box;
+}
+
+/* Full-viewport overlays / dimmers */
+html.tv-safe-inset .overlay {
+  width: var(--tv-safe-width);
+  height: var(--tv-safe-height);
+  top: var(--tv-safe-padding);
+  left: var(--tv-safe-padding);
+}
+
+html.tv-safe-inset .qr-expand-backdrop {
+  top: var(--tv-safe-padding);
+  right: var(--tv-safe-padding);
+  bottom: var(--tv-safe-padding);
+  left: var(--tv-safe-padding);
+}
+
+html.tv-safe-inset .flex.full.game {
+  min-height: var(--tv-safe-height);
+}
+
+html.tv-safe-inset #postGame {
+  min-height: var(--tv-safe-height);
+}
+
+/* Online + postgame pages use 100vw / full viewport height */
+html.tv-safe-inset .online-rooms-page,
+html.tv-safe-inset .online-lobby-page {
+  width: min(100%, var(--tv-safe-width));
+  min-height: calc(var(--tv-safe-height) - 5vw);
+}
+
+html.tv-safe-inset .online-postgame-page {
+  min-height: var(--tv-safe-height);
+}
+
+html.tv-safe-inset .online-loading-overlay {
+  padding: var(--tv-safe-padding);
+  box-sizing: border-box;
+}
+
+html.tv-safe-inset .online-loading-overlay .online-loading-card {
+  max-height: calc(var(--tv-safe-height) - 2 * var(--tv-safe-padding));
+}
+
+/* Tournament / prefs shells: fixed inset 0 */
+html.tv-safe-inset .tournbracket-page,
+html.tv-safe-inset .tournprefs-page,
+html.tv-safe-inset .tournlobby-page {
+  inset: var(--tv-safe-padding);
+}
+
+html.tv-safe-inset .tournbracket-page .tournbracket-header,
+html.tv-safe-inset .tournlobby-page .tournlobby-header {
+  top: calc(var(--tv-safe-padding) + 1rem);
+  left: var(--tv-safe-padding);
+  right: var(--tv-safe-padding);
+  width: auto;
+  margin-top: 0;
+}
+
+html.tv-safe-inset .tournbracket-page .tournbracket-middle {
+  min-height: var(--tv-safe-height);
+  width: min(100%, var(--tv-safe-width));
+}
+
+html.tv-safe-inset .tournprefs-page #brand {
+  top: calc(var(--tv-safe-padding) + 1rem);
+  left: var(--tv-safe-padding);
+  right: var(--tv-safe-padding);
+  width: auto;
+  margin-top: 0;
+}
+
+html.tv-safe-inset .config-overlay {
+  width: var(--tv-safe-width);
+  height: var(--tv-safe-height);
+  top: var(--tv-safe-padding);
+  left: var(--tv-safe-padding);
+}
+
+html.tv-safe-inset .corner-controls {
+  left: calc(var(--tv-safe-padding) + 0.5vw);
+}
+
 .backend-status {
   display: inline-block;
   margin-right: 0.5em;
