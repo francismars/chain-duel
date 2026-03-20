@@ -50,6 +50,8 @@ export const SocketBoundaryParsers = {
     parseWithValidator(payload, SocketValidators.resCreateOnlineRoom),
   listOnlineRooms: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.resListOnlineRooms),
+  listOnlineArchivedRooms: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resListOnlineArchivedRooms),
   joinOnlineRoom: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.resJoinOnlineRoom),
   onlineRoomUpdated: (payload: unknown) =>

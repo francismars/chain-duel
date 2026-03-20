@@ -7,6 +7,7 @@ import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { OnlineRoomSnapshot } from '@/types/socket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
+import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { startMempoolFeed, type BitcoinDetails } from '@/game/io/mempool';
 import type { GameState } from '@/game/engine/types';
 import './game.css';
@@ -18,6 +19,14 @@ export default function OnlineGame() {
   const { socket } = useSocket({ autoConnect: true });
   const roomId = searchParams.get('roomId') ?? '';
   const replayMode = searchParams.get('replay') === '1';
+  const replayMatchRound = (() => {
+    const r = searchParams.get('round');
+    if (!r) {
+      return undefined;
+    }
+    const n = Number.parseInt(r, 10);
+    return Number.isFinite(n) && n > 0 ? n : undefined;
+  })();
   const [snapshot, setSnapshot] = useState<OnlineRoomSnapshot | null>(null);
   const snapshotRef = useRef<OnlineRoomSnapshot | null>(null);
   const rendererRef = useRef<PixiGameRenderer | null>(null);
@@ -128,7 +137,10 @@ export default function OnlineGame() {
       socket.emit('spectateOnlineRoom', { roomId });
       socket.emit('getOnlineRoomState', { roomId });
       if (replayMode) {
-        socket.emit('getOnlineReplay', { roomId });
+        socket.emit(
+          'getOnlineReplay',
+          replayMatchRound != null ? { roomId, matchRound: replayMatchRound } : { roomId }
+        );
       }
     };
     const onSnapshot = (payload: unknown) => {
@@ -182,16 +194,24 @@ export default function OnlineGame() {
       if (!parsed || parsed.roomId !== roomId) {
         return;
       }
-      setReplayTickMs(Math.max(10, parsed.tickMs));
-      setReplayFrames(parsed.frames);
-      setReplayIndex(0);
-      setReplayPlaying(false);
-      setReplayLoaded(true);
-      setReplayError(parsed.frames.length === 0 ? 'Replay has no frames.' : '');
-      const first = parsed.frames[0] ?? null;
-      if (first) {
-        setSnapshot(first);
-      }
+      void (async () => {
+        try {
+          const frames = await expandOnlineReplayWire(parsed);
+          setReplayTickMs(Math.max(10, parsed.tickMs));
+          setReplayFrames(frames);
+          setReplayIndex(0);
+          setReplayPlaying(false);
+          setReplayLoaded(true);
+          setReplayError(frames.length === 0 ? 'Replay has no frames.' : '');
+          const first = frames[0] ?? null;
+          if (first) {
+            setSnapshot(first);
+          }
+        } catch {
+          setReplayLoaded(true);
+          setReplayError('Failed to decode replay.');
+        }
+      })();
     };
     const onInvalid = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlinePinInvalid(payload);
@@ -238,7 +258,7 @@ export default function OnlineGame() {
       socket.off('connect', refreshLocalIdentity);
       socket.off('connect', requestRoomSync);
     };
-  }, [replayLoaded, replayMode, roomId, socket]);
+  }, [replayLoaded, replayMatchRound, replayMode, roomId, socket]);
 
   useEffect(() => {
     if (!replayMode || !replayPlaying || replayFrames.length === 0) {

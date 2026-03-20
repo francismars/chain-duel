@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        '@replay/codec': path.resolve(__dirname, '../../marspayTS/src/state/onlineReplayCodec.ts'),
       },
     },
     server: {

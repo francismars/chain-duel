@@ -15,6 +15,8 @@ type NavFocus =
   | { type: 'room'; index: number }
   | { type: 'back' };
 
+type OnlineTab = 'live' | 'history';
+
 const BUYIN_MIN = 10;
 const BUYIN_MAX = 1_000_000;
 const BUYIN_STEP = 10;
@@ -24,6 +26,8 @@ export default function OnlineRooms() {
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
   const [rooms, setRooms] = useState<OnlineRoomListItem[]>([]);
+  const [archivedRooms, setArchivedRooms] = useState<OnlineRoomListItem[]>([]);
+  const [onlineTab, setOnlineTab] = useState<OnlineTab>('live');
   const [buyin, setBuyin] = useState('100');
   const [roomCode, setRoomCode] = useState('');
   const [error, setError] = useState('');
@@ -40,10 +44,35 @@ export default function OnlineRooms() {
     [rooms]
   );
 
+  const historyRooms = useMemo(() => {
+    const finishedLive = sortedRooms.filter((r) => r.phase === 'finished');
+    const byId = new Map<string, OnlineRoomListItem>();
+    for (const a of archivedRooms) {
+      byId.set(a.roomId, { ...a, archived: true });
+    }
+    for (const f of finishedLive) {
+      if (!byId.has(f.roomId)) {
+        byId.set(f.roomId, { ...f, archived: false });
+      }
+    }
+    return [...byId.values()].sort(
+      (a, b) => (b.finishedAt ?? b.createdAt) - (a.finishedAt ?? a.createdAt)
+    );
+  }, [archivedRooms, sortedRooms]);
+
+  const displayedRooms = useMemo(() => {
+    if (onlineTab === 'live') {
+      return sortedRooms.filter((r) => r.phase !== 'finished');
+    }
+    return historyRooms;
+  }, [historyRooms, onlineTab, sortedRooms]);
+
   const formatPhase = (phase: OnlineRoomListItem['phase']) => {
     switch (phase) {
       case 'playing':
         return 'LIVE';
+      case 'postgame':
+        return 'POSTGAME';
       case 'finished':
         return 'FINISHED';
       case 'cancelled':
@@ -85,6 +114,16 @@ export default function OnlineRooms() {
     navigate(`/online/lobby?roomId=${encodeURIComponent(room.roomId)}`);
   };
 
+  const openHistoryPostGame = (roomId: string) => {
+    navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
+  };
+
+  const openHistoryReplay = (roomId: string, matchRound?: number) => {
+    const roundQ =
+      matchRound != null ? `&round=${encodeURIComponent(String(matchRound))}` : '';
+    navigate(`/online/game?roomId=${encodeURIComponent(roomId)}&replay=1${roundQ}`);
+  };
+
   useEffect(() => {
     if (!socket) {
       return;
@@ -93,6 +132,12 @@ export default function OnlineRooms() {
       const parsed = SocketBoundaryParsers.listOnlineRooms(payload);
       if (parsed) {
         setRooms(parsed.rooms);
+      }
+    };
+    const onArchivedList = (payload: unknown) => {
+      const parsed = SocketBoundaryParsers.listOnlineArchivedRooms(payload);
+      if (parsed) {
+        setArchivedRooms(parsed.rooms);
       }
     };
     const onCreate = (payload: unknown) => {
@@ -142,19 +187,44 @@ export default function OnlineRooms() {
     };
 
     socket.on('resListOnlineRooms', onList);
+    socket.on('resListOnlineArchivedRooms', onArchivedList);
     socket.on('resCreateOnlineRoom', onCreate);
     socket.on('resJoinOnlineRoom', onJoin);
     socket.on('onlinePinInvalid', onInvalid);
     socket.on('onlineRoomUpdated', onRoomUpdated);
     socket.emit('listOnlineRooms');
+    socket.emit('listOnlineArchivedRooms');
     return () => {
       socket.off('resListOnlineRooms', onList);
+      socket.off('resListOnlineArchivedRooms', onArchivedList);
       socket.off('resCreateOnlineRoom', onCreate);
       socket.off('resJoinOnlineRoom', onJoin);
       socket.off('onlinePinInvalid', onInvalid);
       socket.off('onlineRoomUpdated', onRoomUpdated);
     };
   }, [navigate, socket]);
+
+  useEffect(() => {
+    if (!socket || onlineTab !== 'history') {
+      return;
+    }
+    socket.emit('listOnlineArchivedRooms');
+  }, [onlineTab, socket]);
+
+  useEffect(() => {
+    setNavFocus((prev) => {
+      if (prev.type !== 'room') {
+        return prev;
+      }
+      if (displayedRooms.length === 0) {
+        return { type: 'create' };
+      }
+      if (prev.index >= displayedRooms.length) {
+        return { type: 'room', index: displayedRooms.length - 1 };
+      }
+      return prev;
+    });
+  }, [displayedRooms.length, onlineTab]);
 
   useEffect(() => {
     if (!creatingRoom) {
@@ -207,8 +277,8 @@ export default function OnlineRooms() {
       if (isUp) {
         setNavFocus((prev) => {
           if (prev.type === 'back') {
-            if (sortedRooms.length > 0) {
-              return { type: 'room', index: sortedRooms.length - 1 };
+            if (displayedRooms.length > 0) {
+              return { type: 'room', index: displayedRooms.length - 1 };
             }
             return { type: 'create' };
           }
@@ -232,13 +302,13 @@ export default function OnlineRooms() {
             return { type: 'create' };
           }
           if (prev.type === 'create') {
-            if (sortedRooms.length > 0) {
+            if (displayedRooms.length > 0) {
               return { type: 'room', index: 0 };
             }
             return { type: 'back' };
           }
           if (prev.type === 'room') {
-            if (prev.index < sortedRooms.length - 1) {
+            if (prev.index < displayedRooms.length - 1) {
               return { type: 'room', index: prev.index + 1 };
             }
             return { type: 'back' };
@@ -254,9 +324,13 @@ export default function OnlineRooms() {
           return;
         }
         if (navFocus.type === 'room') {
-          const room = sortedRooms[navFocus.index];
+          const room = displayedRooms[navFocus.index];
           if (room) {
-            activateRoom(room);
+            if (onlineTab === 'history') {
+              openHistoryPostGame(room.roomId);
+            } else {
+              activateRoom(room);
+            }
           }
           return;
         }
@@ -276,7 +350,7 @@ export default function OnlineRooms() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [creatingRoom, navFocus, navigate, sortedRooms, socket, buyin]);
+  }, [creatingRoom, displayedRooms, navFocus, navigate, onlineTab, socket, buyin]);
 
   return (
     <div className="online-rooms-page">
@@ -336,16 +410,40 @@ export default function OnlineRooms() {
 
       <section className="online-room-list-panel">
         <div className="online-room-list-head">
-          <h3>LIVE ROOMS</h3>
+          <h3>{onlineTab === 'live' ? 'LIVE ROOMS' : 'MATCH HISTORY'}</h3>
+          <div className="online-tab-row" role="tablist" aria-label="Online room list">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={onlineTab === 'live'}
+              className={`online-tab ${onlineTab === 'live' ? 'online-tab-active' : ''}`}
+              onClick={() => setOnlineTab('live')}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={onlineTab === 'history'}
+              className={`online-tab ${onlineTab === 'history' ? 'online-tab-active' : ''}`}
+              onClick={() => setOnlineTab('history')}
+            >
+              Finished
+            </button>
+          </div>
         </div>
 
         <div className="online-room-list">
-          {sortedRooms.length === 0 ? (
-            <p className="online-empty">No open rooms yet. Create one to start the arena.</p>
+          {displayedRooms.length === 0 ? (
+            <p className="online-empty">
+              {onlineTab === 'live'
+                ? 'No open rooms yet. Create one to start the arena.'
+                : 'No finished matches on this server yet.'}
+            </p>
           ) : null}
-          {sortedRooms.map((room, index) => (
+          {displayedRooms.map((room, index) => (
             <div
-              key={room.roomId}
+              key={`${room.roomId}-${room.matchRound ?? 'live'}-${room.finishedAt ?? room.createdAt}`}
               className={`online-room-card ${
                 navFocus.type === 'room' && navFocus.index === index ? 'online-selected' : ''
               }`}
@@ -361,19 +459,40 @@ export default function OnlineRooms() {
                   <span className={`online-phase online-phase-${room.phase}`}>
                     {formatPhase(room.phase)}
                   </span>
+                  {room.archived ? <span className="online-archived">ARCHIVED</span> : null}
                 </p>
+                {onlineTab === 'history' && room.result ? (
+                  <p className="online-history-result">
+                    {room.result.winnerName} won · {room.result.p1Score}–{room.result.p2Score} ·{' '}
+                    {room.result.netPrize} sats net
+                  </p>
+                ) : null}
               </div>
               <div className="online-room-actions">
-                <Button
-                  className="online-action"
-                  onClick={() => activateRoom(room)}
-                >
-                  {room.phase === 'playing'
-                    ? 'WATCH LIVE'
-                    : room.phase === 'finished'
-                    ? 'ENTER ROOM'
-                    : 'ENTER ROOM'}
-                </Button>
+                {onlineTab === 'live' ? (
+                  <Button
+                    className="online-action"
+                    onClick={() => activateRoom(room)}
+                  >
+                    {room.phase === 'playing' ? 'WATCH LIVE' : 'ENTER ROOM'}
+                  </Button>
+                ) : (
+                  <div className="online-history-actions">
+                    <Button
+                      className="online-action"
+                      onClick={() => openHistoryPostGame(room.roomId)}
+                    >
+                      RESULTS
+                    </Button>
+                    <Button
+                      className="online-action"
+                      onClick={() => openHistoryReplay(room.roomId, room.matchRound)}
+                      disabled={!room.replay?.available}
+                    >
+                      REPLAY
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
