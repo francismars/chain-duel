@@ -406,9 +406,16 @@ font-size: 1cqw;
 
 
 .zapMessage img{
-  border-radius: 1000px;
+  display: block;
   width: 2vw;
   height: 2vw;
+  min-width: 2vw;
+  min-height: 2vw;
+  flex-shrink: 0;
+  align-self: center;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .zapText{
