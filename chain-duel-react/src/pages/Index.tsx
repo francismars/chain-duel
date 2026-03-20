@@ -239,7 +239,12 @@ export default function Index() {
         }
       }
 
-      if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
+      if (
+        event.key === 'ArrowDown' ||
+        event.code === 'ArrowDown' ||
+        event.key === 's' ||
+        event.key === 'S'
+      ) {
         event.preventDefault();
         if (menu === 1) {
           playSfx(SFX.MENU_SELECT);
@@ -256,12 +261,23 @@ export default function Index() {
         } else if (menu === 5) {
           playSfx(SFX.MENU_SELECT);
           setMenu(6);
+        } else if (menu === 6) {
+          playSfx(SFX.MENU_SELECT);
+          setMenu(1);
         }
       }
 
-      if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
+      if (
+        event.key === 'ArrowUp' ||
+        event.code === 'ArrowUp' ||
+        event.key === 'w' ||
+        event.key === 'W'
+      ) {
         event.preventDefault();
-        if (menu === 2) {
+        if (menu === 1) {
+          playSfx(SFX.MENU_SELECT);
+          setMenu(6);
+        } else if (menu === 2) {
           playSfx(SFX.MENU_SELECT);
           setMenu(1);
         } else if (menu === 3) {
