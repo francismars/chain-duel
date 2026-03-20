@@ -43,7 +43,7 @@ const DEFAULT_BITCOIN_DETAILS: BitcoinDetails = {
 export default function Game() {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
-  const { stop } = useAudio();
+  const { stop, isMuted, isMusicMuted } = useAudio();
   useGamepad(true);
 
   const stateRef = useRef<GameState | null>(null);
@@ -119,6 +119,10 @@ export default function Game() {
     // Ensure menu background music is stopped when entering gameplay.
     stop();
   }, [stop]);
+
+  useEffect(() => {
+    audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
+  }, [isMuted, isMusicMuted, loading]);
 
   useEffect(() => {
     const previousImage = document.body.style.backgroundImage;

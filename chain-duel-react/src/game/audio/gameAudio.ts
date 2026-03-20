@@ -19,6 +19,40 @@ export class GameAudioSystem {
   private capture32 = createAudio('/sound/P-FC_32.aac');
   private blockFound = createAudio('/sound/MAINNET_BLOCK.aac');
 
+  /** In-game SFX only (not the looping game music). */
+  private readonly sfx: HTMLAudioElement[] = [
+    this.beep1,
+    this.beep2,
+    this.p1Reset,
+    this.p2Reset,
+    this.capture2,
+    this.capture4,
+    this.capture8,
+    this.capture16,
+    this.capture32,
+    this.blockFound,
+  ];
+
+  /**
+   * Keeps in-game audio aligned with `AudioContext` / corner controls:
+   * full mute silences everything; music-only mute pauses game BGM like the menu player.
+   */
+  applyAppMuteState(isMuted: boolean, isMusicMuted: boolean): void {
+    if (isMuted) {
+      this.music.muted = true;
+      for (const a of this.sfx) a.muted = true;
+      return;
+    }
+    for (const a of this.sfx) a.muted = false;
+    if (isMusicMuted) {
+      this.music.muted = true;
+      this.music.pause();
+    } else {
+      this.music.muted = false;
+      void this.music.play().catch(() => undefined);
+    }
+  }
+
   startMusic(): void {
     void this.music.play().catch(() => undefined);
   }
