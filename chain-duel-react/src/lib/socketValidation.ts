@@ -19,6 +19,7 @@ import {
   ResJoinOnlineRoomSchema,
   ResListOnlineRoomsSchema,
   ResListOnlineArchivedRoomsSchema,
+  ResOnlineHistorySchema,
   ResGetTournamentInfosSchema,
   ResGetTournamentInfosNostrSchema,
   ResPostGameInfoRequestSchema,
@@ -105,6 +106,9 @@ export const SocketValidators = {
 
   resListOnlineArchivedRooms: (data: unknown) =>
     validateSocketEvent(ResListOnlineArchivedRoomsSchema, data, 'resListOnlineArchivedRooms'),
+
+  resOnlineHistory: (data: unknown) =>
+    validateSocketEvent(ResOnlineHistorySchema, data, 'resOnlineHistory'),
 
   resJoinOnlineRoom: (data: unknown) =>
     validateSocketEvent(ResJoinOnlineRoomSchema, data, 'resJoinOnlineRoom'),

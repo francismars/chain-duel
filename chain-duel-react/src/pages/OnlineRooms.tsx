@@ -26,7 +26,8 @@ export default function OnlineRooms() {
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
   const [rooms, setRooms] = useState<OnlineRoomListItem[]>([]);
-  const [archivedRooms, setArchivedRooms] = useState<OnlineRoomListItem[]>([]);
+  /** Server-merged: archive index + finished rooms still in RAM (`listOnlineHistory`). */
+  const [historyRooms, setHistoryRooms] = useState<OnlineRoomListItem[]>([]);
   const [onlineTab, setOnlineTab] = useState<OnlineTab>('live');
   const [buyin, setBuyin] = useState('100');
   const [roomCode, setRoomCode] = useState('');
@@ -44,28 +45,20 @@ export default function OnlineRooms() {
     [rooms]
   );
 
-  const historyRooms = useMemo(() => {
-    const finishedLive = sortedRooms.filter((r) => r.phase === 'finished');
-    const byId = new Map<string, OnlineRoomListItem>();
-    for (const a of archivedRooms) {
-      byId.set(a.roomId, { ...a, archived: true });
-    }
-    for (const f of finishedLive) {
-      if (!byId.has(f.roomId)) {
-        byId.set(f.roomId, { ...f, archived: false });
-      }
-    }
-    return [...byId.values()].sort(
-      (a, b) => (b.finishedAt ?? b.createdAt) - (a.finishedAt ?? a.createdAt)
-    );
-  }, [archivedRooms, sortedRooms]);
+  const sortedHistoryRooms = useMemo(
+    () =>
+      [...historyRooms].sort(
+        (a, b) => (b.finishedAt ?? b.createdAt) - (a.finishedAt ?? a.createdAt)
+      ),
+    [historyRooms]
+  );
 
   const displayedRooms = useMemo(() => {
     if (onlineTab === 'live') {
       return sortedRooms.filter((r) => r.phase !== 'finished');
     }
-    return historyRooms;
-  }, [historyRooms, onlineTab, sortedRooms]);
+    return sortedHistoryRooms;
+  }, [sortedHistoryRooms, onlineTab, sortedRooms]);
 
   const formatPhase = (phase: OnlineRoomListItem['phase']) => {
     switch (phase) {
@@ -134,10 +127,10 @@ export default function OnlineRooms() {
         setRooms(parsed.rooms);
       }
     };
-    const onArchivedList = (payload: unknown) => {
-      const parsed = SocketBoundaryParsers.listOnlineArchivedRooms(payload);
+    const onHistory = (payload: unknown) => {
+      const parsed = SocketBoundaryParsers.onlineHistory(payload);
       if (parsed) {
-        setArchivedRooms(parsed.rooms);
+        setHistoryRooms(parsed.rooms);
       }
     };
     const onCreate = (payload: unknown) => {
@@ -187,16 +180,16 @@ export default function OnlineRooms() {
     };
 
     socket.on('resListOnlineRooms', onList);
-    socket.on('resListOnlineArchivedRooms', onArchivedList);
+    socket.on('resOnlineHistory', onHistory);
     socket.on('resCreateOnlineRoom', onCreate);
     socket.on('resJoinOnlineRoom', onJoin);
     socket.on('onlinePinInvalid', onInvalid);
     socket.on('onlineRoomUpdated', onRoomUpdated);
     socket.emit('listOnlineRooms');
-    socket.emit('listOnlineArchivedRooms');
+    socket.emit('listOnlineHistory');
     return () => {
       socket.off('resListOnlineRooms', onList);
-      socket.off('resListOnlineArchivedRooms', onArchivedList);
+      socket.off('resOnlineHistory', onHistory);
       socket.off('resCreateOnlineRoom', onCreate);
       socket.off('resJoinOnlineRoom', onJoin);
       socket.off('onlinePinInvalid', onInvalid);
@@ -208,7 +201,7 @@ export default function OnlineRooms() {
     if (!socket || onlineTab !== 'history') {
       return;
     }
-    socket.emit('listOnlineArchivedRooms');
+    socket.emit('listOnlineHistory');
   }, [onlineTab, socket]);
 
   useEffect(() => {
