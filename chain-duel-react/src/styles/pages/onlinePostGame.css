@@ -218,7 +218,8 @@
   background: rgb(255 255 255 / 0.03);
 }
 
-.online-postgame-actions .button:hover:not(.disabled):not(:disabled) {
+.online-postgame-actions .button:hover:not(.disabled):not(:disabled),
+.online-postgame-actions .button:focus-visible:not(.disabled):not(:disabled) {
   transform: translateY(-1px);
   filter: brightness(1.08);
 }
