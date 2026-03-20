@@ -24,7 +24,7 @@
   width: min(75vw, 1260px);
   margin: 0 auto;
   border: 1px solid rgb(255 255 255 / 0.28);
-  border-radius: 8px;
+  border-radius: 0;
   background: rgb(255 255 255 / 0.04);
   padding: 0.38vw 0.65vw;
   font-family: 'BureauGrotesque';
@@ -39,6 +39,13 @@
 
 .online-lobby-my-role-spectator {
   color: #c9c9c9;
+}
+
+.online-lobby-my-role-ready {
+  border-color: #0a0a0a;
+  background: #fff;
+  color: #0a0a0a;
+  box-shadow: 0 4px 22px rgb(0 0 0 / 28%);
 }
 
 #online-lobby-subtitle {
@@ -59,7 +66,7 @@
 
 .online-lobby-panel {
   border: 1px solid #565656;
-  border-radius: 10px;
+  border-radius: 0;
   background: linear-gradient(180deg, rgb(255 255 255 / 4%) 0%, rgb(255 255 255 / 1%) 100%);
   box-shadow: 0 0 28px rgb(255 255 255 / 8%);
   padding: 1vw;
@@ -88,7 +95,7 @@
 
 .online-lobby-phase {
   padding: 0.2vw 0.6vw;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid #8a8a8a;
   font-size: 0.72cqw;
   letter-spacing: 0.04rem;
@@ -118,7 +125,7 @@
 .online-lobby-finished-card {
   margin-top: 0.75vw;
   border: 1px solid #888;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 0.75vw;
   background: rgb(0 0 0 / 40%);
 }
@@ -133,7 +140,7 @@
 .online-lobby-pin-card {
   margin-top: 0.75vw;
   border: 1px dashed #838383;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 0.75vw;
   background: rgb(0 0 0 / 35%);
 }
@@ -141,7 +148,7 @@
 .online-lobby-emojis-card {
   margin-top: 0.75vw;
   border: 1px dashed #787878;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 0.75vw;
   background: rgb(0 0 0 / 35%);
 }
@@ -213,7 +220,7 @@
   border: 1px solid #fff;
   padding: 0.55rem;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 0;
 }
 
 .online-lobby-kind1 {
@@ -227,7 +234,7 @@
 .online-lobby-kind1-pending {
   width: 100%;
   border: 1px dashed #6b6b6b;
-  border-radius: 8px;
+  border-radius: 0;
   min-height: 210px;
   display: flex;
   align-items: center;
@@ -262,15 +269,82 @@
 
 .online-lobby-seat {
   border: 1px solid #4f4f4f;
-  border-radius: 8px;
+  border-radius: 0;
   background: rgb(0 0 0 / 30%);
   padding: 0.7vw;
 }
 
 .online-lobby-seat-mine {
-  border-color: #f0f0f0;
-  box-shadow: 0 0 14px rgb(255 255 255 / 20%);
-  background: rgb(255 255 255 / 0.06);
+  border-color: rgb(255 255 255 / 0.78);
+  border-width: 2px;
+  box-shadow:
+    0 0 22px rgb(255 255 255 / 32%),
+    inset 0 0 0 1px rgb(255 255 255 / 14%);
+  background: linear-gradient(
+    155deg,
+    rgb(255 255 255 / 11%) 0%,
+    rgb(255 255 255 / 4%) 55%,
+    rgb(0 0 0 / 28%) 100%
+  );
+}
+
+.online-lobby-seat-mine .online-lobby-seat-avatar {
+  border-color: rgb(255 255 255 / 0.88);
+  box-shadow: 0 0 14px rgb(255 255 255 / 38%);
+}
+
+.online-lobby-seat-mine .online-lobby-you-tag {
+  border-color: rgb(255 255 255 / 0.95);
+  background: rgb(255 255 255 / 0.12);
+}
+
+@keyframes online-lobby-ready-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 18%), 0 6px 22px rgb(0 0 0 / 22%);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgb(0 0 0 / 28%), 0 10px 30px rgb(0 0 0 / 28%);
+  }
+}
+
+.online-lobby-seat-mine-ready {
+  border-color: #0a0a0a;
+  outline: none;
+  background: #fff;
+  color: #0a0a0a;
+  animation: online-lobby-ready-glow 2.5s ease-in-out infinite;
+}
+
+.online-lobby-seat-mine-ready .online-lobby-label {
+  color: #333;
+}
+
+.online-lobby-seat-mine-ready .online-lobby-seat-name {
+  color: #0a0a0a;
+}
+
+.online-lobby-seat-mine-ready .online-lobby-seat-avatar {
+  border-color: #222;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 18%);
+}
+
+.online-lobby-seat-mine-ready .online-lobby-you-tag {
+  border-color: #0a0a0a;
+  color: #0a0a0a;
+  background: rgb(0 0 0 / 0.06);
+  box-shadow: none;
+}
+
+.online-lobby-seat-mine-ready .online-lobby-seat-meta {
+  color: #3d3d3d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-lobby-seat-mine-ready {
+    animation: none;
+    box-shadow: 0 4px 20px rgb(0 0 0 / 24%);
+  }
 }
 
 .online-lobby-you-tag {
@@ -278,7 +352,7 @@
   align-items: center;
   margin-left: 0.28vw;
   padding: 0.05vw 0.35vw;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid rgb(255 255 255 / 0.82);
   color: #fff;
   font-size: 0.6cqw;

@@ -15,6 +15,8 @@ interface OnlinePostGameInfo {
   p2Name: string;
   p1Picture?: string;
   p2Picture?: string;
+  p1SessionID?: string;
+  p2SessionID?: string;
   p1Points: number;
   p2Points: number;
   winnerRole?: 'Player 1' | 'Player 2';
@@ -226,6 +228,25 @@ export default function OnlinePostGame() {
       ? Math.floor(p2Gross * ONLINE_FEE_MULTIPLIER)
       : p2Gross;
 
+  const effectiveSessionID =
+    currentSessionID || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sessionID') : '') || '';
+
+  const { isMyP1, isMyP2 } = useMemo(() => {
+    if (!info || !effectiveSessionID) {
+      return { isMyP1: false, isMyP2: false };
+    }
+    const winnerIsMe =
+      Boolean(info.winnerSessionID && info.winnerSessionID === effectiveSessionID);
+    return {
+      isMyP1: info.p1SessionID
+        ? info.p1SessionID === effectiveSessionID
+        : winnerIsMe && info.winnerRole === 'Player 1',
+      isMyP2: info.p2SessionID
+        ? info.p2SessionID === effectiveSessionID
+        : winnerIsMe && info.winnerRole === 'Player 2',
+    };
+  }, [info, effectiveSessionID]);
+
   return (
     <div className="online-postgame-page">
       <Sponsorship id="sponsorship-online-postgame" />
@@ -262,11 +283,17 @@ export default function OnlinePostGame() {
 
         <div className="online-postgame-scores">
           <div className="online-postgame-score-chip">
-            <span className="online-postgame-score-label">{info?.p1Name ?? 'Player 1'}</span>
+            <span className="online-postgame-score-label">
+              {info?.p1Name ?? 'Player 1'}
+              {isMyP1 ? <span className="online-postgame-you-tag">YOU</span> : null}
+            </span>
             <span className="online-postgame-score-value">{p1DisplayAmount.toLocaleString()} sats</span>
           </div>
           <div className="online-postgame-score-chip">
-            <span className="online-postgame-score-label">{info?.p2Name ?? 'Player 2'}</span>
+            <span className="online-postgame-score-label">
+              {info?.p2Name ?? 'Player 2'}
+              {isMyP2 ? <span className="online-postgame-you-tag">YOU</span> : null}
+            </span>
             <span className="online-postgame-score-value">{p2DisplayAmount.toLocaleString()} sats</span>
           </div>
         </div>
