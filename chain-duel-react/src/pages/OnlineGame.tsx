@@ -8,6 +8,7 @@ import { OnlineRoomSnapshot } from '@/types/socket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
+import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
 import { startMempoolFeed, type BitcoinDetails } from '@/game/io/mempool';
 import type { GameState } from '@/game/engine/types';
 import './game.css';
@@ -68,6 +69,15 @@ export default function OnlineGame() {
   const [replaySpeed, setReplaySpeed] = useState(1);
   const [replayLoaded, setReplayLoaded] = useState(false);
   const [replayError, setReplayError] = useState('');
+  /** Round-trip time to server (ms), for seated players / spectators */
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
+
+  const keysHeldRef = useRef({
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+  });
 
   useGamepad(true);
 
@@ -161,7 +171,8 @@ export default function OnlineGame() {
       if (parsed && parsed.roomId === roomId) {
         if (!replayMode) {
           setSnapshot((prev) => {
-            const merged = mergeOnlineSnapshot(prev, parsed.snapshot);
+            const snap = normalizeOnlineRoomSnapshot(parsed.snapshot);
+            const merged = mergeOnlineSnapshot(prev, snap);
             ingestOnlinePointChanges(merged, pointAnimationsRef.current, prevPointCountByKeyRef.current);
             return merged;
           });
@@ -301,30 +312,54 @@ export default function OnlineGame() {
   }, []);
 
   useEffect(() => {
+    if (!socket || replayMode) {
+      return;
+    }
+    const measure = () => {
+      const t0 = Date.now();
+      socket.emit('pingLatency', () => {
+        setLatencyMs(Date.now() - t0);
+      });
+    };
+    measure();
+    const id = window.setInterval(measure, 2500);
+    return () => window.clearInterval(id);
+  }, [socket, replayMode]);
+
+  useEffect(() => {
     if (!socket || !roomId) {
       return;
     }
-    const keyToInput = (key: string) => {
+
+    const axisForKey = (key: string): 'up' | 'down' | 'left' | 'right' | null => {
       switch (key) {
         case 'ArrowUp':
         case 'w':
         case 'W':
-          return { up: true };
+          return 'up';
         case 'ArrowDown':
         case 's':
         case 'S':
-          return { down: true };
+          return 'down';
         case 'ArrowLeft':
         case 'a':
         case 'A':
-          return { left: true };
+          return 'left';
         case 'ArrowRight':
         case 'd':
         case 'D':
-          return { right: true };
+          return 'right';
         default:
           return null;
       }
+    };
+
+    const emitHeldInput = () => {
+      const k = keysHeldRef.current;
+      socket.emit('roomInput', {
+        roomId,
+        input: { up: k.up, down: k.down, left: k.left, right: k.right },
+      });
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -335,22 +370,40 @@ export default function OnlineGame() {
       if (replayMode) {
         return;
       }
-      const input = keyToInput(event.key);
-      if (!input) {
+      const axis = axisForKey(event.key);
+      if (!axis) {
         return;
       }
-      socket.emit('roomInput', { roomId, input });
+      if (
+        event.key === 'ArrowUp' ||
+        event.key === 'ArrowDown' ||
+        event.key === 'ArrowLeft' ||
+        event.key === 'ArrowRight'
+      ) {
+        event.preventDefault();
+      }
+      keysHeldRef.current[axis] = true;
+      emitHeldInput();
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const input = keyToInput(event.key);
-      if (!input) {
+      if (replayMode) {
         return;
       }
-      socket.emit('roomInput', {
-        roomId,
-        input: { up: false, down: false, left: false, right: false },
-      });
+      const axis = axisForKey(event.key);
+      if (!axis) {
+        return;
+      }
+      if (
+        event.key === 'ArrowUp' ||
+        event.key === 'ArrowDown' ||
+        event.key === 'ArrowLeft' ||
+        event.key === 'ArrowRight'
+      ) {
+        event.preventDefault();
+      }
+      keysHeldRef.current[axis] = false;
+      emitHeldInput();
     };
 
     window.addEventListener('keydown', onKeyDown);
@@ -397,7 +450,24 @@ export default function OnlineGame() {
             </div>
             <div id="gameInfo" className="outline condensed">
               ONLINE {roomInfo?.roomCode ? `· ${roomInfo.roomCode}` : ''}{' '}
-              {replayMode ? '· REPLAY MODE' : `· YOU: ${myRoleLabel}`}
+              {replayMode ? (
+                '· REPLAY MODE'
+              ) : (
+                <>
+                  · YOU: {myRoleLabel}
+                  {latencyMs != null ? (
+                    <span
+                      className={`online-game-ping online-game-ping--${
+                        latencyMs < 90 ? 'good' : latencyMs < 180 ? 'ok' : 'high'
+                      }`}
+                      title="Round-trip time to server"
+                    >
+                      {' '}
+                      · {latencyMs}ms
+                    </span>
+                  ) : null}
+                </>
+              )}
             </div>
             <div id="player2info" className="condensed">
               {isP2 ? <span className="online-game-you-tag">YOU</span> : null}
