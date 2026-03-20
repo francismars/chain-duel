@@ -46,6 +46,25 @@
   letter-spacing: 0.03rem;
 }
 
+.online-game-ping {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.62cqw;
+  letter-spacing: 0.02em;
+  opacity: 0.92;
+}
+
+.online-game-ping--good {
+  color: #7dffb3;
+}
+
+.online-game-ping--ok {
+  color: #ffe08a;
+}
+
+.online-game-ping--high {
+  color: #ff9b9b;
+}
+
 .online-replay-controls {
   margin-top: 0.55vw;
   border: 1px solid #5a5a5a;

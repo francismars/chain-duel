@@ -291,6 +291,8 @@ export interface ClientToServerEvents {
   createOnlineNostrPayout: (payload: { roomId: string }) => void;
   onlineDoubleOrNothing: (payload: { roomId: string }) => void;
   getOnlineReplay: (payload: { roomId: string; matchRound?: number }) => void;
+  /** Round-trip probe; last arg is ack: `emit('pingLatency', () => { ... })` */
+  pingLatency: (ack: () => void) => void;
 }
 
 // Server -> Client Events
