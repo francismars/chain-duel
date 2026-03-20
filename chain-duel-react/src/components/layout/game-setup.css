@@ -142,16 +142,17 @@
   animation: glowing 0ms infinite;
 }
 
-#mainmenubutton:hover,
-#startgame:hover {
-  background-color: white;
-  color: white;
-}
+/* Hover / focus match global .button pulse (see Button.css + --button-glow-* in index.css) */
 
 #mainmenubutton.disabled:hover,
-#startgame.disabled:hover {
+#mainmenubutton.disabled:focus-visible,
+#startgame.disabled:hover,
+#startgame.disabled:focus-visible {
   background-color: transparent;
   color: white;
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: none;
+  animation: glowing 0ms infinite !important;
 }
 
 #startgame {

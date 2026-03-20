@@ -145,21 +145,26 @@ h3 {
   justify-content: center;
 }
 
+/* Shared with .button hover / focus / active in Button.css (pulse peak & trough) */
+:root {
+  --button-glow-bg-low: rgb(255 255 255 / 15%);
+  --button-glow-shadow-low: 0 0 15px rgb(255 255 255);
+  --button-glow-bg-peak: rgb(255 255 255 / 30%);
+  --button-glow-shadow-peak: 0 0 35px rgb(255 255 255);
+  --button-glow-border: #fff;
+}
+
 @keyframes glowing {
-  0% {
-    background-color: rgb(255 255 255 / 15%);
-    box-shadow: 0 0 15px rgb(255 255 255);
-    border-color: #fff;
+  0%,
+  100% {
+    background-color: var(--button-glow-bg-low);
+    box-shadow: var(--button-glow-shadow-low);
+    border-color: var(--button-glow-border);
   }
   50% {
-    background-color: rgb(255 255 255 / 30%);
-    box-shadow: 0 0 35px rgb(255 255 255);
-    border-color: #fff;
-  }
-  100% {
-    background-color: rgb(255 255 255 / 15%);
-    box-shadow: 0 0 15px rgb(255 255 255);
-    border-color: #fff;
+    background-color: var(--button-glow-bg-peak);
+    box-shadow: var(--button-glow-shadow-peak);
+    border-color: var(--button-glow-border);
   }
 }
 
