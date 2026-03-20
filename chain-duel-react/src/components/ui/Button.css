@@ -19,20 +19,61 @@
   font-family: 'Inter', sans-serif;
 }
 
-.button:hover {
-  border-color: rgba(255, 255, 255, 0.58);
+/* Hover / keyboard = same paint as @keyframes glowing 50% (pulse peak).
+   Pause animation so the static style matches what the pulse hits at its brightest.
+   Online postgame buttons keep gradients — they use .online-postgame-btn* + local hover. */
+.button:hover:not([class*='online-postgame-btn']):not(:disabled):not(.disabled),
+.button:focus-visible:not([class*='online-postgame-btn']):not(:disabled):not(.disabled) {
+  animation: none !important;
+  background-color: var(--button-glow-bg-peak, rgb(255 255 255 / 30%));
+  box-shadow: var(--button-glow-shadow-peak, 0 0 35px rgb(255 255 255));
+  border-color: var(--button-glow-border, #fff);
 }
 
-.button:active {
-  background-color: rgba(255, 255, 255, 0.2);
+/* Pressed ≈ glowing 0% / 100% trough */
+.button:active:not([class*='online-postgame-btn']):not(:disabled):not(.disabled) {
+  background-color: var(--button-glow-bg-low, rgb(255 255 255 / 15%));
+  box-shadow: var(--button-glow-shadow-low, 0 0 15px rgb(255 255 255));
+  border-color: var(--button-glow-border, #fff);
 }
 
-.button:focus,
-.button:focus-visible {
+/* Hover + active both match on click — need a compound selector so trough wins over peak */
+.button:hover:active:not([class*='online-postgame-btn']):not(:disabled):not(.disabled) {
+  background-color: var(--button-glow-bg-low, rgb(255 255 255 / 15%));
+  box-shadow: var(--button-glow-shadow-low, 0 0 15px rgb(255 255 255));
+  border-color: var(--button-glow-border, #fff);
+}
+
+.button:focus {
   outline: none;
 }
 
 .button.disabled {
   opacity: 0.2;
   cursor: not-allowed;
+}
+
+.button.disabled:hover:not([class*='online-postgame-btn']),
+.button.disabled:focus-visible:not([class*='online-postgame-btn']) {
+  background-color: transparent;
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.34);
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:hover:not([class*='online-postgame-btn']):not(:disabled):not(.disabled),
+  .button:focus-visible:not([class*='online-postgame-btn']):not(:disabled):not(.disabled) {
+    animation: none !important;
+    background-color: transparent;
+    box-shadow: none;
+    border-color: rgba(255, 255, 255, 0.72);
+  }
+
+  .button:active:not([class*='online-postgame-btn']):not(:disabled):not(.disabled),
+  .button:hover:active:not([class*='online-postgame-btn']):not(:disabled):not(.disabled) {
+    background-color: transparent;
+    box-shadow: none;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
 }

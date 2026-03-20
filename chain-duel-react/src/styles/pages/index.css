@@ -177,7 +177,7 @@
 
 .index-mode-modal {
   width: min(480px, 100%);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: none;
   background: rgba(0, 0, 0, 0.92);
   box-shadow: 0 0 40px rgba(255, 255, 255, 0.12);
   padding: clamp(1.1rem, 3vw, 1.6rem);

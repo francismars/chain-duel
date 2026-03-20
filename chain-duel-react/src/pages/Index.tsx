@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
@@ -526,90 +527,96 @@ export default function Index() {
         alt="Announcement"
       />
 
-      {modeModal ? (
-        <div
-          className="index-mode-modal-backdrop"
-          role="presentation"
-          onClick={closeModeModal}
-        >
-          <div
-            className="index-mode-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="index-mode-modal-title"
-            aria-describedby="index-mode-modal-hint"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 id="index-mode-modal-title" className="index-mode-modal-title">
-              {modeModal === 'p2p' ? 'P2P DUEL' : 'TOURNAMENT'}
-            </h2>
-            <p className="index-mode-modal-copy">
-              Pick how you want to pay.
-            </p>
-            <div className="index-mode-modal-actions">
-              <Button
-                ref={modalLightningRef}
-                type="button"
-                glowing={modalNavSlot === 0}
-                onFocus={() => {
-                  modalNavIndexRef.current = 0;
-                  setModalNavSlot(0);
-                  setModalPitch('lightning');
-                }}
-                onMouseEnter={() => setModalPitch('lightning')}
-                onClick={() => {
-                  playSfx(SFX.MENU_CONFIRM);
-                  confirmMode(false);
-                }}
-              >
-                LIGHTNING
-              </Button>
-              <Button
-                ref={modalNostrRef}
-                type="button"
-                glowing={modalNavSlot === 1}
-                onFocus={() => {
-                  modalNavIndexRef.current = 1;
-                  setModalNavSlot(1);
-                  setModalPitch('nostr');
-                }}
-                onMouseEnter={() => setModalPitch('nostr')}
-                onClick={() => {
-                  playSfx(SFX.MENU_CONFIRM);
-                  confirmMode(true);
-                }}
-              >
-                NOSTR
-              </Button>
-            </div>
-            {modalHints ? (
-              <p
-                id="index-mode-modal-hint"
-                className="index-mode-modal-hint"
-                aria-live="polite"
-              >
-                {modalHints[modalPitch]}
-              </p>
-            ) : null}
-            <Button
-              ref={modalCancelRef}
-              type="button"
-              className="index-mode-modal-cancel"
-              glowing={modalNavSlot === 2}
-              onFocus={() => {
-                modalNavIndexRef.current = 2;
-                setModalNavSlot(2);
-              }}
-              onClick={() => {
-                playSfx(SFX.MENU_SELECT);
-                closeModeModal();
-              }}
+      {modeModal && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className="index-mode-modal-backdrop"
+              role="presentation"
+              onClick={closeModeModal}
             >
-              CANCEL
-            </Button>
-          </div>
-        </div>
-      ) : null}
+              <div
+                className="index-mode-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="index-mode-modal-title"
+                aria-describedby="index-mode-modal-hint"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h2
+                  id="index-mode-modal-title"
+                  className="index-mode-modal-title"
+                >
+                  {modeModal === 'p2p' ? 'P2P DUEL' : 'TOURNAMENT'}
+                </h2>
+                <p className="index-mode-modal-copy">
+                  Pick how you want to pay.
+                </p>
+                <div className="index-mode-modal-actions">
+                  <Button
+                    ref={modalLightningRef}
+                    type="button"
+                    glowing={modalNavSlot === 0}
+                    onFocus={() => {
+                      modalNavIndexRef.current = 0;
+                      setModalNavSlot(0);
+                      setModalPitch('lightning');
+                    }}
+                    onMouseEnter={() => setModalPitch('lightning')}
+                    onClick={() => {
+                      playSfx(SFX.MENU_CONFIRM);
+                      confirmMode(false);
+                    }}
+                  >
+                    LIGHTNING
+                  </Button>
+                  <Button
+                    ref={modalNostrRef}
+                    type="button"
+                    glowing={modalNavSlot === 1}
+                    onFocus={() => {
+                      modalNavIndexRef.current = 1;
+                      setModalNavSlot(1);
+                      setModalPitch('nostr');
+                    }}
+                    onMouseEnter={() => setModalPitch('nostr')}
+                    onClick={() => {
+                      playSfx(SFX.MENU_CONFIRM);
+                      confirmMode(true);
+                    }}
+                  >
+                    NOSTR
+                  </Button>
+                </div>
+                {modalHints ? (
+                  <p
+                    id="index-mode-modal-hint"
+                    className="index-mode-modal-hint"
+                    aria-live="polite"
+                  >
+                    {modalHints[modalPitch]}
+                  </p>
+                ) : null}
+                <Button
+                  ref={modalCancelRef}
+                  type="button"
+                  className="index-mode-modal-cancel"
+                  glowing={modalNavSlot === 2}
+                  onFocus={() => {
+                    modalNavIndexRef.current = 2;
+                    setModalNavSlot(2);
+                  }}
+                  onClick={() => {
+                    playSfx(SFX.MENU_SELECT);
+                    closeModeModal();
+                  }}
+                >
+                  CANCEL
+                </Button>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
     </div>
