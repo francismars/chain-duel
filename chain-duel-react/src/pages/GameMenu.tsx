@@ -15,6 +15,7 @@ import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
 import { createLogger } from '@/shared/utils/logger';
 import {
   HIGHLIGHT_FLASH_TIMEOUT_MS,
+  SETUP_MENU_KEY_GRACE_MS,
 } from '@/shared/constants/timeouts';
 import {
   DEVELOPER_FEE_RATIO,
@@ -71,8 +72,13 @@ export default function GameMenu() {
   const lastKnownP2SatsRef = useRef(0);
   const highlightTimeoutP1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimeoutP2Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setupMenuKeyGraceUntilRef = useRef(0);
 
   useGamepad(true);
+
+  useEffect(() => {
+    setupMenuKeyGraceUntilRef.current = performance.now() + SETUP_MENU_KEY_GRACE_MS;
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
@@ -272,6 +278,12 @@ export default function GameMenu() {
       const canStartNow = prevWinner ? loserSats >= winnerSats : player1Sats !== 0 && player2Sats !== 0;
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
+        if (
+          buttonSelected === 'mainMenuButton' &&
+          performance.now() < setupMenuKeyGraceUntilRef.current
+        ) {
+          return;
+        }
         playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
           if (canStartNow) {
