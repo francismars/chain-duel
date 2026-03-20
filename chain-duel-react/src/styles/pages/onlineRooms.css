@@ -38,7 +38,7 @@
     rgb(255 255 255 / 4%) 0%,
     rgb(255 255 255 / 1%) 100%
   );
-  border-radius: 10px;
+  border-radius: 0;
   padding: 1.1vw 1vw;
   box-shadow: 0 0 28px rgb(255 255 255 / 8%);
 }
@@ -71,7 +71,7 @@
   height: 3vw;
   background: rgb(0 0 0 / 55%);
   border: 1px solid #727272;
-  border-radius: 6px;
+  border-radius: 0;
   color: #fff;
   font-size: 0.82cqw;
   letter-spacing: 0.04rem;
@@ -97,7 +97,7 @@
   width: min(70vw, 1200px);
   margin: 0 auto;
   border: 1px solid #515151;
-  border-radius: 10px;
+  border-radius: 0;
   background: rgb(0 0 0 / 42%);
   box-shadow: 0 0 24px rgb(255 255 255 / 7%);
   padding: 0.9vw 1vw;
@@ -133,7 +133,7 @@
   align-items: center;
   border: 1px solid #4f4f4f;
   background: linear-gradient(90deg, rgb(255 255 255 / 2%) 0%, rgb(255 255 255 / 0%) 100%);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 0.8vw 0.9vw;
   margin-bottom: 0.55vw;
 }
@@ -168,14 +168,14 @@
 
 .online-room-result-chip {
   border: 1px solid #7a7a7a;
-  border-radius: 999px;
+  border-radius: 0;
   padding: 0.1vw 0.45vw;
   color: #fff;
 }
 
 .online-phase {
   padding: 0.1vw 0.45vw;
-  border-radius: 99px;
+  border-radius: 0;
   border: 1px solid #7e7e7e;
   color: #fff;
   line-height: 1.2;
@@ -246,7 +246,7 @@
 .online-loading-card {
   width: min(560px, 88vw);
   border: 1px solid #fff;
-  border-radius: 10px;
+  border-radius: 0;
   padding: 1.3rem 1.2rem;
   background: rgb(0 0 0 / 82%);
   text-align: center;

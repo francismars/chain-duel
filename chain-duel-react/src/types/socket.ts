@@ -353,6 +353,8 @@ export interface ServerToClientEvents {
     p2Name: string;
     p1Picture?: string;
     p2Picture?: string;
+    p1SessionID?: string;
+    p2SessionID?: string;
     p1Points: number;
     p2Points: number;
     winnerRole?: PlayerRole.Player1 | PlayerRole.Player2;

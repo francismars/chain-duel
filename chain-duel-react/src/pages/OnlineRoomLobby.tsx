@@ -114,6 +114,8 @@ export default function OnlineRoomLobby() {
   const rematchAmount = room?.postGame?.rematchRequiredAmount ?? 0;
   const rematchWaitingForSessionID = room?.postGame?.rematchWaitingForSessionID;
   const amILoserToPay = Boolean(rematchWaitingForSessionID && rematchWaitingForSessionID === currentSessionID);
+  /** Seat grid: emphasize your row in lobby; stronger when you are ready to start. */
+  const seatHighlightLobby = !isFinished && !rematchPending;
   const snapshotP1Name =
     (room?.snapshot?.state as { p1Name?: string } | undefined)?.p1Name ?? 'Player 1';
   const snapshotP2Name =
@@ -350,7 +352,15 @@ export default function OnlineRoomLobby() {
       <section className="online-lobby-panel online-lobby-status">
         <h3>ROOM STATUS</h3>
         <div className="online-lobby-status-grid">
-          <div className={`online-lobby-seat ${isMyP1Seat ? 'online-lobby-seat-mine' : ''}`}>
+          <div
+            className={[
+              'online-lobby-seat',
+              isMyP1Seat ? 'online-lobby-seat-mine' : '',
+              seatHighlightLobby && isMyP1Seat && p1?.ready === true ? 'online-lobby-seat-mine-ready' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
             <p className="online-lobby-label">
               PLAYER 1 {isMyP1Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
             </p>
@@ -368,7 +378,15 @@ export default function OnlineRoomLobby() {
             </div>
             <p className="online-lobby-seat-meta">{p1MetaDisplay}</p>
           </div>
-          <div className={`online-lobby-seat ${isMyP2Seat ? 'online-lobby-seat-mine' : ''}`}>
+          <div
+            className={[
+              'online-lobby-seat',
+              isMyP2Seat ? 'online-lobby-seat-mine' : '',
+              seatHighlightLobby && isMyP2Seat && p2?.ready === true ? 'online-lobby-seat-mine-ready' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
             <p className="online-lobby-label">
               PLAYER 2 {isMyP2Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
             </p>
@@ -394,7 +412,15 @@ export default function OnlineRoomLobby() {
         </div>
       </section>
 
-      <div className={`online-lobby-my-role online-lobby-my-role-${mySeat ? 'player' : 'spectator'}`}>
+      <div
+        className={[
+          'online-lobby-my-role',
+          `online-lobby-my-role-${mySeat ? 'player' : 'spectator'}`,
+          seatHighlightLobby && mySeat && myReady ? 'online-lobby-my-role-ready' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         YOU ARE: {myRoleLabel.toUpperCase()}
       </div>
 
