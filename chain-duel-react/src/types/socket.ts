@@ -125,6 +125,13 @@ export interface OnlineInputState {
   right?: boolean;
 }
 
+/** Replay: frame-aligned block cosmetics (server `room.replay.blockEvents`). */
+export interface OnlineReplayBlockEvent {
+  frameIndex: number;
+  blockHeight: number;
+  medianFeeSatPerVb: number;
+}
+
 export interface OnlineRoomSnapshot {
   tick: number;
   phase: 'lobby' | 'playing' | 'postgame' | 'finished' | 'cancelled';
@@ -368,6 +375,12 @@ export interface ServerToClientEvents {
   }) => void;
   onlineRoomUpdated: (data: OnlineRoomState) => void;
   onlineRoomSnapshot: (data: { roomId: string; snapshot: OnlineRoomSnapshot }) => void;
+  /** New mempool tip block: server already spawned food; use for SFX / UI flash only. */
+  onlineBitcoinBlock: (data: {
+    roomId: string;
+    blockHeight: number;
+    medianFeeSatPerVb: number;
+  }) => void;
   onlineSeatAssigned: (data: {
     roomId: string;
     playerRole: PlayerRole.Player1 | PlayerRole.Player2;
@@ -422,5 +435,6 @@ export interface ServerToClientEvents {
     gzipBase64: string;
     frameCount: number;
     matchRound?: number;
+    blockEvents?: OnlineReplayBlockEvent[];
   }) => void;
 }
