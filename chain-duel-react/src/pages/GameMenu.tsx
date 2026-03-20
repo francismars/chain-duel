@@ -37,7 +37,8 @@ export default function GameMenu() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const useNostrFromQuery = searchParams.get('nostr') === 'true';
-  const [isNostrMode, setIsNostrMode] = useState(useNostrFromQuery);
+  /** URL is the source of truth so /gamemenu (no query) never stays stuck in Nostr UI after leaving ?nostr=true. */
+  const isNostrMode = useNostrFromQuery;
   const { socket } = useSocket();
   const { playSfx } = useAudio();
   const [loading, setLoading] = useState(true);
@@ -99,22 +100,21 @@ export default function GameMenu() {
         const donMultiple = winnersCount > 0 ? `*${2 ** winnersCount}` : '';
         // Legacy keeps P2P label even when the panel switches to Nostr mode.
         setGameMenuTitle(`${isNostrModeMeta ? 'P2P' : mode}${donMultiple}`);
-        if (isNostrModeMeta) {
-          setIsNostrMode(true);
-        }
       }
-      if (parsed.nostrMeta) {
-        setIsNostrMode(true);
+      if (parsed.nostrMeta && useNostrFromQuery) {
         setNostrCode(parsed.nostrMeta.emojis);
         setNostrNote1(parsed.nostrMeta.note1);
         setNostrMinP1(parsed.nostrMeta.min);
         setNostrMinP2(parsed.nostrMeta.min);
       }
-      const isNostrPayload = Boolean(parsed.nostrMeta) || Boolean(parsed.modeMeta?.mode && /nostr/i.test(parsed.modeMeta.mode));
+      const isNostrPayload =
+        useNostrFromQuery &&
+        (Boolean(parsed.nostrMeta) ||
+          Boolean(parsed.modeMeta?.mode && /nostr/i.test(parsed.modeMeta.mode)));
       setStatusMessage(isNostrPayload ? '' : links.length > 0 ? '' : 'Waiting for payment links from backend...');
       setLoading(false);
     },
-    [navigate]
+    [navigate, useNostrFromQuery]
   );
 
   const handleMenuLoadingTimeout = useCallback(() => {
@@ -132,11 +132,24 @@ export default function GameMenu() {
   });
 
   useEffect(() => {
+    if (useNostrFromQuery) {
+      return;
+    }
+    setNostrCode('');
+    setNostrNote1('');
+    setNostrMinP1(1);
+    setNostrMinP2(1);
+  }, [useNostrFromQuery]);
+
+  useEffect(() => {
     if (!socket) return;
     const handler = (body: SerializedGameInfo) => {
       logger.debug('updatePayments payload', body);
-      if (typeof body.mode === 'string' && /nostr/i.test(body.mode)) {
-        setIsNostrMode(true);
+      if (
+        useNostrFromQuery &&
+        typeof body.mode === 'string' &&
+        /nostr/i.test(body.mode)
+      ) {
         // Legacy flow can emit updatePayments without re-sending nostr menu metadata.
         // Ensure we fetch note1/emojis payload when switching into Nostr mode.
         if (!nostrNote1) {
@@ -211,7 +224,7 @@ export default function GameMenu() {
       if (highlightTimeoutP1Ref.current) clearTimeout(highlightTimeoutP1Ref.current);
       if (highlightTimeoutP2Ref.current) clearTimeout(highlightTimeoutP2Ref.current);
     };
-  }, [socket, prevWinner, logger, nostrNote1]);
+  }, [socket, prevWinner, logger, nostrNote1, useNostrFromQuery]);
 
   useSessionPersistence(socket);
 
