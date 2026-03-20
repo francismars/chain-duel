@@ -1,6 +1,6 @@
 // Practice menu page – practice mode setup
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { GameSetupLayout } from '@/components/layout/GameSetupLayout';
@@ -20,6 +20,11 @@ import {
   SATS_DISPLAY_MAX,
 } from '@/shared/constants/payment';
 import { QR_CODE_PANEL_SIZE } from '@/shared/constants/ui';
+import {
+  CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
+  clearMenuNavigationState,
+  type MenuNavigationState,
+} from '@/shared/constants/menuNavigation';
 import './practicemenu.css';
 
 type ButtonSelected =
@@ -30,6 +35,14 @@ type ButtonSelected =
 
 export default function PracticeMenu() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const suppressNextMenuConfirmRef = useRef(
+    Boolean(
+      (location.state as MenuNavigationState | null)?.[
+        CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM
+      ]
+    )
+  );
   const { socket, connected } = useSocket();
   const { playSfx } = useAudio();
   const [loading, setLoading] = useState(true);
@@ -122,6 +135,15 @@ export default function PracticeMenu() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
+        if (e.repeat) {
+          return;
+        }
+        if (suppressNextMenuConfirmRef.current) {
+          suppressNextMenuConfirmRef.current = false;
+          e.preventDefault();
+          clearMenuNavigationState(navigate, location);
+          return;
+        }
         e.preventDefault();
         playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
@@ -161,7 +183,7 @@ export default function PracticeMenu() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [buttonSelected, player1Sats, socket, navigate, playSfx]);
+  }, [buttonSelected, player1Sats, socket, navigate, location, playSfx]);
 
   useQrExpandState({
     dualControls: false,

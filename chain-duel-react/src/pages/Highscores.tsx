@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useGamepad } from '@/hooks/useGamepad';
 import './highscores.css';
+import {
+  CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
+  clearMenuNavigationState,
+  type MenuNavigationState,
+} from '@/shared/constants/menuNavigation';
 
 type ButtonSelected = 'mainMenuButton' | 'nextButton' | 'prevButton';
 
@@ -22,6 +27,14 @@ interface Highscore {
 
 export default function Highscores() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const suppressNextMenuConfirmRef = useRef(
+    Boolean(
+      (location.state as MenuNavigationState | null)?.[
+        CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM
+      ]
+    )
+  );
   const [pageHS, setPageHS] = useState<number>(0);
   const [highscores, setHighscores] = useState<Highscore[]>([]);
   const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('mainMenuButton');
@@ -74,6 +87,15 @@ export default function Highscores() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Enter' || event.key === ' ') {
+        if (event.repeat) {
+          return;
+        }
+        if (suppressNextMenuConfirmRef.current) {
+          suppressNextMenuConfirmRef.current = false;
+          event.preventDefault();
+          clearMenuNavigationState(navigate, location);
+          return;
+        }
         event.preventDefault();
         if (buttonSelected === 'mainMenuButton') {
           navigate('/');
@@ -117,7 +139,7 @@ export default function Highscores() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [buttonSelected, navigate]);
+  }, [buttonSelected, navigate, location]);
 
   const handlePrev = () => {
     setPageHS((prev) => (prev + 3 - 1) % 3);
