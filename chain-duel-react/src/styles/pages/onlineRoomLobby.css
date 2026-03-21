@@ -73,6 +73,173 @@
   gap: 1vw;
 }
 
+.online-lobby-sublabel {
+  font-size: 0.72cqw;
+  letter-spacing: 0.14em;
+  color: #a5a5a5;
+  margin: 0.2rem 0 0.15rem;
+}
+
+.online-lobby-claim-nostr-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgb(255 255 255 / 0.12);
+}
+
+.online-lobby-or-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.online-lobby-or-line {
+  flex: 1;
+  height: 1px;
+  background: rgb(255 255 255 / 0.18);
+}
+
+.online-lobby-or-text {
+  font-size: 0.68cqw;
+  letter-spacing: 0.2em;
+  color: #9a9a9a;
+  text-transform: uppercase;
+}
+
+.online-lobby-signin-nostr-btn {
+  width: 100%;
+  font-size: 0.78cqw;
+  letter-spacing: 0.1em;
+  border: 1px solid rgb(255 255 255 / 0.45);
+  background: rgb(255 255 255 / 0.06);
+  color: #fff;
+}
+
+.online-lobby-signin-nostr-btn:hover {
+  border-color: #fff;
+  background: rgb(255 255 255 / 0.12);
+}
+
+.online-lobby-nostr-linked-pill {
+  margin: 0.65rem 0 0;
+  font-size: 0.72cqw;
+  line-height: 1.45;
+  color: #c4e8c8;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgb(120 200 140 / 0.45);
+  background: rgb(40 80 50 / 0.35);
+}
+
+.online-lobby-text-btn {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #fff;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: 0.06em;
+}
+
+.online-lobby-text-btn:hover {
+  color: #e8ffe8;
+}
+
+.online-lobby-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: min(4vw, 24px);
+  background: rgb(0 0 0 / 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.online-lobby-modal {
+  width: min(100%, 440px);
+  max-height: min(90vh, 640px);
+  overflow: auto;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  background: linear-gradient(180deg, #141414 0%, #0a0a0a 100%);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.55);
+  padding: 1.1rem 1.15rem 1.25rem;
+}
+
+.online-lobby-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.online-lobby-modal-title {
+  margin: 0;
+  font-size: 1.05cqw;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.online-lobby-modal-close {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  line-height: 1;
+  font-size: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  background: transparent;
+  color: #ddd;
+  cursor: pointer;
+}
+
+.online-lobby-modal-close:hover {
+  border-color: #fff;
+  color: #fff;
+}
+
+.online-lobby-modal-lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.78cqw;
+  line-height: 1.45;
+  color: #c6c6c6;
+}
+
+.online-lobby-modal-status {
+  margin: 0 0 0.75rem;
+  font-size: 0.74cqw;
+  color: #b0b0b0;
+}
+
+.online-lobby-modal-status-ok {
+  color: #9fdfac;
+  font-weight: 600;
+}
+
+.online-lobby-modal-status-busy {
+  color: #e8d28a;
+}
+
+.online-lobby-modal-status-idle {
+  color: #9a9a9a;
+}
+
+.online-lobby-modal-actions {
+  margin-top: 0.75rem;
+}
+
+.online-lobby-modal-error {
+  margin: 0.65rem 0 0;
+  font-size: 0.74cqw;
+  color: #ff9b9b;
+}
+
 .online-lobby-join-mode {
   display: flex;
   gap: 0.5rem;
@@ -99,6 +266,41 @@
 
 .online-lobby-nostr-actions {
   margin-top: 0.55rem;
+}
+
+.online-lobby-nostr-signer-row {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.35rem;
+  flex-wrap: wrap;
+}
+
+.online-lobby-bunker-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.45rem 0 0.25rem;
+  width: 100%;
+}
+
+.online-lobby-bunker-label {
+  font-size: 0.68cqw;
+  letter-spacing: 0.08em;
+  color: #b8b8b8;
+}
+
+.online-lobby-bunker-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, monospace;
+  font-size: 0.72cqw;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 0;
+  background: rgb(0 0 0 / 35%);
+  color: #eee;
+  resize: vertical;
+  min-height: 3.2rem;
 }
 
 .online-lobby-panel {
