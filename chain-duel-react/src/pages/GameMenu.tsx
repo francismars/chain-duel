@@ -574,8 +574,6 @@ export default function GameMenu() {
                   <br />
                   LNURL compatible wallet required
                   <br />
-                  Hold Left Alt or LB (P1) / Right Alt or RB (P2) for scanner-friendly QR
-                  <br />
                   Allows for multiple deposits
                 </div>
               </div>
@@ -616,8 +614,6 @@ export default function GameMenu() {
                   Set player name on the payment note
                   <br />
                   LNURL compatible wallet required
-                  <br />
-                  Hold Left Alt or LB (P1) / Right Alt or RB (P2) for scanner-friendly QR
                   <br />
                   Allows for multiple deposits
                 </div>
