@@ -31,6 +31,15 @@
   font-size: 1.05cqw;
   letter-spacing: 0.06em;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.45vw;
+}
+
+.online-lobby-my-role-text {
+  display: inline-block;
 }
 
 .online-lobby-my-role-player {
@@ -84,6 +93,40 @@
   font-size: 0.72cqw;
   letter-spacing: 0.05rem;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35vw;
+}
+
+.online-lobby-ping-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05vw 0.32vw;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.52cqw;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  vertical-align: middle;
+  opacity: 0.95;
+}
+
+.online-lobby-ping {
+  font-variant-numeric: tabular-nums;
+}
+
+.online-lobby-ping--good {
+  color: #7dffb3;
+}
+
+.online-lobby-ping--ok {
+  color: #ffe08a;
+}
+
+.online-lobby-ping--high {
+  color: #ff9b9b;
 }
 
 .online-lobby-code {
@@ -200,7 +243,7 @@
 .online-lobby-kind1-views {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.35vw;
 }
 
@@ -434,6 +477,11 @@
   .online-lobby-seat-meta,
   .online-lobby-kind1 {
     font-size: 12px;
+  }
+
+  .online-lobby-ping-badge {
+    font-size: 11px;
+    padding: 2px 6px;
   }
 
   .online-lobby-code {

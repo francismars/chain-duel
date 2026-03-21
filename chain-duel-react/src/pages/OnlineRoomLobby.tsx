@@ -7,6 +7,7 @@ import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { OnlineRoomState } from '@/types/socket';
+import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import '@/styles/pages/onlineRoomLobby.css';
 
 export default function OnlineRoomLobby() {
@@ -21,7 +22,8 @@ export default function OnlineRoomLobby() {
     () => sessionStorage.getItem('sessionID') ?? ''
   );
   const [currentSocketID, setCurrentSocketID] = useState('');
-  const [kind1View, setKind1View] = useState<'njump' | 'nostr'>('nostr');
+  const [kind1View, setKind1View] = useState<'njump' | 'nostr' | 'pubpay'>('nostr');
+  const [yourPingMs, setYourPingMs] = useState<number | null>(null);
 
   useEffect(() => {
     if (!socket || !roomId) {
@@ -86,6 +88,23 @@ export default function OnlineRoomLobby() {
     };
   }, [roomId, socket]);
 
+  useEffect(() => {
+    if (!socket || !roomId) {
+      return;
+    }
+    const measure = () => {
+      const t0 = Date.now();
+      socket.emit('pingLatency', () => {
+        const ms = Date.now() - t0;
+        setYourPingMs(ms);
+        socket.emit('reportOnlineRoomPing', { roomId, latencyMs: ms });
+      });
+    };
+    measure();
+    const id = window.setInterval(measure, 2500);
+    return () => window.clearInterval(id);
+  }, [roomId, socket]);
+
   const paidSeats = useMemo(() => {
     if (!room) {
       return 0;
@@ -125,6 +144,7 @@ export default function OnlineRoomLobby() {
   const kind1 = rematchPending ? rematchNote : room?.nostrMeta?.note1 ?? '';
   const njumpUrl = kind1 ? `https://njump.me/${kind1}` : '';
   const nostrUri = kind1 ? `nostr:${kind1}` : '';
+  const pubpayUrl = kind1 ? `https://pubpay.me/note/${kind1}` : '';
   const roomEmojis = room?.nostrMeta?.emojis ?? '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
@@ -318,6 +338,12 @@ export default function OnlineRoomLobby() {
             >
               NJUMP LINK
             </Button>
+            <Button
+              className={`online-lobby-action ${kind1View === 'pubpay' ? 'online-lobby-kind1-view-active' : ''}`}
+              onClick={() => setKind1View('pubpay')}
+            >
+              PUBPAY.ME
+            </Button>
           </div>
           {kind1 ? (
             <>
@@ -331,6 +357,18 @@ export default function OnlineRoomLobby() {
                     rel="noreferrer"
                   >
                     {kind1}
+                  </a>
+                </>
+              ) : kind1View === 'pubpay' ? (
+                <>
+                  <QRCodeSVG value={pubpayUrl} size={210} includeMargin className="online-lobby-qr" />
+                  <a
+                    className="online-lobby-kind1"
+                    href={pubpayUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {pubpayUrl}
                   </a>
                 </>
               ) : (
@@ -371,6 +409,16 @@ export default function OnlineRoomLobby() {
           >
             <p className="online-lobby-label">
               PLAYER 1 {isMyP1Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
+              {p1?.status === 'paid' && typeof p1.pingMs === 'number' ? (
+                <span
+                  className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(
+                    p1.pingMs
+                  )}`}
+                  title="Player 1 round-trip to server"
+                >
+                  {p1.pingMs}ms
+                </span>
+              ) : null}
             </p>
             <div className="online-lobby-seat-identity">
               {isMatchEnded || p1?.status === 'paid' ? (
@@ -397,6 +445,16 @@ export default function OnlineRoomLobby() {
           >
             <p className="online-lobby-label">
               PLAYER 2 {isMyP2Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
+              {p2?.status === 'paid' && typeof p2.pingMs === 'number' ? (
+                <span
+                  className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(
+                    p2.pingMs
+                  )}`}
+                  title="Player 2 round-trip to server"
+                >
+                  {p2.pingMs}ms
+                </span>
+              ) : null}
             </p>
             <div className="online-lobby-seat-identity">
               {isMatchEnded || p2?.status === 'paid' ? (
@@ -429,7 +487,19 @@ export default function OnlineRoomLobby() {
           .filter(Boolean)
           .join(' ')}
       >
-        YOU ARE: {myRoleLabel.toUpperCase()}
+        <span className="online-lobby-my-role-text">
+          YOU ARE: {myRoleLabel.toUpperCase()}
+        </span>
+        {yourPingMs != null ? (
+          <span
+            className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(
+              yourPingMs
+            )}`}
+            title="Your round-trip to server"
+          >
+            {yourPingMs}ms
+          </span>
+        ) : null}
       </div>
 
       <div className="online-lobby-bottom-actions">
