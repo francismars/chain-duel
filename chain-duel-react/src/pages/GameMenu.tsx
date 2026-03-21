@@ -12,6 +12,7 @@ import { useMenuSocketInfo } from '@/features/setup-menu/hooks/useMenuSocketInfo
 import type { MenuParseResult } from '@/lib/menuAdapters';
 import { useSessionPersistence } from '@/shared/hooks/useSessionPersistence';
 import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
+import { useLnurlCompatibleQrHold } from '@/features/setup-menu/hooks/useLnurlCompatibleQrHold';
 import { createLogger } from '@/shared/utils/logger';
 import {
   HIGHLIGHT_FLASH_TIMEOUT_MS,
@@ -87,7 +88,8 @@ export default function GameMenu() {
   const highlightTimeoutP2Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   const setupMenuKeyGraceUntilRef = useRef(0);
 
-  useGamepad(true);
+  useGamepad(true, { lnurlCompatScan: !isNostrMode });
+  const { compatibleP1, compatibleP2 } = useLnurlCompatibleQrHold(!isNostrMode);
 
   useEffect(() => {
     setupMenuKeyGraceUntilRef.current = performance.now() + SETUP_MENU_KEY_GRACE_MS;
@@ -522,7 +524,12 @@ export default function GameMenu() {
         ) : (
           <>
             <div id="player1card" className={player1CardExpanded ? 'expanded' : ''}>
-              <div id="qrcodeContainer1" className="qrcodeContainer">
+              <div
+                id="qrcodeContainer1"
+                className={['qrcodeContainer', compatibleP1 ? 'qrcodeContainer--compatible' : '']
+                  .filter(Boolean)
+                  .join(' ')}
+              >
                 <a
                   id="qrcode1Link"
                   href={p1PayLink?.lnurlp ? `lightning:${p1PayLink.lnurlp}` : undefined}
@@ -532,11 +539,11 @@ export default function GameMenu() {
                   {p1PayLink?.lnurlp ? (
                     <QRCodeSVG
                       id="qrcode1"
-                      className="qrcode"
+                      className={`qrcode ${compatibleP1 ? 'qrcode--compatible' : ''}`}
                       value={p1PayLink.lnurlp}
                       size={QR_CODE_CARD_SIZE}
-                      level="M"
-                      includeMargin={false}
+                      level={compatibleP1 ? 'H' : 'M'}
+                      includeMargin={compatibleP1}
                     />
                   ) : (
                     <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
@@ -566,6 +573,8 @@ export default function GameMenu() {
                   Set player name on the payment note
                   <br />
                   LNURL compatible wallet required
+                  <br />
+                  Hold Left Alt or LB (P1) / Right Alt or RB (P2) for scanner-friendly QR
                   <br />
                   Allows for multiple deposits
                 </div>
@@ -608,10 +617,17 @@ export default function GameMenu() {
                   <br />
                   LNURL compatible wallet required
                   <br />
+                  Hold Left Alt or LB (P1) / Right Alt or RB (P2) for scanner-friendly QR
+                  <br />
                   Allows for multiple deposits
                 </div>
               </div>
-              <div id="qrcodeContainer2" className="qrcodeContainer">
+              <div
+                id="qrcodeContainer2"
+                className={['qrcodeContainer', compatibleP2 ? 'qrcodeContainer--compatible' : '']
+                  .filter(Boolean)
+                  .join(' ')}
+              >
                 <a
                   id="qrcode2Link"
                   href={p2PayLink?.lnurlp ? `lightning:${p2PayLink.lnurlp}` : undefined}
@@ -621,11 +637,11 @@ export default function GameMenu() {
                   {p2PayLink?.lnurlp ? (
                     <QRCodeSVG
                       id="qrcode2"
-                      className="qrcode"
+                      className={`qrcode ${compatibleP2 ? 'qrcode--compatible' : ''}`}
                       value={p2PayLink.lnurlp}
                       size={180}
-                      level="M"
-                      includeMargin={false}
+                      level={compatibleP2 ? 'H' : 'M'}
+                      includeMargin={compatibleP2}
                     />
                   ) : (
                     <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
