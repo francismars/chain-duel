@@ -24,6 +24,16 @@ export default function OnlineRoomLobby() {
   const [currentSocketID, setCurrentSocketID] = useState('');
   const [kind1View, setKind1View] = useState<'njump' | 'nostr' | 'pubpay'>('nostr');
   const [yourPingMs, setYourPingMs] = useState<number | null>(null);
+  /** Seat claim path: arcade-style PIN vs home NIP-07 link (zap without PIN comment). */
+  const [joinMode, setJoinMode] = useState<'pin' | 'nostr'>('pin');
+  const [nostrLinkExpiresAt, setNostrLinkExpiresAt] = useState<number | null>(null);
+  const [nostrLinkBusy, setNostrLinkBusy] = useState(false);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 4000);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (!socket || !roomId) {
@@ -54,7 +64,51 @@ export default function OnlineRoomLobby() {
     const onInvalid = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlinePinInvalid(payload);
       if (parsed) {
+        setNostrLinkBusy(false);
         setError(parsed.reason);
+      }
+    };
+    const onNostrOk = (payload: unknown) => {
+      const parsed = SocketBoundaryParsers.resOnlineNostrLinkOk(payload);
+      if (!parsed) {
+        return;
+      }
+      setNostrLinkExpiresAt(parsed.expiresAt);
+      setNostrLinkBusy(false);
+      setError('');
+    };
+    const onNostrChallenge = async (payload: unknown) => {
+      const parsed = SocketBoundaryParsers.resOnlineNostrLinkChallenge(payload);
+      if (!parsed) {
+        return;
+      }
+      if (parsed.roomId !== roomId) {
+        setNostrLinkBusy(false);
+        return;
+      }
+      setNostrLinkBusy(true);
+      setError('');
+      try {
+        if (!window.nostr) {
+          setError('no_nostr_extension');
+          setNostrLinkBusy(false);
+          return;
+        }
+        await window.nostr.getPublicKey();
+        const unsigned = {
+          kind: 1,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [] as string[][],
+          content: parsed.challenge,
+        };
+        const signed = await window.nostr.signEvent(unsigned);
+        socket.emit('confirmOnlineNostrLink', {
+          roomId,
+          event: signed as unknown as Record<string, unknown>,
+        });
+      } catch {
+        setError('nostr_sign_failed');
+        setNostrLinkBusy(false);
       }
     };
     const onSession = (payload: { sessionID: string }) => {
@@ -73,6 +127,8 @@ export default function OnlineRoomLobby() {
     socket.on('resJoinOnlineRoom', onJoin);
     socket.on('resCreateOnlineRoom', onCreate);
     socket.on('onlinePinInvalid', onInvalid);
+    socket.on('resOnlineNostrLinkOk', onNostrOk);
+    socket.on('resOnlineNostrLinkChallenge', onNostrChallenge);
     socket.on('session', onSession);
     socket.on('connect', refreshLocalIdentity);
     refreshLocalIdentity();
@@ -83,6 +139,8 @@ export default function OnlineRoomLobby() {
       socket.off('resJoinOnlineRoom', onJoin);
       socket.off('resCreateOnlineRoom', onCreate);
       socket.off('onlinePinInvalid', onInvalid);
+      socket.off('resOnlineNostrLinkOk', onNostrOk);
+      socket.off('resOnlineNostrLinkChallenge', onNostrChallenge);
       socket.off('session', onSession);
       socket.off('connect', refreshLocalIdentity);
     };
@@ -111,6 +169,20 @@ export default function OnlineRoomLobby() {
     }
     return Object.values(room.seats).filter((seat) => seat.status === 'paid').length;
   }, [room]);
+
+  const nostrLinkActive = useMemo(
+    () => nostrLinkExpiresAt != null && nostrLinkExpiresAt > nowTick,
+    [nostrLinkExpiresAt, nowTick]
+  );
+
+  const startNostrLinkFlow = () => {
+    if (!socket || !roomId) {
+      return;
+    }
+    setError('');
+    setNostrLinkBusy(true);
+    socket.emit('requestOnlineNostrLinkChallenge', { roomId });
+  };
 
   const seatEntries = room ? Object.values(room.seats) : [];
   const effectiveSessionID = currentSessionID || sessionStorage.getItem('sessionID') || '';
@@ -311,9 +383,52 @@ export default function OnlineRoomLobby() {
                 </>
               ) : (
                 <>
-                  <p className="online-lobby-label">YOUR PIN</p>
-                  <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
-                  <p className="online-lobby-copy">Paste this PIN in the zap comment.</p>
+                  <p className="online-lobby-label">CLAIM SEAT</p>
+                  <div className="online-lobby-join-mode">
+                    <Button
+                      type="button"
+                      className={`online-lobby-join-mode-btn ${joinMode === 'pin' ? 'online-lobby-join-mode-btn--active' : ''}`}
+                      onClick={() => setJoinMode('pin')}
+                    >
+                      PIN
+                    </Button>
+                    <Button
+                      type="button"
+                      className={`online-lobby-join-mode-btn ${joinMode === 'nostr' ? 'online-lobby-join-mode-btn--active' : ''}`}
+                      onClick={() => setJoinMode('nostr')}
+                    >
+                      NOSTR
+                    </Button>
+                  </div>
+                  {joinMode === 'pin' ? (
+                    <>
+                      <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
+                      <p className="online-lobby-copy">
+                        Paste this PIN in the zap comment (good for shared screens / arcades).
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="online-lobby-pin">
+                        {nostrLinkActive ? 'LINKED' : nostrLinkBusy ? 'SIGNING…' : 'NOT LINKED'}
+                      </p>
+                      <p className="online-lobby-copy">
+                        {nostrLinkActive
+                          ? `Zap the Kind1 from the same Nostr key — no PIN in the comment. Link expires ${new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}.`
+                          : 'Use a NIP-07 extension: sign a one-time challenge, then zap from that pubkey (home / private play).'}
+                      </p>
+                      <div className="online-lobby-nostr-actions">
+                        <Button
+                          type="button"
+                          className="online-lobby-action"
+                          disabled={nostrLinkBusy || !socket}
+                          onClick={startNostrLinkFlow}
+                        >
+                          {nostrLinkActive ? 'Re-link pubkey' : 'Sign & link pubkey'}
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </div>

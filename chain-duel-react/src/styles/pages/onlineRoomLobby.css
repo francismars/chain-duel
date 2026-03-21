@@ -73,6 +73,34 @@
   gap: 1vw;
 }
 
+.online-lobby-join-mode {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.4rem 0 0.65rem;
+  flex-wrap: wrap;
+}
+
+.online-lobby-join-mode-btn {
+  flex: 1;
+  min-width: 120px;
+  font-size: 0.75cqw;
+  letter-spacing: 0.12em;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  background: transparent;
+  color: #cfcfcf;
+}
+
+.online-lobby-join-mode-btn--active {
+  border-color: #fff;
+  background: #fff;
+  color: #0a0a0a;
+  box-shadow: 0 0 18px rgb(255 255 255 / 18%);
+}
+
+.online-lobby-nostr-actions {
+  margin-top: 0.55rem;
+}
+
 .online-lobby-panel {
   border: 1px solid #565656;
   border-radius: 0;
