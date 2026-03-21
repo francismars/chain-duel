@@ -1,6 +1,8 @@
 /**
  * Compact replay codec (decode + encode; no Node/zlib).
  * **Keep in sync** with `marspayTS/src/state/onlineReplayCodec.ts` — server packs replays, client expands them.
+ * `encodeFramesToInnerJson` runs `ensureReplayVictoryEndFrame` so the final frame includes `gameEnded` + winner text;
+ * copy that helper into marspayTS if the server builds replays without it.
  */
 import type {
   Coinbase,
@@ -11,6 +13,7 @@ import type {
   PointChange,
 } from '@/game/engine/types';
 import type { OnlineRoomSnapshot } from '@/types/socket';
+import { ensureReplayVictoryEndFrame } from '@/replay/ensureReplayVictoryEndFrame';
 
 export const COMPACT_REPLAY_FORMAT = 'compact-v2' as const;
 
@@ -295,11 +298,12 @@ function headerFromFirstFrame(first: OnlineRoomSnapshot): CompactReplayHeader {
 export function encodeFramesToInnerJson(
   frames: OnlineRoomSnapshot[]
 ): { h: CompactReplayHeader; f: EncodedFrame[] } {
-  if (frames.length === 0) {
+  const normalized = ensureReplayVictoryEndFrame(frames);
+  if (normalized.length === 0) {
     throw new Error('encodeFramesToInnerJson: empty frames');
   }
-  const header = headerFromFirstFrame(frames[0]!);
-  const f = frames.map(encodeFrame);
+  const header = headerFromFirstFrame(normalized[0]!);
+  const f = normalized.map(encodeFrame);
   return { h: header, f };
 }
 

@@ -3,6 +3,7 @@ import {
   type CompactReplayHeader,
   type EncodedFrame,
 } from '@/replay/codec/onlineReplayCodec';
+import { ensureReplayVictoryEndFrame } from '@/replay/ensureReplayVictoryEndFrame';
 import type { OnlineRoomSnapshot } from '@/types/socket';
 
 async function gunzipBase64ToUtf8(b64: string): Promise<string> {
@@ -27,5 +28,5 @@ export async function expandOnlineReplayWire(wire: {
   }
   const json = await gunzipBase64ToUtf8(wire.gzipBase64);
   const data = JSON.parse(json) as { h: CompactReplayHeader; f: EncodedFrame[] };
-  return decodeInnerJsonToFrames(data);
+  return ensureReplayVictoryEndFrame(decodeInnerJsonToFrames(data));
 }

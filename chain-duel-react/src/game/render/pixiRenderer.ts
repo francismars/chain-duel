@@ -128,14 +128,14 @@ export class PixiGameRenderer {
     }
   }
 
-  render(state: GameState): void {
+  render(state: GameState, opts?: { replayView?: boolean }): void {
     if (!this.app) {
-      this.renderFallback(state);
+      this.renderFallback(state, opts);
       return;
     }
     const renderer = this.app.renderer;
     if (!renderer) {
-      this.renderFallback(state);
+      this.renderFallback(state, opts);
       return;
     }
     // Use CSS pixel size of the host (legacy-like responsive behavior),
@@ -254,7 +254,7 @@ export class PixiGameRenderer {
       this.applyCountdownState(state.countdownTicks);
     } else if (state.gameEnded) {
       this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
-      this.endContinueText.text = 'PRESS ANY BUTTON TO CONTINUE';
+      this.endContinueText.text = opts?.replayView ? '' : 'PRESS ANY BUTTON TO CONTINUE';
     }
   }
 
@@ -375,7 +375,7 @@ export class PixiGameRenderer {
     this.resize();
   }
 
-  private renderFallback(state: GameState): void {
+  private renderFallback(state: GameState, opts?: { replayView?: boolean }): void {
     if (!this.host || !this.fallbackCanvas || !this.fallbackCtx) return;
     const ctx = this.fallbackCtx;
     const width = this.fallbackCanvas.width;
@@ -463,8 +463,10 @@ export class PixiGameRenderer {
     } else if (state.gameEnded) {
       ctx.font = `${Math.floor(width / 17)}px BureauGrotesque`;
       ctx.fillText(`${state.winnerName.toUpperCase()} WINS!`, width / 2, height / 2 - 10);
-      ctx.font = `${Math.floor(width / 39)}px BureauGrotesque`;
-      ctx.fillText('PRESS ANY BUTTON TO CONTINUE', width / 2, height / 2 + 35);
+      if (!opts?.replayView) {
+        ctx.font = `${Math.floor(width / 39)}px BureauGrotesque`;
+        ctx.fillText('PRESS ANY BUTTON TO CONTINUE', width / 2, height / 2 + 35);
+      }
     }
   }
 }
