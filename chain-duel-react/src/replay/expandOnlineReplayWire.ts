@@ -2,7 +2,7 @@ import {
   decodeInnerJsonToFrames,
   type CompactReplayHeader,
   type EncodedFrame,
-} from '@replay/codec';
+} from '@/replay/codec/onlineReplayCodec';
 import type { OnlineRoomSnapshot } from '@/types/socket';
 
 async function gunzipBase64ToUtf8(b64: string): Promise<string> {
