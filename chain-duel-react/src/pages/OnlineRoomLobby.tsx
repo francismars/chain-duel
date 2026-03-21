@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
@@ -8,6 +8,10 @@ import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { OnlineRoomState } from '@/types/socket';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
+import {
+  type OnlineSeatLinkSigner,
+  signOnlineSeatLinkChallenge,
+} from '@/lib/nostr/signOnlineSeatLink';
 import '@/styles/pages/onlineRoomLobby.css';
 
 export default function OnlineRoomLobby() {
@@ -24,16 +28,55 @@ export default function OnlineRoomLobby() {
   const [currentSocketID, setCurrentSocketID] = useState('');
   const [kind1View, setKind1View] = useState<'njump' | 'nostr' | 'pubpay'>('nostr');
   const [yourPingMs, setYourPingMs] = useState<number | null>(null);
-  /** Seat claim path: arcade-style PIN vs home NIP-07 link (zap without PIN comment). */
-  const [joinMode, setJoinMode] = useState<'pin' | 'nostr'>('pin');
   const [nostrLinkExpiresAt, setNostrLinkExpiresAt] = useState<number | null>(null);
+  const [nostrModalOpen, setNostrModalOpen] = useState(false);
   const [nostrLinkBusy, setNostrLinkBusy] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
+  /** NIP-07 extension vs NIP-46 bunker / Nostr Connect URI */
+  const initialNostrSigner: OnlineSeatLinkSigner =
+    sessionStorage.getItem('onlineSeatNostrSigner') === 'bunker' ? 'bunker' : 'nip07';
+  const initialBunkerUri = sessionStorage.getItem('onlineSeatBunkerUri') ?? '';
+  const [nostrSignerMode, setNostrSignerMode] = useState<'nip07' | 'bunker'>(initialNostrSigner);
+  const [bunkerUri, setBunkerUri] = useState(initialBunkerUri);
+  const nostrLinkSignerRef = useRef<{ signer: OnlineSeatLinkSigner; bunkerUri: string }>({
+    signer: initialNostrSigner,
+    bunkerUri: initialBunkerUri,
+  });
+
+  useEffect(() => {
+    nostrLinkSignerRef.current = { signer: nostrSignerMode, bunkerUri };
+  }, [nostrSignerMode, bunkerUri]);
+
+  useEffect(() => {
+    sessionStorage.setItem('onlineSeatNostrSigner', nostrSignerMode);
+  }, [nostrSignerMode]);
+
+  useEffect(() => {
+    sessionStorage.setItem('onlineSeatBunkerUri', bunkerUri);
+  }, [bunkerUri]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowTick(Date.now()), 4000);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!nostrModalOpen) {
+      return;
+    }
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setNostrModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [nostrModalOpen]);
 
   useEffect(() => {
     if (!socket || !roomId) {
@@ -76,6 +119,7 @@ export default function OnlineRoomLobby() {
       setNostrLinkExpiresAt(parsed.expiresAt);
       setNostrLinkBusy(false);
       setError('');
+      setNostrModalOpen(false);
     };
     const onNostrChallenge = async (payload: unknown) => {
       const parsed = SocketBoundaryParsers.resOnlineNostrLinkChallenge(payload);
@@ -89,25 +133,19 @@ export default function OnlineRoomLobby() {
       setNostrLinkBusy(true);
       setError('');
       try {
-        if (!window.nostr) {
-          setError('no_nostr_extension');
-          setNostrLinkBusy(false);
-          return;
-        }
-        await window.nostr.getPublicKey();
-        const unsigned = {
-          kind: 1,
-          created_at: Math.floor(Date.now() / 1000),
-          tags: [] as string[][],
-          content: parsed.challenge,
-        };
-        const signed = await window.nostr.signEvent(unsigned);
+        const cfg = nostrLinkSignerRef.current;
+        const signed = await signOnlineSeatLinkChallenge({
+          challenge: parsed.challenge,
+          signer: cfg.signer,
+          bunkerUri: cfg.bunkerUri,
+        });
         socket.emit('confirmOnlineNostrLink', {
           roomId,
           event: signed as unknown as Record<string, unknown>,
         });
-      } catch {
-        setError('nostr_sign_failed');
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'nostr_sign_failed';
+        setError(msg);
         setNostrLinkBusy(false);
       }
     };
@@ -182,6 +220,15 @@ export default function OnlineRoomLobby() {
     setError('');
     setNostrLinkBusy(true);
     socket.emit('requestOnlineNostrLinkChallenge', { roomId });
+  };
+
+  const openNostrModal = () => {
+    setError('');
+    setNostrModalOpen(true);
+  };
+
+  const closeNostrModal = () => {
+    setNostrModalOpen(false);
   };
 
   const seatEntries = room ? Object.values(room.seats) : [];
@@ -384,51 +431,30 @@ export default function OnlineRoomLobby() {
               ) : (
                 <>
                   <p className="online-lobby-label">CLAIM SEAT</p>
-                  <div className="online-lobby-join-mode">
-                    <Button
-                      type="button"
-                      className={`online-lobby-join-mode-btn ${joinMode === 'pin' ? 'online-lobby-join-mode-btn--active' : ''}`}
-                      onClick={() => setJoinMode('pin')}
-                    >
-                      PIN
-                    </Button>
-                    <Button
-                      type="button"
-                      className={`online-lobby-join-mode-btn ${joinMode === 'nostr' ? 'online-lobby-join-mode-btn--active' : ''}`}
-                      onClick={() => setJoinMode('nostr')}
-                    >
-                      NOSTR
+                  <p className="online-lobby-sublabel">PIN</p>
+                  <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
+                  <p className="online-lobby-copy">
+                    Paste this PIN in the zap comment (shared screens / arcades).
+                  </p>
+                  <div className="online-lobby-claim-nostr-row">
+                    <div className="online-lobby-or-divider" aria-hidden="true">
+                      <span className="online-lobby-or-line" />
+                      <span className="online-lobby-or-text">or</span>
+                      <span className="online-lobby-or-line" />
+                    </div>
+                    <Button type="button" className="online-lobby-signin-nostr-btn" onClick={openNostrModal}>
+                      Sign in with Nostr
                     </Button>
                   </div>
-                  {joinMode === 'pin' ? (
-                    <>
-                      <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
-                      <p className="online-lobby-copy">
-                        Paste this PIN in the zap comment (good for shared screens / arcades).
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="online-lobby-pin">
-                        {nostrLinkActive ? 'LINKED' : nostrLinkBusy ? 'SIGNING…' : 'NOT LINKED'}
-                      </p>
-                      <p className="online-lobby-copy">
-                        {nostrLinkActive
-                          ? `Zap the Kind1 from the same Nostr key — no PIN in the comment. Link expires ${new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}.`
-                          : 'Use a NIP-07 extension: sign a one-time challenge, then zap from that pubkey (home / private play).'}
-                      </p>
-                      <div className="online-lobby-nostr-actions">
-                        <Button
-                          type="button"
-                          className="online-lobby-action"
-                          disabled={nostrLinkBusy || !socket}
-                          onClick={startNostrLinkFlow}
-                        >
-                          {nostrLinkActive ? 'Re-link pubkey' : 'Sign & link pubkey'}
-                        </Button>
-                      </div>
-                    </>
-                  )}
+                  {nostrLinkActive ? (
+                    <p className="online-lobby-nostr-linked-pill">
+                      Nostr linked — zap without PIN · expires{' '}
+                      {new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}{' '}
+                      <button type="button" className="online-lobby-text-btn" onClick={openNostrModal}>
+                        Update
+                      </button>
+                    </p>
+                  ) : null}
                 </>
               )}
             </div>
@@ -508,7 +534,100 @@ export default function OnlineRoomLobby() {
         </section>
       </div>
 
-      {error ? <p className="online-lobby-error">Error: {error}</p> : null}
+      {nostrModalOpen ? (
+        <div
+          className="online-lobby-modal-backdrop"
+          role="presentation"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              closeNostrModal();
+            }
+          }}
+        >
+          <div
+            className="online-lobby-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="online-lobby-nostr-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="online-lobby-modal-header">
+              <h2 id="online-lobby-nostr-modal-title" className="online-lobby-modal-title">
+                Sign in with Nostr
+              </h2>
+              <button
+                type="button"
+                className="online-lobby-modal-close"
+                onClick={closeNostrModal}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <p className="online-lobby-modal-lead">
+              Link this session to a pubkey, then zap the Kind1 <strong>without</strong> putting the PIN in the
+              comment.
+            </p>
+            <p className="online-lobby-modal-status">
+              {nostrLinkActive ? (
+                <>
+                  <span className="online-lobby-modal-status-ok">Linked</span> · expires{' '}
+                  {new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}
+                </>
+              ) : nostrLinkBusy ? (
+                <span className="online-lobby-modal-status-busy">Signing…</span>
+              ) : (
+                <span className="online-lobby-modal-status-idle">Not linked yet</span>
+              )}
+            </p>
+            <div className="online-lobby-nostr-signer-row">
+              <Button
+                type="button"
+                className={`online-lobby-join-mode-btn ${nostrSignerMode === 'nip07' ? 'online-lobby-join-mode-btn--active' : ''}`}
+                onClick={() => setNostrSignerMode('nip07')}
+              >
+                NIP-07
+              </Button>
+              <Button
+                type="button"
+                className={`online-lobby-join-mode-btn ${nostrSignerMode === 'bunker' ? 'online-lobby-join-mode-btn--active' : ''}`}
+                onClick={() => setNostrSignerMode('bunker')}
+              >
+                BUNKER
+              </Button>
+            </div>
+            {nostrSignerMode === 'bunker' ? (
+              <label className="online-lobby-bunker-field">
+                <span className="online-lobby-bunker-label">Bunker / Nostr Connect URI</span>
+                <textarea
+                  className="online-lobby-bunker-input"
+                  rows={3}
+                  placeholder="bunker://… or signer@domain (NIP-05)"
+                  value={bunkerUri}
+                  onChange={(ev) => setBunkerUri(ev.target.value)}
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </label>
+            ) : null}
+            <div className="online-lobby-nostr-actions online-lobby-modal-actions">
+              <Button
+                type="button"
+                className="online-lobby-action"
+                disabled={
+                  nostrLinkBusy || !socket || (nostrSignerMode === 'bunker' && !bunkerUri.trim())
+                }
+                onClick={startNostrLinkFlow}
+              >
+                {nostrLinkActive ? 'Re-link pubkey' : 'Sign & link pubkey'}
+              </Button>
+            </div>
+            {error ? <p className="online-lobby-modal-error">Error: {error}</p> : null}
+          </div>
+        </div>
+      ) : null}
+
+      {error && !nostrModalOpen ? <p className="online-lobby-error">Error: {error}</p> : null}
 
       <section className="online-lobby-panel online-lobby-status">
         <h3>ROOM STATUS</h3>
