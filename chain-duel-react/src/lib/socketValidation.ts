@@ -7,6 +7,8 @@ import { z } from 'zod';
 import {
   OnlineDoubleOrNothingUpdateSchema,
   OnlinePinInvalidSchema,
+  ResOnlineNostrLinkChallengeSchema,
+  ResOnlineNostrLinkOkSchema,
   OnlineRoomSnapshotEventSchema,
   OnlineRoomStateSchema,
   OnlineSeatAssignedSchema,
@@ -124,6 +126,12 @@ export const SocketValidators = {
 
   onlinePinInvalid: (data: unknown) =>
     validateSocketEvent(OnlinePinInvalidSchema, data, 'onlinePinInvalid'),
+
+  resOnlineNostrLinkChallenge: (data: unknown) =>
+    validateSocketEvent(ResOnlineNostrLinkChallengeSchema, data, 'resOnlineNostrLinkChallenge'),
+
+  resOnlineNostrLinkOk: (data: unknown) =>
+    validateSocketEvent(ResOnlineNostrLinkOkSchema, data, 'resOnlineNostrLinkOk'),
 
   resOnlinePostGameInfo: (data: unknown) =>
     validateSocketEvent(ResOnlinePostGameInfoSchema, data, 'resOnlinePostGameInfo'),

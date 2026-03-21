@@ -263,6 +263,16 @@ export const OnlinePinInvalidSchema = z.object({
   reason: z.string(),
 });
 
+export const ResOnlineNostrLinkChallengeSchema = z.object({
+  roomId: z.string(),
+  challenge: z.string(),
+  expiresAt: z.number(),
+});
+
+export const ResOnlineNostrLinkOkSchema = z.object({
+  expiresAt: z.number(),
+});
+
 export const ResOnlinePostGameInfoSchema = z.object({
   roomId: z.string(),
   phase: z.enum(['postgame', 'finished']),

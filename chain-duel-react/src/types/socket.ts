@@ -300,6 +300,9 @@ export interface ClientToServerEvents {
   createOnlineNostrPayout: (payload: { roomId: string }) => void;
   onlineDoubleOrNothing: (payload: { roomId: string }) => void;
   getOnlineReplay: (payload: { roomId: string; matchRound?: number }) => void;
+  /** NIP-07: request hex challenge to sign (kind 1) to bind pubkey → session before zap without PIN. */
+  requestOnlineNostrLinkChallenge: (payload: { roomId: string }) => void;
+  confirmOnlineNostrLink: (payload: { roomId: string; event: Record<string, unknown> }) => void;
   /** Round-trip probe; last arg is ack: `emit('pingLatency', () => { ... })` */
   pingLatency: (ack: () => void) => void;
   /** After measuring RTT, send so server can broadcast both players' ping via `onlineRoomUpdated`. */
@@ -387,6 +390,8 @@ export interface ServerToClientEvents {
     sessionId: string;
   }) => void;
   onlinePinInvalid: (data: { reason: string }) => void;
+  resOnlineNostrLinkChallenge: (data: { roomId: string; challenge: string; expiresAt: number }) => void;
+  resOnlineNostrLinkOk: (data: { expiresAt: number }) => void;
   resOnlinePostGameInfo: (data: {
     roomId: string;
     phase: 'postgame' | 'finished';

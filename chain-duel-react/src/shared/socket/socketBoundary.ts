@@ -64,6 +64,10 @@ export const SocketBoundaryParsers = {
     parseWithValidator(payload, SocketValidators.onlineSeatAssigned),
   onlinePinInvalid: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.onlinePinInvalid),
+  resOnlineNostrLinkChallenge: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resOnlineNostrLinkChallenge),
+  resOnlineNostrLinkOk: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resOnlineNostrLinkOk),
   onlinePostGameInfo: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.resOnlinePostGameInfo),
   createOnlineWithdrawal: (payload: unknown) =>
