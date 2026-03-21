@@ -10,6 +10,7 @@ import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
+import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import { startMempoolFeed, type BitcoinDetails } from '@/game/io/mempool';
 import type { GameState } from '@/game/engine/types';
 import './game.css';
@@ -772,10 +773,6 @@ export default function OnlineGame() {
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
     </>
   );
-}
-
-function onlinePingAccent(ms: number): 'good' | 'ok' | 'high' {
-  return ms < 90 ? 'good' : ms < 180 ? 'ok' : 'high';
 }
 
 function coerceOnlineRoomSnapshotEvent(payload: unknown):
