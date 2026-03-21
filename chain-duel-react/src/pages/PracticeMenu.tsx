@@ -328,8 +328,6 @@ export default function PracticeMenu() {
               <br />
               LNURL compatible wallet required
               <br />
-              Hold Left or Right Alt, or LB or RB, for scanner-friendly QR
-              <br />
               Allows for multiple deposits
             </div>
           </div>
