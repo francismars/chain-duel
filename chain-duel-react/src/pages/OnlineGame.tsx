@@ -628,16 +628,27 @@ export default function OnlineGame() {
             <div className="online-replay-controls">
               <div className="online-replay-toprow">
                 <button
+                  type="button"
                   className="online-replay-btn"
                   onClick={() => {
                     if (!replayFrames.length) return;
-                    setReplayPlaying((prev) => !prev);
+                    if (replayPlaying) {
+                      setReplayPlaying(false);
+                      return;
+                    }
+                    const last = replayFrames.length - 1;
+                    if (last >= 0 && replayIndex >= last) {
+                      setReplayIndex(0);
+                      setSnapshot(replayFrames[0] ?? null);
+                    }
+                    setReplayPlaying(true);
                   }}
                   disabled={!replayFrames.length}
                 >
                   {replayPlaying ? 'PAUSE' : 'PLAY'}
                 </button>
                 <button
+                  type="button"
                   className="online-replay-btn"
                   onClick={() => {
                     if (!replayFrames.length) return;
@@ -650,6 +661,7 @@ export default function OnlineGame() {
                   RESTART
                 </button>
                 <button
+                  type="button"
                   className="online-replay-btn"
                   onClick={() => {
                     setReplayPlaying(false);
@@ -659,6 +671,7 @@ export default function OnlineGame() {
                   BACK TO ROOM
                 </button>
                 <button
+                  type="button"
                   className="online-replay-btn"
                   onClick={() => {
                     setReplayPlaying(false);
