@@ -253,6 +253,29 @@
   left: 0;
 }
 
+/* While held (Alt / LB / RB): standard black-on-white QR + quiet zone for picky scanners */
+.gamemenu-page .qrcodeContainer.qrcodeContainer--compatible > a {
+  background: #fff;
+  padding: 0.25vw;
+  box-sizing: border-box;
+  border-radius: 1px;
+}
+
+.gamemenu-page .qrcodeContainer.qrcodeContainer--compatible .qrcode {
+  filter: none;
+  mix-blend-mode: normal;
+}
+
+.gamemenu-page .qrcodeContainer.qrcodeContainer--compatible .qrcodeDecoration {
+  opacity: 0.12;
+}
+
+.gamemenu-page #player1card.expanded .qrcodeContainer.qrcodeContainer--compatible .qrcode,
+.gamemenu-page #player2card.expanded .qrcodeContainer.qrcodeContainer--compatible .qrcode {
+  filter: none;
+  mix-blend-mode: normal;
+}
+
 /* Same origin in both states so scale-down animates correctly */
 .gamemenu-page #player1card .qrcodeContainer .qrcode {
   transform: scale(1);

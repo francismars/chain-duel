@@ -1,10 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { CHAIN_DUEL_LNURL_COMPAT_QR_EVENT } from '@/shared/constants/events';
+
+export type UseGamepadOptions = {
+  /**
+   * P2P game menu: while held, show scanner-friendly LNURL QR (see `useLnurlCompatibleQrHold`).
+   * One pad: LB = P1, RB = P2. Two pads: each pad’s LB = that player.
+   */
+  lnurlCompatScan?: boolean;
+};
 
 /**
  * Hook for gamepad support
  * Polls gamepad state and dispatches keyboard events (matching legacy behavior)
  */
-export function useGamepad(enabled: boolean = true) {
+export function useGamepad(enabled: boolean = true, options?: UseGamepadOptions) {
+  const optsRef = useRef(options);
+  optsRef.current = options;
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -34,6 +46,17 @@ export function useGamepad(enabled: boolean = true) {
     const dispatchKeyByCode = (type: 'keydown' | 'keyup', code: string) => {
       window.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true }));
     };
+
+    const dispatchLnurlCompat = (player: 1 | 2, pressed: boolean) => {
+      window.dispatchEvent(
+        new CustomEvent(CHAIN_DUEL_LNURL_COMPAT_QR_EVENT, {
+          detail: { player, pressed },
+        })
+      );
+    };
+
+    let compatP1Pad = false;
+    let compatP2Pad = false;
 
     const pollGamepads = () => {
       const gamepads = navigator.getGamepads();
@@ -185,6 +208,40 @@ export function useGamepad(enabled: boolean = true) {
         dispatchKeyByCode('keyup', 'ControlRight');
         l1l2PressedP2 = false;
       }
+
+      const compatEnabled = optsRef.current?.lnurlCompatScan === true;
+      if (compatEnabled) {
+        const g1 = gamepads[0] || null;
+        const g2 = gamepads[1] || null;
+        let p1Want = false;
+        let p2Want = false;
+        if (g1 && g2) {
+          p1Want = !!g1.buttons[4]?.pressed;
+          p2Want = !!g2.buttons[4]?.pressed;
+        } else if (g1) {
+          p1Want = !!g1.buttons[4]?.pressed;
+          p2Want = !!g1.buttons[5]?.pressed;
+        } else if (g2) {
+          p2Want = !!g2.buttons[4]?.pressed;
+        }
+        if (p1Want !== compatP1Pad) {
+          dispatchLnurlCompat(1, p1Want);
+          compatP1Pad = p1Want;
+        }
+        if (p2Want !== compatP2Pad) {
+          dispatchLnurlCompat(2, p2Want);
+          compatP2Pad = p2Want;
+        }
+      } else {
+        if (compatP1Pad) {
+          dispatchLnurlCompat(1, false);
+          compatP1Pad = false;
+        }
+        if (compatP2Pad) {
+          dispatchLnurlCompat(2, false);
+          compatP2Pad = false;
+        }
+      }
     };
 
     // Poll at 60Hz for responsive gamepad input without RAF recursion.
@@ -192,6 +249,8 @@ export function useGamepad(enabled: boolean = true) {
 
     return () => {
       clearInterval(intervalId);
+      dispatchLnurlCompat(1, false);
+      dispatchLnurlCompat(2, false);
     };
   }, [enabled]);
 }

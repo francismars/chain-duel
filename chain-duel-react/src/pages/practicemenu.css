@@ -149,6 +149,29 @@
   z-index: 1;
 }
 
+/* Scanner-friendly LNURL QR while held (Alt / LB / RB) — single practice QR accepts P1 or P2 holds */
+.practice-page .qrcodeContainer.qrcodeContainer--compatible > a {
+  background: #fff;
+  padding: 0.25vw;
+  box-sizing: border-box;
+  border-radius: 1px;
+}
+
+.practice-page .qrcodeContainer.qrcodeContainer--compatible canvas.qrcode,
+.practice-page .qrcodeContainer.qrcodeContainer--compatible .qrcode {
+  filter: none;
+  mix-blend-mode: normal;
+}
+
+.practice-page .qrcodeContainer.qrcodeContainer--compatible .qrcodeDecoration {
+  opacity: 0.12;
+}
+
+.practice-page #player1card.expanded .qrcodeContainer.qrcodeContainer--compatible canvas.qrcode {
+  filter: none;
+  mix-blend-mode: normal;
+}
+
 /* Hold Ctrl (or L1/L2): scale QR in place from bottom – no position change */
 .practice-page #player1card .qrcodeContainer .qrcode {
   transform: scale(1);

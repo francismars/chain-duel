@@ -12,6 +12,7 @@ import { useMenuSocketInfo } from '@/features/setup-menu/hooks/useMenuSocketInfo
 import type { MenuParseResult } from '@/lib/menuAdapters';
 import { useSessionPersistence } from '@/shared/hooks/useSessionPersistence';
 import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
+import { useLnurlCompatibleQrHold } from '@/features/setup-menu/hooks/useLnurlCompatibleQrHold';
 import {
   HIGHLIGHT_FLASH_TIMEOUT_MS,
   SETUP_MENU_KEY_GRACE_MS,
@@ -61,7 +62,10 @@ export default function PracticeMenu() {
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const setupMenuKeyGraceUntilRef = useRef(0);
 
-  useGamepad(true);
+  useGamepad(true, { lnurlCompatScan: true });
+  const { compatibleP1, compatibleP2 } = useLnurlCompatibleQrHold(true);
+  /** Single QR: either P1 or P2 hold (both Alts / both bumpers) shows scanner-friendly mode */
+  const compatiblePracticeQr = compatibleP1 || compatibleP2;
 
   useEffect(() => {
     setupMenuKeyGraceUntilRef.current = performance.now() + SETUP_MENU_KEY_GRACE_MS;
@@ -276,7 +280,12 @@ export default function PracticeMenu() {
             </div>
           </div>
 
-          <div id="qrcodeContainer1" className="qrcodeContainer">
+          <div
+            id="qrcodeContainer1"
+            className={['qrcodeContainer', compatiblePracticeQr ? 'qrcodeContainer--compatible' : '']
+              .filter(Boolean)
+              .join(' ')}
+          >
             <a
               id="qrcode1Link"
               href={lnurlp ? `lightning:${lnurlp}` : undefined}
@@ -286,11 +295,11 @@ export default function PracticeMenu() {
               {lnurlp ? (
                 <QRCodeCanvas
                   id="qrcode1"
-                  className="qrcode"
+                  className={`qrcode ${compatiblePracticeQr ? 'qrcode--compatible' : ''}`}
                   value={lnurlp}
                   size={QR_CODE_PANEL_SIZE}
-                  level="M"
-                  includeMargin={false}
+                  level={compatiblePracticeQr ? 'H' : 'M'}
+                  includeMargin={compatiblePracticeQr}
                 />
               ) : (
                 <span className="qrcode qrcode-placeholder" />
@@ -318,6 +327,8 @@ export default function PracticeMenu() {
               Set player name on the payment note
               <br />
               LNURL compatible wallet required
+              <br />
+              Hold Left or Right Alt, or LB or RB, for scanner-friendly QR
               <br />
               Allows for multiple deposits
             </div>
