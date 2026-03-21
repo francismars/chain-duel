@@ -288,10 +288,19 @@ export default function OnlineGame() {
     if (!replayMode || !replayPlaying || replayFrames.length === 0) {
       return;
     }
-    const intervalMs = Math.max(15, replayTickMs / replaySpeed);
+    // Fixed step + fractional accumulator so 16x/32x/64x actually advance faster than the old
+    // Math.max(15, tick/speed) cap (which topped out around ~6–7× when tickMs was ~100).
+    const intervalMs = 16;
+    let acc = 0;
     const timer = window.setInterval(() => {
+      acc += (replaySpeed * intervalMs) / replayTickMs;
+      const steps = Math.floor(acc);
+      if (steps < 1) {
+        return;
+      }
+      acc -= steps;
       setReplayIndex((prev) => {
-        const next = Math.min(prev + 1, replayFrames.length - 1);
+        const next = Math.min(prev + steps, replayFrames.length - 1);
         if (next >= replayFrames.length - 1) {
           setReplayPlaying(false);
         }
@@ -664,10 +673,16 @@ export default function OnlineGame() {
                     value={String(replaySpeed)}
                     onChange={(event) => setReplaySpeed(Number(event.target.value))}
                   >
+                    <option value="0.25">0.25x</option>
                     <option value="0.5">0.5x</option>
                     <option value="1">1x</option>
                     <option value="1.5">1.5x</option>
                     <option value="2">2x</option>
+                    <option value="4">4x</option>
+                    <option value="8">8x</option>
+                    <option value="16">16x</option>
+                    <option value="32">32x</option>
+                    <option value="64">64x</option>
                   </select>
                 </label>
               </div>
