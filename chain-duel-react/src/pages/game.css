@@ -44,7 +44,7 @@ body {
   flex-direction: row;
   justify-content: space-between;
   align-items: baseline;
-  margin: 0.5vw 15%;
+  margin: 0.35vw 15%;
 }
 
 .flex.players {
@@ -147,12 +147,12 @@ body {
 }
 
 .gameState {
-  margin: 0vw 15% 1vw 15%;
+  margin: 0vw 15% 0.65vw 15%;
   text-transform: uppercase;
   text-align: center;
   font-size: 0.7vw;
   letter-spacing: 0.05em;
-  height: 3.55vw;
+  height: 3.25vw;
 }
 
 #capturing {

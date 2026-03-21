@@ -86,6 +86,8 @@ export default function OnlineGame() {
     left: false,
     right: false,
   });
+  const replayViewRef = useRef(replayMode);
+  replayViewRef.current = replayMode;
 
   useGamepad(true);
 
@@ -122,7 +124,7 @@ export default function OnlineGame() {
           raw.meta?.modeLabel === 'ONLINE'
             ? withOnlinePointAnimations(raw, pointAnimationsRef.current)
             : raw;
-        rendererRef.current.render(renderState);
+        rendererRef.current.render(renderState, { replayView: replayViewRef.current });
       }
       raf = window.requestAnimationFrame(frame);
     };
@@ -626,6 +628,23 @@ export default function OnlineGame() {
           </div>
           {replayMode ? (
             <div className="online-replay-controls">
+              <input
+                className="online-replay-slider"
+                type="range"
+                min={0}
+                max={Math.max(0, replayFrames.length - 1)}
+                value={Math.min(replayIndex, Math.max(0, replayFrames.length - 1))}
+                onChange={(event) => {
+                  const idx = Number(event.target.value);
+                  setReplayPlaying(false);
+                  setReplayIndex(idx);
+                  const frame = replayFrames[idx];
+                  if (frame) {
+                    setSnapshot(frame);
+                  }
+                }}
+                disabled={!replayFrames.length}
+              />
               <div className="online-replay-toprow">
                 <button
                   type="button"
@@ -645,7 +664,10 @@ export default function OnlineGame() {
                   }}
                   disabled={!replayFrames.length}
                 >
-                  {replayPlaying ? 'PAUSE' : 'PLAY'}
+                  <span className="online-replay-btn__icon" aria-hidden>
+                    {replayPlaying ? <ReplayIconPause /> : <ReplayIconPlay />}
+                  </span>
+                  <span className="online-replay-btn__label">{replayPlaying ? 'PAUSE' : 'PLAY'}</span>
                 </button>
                 <button
                   type="button"
@@ -658,7 +680,10 @@ export default function OnlineGame() {
                   }}
                   disabled={!replayFrames.length}
                 >
-                  RESTART
+                  <span className="online-replay-btn__icon" aria-hidden>
+                    <ReplayIconRestart />
+                  </span>
+                  <span className="online-replay-btn__label">RESTART</span>
                 </button>
                 <button
                   type="button"
@@ -668,7 +693,10 @@ export default function OnlineGame() {
                     navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`);
                   }}
                 >
-                  BACK TO ROOM
+                  <span className="online-replay-btn__icon" aria-hidden>
+                    <ReplayIconBackToRoom />
+                  </span>
+                  <span className="online-replay-btn__label">BACK TO ROOM</span>
                 </button>
                 <button
                   type="button"
@@ -678,46 +706,34 @@ export default function OnlineGame() {
                     navigate('/online');
                   }}
                 >
-                  EXIT ROOM
+                  <span className="online-replay-btn__icon" aria-hidden>
+                    <ReplayIconExitRoom />
+                  </span>
+                  <span className="online-replay-btn__label">EXIT ROOM</span>
                 </button>
-                <label className="online-replay-speed">
-                  Speed
-                  <select
-                    value={String(replaySpeed)}
-                    onChange={(event) => setReplaySpeed(Number(event.target.value))}
-                  >
-                    <option value="0.25">0.25x</option>
-                    <option value="0.5">0.5x</option>
-                    <option value="1">1x</option>
-                    <option value="1.5">1.5x</option>
-                    <option value="2">2x</option>
-                    <option value="4">4x</option>
-                    <option value="8">8x</option>
-                    <option value="16">16x</option>
-                    <option value="32">32x</option>
-                    <option value="64">64x</option>
-                  </select>
-                </label>
-              </div>
-              <input
-                className="online-replay-slider"
-                type="range"
-                min={0}
-                max={Math.max(0, replayFrames.length - 1)}
-                value={Math.min(replayIndex, Math.max(0, replayFrames.length - 1))}
-                onChange={(event) => {
-                  const idx = Number(event.target.value);
-                  setReplayPlaying(false);
-                  setReplayIndex(idx);
-                  const frame = replayFrames[idx];
-                  if (frame) {
-                    setSnapshot(frame);
-                  }
-                }}
-                disabled={!replayFrames.length}
-              />
-              <div className="online-replay-time">
-                {formatSeconds(replayPositionSec)} / {formatSeconds(replayDurationSec)}
+                <div className="online-replay-trailing">
+                  <label className="online-replay-speed">
+                    Speed
+                    <select
+                      value={String(replaySpeed)}
+                      onChange={(event) => setReplaySpeed(Number(event.target.value))}
+                    >
+                      <option value="0.25">0.25x</option>
+                      <option value="0.5">0.5x</option>
+                      <option value="1">1x</option>
+                      <option value="1.5">1.5x</option>
+                      <option value="2">2x</option>
+                      <option value="4">4x</option>
+                      <option value="8">8x</option>
+                      <option value="16">16x</option>
+                      <option value="32">32x</option>
+                      <option value="64">64x</option>
+                    </select>
+                  </label>
+                  <div className="online-replay-time" aria-label="Replay position">
+                    {formatSeconds(replayPositionSec)} / {formatSeconds(replayDurationSec)}
+                  </div>
+                </div>
               </div>
               {replayError ? <div className="online-replay-error">{replayError}</div> : null}
             </div>
@@ -1022,6 +1038,62 @@ function withOnlinePointAnimations(
     ...baseState,
     pointChanges: liveAnimations,
   };
+}
+
+function ReplayIconPlay() {
+  return (
+    <svg className="online-replay-btn__svg" viewBox="0 0 24 24" aria-hidden>
+      <path fill="currentColor" d="M8 5v14l11-7L8 5z" />
+    </svg>
+  );
+}
+
+function ReplayIconPause() {
+  return (
+    <svg className="online-replay-btn__svg" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"
+      />
+    </svg>
+  );
+}
+
+function ReplayIconRestart() {
+  return (
+    <svg
+      className="online-replay-btn__svg online-replay-btn__svg--stroke"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <path d="M1 4v6h6" />
+      <path d="M3.51 15a9 9 0 1 0 2.13 -9.36L6 10" />
+    </svg>
+  );
+}
+
+function ReplayIconBackToRoom() {
+  return (
+    <svg
+      className="online-replay-btn__svg online-replay-btn__svg--stroke"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+  );
+}
+
+function ReplayIconExitRoom() {
+  return (
+    <svg
+      className="online-replay-btn__svg online-replay-btn__svg--stroke"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  );
 }
 
 function formatSeconds(totalSeconds: number) {
