@@ -157,6 +157,12 @@ export const OnlineRoomStateSchema = z.object({
       p1Score: z.number(),
       p2Score: z.number(),
       netPrize: z.number(),
+      p1Picture: z.string().optional(),
+      p2Picture: z.string().optional(),
+      winnerPicture: z.string().optional(),
+      winnerRole: z
+        .union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)])
+        .optional(),
     })
     .optional(),
   replay: z
@@ -220,6 +226,12 @@ export const OnlineRoomListItemSchema = z.object({
       p1Score: z.number(),
       p2Score: z.number(),
       netPrize: z.number(),
+      p1Picture: z.string().optional(),
+      p2Picture: z.string().optional(),
+      winnerPicture: z.string().optional(),
+      winnerRole: z
+        .union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)])
+        .optional(),
     })
     .optional(),
 });
