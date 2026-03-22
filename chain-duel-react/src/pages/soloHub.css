@@ -1,0 +1,431 @@
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
+
+.solo-hub {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5vw 3vw 3vw;
+  gap: 2.5vw;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+
+.solo-hub-header {
+  text-align: center;
+  animation: card-enter 0.35s cubic-bezier(0.22, 0.68, 0, 1.2) both;
+  animation-delay: 0s;
+}
+
+.solo-hub-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(28px, 4vw, 56px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.solo-hub-subtitle {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(9px, 0.9vw, 12px);
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0.3em 0 0;
+  text-transform: uppercase;
+}
+
+/* ── Mode grid ──────────────────────────────────────────────────────────────── */
+
+.solo-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.2vw;
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* ── Card entrance animation ────────────────────────────────────────────────── */
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Mode card ──────────────────────────────────────────────────────────────── */
+
+.mode-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  transition: border-color 0.18s, background 0.18s, transform 0.12s;
+  position: relative;
+  overflow: hidden;
+
+  animation: card-enter 0.38s cubic-bezier(0.22, 0.68, 0, 1.2) both;
+}
+
+.mode-card:nth-child(1) { animation-delay: 0.00s; }
+.mode-card:nth-child(2) { animation-delay: 0.07s; }
+.mode-card:nth-child(3) { animation-delay: 0.14s; }
+.mode-card:nth-child(4) { animation-delay: 0.21s; }
+.mode-card:nth-child(5) { animation-delay: 0.28s; }
+.mode-card:nth-child(6) { animation-delay: 0.35s; }
+
+.mode-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.mode-card:hover {
+  transform: translateY(-2px);
+}
+
+.mode-card:hover::before {
+  opacity: 1;
+}
+
+.mode-card-inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 1.4vw 1.4vw 1.2vw;
+  gap: 1.2vw;
+}
+
+.mode-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+/* ── Card text ──────────────────────────────────────────────────────────────── */
+
+.mode-tag {
+  font-size: clamp(8px, 0.65vw, 9px);
+  letter-spacing: 0.25em;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  font-family: 'BureauGrotesque', sans-serif;
+}
+
+.mode-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(20px, 2.2vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1;
+}
+
+.mode-description {
+  font-size: clamp(10px, 0.85vw, 12px);
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.55;
+  margin: 0.3em 0 0;
+}
+
+.mode-controls {
+  font-size: clamp(8px, 0.65vw, 9px);
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.2);
+  margin: 0;
+  font-family: 'BureauGrotesque', sans-serif;
+  text-transform: uppercase;
+}
+
+/* ── Card actions ───────────────────────────────────────────────────────────── */
+
+.mode-card-actions {
+  display: flex;
+  gap: 0.6em;
+  margin-top: auto;
+}
+
+.mode-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 0.55em 1.1em;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  text-transform: uppercase;
+}
+
+.mode-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+}
+
+.mode-btn-primary {
+  flex: 1;
+}
+
+.mode-btn-secondary {
+  flex: 1;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.mode-btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Gauntlet violator ──────────────────────────────────────────────────────── */
+
+.gauntlet-violator {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+  width: 96px;
+  height: 96px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Starburst via clip-path */
+.gauntlet-violator-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(250, 210, 60, 1) 0%, rgba(220, 160, 20, 1) 100%);
+  clip-path: polygon(
+    50% 0%, 61% 15%, 79% 9%, 75% 27%,
+    95% 29%, 85% 44%, 100% 54%, 86% 63%,
+    93% 81%, 75% 80%, 72% 99%, 56% 90%,
+    50% 100%, 44% 90%, 28% 99%, 25% 80%,
+    7% 81%, 14% 63%, 0% 54%, 15% 44%,
+    5% 29%, 25% 27%, 21% 9%, 39% 15%
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  box-shadow: 0 0 24px rgba(230, 190, 50, 0.5), 0 0 60px rgba(230, 190, 50, 0.2);
+}
+
+.violator-top {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(0, 0, 0, 0.65);
+  text-transform: uppercase;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.violator-amount {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.violator-unit {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: rgba(0, 0, 0, 0.6);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.violator-sub {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: 6px;
+  letter-spacing: 0.08em;
+  color: rgba(0, 0, 0, 0.5);
+  line-height: 1;
+  margin-top: 2px;
+}
+
+/* ── Accent themes ──────────────────────────────────────────────────────────── */
+
+/* SOVEREIGN — gold */
+.accent-sovereign {
+  border-color: rgba(210, 175, 30, 0.25);
+}
+.accent-sovereign:hover {
+  border-color: rgba(210, 175, 30, 0.5);
+  background: rgba(210, 175, 30, 0.04);
+}
+.accent-sovereign .mode-name { color: rgba(230, 200, 50, 0.95); }
+.accent-sovereign .mode-tag  { color: rgba(210, 175, 30, 0.55); }
+.accent-sovereign .mode-btn-primary {
+  border-color: rgba(210, 175, 30, 0.45);
+  color: rgba(230, 200, 50, 0.9);
+}
+.accent-sovereign .mode-btn-primary:hover {
+  background: rgba(210, 175, 30, 0.1);
+  border-color: rgba(210, 175, 30, 0.7);
+  color: rgba(230, 200, 50, 1);
+}
+
+/* OVERCLOCK — red */
+.accent-overclock {
+  border-color: rgba(220, 50, 30, 0.2);
+}
+.accent-overclock:hover {
+  border-color: rgba(220, 50, 30, 0.45);
+  background: rgba(220, 50, 30, 0.03);
+}
+.accent-overclock .mode-tag { color: rgba(220, 80, 60, 0.5); }
+.accent-overclock .mode-btn-primary {
+  border-color: rgba(220, 50, 30, 0.4);
+  color: rgba(240, 100, 80, 0.9);
+}
+.accent-overclock .mode-btn-primary:hover {
+  background: rgba(220, 50, 30, 0.08);
+  border-color: rgba(220, 50, 30, 0.65);
+}
+
+/* CONVERGENCE — amber */
+.accent-convergence {
+  border-color: rgba(200, 136, 32, 0.2);
+}
+.accent-convergence:hover {
+  border-color: rgba(200, 136, 32, 0.45);
+  background: rgba(200, 136, 32, 0.03);
+}
+.accent-convergence .mode-tag { color: rgba(200, 136, 32, 0.5); }
+.accent-convergence .mode-btn-primary {
+  border-color: rgba(200, 136, 32, 0.4);
+  color: rgba(220, 160, 50, 0.9);
+}
+.accent-convergence .mode-btn-primary:hover {
+  background: rgba(200, 136, 32, 0.08);
+  border-color: rgba(200, 136, 32, 0.65);
+}
+
+/* POWERUP — blue */
+.accent-powerup {
+  border-color: rgba(48, 144, 200, 0.2);
+}
+.accent-powerup:hover {
+  border-color: rgba(48, 144, 200, 0.45);
+  background: rgba(48, 144, 200, 0.03);
+}
+.accent-powerup .mode-tag { color: rgba(48, 144, 200, 0.5); }
+.accent-powerup .mode-btn-primary {
+  border-color: rgba(48, 144, 200, 0.4);
+  color: rgba(80, 170, 230, 0.9);
+}
+.accent-powerup .mode-btn-primary:hover {
+  background: rgba(48, 144, 200, 0.08);
+  border-color: rgba(48, 144, 200, 0.65);
+}
+
+/* LABYRINTH — teal/cyan */
+.accent-labyrinth {
+  border-color: rgba(32, 180, 170, 0.2);
+}
+.accent-labyrinth:hover {
+  border-color: rgba(32, 180, 170, 0.45);
+  background: rgba(32, 180, 170, 0.03);
+}
+.accent-labyrinth .mode-tag { color: rgba(32, 180, 170, 0.5); }
+.accent-labyrinth .mode-btn-primary {
+  border-color: rgba(32, 180, 170, 0.4);
+  color: rgba(60, 210, 200, 0.9);
+}
+.accent-labyrinth .mode-btn-primary:hover {
+  background: rgba(32, 180, 170, 0.08);
+  border-color: rgba(32, 180, 170, 0.65);
+}
+
+/* GAUNTLET — silver */
+.accent-gauntlet {
+  border-color: rgba(180, 180, 200, 0.18);
+}
+.accent-gauntlet:hover {
+  border-color: rgba(180, 180, 200, 0.38);
+  background: rgba(180, 180, 200, 0.03);
+}
+.accent-gauntlet .mode-tag { color: rgba(180, 180, 200, 0.45); }
+.accent-gauntlet .mode-btn-primary {
+  border-color: rgba(180, 180, 200, 0.35);
+  color: rgba(200, 200, 220, 0.85);
+}
+.accent-gauntlet .mode-btn-primary:hover {
+  background: rgba(180, 180, 200, 0.07);
+  border-color: rgba(180, 180, 200, 0.6);
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+
+.solo-hub-footer {
+  display: flex;
+  align-items: center;
+  gap: 1.5em;
+  margin-top: auto;
+}
+
+.solo-back-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 0.5em 1.2em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+  text-transform: uppercase;
+}
+
+.solo-back-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.solo-hub-hint {
+  font-size: clamp(9px, 0.7vw, 10px);
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.18);
+  text-transform: uppercase;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .solo-hub-grid {
+    grid-template-columns: 1fr;
+  }
+  .solo-hub {
+    padding: 5vw 4vw;
+    gap: 4vw;
+  }
+  .mode-card-inner {
+    padding: 4vw;
+    gap: 3vw;
+  }
+}
+
+@media (min-width: 721px) and (max-width: 1100px) {
+  .solo-hub-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

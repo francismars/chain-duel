@@ -1,0 +1,298 @@
+.sovereign-menu {
+  flex-direction: column;
+  gap: 0;
+  padding: 2vw 4vw;
+}
+
+.sovereign-header {
+  text-align: center;
+  margin-bottom: 3vw;
+}
+
+.sovereign-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(28px, 4vw, 56px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.sovereign-subtitle {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(10px, 1.1vw, 14px);
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0.4em 0 0;
+  text-transform: uppercase;
+}
+
+.sovereign-content {
+  display: flex;
+  gap: 4vw;
+  width: 100%;
+  max-width: 900px;
+  align-items: flex-start;
+}
+
+/* ── Tier list ────────────────────────────────────────────────────────────── */
+
+.sovereign-tier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vw;
+  flex: 0 0 auto;
+  min-width: 220px;
+}
+
+.sovereign-tier-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9vw 1.2vw;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.sovereign-tier-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sovereign-tier-row.selected {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tier-row-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tier-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(14px, 1.6vw, 22px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tier-subtitle {
+  font-size: clamp(9px, 0.85vw, 11px);
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.08em;
+}
+
+.tier-best {
+  font-size: clamp(9px, 0.75vw, 10px);
+  color: rgba(200, 160, 40, 0.7);
+  letter-spacing: 0.06em;
+  font-family: 'BureauGrotesque', sans-serif;
+}
+
+.tier-indicator {
+  width: 4px;
+  height: 70%;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.tier-indicator.active {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Tier glow accents */
+.selected.tier-wanderer { border-color: rgba(200, 200, 200, 0.3); }
+.selected.tier-hunter   { border-color: rgba(200, 136, 32, 0.45); }
+.selected.tier-tactician { border-color: rgba(180, 180, 210, 0.45); }
+.selected.tier-sovereign { border-color: rgba(210, 175, 30, 0.6); }
+
+.tier-wanderer .tier-name  { color: rgba(230, 230, 230, 0.9); }
+.tier-hunter .tier-name    { color: rgba(220, 160, 50, 0.9); }
+.tier-tactician .tier-name { color: rgba(200, 200, 230, 0.9); }
+.tier-sovereign .tier-name { color: rgba(230, 195, 40, 0.95); }
+
+/* ── Detail panel ─────────────────────────────────────────────────────────── */
+
+.sovereign-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vw;
+}
+
+.detail-badge {
+  display: inline-block;
+  padding: 0.4em 1.2em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.detail-tier-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(20px, 2.5vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.detail-badge.tier-wanderer .detail-tier-name  { color: rgba(230, 230, 230, 0.95); }
+.detail-badge.tier-hunter .detail-tier-name    { color: rgba(220, 160, 50, 0.95); }
+.detail-badge.tier-tactician .detail-tier-name { color: rgba(200, 200, 230, 0.95); }
+.detail-badge.tier-sovereign .detail-tier-name { color: rgba(230, 195, 40, 1); }
+
+.detail-description {
+  font-size: clamp(11px, 1.1vw, 14px);
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.6;
+  max-width: 360px;
+  margin: 0;
+}
+
+.sovereign-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7vw;
+  align-items: flex-start;
+}
+
+.sovereign-start {
+  min-width: 160px;
+}
+
+.sovereign-start.tier-sovereign {
+  border-color: rgba(230, 195, 40, 0.5) !important;
+  color: rgba(230, 195, 40, 0.95) !important;
+}
+
+.sovereign-start.tier-tactician {
+  border-color: rgba(200, 200, 230, 0.4) !important;
+}
+
+.sovereign-start.tier-hunter {
+  border-color: rgba(220, 160, 50, 0.4) !important;
+  color: rgba(220, 160, 50, 0.9) !important;
+}
+
+.sovereign-back {
+  min-width: 160px;
+  opacity: 0.5;
+}
+
+/* ── Format bar ───────────────────────────────────────────────────────────── */
+
+.sovereign-format-bar {
+  display: flex;
+  gap: 0.8vw;
+  margin-bottom: 0.6vw;
+  width: 100%;
+  max-width: 900px;
+}
+
+.sov-format-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0.7vw 1vw;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.sov-format-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sov-format-btn.active {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.sov-format-tag {
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+}
+.sov-format-btn.active .sov-format-tag { color: rgba(255, 255, 255, 0.5); }
+
+.sov-format-label {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(12px, 1.3vw, 18px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.sov-format-chains {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.sov-chain-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.sov-format-desc {
+  font-size: clamp(10px, 1vw, 13px);
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.05em;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 0 1.5vw;
+  line-height: 1.5;
+}
+
+/* ── Team preview ─────────────────────────────────────────────────────────── */
+
+.sov-team-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0.7vw 1vw;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.sov-team-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sov-team-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.sov-team-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(10px, 1vw, 13px);
+  letter-spacing: 0.12em;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .sovereign-content {
+    flex-direction: column;
+    gap: 4vw;
+  }
+  .sovereign-tier-list {
+    width: 100%;
+  }
+}

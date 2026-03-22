@@ -11,8 +11,8 @@ import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
 import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
 
-/** Vertical menu focus (P2P / Tournament each open a Lightning vs Nostr modal). */
-type MenuState = 1 | 2 | 3 | 4 | 5 | 6;
+/** Vertical menu focus — 7 rows: SOVEREIGN, P2P, TOURNAMENT, ONLINE, BOUNTY, HIGHSCORES, ABOUT+CONFIG */
+type MenuState = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 type ModeModal = null | 'p2p' | 'tournament';
 type ModalPitch = 'lightning' | 'nostr';
 
@@ -39,16 +39,18 @@ function menuStepDown(prev: MenuState): MenuState {
   if (prev === 3) return 4;
   if (prev === 4) return 5;
   if (prev === 5) return 6;
+  if (prev === 6) return 7;
   return 1;
 }
 
 function menuStepUp(prev: MenuState): MenuState {
-  if (prev === 1) return 6;
+  if (prev === 1) return 7;
   if (prev === 2) return 1;
   if (prev === 3) return 2;
   if (prev === 4) return 3;
   if (prev === 5) return 4;
-  return 5;
+  if (prev === 6) return 5;
+  return 6;
 }
 
 export default function Index() {
@@ -60,10 +62,11 @@ export default function Index() {
   /** Which modal control is active (drives pulse); separate from modalPitch for hint text */
   const [modalNavSlot, setModalNavSlot] = useState<0 | 1 | 2>(0);
   const [hostName, setHostName] = useState<string>('@chainduel');
-  const startPracticeRef = useRef<HTMLButtonElement>(null);
+  const startSovereignRef = useRef<HTMLButtonElement>(null);
   const startGameRef = useRef<HTMLButtonElement>(null);
   const startTournRef = useRef<HTMLButtonElement>(null);
   const startOnlineRef = useRef<HTMLButtonElement>(null);
+  const startBountyRef = useRef<HTMLButtonElement>(null);
   const highscoresRef = useRef<HTMLButtonElement>(null);
   const aboutRef = useRef<HTMLButtonElement>(null);
   const modalLightningRef = useRef<HTMLButtonElement>(null);
@@ -94,9 +97,9 @@ export default function Index() {
       return;
     }
     const inner =
-      menu === 6
+      menu === 7
         ? (root.querySelector(
-            '[data-menu-row="6"] [data-menu-kbd-focus]'
+            '[data-menu-row="7"] [data-menu-kbd-focus]'
           ) as HTMLElement | null)
         : (root.querySelector(
             `[data-menu-row="${menu}"] > .menu-buttons__row-inner`
@@ -130,27 +133,26 @@ export default function Index() {
   // Update button animations based on menu state
   useEffect(() => {
     const updateAnimations = () => {
-      if (startPracticeRef.current) {
-        startPracticeRef.current.style.animationDuration =
-          menu === 1 ? '2s' : '0s';
+      if (startSovereignRef.current) {
+        startSovereignRef.current.style.animationDuration = menu === 1 ? '2s' : '0s';
       }
       if (startGameRef.current) {
-        startGameRef.current.style.animationDuration =
-          menu === 2 ? '2s' : '0s';
+        startGameRef.current.style.animationDuration = menu === 2 ? '2s' : '0s';
       }
       if (startTournRef.current) {
-        startTournRef.current.style.animationDuration =
-          menu === 3 ? '2s' : '0s';
+        startTournRef.current.style.animationDuration = menu === 3 ? '2s' : '0s';
       }
       if (startOnlineRef.current) {
         startOnlineRef.current.style.animationDuration = menu === 4 ? '2s' : '0s';
       }
+      if (startBountyRef.current) {
+        startBountyRef.current.style.animationDuration = menu === 5 ? '2s' : '0s';
+      }
       if (highscoresRef.current) {
-        highscoresRef.current.style.animationDuration =
-          menu === 5 ? '2s' : '0s';
+        highscoresRef.current.style.animationDuration = menu === 6 ? '2s' : '0s';
       }
       if (aboutRef.current) {
-        aboutRef.current.style.animationDuration = menu === 6 ? '2s' : '0s';
+        aboutRef.current.style.animationDuration = menu === 7 ? '2s' : '0s';
       }
     };
 
@@ -324,7 +326,7 @@ export default function Index() {
         playSfx(SFX.MENU_CONFIRM);
         const row = menuRef.current;
         if (row === 1) {
-          navigate('/practicemenu', { state: keyboardNavState });
+          navigate('/solo', { state: keyboardNavState });
         } else if (row === 2) {
           setModeModal('p2p');
         } else if (row === 3) {
@@ -332,8 +334,10 @@ export default function Index() {
         } else if (row === 4) {
           navigate('/online', { state: keyboardNavState });
         } else if (row === 5) {
-          navigate('/highscores', { state: keyboardNavState });
+          navigate('/bounty', { state: keyboardNavState });
         } else if (row === 6) {
+          navigate('/highscores', { state: keyboardNavState });
+        } else if (row === 7) {
           navigate('/about', { state: keyboardNavState });
         }
         return;
@@ -397,14 +401,14 @@ export default function Index() {
         <div className="menu-buttons__row" data-menu-row={1}>
           <div className="menu-buttons__row-inner">
             <Button
-              ref={startPracticeRef}
-              id="startpractice"
+              ref={startSovereignRef}
+              id="startsovereign"
               onClick={() => {
                 playSfx(SFX.MENU_CONFIRM);
-                navigate('/practicemenu');
+                navigate('/solo');
               }}
             >
-              PRACTICE
+              SOLO
             </Button>
           </div>
         </div>
@@ -457,6 +461,21 @@ export default function Index() {
         <div className="menu-buttons__row" data-menu-row={5}>
           <div className="menu-buttons__row-inner">
             <Button
+              ref={startBountyRef}
+              id="startbounty"
+              onClick={() => {
+                playSfx(SFX.MENU_CONFIRM);
+                navigate('/bounty');
+              }}
+            >
+              BOUNTY HUNT
+            </Button>
+          </div>
+        </div>
+
+        <div className="menu-buttons__row" data-menu-row={6}>
+          <div className="menu-buttons__row-inner">
+            <Button
               ref={highscoresRef}
               id="highscoresbutton"
               onClick={() => {
@@ -469,7 +488,7 @@ export default function Index() {
           </div>
         </div>
 
-        <div className="menu-buttons__row" data-menu-row={6}>
+        <div className="menu-buttons__row" data-menu-row={7}>
           <div className="double-button menu-buttons__double-row">
             <div
               className="menu-buttons__row-inner menu-buttons__double-cell"
