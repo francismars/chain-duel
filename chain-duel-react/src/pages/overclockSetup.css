@@ -1,0 +1,362 @@
+/* ── Root ───────────────────────────────────────────────────────────────────── */
+
+.overclock-setup {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5vw 3vw 3vw;
+  gap: 2vw;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+
+.os-header { text-align: center; }
+
+.os-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(28px, 4vw, 56px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.os-subtitle {
+  font-size: clamp(8px, 0.75vw, 10px);
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.25);
+  margin: 0.3em 0 0;
+  text-transform: uppercase;
+}
+
+/* ── Body ───────────────────────────────────────────────────────────────────── */
+
+.os-body {
+  display: flex;
+  gap: 2vw;
+  width: 100%;
+  max-width: 1000px;
+  align-items: flex-start;
+}
+
+/* ── Tier list ──────────────────────────────────────────────────────────────── */
+
+.os-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vw;
+  flex: 0 0 auto;
+  min-width: 210px;
+}
+
+.os-tier-btn {
+  display: grid;
+  grid-template-columns: 2.2em 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.6em;
+  align-items: center;
+  padding: 0.75em 1em;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.14s, background 0.14s;
+  position: relative;
+}
+
+.os-tier-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.os-tier-btn.active {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.os-tier-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--accent);
+}
+
+.os-rank {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(13px, 1.1vw, 16px);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.2);
+  grid-row: 1 / 3;
+  align-self: center;
+  letter-spacing: 0.05em;
+}
+
+.os-tier-btn.active .os-rank { color: var(--accent); }
+
+.os-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(13px, 1.1vw, 16px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.1;
+}
+
+.os-tier-btn.active .os-name { color: #ffffff; }
+
+.os-sub {
+  font-size: clamp(8px, 0.62vw, 9px);
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  grid-column: 2;
+}
+
+/* ── Detail panel ───────────────────────────────────────────────────────────── */
+
+.os-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4vw;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.6vw;
+  min-width: 0;
+}
+
+.os-detail-top {
+  display: flex;
+  gap: 1.4vw;
+  align-items: flex-start;
+}
+
+/* ── Ramp preview ───────────────────────────────────────────────────────────── */
+
+.ramp-preview {
+  flex: 0 0 auto;
+  width: clamp(100px, 10vw, 150px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4em 0.5em 0.3em;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.ramp-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ramp-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: clamp(7px, 0.6vw, 8px);
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ramp-lbl { white-space: nowrap; }
+.ramp-center { color: rgba(255, 255, 255, 0.15); }
+.ramp-floor { color: rgba(255, 255, 255, 0.4); }
+
+/* ── Detail info ────────────────────────────────────────────────────────────── */
+
+.os-detail-info { flex: 1; }
+
+.os-detail-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(22px, 2.5vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  margin: 0 0 0.5em;
+}
+
+.os-detail-desc {
+  font-size: clamp(10px, 0.9vw, 13px);
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Stats ──────────────────────────────────────────────────────────────────── */
+
+.os-stats {
+  display: flex;
+  gap: 1.5vw;
+  flex-wrap: wrap;
+}
+
+.os-stat { display: flex; flex-direction: column; gap: 0.3em; }
+
+.os-stat-label {
+  font-size: clamp(7px, 0.6vw, 8px);
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+}
+
+.os-stat-val {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(13px, 1.1vw, 16px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Speed bar ──────────────────────────────────────────────────────────────── */
+
+.os-speed-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+}
+
+.os-bar-label {
+  font-size: clamp(7px, 0.6vw, 8px);
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.os-bar-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.os-bar-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  opacity: 0.7;
+  transition: left 0.25s ease, width 0.25s ease;
+}
+
+.os-bar-marker {
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 0.25s ease;
+}
+
+.os-bar-start {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.os-bar-floor {
+  /* accent color set inline */
+}
+
+/* ── Actions ────────────────────────────────────────────────────────────────── */
+
+.os-actions {
+  display: flex;
+  gap: 0.8em;
+  align-items: center;
+}
+
+.os-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(12px, 1.05vw, 15px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 0.55em 1.5em;
+  border: 1px solid;
+  background: transparent;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background 0.12s;
+}
+
+.os-btn-primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.os-btn-primary:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.os-btn-secondary {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.os-btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.os-btn-back {
+  border-color: transparent;
+  color: rgba(255, 255, 255, 0.28);
+  margin-left: auto;
+  padding-left: 0.6em;
+  padding-right: 0.6em;
+}
+
+.os-btn-back:hover {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ── Hint ───────────────────────────────────────────────────────────────────── */
+
+.os-hint {
+  font-size: clamp(8px, 0.65vw, 9px);
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.15);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+
+.os-footer {
+  margin-top: auto;
+  padding-top: 1.5vw;
+}
+
+.os-back-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 0.5em 1.2em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+  text-transform: uppercase;
+}
+
+.os-back-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  .os-body { flex-direction: column; }
+  .os-list {
+    flex-direction: row;
+    overflow-x: auto;
+    width: 100%;
+    min-width: 0;
+  }
+  .os-tier-btn { min-width: 130px; }
+  .os-detail-top { flex-direction: column; }
+  .overclock-setup { padding: 5vw 4vw; }
+}

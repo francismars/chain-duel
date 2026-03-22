@@ -1,0 +1,312 @@
+/* ── Enter animation ──────────────────────────────────────────────────────── */
+
+@keyframes bounty-enter {
+  from {
+    opacity: 0;
+    transform: scale(1.04) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+
+.bounty-board {
+  flex-direction: column;
+  align-items: center;
+  padding: 2vw 4vw 3vw;
+  gap: 0;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.bounty-header {
+  text-align: center;
+  margin-bottom: 1.8vw;
+  position: relative;
+  animation: bounty-enter 0.5s cubic-bezier(0.22, 0.68, 0, 1.1) 0s both;
+}
+
+.bounty-wanted-label {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(8px, 0.8vw, 11px);
+  letter-spacing: 0.45em;
+  color: rgba(200, 136, 32, 0.6);
+  margin-bottom: 0.3em;
+  text-transform: uppercase;
+}
+
+.bounty-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(28px, 4vw, 56px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #ffffff;
+  margin: 0;
+  text-shadow:
+    0 0 40px rgba(200, 144, 32, 0.25),
+    0 0 80px rgba(200, 144, 32, 0.10);
+}
+
+.bounty-subtitle {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(8px, 0.75vw, 10px);
+  letter-spacing: 0.25em;
+  color: rgba(255, 255, 255, 0.25);
+  margin: 0.4em 0 0;
+  text-transform: uppercase;
+}
+
+/* ── Content ──────────────────────────────────────────────────────────────── */
+
+.bounty-content {
+  width: 100%;
+  max-width: 780px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6vw;
+}
+
+.bounty-loading {
+  display: flex;
+  justify-content: center;
+  padding: 3vw;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+
+.bounty-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bounty-table-head {
+  animation: bounty-enter 0.5s cubic-bezier(0.22, 0.68, 0, 1.1) 0.08s both;
+}
+
+.bounty-table-head th {
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.25);
+  text-align: left;
+  padding: 0 0.8vw 0.8vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-weight: 400;
+}
+
+.bounty-table-head .col-sats,
+.bounty-table-head .col-record {
+  text-align: right;
+}
+
+.bounty-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.1s;
+  animation: bounty-enter 0.48s cubic-bezier(0.22, 0.68, 0, 1.1) both;
+}
+
+.bounty-row:nth-child(1)  { animation-delay: 0.13s; }
+.bounty-row:nth-child(2)  { animation-delay: 0.18s; }
+.bounty-row:nth-child(3)  { animation-delay: 0.23s; }
+.bounty-row:nth-child(4)  { animation-delay: 0.28s; }
+.bounty-row:nth-child(5)  { animation-delay: 0.33s; }
+.bounty-row:nth-child(6)  { animation-delay: 0.38s; }
+.bounty-row:nth-child(7)  { animation-delay: 0.43s; }
+.bounty-row:nth-child(8)  { animation-delay: 0.48s; }
+.bounty-row:nth-child(9)  { animation-delay: 0.53s; }
+.bounty-row:nth-child(10) { animation-delay: 0.58s; }
+
+.bounty-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.bounty-row.champion {
+  background: rgba(200, 144, 32, 0.04);
+}
+
+.bounty-row.champion:hover {
+  background: rgba(200, 144, 32, 0.07);
+}
+
+.bounty-row td {
+  padding: 0.7vw 0.8vw;
+  vertical-align: middle;
+}
+
+.col-rank {
+  width: 3em;
+  font-family: 'BureauGrotesque', sans-serif;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: clamp(12px, 1.2vw, 16px);
+}
+
+.champion-crown {
+  color: rgba(230, 195, 40, 0.95);
+  font-size: clamp(14px, 1.4vw, 20px);
+  text-shadow: 0 0 12px rgba(230, 195, 40, 0.6);
+}
+
+.rank-number {
+  font-weight: 700;
+}
+
+.col-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(13px, 1.4vw, 19px);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.05em;
+}
+
+.champion .col-name {
+  color: rgba(230, 195, 40, 0.95);
+}
+
+.champion-label {
+  font-size: clamp(8px, 0.65vw, 9px);
+  letter-spacing: 0.2em;
+  color: rgba(230, 195, 40, 0.6);
+  margin-left: 0.5em;
+}
+
+.col-sats {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(13px, 1.4vw, 18px);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: right;
+}
+
+.champion .col-sats {
+  color: rgba(230, 195, 40, 0.95);
+}
+
+.champion .sats-unit {
+  color: rgba(230, 195, 40, 0.5);
+}
+
+.sats-unit {
+  font-size: clamp(8px, 0.7vw, 10px);
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.1em;
+}
+
+.col-record {
+  font-size: clamp(10px, 0.9vw, 12px);
+  color: rgba(255, 255, 255, 0.35);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Nostr promo ──────────────────────────────────────────────────────────── */
+
+.bounty-nostr-promo {
+  display: flex;
+  align-items: center;
+  gap: 1.2em;
+  padding: 1em 1.4em;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.06);
+  position: relative;
+  overflow: hidden;
+  animation: bounty-enter 0.48s cubic-bezier(0.22, 0.68, 0, 1.1) 0.65s both;
+}
+
+.bounty-nostr-promo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.nostr-promo-icon {
+  font-size: clamp(20px, 2vw, 28px);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.6));
+}
+
+.nostr-promo-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.nostr-promo-label {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.28em;
+  color: rgba(167, 139, 250, 0.8);
+  text-transform: uppercase;
+}
+
+.nostr-promo-text {
+  font-size: clamp(10px, 0.9vw, 12px);
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.nostr-promo-text strong {
+  color: rgba(196, 181, 253, 0.9);
+  font-weight: 600;
+}
+
+.nostr-promo-badge {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(22px, 2.5vw, 36px);
+  font-weight: 700;
+  color: rgba(167, 139, 250, 0.9);
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+  text-shadow: 0 0 24px rgba(139, 92, 246, 0.5);
+}
+
+/* ── Info section ─────────────────────────────────────────────────────────── */
+
+.bounty-info {
+  display: flex;
+  gap: 3vw;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 1.4vw;
+  animation: bounty-enter 0.48s cubic-bezier(0.22, 0.68, 0, 1.1) 0.72s both;
+}
+
+.bounty-info-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.info-label {
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+}
+
+.info-text {
+  font-size: clamp(10px, 0.9vw, 12px);
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+
+.bounty-footer {
+  margin-top: 2.5vw;
+  animation: bounty-enter 0.48s cubic-bezier(0.22, 0.68, 0, 1.1) 0.80s both;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .bounty-info {
+    flex-direction: column;
+  }
+}

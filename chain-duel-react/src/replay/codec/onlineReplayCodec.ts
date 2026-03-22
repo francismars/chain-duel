@@ -5,8 +5,10 @@
  * copy that helper into marspayTS if the server builds replays without it.
  */
 import type {
+  AiTier,
   Coinbase,
   Direction,
+  GameMeta,
   GameState,
   HudState,
   PlayerId,
@@ -16,6 +18,41 @@ import type { OnlineRoomSnapshot } from '@/types/socket';
 import { ensureReplayVictoryEndFrame } from '@/replay/ensureReplayVictoryEndFrame';
 
 export const COMPACT_REPLAY_FORMAT = 'compact-v2' as const;
+
+/** Backfill new meta fields for replays encoded before the new modes were added. */
+function buildMeta(partial: GameMeta): GameMeta {
+  const p = partial as unknown as Record<string, unknown>;
+  return {
+    ...partial,
+    sovereignMode: (p.sovereignMode as boolean | undefined) ?? false,
+    aiTier: ((p.aiTier as string | undefined) ?? 'hunter') as AiTier,
+    overclockMode: (p.overclockMode as boolean | undefined) ?? false,
+    overclockMinStepMs: (p.overclockMinStepMs as number | undefined) ?? 30,
+    overclockStepIntervalTicks: (p.overclockStepIntervalTicks as number | undefined) ?? 200,
+    overclockSpeedReductionMs: (p.overclockSpeedReductionMs as number | undefined) ?? 10,
+    convergenceMode: (p.convergenceMode as boolean | undefined) ?? false,
+    convergenceShrinkInterval: (p.convergenceShrinkInterval as number | undefined) ?? 150,
+    convergenceMinCols: (p.convergenceMinCols as number | undefined) ?? 11,
+    convergenceMinRows: (p.convergenceMinRows as number | undefined) ?? 11,
+    powerupMode: (p.powerupMode as boolean | undefined) ?? false,
+    gauntletMode: (p.gauntletMode as boolean | undefined) ?? false,
+    gauntletLevel: (p.gauntletLevel as number | undefined) ?? 1,
+    bountyMode: (p.bountyMode as boolean | undefined) ?? false,
+    labyrinthMode: (p.labyrinthMode as boolean | undefined) ?? false,
+    labyrinthLoopFactor: (p.labyrinthLoopFactor as number | undefined) ?? 0,
+    labyrinthCornerFactor: (p.labyrinthCornerFactor as number | undefined) ?? 0,
+    labyrinthRegenInterval: (p.labyrinthRegenInterval as number | undefined) ?? 450,
+    labyrinthCorridorWidth: (p.labyrinthCorridorWidth as number | undefined) ?? 1,
+    labyrinthSections: (p.labyrinthSections as number | undefined) ?? 1,
+    labyrinthTeleports: (p.labyrinthTeleports as boolean | undefined) ?? false,
+    teamMode: (p.teamMode as 'solo' | 'teams' | 'ffa' | undefined) ?? 'solo',
+    layers3D: (p.layers3D as boolean | undefined) ?? false,
+    invisibleGrid: (p.invisibleGrid as boolean | undefined) ?? false,
+    currentStepMs: (p.currentStepMs as number | undefined) ?? 100,
+    p1ChainAbilityAvailable: (p.p1ChainAbilityAvailable as boolean | undefined) ?? false,
+    p2ChainAbilityAvailable: (p.p2ChainAbilityAvailable as boolean | undefined) ?? false,
+  };
+}
 
 type OnlinePhase = OnlineRoomSnapshot['phase'];
 
@@ -262,10 +299,30 @@ function buildState(ef: EncodedFrame, header: CompactReplayHeader): GameState {
     pointChanges: decodePointChanges(ef.pc),
     p1Name: header.p1Name,
     p2Name: header.p2Name,
-    meta: header.meta,
+    meta: buildMeta(header.meta),
     initialScore: [header.initialScore[0], header.initialScore[1]],
     currentCaptureP1: captureLabelForLength(p1Body.length),
     currentCaptureP2: captureLabelForLength(p2Body.length),
+    tickCount: ef.t,
+    powerUpItems: [],
+    activePowerUps: [],
+    obstacleWalls: [],
+    shrinkBorder: null,
+    powerUpRespawnCooldownTick: 0,
+    gauntletStartTick: 0,
+    gauntletCompleted: false,
+    gauntletElapsedSecs: 0,
+    voidCells: [],
+    voidCellsNextToggleTick: Number.POSITIVE_INFINITY,
+    labyrinthSeed: 0,
+    labyrinthNextRegenTick: Number.POSITIVE_INFINITY,
+    convergenceWallClosed: false,
+    teleportDoors: [],
+    extraSnakes: [],
+    board3DLayers: [],
+    p1Layer: 0,
+    p2Layer: 0,
+    layerSwitchCooldown: 0,
   };
   applyFlags(ef.f, st);
   return st;

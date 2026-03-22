@@ -30,6 +30,7 @@ interface UseGameRenderBridgeArgs {
   emitWinner: (winner: 'P1' | 'P2') => void;
   onHudTick: (hud: HudSnapshot) => void;
   onCaptureChanged: (side: 'P1' | 'P2') => void;
+  onSpeedChanged?: (stepMs: number) => void;
 }
 
 export function useGameRenderBridge({
@@ -46,6 +47,7 @@ export function useGameRenderBridge({
   emitWinner,
   onHudTick,
   onCaptureChanged,
+  onSpeedChanged,
 }: UseGameRenderBridgeArgs) {
   useEffect(() => {
     if (!hostRef.current || !stateRef.current || loading) return;
@@ -63,14 +65,27 @@ export function useGameRenderBridge({
       detachResize = () => window.removeEventListener('resize', onResize);
     });
 
+    // Variable-speed game loop: poll at ~16ms but only step when enough time has elapsed.
+    // This supports both fixed-speed and Overclock modes without changing the interval.
+    let lastStepTime = performance.now();
+    let lastReportedStepMs = STEP_SPEED_MS;
+
     const gameLoop = window.setInterval(() => {
       const state = stateRef.current;
       if (!state) return;
+
+      const now = performance.now();
+      const stepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
+
+      if (now - lastStepTime < stepMs) return;
+      lastStepTime = now;
+
       const prevCountdown = state.countdownTicks;
       const prevP1Len = state.p1.body.length;
       const prevP2Len = state.p2.body.length;
       const prevP1Head = [...state.p1.head] as [number, number];
       const prevP2Head = [...state.p2.head] as [number, number];
+      const prevStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
 
       stepGame(state);
       const hud = getHudState(state);
@@ -92,11 +107,21 @@ export function useGameRenderBridge({
       captureP1Ref.current = hud.captureP1;
       captureP2Ref.current = hud.captureP2;
 
+      // Speed change notification (Overclock mode)
+      const newStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
+      if (newStepMs !== prevStepMs && newStepMs !== lastReportedStepMs) {
+        lastReportedStepMs = newStepMs;
+        onSpeedChanged?.(newStepMs);
+        audio?.playBlockFound(); // reuse existing sound as speed-up cue
+      }
+
       if (state.countdownStart && state.countdownTicks !== prevCountdown) {
         audio?.playCountdownTick(state.countdownTicks);
       }
       if (state.p1.body.length > prevP1Len) audio?.playCapture(state.p1.body.length);
       if (state.p2.body.length > prevP2Len) audio?.playCapture(state.p2.body.length);
+
+      // Reset detection: compare current head vs spawn position
       if (
         (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
         state.p1.head[0] === 6 &&
@@ -116,7 +141,7 @@ export function useGameRenderBridge({
         emitWinner(state.winnerPlayer);
         winnerSentRef.current = true;
       }
-    }, STEP_SPEED_MS);
+    }, 10); // Poll every 10ms for accurate variable-speed stepping
 
     const frame = () => {
       const state = stateRef.current;
@@ -143,6 +168,7 @@ export function useGameRenderBridge({
     loading,
     onCaptureChanged,
     onHudTick,
+    onSpeedChanged,
     rendererRef,
     socket,
     stateRef,

@@ -1,0 +1,463 @@
+.gauntlet-menu {
+  flex-direction: column;
+  gap: 0;
+  padding: 2vw 4vw;
+}
+
+.gauntlet-header {
+  text-align: center;
+  margin-bottom: 2.5vw;
+}
+
+.gauntlet-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(28px, 4vw, 56px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.gauntlet-subtitle {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(9px, 0.95vw, 12px);
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0.4em 0 0;
+  text-transform: uppercase;
+}
+
+.sovereign-badge {
+  display: inline-block;
+  margin-top: 0.7em;
+  padding: 0.3em 1em;
+  border: 1px solid rgba(210, 175, 30, 0.5);
+  color: rgba(230, 195, 40, 0.9);
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(9px, 0.85vw, 11px);
+  letter-spacing: 0.2em;
+}
+
+/* ── Content layout ───────────────────────────────────────────────────────── */
+
+.gauntlet-content {
+  display: flex;
+  gap: 4vw;
+  width: 100%;
+  max-width: 920px;
+  align-items: flex-start;
+}
+
+/* ── Level list ───────────────────────────────────────────────────────────── */
+
+.gauntlet-level-list {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  min-width: 240px;
+}
+
+.gauntlet-level-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.6vw 1vw;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.gauntlet-level-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.gauntlet-level-row.selected {
+  background: rgba(255, 255, 255, 0.06);
+  border-left-color: rgba(255, 255, 255, 0.4);
+}
+
+.gauntlet-level-row.cleared {
+  border-left-color: rgba(66, 163, 69, 0.6);
+}
+
+.gauntlet-level-row.locked {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.level-number {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1.1vw, 15px);
+  color: rgba(255, 255, 255, 0.3);
+  min-width: 2ch;
+  font-weight: 700;
+}
+
+.level-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(12px, 1.35vw, 18px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.85);
+  flex: 1;
+}
+
+.level-prize {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 700;
+  color: rgba(230, 190, 50, 0.75);
+  letter-spacing: 0.04em;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.gauntlet-level-row.selected .level-prize {
+  color: rgba(250, 210, 60, 1);
+  text-shadow: 0 0 12px rgba(230, 190, 50, 0.5);
+}
+
+.level-prize-unit {
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+
+.level-status {
+  font-size: clamp(10px, 0.9vw, 13px);
+  color: rgba(66, 163, 69, 0.8);
+  margin-left: 0.4em;
+}
+
+/* ── Detail panel ─────────────────────────────────────────────────────────── */
+
+.gauntlet-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4vw;
+}
+
+.gauntlet-level-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.8vw;
+}
+
+.badge-number {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(16px, 2vw, 28px);
+  color: rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+}
+
+.badge-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(20px, 2.6vw, 38px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+}
+
+.gauntlet-description {
+  font-size: clamp(11px, 1.05vw, 13px);
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
+  max-width: 360px;
+  margin: 0;
+}
+
+/* ── Stats ────────────────────────────────────────────────────────────────── */
+
+.gauntlet-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7vw;
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8em;
+}
+
+.stat-label {
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.25);
+  min-width: 80px;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(14px, 1.5vw, 20px);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 700;
+}
+
+.stat-value-sm {
+  font-size: clamp(10px, 0.9vw, 12px);
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 240px;
+  line-height: 1.4;
+}
+
+.stat-unit {
+  font-size: clamp(8px, 0.65vw, 9px);
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.08em;
+}
+
+/* ── Prize card ───────────────────────────────────────────────────────────── */
+
+.gauntlet-prize-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid rgba(230, 190, 50, 0.25);
+  background: linear-gradient(135deg, rgba(230, 190, 50, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.gauntlet-prize-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(230, 190, 50, 0.06) 0%, transparent 50%, rgba(139, 92, 246, 0.06) 100%);
+  pointer-events: none;
+}
+
+.prize-card-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.prize-card-divider {
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.1) 30%, rgba(255, 255, 255, 0.1) 70%, transparent);
+  flex-shrink: 0;
+}
+
+.prize-tier {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1em 1.2em 0.9em;
+  gap: 0.15em;
+}
+
+.prize-tier-label {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(8px, 0.65vw, 9px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.prize-tier--lightning .prize-tier-label {
+  color: rgba(250, 210, 60, 0.6);
+}
+
+.prize-tier--nostr .prize-tier-label {
+  color: rgba(167, 139, 250, 0.6);
+}
+
+.prize-tier-amount {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(26px, 3vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.prize-tier--lightning .prize-tier-amount {
+  color: rgba(250, 210, 60, 1);
+  text-shadow:
+    0 0 20px rgba(230, 190, 50, 0.55),
+    0 0 50px rgba(230, 190, 50, 0.2);
+}
+
+.prize-tier--nostr .prize-tier-amount {
+  color: rgba(196, 181, 253, 1);
+  text-shadow:
+    0 0 20px rgba(139, 92, 246, 0.6),
+    0 0 50px rgba(139, 92, 246, 0.25);
+}
+
+.prize-tier-unit {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.prize-tier--lightning .prize-tier-unit {
+  color: rgba(250, 210, 60, 0.45);
+}
+
+.prize-tier--nostr .prize-tier-unit {
+  color: rgba(167, 139, 250, 0.5);
+}
+
+.prize-card-hint {
+  text-align: center;
+  font-size: clamp(8px, 0.65vw, 9px);
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  padding: 0.5em 1em;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.gauntlet-modifiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+}
+
+.modifier-tag {
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.12em;
+  padding: 0.2em 0.5em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Actions ──────────────────────────────────────────────────────────────── */
+
+.gauntlet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vw;
+  align-items: flex-start;
+  margin-top: 0.5vw;
+}
+
+.gauntlet-start {
+  min-width: 160px;
+}
+
+.gauntlet-back {
+  min-width: 160px;
+  opacity: 0.4;
+}
+
+.gauntlet-unlock-all {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(9px, 0.75vw, 11px);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  padding: 0.4em 0.9em;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+  text-transform: uppercase;
+  margin-top: 0.4em;
+}
+.gauntlet-unlock-all:hover {
+  color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.gauntlet-locked-msg {
+  font-size: clamp(10px, 0.9vw, 12px);
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.1em;
+  padding: 0.6em 0;
+}
+
+/* ── Prize banner ─────────────────────────────────────────────────────────── */
+
+.gauntlet-prize-banner {
+  display: flex;
+  gap: 0;
+  width: 100%;
+  max-width: 920px;
+  margin-top: 2vw;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  position: relative;
+  overflow: hidden;
+}
+
+.gauntlet-prize-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(250, 210, 60, 0.04) 0%, transparent 50%, rgba(139, 92, 246, 0.05) 100%);
+  pointer-events: none;
+}
+
+.gpb-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 1.1em 1.4em;
+}
+
+.gpb-divider {
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.08) 20%, rgba(255, 255, 255, 0.08) 80%, transparent);
+  flex-shrink: 0;
+  margin: 0.8em 0;
+}
+
+.gpb-label {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.gpb-section--lightning .gpb-label {
+  color: rgba(250, 210, 60, 0.7);
+}
+
+.gpb-section--nostr .gpb-label {
+  color: rgba(167, 139, 250, 0.7);
+}
+
+.gpb-text {
+  font-size: clamp(10px, 0.9vw, 12px);
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.gpb-text strong {
+  font-weight: 700;
+}
+
+.gpb-section--lightning .gpb-text strong {
+  color: rgba(250, 210, 60, 0.85);
+}
+
+.gpb-section--nostr .gpb-text strong {
+  color: rgba(196, 181, 253, 0.9);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .gauntlet-content {
+    flex-direction: column;
+    gap: 4vw;
+  }
+  .gauntlet-level-list {
+    width: 100%;
+  }
+  .gauntlet-prize-banner {
+    flex-direction: column;
+  }
+  .gpb-divider {
+    width: auto;
+    height: 1px;
+    margin: 0 0.8em;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.08) 20%, rgba(255, 255, 255, 0.08) 80%, transparent);
+  }
+}

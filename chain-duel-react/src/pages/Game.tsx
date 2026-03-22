@@ -82,25 +82,121 @@ export default function Game() {
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
   const canShowP2Image = useMemo(() => player2Img.length > 0, [player2Img]);
 
+  const isPowerupMode = useMemo(() => {
+    try {
+      const raw = sessionStorage.getItem('gameConfig');
+      if (!raw) return false;
+      const cfg = JSON.parse(raw) as Record<string, unknown>;
+      const m = String(cfg.mode ?? '').toUpperCase();
+      return m === 'POWERUP' || m === 'POWER-UP ARENA';
+    } catch { return false; }
+  }, []);
+
   const bootstrapLocalGame = useCallback(() => {
     if (localBootRef.current) return;
     localBootRef.current = true;
+
+    // Read gameConfig from sessionStorage (set by new mode menu pages)
+    let gameConfig: Record<string, unknown> = {};
+    try {
+      const raw = sessionStorage.getItem('gameConfig');
+      if (raw) gameConfig = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+
+    const configMode = String(gameConfig.mode ?? 'SOVEREIGN').toUpperCase();
+    const isSovereign = configMode === 'SOVEREIGN';
+    const isOverclock = configMode === 'OVERCLOCK';
+    const isConvergence = configMode === 'CONVERGENCE';
+    const isPowerup = configMode === 'POWERUP';
+    const isGauntlet = configMode === 'GAUNTLET';
+    const isLabyrinth = configMode === 'LABYRINTH';
+    // practiceMode: set by sovereign, labyrinth solo, and solo-hub AI starts
+    const isPracticeMode = Boolean(gameConfig.practiceMode) || isSovereign;
+    const aiTier = (gameConfig.aiTier as string) ?? 'hunter';
+    const gauntletLevel = Number(gameConfig.gauntletLevel ?? 1);
+    const p1Name = String(gameConfig.p1Name ?? 'Player 1');
+    const rawP2Name = String(gameConfig.p2Name ?? (isPracticeMode ? 'BigToshi 🌊' : 'Player 2'));
+
+    const MODE_LABELS: Record<string, string> = {
+      SOVEREIGN: 'SOVEREIGN',
+      OVERCLOCK: 'OVERCLOCK',
+      CONVERGENCE: 'CONVERGENCE',
+      POWERUP: 'POWER-UP ARENA',
+      GAUNTLET: `GAUNTLET ${gauntletLevel}`,
+      LABYRINTH: 'LABYRINTH',
+    };
+    const modeLabel = MODE_LABELS[configMode] ?? 'SOVEREIGN';
+    const displayP2Name = isPracticeMode ? rawP2Name : 'Player 2';
+
+    const labyrinthLoopFactor = Number(gameConfig.labyrinthLoopFactor ?? 0);
+    const labyrinthCornerFactor = Number(gameConfig.labyrinthCornerFactor ?? 0);
+    const labyrinthRegenInterval = Number(gameConfig.labyrinthRegenInterval ?? 450);
+    const labyrinthStepMs = Number(gameConfig.labyrinthStepMs ?? 100);
+    const labyrinthCorridorWidth = (Number(gameConfig.labyrinthCorridorWidth ?? 1) as 1 | 2 | 4 | 5);
+    const labyrinthSections = (Number(gameConfig.labyrinthSections ?? 1) as 1 | 3);
+    const labyrinthTeleports = Boolean(gameConfig.labyrinthTeleports ?? false);
+    const teamMode = (gameConfig.teamMode as 'solo' | 'teams' | 'ffa') ?? 'solo';
+
+    const convergenceShrinkInterval = gameConfig.convergenceShrinkInterval != null
+      ? Number(gameConfig.convergenceShrinkInterval) : undefined;
+    const convergenceMinCols = gameConfig.convergenceMinCols != null
+      ? Number(gameConfig.convergenceMinCols) : undefined;
+    const convergenceMinRows = gameConfig.convergenceMinRows != null
+      ? Number(gameConfig.convergenceMinRows) : undefined;
+    const convergenceStepMs = gameConfig.convergenceStepMs != null
+      ? Number(gameConfig.convergenceStepMs) : undefined;
+
+    const overclockStartStepMs = gameConfig.overclockStartStepMs != null
+      ? Number(gameConfig.overclockStartStepMs) : undefined;
+    const overclockMinStepMs = gameConfig.overclockMinStepMs != null
+      ? Number(gameConfig.overclockMinStepMs) : undefined;
+    const overclockStepIntervalTicks = gameConfig.overclockStepIntervalTicks != null
+      ? Number(gameConfig.overclockStepIntervalTicks) : undefined;
+    const overclockSpeedReductionMs = gameConfig.overclockSpeedReductionMs != null
+      ? Number(gameConfig.overclockSpeedReductionMs) : undefined;
+
     const state = createGameState({
-      p1Name: 'Player 1',
-      p2Name: 'BigToshi 🌊',
+      p1Name,
+      p2Name: displayP2Name,
       p1Points: 1000,
       p2Points: 1000,
-      modeLabel: 'Practice',
-      practiceMode: true,
+      modeLabel,
+      practiceMode: isPracticeMode,
       isTournament: false,
+      sovereignMode: isSovereign,
+      aiTier: aiTier as import('@/game/engine/types').AiTier,
+      overclockMode: isOverclock,
+      overclockStartStepMs,
+      overclockMinStepMs,
+      overclockStepIntervalTicks,
+      overclockSpeedReductionMs,
+      convergenceMode: isConvergence,
+      convergenceShrinkInterval,
+      convergenceMinCols,
+      convergenceMinRows,
+      convergenceStepMs,
+      powerupMode: isPowerup,
+      gauntletMode: isGauntlet,
+      gauntletLevel,
+      labyrinthMode: isLabyrinth,
+      labyrinthLoopFactor,
+      labyrinthCornerFactor,
+      labyrinthRegenInterval,
+      labyrinthStepMs,
+      labyrinthCorridorWidth,
+      labyrinthSections,
+      labyrinthTeleports,
+      teamMode,
     });
     stateRef.current = state;
     winnerSentRef.current = false;
-    setPlayer1Name('Player 1');
-    setPlayer2Name('BigToshi 🌊');
+    setPlayer1Name(p1Name);
+    setPlayer2Name(displayP2Name);
     setP1Points(1000);
     setP2Points(1000);
-    setGameInfo('Practice');
+    setGameInfo(modeLabel);
 
     const hud = getHudState(state);
     setCaptureP1(hud.captureP1);
@@ -142,6 +238,22 @@ export default function Game() {
   }, []);
 
   useEffect(() => {
+    // For new local modes (SOVEREIGN, GAUNTLET, OVERCLOCK, CONVERGENCE, POWERUP)
+    // bootstrap immediately without waiting for socket
+    let gameConfig: Record<string, unknown> = {};
+    try {
+      const raw = sessionStorage.getItem('gameConfig');
+      if (raw) gameConfig = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+    const localModes = ['SOVEREIGN', 'OVERCLOCK', 'CONVERGENCE', 'POWERUP', 'GAUNTLET', 'LABYRINTH'];
+    const configMode = String(gameConfig.mode ?? '').toUpperCase();
+    if (localModes.includes(configMode)) {
+      bootstrapLocalGame();
+      return;
+    }
+
     if (!socket || !connected) {
       const noSocketTimer = window.setTimeout(() => {
         if (loading && !stateRef.current) {
@@ -270,6 +382,25 @@ export default function Game() {
       navigate(mode === 'tournamentnostr' ? '/tournbracket?mode=tournamentnostr' : '/tournbracket');
       return;
     }
+    // Return to relevant menu for local-only modes
+    let gameConfig: Record<string, unknown> = {};
+    try {
+      const raw = sessionStorage.getItem('gameConfig');
+      if (raw) gameConfig = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+    const configMode = String(gameConfig.mode ?? '').toUpperCase();
+    const modeRoutes: Record<string, string> = {
+      SOVEREIGN:  '/sovereign',
+      GAUNTLET:   '/gauntlet',
+      LABYRINTH:  '/labyrinth',
+      OVERCLOCK:  '/overclock',
+      CONVERGENCE:'/convergence',
+      POWERUP:    '/solo',
+    };
+    const modeRoute = modeRoutes[configMode];
+    if (modeRoute) { navigate(modeRoute); return; }
     navigate('/postgame');
   }, [navigate]);
 
@@ -452,6 +583,25 @@ export default function Game() {
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
             <div id="gameCanvasHost" ref={hostRef} />
           </div>
+
+          {isPowerupMode && (
+            <div id="powerUpKey">
+              {[
+                { type: 'SURGE',     color: '#C8881A', label: 'SURGE',  desc: 'Speed boost · immune to tail collision · 4s' },
+                { type: 'FREEZE',    color: '#2878A8', label: 'FREEZE', desc: 'Opponent slows to half speed · 4s' },
+                { type: 'PHANTOM',   color: '#9898B8', label: 'GHOST',  desc: 'Loops through walls · phase through own tail · semi-invisible · 5s' },
+                { type: 'ANCHOR',    color: '#D0D0D0', label: 'ANCHOR', desc: 'Drops obstacle wall on next collision · 10s' },
+                { type: 'AMPLIFIER', color: '#7AAA70', label: 'AMP',    desc: 'Next 3 coinbases score double' },
+                { type: 'DECOY',     color: '#ffffff', label: 'DECOY',  desc: 'Fake coinbase · teleports opponent back to spawn' },
+              ].map(({ type, color, label, desc }) => (
+                <div key={type} className="powerUpKeyEntry">
+                  <span className="powerUpKeySwatch" style={{ borderColor: color, color }} >{type[0]}</span>
+                  <span className="powerUpKeyName condensed" style={{ color }}>{label}</span>
+                  <span className="powerUpKeyDesc">{desc}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div id="bitcoinDetails" className={footerHighlight ? 'highlight' : ''}>
             <div className="detail">
