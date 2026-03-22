@@ -146,9 +146,96 @@
 }
 
 .online-history-result {
-  font-size: 0.72cqw;
-  color: #bdbdbd;
-  margin: 0.35vw 0 0;
+  font-size: 0.62cqw;
+  color: #b0b0b0;
+  margin: 0.22vw 0 0;
+  width: 100%;
+  line-height: 1.25;
+}
+
+.online-room-card--history .online-room-actions {
+  align-self: center;
+}
+
+.online-history-matchup {
+  margin-top: 0.22vw;
+  width: 100%;
+  max-width: 100%;
+}
+
+.online-history-matchup-row {
+  display: flex;
+  gap: 0.28vw;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.online-history-player {
+  display: flex;
+  align-items: center;
+  gap: 0.32vw;
+  min-width: 0;
+  padding: 0.1vw 0.32vw;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(0 0 0 / 22%);
+}
+
+.online-history-player--winner {
+  border-color: rgb(140 200 130 / 0.45);
+  box-shadow: 0 0 8px rgb(80 140 70 / 0.14);
+}
+
+.online-history-avatar {
+  width: 1.55cqw;
+  height: 1.55cqw;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: 32px;
+  max-height: 32px;
+  object-fit: cover;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  flex-shrink: 0;
+}
+
+.online-history-player-info {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.22vw;
+  min-width: 0;
+}
+
+.online-history-player-name {
+  font-size: 0.58cqw;
+  color: #e4e4e4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(28vw, 160px);
+}
+
+.online-history-player-sep {
+  font-size: 0.52cqw;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.online-history-player-score {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: 0.62cqw;
+  color: #fff;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.online-history-vs {
+  font-size: 0.52cqw;
+  letter-spacing: 0.1em;
+  color: #777;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  padding: 0 0.05vw;
 }
 
 .online-archived {
@@ -186,6 +273,23 @@
   border-radius: 0;
   padding: 0.8vw 0.9vw;
   margin-bottom: 0.55vw;
+}
+
+/* Compact finished-match rows (must follow .online-room-card so padding wins). */
+.online-room-card.online-room-card--history {
+  align-items: flex-start;
+  padding: 0.42vw 0.55vw;
+  margin-bottom: 0.38vw;
+}
+
+.online-room-card.online-room-card--history .online-room-meta {
+  margin-top: 0.12vw;
+  gap: 0.55vw;
+  font-size: 0.68cqw;
+}
+
+.online-room-card.online-room-card--history .online-room-code {
+  font-size: 1.12cqw;
 }
 
 .online-selected {

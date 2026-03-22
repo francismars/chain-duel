@@ -6,7 +6,7 @@ import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
-import { OnlineRoomListItem } from '@/types/socket';
+import { OnlineRoomListItem, PlayerRole } from '@/types/socket';
 import '@/styles/pages/onlineRooms.css';
 
 type NavFocus =
@@ -21,6 +21,65 @@ const BUYIN_MIN = 10;
 const BUYIN_MAX = 1_000_000;
 const BUYIN_STEP = 10;
 const BUYIN_STEP_FAST = 50;
+
+const PLACEHOLDER_AVATAR = '/images/loading.gif';
+
+function HistoryMatchupBlock({ result }: { result: NonNullable<OnlineRoomListItem['result']> }) {
+  const winP1 =
+    result.winnerRole === PlayerRole.Player1 ||
+    (result.winnerRole == null && result.winnerName === result.p1Name);
+  const winP2 =
+    result.winnerRole === PlayerRole.Player2 ||
+    (result.winnerRole == null && result.winnerName === result.p2Name);
+  return (
+    <div className="online-history-matchup">
+      <div className="online-history-matchup-row">
+        <div
+          className={['online-history-player', winP1 ? 'online-history-player--winner' : '']
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <img
+            className="online-history-avatar"
+            src={result.p1Picture || PLACEHOLDER_AVATAR}
+            alt={result.p1Name}
+          />
+          <div className="online-history-player-info">
+            <span className="online-history-player-name">{result.p1Name}</span>
+            <span className="online-history-player-sep" aria-hidden="true">
+              ·
+            </span>
+            <span className="online-history-player-score">{result.p1Score}</span>
+          </div>
+        </div>
+        <span className="online-history-vs" aria-hidden="true">
+          vs
+        </span>
+        <div
+          className={['online-history-player', winP2 ? 'online-history-player--winner' : '']
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <img
+            className="online-history-avatar"
+            src={result.p2Picture || PLACEHOLDER_AVATAR}
+            alt={result.p2Name}
+          />
+          <div className="online-history-player-info">
+            <span className="online-history-player-name">{result.p2Name}</span>
+            <span className="online-history-player-sep" aria-hidden="true">
+              ·
+            </span>
+            <span className="online-history-player-score">{result.p2Score}</span>
+          </div>
+        </div>
+      </div>
+      <p className="online-history-result">
+        {result.winnerName} won · {result.netPrize} sats net
+      </p>
+    </div>
+  );
+}
 
 export default function OnlineRooms() {
   const navigate = useNavigate();
@@ -437,9 +496,13 @@ export default function OnlineRooms() {
           {displayedRooms.map((room, index) => (
             <div
               key={`${room.roomId}-${room.matchRound ?? 'live'}-${room.finishedAt ?? room.createdAt}`}
-              className={`online-room-card ${
-                navFocus.type === 'room' && navFocus.index === index ? 'online-selected' : ''
-              }`}
+              className={[
+                'online-room-card',
+                onlineTab === 'history' ? 'online-room-card--history' : '',
+                navFocus.type === 'room' && navFocus.index === index ? 'online-selected' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
             >
               <div className="online-room-main">
                 <p className="online-room-code">{room.roomCode}</p>
@@ -455,10 +518,7 @@ export default function OnlineRooms() {
                   {room.archived ? <span className="online-archived">ARCHIVED</span> : null}
                 </p>
                 {onlineTab === 'history' && room.result ? (
-                  <p className="online-history-result">
-                    {room.result.winnerName} won · {room.result.p1Score}–{room.result.p2Score} ·{' '}
-                    {room.result.netPrize} sats net
-                  </p>
+                  <HistoryMatchupBlock result={room.result} />
                 ) : null}
               </div>
               <div className="online-room-actions">
