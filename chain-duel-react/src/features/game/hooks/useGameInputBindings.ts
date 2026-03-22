@@ -3,6 +3,7 @@ import {
   canContinueAfterGame,
   setWantedDirection,
   startCountdown,
+  switchPlayerLayer,
 } from '@/game/engine';
 import type { GameState } from '@/game/engine/types';
 import { NAVIGATE_AFTER_FINISH_DELAY_MS } from '@/shared/constants/timeouts';
@@ -75,6 +76,10 @@ export function useGameInputBindings({
           break;
         case 'ARROWDOWN':
           if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Down');
+          break;
+        case 'Q':
+          // Phase-shift between 3D board layers (Gauntlet 3D levels)
+          switchPlayerLayer(state);
           break;
         default:
           break;
