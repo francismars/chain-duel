@@ -228,9 +228,10 @@ body {
 #powerUpKey {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3vw 1.6vw;
-  width: 100%;
-  padding: 0.5vw 0.2vw 0.3vw;
+  gap: 0.25vw 1.4vw;
+  width: 70vw;
+  margin: 0 15%;
+  padding: 0.55vw 0 0.35vw;
   box-sizing: border-box;
   justify-content: center;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -239,21 +240,21 @@ body {
 .powerUpKeyEntry {
   display: flex;
   align-items: center;
-  gap: 0.35em;
+  gap: 0.4em;
   white-space: nowrap;
 }
 
-.powerUpKeySwatch {
+.powerUpKeyIcon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.3em;
-  height: 1.3em;
-  border: 1px solid;
-  font-size: clamp(7px, 0.65vw, 9px);
-  font-weight: 700;
-  font-family: 'BureauGrotesque', sans-serif;
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.powerUpKeyIcon svg {
+  display: block;
 }
 
 .powerUpKeyName {
