@@ -1,6 +1,7 @@
 import { useEffect, type MutableRefObject } from 'react';
 import {
   canContinueAfterGame,
+  setExtraSnakeWantedDirection,
   setWantedDirection,
   setStrategyShift,
   startCountdown,
@@ -60,28 +61,68 @@ export function useGameInputBindings({
 
       switch (key) {
         case 'A':
-          setWantedDirection(state, 'P1', 'Left');
+          if (state.meta.p1Human) setWantedDirection(state, 'P1', 'Left');
           break;
         case 'D':
-          setWantedDirection(state, 'P1', 'Right');
+          if (state.meta.p1Human) setWantedDirection(state, 'P1', 'Right');
           break;
         case 'W':
-          setWantedDirection(state, 'P1', 'Up');
+          if (state.meta.p1Human) setWantedDirection(state, 'P1', 'Up');
           break;
         case 'S':
-          setWantedDirection(state, 'P1', 'Down');
+          if (state.meta.p1Human) setWantedDirection(state, 'P1', 'Down');
           break;
         case 'ARROWLEFT':
-          if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Left');
+          if (state.meta.p2Human) setWantedDirection(state, 'P2', 'Left');
           break;
         case 'ARROWRIGHT':
-          if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Right');
+          if (state.meta.p2Human) setWantedDirection(state, 'P2', 'Right');
           break;
         case 'ARROWUP':
-          if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Up');
+          if (state.meta.p2Human) setWantedDirection(state, 'P2', 'Up');
           break;
         case 'ARROWDOWN':
-          if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Down');
+          if (state.meta.p2Human) setWantedDirection(state, 'P2', 'Down');
+          break;
+        case 'I':
+          if (state.extraSnakes[0]?.humanControlled) {
+            setExtraSnakeWantedDirection(state, 0, 'Up');
+          }
+          break;
+        case 'J':
+          if (state.extraSnakes[0]?.humanControlled) {
+            setExtraSnakeWantedDirection(state, 0, 'Left');
+          }
+          break;
+        case 'K':
+          if (state.extraSnakes[0]?.humanControlled) {
+            setExtraSnakeWantedDirection(state, 0, 'Down');
+          }
+          break;
+        case 'L':
+          if (state.extraSnakes[0]?.humanControlled) {
+            setExtraSnakeWantedDirection(state, 0, 'Right');
+          }
+          break;
+        case 'T':
+          if (state.extraSnakes[1]?.humanControlled) {
+            setExtraSnakeWantedDirection(state, 1, 'Up');
+          }
+          break;
+        case 'F':
+          if (state.extraSnakes[1]?.humanControlled) {
+            setExtraSnakeWantedDirection(state, 1, 'Left');
+          }
+          break;
+        case 'G':
+          if (state.extraSnakes[1]?.humanControlled) {
+            setExtraSnakeWantedDirection(state, 1, 'Down');
+          }
+          break;
+        case 'H':
+          if (state.extraSnakes[1]?.humanControlled) {
+            setExtraSnakeWantedDirection(state, 1, 'Right');
+          }
           break;
         default:
           break;

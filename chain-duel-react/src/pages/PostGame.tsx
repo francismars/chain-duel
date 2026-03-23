@@ -140,7 +140,7 @@ export default function PostGame() {
     // Keep legacy full-page navigation, but allow one frame for websocket frame flush.
     window.setTimeout(() => {
       if (gameMode === 'PRACTICE') {
-        window.location.href = '/practicemenu';
+        window.location.href = '/regtest';
         return;
       }
       window.location.href = gameMode === 'P2PNOSTR' ? '/gamemenu?nostr=true' : '/gamemenu';
@@ -255,7 +255,7 @@ export default function PostGame() {
   const canDoubleOrNothing = menu === 1 && !tournamentMode && !prizeClaimed && !loading;
 
   const claimButtonText = useMemo(() => {
-    if (menu === 3) return 'HIGHSCORES';
+    if (menu === 3) return 'LEDGER';
     if (menu === 2) return creatingWithdrawal ? 'CREATING CODE...' : 'BLUR QR CODE';
     if (practiceMode) return 'END PRACTICE';
     if (tournamentMode) return 'CLAIM TOURNAMENT PRIZE';

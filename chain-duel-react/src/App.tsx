@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AudioProvider } from './contexts/AudioContext';
 import { CornerControls } from './components/ui/CornerControls';
 import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
@@ -15,6 +15,8 @@ import StrategySetup from './pages/StrategySetup';
 import PowerupSetup from './pages/PowerupSetup';
 import BountyLeaderboard from './pages/BountyLeaderboard';
 import TournamentPrefs from './pages/TournamentPrefs';
+import TestnetHub from './pages/TestnetHub';
+import TestnetEntry from './pages/TestnetEntry';
 import TournamentLobby from './pages/TournamentLobby';
 import TournamentBracket from './pages/TournamentBracket';
 import Game from './pages/Game';
@@ -35,6 +37,7 @@ function App() {
         <CornerControls />
         <Routes>
           <Route element={<PageRevealOutlet />}>
+            {/* Home & game flow */}
             <Route path="/" element={<Index />} />
             <Route path="/gamemenu" element={<GameMenu />} />
             <Route path="/practicemenu" element={<PracticeMenu />} />
@@ -52,9 +55,20 @@ function App() {
             <Route path="/tournbracket" element={<TournamentBracket />} />
             <Route path="/game" element={<Game />} />
             <Route path="/postgame" element={<PostGame />} />
+
+            {/* Regtest hub */}
+            <Route path="/regtest" element={<TestnetHub />} />
+            <Route path="/testnet" element={<Navigate to="/regtest" replace />} />
+
+            {/* Testnet tournament (paid entry + lobby + bracket) */}
+            <Route path="/testnet-entry" element={<TestnetEntry />} />
+
+            {/* Meta */}
             <Route path="/highscores" element={<Highscores />} />
             <Route path="/about" element={<About />} />
             <Route path="/config" element={<Config />} />
+
+            {/* Online */}
             <Route path="/online" element={<OnlineRooms />} />
             <Route path="/online/lobby" element={<OnlineRoomLobby />} />
             <Route path="/online/game" element={<OnlineGame />} />

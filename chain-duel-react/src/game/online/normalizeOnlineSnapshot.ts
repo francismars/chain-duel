@@ -10,11 +10,22 @@ export function normalizeOnlineRoomSnapshot(snapshot: OnlineRoomSnapshot): Onlin
     return snapshot;
   }
   const hud = snapshot.hud;
-  const metaRaw = state.meta as { modeLabel?: string; isTournament?: boolean; practiceMode?: boolean } | undefined;
+  const metaRaw = state.meta as {
+    modeLabel?: string;
+    isTournament?: boolean;
+    practiceMode?: boolean;
+    p1Human?: boolean;
+    p2Human?: boolean;
+  } | undefined;
+  const practiceMode =
+    typeof metaRaw?.practiceMode === 'boolean' ? metaRaw.practiceMode : false;
   const meta = {
     modeLabel: typeof metaRaw?.modeLabel === 'string' ? metaRaw.modeLabel : 'ONLINE',
     isTournament: typeof metaRaw?.isTournament === 'boolean' ? metaRaw.isTournament : false,
-    practiceMode: typeof metaRaw?.practiceMode === 'boolean' ? metaRaw.practiceMode : false,
+    practiceMode,
+    p1Human: typeof metaRaw?.p1Human === 'boolean' ? metaRaw.p1Human : true,
+    p2Human:
+      typeof metaRaw?.p2Human === 'boolean' ? metaRaw.p2Human : !practiceMode,
   };
 
   return {
