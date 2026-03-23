@@ -340,6 +340,21 @@ function generate3SectionMaze(
 // ============================================================================
 // Extra-snake helpers
 
+/** Tail cell opposite the initial facing direction (head + 1 segment). */
+function bodySegmentBehindHead(
+  head: GridPos,
+  dirWanted: Exclude<Direction, ''>,
+): GridPos {
+  const [x, y] = head;
+  switch (dirWanted) {
+    case 'Right': return [x - 1, y];
+    case 'Left': return [x + 1, y];
+    case 'Down': return [x, y - 1];
+    case 'Up': return [x, y + 1];
+    default: return [x - 1, y];
+  }
+}
+
 function makeExtraSnake(
   spawnHead: GridPos,
   spawnDir: Direction,
@@ -350,8 +365,15 @@ function makeExtraSnake(
   humanControlled: boolean,
   outline?: number,
 ): ExtraSnake {
+  const d: Exclude<Direction, ''> = spawnDir === '' ? 'Right' : spawnDir;
+  const tail = bodySegmentBehindHead([spawnHead[0], spawnHead[1]], d);
   return {
-    snake: { head: [spawnHead[0], spawnHead[1]], body: [], dir: '', dirWanted: spawnDir },
+    snake: {
+      head: [spawnHead[0], spawnHead[1]],
+      body: [tail],
+      dir: '',
+      dirWanted: spawnDir,
+    },
     teamId, color, outline, name, score: 0, aiTier, humanControlled, spawnHead, spawnDir,
   };
 }
@@ -606,14 +628,26 @@ export function createGameState(args: CreateStateArgs): GameState {
       // Shadow: visible dark grey + blue border (0x111111 is invisible on dark bg)
       makeExtraSnake([46, 15], 'Left',  1, 0x3a3a3a, 'Shadow', enemyTier, p4Human, 0x3366FF),
     ];
-    // Spread P1/P2 to top slots so allies start below
-    state.p1.head = [4, 9];  state.p1.body = [];
-    state.p2.head = [46, 9]; state.p2.body = [];
+    // Spread P1/P2 to top slots so allies start below (head + 1 body like 1v1)
+    {
+      const h1: GridPos = [4, 9];
+      const h2: GridPos = [46, 9];
+      state.p1.head = h1;
+      state.p1.body = [bodySegmentBehindHead(h1, 'Right')];
+      state.p2.head = h2;
+      state.p2.body = [bodySegmentBehindHead(h2, 'Left')];
+    }
   } else if (teamMode === 'ffa') {
     const fTier = args.ffaAiTier ?? (args.aiTier ?? 'hunter');
     // Spread 4 snakes to corners
-    state.p1.head = [4, 4];   state.p1.body = [];
-    state.p2.head = [46, 4];  state.p2.body = [];
+    {
+      const h1: GridPos = [4, 4];
+      const h2: GridPos = [46, 4];
+      state.p1.head = h1;
+      state.p1.body = [bodySegmentBehindHead(h1, 'Right')];
+      state.p2.head = h2;
+      state.p2.body = [bodySegmentBehindHead(h2, 'Left')];
+    }
     state.p2.dirWanted = 'Left';
     state.extraSnakes = [
       makeExtraSnake([46, 20], 'Left',  1, 0x777777, 'Ghost',   fTier, p3Human),
@@ -736,8 +770,8 @@ function findSafeTeleportPos(state: GameState, player: PlayerId): GridPos | null
   const maxY = border ? border.bottom - 1 : state.rows - 3;
 
   for (let attempts = 0; attempts < 200; attempts++) {
-    const x = minX + Math.floor(Math.random() * (maxX - minX));
-    const y = minY + Math.floor(Math.random() * (maxY - minY));
+    const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
+    const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
     const pos: GridPos = [x, y];
     const distFromOpponent = Math.hypot(pos[0] - opponent.head[0], pos[1] - opponent.head[1]);
     if (distFromOpponent >= CHAIN_ABILITY_SHADOW_STEP_SAFE_RADIUS && !hasCollisionAt(state, pos)) {
@@ -999,6 +1033,25 @@ export function advanceShrinkBorder(state: GameState): void {
     const newPos = findSafePosInBorder(state, sb);
     return newPos ? { ...cb, pos: newPos } : cb;
   });
+
+  // Power-ups must stay in the playable interior (same as food)
+  state.powerUpItems = state.powerUpItems.map((item) => {
+    if (isPosInsideActiveBorder(sb, item.pos)) return item;
+    const newPos = findSafePosInBorder(state, sb);
+    return newPos ? { ...item, pos: newPos } : item;
+  });
+
+  // Extra snakes (teams / FFA): fixed spawn points can end up outside the new border
+  for (const extra of state.extraSnakes) {
+    if (outOfBounds(state, extra.snake.head) || hitsObstacle(state, extra.snake.head)) {
+      resetExtraSnake(extra, state);
+    }
+  }
+
+  // Void cells are invalid if the wall moved over them
+  if (state.voidCells.length > 0) {
+    state.voidCells = state.voidCells.filter((c) => isPosInsideActiveBorder(sb, c));
+  }
 }
 
 /** Returns true when pos is safely inside the active (non-wall) area */
@@ -1017,6 +1070,22 @@ function findSafePosInBorder(state: GameState, sb: import('./types').ShrinkBorde
     const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
     const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
     if (!hasCollisionAt(state, [x, y])) return [x, y];
+  }
+  return scanGridForSafePosInBorder(state, sb);
+}
+
+/** Deterministic fallback when random placement fails (crowded small arenas). */
+function scanGridForSafePosInBorder(state: GameState, sb: import('./types').ShrinkBorder): GridPos | null {
+  const minX = sb.left + 1;
+  const maxX = sb.right - 1;
+  const minY = sb.top + 1;
+  const maxY = sb.bottom - 1;
+  if (maxX < minX || maxY < minY) return null;
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const pos: GridPos = [x, y];
+      if (!hasCollisionAt(state, pos)) return pos;
+    }
   }
   return null;
 }
@@ -1219,10 +1288,16 @@ function exitTeleport(state: GameState, player: 'P1' | 'P2', exitPos: GridPos): 
 
 function regenerateVoidCells(state: GameState): void {
   const newCells: GridPos[] = [];
+  const sb = state.shrinkBorder;
+  const minX = sb ? sb.left + 1 : 2;
+  const maxX = sb ? sb.right - 1 : state.cols - 3;
+  const minY = sb ? sb.top + 1 : 2;
+  const maxY = sb ? sb.bottom - 1 : state.rows - 3;
   let attempts = 0;
   while (newCells.length < VOID_CELLS_COUNT && attempts < 500) {
-    const x = 2 + Math.floor(Math.random() * (state.cols - 4));
-    const y = 2 + Math.floor(Math.random() * (state.rows - 4));
+    if (maxX < minX || maxY < minY) break;
+    const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
+    const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
     const pos: GridPos = [x, y];
     if (!hasCollisionAt(state, pos) && !newCells.some((c) => samePos(c, pos))) {
       newCells.push(pos);
@@ -1238,16 +1313,25 @@ function regenerateVoidCells(state: GameState): void {
 
 export function spawnPowerUp(state: GameState): void {
   const type = weightedRandomPowerUp();
+  const border = state.shrinkBorder;
+  const minX = border ? border.left + 1 : 0;
+  const maxX = border ? border.right - 1 : state.cols - 1;
+  const minY = border ? border.top + 1 : 0;
+  const maxY = border ? border.bottom - 1 : state.rows - 1;
   let attempts = 0;
   while (attempts < 200) {
-    const x = Math.floor(Math.random() * state.cols);
-    const y = Math.floor(Math.random() * state.rows);
+    const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
+    const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
     const pos: GridPos = [x, y];
-    if (!hasCollisionAt(state, pos) && !state.powerUpItems.some((p) => samePos(p.pos, pos))) {
+    if (!hasCollisionAt(state, pos)) {
       state.powerUpItems.push({ pos, type });
       return;
     }
     attempts++;
+  }
+  if (border) {
+    const p = findSafePosInBorder(state, border);
+    if (p) state.powerUpItems.push({ pos: p, type });
   }
 }
 
@@ -1703,49 +1787,97 @@ function resetSnake(state: GameState, player: PlayerId): void {
   const isLabyrinth = state.meta.labyrinthMode;
   const wideLabyrinth = isLabyrinth && state.meta.labyrinthCorridorWidth === 2;
   const quadLabyrinth = isLabyrinth && (state.meta.labyrinthCorridorWidth === 4 || state.meta.labyrinthCorridorWidth === 5);
+  const teamMode = state.meta.teamMode ?? 'solo';
+  const conv = Boolean(state.meta.convergenceMode && state.shrinkBorder);
+  const sb = state.shrinkBorder;
 
   if (player === 'P1') {
-    let head: GridPos = isLabyrinth ? [1, 1] : [6, 12];
-    let body: GridPos[] = isLabyrinth ? [] : [[5, 12]];
-
-    // Convergence: Y stays fixed at row 12; push X inward (rightward) as left wall advances
-    if (state.meta.convergenceMode && state.shrinkBorder) {
-      const sb = state.shrinkBorder;
-      const spawnX = Math.max(head[0], sb.left + 2);
-      head = [spawnX, 12];
-      body = [[Math.max(sb.left + 1, spawnX - 1), 12]];
+    if (isLabyrinth) {
+      state.p1.head = [1, 1];
+      state.p1.body = [];
+    } else if (teamMode === 'teams') {
+      let head: GridPos = [4, 9];
+      let body: GridPos[] = [bodySegmentBehindHead(head, 'Right')];
+      if (conv && sb) {
+        const spawnX = Math.max(4, sb.left + 2);
+        head = [spawnX, 9];
+        body = [[Math.max(sb.left + 1, spawnX - 1), 9]];
+      }
+      state.p1.head = head;
+      state.p1.body = body;
+    } else if (teamMode === 'ffa') {
+      let head: GridPos = [4, 4];
+      let body: GridPos[] = [bodySegmentBehindHead(head, 'Right')];
+      if (conv && sb) {
+        const spawnX = Math.max(4, sb.left + 2);
+        const spawnY = Math.max(4, sb.top + 2);
+        head = [spawnX, spawnY];
+        body = [[Math.max(sb.left + 1, spawnX - 1), spawnY]];
+      }
+      state.p1.head = head;
+      state.p1.body = body;
+    } else {
+      let head: GridPos = [6, 12];
+      let body: GridPos[] = [[5, 12]];
+      if (conv && sb) {
+        const spawnX = Math.max(head[0], sb.left + 2);
+        head = [spawnX, 12];
+        body = [[Math.max(sb.left + 1, spawnX - 1), 12]];
+      }
+      state.p1.head = head;
+      state.p1.body = body;
     }
-
-    state.p1.head = head;
-    state.p1.body = body;
     state.p1.dir = '';
     state.p1.dirWanted = 'Right';
     state.currentCaptureP1 = '2%';
     state.activePowerUps = state.activePowerUps.filter((ap) => ap.player !== 'P1');
-  } else {
-    let head: GridPos =
-      (isLabyrinth && state.meta.labyrinthCorridorWidth === 5) ? [43, 19] :
-      quadLabyrinth ? [47, 17] :
-      wideLabyrinth ? [47, 22] :
-      isLabyrinth ? [49, 23] : [44, 12];
-    let body: GridPos[] = isLabyrinth ? [] : [[45, 12]];
+    return;
+  }
 
-    // Convergence: Y stays fixed at row 12; push X inward (leftward) as right wall advances
-    if (state.meta.convergenceMode && state.shrinkBorder) {
-      const sb = state.shrinkBorder;
+  // P2
+  if (isLabyrinth) {
+    state.p2.head =
+      (state.meta.labyrinthCorridorWidth === 5) ? [43, 19] :
+      quadLabyrinth ? [47, 17] :
+      wideLabyrinth ? [47, 22] : [49, 23];
+    state.p2.body = [];
+  } else if (teamMode === 'teams') {
+    let head: GridPos = [46, 9];
+    let body: GridPos[] = [bodySegmentBehindHead(head, 'Left')];
+    if (conv && sb) {
+      const spawnX = Math.min(46, sb.right - 2);
+      head = [spawnX, 9];
+      body = [[Math.min(sb.right - 1, spawnX + 1), 9]];
+    }
+    state.p2.head = head;
+    state.p2.body = body;
+  } else if (teamMode === 'ffa') {
+    let head: GridPos = [46, 4];
+    let body: GridPos[] = [bodySegmentBehindHead(head, 'Left')];
+    if (conv && sb) {
+      const spawnX = Math.min(46, sb.right - 2);
+      const spawnY = Math.max(4, sb.top + 2);
+      head = [spawnX, spawnY];
+      body = [[Math.min(sb.right - 1, spawnX + 1), spawnY]];
+    }
+    state.p2.head = head;
+    state.p2.body = body;
+  } else {
+    let head: GridPos = [44, 12];
+    let body: GridPos[] = [[45, 12]];
+    if (conv && sb) {
       const spawnX = Math.min(head[0], sb.right - 2);
       head = [spawnX, 12];
       body = [[Math.min(sb.right - 1, spawnX + 1), 12]];
     }
-
     state.p2.head = head;
     state.p2.body = body;
-    state.p2.dir = '';
-    state.p2.dirWanted = 'Left';
-    state.currentCaptureP2 = '2%';
-    if (!retainSpeed) {
-      state.activePowerUps = state.activePowerUps.filter((ap) => ap.player !== 'P2');
-    }
+  }
+  state.p2.dir = '';
+  state.p2.dirWanted = 'Left';
+  state.currentCaptureP2 = '2%';
+  if (!retainSpeed) {
+    state.activePowerUps = state.activePowerUps.filter((ap) => ap.player !== 'P2');
   }
 }
 
@@ -1757,7 +1889,12 @@ function hasCollisionAt(state: GameState, pos: GridPos): boolean {
   if (samePos(state.p1.head, pos) || samePos(state.p2.head, pos)) return true;
   if (state.p1.body.some((part) => samePos(part, pos))) return true;
   if (state.p2.body.some((part) => samePos(part, pos))) return true;
+  for (const e of state.extraSnakes) {
+    if (samePos(e.snake.head, pos)) return true;
+    if (e.snake.body.some((part) => samePos(part, pos))) return true;
+  }
   if (state.coinbases.some((cb) => samePos(cb.pos, pos))) return true;
+  if (state.powerUpItems.some((p) => samePos(p.pos, pos))) return true;
   if (state.obstacleWalls.some((w) => samePos(w.pos, pos))) return true;
   return false;
 }
@@ -1844,9 +1981,32 @@ function tickMovingWalls(state: GameState): void {
 // Extra-snake helpers (teams / ffa)
 // ============================================================================
 
-function resetExtraSnake(extra: ExtraSnake): void {
-  extra.snake.head = [extra.spawnHead[0], extra.spawnHead[1]];
+function resetExtraSnake(extra: ExtraSnake, state: GameState): void {
+  let head: GridPos = [extra.spawnHead[0], extra.spawnHead[1]];
+  if (state.shrinkBorder) {
+    const sb = state.shrinkBorder;
+    if (!isPosInsideActiveBorder(sb, head) || hasCollisionAt(state, head)) {
+      const safe = findSafePosInBorder(state, sb);
+      if (safe) head = safe;
+    }
+  }
+  extra.snake.head = head;
   extra.snake.body = [];
+  const dir: Exclude<Direction, ''> = extra.spawnDir === '' ? 'Right' : extra.spawnDir;
+  let tail = bodySegmentBehindHead(head, dir);
+  if (!hasCollisionAt(state, tail)) {
+    extra.snake.body = [tail];
+  } else {
+    const alts: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
+    for (const d2 of alts) {
+      if (d2 === dir) continue;
+      tail = bodySegmentBehindHead(head, d2);
+      if (!hasCollisionAt(state, tail)) {
+        extra.snake.body = [tail];
+        break;
+      }
+    }
+  }
   extra.snake.dir = '';
   extra.snake.dirWanted = extra.spawnDir;
 }
@@ -1955,7 +2115,7 @@ function captureExtraSnakeCoinbases(state: GameState): void {
       const cb = state.coinbases[i];
       if (!samePos(extra.snake.head, cb.pos)) continue;
       if (cb.isDecoy) {
-        resetExtraSnake(extra);
+        resetExtraSnake(extra, state);
         state.coinbases.splice(i, 1);
         break;
       }
@@ -1978,19 +2138,19 @@ function captureExtraSnakeCoinbases(state: GameState): void {
 function checkExtraSnakeCollisions(state: GameState): void {
   for (const extra of state.extraSnakes) {
     if (outOfBounds(state, extra.snake.head) || hitsObstacle(state, extra.snake.head)) {
-      resetExtraSnake(extra); continue;
+      resetExtraSnake(extra, state); continue;
     }
     // Self-collision
     if (extra.snake.body.some((p) => samePos(p, extra.snake.head))) {
-      resetExtraSnake(extra); continue;
+      resetExtraSnake(extra, state); continue;
     }
     // Hit P1 body
     if (state.p1.body.some((p) => samePos(p, extra.snake.head))) {
-      resetExtraSnake(extra); continue;
+      resetExtraSnake(extra, state); continue;
     }
     // Hit P2 body
     if (state.p2.body.some((p) => samePos(p, extra.snake.head))) {
-      resetExtraSnake(extra); continue;
+      resetExtraSnake(extra, state); continue;
     }
     // Hit another extra snake
     let hitOther = false;
@@ -2001,7 +2161,7 @@ function checkExtraSnakeCollisions(state: GameState): void {
         hitOther = true; break;
       }
     }
-    if (hitOther) { resetExtraSnake(extra); continue; }
+    if (hitOther) { resetExtraSnake(extra, state); continue; }
   }
   // P1/P2 heads hitting extra snake bodies
   for (const extra of state.extraSnakes) {
@@ -2012,8 +2172,8 @@ function checkExtraSnakeCollisions(state: GameState): void {
       resetSnake(state, 'P2');
     }
     // Head-on collisions
-    if (samePos(state.p1.head, extra.snake.head)) { resetSnake(state, 'P1'); resetExtraSnake(extra); }
-    if (samePos(state.p2.head, extra.snake.head)) { resetSnake(state, 'P2'); resetExtraSnake(extra); }
+    if (samePos(state.p1.head, extra.snake.head)) { resetSnake(state, 'P1'); resetExtraSnake(extra, state); }
+    if (samePos(state.p2.head, extra.snake.head)) { resetSnake(state, 'P2'); resetExtraSnake(extra, state); }
   }
 }
 
@@ -2291,3 +2451,4 @@ export function getMetaFromDuel(
   }
   return { modeLabel: mode || 'P2P', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, gauntletMode: false, bountyMode: false };
 }
+
