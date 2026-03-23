@@ -357,11 +357,12 @@ function makeExtraSnake(
   color: number,
   name: string,
   aiTier: AiTier,
+  humanControlled: boolean,
   outline?: number,
 ): ExtraSnake {
   return {
     snake: { head: [spawnHead[0], spawnHead[1]], body: [], dir: '', dirWanted: spawnDir },
-    teamId, color, outline, name, score: 0, aiTier, spawnHead, spawnDir,
+    teamId, color, outline, name, score: 0, aiTier, humanControlled, spawnHead, spawnDir,
   };
 }
 
@@ -485,6 +486,11 @@ interface CreateStateArgs {
   teamAllyAiTier?: AiTier;    // P3 tier in teams mode (defaults to one below opponent)
   teamEnemyAiTier?: AiTier;   // P4 tier in teams mode (defaults to same as aiTier)
   ffaAiTier?: AiTier;         // tier for P2/P3/P4 in FFA (defaults to aiTier)
+  p1Human?: boolean;
+  p2Human?: boolean;
+  /** Extra snakes (teams/FFA slot 3 & 4). Default false = AI when omitted. */
+  p3Human?: boolean;
+  p4Human?: boolean;
 }
 
 // ============================================================================
@@ -550,6 +556,17 @@ export function createGameState(args: CreateStateArgs): GameState {
     ? [{ pos: initialCoinbasePos }]
     : initialCoinbases;
 
+  const gauntletAiOpponent =
+    (args.gauntletMode ?? false) &&
+    getGauntletLevel(gauntletLevel).modifiers.includes('ai_opponent');
+  const defaultP2Human = !(
+    Boolean(args.practiceMode) ||
+    Boolean(args.sovereignMode) ||
+    gauntletAiOpponent
+  );
+  const p1HumanMeta = args.p1Human !== undefined ? Boolean(args.p1Human) : true;
+  const p2HumanMeta = args.p2Human !== undefined ? Boolean(args.p2Human) : defaultP2Human;
+
   const state: GameState = {
     cols: strategyMode ? STRATEGY_COLS : GAME_COLS,
     rows: strategyMode ? STRATEGY_ROWS : GAME_ROWS,
@@ -584,6 +601,8 @@ export function createGameState(args: CreateStateArgs): GameState {
     meta: {
       modeLabel: args.modeLabel,
       practiceMode: args.practiceMode ?? false,
+      p1Human: p1HumanMeta,
+      p2Human: p2HumanMeta,
       isTournament: args.isTournament ?? false,
       sovereignMode: args.sovereignMode ?? false,
       aiTier: args.aiTier ?? 'hunter',
@@ -698,14 +717,16 @@ export function createGameState(args: CreateStateArgs): GameState {
 
   // ── Spawn extra snakes for teams / FFA ──────────────────────────────────
   const teamMode = args.teamMode ?? 'solo';
+  const p3Human = args.p3Human === true;
+  const p4Human = args.p4Human === true;
   if (teamMode === 'teams') {
     const allyTier  = args.teamAllyAiTier  ?? downTier(args.aiTier ?? 'hunter');
     const enemyTier = args.teamEnemyAiTier ?? (args.aiTier ?? 'hunter');
     state.extraSnakes = [
-      // Ally:   medium grey + white outline — light team partner to P1 (white)
-      makeExtraSnake([4, 15],  'Right', 0, 0x888888, 'Ally',   allyTier,  0xFFFFFF),
-      // Shadow: dark grey + black outline — dark team partner to P2 (black)
-      makeExtraSnake([46, 15], 'Left',  1, 0x3A3A3A, 'Shadow', enemyTier, 0x000000),
+      // Ally:   white + blue border
+      makeExtraSnake([4, 15],  'Right', 0, 0xffffff, 'Ally',   allyTier,  p3Human, 0x3366FF),
+      // Shadow: visible dark grey + blue border (0x111111 is invisible on dark bg)
+      makeExtraSnake([46, 15], 'Left',  1, 0x3a3a3a, 'Shadow', enemyTier, p4Human, 0x3366FF),
     ];
     // Spread P1/P2 to top slots so allies start below
     state.p1.head = [4, 9];  state.p1.body = [];
@@ -721,9 +742,8 @@ export function createGameState(args: CreateStateArgs): GameState {
     state.p1SpawnHead = [4, 4];
     state.p2SpawnHead = [46, 4];
     state.extraSnakes = [
-      // FFA mirrors teams palette: light grey + white outline, dark grey + black outline
-      makeExtraSnake([46, 20], 'Left',  1, 0x888888, 'Ghost',   fTier, 0xFFFFFF),
-      makeExtraSnake([4,  20], 'Right', 1, 0x3A3A3A, 'Specter', fTier, 0x000000),
+      makeExtraSnake([46, 20], 'Left',  1, 0x777777, 'Ghost',   fTier, p3Human),
+      makeExtraSnake([4,  20], 'Right', 1, 0xAAAAAA, 'Specter', fTier, p4Human),
     ];
   }
 
@@ -776,6 +796,26 @@ export function setWantedDirection(
     if (dir === 'Right' && (snake.dir === 'Up' || snake.dir === 'Down' || snake.dir === '')) snake.dirWanted = 'Right';
     if (dir === 'Up' && (snake.dir === 'Left' || snake.dir === 'Right')) snake.dirWanted = 'Up';
     if (dir === 'Down' && (snake.dir === 'Left' || snake.dir === 'Right')) snake.dirWanted = 'Down';
+    return;
+  }
+  if (dir === 'Left' && (snake.dir === 'Up' || snake.dir === 'Down' || snake.dir === '')) snake.dirWanted = 'Left';
+  if (dir === 'Right' && (snake.dir === 'Up' || snake.dir === 'Down')) snake.dirWanted = 'Right';
+  if (dir === 'Up' && (snake.dir === 'Left' || snake.dir === 'Right')) snake.dirWanted = 'Up';
+  if (dir === 'Down' && (snake.dir === 'Left' || snake.dir === 'Right')) snake.dirWanted = 'Down';
+}
+
+/** Steer P3/P4 (extraSnakes[0] / extraSnakes[1]) when `humanControlled` is set. */
+export function setExtraSnakeWantedDirection(
+  state: GameState,
+  index: number,
+  dir: Exclude<Direction, ''>
+): void {
+  const extra = state.extraSnakes[index];
+  if (!extra?.humanControlled) return;
+  const snake = extra.snake;
+  const spawn = extra.spawnDir;
+  if (!state.gameStarted) {
+    if (dir === spawn) snake.dirWanted = dir;
     return;
   }
   if (dir === 'Left' && (snake.dir === 'Up' || snake.dir === 'Down' || snake.dir === '')) snake.dirWanted = 'Left';
@@ -923,10 +963,13 @@ export function stepGame(state: GameState): TickResult {
       }
     }
 
-    // AI decision
-    const useAi = state.meta.practiceMode || state.meta.sovereignMode ||
-      (state.meta.gauntletMode && isGauntletAiLevel(state));
-    if (useAi) {
+    // AI decision — pathfinding helpers treat P2 as the bot; swap when P1 is the bot.
+    if (!state.meta.p1Human) {
+      swapP1P2Snakes(state);
+      decideAiDirection(state);
+      swapP1P2Snakes(state);
+    }
+    if (!state.meta.p2Human) {
       decideAiDirection(state);
     }
 
@@ -1010,7 +1053,9 @@ export function stepGame(state: GameState): TickResult {
 
     // ── Extra snakes (teams / ffa) ──────────────────────────────────────────
     if (state.extraSnakes.length > 0) {
-      for (const extra of state.extraSnakes) decideExtraSnakeDir(state, extra);
+      for (const extra of state.extraSnakes) {
+        if (!extra.humanControlled) decideExtraSnakeDir(state, extra);
+      }
       for (const extra of state.extraSnakes) moveSnake(extra.snake);
       captureExtraSnakeCoinbases(state);
       checkExtraSnakeCollisions(state);
@@ -2077,16 +2122,6 @@ export function canContinueAfterGame(state: GameState, key: string): boolean {
 }
 
 // ============================================================================
-// Gauntlet helpers
-// ============================================================================
-
-function isGauntletAiLevel(state: GameState): boolean {
-  if (!state.meta.gauntletMode) return false;
-  const level = getGauntletLevel(state.meta.gauntletLevel);
-  return level.modifiers.includes('ai_opponent');
-}
-
-// ============================================================================
 // Moving walls (Gauntlet level 4)
 // ============================================================================
 
@@ -2323,6 +2358,15 @@ function checkExtraSnakeCollisions(state: GameState): void {
     if (samePos(state.p1.head, extra.snake.head)) { resetSnake(state, 'P1'); resetExtraSnake(extra); }
     if (samePos(state.p2.head, extra.snake.head)) { resetSnake(state, 'P2'); resetExtraSnake(extra); }
   }
+}
+
+function swapP1P2Snakes(state: GameState): void {
+  const t = state.p1;
+  state.p1 = state.p2;
+  state.p2 = t;
+  const tl = state.p1Layer;
+  state.p1Layer = state.p2Layer;
+  state.p2Layer = tl;
 }
 
 function decideAiDirection(state: GameState): void {
@@ -2585,6 +2629,7 @@ export function getMetaFromDuel(
     return { modeLabel: 'Gauntlet', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, gauntletMode: true, bountyMode: false };
   }
   if (normalized === 'BOUNTY') {
+    // Legacy / replay payloads (no Bounty page in client)
     return { modeLabel: 'Bounty Hunt', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, gauntletMode: false, bountyMode: true };
   }
   return { modeLabel: mode || 'P2P', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, gauntletMode: false, bountyMode: false };
