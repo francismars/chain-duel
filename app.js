@@ -18,6 +18,8 @@ var tournLobbyRouter = require('./routes/tournlobby');
 var tournBracketRouter = require('./routes/tournbracket');
 var configRouter = require('./routes/config');
 var practiceMenuRouter = require('./routes/practicemenu');
+var gauntletRouter = require('./routes/gauntlet');
+var bountyRouter = require('./routes/bounty');
 var demoRouter = require('./routes/demo');
 
 var app = express();
@@ -45,7 +47,9 @@ app.use('/tournprefs', tournPrefsRouter);
 app.use('/tournlobby', tournLobbyRouter);
 app.use('/tournbracket', tournBracketRouter);
 app.use('/config', configRouter) 
-app.use('/practicemenu', practiceMenuRouter) 
+app.use('/practicemenu', practiceMenuRouter);
+app.use('/gauntlet', gauntletRouter);
+app.use('/bounty', bountyRouter);
 app.use('/demo', demoRouter);
 
 

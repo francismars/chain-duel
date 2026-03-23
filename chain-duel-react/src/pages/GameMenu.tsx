@@ -591,7 +591,7 @@ export default function GameMenu() {
               </div>
               <div id="leaderboard">
                 <p id="leaderboard-inner">
-                  <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span> sats qualifies for highscore
+                  <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span> sats qualifies for the ledger
                 </p>
               </div>
             </div>

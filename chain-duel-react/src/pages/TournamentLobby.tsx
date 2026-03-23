@@ -102,7 +102,7 @@ export default function TournamentLobby() {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         if (buttonSelected === 'backButton') {
-          navigate('/tournprefs');
+          navigate('/testnet-entry');
         } else if (buttonSelected === 'proceedButton') {
           sessionStorage.setItem('Players', JSON.stringify(playersPaid));
           navigate(`/tournbracket?players=${numberOfPlayers}&deposit=${deposit}`);
@@ -167,7 +167,7 @@ export default function TournamentLobby() {
                 className={paidCount > 0 ? 'disabled' : ''}
                 id="backButton"
                 type="button"
-                onClick={() => navigate('/tournprefs')}
+                onClick={() => navigate('/testnet-entry')}
               >
                 Cancel
               </Button>

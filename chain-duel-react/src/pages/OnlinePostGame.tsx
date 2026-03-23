@@ -257,7 +257,7 @@ export default function OnlinePostGame() {
 
       <div className="online-postgame-card">
         <div className="online-postgame-headline">
-          <p className="online-postgame-kicker">ONLINE MATCH COMPLETE</p>
+          <p className="online-postgame-kicker">MAINNET MATCH COMPLETE</p>
           <h1 className="online-postgame-title">VICTORY SCREEN</h1>
         </div>
 

@@ -14,6 +14,14 @@ export enum GameMode {
   TOURNAMENT = 'TOURNAMENT',
   TOURNAMENTNOSTR = 'TOURNAMENTNOSTR',
   ONLINE = 'ONLINE',
+  SOVEREIGN = 'SOVEREIGN',
+  OVERCLOCK = 'OVERCLOCK',
+  CONVERGENCE = 'CONVERGENCE',
+  POWERUP = 'POWERUP',
+  GAUNTLET = 'GAUNTLET',
+  /** Legacy wire value; no client route — keep for older server payloads */
+  BOUNTY = 'BOUNTY',
+  LABYRINTH = 'LABYRINTH',
 }
 
 export enum PlayerRole {

@@ -82,25 +82,114 @@ export default function Game() {
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
   const canShowP2Image = useMemo(() => player2Img.length > 0, [player2Img]);
 
+  const isPowerupMode = useMemo(() => {
+    try {
+      const raw = sessionStorage.getItem('gameConfig');
+      if (!raw) return false;
+      const cfg = JSON.parse(raw) as Record<string, unknown>;
+      const m = String(cfg.mode ?? '').toUpperCase();
+      if (m === 'TESTNET') return Boolean(cfg.powerupMode);
+      return m === 'POWERUP' || m === 'POWER-UP ARENA';
+    } catch {
+      return false;
+    }
+  }, []);
+
   const bootstrapLocalGame = useCallback(() => {
     if (localBootRef.current) return;
     localBootRef.current = true;
+
+    // sessionStorage from regtest hub (/regtest); legacy POWERUP sessions may remain
+    let gameConfig: Record<string, unknown> = {};
+    try {
+      const raw = sessionStorage.getItem('gameConfig');
+      if (raw) gameConfig = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+
+    const configMode = String(gameConfig.mode ?? '').toUpperCase();
+    const isTestnet = configMode === 'TESTNET';
+    const isLegacyPowerup =
+      configMode === 'POWERUP' || configMode === 'POWER-UP ARENA';
+    const isConvergence = isTestnet && Boolean(gameConfig.convergenceMode);
+    const isPowerup =
+      isLegacyPowerup || (isTestnet && Boolean(gameConfig.powerupMode));
+    const isPracticeMode = Boolean(gameConfig.practiceMode);
+    const aiTier = (gameConfig.aiTier as string) ?? 'hunter';
+    const p1Name = String(gameConfig.p1Name ?? 'Player 1');
+    const rawP2Name = String(gameConfig.p2Name ?? (isPracticeMode ? 'BigToshi 🌊' : 'Player 2'));
+
+    let p1Human = true;
+    let p2Human = !isPracticeMode;
+    if (typeof gameConfig.p1Human === 'boolean') p1Human = gameConfig.p1Human;
+    if (typeof gameConfig.p2Human === 'boolean') p2Human = gameConfig.p2Human;
+    const p3Human = gameConfig.p3Human === true;
+    const p4Human = gameConfig.p4Human === true;
+
+    const modeLabel =
+      isTestnet && typeof gameConfig.testnetHudLabel === 'string'
+        ? String(gameConfig.testnetHudLabel)
+        : isLegacyPowerup
+          ? 'POWER-UP ARENA'
+          : 'TESTNET';
+    const displayP2Name = isTestnet
+      ? String(gameConfig.p2Name ?? 'Player 2')
+      : isPracticeMode
+        ? rawP2Name
+        : 'Player 2';
+
+    const teamMode = (gameConfig.teamMode as 'solo' | 'teams' | 'ffa') ?? 'solo';
+
+    const convergenceShrinkInterval = gameConfig.convergenceShrinkInterval != null
+      ? Number(gameConfig.convergenceShrinkInterval)
+      : undefined;
+    const convergenceMinCols = gameConfig.convergenceMinCols != null
+      ? Number(gameConfig.convergenceMinCols)
+      : undefined;
+    const convergenceMinRows = gameConfig.convergenceMinRows != null
+      ? Number(gameConfig.convergenceMinRows)
+      : undefined;
+    const convergenceStepMs = gameConfig.convergenceStepMs != null
+      ? Number(gameConfig.convergenceStepMs)
+      : undefined;
+
     const state = createGameState({
-      p1Name: 'Player 1',
-      p2Name: 'BigToshi 🌊',
+      p1Name,
+      p2Name: displayP2Name,
       p1Points: 1000,
       p2Points: 1000,
-      modeLabel: 'Practice',
-      practiceMode: true,
+      modeLabel,
+      practiceMode: isPracticeMode,
+      p1Human,
+      p2Human,
+      p3Human,
+      p4Human,
       isTournament: false,
+      sovereignMode: false,
+      aiTier: aiTier as import('@/game/engine/types').AiTier,
+      teamAllyAiTier: gameConfig.teamAllyAiTier as import('@/game/engine/types').AiTier | undefined,
+      teamEnemyAiTier: gameConfig.teamEnemyAiTier as import('@/game/engine/types').AiTier | undefined,
+      ffaAiTier: gameConfig.ffaAiTier as import('@/game/engine/types').AiTier | undefined,
+      overclockMode: false,
+      convergenceMode: isConvergence,
+      convergenceShrinkInterval,
+      convergenceMinCols,
+      convergenceMinRows,
+      convergenceStepMs,
+      powerupMode: isPowerup,
+      gauntletMode: false,
+      gauntletLevel: 1,
+      labyrinthMode: false,
+      teamMode,
     });
     stateRef.current = state;
     winnerSentRef.current = false;
-    setPlayer1Name('Player 1');
-    setPlayer2Name('BigToshi 🌊');
+    setPlayer1Name(p1Name);
+    setPlayer2Name(displayP2Name);
     setP1Points(1000);
     setP2Points(1000);
-    setGameInfo('Practice');
+    setGameInfo(modeLabel);
 
     const hud = getHudState(state);
     setCaptureP1(hud.captureP1);
@@ -142,6 +231,21 @@ export default function Game() {
   }, []);
 
   useEffect(() => {
+    // Regtest (and legacy POWERUP) bootstrap without waiting for socket
+    let gameConfig: Record<string, unknown> = {};
+    try {
+      const raw = sessionStorage.getItem('gameConfig');
+      if (raw) gameConfig = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+    const localModes = ['TESTNET', 'POWERUP', 'POWER-UP ARENA'];
+    const configMode = String(gameConfig.mode ?? '').toUpperCase();
+    if (localModes.includes(configMode)) {
+      bootstrapLocalGame();
+      return;
+    }
+
     if (!socket || !connected) {
       const noSocketTimer = window.setTimeout(() => {
         if (loading && !stateRef.current) {
@@ -270,6 +374,22 @@ export default function Game() {
       navigate(mode === 'tournamentnostr' ? '/tournbracket?mode=tournamentnostr' : '/tournbracket');
       return;
     }
+    // Return to relevant menu for local-only modes
+    let gameConfig: Record<string, unknown> = {};
+    try {
+      const raw = sessionStorage.getItem('gameConfig');
+      if (raw) gameConfig = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+    const configMode = String(gameConfig.mode ?? '').toUpperCase();
+    const modeRoutes: Record<string, string> = {
+      TESTNET: '/regtest',
+      POWERUP: '/regtest',
+      'POWER-UP ARENA': '/regtest',
+    };
+    const modeRoute = modeRoutes[configMode];
+    if (modeRoute) { navigate(modeRoute); return; }
     navigate('/postgame');
   }, [navigate]);
 
@@ -452,6 +572,25 @@ export default function Game() {
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
             <div id="gameCanvasHost" ref={hostRef} />
           </div>
+
+          {isPowerupMode && (
+            <div id="powerUpKey">
+              {[
+                { type: 'SURGE',     color: '#C8881A', label: 'SURGE',  desc: 'Speed boost · immune to tail collision · 4s' },
+                { type: 'FREEZE',    color: '#2878A8', label: 'FREEZE', desc: 'Opponent slows to half speed · 4s' },
+                { type: 'PHANTOM',   color: '#9898B8', label: 'GHOST',  desc: 'Loops through walls · phase through own tail · semi-invisible · 5s' },
+                { type: 'ANCHOR',    color: '#D0D0D0', label: 'ANCHOR', desc: 'Drops obstacle wall on next collision · 10s' },
+                { type: 'AMPLIFIER', color: '#7AAA70', label: 'AMP',    desc: 'Next 3 coinbases score double' },
+                { type: 'DECOY',     color: '#ffffff', label: 'DECOY',  desc: 'Fake coinbase · teleports opponent back to spawn' },
+              ].map(({ type, color, label, desc }) => (
+                <div key={type} className="powerUpKeyEntry">
+                  <span className="powerUpKeySwatch" style={{ borderColor: color, color }} >{type[0]}</span>
+                  <span className="powerUpKeyName condensed" style={{ color }}>{label}</span>
+                  <span className="powerUpKeyDesc">{desc}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div id="bitcoinDetails" className={footerHighlight ? 'highlight' : ''}>
             <div className="detail">
