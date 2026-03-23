@@ -13,6 +13,7 @@ import type {
   HudState,
   PlayerId,
   PointChange,
+  PowerUpType,
 } from '@/game/engine/types';
 import type { OnlineRoomSnapshot } from '@/types/socket';
 import { ensureReplayVictoryEndFrame } from '@/replay/ensureReplayVictoryEndFrame';
@@ -35,6 +36,10 @@ function buildMeta(partial: GameMeta): GameMeta {
     convergenceMinCols: (p.convergenceMinCols as number | undefined) ?? 11,
     convergenceMinRows: (p.convergenceMinRows as number | undefined) ?? 11,
     powerupMode: (p.powerupMode as boolean | undefined) ?? false,
+    powerupSpawnCooldown: (p.powerupSpawnCooldown as number | undefined) ?? 95,
+    powerupMaxItems: (p.powerupMaxItems as number | undefined) ?? 1,
+    powerupAllowedTypes: (p.powerupAllowedTypes as PowerUpType[] | undefined) ?? (['SURGE','FREEZE','PHANTOM','ANCHOR','AMPLIFIER','DECOY','FORK'] as PowerUpType[]),
+    strategyMode: (p.strategyMode as boolean | undefined) ?? false,
     gauntletMode: (p.gauntletMode as boolean | undefined) ?? false,
     gauntletLevel: (p.gauntletLevel as number | undefined) ?? 1,
     bountyMode: (p.bountyMode as boolean | undefined) ?? false,
@@ -323,6 +328,16 @@ function buildState(ef: EncodedFrame, header: CompactReplayHeader): GameState {
     p1Layer: 0,
     p2Layer: 0,
     layerSwitchCooldown: 0,
+    p1ShiftHeld: false,
+    p2ShiftHeld: false,
+    p1ShiftFactor: 1.0,
+    p2ShiftFactor: 1.0,
+    p1MoveCredit: 1.0,
+    p2MoveCredit: 1.0,
+    forkChains: [],
+    forkBursts: [],
+    p1SpawnHead: [6, 12],
+    p2SpawnHead: [44, 12],
   };
   applyFlags(ef.f, st);
   return st;

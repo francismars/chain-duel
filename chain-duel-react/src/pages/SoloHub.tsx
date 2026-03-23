@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useAudio, SFX } from '@/contexts/AudioContext';
@@ -56,17 +56,12 @@ const MODES: ModeCard[] = [
   {
     id: 'powerup',
     name: 'POWER-UP ARENA',
-    tag: 'SOLO · 2P LOCAL',
-    description: 'SURGE · FREEZE · PHANTOM · ANCHOR · AMPLIFIER · DECOY. White chain boosts length, Black retains speed on reset.',
+    tag: 'CONFIGURE · SOLO · 2P LOCAL',
+    description: 'SURGE · FREEZE · PHANTOM · ANCHOR · AMPLIFIER · DECOY · FORK. Set emission rate, loadout, and AI difficulty before you play.',
     controls: 'WASD vs ARROWS · SHIFT = special',
     accentClass: 'accent-powerup',
-    action: 'start',
-    gameConfig: {
-      mode: 'POWERUP',
-      p1Name: 'Player 1',
-      p2Name: 'BigToshi 🌊',
-      aiTier: 'hunter',
-    },
+    action: 'navigate',
+    route: '/powerup',
   },
   {
     id: 'labyrinth',
@@ -81,12 +76,22 @@ const MODES: ModeCard[] = [
   {
     id: 'gauntlet',
     name: 'GAUNTLET',
-    tag: '10 LEVELS',
-    description: '10 pre-built obstacle courses. Shadow Run · The Void · Sovereign Trial. Complete 7 to unlock Bounty Hunt.',
+    tag: '13 LEVELS',
+    description: '13 pre-built obstacle courses. Shadow Run · The Void · Sovereign Trial. Complete 7 to unlock Bounty Hunt.',
     controls: 'WASD · select level',
     accentClass: 'accent-gauntlet',
     action: 'navigate',
     route: '/gauntlet',
+  },
+  {
+    id: 'strategy',
+    name: 'STRATEGY',
+    tag: 'TACTICAL ARENA',
+    description: '99×49 two-floor arena. Walls, portals, power-ups. Hold Shift to slow your chain. Step through hatch diamonds (Q) to switch floors.',
+    controls: 'WASD · L-SHIFT slow · Q hatch · configure',
+    accentClass: 'accent-strategy',
+    action: 'navigate',
+    route: '/strategy',
   },
 ];
 
@@ -97,6 +102,8 @@ const MODES: ModeCard[] = [
 export default function SoloHub() {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
+  const [selected, setSelected] = useState(0);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useGamepad(true);
 
@@ -130,8 +137,23 @@ export default function SoloHub() {
   );
 
   useEffect(() => {
+    cardRefs.current[selected]?.scrollIntoView({ block: 'nearest' });
+  }, [selected]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        playSfx(SFX.MENU_SELECT);
+        setSelected((p) => Math.max(0, p - 1));
+      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        playSfx(SFX.MENU_SELECT);
+        setSelected((p) => Math.min(MODES.length - 1, p + 1));
+      } else if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+        e.preventDefault();
+        startMode(MODES[selected], true);
+      } else if (e.key === 'Escape') {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
         navigate('/');
@@ -139,7 +161,7 @@ export default function SoloHub() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, playSfx]);
+  }, [navigate, playSfx, selected, startMode]);
 
   return (
     <div className="solo-hub">
@@ -149,8 +171,13 @@ export default function SoloHub() {
       </header>
 
       <div className="solo-hub-grid">
-        {MODES.map((card) => (
-          <div key={card.id} className={`mode-card ${card.accentClass}`}>
+        {MODES.map((card, i) => (
+          <div
+            key={card.id}
+            className={`mode-card ${card.accentClass}${selected === i ? ' mode-card--active' : ''}`}
+            ref={(el) => { cardRefs.current[i] = el; }}
+            onClick={() => setSelected(i)}
+          >
             {card.id === 'gauntlet' && (
               <div className="gauntlet-violator" aria-hidden="true">
                 <div className="gauntlet-violator-inner">
@@ -211,7 +238,7 @@ export default function SoloHub() {
         >
           ← MAIN MENU
         </button>
-        <span className="solo-hub-hint">ESC to go back</span>
+        <span className="solo-hub-hint">↑↓ navigate · ENTER select · ESC back</span>
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />

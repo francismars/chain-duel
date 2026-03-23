@@ -41,6 +41,13 @@ export const POWERUP_PHANTOM_DURATION_TICKS = 50;   // 5s
 export const POWERUP_ANCHOR_DURATION_TICKS = 100;   // 10s
 export const POWERUP_AMPLIFIER_CHARGES = 3;
 
+/** FORK: clone chain lifetime (10s at 110ms/tick ≈ 91 ticks). */
+export const POWERUP_FORK_DURATION_TICKS = 91;
+/** FORK: tick offset within lifetime at which the clone starts fading (~7s). */
+export const POWERUP_FORK_FADE_START_TICKS = 64;
+/** FORK: how many ticks the birth-burst animation lasts. */
+export const POWERUP_FORK_BURST_TICKS = 35;
+
 /** Desaturated accent colors (30% saturation) for power-up rendering */
 export const POWERUP_COLORS: Record<string, number> = {
   SURGE: 0xC8881A,       // amber
@@ -49,6 +56,7 @@ export const POWERUP_COLORS: Record<string, number> = {
   ANCHOR: 0xD0D0D0,      // near-white
   AMPLIFIER: 0x7AAA70,   // faint green
   DECOY: 0xFFFFFF,       // white (like a real coinbase)
+  FORK: 0x44EE88,        // bright lime-green
 };
 
 /** Spawn weights: index maps to spawn probability relative to others */
@@ -59,6 +67,7 @@ export const POWERUP_SPAWN_WEIGHTS: Record<string, number> = {
   ANCHOR: 2,
   AMPLIFIER: 2,
   DECOY: 1,
+  FORK: 2,
 };
 
 // ============================================================================
@@ -90,6 +99,23 @@ export const BOUNTY_COINBASE_COLOR = 0xC89020; // gold
 
 export const CHAIN_ABILITY_RADIANCE_DURATION_TICKS = 15; // ~1.5s white flash
 export const CHAIN_ABILITY_SHADOW_STEP_SAFE_RADIUS = 5;  // cells from opponent
+
+// ============================================================================
+// Strategy mode
+// ============================================================================
+
+/** Board dimensions for Strategy mode — significantly larger than classic 51×25. */
+export const STRATEGY_COLS = 99;
+export const STRATEGY_ROWS = 49;
+
+/** Tick speed for Strategy mode (ms). Slower tick = deliberate, strategic pacing. */
+export const STRATEGY_STEP_MS = 110;
+
+/** Per-tick decrease of shift factor when player holds Shift (~7 ticks to full stop). */
+export const STRATEGY_SHIFT_RAMP_DOWN = 0.14;
+
+/** Per-tick increase of shift factor when player releases Shift (~6 ticks to full speed). */
+export const STRATEGY_SHIFT_RAMP_UP = 0.18;
 
 // ============================================================================
 // Labyrinth mode (recursive-backtracking maze)

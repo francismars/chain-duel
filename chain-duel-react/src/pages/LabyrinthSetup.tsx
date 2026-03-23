@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useAudio, SFX } from '@/contexts/AudioContext';
@@ -382,8 +382,13 @@ export default function LabyrinthSetup() {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
   const [selected, setSelected] = useState(2); // default: ADEPT
+  const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useGamepad(true);
+
+  useEffect(() => {
+    rowRefs.current[selected]?.focus({ preventScroll: true });
+  }, [selected]);
 
   const launch = useCallback(
     (preset: LabyrinthPreset, vsAi: boolean) => {
@@ -451,6 +456,7 @@ export default function LabyrinthSetup() {
           {PRESETS.map((p, i) => (
             <button
               key={p.id}
+              ref={(el) => { rowRefs.current[i] = el; }}
               className={`ls-tier-btn ${selected === i ? 'active' : ''}`}
               style={{ '--accent': p.accentColor } as React.CSSProperties}
               onClick={() => {

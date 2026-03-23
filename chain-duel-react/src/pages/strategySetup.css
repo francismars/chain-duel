@@ -1,0 +1,344 @@
+/* ── Root ───────────────────────────────────────────────────────────────────── */
+
+.strategy-setup {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5vw 3vw 3vw;
+  gap: 2vw;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+
+.st-header { text-align: center; }
+
+.st-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(28px, 4vw, 56px);
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #ffffff;
+  margin: 0;
+}
+
+.st-subtitle {
+  font-size: clamp(8px, 0.75vw, 10px);
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.25);
+  margin: 0.3em 0 0;
+  text-transform: uppercase;
+}
+
+/* ── Body ───────────────────────────────────────────────────────────────────── */
+
+.st-body {
+  display: flex;
+  gap: 2vw;
+  width: 100%;
+  max-width: 1040px;
+  align-items: flex-start;
+}
+
+/* ── Tier list ──────────────────────────────────────────────────────────────── */
+
+.st-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vw;
+  flex: 0 0 auto;
+  min-width: 220px;
+}
+
+.st-tier-btn {
+  display: grid;
+  grid-template-columns: 2.2em 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.6em;
+  align-items: center;
+  padding: 0.75em 1em;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.st-tier-btn:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.st-tier-btn:focus {
+  outline: none;
+}
+
+.st-tier-btn.active {
+  border-color: var(--accent);
+  color: #ffffff;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.st-rank {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1.1vw, 15px);
+  color: rgba(255, 255, 255, 0.2);
+  grid-row: span 2;
+  align-self: center;
+  letter-spacing: 0.05em;
+}
+
+.st-tier-btn.active .st-rank { color: var(--accent); }
+
+.st-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(12px, 1.15vw, 16px);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.st-sub {
+  font-size: clamp(8px, 0.65vw, 9px);
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.28);
+  grid-column: 2;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Shift mechanic card ─────────────────────────────────────────────────────── */
+
+.st-shift-card {
+  margin-top: 1em;
+  padding: 1em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.st-shift-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(9px, 0.75vw, 11px);
+  letter-spacing: 0.25em;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 0.75em;
+}
+
+.st-shift-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
+  margin-bottom: 0.8em;
+}
+
+.st-shift-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.st-key-badge {
+  display: inline-block;
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(10px, 0.9vw, 13px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.15em 0.55em;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border-radius: 3px;
+  min-width: 3em;
+  text-align: center;
+  font-style: normal;
+}
+
+.st-shift-label {
+  font-size: clamp(9px, 0.7vw, 11px);
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+}
+
+.st-shift-desc {
+  font-size: clamp(8.5px, 0.65vw, 10px);
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Detail panel ───────────────────────────────────────────────────────────── */
+
+.st-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vw;
+  min-width: 0;
+}
+
+/* ── Map preview ────────────────────────────────────────────────────────────── */
+
+.st-map-preview {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+
+.st-map-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 140px;
+}
+
+.st-map-legend {
+  display: flex;
+  gap: 1.2em;
+}
+
+.st-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: clamp(7.5px, 0.6vw, 9px);
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+}
+
+.st-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.st-legend-coin   { background: rgba(200, 160, 30, 0.8); }
+.st-legend-portal { background: transparent; border: 1px solid rgba(160, 100, 255, 0.7); }
+.st-legend-wall   { background: rgba(255, 255, 255, 0.35); border-radius: 0; height: 2px; width: 14px; }
+
+/* ── Detail info ────────────────────────────────────────────────────────────── */
+
+.st-detail-info { display: flex; flex-direction: column; gap: 0.6em; }
+
+.st-detail-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(16px, 1.8vw, 26px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 0;
+}
+
+.st-detail-desc {
+  font-size: clamp(10px, 0.85vw, 12.5px);
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Feature list ───────────────────────────────────────────────────────────── */
+
+.st-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  padding-top: 0.3em;
+}
+
+.st-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  font-size: clamp(9px, 0.72vw, 11px);
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+}
+
+.st-feature-icon {
+  font-size: clamp(10px, 0.85vw, 13px);
+  width: 1.4em;
+  text-align: center;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* ── Actions ────────────────────────────────────────────────────────────────── */
+
+.st-actions {
+  display: flex;
+  gap: 0.8em;
+}
+
+.st-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  padding: 0.65em 1.6em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.st-btn-primary {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border: 1px solid var(--accent);
+  color: #ffffff;
+}
+
+.st-btn-primary:hover {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.st-btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.st-btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.st-hint {
+  font-size: clamp(8px, 0.62vw, 9.5px);
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.2);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+
+.st-footer {
+  width: 100%;
+  max-width: 1040px;
+  padding-top: 0.5vw;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.st-back-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(10px, 0.85vw, 12px);
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.55em 1.2em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.st-back-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.3);
+}

@@ -1,6 +1,6 @@
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { GameState, GridPos } from '@/game/engine/types';
-import { POWERUP_COLORS, BOUNTY_COINBASE_COLOR, BOUNTY_COINBASE_RINGS } from '@/game/engine/constants';
+import { POWERUP_COLORS, BOUNTY_COINBASE_COLOR, BOUNTY_COINBASE_RINGS, POWERUP_FORK_DURATION_TICKS, POWERUP_FORK_FADE_START_TICKS, POWERUP_FORK_BURST_TICKS } from '@/game/engine/constants';
 
 /** Color palette for teleport portal pairs (4 distinct hues). */
 const PORTAL_COLORS: readonly number[] = [
@@ -232,10 +232,8 @@ export class PixiGameRenderer {
       this.draw3DGhostLayer(state, colSize, rowSize, now);
     }
 
-    // Obstacle walls (active layer only in 3D mode)
-    const activeWalls = state.meta.layers3D && state.p1Layer === 1
-      ? (state.board3DLayers[0]?.obstacleWalls ?? [])
-      : state.obstacleWalls;
+    // Obstacle walls — always the same board layout (layer depth is visual only)
+    const activeWalls = state.obstacleWalls;
     for (const wall of activeWalls) {
       const px = wall.pos[0] * colSize;
       const py = wall.pos[1] * rowSize;
@@ -291,7 +289,7 @@ export class PixiGameRenderer {
       }, [], now);
       // Ally / shadow border: solid inset outline distinguishes them from P1/P2
       if (extra.outline != null) {
-        const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
+        const lw = Math.max(1, Math.min(colSize, rowSize) * 0.05);
         for (const seg of [extra.snake.head, ...extra.snake.body]) {
           this.scene
             .rect(
@@ -300,44 +298,43 @@ export class PixiGameRenderer {
               colSize - lw,
               rowSize - lw,
             )
-            .stroke({ width: lw, color: extra.outline, alpha: 0.85 });
+            .stroke({ width: lw, color: extra.outline, alpha: 0.7 });
         }
       }
     }
 
+    // Fork bursts (must be drawn BEFORE snakes so they show behind)
+    if (state.forkBursts?.length) {
+      this.drawForkBursts(state, colSize, rowSize, now);
+    }
+    // Fork chains
+    if (state.forkChains?.length) {
+      this.drawForkChains(state, colSize, rowSize, now);
+    }
+
+    // In 3D levels chains are drawn at their layer's visual depth
+    const boardW3D = state.cols * colSize;
+    const boardH3D = state.rows * rowSize;
+    const p1LayerTr = state.meta.layers3D
+      ? this.getLayerTransform3D(state.p1Layer as 0 | 1, colSize, rowSize, boardW3D, boardH3D)
+      : undefined;
+    const p2LayerTr = state.meta.layers3D
+      ? this.getLayerTransform3D(state.p2Layer as 0 | 1, colSize, rowSize, boardW3D, boardH3D)
+      : undefined;
+
     this.drawSnake(state.p1, 0xffffff, colSize, rowSize, {
       frozen: p1Frozen, phantom: p1Phantom, surging: p1Surging, amped: p1Amped,
-    }, this.p1Pulses, now);
-    // Teams mode: P1 gets a red border
-    if (state.meta?.teamMode === 'teams') {
-      const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
-      for (const seg of [state.p1.head, ...state.p1.body]) {
-        this.scene
-          .rect(seg[0] * colSize + lw / 2, seg[1] * rowSize + lw / 2, colSize - lw, rowSize - lw)
-          .stroke({ width: lw, color: 0xFF3333, alpha: 0.85 });
-      }
-    }
+    }, this.p1Pulses, now, p1LayerTr);
 
-    // FFA: medium grey · Teams: visible dark grey (0x111111 is invisible on dark background)
-    const p2Color = state.meta?.teamMode === 'ffa' ? 0x555555
-      : state.meta?.teamMode === 'teams' ? 0x3a3a3a
-      : 0x111111;
+    const p2Color = 0x111111;
     this.drawSnake(state.p2, p2Color, colSize, rowSize, {
       frozen: p2Frozen, phantom: p2Phantom, surging: p2Surging, amped: p2Amped,
-    }, this.p2Pulses, now);
-    // Teams mode: P2 gets a red border
-    if (state.meta?.teamMode === 'teams') {
-      const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
-      for (const seg of [state.p2.head, ...state.p2.body]) {
-        this.scene
-          .rect(seg[0] * colSize + lw / 2, seg[1] * rowSize + lw / 2, colSize - lw, rowSize - lw)
-          .stroke({ width: lw, color: 0xFF3333, alpha: 0.85 });
-      }
-    }
+    }, this.p2Pulses, now, p2LayerTr);
 
-    // Coinbases — in 3D mode only show coinbases on the active layer
+    // Coinbases — in 3D mode the main board always shows layer-0 coinbases;
+    // layer-1 coinbases appear on the ghost board drawn earlier.
     const activeCoinbases = state.meta.layers3D
-      ? state.coinbases.filter((cb) => cb.layer === undefined || cb.layer === state.p1Layer)
+      ? state.coinbases.filter((cb) => cb.layer === undefined || cb.layer === 0)
       : state.coinbases;
     for (const cb of activeCoinbases) {
       this.drawCoinbase(cb.pos, colSize, rowSize, {
@@ -350,8 +347,8 @@ export class PixiGameRenderer {
     // Teleport portals
     if (state.teleportDoors?.length) {
       for (const door of state.teleportDoors) {
-        this.drawPortal(door.a, door.colorIndex, colSize, rowSize, now);
-        this.drawPortal(door.b, door.colorIndex, colSize, rowSize, now);
+        this.drawPortal(door.a, door.colorIndex, colSize, rowSize, now, door.switchesLayer);
+        this.drawPortal(door.b, door.colorIndex, colSize, rowSize, now, door.switchesLayer);
         // Thin link line between partners
         const ax = door.a[0] * colSize + colSize / 2;
         const ay = door.a[1] * rowSize + rowSize / 2;
@@ -561,30 +558,34 @@ export class PixiGameRenderer {
     effects: { frozen?: boolean; phantom?: boolean; surging?: boolean; amped?: boolean },
     pulses: number[] = [],
     now: number = 0,
+    layerTransform?: { scale: number; xOff: number; yOff: number; alpha: number },
   ): void {
-    const headAlpha = effects.phantom ? 0.5 : 1;
-    const baseBodyAlpha = effects.phantom ? 0.25 : 0.6;
+    // Layer-depth transform helpers
+    const sc  = layerTransform?.scale ?? 1;
+    const ox  = layerTransform?.xOff  ?? 0;
+    const oy  = layerTransform?.yOff  ?? 0;
+    const la  = layerTransform?.alpha ?? 1;
+    const eCS = colSize * sc;
+    const eRS = rowSize * sc;
+    const sx  = (gx: number) => ox + gx * eCS;
+    const sy  = (gy: number) => oy + gy * eRS;
+
+    const headAlpha    = (effects.phantom ? 0.5 : 1) * la;
+    const baseBodyAlpha = (effects.phantom ? 0.25 : 0.6) * la;
     const totalLen = 1 + snake.body.length;
-    const isLight = color === 0xffffff;
+    const isLight  = color === 0xffffff;
 
     // AMP pulsing gold glow under the whole chain (drawn first, underneath)
     if (effects.amped) {
       const ampPulse = 0.5 + 0.5 * Math.sin(now / 220);
-      const ampAlpha = 0.18 + ampPulse * 0.22;
+      const ampAlpha = (0.18 + ampPulse * 0.22) * la;
       const expand = 2 + ampPulse * 3;
-      // Head glow
       this.scene
-        .rect(
-          snake.head[0] * colSize - expand,
-          snake.head[1] * rowSize - expand,
-          colSize + expand * 2,
-          rowSize + expand * 2,
-        )
+        .rect(sx(snake.head[0]) - expand, sy(snake.head[1]) - expand, eCS + expand * 2, eRS + expand * 2)
         .fill({ color: 0xFFBB00, alpha: ampAlpha * 1.4 });
-      // Body glow
       for (const seg of snake.body) {
         this.scene
-          .rect(seg[0] * colSize - expand * 0.5, seg[1] * rowSize - expand * 0.5, colSize + expand, rowSize + expand)
+          .rect(sx(seg[0]) - expand * 0.5, sy(seg[1]) - expand * 0.5, eCS + expand, eRS + expand)
           .fill({ color: 0xFFBB00, alpha: ampAlpha * 0.7 });
       }
     }
@@ -594,72 +595,62 @@ export class PixiGameRenderer {
     if (headBoost > 0) {
       const expand = headBoost * 4;
       this.scene
-        .rect(
-          snake.head[0] * colSize - expand,
-          snake.head[1] * rowSize - expand,
-          colSize + expand * 2,
-          rowSize + expand * 2,
-        )
-        .fill({ color: isLight ? 0xffffff : 0xdddddd, alpha: headBoost * 0.35 });
+        .rect(sx(snake.head[0]) - expand, sy(snake.head[1]) - expand, eCS + expand * 2, eRS + expand * 2)
+        .fill({ color: isLight ? 0xffffff : 0xdddddd, alpha: headBoost * 0.35 * la });
     }
-    this.scene.rect(snake.head[0] * colSize, snake.head[1] * rowSize, colSize, rowSize)
+    this.scene.rect(sx(snake.head[0]), sy(snake.head[1]), eCS, eRS)
       .fill({ color, alpha: headAlpha });
 
     // Orange SURGE border on head
     if (effects.surging) {
       const surgePulse = 0.7 + 0.3 * Math.sin(now / 80);
       this.scene
-        .rect(snake.head[0] * colSize - 2, snake.head[1] * rowSize - 2, colSize + 4, rowSize + 4)
-        .stroke({ width: 2.5, color: 0xFF7200, alpha: surgePulse });
+        .rect(sx(snake.head[0]) - 2, sy(snake.head[1]) - 2, eCS + 4, eRS + 4)
+        .stroke({ width: 2.5, color: 0xFF7200, alpha: surgePulse * la });
     }
 
-    // AMP pulsing gold border on head (on top of base)
+    // AMP pulsing gold border on head
     if (effects.amped) {
       const ampPulse = 0.6 + 0.4 * Math.sin(now / 220);
       this.scene
-        .rect(snake.head[0] * colSize - 2, snake.head[1] * rowSize - 2, colSize + 4, rowSize + 4)
-        .stroke({ width: 2, color: 0xFFBB00, alpha: ampPulse });
+        .rect(sx(snake.head[0]) - 2, sy(snake.head[1]) - 2, eCS + 4, eRS + 4)
+        .stroke({ width: 2, color: 0xFFBB00, alpha: ampPulse * la });
     }
 
     // Frozen ring around head
     if (effects.frozen) {
       this.scene
-        .rect(snake.head[0] * colSize - 2, snake.head[1] * rowSize - 2, colSize + 4, rowSize + 4)
-        .stroke({ width: 2, color: 0x3090C8, alpha: 0.7 });
+        .rect(sx(snake.head[0]) - 2, sy(snake.head[1]) - 2, eCS + 4, eRS + 4)
+        .stroke({ width: 2, color: 0x3090C8, alpha: 0.7 * la });
     }
 
     // Body — pulse wave travels head → tail
     for (let i = 0; i < snake.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, totalLen, pulses, now);
-      const segAlpha = Math.min(1, baseBodyAlpha + boost * 0.36);
-      const px = snake.body[i][0] * colSize;
-      const py = snake.body[i][1] * rowSize;
+      const segAlpha = Math.min(1, baseBodyAlpha + boost * 0.36 * la);
+      const px = sx(snake.body[i][0]);
+      const py = sy(snake.body[i][1]);
 
-      this.scene
-        .rect(px, py, colSize, rowSize)
-        .fill({ color, alpha: segAlpha });
+      this.scene.rect(px, py, eCS, eRS).fill({ color, alpha: segAlpha });
 
-      // Dark chains get a white overlay so the pulse is visible on black bg
       if (!isLight && boost > 0.05) {
         this.scene
-          .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
-          .fill({ color: 0xffffff, alpha: boost * 0.28 });
+          .rect(px + 1, py + 1, eCS - 2, eRS - 2)
+          .fill({ color: 0xffffff, alpha: boost * 0.28 * la });
       }
 
-      // Orange SURGE border on each body segment
       if (effects.surging) {
         const surgePulse = 0.5 + 0.3 * Math.sin(now / 80 + i * 0.4);
         this.scene
-          .rect(px - 1, py - 1, colSize + 2, rowSize + 2)
-          .stroke({ width: 1.5, color: 0xFF7200, alpha: surgePulse });
+          .rect(px - 1, py - 1, eCS + 2, eRS + 2)
+          .stroke({ width: 1.5, color: 0xFF7200, alpha: surgePulse * la });
       }
 
-      // AMP gold border on body (subtler than head)
       if (effects.amped) {
         const ampPulse = 0.4 + 0.3 * Math.sin(now / 220 + i * 0.2);
         this.scene
-          .rect(px - 1, py - 1, colSize + 2, rowSize + 2)
-          .stroke({ width: 1.5, color: 0xFFBB00, alpha: ampPulse * 0.7 });
+          .rect(px - 1, py - 1, eCS + 2, eRS + 2)
+          .stroke({ width: 1.5, color: 0xFFBB00, alpha: ampPulse * 0.7 * la });
       }
     }
   }
@@ -745,6 +736,31 @@ export class PixiGameRenderer {
     }
   }
 
+  // ── Layer-depth transform helper ─────────────────────────────────────────
+  /**
+   * Returns a pixel transform for chains on the "back" (layer 1) board so they
+   * appear to recede into the ghost-board perspective behind the main board.
+   * Layer 0 (front) returns undefined — no transform needed.
+   */
+  private getLayerTransform3D(
+    layer: 0 | 1,
+    colSize: number, rowSize: number,
+    boardW: number, boardH: number,
+  ): { scale: number; xOff: number; yOff: number; alpha: number } | undefined {
+    if (layer === 0) return undefined;
+    const dX    = colSize * 3.0;
+    const dY    = -rowSize * 1.85;
+    const scale = 0.72;
+    const ghostW = boardW * scale;
+    const ghostH = boardH * scale;
+    return {
+      scale,
+      xOff: (boardW - ghostW) / 2 + dX,
+      yOff: (boardH - ghostH) / 2 + dY,
+      alpha: 0.62,
+    };
+  }
+
   // ── 3D ghost layers ───────────────────────────────────────────────────────
   /**
    * Render a convincing 3-board perspective stack with connecting "shafts"
@@ -758,19 +774,17 @@ export class PixiGameRenderer {
    * the unmistakable look of a stacked building viewed at an angle.
    */
   private draw3DGhostLayer(state: GameState, colSize: number, rowSize: number, _now: number): void {
-    const ghostLayer = state.p1Layer === 0 ? 1 : 0;
-    const ghostWalls = ghostLayer === 0
-      ? state.obstacleWalls
-      : (state.board3DLayers[0]?.obstacleWalls ?? []);
-    const ghostCoins = state.coinbases.filter((cb) => cb.layer === ghostLayer);
+    // Ghost boards always show the same wall layout as the main board;
+    // layer-1 coinbases appear on the back ghost board.
+    const ghostWalls = state.obstacleWalls;
+    const ghostCoins = state.coinbases.filter((cb) => cb.layer === 1);
 
     const boardW = state.cols * colSize;
     const boardH = state.rows * rowSize;
 
-    // Direction: layer 1 (elevated) → upper-right; layer 0 (ground) → lower-left
-    const sign = ghostLayer === 1 ? 1 : -1;
-    const dX   = sign *  colSize * 3.0;
-    const dY   = sign * -rowSize * 1.85;
+    // Back layer always renders upper-right (fixed perspective direction)
+    const dX = colSize * 3.0;
+    const dY = -rowSize * 1.85;
 
     // Pre-compute corners for all 3 boards so we can draw the shafts between them.
     // Board corners: [topLeft, topRight, bottomLeft, bottomRight]
@@ -867,7 +881,7 @@ export class PixiGameRenderer {
 
   // ── Teleport portals ─────────────────────────────────────────────────────
 
-  private drawPortal(pos: GridPos, colorIndex: number, colSize: number, rowSize: number, now: number): void {
+  private drawPortal(pos: GridPos, colorIndex: number, colSize: number, rowSize: number, now: number, switchesLayer?: boolean): void {
     const color = PORTAL_COLORS[colorIndex % PORTAL_COLORS.length];
     const x0 = pos[0] * colSize;
     const y0 = pos[1] * rowSize;
@@ -875,6 +889,7 @@ export class PixiGameRenderer {
     const pulse = 0.55 + 0.45 * Math.sin(now / 280 + colorIndex * 1.4);
     const cx = x0 + colSize / 2;
     const cy = y0 + rowSize / 2;
+    const s = Math.min(colSize, rowSize);
 
     // Outer glow square
     this.scene
@@ -883,20 +898,156 @@ export class PixiGameRenderer {
     // Border square
     this.scene
       .rect(x0 + pad, y0 + pad, colSize - pad * 2, rowSize - pad * 2)
-      .stroke({ width: Math.max(2, Math.min(colSize, rowSize) * 0.12), color, alpha: 0.55 + pulse * 0.35 });
+      .stroke({ width: Math.max(1, s * 0.05), color, alpha: 0.5 + pulse * 0.3 });
     // Inner spinning cross
-    const arm = Math.min(colSize, rowSize) * 0.2;
+    const arm = s * 0.2;
     const angle = now / 600 + colorIndex * Math.PI / 2;
     for (let i = 0; i < 4; i++) {
       const a = angle + (i * Math.PI) / 2;
       this.scene
         .moveTo(cx, cy)
         .lineTo(cx + Math.cos(a) * arm, cy + Math.sin(a) * arm)
-        .stroke({ width: Math.max(1, Math.min(colSize, rowSize) * 0.07), color, alpha: 0.6 + pulse * 0.35 });
+        .stroke({ width: Math.max(1, s * 0.07), color, alpha: 0.6 + pulse * 0.35 });
     }
-    // Bright center square
-    const cs = Math.min(colSize, rowSize) * 0.18;
-    this.scene.rect(cx - cs / 2, cy - cs / 2, cs, cs).fill({ color, alpha: 0.85 });
+    // Center: layer-shift portals show stacked up/down chevrons; regular portals show a solid square
+    if (switchesLayer) {
+      const aw = s * 0.13;
+      const ah = s * 0.1;
+      const gap = s * 0.06;
+      // Up chevron
+      this.scene
+        .moveTo(cx - aw, cy - gap)
+        .lineTo(cx,      cy - gap - ah)
+        .lineTo(cx + aw, cy - gap)
+        .stroke({ width: Math.max(1, s * 0.06), color: 0xFFFFFF, alpha: 0.7 + pulse * 0.25 });
+      // Down chevron
+      this.scene
+        .moveTo(cx - aw, cy + gap)
+        .lineTo(cx,      cy + gap + ah)
+        .lineTo(cx + aw, cy + gap)
+        .stroke({ width: Math.max(1, s * 0.06), color: 0xFFFFFF, alpha: 0.7 + pulse * 0.25 });
+    } else {
+      const cs = s * 0.18;
+      this.scene.rect(cx - cs / 2, cy - cs / 2, cs, cs).fill({ color, alpha: 0.85 });
+    }
+  }
+
+  // ── Fork power-up rendering ────────────────────────────────────────────────
+
+  /**
+   * Renders the fork-birth burst animation.
+   * Three visual layers animate over POWERUP_FORK_BURST_TICKS:
+   *  1. Flash disc — bright flood fill at origin, peaks at tick 3, gone by tick 12
+   *  2. Expanding ring pair — two rings grow outward in parent/fork directions
+   *  3. Trailing glow lines — subtle lines extending along each direction
+   */
+  private drawForkBursts(state: GameState, colSize: number, rowSize: number, now: number): void {
+    const BURST = POWERUP_FORK_BURST_TICKS;
+    for (const burst of state.forkBursts) {
+      const shimmer = 0.85 + 0.15 * Math.sin(now / 80);
+      const age = state.tickCount - burst.tick;
+      if (age >= BURST) continue;
+      const t = age / BURST;                 // 0→1 lifetime
+      const cx = burst.pos[0] * colSize + colSize / 2;
+      const cy = burst.pos[1] * rowSize + rowSize / 2;
+      const baseColor = burst.player === 'P1' ? 0x44FF88 : 0x44AAFF;
+      const s = Math.min(colSize, rowSize);
+
+      // 1 — Flash disc (fast fade-in, medium fade-out, first 35% of burst)
+      if (t < 0.35) {
+        const flashT = t / 0.35;
+        const flashA = flashT < 0.2
+          ? flashT / 0.2
+          : 1 - (flashT - 0.2) / 0.8;
+        const flashR = s * (0.5 + flashT * 1.5);
+        this.scene.circle(cx, cy, flashR)
+          .fill({ color: baseColor, alpha: flashA * 0.4 });
+        this.scene.circle(cx, cy, flashR * 0.5)
+          .fill({ color: 0xFFFFFF, alpha: flashA * 0.25 });
+      }
+
+      // 2 — Expanding rings (two rings, offset in time, travel outward)
+      const dirVec = (dir: string): [number, number] => {
+        if (dir === 'Right') return [1, 0];
+        if (dir === 'Left')  return [-1, 0];
+        if (dir === 'Down')  return [0, 1];
+        return [0, -1]; // Up
+      };
+      const [px, py] = dirVec(burst.spawnDir);
+      const [fx, fy] = dirVec(burst.forkDir);
+
+      const ringAge = Math.max(0, t - 0.05);
+      const ringR = s * ringAge * 3.5;
+      const ringA = (1 - ringAge) * 0.7 * shimmer;
+      // Ring in parent direction
+      this.scene.circle(cx + px * ringR * 0.4, cy + py * ringR * 0.4, ringR)
+        .stroke({ width: Math.max(1, s * 0.08), color: 0xFFFFFF, alpha: ringA * 0.5 });
+      this.scene.circle(cx + px * ringR * 0.4, cy + py * ringR * 0.4, ringR)
+        .stroke({ width: Math.max(1, s * 0.04), color: baseColor, alpha: ringA });
+      // Ring in fork direction
+      const ringR2 = s * Math.max(0, ringAge - 0.06) * 3.5;
+      this.scene.circle(cx + fx * ringR2 * 0.4, cy + fy * ringR2 * 0.4, ringR2)
+        .stroke({ width: Math.max(1, s * 0.08), color: 0xFFFFFF, alpha: ringA * 0.5 });
+      this.scene.circle(cx + fx * ringR2 * 0.4, cy + fy * ringR2 * 0.4, ringR2)
+        .stroke({ width: Math.max(1, s * 0.04), color: baseColor, alpha: ringA });
+
+      // 3 — Trailing glow lines along each diverge direction
+      const lineLen = s * t * 6;
+      const lineA = (1 - t) * 0.55;
+      const lw = Math.max(1, s * 0.1);
+      this.scene
+        .moveTo(cx, cy)
+        .lineTo(cx + px * lineLen, cy + py * lineLen)
+        .stroke({ width: lw, color: baseColor, alpha: lineA });
+      this.scene
+        .moveTo(cx, cy)
+        .lineTo(cx + fx * lineLen, cy + fy * lineLen)
+        .stroke({ width: lw, color: baseColor, alpha: lineA });
+    }
+  }
+
+  /**
+   * Draws all active fork chains. Each clone is rendered with a tinted
+   * glow matching the owning player, fading in the final 3 seconds.
+   */
+  private drawForkChains(state: GameState, colSize: number, rowSize: number, now: number): void {
+    const FADE_START = POWERUP_FORK_FADE_START_TICKS;
+    const TOTAL = POWERUP_FORK_DURATION_TICKS;
+    for (const fork of state.forkChains) {
+      const age = state.tickCount - fork.spawnTick;
+      const alpha = age < FADE_START
+        ? 1.0
+        : 1.0 - (age - FADE_START) / (TOTAL - FADE_START);
+      const clampedAlpha = Math.max(0, Math.min(1, alpha));
+
+      const baseColor = fork.player === 'P1' ? 0x44FF88 : 0x44AAFF;
+      const s = Math.min(colSize, rowSize);
+
+      // Body segments (tail to just before head)
+      const allSegs = [fork.snake.head, ...fork.snake.body];
+      for (let i = allSegs.length - 1; i >= 0; i--) {
+        const seg = allSegs[i];
+        const isHead = i === 0;
+        const segAlpha = clampedAlpha * (isHead ? 0.95 : 0.55 - i * 0.003);
+        const pad = isHead ? 1 : 2;
+        this.scene
+          .rect(seg[0] * colSize + pad, seg[1] * rowSize + pad, colSize - pad * 2, rowSize - pad * 2)
+          .fill({ color: baseColor, alpha: Math.max(0, segAlpha) });
+      }
+
+      // Glow outline around head
+      const h = fork.snake.head;
+      const glowPulse = 0.5 + 0.5 * Math.sin(now / 300 + fork.spawnTick);
+      const glowW = Math.max(1, s * 0.12);
+      this.scene
+        .rect(h[0] * colSize + glowW / 2, h[1] * rowSize + glowW / 2, colSize - glowW, rowSize - glowW)
+        .stroke({ width: glowW, color: baseColor, alpha: clampedAlpha * (0.5 + glowPulse * 0.4) });
+      // Bright inner dot
+      const dotR = s * 0.18;
+      this.scene
+        .circle(h[0] * colSize + colSize / 2, h[1] * rowSize + rowSize / 2, dotR)
+        .fill({ color: 0xFFFFFF, alpha: clampedAlpha * 0.7 });
+    }
   }
 
   // ── Power-up item drawing ──────────────────────────────────────────────────
@@ -935,6 +1086,7 @@ export class PixiGameRenderer {
     ANCHOR:    'ANCHOR',
     AMPLIFIER: 'AMP',
     DECOY:     'DECOY',
+    FORK:      'FORK',
   };
 
   private drawPowerUpLabel(pos: GridPos, type: string, colSize: number, rowSize: number): void {
@@ -1181,16 +1333,14 @@ export class PixiGameRenderer {
 
     // ── Fallback 3D ghost layers — 3-board perspective stack ─────────────────
     if (state.meta.layers3D) {
-      const ghostLayer = state.p1Layer === 0 ? 1 : 0;
-      const ghostWalls = ghostLayer === 0
-        ? state.obstacleWalls
-        : (state.board3DLayers[0]?.obstacleWalls ?? []);
-      const ghostCoins = state.coinbases.filter((c) => c.layer === ghostLayer);
+      // Ghost boards always show the same wall layout; layer-1 coinbases on back board
+      const ghostWalls = state.obstacleWalls;
+      const ghostCoins = state.coinbases.filter((c) => c.layer === 1);
       const boardW = state.cols * colSize;
       const boardH = state.rows * rowSize;
-      const sign   = ghostLayer === 1 ? 1 : -1;
-      const dX     = sign *  colSize * 3.0;
-      const dY     = sign * -rowSize * 1.85;
+      // Back layer is always upper-right (fixed perspective)
+      const dX = colSize * 3.0;
+      const dY = -rowSize * 1.85;
 
       // Corner helper
       const fbCorners = (scale: number, xs: number, ys: number) => {
@@ -1251,8 +1401,93 @@ export class PixiGameRenderer {
       ctx.globalAlpha = 1;
     }
 
+    // ── Fork bursts (fallback) ─────────────────────────────────────────────
+    for (const burst of (state.forkBursts ?? [])) {
+      const age = state.tickCount - burst.tick;
+      const BURST = POWERUP_FORK_BURST_TICKS;
+      if (age >= BURST) continue;
+      const t = age / BURST;
+      const bx = burst.pos[0] * colSize + colSize / 2;
+      const by = burst.pos[1] * rowSize + rowSize / 2;
+      const hexColor = burst.player === 'P1' ? '#44FF88' : '#44AAFF';
+      const s = Math.min(colSize, rowSize);
+      const dirVecFb = (dir: string): [number, number] => {
+        if (dir === 'Right') return [1, 0];
+        if (dir === 'Left')  return [-1, 0];
+        if (dir === 'Down')  return [0, 1];
+        return [0, -1];
+      };
+      const [px, py] = dirVecFb(burst.spawnDir);
+      const [fx, fy] = dirVecFb(burst.forkDir);
+      // Flash disc
+      if (t < 0.35) {
+        const ft = t / 0.35;
+        const fa = (ft < 0.2 ? ft / 0.2 : 1 - (ft - 0.2) / 0.8) * 0.35;
+        ctx.globalAlpha = fa;
+        ctx.fillStyle = hexColor;
+        ctx.beginPath(); ctx.arc(bx, by, s * (0.5 + ft * 1.5), 0, Math.PI * 2); ctx.fill();
+      }
+      // Expanding ring
+      const ringAge = Math.max(0, t - 0.05);
+      const ringR = s * ringAge * 3.5;
+      const ringA = (1 - ringAge) * 0.7;
+      ctx.strokeStyle = hexColor; ctx.lineWidth = Math.max(1, s * 0.06);
+      ctx.globalAlpha = ringA;
+      ctx.beginPath(); ctx.arc(bx + px * ringR * 0.4, by + py * ringR * 0.4, ringR, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(bx + fx * ringR * 0.4, by + fy * ringR * 0.4, ringR, 0, Math.PI * 2); ctx.stroke();
+      // Trailing lines
+      const lineLen = s * t * 6;
+      const lineA = (1 - t) * 0.55;
+      ctx.strokeStyle = hexColor; ctx.lineWidth = Math.max(1, s * 0.08);
+      ctx.globalAlpha = lineA;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + px * lineLen, by + py * lineLen); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + fx * lineLen, by + fy * lineLen); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Fork chains (fallback) ─────────────────────────────────────────────
+    for (const fork of (state.forkChains ?? [])) {
+      const age = state.tickCount - fork.spawnTick;
+      const alpha = age < POWERUP_FORK_FADE_START_TICKS
+        ? 1.0
+        : 1.0 - (age - POWERUP_FORK_FADE_START_TICKS) / (POWERUP_FORK_DURATION_TICKS - POWERUP_FORK_FADE_START_TICKS);
+      const clampedA = Math.max(0, Math.min(1, alpha));
+      const hexColor = fork.player === 'P1' ? '#44FF88' : '#44AAFF';
+      // Body
+      const allSegs = [fork.snake.head, ...fork.snake.body];
+      for (let i = allSegs.length - 1; i >= 0; i--) {
+        const seg = allSegs[i];
+        const isHead = i === 0;
+        const segA = clampedA * (isHead ? 0.9 : Math.max(0.1, 0.5 - i * 0.003));
+        ctx.globalAlpha = segA;
+        ctx.fillStyle = hexColor;
+        const pad = isHead ? 1 : 2;
+        ctx.fillRect(seg[0] * colSize + pad, seg[1] * rowSize + pad, colSize - pad * 2, rowSize - pad * 2);
+      }
+      // Head glow ring
+      const h = fork.snake.head;
+      const gp = 0.5 + 0.5 * Math.sin(nowFb / 300 + fork.spawnTick);
+      ctx.globalAlpha = clampedA * (0.5 + gp * 0.4);
+      ctx.strokeStyle = hexColor;
+      ctx.lineWidth = Math.max(1, Math.min(colSize, rowSize) * 0.12);
+      ctx.strokeRect(h[0] * colSize + 1, h[1] * rowSize + 1, colSize - 2, rowSize - 2);
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Fallback layer-depth transform (chains on layer 1 appear on ghost board) ─
+    const fbBoardW = state.cols * colSize;
+    const fbBoardH = state.rows * rowSize;
+    const fbGetLayerTr = (layer: number) => {
+      if (!state.meta.layers3D || layer === 0) return null;
+      const dX = colSize * 3.0, dY = -rowSize * 1.85, sc = 0.72;
+      return { ox: (fbBoardW - fbBoardW * sc) / 2 + dX, oy: (fbBoardH - fbBoardH * sc) / 2 + dY, sc };
+    };
+    const fbP1Tr = fbGetLayerTr(state.p1Layer);
+    const fbP2Tr = fbGetLayerTr(state.p2Layer);
+
     // P1
     const p1Total = 1 + state.p1.body.length;
+    if (fbP1Tr) { ctx.save(); ctx.translate(fbP1Tr.ox, fbP1Tr.oy); ctx.scale(fbP1Tr.sc, fbP1Tr.sc); }
     // AMP under-glow
     if (fbP1Amped) {
       const ampP = 0.5 + 0.5 * Math.sin(nowFb / 220);
@@ -1277,10 +1512,10 @@ export class PixiGameRenderer {
       ctx.globalAlpha = 1;
       // Ally / shadow: solid inset border
       if (extra.outline != null) {
-        const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
+        const lw = Math.max(1, Math.min(colSize, rowSize) * 0.05);
         ctx.strokeStyle = '#' + extra.outline.toString(16).padStart(6, '0');
         ctx.lineWidth = lw;
-        ctx.globalAlpha = 0.85;
+        ctx.globalAlpha = 0.7;
         for (const seg of [extra.snake.head, ...extra.snake.body]) {
           ctx.strokeRect(
             seg[0] * colSize + lw / 2,
@@ -1340,18 +1575,11 @@ export class PixiGameRenderer {
       }
     }
     ctx.globalAlpha = 1;
-    // Teams mode: P1 red border
-    if (state.meta?.teamMode === 'teams') {
-      const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
-      ctx.strokeStyle = '#FF3333'; ctx.lineWidth = lw; ctx.globalAlpha = 0.85;
-      for (const seg of [state.p1.head, ...state.p1.body]) {
-        ctx.strokeRect(seg[0] * colSize + lw / 2, seg[1] * rowSize + lw / 2, colSize - lw, rowSize - lw);
-      }
-      ctx.globalAlpha = 1;
-    }
+    if (fbP1Tr) ctx.restore();
 
     // P2
     const p2Total = 1 + state.p2.body.length;
+    if (fbP2Tr) { ctx.save(); ctx.translate(fbP2Tr.ox, fbP2Tr.oy); ctx.scale(fbP2Tr.sc, fbP2Tr.sc); }
     if (fbP2Amped) {
       const ampP = 0.5 + 0.5 * Math.sin(nowFb / 220);
       const expand = 2 + ampP * 3;
@@ -1363,8 +1591,8 @@ export class PixiGameRenderer {
       }
       ctx.globalAlpha = 1;
     }
-    ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#555555'
-      : state.meta?.teamMode === 'teams' ? '#3a3a3a'
+    ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#111111'
+      : state.meta?.teamMode === 'teams' ? '#111111'
       : '#111111';
     const p2HeadBoost = this.getSegmentGlow(0, p2Total, this.p2Pulses, nowFb);
     if (p2HeadBoost > 0) {
@@ -1395,8 +1623,8 @@ export class PixiGameRenderer {
     }
     for (let i = 0; i < state.p2.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, p2Total, this.p2Pulses, nowFb);
-      ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#555555'
-        : state.meta?.teamMode === 'teams' ? '#3a3a3a'
+      ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#111111'
+        : state.meta?.teamMode === 'teams' ? '#111111'
         : '#111111';
       ctx.globalAlpha = Math.min(1, 0.6 + boost * 0.36);
       ctx.fillRect(state.p2.body[i][0] * colSize, state.p2.body[i][1] * rowSize, colSize, rowSize);
@@ -1421,15 +1649,7 @@ export class PixiGameRenderer {
       }
     }
     ctx.globalAlpha = 1;
-    // Teams mode: P2 red border
-    if (state.meta?.teamMode === 'teams') {
-      const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
-      ctx.strokeStyle = '#FF3333'; ctx.lineWidth = lw; ctx.globalAlpha = 0.85;
-      for (const seg of [state.p2.head, ...state.p2.body]) {
-        ctx.strokeRect(seg[0] * colSize + lw / 2, seg[1] * rowSize + lw / 2, colSize - lw, rowSize - lw);
-      }
-      ctx.globalAlpha = 1;
-    }
+    if (fbP2Tr) ctx.restore();
 
     // Teleport portals (fallback)
     if (state.teleportDoors?.length) {
@@ -1466,9 +1686,11 @@ export class PixiGameRenderer {
       }
     }
 
+
     // Coinbases (in 3D mode only show active-layer coinbases)
+    // In 3D levels main board always shows layer-0 coinbases; layer-1 appear on ghost board
     const fbActiveCoinbases = state.meta.layers3D
-      ? state.coinbases.filter((cb) => cb.layer === undefined || cb.layer === state.p1Layer)
+      ? state.coinbases.filter((cb) => cb.layer === undefined || cb.layer === 0)
       : state.coinbases;
     for (const cb of fbActiveCoinbases) {
       const cx = cb.pos[0] * colSize + colSize / 2;
