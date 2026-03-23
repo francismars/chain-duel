@@ -104,6 +104,13 @@ export default function SoloHub() {
   const { playSfx } = useAudio();
   const [selected, setSelected] = useState(0);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const gridRef  = useRef<HTMLDivElement | null>(null);
+
+  const getColCount = () => {
+    if (!gridRef.current) return 1;
+    const cols = getComputedStyle(gridRef.current).gridTemplateColumns.split(' ').length;
+    return Math.max(1, cols);
+  };
 
   useGamepad(true);
 
@@ -142,11 +149,21 @@ export default function SoloHub() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        playSfx(SFX.MENU_SELECT);
+        const cols = getColCount();
+        setSelected((p) => Math.max(0, p - cols));
+      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        playSfx(SFX.MENU_SELECT);
+        const cols = getColCount();
+        setSelected((p) => Math.min(MODES.length - 1, p + cols));
+      } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
         setSelected((p) => Math.max(0, p - 1));
-      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
         setSelected((p) => Math.min(MODES.length - 1, p + 1));
@@ -170,7 +187,7 @@ export default function SoloHub() {
         <p className="solo-hub-subtitle">INDIVIDUAL · SOVEREIGN · UNCHALLENGED</p>
       </header>
 
-      <div className="solo-hub-grid">
+      <div className="solo-hub-grid" ref={gridRef}>
         {MODES.map((card, i) => (
           <div
             key={card.id}
@@ -238,7 +255,7 @@ export default function SoloHub() {
         >
           ← MAIN MENU
         </button>
-        <span className="solo-hub-hint">↑↓ navigate · ENTER select · ESC back</span>
+        <span className="solo-hub-hint">↑↓ row · ←→ column · ENTER select · ESC back</span>
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />

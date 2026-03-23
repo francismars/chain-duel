@@ -91,6 +91,13 @@ export default function GauntletMenu() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // If focus is on an interactive element (button, a, input…), let the
+      // browser fire its native click so the action buttons stay accessible.
+      const focused = document.activeElement;
+      const isOnControl = focused instanceof HTMLButtonElement
+        || focused instanceof HTMLAnchorElement
+        || focused instanceof HTMLInputElement;
+
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
@@ -105,6 +112,8 @@ export default function GauntletMenu() {
       }
       if (e.key === 'Enter' || e.key === ' ') {
         if (e.repeat) return;
+        // Yield to the focused button so Enter/Space trigger its onClick
+        if (isOnControl) return;
         e.preventDefault();
         startLevel(GAUNTLET_LEVELS[selected].id);
         return;
