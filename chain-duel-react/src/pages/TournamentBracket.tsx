@@ -187,7 +187,7 @@ export default function TournamentBracket() {
         const claimed = d.claimedCount ?? 0;
         const remaining = seq.slice(claimed);
         if (remaining.length === 0) {
-          navigate('/tournprefs');
+          navigate('/testnet-entry');
         } else {
           setPlayerListSequential(remaining);
           setWithdrawLnurl(d.lnurlw);
@@ -208,7 +208,7 @@ export default function TournamentBracket() {
   const handleTournamentCancel = useCallback(
     (d: { depositcount: number; lnurlw?: string }) => {
       if (d.depositcount === 0 || !d.lnurlw) {
-        navigate('/tournprefs');
+        navigate('/testnet-entry');
         return;
       }
       setPlayersPaid((current) => {
@@ -227,7 +227,7 @@ export default function TournamentBracket() {
     timesWithdrawnRef.current += 1;
     setPlayerListSequential((prev) => {
       const next = prev.slice(1);
-      if (next.length === 0) navigate('/tournprefs');
+      if (next.length === 0) navigate('/testnet-entry');
       return next;
     });
   }, [navigate]);
@@ -429,7 +429,7 @@ export default function TournamentBracket() {
 
   function handleCancel() {
     // Legacy behavior: Cancel always opens the refund confirmation view first.
-    // If there are 0 deposits, backend responds and navigates back to tournprefs.
+    // If there are 0 deposits, backend responds and navigates back to testnet entry.
     setPanelView('confirm-cancel');
     setFocusedBtn('left');
   }

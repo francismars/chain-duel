@@ -223,6 +223,54 @@ body {
   right: 0;
 }
 
+/* ── Power-up key legend ──────────────────────────────────────────────────── */
+
+#powerUpKey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3vw 1.6vw;
+  width: 100%;
+  padding: 0.5vw 0.2vw 0.3vw;
+  box-sizing: border-box;
+  justify-content: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.powerUpKeyEntry {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  white-space: nowrap;
+}
+
+.powerUpKeySwatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3em;
+  height: 1.3em;
+  border: 1px solid;
+  font-size: clamp(7px, 0.65vw, 9px);
+  font-weight: 700;
+  font-family: 'BureauGrotesque', sans-serif;
+  flex-shrink: 0;
+}
+
+.powerUpKeyName {
+  font-size: clamp(8px, 0.7vw, 10px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  flex-shrink: 0;
+}
+
+.powerUpKeyDesc {
+  font-size: clamp(7px, 0.6vw, 8.5px);
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.04em;
+}
+
+/* ── Bitcoin details ─────────────────────────────────────────────────────── */
+
 #bitcoinDetails {
   display: flex;
   width: 100%;

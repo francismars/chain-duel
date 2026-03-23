@@ -12,11 +12,8 @@ import {
 
 interface UseMenuSocketInfoArgs {
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
-  responseEvent: 'resGetGameMenuInfos' | 'resGetPracticeMenuInfos';
-  requestEvent:
-    | 'getGameMenuInfos'
-    | 'getGameMenuInfosNostr'
-    | 'getPracticeMenuInfos';
+  responseEvent: 'resGetGameMenuInfos';
+  requestEvent: 'getGameMenuInfos' | 'getGameMenuInfosNostr';
   connected?: boolean;
   maxRetries?: number;
   onParsed: (parsed: MenuParseResult) => void;

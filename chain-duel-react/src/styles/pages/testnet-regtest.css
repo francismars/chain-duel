@@ -1,0 +1,59 @@
+/* Regtest hub (/regtest) — monochrome ink + paper (aligned with testnet paid entry) */
+
+.testnet-regtest-hub .testnet-panel {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.testnet-regtest-hub .testnet-summary-code {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.testnet-regtest-hub .testnet-start {
+  color: rgba(255, 255, 255, 0.94);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.04);
+}
+
+.testnet-regtest-hub .testnet-start:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 0 32px rgba(255, 255, 255, 0.08);
+}
+
+/* Slot tiles — neutral (no cyan / gold) */
+.testnet-regtest-hub .testnet-slot-btn.human {
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.testnet-regtest-hub .testnet-slot-btn.ai {
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+/* Toggle checked — white ink */
+.testnet-regtest-hub .testnet-toggle input:checked + .testnet-toggle-ui {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.testnet-regtest-hub .testnet-toggle input:checked + .testnet-toggle-ui::after {
+  border-color: rgba(255, 255, 255, 0.92);
+}
+
+/* Keyboard / gamepad focus */
+.testnet-regtest-hub .testnet-seg-btn.testnet-focus-target,
+.testnet-regtest-hub .testnet-start.testnet-focus-target,
+.testnet-regtest-hub .testnet-back-btn.testnet-focus-target,
+.testnet-regtest-hub .testnet-slot-btn.testnet-focus-target,
+.testnet-regtest-hub .testnet-toggle.testnet-focus-target {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.testnet-regtest-hub .tn-tier-pick.testnet-focus-target {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}

@@ -1,0 +1,540 @@
+/* Testnet practice — Chain Duel brand: white / black / sovereign gold / link cyan */
+
+.testnet-hub {
+  --cd-white-08: rgba(255, 255, 255, 0.08);
+  --cd-white-10: rgba(255, 255, 255, 0.1);
+  --cd-white-12: rgba(255, 255, 255, 0.12);
+  --cd-white-25: rgba(255, 255, 255, 0.25);
+  --cd-white-34: rgba(255, 255, 255, 0.34);
+  --cd-white-40: rgba(255, 255, 255, 0.4);
+  --cd-gold: rgba(230, 195, 40, 1);
+  --cd-gold-50: rgba(230, 195, 40, 0.5);
+  --cd-gold-65: rgba(230, 195, 40, 0.65);
+  --cd-gold-soft: rgba(220, 160, 50, 0.95);
+  --cd-cyan: #00b7ff;
+  --cd-cyan-dim: rgba(0, 183, 255, 0.75);
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.2vw 3vw 3vw;
+  gap: 1.5vw;
+}
+
+.testnet-hub--practice {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.testnet-hub-header {
+  text-align: center;
+  animation: card-enter 0.35s cubic-bezier(0.22, 0.68, 0, 1.2) both;
+}
+
+.testnet-hub-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(26px, 3.8vw, 48px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.testnet-hub-subtitle {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(9px, 0.85vw, 11px);
+  letter-spacing: 0.28em;
+  color: var(--cd-white-40);
+  margin: 0.4em 0 0;
+  text-transform: uppercase;
+}
+
+.testnet-hub-lede {
+  font-size: clamp(11px, 1vw, 13px);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.42);
+  max-width: 38em;
+  margin: 1em auto 0;
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Panel — same language as Sovereign / format bar */
+.testnet-panel {
+  width: 100%;
+  border: 1px solid var(--cd-white-10);
+  background: rgba(0, 0, 0, 0.42);
+  padding: clamp(16px, 2.2vw, 28px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 2vw, 26px);
+  animation: card-enter 0.4s cubic-bezier(0.22, 0.68, 0, 1.1) 0.06s both;
+  box-shadow:
+    0 0 0 1px rgba(230, 195, 40, 0.06),
+    0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.testnet-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65em;
+}
+
+.testnet-section-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 0.95vw, 13px);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.testnet-section-hint {
+  font-size: clamp(10px, 0.85vw, 12px);
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0;
+}
+
+/* Segmented control — align with .sov-format-btn */
+.testnet-seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.testnet-seg--two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.testnet-four-slot {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.testnet-slot-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 64px;
+  padding: 8px 4px;
+  border: 1px solid var(--cd-white-10);
+  background: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  border-radius: 2px;
+  color: inherit;
+  font: inherit;
+}
+
+.testnet-slot-btn:hover {
+  border-color: var(--cd-white-25);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.testnet-slot-btn.human {
+  border-color: rgba(0, 183, 255, 0.4);
+  box-shadow: 0 0 0 1px rgba(0, 183, 255, 0.08);
+}
+
+.testnet-slot-btn.ai {
+  border-color: var(--cd-gold-50);
+  box-shadow: 0 0 0 1px rgba(230, 195, 40, 0.06);
+}
+
+.testnet-slot-id {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(12px, 1.1vw, 15px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.testnet-slot-role {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.testnet-seg-btn {
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--cd-white-10);
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  border-radius: 2px;
+  color: inherit;
+  font: inherit;
+}
+
+.testnet-seg-btn:hover {
+  border-color: var(--cd-white-25);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.testnet-seg-btn.active {
+  border-color: var(--cd-white-40);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.testnet-seg-label {
+  display: block;
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.92);
+  text-transform: uppercase;
+}
+
+.testnet-seg-desc {
+  display: block;
+  margin-top: 3px;
+  font-size: clamp(9px, 0.75vw, 11px);
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.04em;
+}
+
+.testnet-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.testnet-field-label {
+  display: block;
+  font-size: clamp(9px, 0.72vw, 10px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 8px;
+}
+
+/* ── Bot tier: description + bar on top, tier buttons below ─────────────── */
+
+.tn-tier-picker {
+  width: 100%;
+  border: 1px solid var(--cd-white-10);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 8px 10px 10px;
+}
+
+.tn-tier-detail {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tn-tier-detail-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(12px, 1.35vw, 15px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.tn-tier-detail-desc {
+  font-size: clamp(8px, 0.72vw, 10px);
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.42);
+  margin: 0;
+}
+
+.tn-tier-pressure {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.tn-tier-pressure-label {
+  font-size: 6px;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.18);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tn-tier-track {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.tn-tier-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  opacity: 0.75;
+  transition: left 0.25s ease, width 0.25s ease, background 0.25s;
+}
+
+.tn-tier-marker {
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 0.25s ease, background 0.25s;
+}
+
+.tn-tier-picks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.tn-tier-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  padding: 5px 3px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+  font: inherit;
+  color: inherit;
+  position: relative;
+}
+
+.tn-tier-pick:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tn-tier-pick.active {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tn-tier-pick.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+.tn-tier-pick-rank {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.22);
+  letter-spacing: 0.06em;
+}
+
+.tn-tier-pick.active .tn-tier-pick-rank {
+  color: var(--accent);
+}
+
+.tn-tier-pick-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(7px, 0.62vw, 9px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  line-height: 1.1;
+  word-break: break-word;
+}
+
+.tn-tier-pick.active .tn-tier-pick-name {
+  color: #ffffff;
+}
+
+@media (max-width: 420px) {
+  .tn-tier-picks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.testnet-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  font-size: clamp(11px, 0.95vw, 13px);
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.testnet-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.testnet-toggle-ui {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 1px solid var(--cd-white-25);
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 3px;
+  position: relative;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.testnet-toggle input:checked + .testnet-toggle-ui {
+  border-color: var(--cd-gold-65);
+  background: rgba(230, 195, 40, 0.12);
+}
+
+.testnet-toggle input:checked + .testnet-toggle-ui::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid var(--cd-gold);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.testnet-toggle strong {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+}
+
+.testnet-conv-note {
+  color: rgba(255, 255, 255, 0.38);
+  font-weight: 400;
+}
+
+.testnet-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px dashed var(--cd-white-12);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.testnet-summary-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.testnet-summary-code {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 11px;
+  color: var(--cd-cyan-dim);
+  word-break: break-all;
+}
+
+.testnet-actions {
+  display: flex;
+  justify-content: stretch;
+}
+
+/* Primary CTA — sovereign gold outline, matches tier CTAs */
+.testnet-start {
+  flex: 1;
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(13px, 1.2vw, 16px);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  padding: 14px 20px;
+  cursor: pointer;
+  text-transform: uppercase;
+  color: var(--cd-gold);
+  background: transparent;
+  border: 1px solid var(--cd-gold-50);
+  box-shadow: 0 0 24px rgba(230, 195, 40, 0.12);
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
+}
+
+.testnet-start:hover {
+  background: rgba(230, 195, 40, 0.08);
+  border-color: var(--cd-gold-65);
+  box-shadow: 0 0 40px rgba(230, 195, 40, 0.22);
+}
+
+.testnet-start:active {
+  transform: scale(0.99);
+}
+
+.testnet-hub-footer {
+  display: flex;
+  align-items: center;
+  gap: 1.5em;
+  margin-top: auto;
+  padding-top: 0.5em;
+}
+
+.testnet-back-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 0.5em 1.2em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+  text-transform: uppercase;
+}
+
+.testnet-back-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: var(--cd-white-34);
+}
+
+.testnet-hub-hint {
+  font-size: clamp(9px, 0.7vw, 10px);
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.18);
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .testnet-seg:not(.testnet-seg--two) {
+    grid-template-columns: 1fr;
+  }
+
+  .testnet-hub {
+    padding: 5vw 4vw;
+  }
+}
