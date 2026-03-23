@@ -199,6 +199,7 @@
   padding-top: 0;
   margin-top: 0.2cqw;
   white-space: nowrap;
+  min-width: 135px;
 }
 
 /* Override global in-game HUD id styles that leak into GameMenu */
