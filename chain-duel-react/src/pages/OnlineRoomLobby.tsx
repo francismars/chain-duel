@@ -344,7 +344,7 @@ export default function OnlineRoomLobby() {
     <div className="online-lobby-page">
       <Sponsorship id="sponsorship-online-lobby" />
 
-      <h1 id="online-lobby-title">ONLINE LOBBY</h1>
+      <h1 id="online-lobby-title">MAINNET LOBBY</h1>
       <p id="online-lobby-subtitle">
         {room?.phase === 'finished'
           ? 'Session finished — winner closed payout. View details or replay from this room.'

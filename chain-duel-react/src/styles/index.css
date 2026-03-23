@@ -287,7 +287,6 @@ html.tv-safe-inset .online-postgame-page {
 
 /* Tournament / prefs shells: fixed inset 0 */
 html.tv-safe-inset .tournbracket-page,
-html.tv-safe-inset .tournprefs-page,
 html.tv-safe-inset .tournlobby-page {
   inset: var(--tv-safe-padding);
 }
@@ -304,14 +303,6 @@ html.tv-safe-inset .tournlobby-page .tournlobby-header {
 html.tv-safe-inset .tournbracket-page .tournbracket-middle {
   min-height: var(--tv-safe-height);
   width: min(100%, var(--tv-safe-width));
-}
-
-html.tv-safe-inset .tournprefs-page #brand {
-  top: calc(var(--tv-safe-padding) + 1rem);
-  left: var(--tv-safe-padding);
-  right: var(--tv-safe-padding);
-  width: auto;
-  margin-top: 0;
 }
 
 /* Match default .corner-controls (1vw) but from the TV-safe content edge; aligns with CHAIN / #brand inset */

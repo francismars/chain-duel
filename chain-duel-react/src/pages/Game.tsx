@@ -88,15 +88,18 @@ export default function Game() {
       if (!raw) return false;
       const cfg = JSON.parse(raw) as Record<string, unknown>;
       const m = String(cfg.mode ?? '').toUpperCase();
+      if (m === 'TESTNET') return Boolean(cfg.powerupMode);
       return m === 'POWERUP' || m === 'POWER-UP ARENA';
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   }, []);
 
   const bootstrapLocalGame = useCallback(() => {
     if (localBootRef.current) return;
     localBootRef.current = true;
 
-    // Read gameConfig from sessionStorage (set by new mode menu pages)
+    // sessionStorage from regtest hub (/regtest); legacy POWERUP sessions may remain
     let gameConfig: Record<string, unknown> = {};
     try {
       const raw = sessionStorage.getItem('gameConfig');
@@ -105,57 +108,51 @@ export default function Game() {
       // ignore
     }
 
-    const configMode = String(gameConfig.mode ?? 'SOVEREIGN').toUpperCase();
-    const isSovereign = configMode === 'SOVEREIGN';
-    const isOverclock = configMode === 'OVERCLOCK';
-    const isConvergence = configMode === 'CONVERGENCE';
-    const isPowerup = configMode === 'POWERUP';
-    const isGauntlet = configMode === 'GAUNTLET';
-    const isLabyrinth = configMode === 'LABYRINTH';
-    // practiceMode: set by sovereign, labyrinth solo, and solo-hub AI starts
-    const isPracticeMode = Boolean(gameConfig.practiceMode) || isSovereign;
+    const configMode = String(gameConfig.mode ?? '').toUpperCase();
+    const isTestnet = configMode === 'TESTNET';
+    const isLegacyPowerup =
+      configMode === 'POWERUP' || configMode === 'POWER-UP ARENA';
+    const isConvergence = isTestnet && Boolean(gameConfig.convergenceMode);
+    const isPowerup =
+      isLegacyPowerup || (isTestnet && Boolean(gameConfig.powerupMode));
+    const isPracticeMode = Boolean(gameConfig.practiceMode);
     const aiTier = (gameConfig.aiTier as string) ?? 'hunter';
-    const gauntletLevel = Number(gameConfig.gauntletLevel ?? 1);
     const p1Name = String(gameConfig.p1Name ?? 'Player 1');
     const rawP2Name = String(gameConfig.p2Name ?? (isPracticeMode ? 'BigToshi 🌊' : 'Player 2'));
 
-    const MODE_LABELS: Record<string, string> = {
-      SOVEREIGN: 'SOVEREIGN',
-      OVERCLOCK: 'OVERCLOCK',
-      CONVERGENCE: 'CONVERGENCE',
-      POWERUP: 'POWER-UP ARENA',
-      GAUNTLET: `GAUNTLET ${gauntletLevel}`,
-      LABYRINTH: 'LABYRINTH',
-    };
-    const modeLabel = MODE_LABELS[configMode] ?? 'SOVEREIGN';
-    const displayP2Name = isPracticeMode ? rawP2Name : 'Player 2';
+    let p1Human = true;
+    let p2Human = !isPracticeMode;
+    if (typeof gameConfig.p1Human === 'boolean') p1Human = gameConfig.p1Human;
+    if (typeof gameConfig.p2Human === 'boolean') p2Human = gameConfig.p2Human;
+    const p3Human = gameConfig.p3Human === true;
+    const p4Human = gameConfig.p4Human === true;
 
-    const labyrinthLoopFactor = Number(gameConfig.labyrinthLoopFactor ?? 0);
-    const labyrinthCornerFactor = Number(gameConfig.labyrinthCornerFactor ?? 0);
-    const labyrinthRegenInterval = Number(gameConfig.labyrinthRegenInterval ?? 450);
-    const labyrinthStepMs = Number(gameConfig.labyrinthStepMs ?? 100);
-    const labyrinthCorridorWidth = (Number(gameConfig.labyrinthCorridorWidth ?? 1) as 1 | 2 | 4 | 5);
-    const labyrinthSections = (Number(gameConfig.labyrinthSections ?? 1) as 1 | 3);
-    const labyrinthTeleports = Boolean(gameConfig.labyrinthTeleports ?? false);
+    const modeLabel =
+      isTestnet && typeof gameConfig.testnetHudLabel === 'string'
+        ? String(gameConfig.testnetHudLabel)
+        : isLegacyPowerup
+          ? 'POWER-UP ARENA'
+          : 'TESTNET';
+    const displayP2Name = isTestnet
+      ? String(gameConfig.p2Name ?? 'Player 2')
+      : isPracticeMode
+        ? rawP2Name
+        : 'Player 2';
+
     const teamMode = (gameConfig.teamMode as 'solo' | 'teams' | 'ffa') ?? 'solo';
 
     const convergenceShrinkInterval = gameConfig.convergenceShrinkInterval != null
-      ? Number(gameConfig.convergenceShrinkInterval) : undefined;
+      ? Number(gameConfig.convergenceShrinkInterval)
+      : undefined;
     const convergenceMinCols = gameConfig.convergenceMinCols != null
-      ? Number(gameConfig.convergenceMinCols) : undefined;
+      ? Number(gameConfig.convergenceMinCols)
+      : undefined;
     const convergenceMinRows = gameConfig.convergenceMinRows != null
-      ? Number(gameConfig.convergenceMinRows) : undefined;
+      ? Number(gameConfig.convergenceMinRows)
+      : undefined;
     const convergenceStepMs = gameConfig.convergenceStepMs != null
-      ? Number(gameConfig.convergenceStepMs) : undefined;
-
-    const overclockStartStepMs = gameConfig.overclockStartStepMs != null
-      ? Number(gameConfig.overclockStartStepMs) : undefined;
-    const overclockMinStepMs = gameConfig.overclockMinStepMs != null
-      ? Number(gameConfig.overclockMinStepMs) : undefined;
-    const overclockStepIntervalTicks = gameConfig.overclockStepIntervalTicks != null
-      ? Number(gameConfig.overclockStepIntervalTicks) : undefined;
-    const overclockSpeedReductionMs = gameConfig.overclockSpeedReductionMs != null
-      ? Number(gameConfig.overclockSpeedReductionMs) : undefined;
+      ? Number(gameConfig.convergenceStepMs)
+      : undefined;
 
     const state = createGameState({
       p1Name,
@@ -164,30 +161,26 @@ export default function Game() {
       p2Points: 1000,
       modeLabel,
       practiceMode: isPracticeMode,
+      p1Human,
+      p2Human,
+      p3Human,
+      p4Human,
       isTournament: false,
-      sovereignMode: isSovereign,
+      sovereignMode: false,
       aiTier: aiTier as import('@/game/engine/types').AiTier,
-      overclockMode: isOverclock,
-      overclockStartStepMs,
-      overclockMinStepMs,
-      overclockStepIntervalTicks,
-      overclockSpeedReductionMs,
+      teamAllyAiTier: gameConfig.teamAllyAiTier as import('@/game/engine/types').AiTier | undefined,
+      teamEnemyAiTier: gameConfig.teamEnemyAiTier as import('@/game/engine/types').AiTier | undefined,
+      ffaAiTier: gameConfig.ffaAiTier as import('@/game/engine/types').AiTier | undefined,
+      overclockMode: false,
       convergenceMode: isConvergence,
       convergenceShrinkInterval,
       convergenceMinCols,
       convergenceMinRows,
       convergenceStepMs,
       powerupMode: isPowerup,
-      gauntletMode: isGauntlet,
-      gauntletLevel,
-      labyrinthMode: isLabyrinth,
-      labyrinthLoopFactor,
-      labyrinthCornerFactor,
-      labyrinthRegenInterval,
-      labyrinthStepMs,
-      labyrinthCorridorWidth,
-      labyrinthSections,
-      labyrinthTeleports,
+      gauntletMode: false,
+      gauntletLevel: 1,
+      labyrinthMode: false,
       teamMode,
     });
     stateRef.current = state;
@@ -238,8 +231,7 @@ export default function Game() {
   }, []);
 
   useEffect(() => {
-    // For new local modes (SOVEREIGN, GAUNTLET, OVERCLOCK, CONVERGENCE, POWERUP)
-    // bootstrap immediately without waiting for socket
+    // Regtest (and legacy POWERUP) bootstrap without waiting for socket
     let gameConfig: Record<string, unknown> = {};
     try {
       const raw = sessionStorage.getItem('gameConfig');
@@ -247,7 +239,7 @@ export default function Game() {
     } catch {
       // ignore
     }
-    const localModes = ['SOVEREIGN', 'OVERCLOCK', 'CONVERGENCE', 'POWERUP', 'GAUNTLET', 'LABYRINTH'];
+    const localModes = ['TESTNET', 'POWERUP', 'POWER-UP ARENA'];
     const configMode = String(gameConfig.mode ?? '').toUpperCase();
     if (localModes.includes(configMode)) {
       bootstrapLocalGame();
@@ -392,12 +384,9 @@ export default function Game() {
     }
     const configMode = String(gameConfig.mode ?? '').toUpperCase();
     const modeRoutes: Record<string, string> = {
-      SOVEREIGN:  '/sovereign',
-      GAUNTLET:   '/gauntlet',
-      LABYRINTH:  '/labyrinth',
-      OVERCLOCK:  '/overclock',
-      CONVERGENCE:'/convergence',
-      POWERUP:    '/solo',
+      TESTNET: '/regtest',
+      POWERUP: '/regtest',
+      'POWER-UP ARENA': '/regtest',
     };
     const modeRoute = modeRoutes[configMode];
     if (modeRoute) { navigate(modeRoute); return; }
