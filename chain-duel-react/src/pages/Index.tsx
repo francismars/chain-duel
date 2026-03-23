@@ -18,16 +18,16 @@ type MenuHintKey = MenuState | 'config';
 
 const INDEX_MENU_HINTS: Record<MenuState, { title: string; body: string }> = {
   1: {
-    title: 'Regtest',
-    body: 'Free local practice — bots, formats, and rules before real stakes.',
+    title: 'REGTEST — Free local practice',
+    body: 'Try formats and AI locally — no wallet or payment.',
   },
   2: {
-    title: 'Testnet',
-    body: 'Paid entry — payment first, then session; bracket size when you pick tournament.',
+    title: 'TESTNET — Paid entry',
+    body: 'Fund your session first, then tournament or bracket play.',
   },
   3: {
-    title: 'Mainnet',
-    body: 'Online rooms — matchmaking, stakes, and payouts on the server.',
+    title: 'MAINNET — Online rooms',
+    body: 'Browse rooms, stakes, and live opponents on the server.',
   },
   4: {
     title: 'Ledger',

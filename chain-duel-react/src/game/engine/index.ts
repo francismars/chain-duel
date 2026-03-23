@@ -2017,6 +2017,8 @@ function findPathGeneric(
   start: GridPos,
   target: GridPos,
   extraBlocked: Set<string>,
+  /** First-step facing for this snake (omit when unknown / no reverse constraint). */
+  facing?: Direction,
 ): GridPos[] {
   const openSet: GridPos[] = [start];
   const cameFrom = new Map<string, string>();
@@ -2043,6 +2045,10 @@ function findPathGeneric(
       if (outOfBounds(state, nb)) continue;
       if (hitsObstacle(state, nb)) continue;
       if (extraBlocked.has(posKey(nb))) continue;
+      if (samePos(current, start) && facing) {
+        const step = stepDirFromTo(current, nb);
+        if (step && dirsAreOpposite(facing, step)) continue;
+      }
       const tentative = (gScore.get(posKey(current)) ?? Number.POSITIVE_INFINITY) + 1;
       if (tentative < (gScore.get(posKey(nb)) ?? Number.POSITIVE_INFINITY)) {
         cameFrom.set(posKey(nb), posKey(current));
@@ -2092,7 +2098,8 @@ function decideExtraSnakeDir(state: GameState, extra: ExtraSnake): void {
   const target = extraSnakeTarget(state, extra);
   if (!target) return;
   const blocked = buildBlockedSet(state, extra);
-  const path = findPathGeneric(state, extra.snake.head, target, blocked);
+  const facing = extra.snake.dir || extra.snake.dirWanted;
+  const path = findPathGeneric(state, extra.snake.head, target, blocked, facing || undefined);
   if (path.length < 2) return;
   const next = path[1];
   const [x, y] = extra.snake.head;
@@ -2313,7 +2320,28 @@ function applyAiDir(state: GameState, dir: Exclude<Direction, ''>): void {
   else if (dir === 'Left' && (cur === 'Up' || cur === 'Down' || cur === '')) state.p2.dirWanted = 'Left';
 }
 
+/** True if b is the opposite cardinal direction of a (snake cannot reverse in one tick). */
+function dirsAreOpposite(a: Direction, b: Direction): boolean {
+  if (!a || !b) return false;
+  return (
+    (a === 'Up' && b === 'Down') ||
+    (a === 'Down' && b === 'Up') ||
+    (a === 'Left' && b === 'Right') ||
+    (a === 'Right' && b === 'Left')
+  );
+}
+
+function stepDirFromTo(from: GridPos, to: GridPos): Exclude<Direction, ''> | null {
+  if (to[0] > from[0]) return 'Right';
+  if (to[0] < from[0]) return 'Left';
+  if (to[1] > from[1]) return 'Down';
+  if (to[1] < from[1]) return 'Up';
+  return null;
+}
+
 function wouldHitWall(state: GameState, snake: GameState['p1'], dir: Direction): boolean {
+  const facing = snake.dir || snake.dirWanted;
+  if (facing && dir && dirsAreOpposite(facing, dir)) return true;
   const next: GridPos = [snake.head[0], snake.head[1]];
   if (dir === 'Up') next[1] -= 1;
   else if (dir === 'Down') next[1] += 1;
@@ -2385,6 +2413,11 @@ function findPath(
       if (hitsObstacle(state, neighbor)) continue;
       if (state.p2.body.some((p) => samePos(p, neighbor))) continue;
       if (avoidPlayerBody && state.p1.body.some((p) => samePos(p, neighbor))) continue;
+      if (samePos(current, start) && samePos(start, state.p2.head)) {
+        const facing = state.p2.dir || state.p2.dirWanted;
+        const step = stepDirFromTo(current, neighbor);
+        if (facing && step && dirsAreOpposite(facing, step)) continue;
+      }
 
       const tentative = (gScore.get(posKey(current)) ?? Number.POSITIVE_INFINITY) + 1;
       if (tentative < (gScore.get(posKey(neighbor)) ?? Number.POSITIVE_INFINITY)) {
