@@ -19,6 +19,7 @@ export enum GameMode {
   CONVERGENCE = 'CONVERGENCE',
   POWERUP = 'POWERUP',
   GAUNTLET = 'GAUNTLET',
+  /** Legacy wire value; no client route — keep for older server payloads */
   BOUNTY = 'BOUNTY',
   LABYRINTH = 'LABYRINTH',
 }

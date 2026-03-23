@@ -24,6 +24,9 @@ function buildMeta(partial: GameMeta): GameMeta {
   const p = partial as unknown as Record<string, unknown>;
   return {
     ...partial,
+    p1Human: (p.p1Human as boolean | undefined) ?? true,
+    p2Human: (p.p2Human as boolean | undefined) ??
+      !Boolean((p.practiceMode as boolean | undefined) ?? false),
     sovereignMode: (p.sovereignMode as boolean | undefined) ?? false,
     aiTier: ((p.aiTier as string | undefined) ?? 'hunter') as AiTier,
     overclockMode: (p.overclockMode as boolean | undefined) ?? false,

@@ -517,7 +517,7 @@ export default function OnlineGame() {
               {isP1 ? <span className="online-game-you-tag">YOU</span> : null}
             </div>
             <div id="gameInfo" className="outline condensed">
-              ONLINE{roomInfo?.roomCode ? ` · ${roomInfo.roomCode}` : ''}
+              MAINNET{roomInfo?.roomCode ? ` · ${roomInfo.roomCode}` : ''}
               {replayMode ? ' · REPLAY MODE' : ''}
             </div>
             <div id="player2info" className="condensed">

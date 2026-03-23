@@ -60,7 +60,7 @@ export interface ActivePowerUp {
 
 export type TeamMode = 'solo' | 'teams' | 'ffa';
 
-/** An AI-controlled extra snake (P3/P4) in teams or FFA modes. */
+/** Extra snake (P3/P4) in teams or FFA — AI or human-controlled. */
 export interface ExtraSnake {
   snake: SnakeState;
   teamId: 0 | 1;   // 0 = white side, 1 = black side
@@ -70,6 +70,8 @@ export interface ExtraSnake {
   name: string;
   score: number;   // individual score tracked in FFA mode
   aiTier: AiTier;
+  /** When true, player input steers this snake; otherwise `decideExtraSnakeDir` runs. */
+  humanControlled: boolean;
   spawnHead: GridPos;
   spawnDir: Direction;
 }
@@ -152,6 +154,10 @@ export interface GameMeta {
   modeLabel: string;
   isTournament: boolean;
   practiceMode: boolean;
+  /** When false, P1 is driven by AI (WASD / pad 1 ignored). */
+  p1Human: boolean;
+  /** When false, P2 is driven by AI (arrows / pad 2 ignored). */
+  p2Human: boolean;
   sovereignMode: boolean;
   aiTier: AiTier;
   overclockMode: boolean;

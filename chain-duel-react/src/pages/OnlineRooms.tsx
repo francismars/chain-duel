@@ -408,7 +408,7 @@ export default function OnlineRooms() {
     <div className="online-rooms-page">
       <Sponsorship id="sponsorship-online-rooms" />
 
-      <h1 id="online-title">ONLINE ARENA</h1>
+      <h1 id="online-title">MAINNET ARENA</h1>
       <p id="online-subtitle">Create a room, share the code, and claim seats with PIN-in-zap.</p>
 
       <div className="online-layout">
