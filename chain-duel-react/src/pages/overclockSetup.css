@@ -17,7 +17,7 @@
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(28px, 4vw, 56px);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0;
   color: #ffffff;
   margin: 0;
 }
@@ -68,6 +68,10 @@
 .os-tier-btn:hover {
   border-color: rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.03);
+}
+
+.os-tier-btn:focus {
+  outline: none;
 }
 
 .os-tier-btn.active {

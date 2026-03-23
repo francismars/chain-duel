@@ -2,8 +2,8 @@ import { useEffect, type MutableRefObject } from 'react';
 import {
   canContinueAfterGame,
   setWantedDirection,
+  setStrategyShift,
   startCountdown,
-  switchPlayerLayer,
 } from '@/game/engine';
 import type { GameState } from '@/game/engine/types';
 import { NAVIGATE_AFTER_FINISH_DELAY_MS } from '@/shared/constants/timeouts';
@@ -52,6 +52,12 @@ export function useGameInputBindings({
         return;
       }
 
+      // Strategy mode: Shift keys control per-player chain speed
+      if (state.meta.strategyMode) {
+        if (event.code === 'ShiftLeft')  { setStrategyShift(state, 'P1', true); event.preventDefault(); }
+        if (event.code === 'ShiftRight') { setStrategyShift(state, 'P2', true); event.preventDefault(); }
+      }
+
       switch (key) {
         case 'A':
           setWantedDirection(state, 'P1', 'Left');
@@ -77,16 +83,23 @@ export function useGameInputBindings({
         case 'ARROWDOWN':
           if (!state.meta.practiceMode) setWantedDirection(state, 'P2', 'Down');
           break;
-        case 'Q':
-          // Phase-shift between 3D board layers (Gauntlet 3D levels)
-          switchPlayerLayer(state);
-          break;
         default:
           break;
       }
     };
 
+    const onKeyUp = (event: KeyboardEvent) => {
+      const state = stateRef.current;
+      if (!state?.meta.strategyMode) return;
+      if (event.code === 'ShiftLeft')  setStrategyShift(state, 'P1', false);
+      if (event.code === 'ShiftRight') setStrategyShift(state, 'P2', false);
+    };
+
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
   }, [onEmitWinner, onNavigateAfterFinish, stateRef, winnerSentRef]);
 }

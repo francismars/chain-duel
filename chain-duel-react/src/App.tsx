@@ -11,6 +11,8 @@ import LabyrinthSetup from './pages/LabyrinthSetup';
 import ConvergenceSetup from './pages/ConvergenceSetup';
 import OverclockSetup from './pages/OverclockSetup';
 import GauntletMenu from './pages/GauntletMenu';
+import StrategySetup from './pages/StrategySetup';
+import PowerupSetup from './pages/PowerupSetup';
 import BountyLeaderboard from './pages/BountyLeaderboard';
 import TournamentPrefs from './pages/TournamentPrefs';
 import TournamentLobby from './pages/TournamentLobby';
@@ -42,6 +44,8 @@ function App() {
             <Route path="/overclock" element={<OverclockSetup />} />
             <Route path="/sovereign" element={<SovereignMenu />} />
             <Route path="/gauntlet" element={<GauntletMenu />} />
+            <Route path="/strategy" element={<StrategySetup />} />
+            <Route path="/powerup" element={<PowerupSetup />} />
             <Route path="/bounty" element={<BountyLeaderboard />} />
             <Route path="/tournprefs" element={<TournamentPrefs />} />
             <Route path="/tournlobby" element={<TournamentLobby />} />

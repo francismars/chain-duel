@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useAudio, SFX } from '@/contexts/AudioContext';
@@ -166,8 +166,13 @@ export default function ConvergenceSetup() {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
   const [selected, setSelected] = useState(1); // default: SOLDIER
+  const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useGamepad(true);
+
+  useEffect(() => {
+    rowRefs.current[selected]?.focus({ preventScroll: true });
+  }, [selected]);
 
   const launch = useCallback(
     (preset: ConvergencePreset, vsAi: boolean) => {
@@ -230,6 +235,7 @@ export default function ConvergenceSetup() {
           {PRESETS.map((p, i) => (
             <button
               key={p.id}
+              ref={(el) => { rowRefs.current[i] = el; }}
               className={`cs-tier-btn ${selected === i ? 'active' : ''}`}
               style={{ '--accent': p.accentColor } as React.CSSProperties}
               onClick={() => { playSfx(SFX.MENU_SELECT); setSelected(i); }}

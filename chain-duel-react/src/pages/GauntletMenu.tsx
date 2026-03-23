@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { Button } from '@/components/ui/Button';
@@ -45,6 +45,7 @@ export default function GauntletMenu() {
   const { playSfx } = useAudio();
   const [selected, setSelected] = useState(0);
   const [cleared, setCleared] = useState<Set<number>>(new Set());
+  const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [sovereignRank, setSovereignRank] = useState(false);
 
   useGamepad(true);
@@ -54,6 +55,11 @@ export default function GauntletMenu() {
     setCleared(c);
     setSovereignRank(localStorage.getItem(SOVEREIGN_RANK_KEY) === 'true');
   }, []);
+
+  useEffect(() => {
+    rowRefs.current[selected]?.focus({ preventScroll: true });
+    rowRefs.current[selected]?.scrollIntoView({ block: 'nearest' });
+  }, [selected]);
 
   const isUnlocked = useCallback((levelId: number): boolean => {
     if (levelId === 1) return true;
@@ -134,6 +140,8 @@ export default function GauntletMenu() {
             return (
               <div
                 key={level.id}
+                ref={(el) => { rowRefs.current[i] = el; }}
+                tabIndex={0}
                 className={[
                   'gauntlet-level-row',
                   selected === i ? 'selected' : '',
@@ -199,16 +207,14 @@ export default function GauntletMenu() {
               <div className="stat-label">CHALLENGE</div>
               <div className="stat-value-sm">{activeLevel.challengeCondition}</div>
             </div>
-            {activeLevel.modifiers.length > 0 && (
-              <div className="stat">
-                <div className="stat-label">MODIFIERS</div>
-                <div className="gauntlet-modifiers">
-                  {activeLevel.modifiers.map((m) => (
-                    <span key={m} className="modifier-tag">{modifierLabel(m)}</span>
-                  ))}
-                </div>
+            <div className="stat" style={{ visibility: activeLevel.modifiers.length > 0 ? 'visible' : 'hidden' }}>
+              <div className="stat-label">MODIFIERS</div>
+              <div className="gauntlet-modifiers">
+                {activeLevel.modifiers.map((m) => (
+                  <span key={m} className="modifier-tag">{modifierLabel(m)}</span>
+                ))}
               </div>
-            )}
+            </div>
           </div>
 
           <div className="gauntlet-actions">

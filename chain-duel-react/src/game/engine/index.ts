@@ -24,6 +24,13 @@ import {
   LABYRINTH_REGEN_INTERVAL_TICKS,
   LABYRINTH_REGEN_WARNING_TICKS,
   STEP_SPEED_MS,
+  STRATEGY_COLS,
+  STRATEGY_ROWS,
+  STRATEGY_STEP_MS,
+  STRATEGY_SHIFT_RAMP_DOWN,
+  STRATEGY_SHIFT_RAMP_UP,
+  POWERUP_FORK_DURATION_TICKS,
+  POWERUP_FORK_BURST_TICKS,
 } from '@/game/engine/constants';
 import type {
   AiTier,
@@ -31,12 +38,15 @@ import type {
   Coinbase,
   Direction,
   ExtraSnake,
+  ForkBurst,
+  ForkChain,
   GameMeta,
   GameState,
   GridPos,
   HudState,
   PlayerId,
   PowerUpType,
+  SnakeState,
   TeamMode,
   TeleportDoor,
   TickResult,
@@ -363,6 +373,75 @@ function downTier(tier: AiTier): AiTier {
 }
 
 // ============================================================================
+// Strategy mode — hand-crafted tactical map walls (75×37)
+// ============================================================================
+
+/**
+ * Strategy mode hatch cells — floor positions where players switch Z layers.
+ * Exported so the renderer can draw visible hatch markers at these locations.
+ * 8 hatches placed symmetrically across the 99×49 arena (all confirmed open on both layers).
+ */
+export const STRATEGY_HATCH_CELLS: GridPos[] = [
+  [36, 24],   // left approach, center row
+  [62, 24],   // right approach, center row
+  [49, 14],   // above central fortress
+  [49, 34],   // below central fortress
+  [22,  9],   // top-left open area
+  [22, 39],   // bottom-left open area
+  [76,  9],   // top-right open area
+  [76, 39],   // bottom-right open area
+];
+
+// Board: 99×49  •  center: (49, 24)  •  P1: [3,24] → Right  •  P2: [95,24] → Left
+function buildStrategyWalls(): GridPos[] {
+  const walls: GridPos[] = [];
+  const h = (x: number, y: number, len: number) => {
+    for (let i = 0; i < len; i++) walls.push([x + i, y]);
+  };
+  const v = (x: number, y: number, len: number) => {
+    for (let i = 0; i < len; i++) walls.push([x, y + i]);
+  };
+
+  // ── Central fortress (x:40–58, y:16–32) — 2-cell gaps on all four sides ──
+  h(40, 16,  9);  h(50, 16,  9);  // top:    gap at x=49–50 (2 cells)
+  h(40, 32,  9);  h(50, 32,  9);  // bottom: gap at x=49–50
+  v(40, 17,  7);  v(40, 26,  6);  // left:   gap at y=24–25
+  v(58, 17,  7);  v(58, 26,  6);  // right:  gap at y=24–25
+
+  // ── Left-side horizontal barriers — upper and lower corridors ──
+  h( 8, 10, 24);  // y=10, x:8–31
+  h( 8, 38, 24);  // y=38, x:8–31
+
+  // ── Right-side horizontal barriers ──
+  h(67, 10, 24);  // y=10, x:67–90
+  h(67, 38, 24);  // y=38, x:67–90
+
+  // ── Mid-field cover pillars (left quadrant) ──
+  h(22, 18,  7);  // left-upper pillar  y=18
+  h(22, 30,  7);  // left-lower pillar  y=30
+
+  // ── Mid-field cover pillars (right quadrant) ──
+  h(70, 18,  7);  // right-upper pillar
+  h(70, 30,  7);  // right-lower pillar
+
+  // ── Top & bottom center spines (funnel approach to fortress) ──
+  v(49,  2, 11);  // top spine:    y:2–12
+  v(49, 36, 11);  // bottom spine: y:36–46
+
+  // ── Corner pocket walls (add tactical depth near spawns) ──
+  v( 8, 18,  8);  // left pocket  y:18–25
+  v(90, 18,  8);  // right pocket y:18–25
+
+  return walls;
+}
+
+/**
+ * Strategy mode — underground layer (layer 1).
+ * Cross-shaped dividers + four quadrant rooms.  Hatch cells (STRATEGY_HATCH_CELLS)
+ * are guaranteed to fall in gaps so players always have clear floor tiles there.
+ */
+
+// ============================================================================
 // Public API types
 // ============================================================================
 
@@ -387,6 +466,10 @@ interface CreateStateArgs {
   convergenceMinRows?: number;
   convergenceStepMs?: number;
   powerupMode?: boolean;
+  powerupSpawnCooldown?: number;
+  powerupMaxItems?: number;
+  powerupAllowedTypes?: string[];
+  strategyMode?: boolean;
   gauntletMode?: boolean;
   gauntletLevel?: number;
   bountyMode?: boolean;
@@ -412,12 +495,22 @@ export function createGameState(args: CreateStateArgs): GameState {
   const p1 = Math.max(1, Math.floor(args.p1Points));
   const p2 = Math.max(1, Math.floor(args.p2Points));
 
+  const strategyMode = args.strategyMode ?? false;
+
   const gauntletLevel = args.gauntletLevel ?? 1;
   const levelConfig = args.gauntletMode ? getGauntletLevel(gauntletLevel) : null;
 
   const initialCoinbases: Coinbase[] = levelConfig?.initialCoinbasePositions.length
     ? levelConfig.initialCoinbasePositions.map((pos) => ({ pos: [pos[0], pos[1]] }))
-    : [{ pos: [25, 12] }];
+    : strategyMode
+      ? [
+          { pos: [49, 24] as GridPos },
+          { pos: [13,  6] as GridPos },
+          { pos: [85,  6] as GridPos },
+          { pos: [13, 42] as GridPos },
+          { pos: [85, 42] as GridPos },
+        ]
+      : [{ pos: [25, 12] as GridPos }];
 
   const startStepMs = levelConfig?.startStepMs ?? STEP_SPEED_MS;
 
@@ -440,12 +533,12 @@ export function createGameState(args: CreateStateArgs): GameState {
   //   width=4 (P=5):       P1=(1,1),  P2=(47,17)
   //   width=5 (P=6):       P1=(1,1),  P2=(43,19)  (last cell in last P=6 unit)
   //   sections=3:          P1=(1,1),  P2=(49,23)
-  const p1StartPos: GridPos = labyrinthMode ? [1, 1] : [6, 12];
+  const p1StartPos: GridPos = labyrinthMode ? [1, 1] : strategyMode ? [3, 24] : [6, 12];
   const p2StartPos: GridPos = labyrinthMode
     ? (labyrinthCorridorWidth === 5 ? [43, 19] : labyrinthCorridorWidth === 4 ? [47, 17] : labyrinthCorridorWidth === 2 ? [47, 22] : [49, 23])
-    : [44, 12];
-  const p1BodyPos: GridPos[] = labyrinthMode ? [] : [[5, 12]];
-  const p2BodyPos: GridPos[] = labyrinthMode ? [] : [[45, 12]];
+    : strategyMode ? [95, 24] : [44, 12];
+  const p1BodyPos: GridPos[] = (labyrinthMode || strategyMode) ? [] : [[5, 12]];
+  const p2BodyPos: GridPos[] = (labyrinthMode || strategyMode) ? [] : [[45, 12]];
 
   // Initial coinbase: safe center cell for each maze type
   const initialCoinbasePos: GridPos =
@@ -458,8 +551,8 @@ export function createGameState(args: CreateStateArgs): GameState {
     : initialCoinbases;
 
   const state: GameState = {
-    cols: GAME_COLS,
-    rows: GAME_ROWS,
+    cols: strategyMode ? STRATEGY_COLS : GAME_COLS,
+    rows: strategyMode ? STRATEGY_ROWS : GAME_ROWS,
     p1: {
       head: p1StartPos,
       body: p1BodyPos,
@@ -503,6 +596,10 @@ export function createGameState(args: CreateStateArgs): GameState {
       convergenceMinCols: args.convergenceMinCols ?? CONVERGENCE_MIN_COLS,
       convergenceMinRows: args.convergenceMinRows ?? CONVERGENCE_MIN_ROWS,
       powerupMode: args.powerupMode ?? false,
+      powerupSpawnCooldown: args.powerupSpawnCooldown ?? POWERUP_RESPAWN_COOLDOWN_TICKS,
+      powerupMaxItems: args.powerupMaxItems ?? 1,
+      powerupAllowedTypes: (args.powerupAllowedTypes as PowerUpType[] | undefined) ?? (Object.keys(POWERUP_SPAWN_WEIGHTS) as PowerUpType[]),
+      strategyMode,
       gauntletMode: args.gauntletMode ?? false,
       gauntletLevel,
       bountyMode: args.bountyMode ?? false,
@@ -516,18 +613,20 @@ export function createGameState(args: CreateStateArgs): GameState {
       teamMode: (args.teamMode ?? 'solo') as TeamMode,
       layers3D: Boolean(levelConfig?.modifiers.includes('layers_3d')),
       invisibleGrid: Boolean(levelConfig?.modifiers.includes('invisible_grid')),
-      currentStepMs: args.labyrinthStepMs ?? args.convergenceStepMs ?? args.overclockStartStepMs ?? startStepMs,
-      p1ChainAbilityAvailable: Boolean(args.powerupMode || args.bountyMode),
-      p2ChainAbilityAvailable: Boolean(args.powerupMode || args.bountyMode),
+      currentStepMs: strategyMode ? STRATEGY_STEP_MS : (args.labyrinthStepMs ?? args.convergenceStepMs ?? args.overclockStartStepMs ?? startStepMs),
+      p1ChainAbilityAvailable: Boolean(args.powerupMode || args.bountyMode || strategyMode),
+      p2ChainAbilityAvailable: Boolean(args.powerupMode || args.bountyMode || strategyMode),
     },
     tickCount: 0,
     powerUpItems: [],
     activePowerUps: [],
     obstacleWalls: labyrinthMode
       ? mazeWalls
-      : levelConfig
-        ? levelConfig.obstacleWalls.map((pos) => ({ pos }))
-        : [],
+      : strategyMode
+        ? buildStrategyWalls().map((pos) => ({ pos }))
+        : levelConfig
+          ? levelConfig.obstacleWalls.map((pos) => ({ pos }))
+          : [],
     shrinkBorder: (args.convergenceMode || levelConfig?.modifiers.includes('shrinking_border'))
       ? { top: 0, bottom: GAME_ROWS - 1, left: 0, right: GAME_COLS - 1, warningActive: false }
       : null,
@@ -545,11 +644,23 @@ export function createGameState(args: CreateStateArgs): GameState {
       : Number.POSITIVE_INFINITY,
     convergenceWallClosed: false,
     teleportDoors: [],
+    p1SpawnHead: [p1StartPos[0], p1StartPos[1]],
+    p2SpawnHead: [p2StartPos[0], p2StartPos[1]],
     extraSnakes: [],
     board3DLayers: [],
     p1Layer: 0,
     p2Layer: 0,
     layerSwitchCooldown: 0,
+    // Fork power-up
+    forkChains: [],
+    forkBursts: [],
+    // Strategy mode shift state
+    p1ShiftHeld: false,
+    p2ShiftHeld: false,
+    p1ShiftFactor: 1.0,
+    p2ShiftFactor: 1.0,
+    p1MoveCredit: 1.0,
+    p2MoveCredit: 1.0,
   };
   // Gauntlet 3D layers: build the alternate board layer from altLayerWalls
   if (levelConfig?.modifiers.includes('layers_3d') && levelConfig.altLayerWalls) {
@@ -560,6 +671,7 @@ export function createGameState(args: CreateStateArgs): GameState {
     // Assign initial coinbases to alternating layers
     state.coinbases.forEach((cb, i) => { cb.layer = (i % 2 === 0 ? 0 : 1) as 0 | 1; });
   }
+
   if (labyrinthMode && labyrinthTeleports) {
     state.teleportDoors = makeTeleportDoors(state, 2);
   }
@@ -572,6 +684,16 @@ export function createGameState(args: CreateStateArgs): GameState {
   if (levelConfig?.modifiers.includes('portals')) {
     const pairs = levelConfig.portalPairs ?? 2;
     state.teleportDoors = makeTeleportDoors(state, pairs, 24, 8);
+    // Phase Shift (level 12) and Quantum Maze (level 13): portals switch layers
+    if (levelConfig.modifiers.includes('layers_3d')) {
+      for (const door of state.teleportDoors) door.switchesLayer = true;
+    }
+  }
+
+  // Strategy mode: portals and power-up spawn priming
+  if (strategyMode) {
+    state.teleportDoors = makeTeleportDoors(state, 3, 20, 6);
+    state.powerUpRespawnCooldownTick = POWERUP_FIRST_SPAWN_TICKS;
   }
 
   // ── Spawn extra snakes for teams / FFA ──────────────────────────────────
@@ -580,23 +702,28 @@ export function createGameState(args: CreateStateArgs): GameState {
     const allyTier  = args.teamAllyAiTier  ?? downTier(args.aiTier ?? 'hunter');
     const enemyTier = args.teamEnemyAiTier ?? (args.aiTier ?? 'hunter');
     state.extraSnakes = [
-      // Ally:   white + blue border
-      makeExtraSnake([4, 15],  'Right', 0, 0xffffff, 'Ally',   allyTier,  0x3366FF),
-      // Shadow: visible dark grey + blue border (0x111111 is invisible on dark bg)
-      makeExtraSnake([46, 15], 'Left',  1, 0x3a3a3a, 'Shadow', enemyTier, 0x3366FF),
+      // Ally:   medium grey + white outline — light team partner to P1 (white)
+      makeExtraSnake([4, 15],  'Right', 0, 0x888888, 'Ally',   allyTier,  0xFFFFFF),
+      // Shadow: dark grey + black outline — dark team partner to P2 (black)
+      makeExtraSnake([46, 15], 'Left',  1, 0x3A3A3A, 'Shadow', enemyTier, 0x000000),
     ];
     // Spread P1/P2 to top slots so allies start below
     state.p1.head = [4, 9];  state.p1.body = [];
     state.p2.head = [46, 9]; state.p2.body = [];
+    state.p1SpawnHead = [4, 9];
+    state.p2SpawnHead = [46, 9];
   } else if (teamMode === 'ffa') {
     const fTier = args.ffaAiTier ?? (args.aiTier ?? 'hunter');
     // Spread 4 snakes to corners
     state.p1.head = [4, 4];   state.p1.body = [];
     state.p2.head = [46, 4];  state.p2.body = [];
     state.p2.dirWanted = 'Left';
+    state.p1SpawnHead = [4, 4];
+    state.p2SpawnHead = [46, 4];
     state.extraSnakes = [
-      makeExtraSnake([46, 20], 'Left',  1, 0x777777, 'Ghost',   fTier),
-      makeExtraSnake([4,  20], 'Right', 1, 0xAAAAAA, 'Specter', fTier),
+      // FFA mirrors teams palette: light grey + white outline, dark grey + black outline
+      makeExtraSnake([46, 20], 'Left',  1, 0x888888, 'Ghost',   fTier, 0xFFFFFF),
+      makeExtraSnake([4,  20], 'Right', 1, 0x3A3A3A, 'Specter', fTier, 0x000000),
     ];
   }
 
@@ -658,12 +785,22 @@ export function setWantedDirection(
 }
 
 // ============================================================================
+// Strategy mode — per-player shift (slow/stop) control
+// ============================================================================
+
+export function setStrategyShift(state: GameState, player: PlayerId, held: boolean): void {
+  if (!state.meta.strategyMode) return;
+  if (player === 'P1') state.p1ShiftHeld = held;
+  else state.p2ShiftHeld = held;
+}
+
+// ============================================================================
 // Activate chain special ability
 // ============================================================================
 
 export function activateChainAbility(state: GameState, player: PlayerId): void {
   if (!state.gameStarted || state.gameEnded) return;
-  if (!state.meta.powerupMode && !state.meta.bountyMode) return;
+  if (!state.meta.powerupMode && !state.meta.bountyMode && !state.meta.strategyMode) return;
 
   if (player === 'P1' && state.meta.p1ChainAbilityAvailable) {
     // RADIANCE: reveals all coinbase positions (flash effect, visual only — handled by renderer)
@@ -750,10 +887,13 @@ export function stepGame(state: GameState): TickResult {
       tickLabyrinth(state);
     }
 
-    // Power-up spawn
-    if (state.meta.powerupMode && state.powerUpItems.length === 0 &&
+    // Power-up spawn — keep filling up to the per-mode cap
+    if (state.meta.powerupMode &&
+        state.powerUpItems.length < state.meta.powerupMaxItems &&
         state.tickCount >= state.powerUpRespawnCooldownTick) {
       spawnPowerUp(state);
+      // Schedule next spawn so multiple slots fill sequentially
+      state.powerUpRespawnCooldownTick = state.tickCount + state.meta.powerupSpawnCooldown;
     }
 
     // Expire timed obstacle walls (ANCHOR)
@@ -776,8 +916,8 @@ export function stepGame(state: GameState): TickResult {
       }
     }
 
-    // 3D layers: P2 AI occasionally follows P1 to their layer
-    if (state.meta.layers3D && state.meta.gauntletMode) {
+    // 3D layers: P2 AI occasionally follows P1 to their layer (gauntlet + strategy)
+    if (state.meta.layers3D && (state.meta.gauntletMode || state.meta.strategyMode)) {
       if (state.tickCount % 30 === 0 && state.p2Layer !== state.p1Layer) {
         if (Math.random() < 0.45) state.p2Layer = state.p1Layer;
       }
@@ -788,6 +928,40 @@ export function stepGame(state: GameState): TickResult {
       (state.meta.gauntletMode && isGauntletAiLevel(state));
     if (useAi) {
       decideAiDirection(state);
+    }
+
+    // Strategy mode: update per-player shift factors and accumulate movement credit
+    if (state.meta.strategyMode) {
+      state.p1ShiftFactor = state.p1ShiftHeld
+        ? Math.max(0, state.p1ShiftFactor - STRATEGY_SHIFT_RAMP_DOWN)
+        : Math.min(1, state.p1ShiftFactor + STRATEGY_SHIFT_RAMP_UP);
+      // AI P2 always runs at full speed; human P2 can shift-slow
+      if (state.meta.practiceMode) {
+        state.p2ShiftFactor = 1.0;
+      } else {
+        state.p2ShiftFactor = state.p2ShiftHeld
+          ? Math.max(0, state.p2ShiftFactor - STRATEGY_SHIFT_RAMP_DOWN)
+          : Math.min(1, state.p2ShiftFactor + STRATEGY_SHIFT_RAMP_UP);
+      }
+      state.p1MoveCredit += state.p1ShiftFactor;
+      state.p2MoveCredit += state.p2ShiftFactor;
+    }
+
+    // Strategy mode gate: only advance a player when their credit reaches 1.0
+    let p1StratMove = true;
+    let p2StratMove = true;
+    if (state.meta.strategyMode) {
+      p1StratMove = state.p1MoveCredit >= 1.0;
+      if (p1StratMove) state.p1MoveCredit -= 1.0;
+      p2StratMove = state.p2MoveCredit >= 1.0;
+      if (p2StratMove) state.p2MoveCredit -= 1.0;
+    }
+
+    // Power-up spawn also runs in strategy mode
+    if (state.meta.strategyMode &&
+        state.powerUpItems.length < state.meta.powerupMaxItems &&
+        state.tickCount >= state.powerUpRespawnCooldownTick) {
+      spawnPowerUp(state);
     }
 
     // Check FREEZE: slow P1/P2 (player field = the affected snake)
@@ -806,8 +980,8 @@ export function stepGame(state: GameState): TickResult {
       (ap) => ap.type === 'SURGE' && ap.player === 'P2'
     );
 
-    const p1ShouldMove = !p1Frozen || (p1Frozen && state.tickCount % 2 === 0);
-    const p2ShouldMove = !p2Frozen || (p2Frozen && state.tickCount % 2 === 0);
+    const p1ShouldMove = p1StratMove && (!p1Frozen || (p1Frozen && state.tickCount % 2 === 0));
+    const p2ShouldMove = p2StratMove && (!p2Frozen || (p2Frozen && state.tickCount % 2 === 0));
 
     // Surge doubles movement speed every other tick.
     // We must run the full collision/capture pipeline after EACH step so
@@ -840,6 +1014,11 @@ export function stepGame(state: GameState): TickResult {
       for (const extra of state.extraSnakes) moveSnake(extra.snake);
       captureExtraSnakeCoinbases(state);
       checkExtraSnakeCollisions(state);
+    }
+
+    // ── Fork chains ────────────────────────────────────────────────────────
+    if (state.forkChains.length > 0 || state.forkBursts.length > 0) {
+      tickForkChains(state);
     }
 
     if (state.score[0] <= 0 || state.score[1] <= 0) {
@@ -1150,14 +1329,19 @@ function checkTeleports(state: GameState): void {
   if (!state.teleportDoors.length) return;
 
   for (const door of state.teleportDoors) {
-    if (samePos(state.p1.head, door.a)) { exitTeleport(state, 'P1', door.b); break; }
-    if (samePos(state.p1.head, door.b)) { exitTeleport(state, 'P1', door.a); break; }
-    if (samePos(state.p2.head, door.a)) { exitTeleport(state, 'P2', door.b); break; }
-    if (samePos(state.p2.head, door.b)) { exitTeleport(state, 'P2', door.a); break; }
+    if (samePos(state.p1.head, door.a)) { exitTeleport(state, 'P1', door.b, door); break; }
+    if (samePos(state.p1.head, door.b)) { exitTeleport(state, 'P1', door.a, door); break; }
+    if (samePos(state.p2.head, door.a)) { exitTeleport(state, 'P2', door.b, door); break; }
+    if (samePos(state.p2.head, door.b)) { exitTeleport(state, 'P2', door.a, door); break; }
   }
 }
 
-function exitTeleport(state: GameState, player: 'P1' | 'P2', exitPos: GridPos): void {
+function exitTeleport(
+  state: GameState,
+  player: 'P1' | 'P2',
+  exitPos: GridPos,
+  door?: { switchesLayer?: boolean },
+): void {
   const snake = player === 'P1' ? state.p1 : state.p2;
   const dir = snake.dir || snake.dirWanted;
   const dx = dir === 'Right' ? 1 : dir === 'Left' ? -1 : 0;
@@ -1168,6 +1352,11 @@ function exitTeleport(state: GameState, player: 'P1' | 'P2', exitPos: GridPos): 
     snake.head = [next[0], next[1]];
   } else {
     snake.head = [exitPos[0], exitPos[1]];
+  }
+  // Layer-shifting portals flip the player to the opposite 3D floor
+  if (door?.switchesLayer && state.meta.layers3D) {
+    if (player === 'P1') state.p1Layer = state.p1Layer === 0 ? 1 : 0;
+    else                 state.p2Layer = state.p2Layer === 0 ? 1 : 0;
   }
 }
 
@@ -1191,7 +1380,8 @@ function regenerateVoidCells(state: GameState): void {
 // ============================================================================
 
 export function spawnPowerUp(state: GameState): void {
-  const type = weightedRandomPowerUp();
+  const allowed = state.meta.powerupAllowedTypes.length > 0 ? state.meta.powerupAllowedTypes : undefined;
+  const type = weightedRandomPowerUp(allowed);
   let attempts = 0;
   while (attempts < 200) {
     const x = Math.floor(Math.random() * state.cols);
@@ -1205,15 +1395,17 @@ export function spawnPowerUp(state: GameState): void {
   }
 }
 
-function weightedRandomPowerUp(): PowerUpType {
-  const types = Object.keys(POWERUP_SPAWN_WEIGHTS) as PowerUpType[];
+function weightedRandomPowerUp(allowed?: PowerUpType[]): PowerUpType {
+  const types = (Object.keys(POWERUP_SPAWN_WEIGHTS) as PowerUpType[])
+    .filter((t) => !allowed || allowed.includes(t));
+  if (types.length === 0) return 'SURGE';
   const totalWeight = types.reduce((sum, t) => sum + POWERUP_SPAWN_WEIGHTS[t], 0);
   let rand = Math.random() * totalWeight;
   for (const type of types) {
     rand -= POWERUP_SPAWN_WEIGHTS[type];
     if (rand <= 0) return type;
   }
-  return 'SURGE';
+  return types[types.length - 1];
 }
 
 function checkPowerUpPickup(state: GameState): void {
@@ -1227,7 +1419,7 @@ function checkPowerUpPickup(state: GameState): void {
     if (pickedBy) {
       applyPowerUp(state, pickedBy, item.type);
       state.powerUpItems.splice(i, 1);
-      state.powerUpRespawnCooldownTick = state.tickCount + POWERUP_RESPAWN_COOLDOWN_TICKS;
+      state.powerUpRespawnCooldownTick = state.tickCount + state.meta.powerupSpawnCooldown;
     }
   }
 }
@@ -1293,6 +1485,44 @@ function applyPowerUp(state: GameState, player: PlayerId, type: PowerUpType): vo
       }
       break;
     }
+
+    case 'FORK': {
+      const parent = player === 'P1' ? state.p1 : state.p2;
+      const parentDir = parent.dir || parent.dirWanted || 'Right';
+
+      // Pick a perpendicular direction for the fork clone
+      const perp: Direction[] =
+        parentDir === 'Left' || parentDir === 'Right'
+          ? ['Up', 'Down']
+          : ['Left', 'Right'];
+      const forkDir: Direction = perp[Math.floor(Math.random() * 2)];
+
+      const forkSnake: SnakeState = {
+        head: [parent.head[0], parent.head[1]],
+        body: parent.body.map(([bx, by]) => [bx, by] as GridPos),
+        dir: forkDir,
+        dirWanted: forkDir,
+      };
+
+      const fork: ForkChain = {
+        snake: forkSnake,
+        player,
+        spawnTick: state.tickCount,
+        expiresAtTick: state.tickCount + POWERUP_FORK_DURATION_TICKS,
+      };
+      state.forkChains.push(fork);
+
+      // Record burst event for the split animation
+      const burst: ForkBurst = {
+        pos: [parent.head[0], parent.head[1]],
+        spawnDir: parentDir,
+        forkDir,
+        player,
+        tick: state.tickCount,
+      };
+      state.forkBursts.push(burst);
+      break;
+    }
   }
 }
 
@@ -1300,6 +1530,110 @@ function removeExisting(state: GameState, player: PlayerId, type: PowerUpType): 
   state.activePowerUps = state.activePowerUps.filter(
     (ap) => !(ap.player === player && ap.type === type)
   );
+}
+
+// ============================================================================
+// Fork chain tick — AI movement + coinbase capture + expiry
+// ============================================================================
+
+/** Simple greedy direction toward the nearest coinbase, with wall avoidance. */
+function decideForkDir(state: GameState, fork: ForkChain): void {
+  const head = fork.snake.head;
+  const curDir = fork.snake.dir || fork.snake.dirWanted;
+  const is3D = state.meta.layers3D;
+  const layer = fork.snake === state.p1 ? state.p1Layer : 0;
+
+  // Visible coinbases: only on the same layer (or layer-agnostic)
+  const visibleCoins = state.coinbases.filter(
+    (cb) => !cb.isDecoy && (!is3D || cb.layer === undefined || cb.layer === (layer as 0 | 1))
+  );
+  if (visibleCoins.length === 0) return;
+
+  // Find nearest coinbase
+  let bestDist = Infinity;
+  let target = visibleCoins[0].pos;
+  for (const cb of visibleCoins) {
+    const d = Math.abs(cb.pos[0] - head[0]) + Math.abs(cb.pos[1] - head[1]);
+    if (d < bestDist) { bestDist = d; target = cb.pos; }
+  }
+
+  const DIRS: { dir: Direction; dx: number; dy: number }[] = [
+    { dir: 'Right', dx: 1, dy: 0 }, { dir: 'Left',  dx: -1, dy: 0 },
+    { dir: 'Up',    dx: 0, dy: -1 }, { dir: 'Down',  dx: 0, dy: 1 },
+  ];
+  const opposite: Record<Direction, Direction> = {
+    Right: 'Left', Left: 'Right', Up: 'Down', Down: 'Up', '': '',
+  };
+
+  // Score each direction: prefer toward target, avoid walls and U-turns
+  let bestScore = -Infinity;
+  let bestDir: Direction = curDir || 'Right';
+  for (const { dir, dx, dy } of DIRS) {
+    if (dir === opposite[curDir as Direction]) continue; // no U-turn
+    const nx = head[0] + dx;
+    const ny = head[1] + dy;
+    const next: GridPos = [nx, ny];
+    // Soft wall avoidance (skip if hits wall/boundary)
+    if (nx < 0 || nx >= state.cols || ny < 0 || ny >= state.rows) continue;
+    if (hitsObstacle(state, next)) continue;
+    // Penalise self-body overlap
+    const selfHit = fork.snake.body.some(([bx, by]) => bx === nx && by === ny) ? -20 : 0;
+    const dist = Math.abs(nx - target[0]) + Math.abs(ny - target[1]);
+    const score = -dist + selfHit + (Math.random() * 2 - 1); // tiny jitter breaks ties
+    if (score > bestScore) { bestScore = score; bestDir = dir; }
+  }
+  fork.snake.dirWanted = bestDir;
+}
+
+export function tickForkChains(state: GameState): void {
+  // Prune expired bursts
+  state.forkBursts = state.forkBursts.filter(
+    (b) => state.tickCount - b.tick < POWERUP_FORK_BURST_TICKS
+  );
+
+  if (state.forkChains.length === 0) return;
+
+  const newForks: ForkChain[] = [];
+  for (const fork of state.forkChains) {
+    // Expire
+    if (state.tickCount >= fork.expiresAtTick) continue;
+
+    // AI decides direction, then moves
+    decideForkDir(state, fork);
+    fork.snake.dir = fork.snake.dirWanted;
+    moveSnake(fork.snake);
+
+    // Wall / boundary collision — fork dies
+    const h = fork.snake.head;
+    if (h[0] < 0 || h[0] >= state.cols || h[1] < 0 || h[1] >= state.rows) continue;
+    if (hitsObstacle(state, h)) continue;
+
+    // Coinbase capture — counts for owner
+    const is3D = state.meta.layers3D;
+    for (let i = state.coinbases.length - 1; i >= 0; i--) {
+      const cb = state.coinbases[i];
+      if (cb.isDecoy) continue;
+      if (!samePos(cb.pos, h)) continue;
+      if (is3D && cb.layer !== undefined && cb.layer !== 0) continue; // simple: forks live on layer 0
+
+      // Score the capture for the owner
+      const capturePercent = capturePercentByLength(fork.snake.body.length, state);
+      const pts = Math.round(state.totalPoints * capturePercent / 100);
+      if (fork.player === 'P1') {
+        state.score[0] = Math.min(state.totalPoints - 1, state.score[0] + pts);
+        state.score[1] = Math.max(1, state.score[1] - pts);
+      } else {
+        state.score[1] = Math.min(state.totalPoints - 1, state.score[1] + pts);
+        state.score[0] = Math.max(1, state.score[0] - pts);
+      }
+      state.coinbases.splice(i, 1);
+      // Respawn a new coinbase
+      createNewCoinbase(state);
+    }
+
+    newForks.push(fork);
+  }
+  state.forkChains = newForks;
 }
 
 // ============================================================================
@@ -1502,12 +1836,18 @@ function hitsObstacleOnLayer(state: GameState, pos: GridPos, layer: 0 | 1): bool
   return (altLayer?.obstacleWalls ?? []).some((w) => samePos(w.pos, pos));
 }
 
-export function switchPlayerLayer(state: GameState): void {
+export function switchPlayerLayer(state: GameState, player: PlayerId = 'P1'): void {
   if (!state.meta.layers3D) return;
   if (!state.gameStarted) return;
   if (state.tickCount < state.layerSwitchCooldown) return;
-  state.p1Layer = state.p1Layer === 0 ? 1 : 0;
-  state.layerSwitchCooldown = state.tickCount + 8;  // ~800ms cooldown at 100ms/tick
+  if (player === 'P1') {
+    state.p1Layer = state.p1Layer === 0 ? 1 : 0;
+  } else {
+    state.p2Layer = state.p2Layer === 0 ? 1 : 0;
+  }
+  // Cooldown scales with tick speed so it feels consistent (target ~700ms)
+  const cooldownTicks = Math.max(4, Math.round(700 / state.meta.currentStepMs));
+  state.layerSwitchCooldown = state.tickCount + cooldownTicks;
 }
 
 // ============================================================================
@@ -1659,8 +1999,11 @@ function resetSnake(state: GameState, player: PlayerId): void {
   const quadLabyrinth = isLabyrinth && (state.meta.labyrinthCorridorWidth === 4 || state.meta.labyrinthCorridorWidth === 5);
 
   if (player === 'P1') {
-    let head: GridPos = isLabyrinth ? [1, 1] : [6, 12];
-    let body: GridPos[] = isLabyrinth ? [] : [[5, 12]];
+    // Teams/FFA: always return to the dedicated spawn slot stored at game start
+    const hasFixedSpawn = state.meta.teamMode === 'teams' || state.meta.teamMode === 'ffa';
+    let head: GridPos = hasFixedSpawn ? state.p1SpawnHead
+      : isLabyrinth ? [1, 1] : [6, 12];
+    let body: GridPos[] = (hasFixedSpawn || isLabyrinth) ? [] : [[5, 12]];
 
     // Convergence: Y stays fixed at row 12; push X inward (rightward) as left wall advances
     if (state.meta.convergenceMode && state.shrinkBorder) {
@@ -1677,12 +2020,13 @@ function resetSnake(state: GameState, player: PlayerId): void {
     state.currentCaptureP1 = '2%';
     state.activePowerUps = state.activePowerUps.filter((ap) => ap.player !== 'P1');
   } else {
-    let head: GridPos =
-      (isLabyrinth && state.meta.labyrinthCorridorWidth === 5) ? [43, 19] :
+    const hasFixedSpawn = state.meta.teamMode === 'teams' || state.meta.teamMode === 'ffa';
+    let head: GridPos = hasFixedSpawn ? state.p2SpawnHead
+      : (isLabyrinth && state.meta.labyrinthCorridorWidth === 5) ? [43, 19] :
       quadLabyrinth ? [47, 17] :
       wideLabyrinth ? [47, 22] :
       isLabyrinth ? [49, 23] : [44, 12];
-    let body: GridPos[] = isLabyrinth ? [] : [[45, 12]];
+    let body: GridPos[] = (hasFixedSpawn || isLabyrinth) ? [] : [[45, 12]];
 
     // Convergence: Y stays fixed at row 12; push X inward (leftward) as right wall advances
     if (state.meta.convergenceMode && state.shrinkBorder) {

@@ -285,7 +285,8 @@ export const GAUNTLET_LEVELS: GauntletLevel[] = [
       ...hWall(34, 12, 7),
     ],
     initialCoinbasePositions: [[25, 12]],
-    modifiers: ['layers_3d', 'ai_opponent'],
+    modifiers: ['layers_3d', 'portals', 'ai_opponent'],
+    portalPairs: 2,
     prizeNormal: 100_000,
     prizeNostr: 200_000,
   },
@@ -326,7 +327,8 @@ export const GAUNTLET_LEVELS: GauntletLevel[] = [
       [7, 20], [43, 20],  // bottom corners — easier from layer 1
       [25, 4], [25, 20],  // top/bottom centre — easier from layer 0
     ],
-    modifiers: ['layers_3d', 'ai_opponent', 'multiple_coinbases'],
+    modifiers: ['layers_3d', 'portals', 'ai_opponent', 'multiple_coinbases'],
+    portalPairs: 3,
     prizeNormal: 150_000,
     prizeNostr: 300_000,
   },

@@ -1,0 +1,507 @@
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
+
+.pu-setup {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 2vw 3.5vw 2.5vw;
+  gap: 2vw;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+
+.pu-header {
+  text-align: center;
+  animation: pu-enter 0.35s cubic-bezier(0.22, 0.68, 0, 1.2) both;
+}
+
+.pu-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(28px, 4vw, 56px);
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #ffffff;
+  margin: 0;
+}
+
+.pu-subtitle {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(8px, 0.75vw, 10px);
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  margin: 0.4em 0 0;
+}
+
+/* ── Body split ─────────────────────────────────────────────────────────────── */
+
+.pu-body {
+  display: flex;
+  gap: 3.5vw;
+  flex: 1;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+/* ── Left: config column ────────────────────────────────────────────────────── */
+
+.pu-config {
+  flex: 0 0 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6vw;
+}
+
+/* ── Section blocks ─────────────────────────────────────────────────────────── */
+
+.pu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+}
+
+.pu-section-label {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(7px, 0.62vw, 9px);
+  letter-spacing: 0.28em;
+  color: rgba(255, 255, 255, 0.28);
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.4em;
+}
+
+/* ── Emission rate ──────────────────────────────────────────────────────────── */
+
+.pu-emission-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5em;
+}
+
+.pu-emission-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2em;
+  padding: 0.55em 0.7em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+  text-align: left;
+  position: relative;
+}
+
+.pu-emission-btn:focus {
+  outline: none;
+}
+
+.pu-emission-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pu-emission-btn.active {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pu-emission-btn.active::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+.pu-em-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.pu-emission-btn.active .pu-em-name {
+  color: #ffffff;
+}
+
+.pu-em-sub {
+  font-size: clamp(7px, 0.58vw, 8.5px);
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.25);
+  line-height: 1.3;
+}
+
+/* ── Loadout ────────────────────────────────────────────────────────────────── */
+
+.pu-loadout-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+}
+
+.pu-loadout-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(9px, 0.78vw, 11px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 0.4em 0.85em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+  text-transform: uppercase;
+}
+
+.pu-loadout-btn:hover {
+  border-color: rgba(48, 144, 200, 0.4);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.pu-loadout-btn.active {
+  border-color: rgba(48, 144, 200, 0.7);
+  color: rgba(80, 170, 240, 0.95);
+  background: rgba(48, 144, 200, 0.08);
+}
+
+.pu-loadout-desc {
+  font-size: clamp(9px, 0.72vw, 10.5px);
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.06em;
+  margin: 0;
+  min-height: 2.4em;
+}
+
+/* ── Custom type toggles ────────────────────────────────────────────────────── */
+
+.pu-custom-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4em;
+}
+
+.pu-custom-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0.5em 0.4em 0.45em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, opacity 0.12s;
+  opacity: 0.35;
+}
+
+.pu-custom-toggle.on {
+  border-color: var(--pu-color, rgba(255, 255, 255, 0.4));
+  background: rgba(255, 255, 255, 0.03);
+  opacity: 1;
+}
+
+.pu-custom-toggle:hover {
+  opacity: 0.8;
+}
+
+.pu-ct-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pu-ct-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(7px, 0.58vw, 8.5px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.pu-custom-toggle.on .pu-ct-name {
+  color: #ffffff;
+}
+
+/* ── AI difficulty ──────────────────────────────────────────────────────────── */
+
+.pu-ai-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.pu-ai-btn {
+  display: grid;
+  grid-template-columns: 2.2ch 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.7em;
+  align-items: center;
+  padding: 0.45em 0.85em;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s, background 0.12s;
+  position: relative;
+}
+
+.pu-ai-btn:focus {
+  outline: none;
+}
+
+.pu-ai-btn:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pu-ai-btn.active {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pu-ai-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--accent);
+}
+
+.pu-ai-rank {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 0.95vw, 14px);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.2);
+  grid-row: 1 / 3;
+  align-self: center;
+}
+
+.pu-ai-btn.active .pu-ai-rank {
+  color: var(--accent);
+}
+
+.pu-ai-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 0.95vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.pu-ai-btn.active .pu-ai-name {
+  color: #ffffff;
+}
+
+.pu-ai-sub {
+  font-size: clamp(7.5px, 0.6vw, 9px);
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.06em;
+  grid-column: 2;
+}
+
+/* ── Launch buttons ─────────────────────────────────────────────────────────── */
+
+.pu-actions {
+  display: flex;
+  gap: 0.6em;
+  margin-top: 0.4em;
+}
+
+.pu-launch-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 0.6em 1.4em;
+  border: 1px solid rgba(48, 144, 200, 0.35);
+  background: transparent;
+  color: rgba(80, 170, 230, 0.9);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  text-transform: uppercase;
+}
+
+.pu-launch-primary {
+  flex: 1.5;
+}
+
+.pu-launch-secondary {
+  flex: 1;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.pu-launch-btn:hover:not(:disabled) {
+  background: rgba(48, 144, 200, 0.1);
+  border-color: rgba(48, 144, 200, 0.6);
+  color: rgba(80, 170, 240, 1);
+}
+
+.pu-launch-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.pu-launch-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+
+.pu-footer {
+  display: flex;
+  align-items: center;
+  gap: 1.2em;
+  margin-top: 0.2em;
+}
+
+.pu-back-btn {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(10px, 0.85vw, 12px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 0.4em 1em;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+  text-transform: uppercase;
+}
+
+.pu-back-btn:hover {
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.pu-hint {
+  font-size: clamp(7.5px, 0.6vw, 9px);
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.16);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Right: reference grid ──────────────────────────────────────────────────── */
+
+.pu-reference {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.pu-ref-header {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(7px, 0.62vw, 9px);
+  letter-spacing: 0.28em;
+  color: rgba(255, 255, 255, 0.28);
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.5em;
+}
+
+.pu-ref-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55em;
+}
+
+.pu-ref-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8em;
+  padding: 0.75em 0.9em;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.2);
+  transition: border-color 0.15s, background 0.15s, opacity 0.18s;
+}
+
+.pu-ref-card.active {
+  border-color: color-mix(in srgb, var(--pu-color) 30%, transparent);
+  background: color-mix(in srgb, var(--pu-color) 5%, rgba(0,0,0,0.2));
+}
+
+.pu-ref-card.inactive {
+  opacity: 0.28;
+  filter: saturate(0.3);
+}
+
+.pu-ref-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pu-icon-svg {
+  width: 24px;
+  height: 24px;
+  overflow: visible;
+}
+
+.pu-ref-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  min-width: 0;
+}
+
+.pu-ref-name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--pu-color, #ffffff);
+  line-height: 1;
+}
+
+.pu-ref-effect {
+  font-size: clamp(9px, 0.75vw, 11px);
+  color: rgba(255, 255, 255, 0.42);
+  line-height: 1.45;
+}
+
+/* ── Entrance animation ─────────────────────────────────────────────────────── */
+
+@keyframes pu-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pu-config  { animation: pu-enter 0.32s cubic-bezier(0.22, 0.68, 0, 1.2) 0.05s both; }
+.pu-reference { animation: pu-enter 0.32s cubic-bezier(0.22, 0.68, 0, 1.2) 0.1s both; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 820px) {
+  .pu-body {
+    flex-direction: column;
+  }
+
+  .pu-config {
+    flex: none;
+    width: 100%;
+  }
+
+  .pu-ref-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pu-emission-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pu-custom-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

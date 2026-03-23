@@ -25,7 +25,9 @@
 #highscoresbutton,
 #starttourn,
 #startonline,
-#startpractice {
+#startpractice,
+#startsovereign,
+#startbounty {
   animation: glowing 0ms infinite;
 }
 

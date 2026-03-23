@@ -40,7 +40,8 @@ export type PowerUpType =
   | 'PHANTOM'     // Pass through own body (5s)
   | 'ANCHOR'      // Drop immovable wall cell at tail (10s)
   | 'AMPLIFIER'   // Double capture % for next 3 coinbases
-  | 'DECOY';      // Spawn fake coinbase that teleports opponent on eat
+  | 'DECOY'       // Spawn fake coinbase that teleports opponent on eat
+  | 'FORK';       // Clone chain — auto-AI twin that hunts coinbases for 10s
 
 export interface PowerUpItem {
   pos: GridPos;
@@ -75,6 +76,30 @@ export interface ExtraSnake {
 }
 
 // ============================================================================
+// Fork power-up — cloned AI chain
+// ============================================================================
+
+/** A short-lived AI-controlled clone chain spawned by the FORK power-up. */
+export interface ForkChain {
+  snake: SnakeState;
+  player: PlayerId;
+  spawnTick: number;
+  expiresAtTick: number;
+}
+
+/**
+ * A recorded fork-birth event used purely for the split animation.
+ * Renderer reads it for the glow burst; the event self-expires after ~35 ticks.
+ */
+export interface ForkBurst {
+  pos: GridPos;
+  spawnDir: Direction;
+  forkDir: Direction;
+  player: PlayerId;
+  tick: number;
+}
+
+// ============================================================================
 // 3D layered board
 // ============================================================================
 
@@ -93,7 +118,8 @@ export interface ObstacleWall {
 export interface TeleportDoor {
   a: GridPos;
   b: GridPos;
-  colorIndex: number; // 0-3, controls portal color pair
+  colorIndex: number;     // 0-3, controls portal color pair
+  switchesLayer?: boolean; // if true, also flips the player's 3D layer on exit
 }
 
 // ============================================================================
@@ -163,6 +189,10 @@ export interface GameMeta {
   convergenceMinCols: number;
   convergenceMinRows: number;
   powerupMode: boolean;
+  powerupSpawnCooldown: number;
+  powerupMaxItems: number;
+  powerupAllowedTypes: PowerUpType[];
+  strategyMode: boolean;
   gauntletMode: boolean;
   gauntletLevel: number;
   bountyMode: boolean;
@@ -222,6 +252,9 @@ export interface GameState {
   convergenceWallClosed: boolean;
   // Labyrinth teleport doors
   teleportDoors: TeleportDoor[];
+  // Spawn positions — used by resetSnake to always return to the correct slot
+  p1SpawnHead: GridPos;
+  p2SpawnHead: GridPos;
   // Multi-snake (teams / ffa) extra snakes
   extraSnakes: ExtraSnake[];
   // 3D layered board
@@ -229,6 +262,18 @@ export interface GameState {
   p1Layer: 0 | 1;                     // which layer P1 is currently on
   p2Layer: 0 | 1;
   layerSwitchCooldown: number;        // tick count before P1 can switch again
+  // Fork power-up — cloned AI chains
+  forkChains: ForkChain[];
+  forkBursts: ForkBurst[];
+  // Strategy mode: per-player shift slow
+  p1ShiftHeld: boolean;
+  p2ShiftHeld: boolean;
+  /** 0.0 = stopped, 1.0 = full speed. Ramped by shift key. */
+  p1ShiftFactor: number;
+  p2ShiftFactor: number;
+  /** Fractional movement credit; player moves when this reaches 1.0. */
+  p1MoveCredit: number;
+  p2MoveCredit: number;
 }
 
 export interface HudState {

@@ -18,6 +18,7 @@ import { useGameSocketEvents } from '@/features/game/hooks/useGameSocketEvents';
 import { useGameRenderBridge } from '@/features/game/hooks/useGameRenderBridge';
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
 import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
+import { PowerUpIcon } from '@/components/ui/PowerUpIcons';
 import './game.css';
 
 interface ZapMessage {
@@ -112,6 +113,7 @@ export default function Game() {
     const isPowerup = configMode === 'POWERUP';
     const isGauntlet = configMode === 'GAUNTLET';
     const isLabyrinth = configMode === 'LABYRINTH';
+    const isStrategy  = configMode === 'STRATEGY';
     // practiceMode: set by sovereign, labyrinth solo, and solo-hub AI starts
     const isPracticeMode = Boolean(gameConfig.practiceMode) || isSovereign;
     const aiTier = (gameConfig.aiTier as string) ?? 'hunter';
@@ -126,6 +128,7 @@ export default function Game() {
       POWERUP: 'POWER-UP ARENA',
       GAUNTLET: `GAUNTLET ${gauntletLevel}`,
       LABYRINTH: 'LABYRINTH',
+      STRATEGY: 'STRATEGY',
     };
     const modeLabel = MODE_LABELS[configMode] ?? 'SOVEREIGN';
     const displayP2Name = isPracticeMode ? rawP2Name : 'Player 2';
@@ -157,6 +160,13 @@ export default function Game() {
     const overclockSpeedReductionMs = gameConfig.overclockSpeedReductionMs != null
       ? Number(gameConfig.overclockSpeedReductionMs) : undefined;
 
+    const powerupSpawnCooldown = gameConfig.powerupSpawnCooldown != null
+      ? Number(gameConfig.powerupSpawnCooldown) : undefined;
+    const powerupMaxItems = gameConfig.powerupMaxItems != null
+      ? Number(gameConfig.powerupMaxItems) : undefined;
+    const powerupAllowedTypes = Array.isArray(gameConfig.powerupAllowedTypes)
+      ? (gameConfig.powerupAllowedTypes as string[]) : undefined;
+
     const state = createGameState({
       p1Name,
       p2Name: displayP2Name,
@@ -178,8 +188,12 @@ export default function Game() {
       convergenceMinRows,
       convergenceStepMs,
       powerupMode: isPowerup,
+      powerupSpawnCooldown,
+      powerupMaxItems,
+      powerupAllowedTypes,
       gauntletMode: isGauntlet,
       gauntletLevel,
+      strategyMode: isStrategy,
       labyrinthMode: isLabyrinth,
       labyrinthLoopFactor,
       labyrinthCornerFactor,
@@ -587,15 +601,18 @@ export default function Game() {
           {isPowerupMode && (
             <div id="powerUpKey">
               {[
-                { type: 'SURGE',     color: '#C8881A', label: 'SURGE',  desc: 'Speed boost · immune to tail collision · 4s' },
+                { type: 'SURGE',     color: '#C8881A', label: 'SURGE',  desc: 'Speed boost · immune to collision · 4s' },
                 { type: 'FREEZE',    color: '#2878A8', label: 'FREEZE', desc: 'Opponent slows to half speed · 4s' },
-                { type: 'PHANTOM',   color: '#9898B8', label: 'GHOST',  desc: 'Loops through walls · phase through own tail · semi-invisible · 5s' },
-                { type: 'ANCHOR',    color: '#D0D0D0', label: 'ANCHOR', desc: 'Drops obstacle wall on next collision · 10s' },
-                { type: 'AMPLIFIER', color: '#7AAA70', label: 'AMP',    desc: 'Next 3 coinbases score double' },
-                { type: 'DECOY',     color: '#ffffff', label: 'DECOY',  desc: 'Fake coinbase · teleports opponent back to spawn' },
+                { type: 'PHANTOM',   color: '#9898B8', label: 'GHOST',  desc: 'Phase walls & own tail · semi-invisible · 5s' },
+                { type: 'ANCHOR',    color: '#D0D0D0', label: 'ANCHOR', desc: 'Drops obstacle wall on tail · 10s' },
+                { type: 'AMPLIFIER', color: '#7AAA70', label: 'AMP',    desc: 'Next 3 captures score double' },
+                { type: 'DECOY',     color: '#ffffff', label: 'DECOY',  desc: 'Fake coinbase · teleports opponent to spawn' },
+                { type: 'FORK',      color: '#44EE88', label: 'FORK',   desc: 'AI twin hunts coinbases for you · 10s' },
               ].map(({ type, color, label, desc }) => (
                 <div key={type} className="powerUpKeyEntry">
-                  <span className="powerUpKeySwatch" style={{ borderColor: color, color }} >{type[0]}</span>
+                  <span className="powerUpKeyIcon" style={{ color }}>
+                    <PowerUpIcon type={type} size={16} />
+                  </span>
                   <span className="powerUpKeyName condensed" style={{ color }}>{label}</span>
                   <span className="powerUpKeyDesc">{desc}</span>
                 </div>

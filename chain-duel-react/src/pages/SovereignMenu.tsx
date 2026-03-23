@@ -77,24 +77,24 @@ const FORMATS: FormatOption[] = [
     id: 'teams',
     label: '2v2 TEAMS',
     tag: 'TEAM PLAY',
-    description: 'White team vs Black team. Your AI ally cooperates — targets different coinbases. Two enemies coordinate against you.',
+    description: 'Light team vs Dark team. Your AI ally targets different coinbases. Two dark-chain enemies coordinate against you.',
     chains: [
-      { color: '#ffffff', label: 'YOU',  border: '#FF3333' },
-      { color: '#ffffff', label: 'ALLY', border: '#3366FF' },
-      { color: '#3a3a3a', label: 'FOE',  border: '#FF3333' },
-      { color: '#3a3a3a', label: 'FOE',  border: '#3366FF' },
+      { color: '#ffffff', label: 'YOU',    border: '#ffffff' },
+      { color: '#888888', label: 'ALLY',   border: '#ffffff' },
+      { color: '#111111', label: 'FOE',    border: '#000000' },
+      { color: '#3A3A3A', label: 'SHADOW', border: '#000000' },
     ],
   },
   {
     id: 'ffa',
     label: '4-WAY FFA',
     tag: 'FREE FOR ALL',
-    description: 'Every chain for themselves. Three AI opponents in shades of grey. Highest score wins.',
+    description: 'Every chain for themselves. Same palette as Teams — white, grey, black, dark grey. No alliances.',
     chains: [
-      { color: '#ffffff', label: 'YOU' },
-      { color: '#555555', label: 'GREY' },
-      { color: '#777777', label: 'GHOST' },
-      { color: '#aaaaaa', label: 'SPECTER' },
+      { color: '#ffffff', label: 'YOU'    },
+      { color: '#888888', label: 'GHOST'  },
+      { color: '#111111', label: 'FOE'    },
+      { color: '#3A3A3A', label: 'SPECTER'},
     ],
   },
 ];
@@ -251,7 +251,7 @@ export default function SovereignMenu() {
           {/* Team layout preview */}
           <div className="sov-team-preview">
             {activeFormat.chains.map((c, i) => (
-              <div key={i} className="sov-team-row">
+              <div key={i} className={`sov-team-row${c.label === 'YOU' ? ' sov-team-row--you' : ''}`}>
                 <span
                   className="sov-team-dot"
                   style={{
@@ -262,8 +262,8 @@ export default function SovereignMenu() {
                 />
                 <span className="sov-team-name" style={{ color: c.color === '#ffffff' ? '#ffffff' : '#aaaaaa' }}>
                   {c.label}
-                  {c.label === 'YOU' && ' ← YOU'}
                 </span>
+                {c.label === 'YOU' && <span className="sov-you-badge">YOU</span>}
               </div>
             ))}
           </div>
