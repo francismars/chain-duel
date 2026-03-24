@@ -285,6 +285,18 @@ export const ResOnlineNostrLinkOkSchema = z.object({
   expiresAt: z.number(),
 });
 
+export const OnlineMatchRoundSummarySchema = z.object({
+  matchRound: z.number(),
+  finishedAt: z.number(),
+  winnerName: z.string(),
+  p1Name: z.string(),
+  p2Name: z.string(),
+  p1Score: z.number(),
+  p2Score: z.number(),
+  netPrize: z.number(),
+  winnerRole: z.union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)]).optional(),
+});
+
 export const ResOnlinePostGameInfoSchema = z.object({
   roomId: z.string(),
   phase: z.enum(['postgame', 'finished']),
@@ -312,6 +324,7 @@ export const ResOnlinePostGameInfoSchema = z.object({
   rematchNote1: z.string().optional(),
   rematchWaitingForSessionID: z.string().optional(),
   doubleOrNothingVotes: z.number(),
+  matchRounds: z.array(OnlineMatchRoundSummarySchema).optional(),
 });
 
 export const ResCreateOnlineWithdrawalSchema = z.object({

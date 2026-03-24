@@ -235,7 +235,7 @@ export class PixiGameRenderer {
     // Obstacle walls (active layer only in 3D mode)
     const activeWalls = state.meta.layers3D && state.p1Layer === 1
       ? (state.board3DLayers[0]?.obstacleWalls ?? [])
-      : state.obstacleWalls;
+      : (state.obstacleWalls ?? []);
     for (const wall of activeWalls) {
       const px = wall.pos[0] * colSize;
       const py = wall.pos[1] * rowSize;
@@ -244,7 +244,7 @@ export class PixiGameRenderer {
     }
 
     // Void cells
-    for (const vc of state.voidCells) {
+    for (const vc of state.voidCells ?? []) {
       const px = vc[0] * colSize;
       const py = vc[1] * rowSize;
       this.scene.rect(px, py, colSize, rowSize).fill({ color: 0x000000, alpha: 0.85 });
@@ -252,14 +252,15 @@ export class PixiGameRenderer {
     }
 
     // Snakes
-    const p1Frozen  = state.activePowerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P1');
-    const p2Frozen  = state.activePowerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P2');
-    const p1Phantom = state.activePowerUps.some((ap) => ap.type === 'PHANTOM'   && ap.player === 'P1');
-    const p2Phantom = state.activePowerUps.some((ap) => ap.type === 'PHANTOM'   && ap.player === 'P2');
-    const p1Surging = state.activePowerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P1');
-    const p2Surging = state.activePowerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P2');
-    const p1Amped   = state.activePowerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P1');
-    const p2Amped   = state.activePowerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P2');
+    const powerUps = state.activePowerUps ?? [];
+    const p1Frozen  = powerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P1');
+    const p2Frozen  = powerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P2');
+    const p1Phantom = powerUps.some((ap) => ap.type === 'PHANTOM'   && ap.player === 'P1');
+    const p2Phantom = powerUps.some((ap) => ap.type === 'PHANTOM'   && ap.player === 'P2');
+    const p1Surging = powerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P1');
+    const p2Surging = powerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P2');
+    const p1Amped   = powerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P1');
+    const p2Amped   = powerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P2');
 
     // Record surge trail positions each frame
     const FADE = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
@@ -337,8 +338,8 @@ export class PixiGameRenderer {
 
     // Coinbases — in 3D mode only show coinbases on the active layer
     const activeCoinbases = state.meta.layers3D
-      ? state.coinbases.filter((cb) => cb.layer === undefined || cb.layer === state.p1Layer)
-      : state.coinbases;
+      ? (state.coinbases ?? []).filter((cb) => cb.layer === undefined || cb.layer === state.p1Layer)
+      : (state.coinbases ?? []);
     for (const cb of activeCoinbases) {
       this.drawCoinbase(cb.pos, colSize, rowSize, {
         reward: cb.reward,
@@ -366,13 +367,13 @@ export class PixiGameRenderer {
 
     // Power-up items + labels
     this.powerUpLabels.removeChildren().forEach((c) => (c as Text).destroy?.());
-    for (const item of state.powerUpItems) {
+    for (const item of state.powerUpItems ?? []) {
       this.drawPowerUpItem(item.pos, item.type, colSize, rowSize);
       this.drawPowerUpLabel(item.pos, item.type, colSize, rowSize);
     }
 
     // Point pop-ups
-    for (const change of state.pointChanges) {
+    for (const change of state.pointChanges ?? []) {
       const x1 = change.p1Pos[0] * colSize + colSize / 2;
       const y1 = change.p1Pos[1] * rowSize + rowSize / 2 + change.p1YOffsetPx;
       const x2 = change.p2Pos[0] * colSize + colSize / 2;
@@ -387,7 +388,7 @@ export class PixiGameRenderer {
     }
 
     if (state.meta?.modeLabel !== 'ONLINE') {
-      state.pointChanges = state.pointChanges
+      state.pointChanges = (state.pointChanges ?? [])
         .map((change) => ({
           ...change,
           p1YOffsetPx: change.p1YOffsetPx - 1,
@@ -760,9 +761,9 @@ export class PixiGameRenderer {
   private draw3DGhostLayer(state: GameState, colSize: number, rowSize: number, _now: number): void {
     const ghostLayer = state.p1Layer === 0 ? 1 : 0;
     const ghostWalls = ghostLayer === 0
-      ? state.obstacleWalls
+      ? (state.obstacleWalls ?? [])
       : (state.board3DLayers[0]?.obstacleWalls ?? []);
-    const ghostCoins = state.coinbases.filter((cb) => cb.layer === ghostLayer);
+    const ghostCoins = (state.coinbases ?? []).filter((cb) => cb.layer === ghostLayer);
 
     const boardW = state.cols * colSize;
     const boardH = state.rows * rowSize;
@@ -1127,13 +1128,13 @@ export class PixiGameRenderer {
     }
 
     // Obstacle walls
-    for (const wall of state.obstacleWalls) {
+    for (const wall of state.obstacleWalls ?? []) {
       ctx.fillStyle = 'rgba(255,255,255,0.8)';
       ctx.fillRect(wall.pos[0] * colSize, wall.pos[1] * rowSize, colSize, rowSize);
     }
 
     // Void cells
-    for (const vc of state.voidCells) {
+    for (const vc of state.voidCells ?? []) {
       ctx.fillStyle = 'rgba(0,0,0,0.85)';
       ctx.fillRect(vc[0] * colSize, vc[1] * rowSize, colSize, rowSize);
     }
@@ -1152,12 +1153,13 @@ export class PixiGameRenderer {
     this.p1Pulses = this.p1Pulses.filter((t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS);
     this.p2Pulses = this.p2Pulses.filter((t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS);
 
-    const fbP1Surging = state.activePowerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P1');
-    const fbP2Surging = state.activePowerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P2');
-    const fbP1Amped   = state.activePowerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P1');
-    const fbP2Amped   = state.activePowerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P2');
-    const fbP1Frozen  = state.activePowerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P1');
-    const fbP2Frozen  = state.activePowerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P2');
+    const fbPowerUps = state.activePowerUps ?? [];
+    const fbP1Surging = fbPowerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P1');
+    const fbP2Surging = fbPowerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P2');
+    const fbP1Amped   = fbPowerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P1');
+    const fbP2Amped   = fbPowerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P2');
+    const fbP1Frozen  = fbPowerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P1');
+    const fbP2Frozen  = fbPowerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P2');
 
     // FADE surge trails
     const FADE_FB = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
@@ -1183,9 +1185,9 @@ export class PixiGameRenderer {
     if (state.meta.layers3D) {
       const ghostLayer = state.p1Layer === 0 ? 1 : 0;
       const ghostWalls = ghostLayer === 0
-        ? state.obstacleWalls
+        ? (state.obstacleWalls ?? [])
         : (state.board3DLayers[0]?.obstacleWalls ?? []);
-      const ghostCoins = state.coinbases.filter((c) => c.layer === ghostLayer);
+      const ghostCoins = (state.coinbases ?? []).filter((c) => c.layer === ghostLayer);
       const boardW = state.cols * colSize;
       const boardH = state.rows * rowSize;
       const sign   = ghostLayer === 1 ? 1 : -1;
@@ -1468,8 +1470,8 @@ export class PixiGameRenderer {
 
     // Coinbases (in 3D mode only show active-layer coinbases)
     const fbActiveCoinbases = state.meta.layers3D
-      ? state.coinbases.filter((cb) => cb.layer === undefined || cb.layer === state.p1Layer)
-      : state.coinbases;
+      ? (state.coinbases ?? []).filter((cb) => cb.layer === undefined || cb.layer === state.p1Layer)
+      : (state.coinbases ?? []);
     for (const cb of fbActiveCoinbases) {
       const cx = cb.pos[0] * colSize + colSize / 2;
       const cy = cb.pos[1] * rowSize + rowSize / 2;
@@ -1498,7 +1500,7 @@ export class PixiGameRenderer {
     }
 
     // Power-up items (fallback: colored squares)
-    for (const item of state.powerUpItems) {
+    for (const item of state.powerUpItems ?? []) {
       const color = POWERUP_COLORS[item.type] ?? 0xffffff;
       const r = (color >> 16) & 0xff;
       const g = (color >> 8) & 0xff;

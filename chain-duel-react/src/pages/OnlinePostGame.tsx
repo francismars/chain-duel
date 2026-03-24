@@ -34,6 +34,17 @@ interface OnlinePostGameInfo {
   rematchNote1?: string;
   rematchWaitingForSessionID?: string;
   doubleOrNothingVotes: number;
+  matchRounds?: Array<{
+    matchRound: number;
+    finishedAt: number;
+    winnerName: string;
+    p1Name: string;
+    p2Name: string;
+    p1Score: number;
+    p2Score: number;
+    netPrize: number;
+    winnerRole?: 'Player 1' | 'Player 2';
+  }>;
 }
 
 const PLACEHOLDER_LNURL =
@@ -260,6 +271,42 @@ export default function OnlinePostGame() {
           <p className="online-postgame-kicker">MAINNET MATCH COMPLETE</p>
           <h1 className="online-postgame-title">VICTORY SCREEN</h1>
         </div>
+
+        {info && (info.matchRounds?.length ?? 0) > 0 ? (
+          <section className="online-postgame-round-history" aria-label="Session game history">
+            <h2 className="online-postgame-round-history-title">Session history</h2>
+            <p className="online-postgame-round-history-note">
+              Each row is one completed game. Rounds after the first are double-or-nothing continuations.
+            </p>
+            <ul className="online-postgame-round-list">
+              {(info.matchRounds ?? []).map((round) => (
+                <li key={round.matchRound} className="online-postgame-round-row">
+                  <div className="online-postgame-round-meta">
+                    <span className="online-postgame-round-label">
+                      Game {round.matchRound}
+                      {round.matchRound > 1 ? (
+                        <span className="online-postgame-round-don"> · double or nothing</span>
+                      ) : null}
+                    </span>
+                    <span className="online-postgame-round-time">
+                      {new Date(round.finishedAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="online-postgame-round-scoreline">
+                    <span className="online-postgame-round-p1">{round.p1Name}</span>
+                    <span className="online-postgame-round-vs" aria-hidden="true">
+                      {round.p1Score} – {round.p2Score}
+                    </span>
+                    <span className="online-postgame-round-p2">{round.p2Name}</span>
+                  </div>
+                  <p className="online-postgame-round-winner">
+                    <strong>{round.winnerName}</strong> won · {round.netPrize.toLocaleString()} sats net
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <div className="online-postgame-winner-panel">
           <div className="online-postgame-winner">
