@@ -121,6 +121,8 @@ body {
 }
 
 #gameCanvas {
+  position: relative;
+  z-index: 0;
   margin: 0 15%;
   width: 70vw;
   height: 35vw;
@@ -128,6 +130,7 @@ body {
   background-image: url('/images/game_bg.png');
   background-size: cover;
   background-position: center;
+  isolation: isolate;
 }
 
 #gameCanvasHost,
@@ -492,7 +495,8 @@ body {
   justify-content: center;
   transition: all 0.35s ease-in-out;
   opacity: 1;
-  z-index: 10;
+  /* Above WebGL canvas (composited) and .corner-controls (100) */
+  z-index: 10000;
 }
 
 #loading.overlay img {
