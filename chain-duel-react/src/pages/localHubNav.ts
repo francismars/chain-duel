@@ -1,14 +1,13 @@
-﻿/** Keyboard / gamepad focus model for Local hub (/local). */
+/** Keyboard / gamepad focus model for Local hub (/local). */
 
-export type MatchFormat = 'solo' | 'teams' | 'ffa';
+export type MatchFormat = 'solo' | 'ffa';
 export type OpponentChoice = 'humans' | 'ai';
 
 export type LocalNavFocus =
-  | { kind: 'format'; idx: 0 | 1 | 2 }
+  | { kind: 'format'; idx: 0 | 1 }
   | { kind: 'slot'; idx: 0 | 1 | 2 | 3 }
   | { kind: 'opponent'; idx: 0 | 1 }
   | { kind: 'tier'; idx: 0 | 1 | 2 | 3 }
-  | { kind: 'ruleConvergence' }
   | { kind: 'rulePowerup' }
   | { kind: 'start' }
   | { kind: 'back' };
@@ -31,7 +30,6 @@ export function buildLocalHubFlatNav(
   const list: LocalNavFocus[] = [
     { kind: 'format', idx: 0 },
     { kind: 'format', idx: 1 },
-    { kind: 'format', idx: 2 },
   ];
   if (showTeamControl) {
     for (let i = 0; i < 4; i++) {
@@ -50,12 +48,7 @@ export function buildLocalHubFlatNav(
       list.push({ kind: 'tier', idx: i as 0 | 1 | 2 | 3 });
     }
   }
-  list.push(
-    { kind: 'ruleConvergence' },
-    { kind: 'rulePowerup' },
-    { kind: 'start' },
-    { kind: 'back' }
-  );
+  list.push({ kind: 'rulePowerup' }, { kind: 'start' }, { kind: 'back' });
   return list;
 }
 
@@ -88,7 +81,7 @@ function horizontalStep(
     (((n + (left ? -1 : 1)) % mod) + mod) % mod;
   switch (f.kind) {
     case 'format':
-      return { kind: 'format', idx: horiz(f.idx, 3) as 0 | 1 | 2 };
+      return { kind: 'format', idx: horiz(f.idx, 2) as 0 | 1 };
     case 'slot':
       return { kind: 'slot', idx: horiz(f.idx, 4) as 0 | 1 | 2 | 3 };
     case 'opponent':
@@ -156,4 +149,3 @@ export function normalizeLocalNavFocus(
   if (flat.some((x) => navFocusEqual(x, f))) return f;
   return flat[0] ?? { kind: 'format', idx: 0 };
 }
-

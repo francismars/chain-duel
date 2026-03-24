@@ -12,6 +12,11 @@ import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useAudio, SFX } from '@/contexts/AudioContext';
 import { useGamepad } from '@/hooks/useGamepad';
 import type { AiTier, TeamMode } from '@/game/engine/types';
+import {
+  CONVERGENCE_MIN_COLS,
+  CONVERGENCE_MIN_ROWS,
+  LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
+} from '@/game/engine/constants';
 import '@/components/ui/Button.css';
 import './practiceHub.css';
 import '@/styles/pages/local-hub.css';
@@ -24,12 +29,23 @@ import {
 
 // ── Convergence: fixed Soldier preset (local hub / engine) ──────────────────
 
+/** ~20 shrink steps on 51×25 → 11×11; duration scales with LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS. */
+const LOCAL_SHRINK_STEPS_TO_MIN_EST = 20;
+
 const CONVERGENCE_SOLDIER = {
-  shrinkIntervalTicks: 150,
+  shrinkIntervalTicks: LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
   stepMs: 100,
-  minCols: 11,
-  minRows: 11,
+  minCols: CONVERGENCE_MIN_COLS,
+  minRows: CONVERGENCE_MIN_ROWS,
 } as const;
+
+const LOCAL_SEC_BETWEEN_SHRINKS =
+  (CONVERGENCE_SOLDIER.shrinkIntervalTicks * CONVERGENCE_SOLDIER.stepMs) / 1000;
+const LOCAL_EST_MATCH_MIN =
+  (LOCAL_SHRINK_STEPS_TO_MIN_EST *
+    CONVERGENCE_SOLDIER.shrinkIntervalTicks *
+    CONVERGENCE_SOLDIER.stepMs) /
+  60_000;
 
 /** Bot tiers — order = easiest → hardest (matches Convergence list UX) */
 const AI_TIER_PRESETS: Array<{
@@ -183,21 +199,15 @@ function BotTierPicker({
   );
 }
 
-type MatchFormat = 'solo' | 'teams' | 'ffa';
+type MatchFormat = 'solo' | 'ffa';
 type OpponentChoice = 'humans' | 'ai';
 
-function buildHudLabel(
-  format: MatchFormat,
-  convergence: boolean,
-  powerup: boolean
-): string {
+function buildHudLabel(format: MatchFormat, powerup: boolean): string {
   const parts: string[] = ['LOCAL'];
-  if (format === 'teams') parts.push('2v2');
-  else if (format === 'ffa') parts.push('FFA');
+  if (format === 'ffa') parts.push('FFA');
   else parts.push('1v1');
-  if (convergence) parts.push('CVG');
+  parts.push('CVG');
   if (powerup) parts.push('PWR');
-  if (!convergence && !powerup) parts.push('CLASSIC');
   return parts.join(' · ');
 }
 
@@ -208,10 +218,9 @@ export default function LocalHub() {
 
   const [format, setFormat] = useState<MatchFormat>('solo');
   const [opponent, setOpponent] = useState<OpponentChoice>('humans');
-  /** P1–P4 human vs AI (2v2 / FFA). Default all human. */
+  /** P1–P4 human vs AI (FFA). Default all human. */
   const [slotHuman, setSlotHuman] = useState([true, true, true, true]);
   const [aiTier, setAiTier] = useState<AiTier>('hunter');
-  const [convergence, setConvergence] = useState(false);
   const [powerup, setPowerup] = useState(false);
 
   const [navFocus, setNavFocus] = useState<LocalNavFocus>({
@@ -222,18 +231,17 @@ export default function LocalHub() {
   const slotRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const opponentRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const tierRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const convergenceRef = useRef<HTMLInputElement | null>(null);
   const powerupRef = useRef<HTMLInputElement | null>(null);
   const startRef = useRef<HTMLButtonElement | null>(null);
   const backRef = useRef<HTMLButtonElement | null>(null);
 
   const summaryLine = useMemo(
-    () => buildHudLabel(format, convergence, powerup),
-    [format, convergence, powerup]
+    () => buildHudLabel(format, powerup),
+    [format, powerup]
   );
 
   const show1v1Opponent = format === 'solo';
-  const showTeamControl = format === 'teams' || format === 'ffa';
+  const showTeamControl = format === 'ffa';
   const allFourHuman = showTeamControl && slotHuman.every(Boolean);
 
   const toggleSlot = useCallback(
@@ -283,16 +291,13 @@ export default function LocalHub() {
       p1Name: p1Human ? 'Player 1' : 'BigToshi 🌊',
       p2Name: p2Human ? 'Player 2' : 'BigToshi 🌊',
       aiTier,
-      convergenceMode: convergence,
+      convergenceMode: true,
       powerupMode: powerup,
+      convergenceShrinkInterval: CONVERGENCE_SOLDIER.shrinkIntervalTicks,
+      convergenceMinCols: CONVERGENCE_SOLDIER.minCols,
+      convergenceMinRows: CONVERGENCE_SOLDIER.minRows,
+      convergenceStepMs: CONVERGENCE_SOLDIER.stepMs,
     };
-
-    if (convergence) {
-      config.convergenceShrinkInterval = CONVERGENCE_SOLDIER.shrinkIntervalTicks;
-      config.convergenceMinCols = CONVERGENCE_SOLDIER.minCols;
-      config.convergenceMinRows = CONVERGENCE_SOLDIER.minRows;
-      config.convergenceStepMs = CONVERGENCE_SOLDIER.stepMs;
-    }
 
     if (format === 'ffa') {
       config.ffaAiTier = aiTier;
@@ -307,7 +312,6 @@ export default function LocalHub() {
     opponent,
     slotHuman,
     aiTier,
-    convergence,
     powerup,
     summaryLine,
   ]);
@@ -316,7 +320,7 @@ export default function LocalHub() {
     (f: LocalNavFocus) => {
       switch (f.kind) {
         case 'format':
-          setFormat((['solo', 'teams', 'ffa'] as const)[f.idx]);
+          setFormat((['solo', 'ffa'] as const)[f.idx]);
           playSfx(SFX.MENU_SELECT);
           break;
         case 'slot':
@@ -328,10 +332,6 @@ export default function LocalHub() {
           break;
         case 'tier':
           setAiTier(AI_TIER_PRESETS[f.idx]!.id);
-          playSfx(SFX.MENU_SELECT);
-          break;
-        case 'ruleConvergence':
-          setConvergence((v) => !v);
           playSfx(SFX.MENU_SELECT);
           break;
         case 'rulePowerup':
@@ -464,8 +464,6 @@ export default function LocalHub() {
       opponentRefs.current[navFocus.idx]?.focus();
     } else if (navFocus.kind === 'tier') {
       tierRefs.current[navFocus.idx]?.focus();
-    } else if (navFocus.kind === 'ruleConvergence') {
-      convergenceRef.current?.focus();
     } else if (navFocus.kind === 'rulePowerup') {
       powerupRef.current?.focus();
     } else if (navFocus.kind === 'start') {
@@ -485,9 +483,8 @@ export default function LocalHub() {
           LOCAL · FREE
         </p>
         <p className="practice-hub-lede">
-          Grind 1v1, stack four humans, or let the bots hunt you. Shrink the
-          arena, flip on power-ups, or keep it raw classic — tune the chaos
-          below.
+          Demo play — short, timed sessions. Pick 1v1 or four-way FFA; the board
+          shrinks until someone wins on score. Power-ups optional below.
         </p>
       </header>
 
@@ -497,10 +494,13 @@ export default function LocalHub() {
             Match format
           </h3>
           <p className="practice-section-hint">
-            1v1 is the default duel. In 2v2 / FFA you get four human/AI toggles
-            (all human is supported) plus bot tier for any AI slots.
+            1v1 duel, or FFA with four human/AI slots and bot tier for AI.
           </p>
-          <div className="practice-seg" role="group" aria-label="Match format">
+          <div
+            className="practice-seg practice-seg--two"
+            role="group"
+            aria-label="Match format"
+          >
             <button
               ref={(el) => {
                 formatRefs.current[0] = el;
@@ -523,25 +523,9 @@ export default function LocalHub() {
               }}
               type="button"
               tabIndex={navFocus.kind === 'format' && navFocus.idx === 1 ? 0 : -1}
-              className={`practice-seg-btn ${format === 'teams' ? 'active' : ''}${navFocus.kind === 'format' && navFocus.idx === 1 ? ' practice-focus-target' : ''}`}
+              className={`practice-seg-btn ${format === 'ffa' ? 'active' : ''}${navFocus.kind === 'format' && navFocus.idx === 1 ? ' practice-focus-target' : ''}`}
               onClick={() => {
                 setNavFocus({ kind: 'format', idx: 1 });
-                playSfx(SFX.MENU_SELECT);
-                setFormat('teams');
-              }}
-            >
-              <span className="practice-seg-label">2v2 teams</span>
-              <span className="practice-seg-desc">Allies + shadows</span>
-            </button>
-            <button
-              ref={(el) => {
-                formatRefs.current[2] = el;
-              }}
-              type="button"
-              tabIndex={navFocus.kind === 'format' && navFocus.idx === 2 ? 0 : -1}
-              className={`practice-seg-btn ${format === 'ffa' ? 'active' : ''}${navFocus.kind === 'format' && navFocus.idx === 2 ? ' practice-focus-target' : ''}`}
-              onClick={() => {
-                setNavFocus({ kind: 'format', idx: 2 });
                 playSfx(SFX.MENU_SELECT);
                 setFormat('ffa');
               }}
@@ -558,15 +542,8 @@ export default function LocalHub() {
               Four chains — human or AI
             </h3>
             <p className="practice-section-hint">
-              Tap a slot to flip Human ↔ AI. Four locals: WASD · arrows · IJKL ·
-              TFGH.
-              {!allFourHuman && (
-                <>
-                  {' '}
-                  Or mix humans and bots — bot strength below applies to every AI
-                  chain.
-                </>
-              )}
+              Flip Human/AI per slot. WASD · arrows · IJKL · TFGH.
+              {!allFourHuman && <> Bot tier below applies to every AI.</>}
             </p>
             <div className="practice-four-slot" role="group" aria-label="P1 through P4">
               {(['P1', 'P2', 'P3', 'P4'] as const).map((label, idx) => (
@@ -603,8 +580,7 @@ export default function LocalHub() {
             {show1v1Opponent ? (
               <>
                 <p className="practice-section-hint">
-                  Two humans = P1 on WASD (or pad 1), P2 on arrows (or pad 2). Vs
-                  AI = you steer white only; black is played by the bot.
+                  P1 WASD / pad 1 · P2 arrows / pad 2. Vs AI: you play white only.
                 </p>
                 <div className="practice-seg practice-seg--two" role="group" aria-label="Black chain">
                   <button
@@ -662,9 +638,7 @@ export default function LocalHub() {
               </>
             ) : (
               <>
-                <p className="practice-section-hint">
-                  Every AI-controlled chain uses this tier (main two and extras).
-                </p>
+                <p className="practice-section-hint">Shared bot tier for all AI chains.</p>
                 <>
                   <span className="practice-field-label">Bot tier</span>
                   <BotTierPicker
@@ -688,30 +662,10 @@ export default function LocalHub() {
             Arena rules
           </h3>
           <p className="practice-section-hint">
-            Mix and match — classic board, shrinking walls, power-ups, or any
-            combination.
+            <strong>Convergence</strong> on — border steps ~every{' '}
+            {LOCAL_SEC_BETWEEN_SHRINKS.toFixed(0)}s (~{LOCAL_EST_MATCH_MIN.toFixed(0)}{' '}
+            min to min size). Ends on score (ties → P1) or sooner at 0 points.
           </p>
-
-          <label
-            className={`practice-toggle${navFocus.kind === 'ruleConvergence' ? ' practice-focus-target' : ''}`}
-            onClick={() => setNavFocus({ kind: 'ruleConvergence' })}
-          >
-            <input
-              ref={convergenceRef}
-              type="checkbox"
-              tabIndex={navFocus.kind === 'ruleConvergence' ? 0 : -1}
-              checked={convergence}
-              onChange={() => {
-                playSfx(SFX.MENU_SELECT);
-                setConvergence((v) => !v);
-              }}
-            />
-            <span className="practice-toggle-ui" />
-            <span>
-              <strong>Convergence</strong> — arena shrinks toward the center
-              <span className="practice-conv-note"> (Soldier pacing)</span>
-            </span>
-          </label>
 
           <label
             className={`practice-toggle${navFocus.kind === 'rulePowerup' ? ' practice-focus-target' : ''}`}

@@ -28,6 +28,13 @@ export const CONVERGENCE_WARNING_TICKS = 10;           // 1s warning before shri
 export const CONVERGENCE_MIN_COLS = 11;
 export const CONVERGENCE_MIN_ROWS = 11;
 
+/**
+ * Local hub (free): ticks between border shrinks. Tuned so ~20 shrink steps on
+ * the default 51×25 grid (to 11×11) land near ~1.3 min of simulated time:
+ * 20 × LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS × STEP_SPEED_MS.
+ */
+export const LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS = 40;
+
 // ============================================================================
 // Power-up mode
 // ============================================================================

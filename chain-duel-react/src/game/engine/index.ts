@@ -977,12 +977,17 @@ function tickConvergence(state: GameState): void {
   if (!state.shrinkBorder) return;
 
   const shrinkInterval = state.meta.convergenceShrinkInterval ?? CONVERGENCE_SHRINK_INTERVAL_TICKS;
-  const warningInterval = shrinkInterval - CONVERGENCE_WARNING_TICKS;
+  const warningInterval = Math.max(0, shrinkInterval - CONVERGENCE_WARNING_TICKS);
 
   const phase = state.tickCount % shrinkInterval;
-  state.shrinkBorder.warningActive = phase >= warningInterval;
+  const shrinkThisTick =
+    state.tickCount > 0 && state.tickCount % shrinkInterval === 0;
+  // Include the shrink frame: when phase wraps to 0, phase >= warningInterval is false,
+  // so without shrinkThisTick the warning would blink off exactly when the border steps.
+  state.shrinkBorder.warningActive =
+    phase >= warningInterval || shrinkThisTick;
 
-  if (state.tickCount % shrinkInterval === 0 && state.tickCount > 0) {
+  if (shrinkThisTick) {
     advanceShrinkBorder(state);
 
     // Detect when the wall has fully closed (reached minimum size)
