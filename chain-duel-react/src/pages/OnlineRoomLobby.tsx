@@ -25,6 +25,8 @@ type Kind1PostLoaded = {
   created_at: number;
   pubkey: string;
   npubDisplay: string;
+  authorName: string;
+  authorPicture?: string | null;
 };
 
 export default function OnlineRoomLobby() {
@@ -288,6 +290,8 @@ export default function OnlineRoomLobby() {
           created_at: parsed.created_at,
           pubkey: parsed.pubkey,
           npubDisplay: parsed.npubDisplay,
+          authorName: parsed.authorName,
+          authorPicture: parsed.authorPicture,
         });
         setKind1PostStatus('idle');
       } else {
@@ -927,12 +931,32 @@ export default function OnlineRoomLobby() {
                     </div>
                   ) : kind1PostEvent ? (
                     <div className="online-lobby-kind1-embedded">
+                      <div className="online-lobby-kind1-author">
+                        {kind1PostEvent.authorPicture ? (
+                          <img
+                            className="online-lobby-kind1-author-avatar"
+                            src={kind1PostEvent.authorPicture}
+                            alt=""
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div
+                            className="online-lobby-kind1-author-avatar online-lobby-kind1-author-avatar--placeholder"
+                            aria-hidden
+                          />
+                        )}
+                        <div className="online-lobby-kind1-author-text">
+                          <span className="online-lobby-kind1-author-name">{kind1PostEvent.authorName}</span>
+                          <span
+                            className="online-lobby-kind1-author-npub"
+                            title={kind1PostEvent.npubDisplay}
+                          >
+                            {kind1PostEvent.npubDisplay}
+                          </span>
+                        </div>
+                      </div>
                       <p className="online-lobby-kind1-embedded-meta">
                         {new Date(kind1PostEvent.created_at * 1000).toLocaleString()}
-                        {' · '}
-                        <span className="online-lobby-kind1-embedded-pubkey" title={kind1PostEvent.npubDisplay}>
-                          {kind1PostEvent.npubDisplay}
-                        </span>
                       </p>
                       <div className="online-lobby-kind1-embedded-body">{kind1PostEvent.content}</div>
                       {kind1PostEvent.pubpayZap.isPubpay ? (

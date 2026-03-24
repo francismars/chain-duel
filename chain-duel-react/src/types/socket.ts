@@ -437,6 +437,8 @@ export interface ServerToClientEvents {
           created_at: number;
           pubkey: string;
           npubDisplay: string;
+          authorName: string;
+          authorPicture?: string | null;
         }
       | { roomId: string; ok: false; reason: string }
   ) => void;
