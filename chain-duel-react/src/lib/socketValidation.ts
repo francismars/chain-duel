@@ -10,6 +10,9 @@ import {
   ResOnlineNostrLinkChallengeSchema,
   ResOnlineNostrLinkOkSchema,
   ResOnlineKind1PostSchema,
+  ResOnlineSeatZapPayPrepareSchema,
+  ResOnlineSeatZapPayInvoiceSchema,
+  ResOnlineSeatZapPayErrorSchema,
   ResOnlineSeatLightningSchema,
   ResOnlineSeatLightningErrorSchema,
   ResOnlineSeatLightningCancelledSchema,
@@ -139,6 +142,15 @@ export const SocketValidators = {
 
   resOnlineKind1Post: (data: unknown) =>
     validateSocketEvent(ResOnlineKind1PostSchema, data, 'resOnlineKind1Post'),
+
+  resOnlineSeatZapPayPrepare: (data: unknown) =>
+    validateSocketEvent(ResOnlineSeatZapPayPrepareSchema, data, 'resOnlineSeatZapPayPrepare'),
+
+  resOnlineSeatZapPayInvoice: (data: unknown) =>
+    validateSocketEvent(ResOnlineSeatZapPayInvoiceSchema, data, 'resOnlineSeatZapPayInvoice'),
+
+  resOnlineSeatZapPayError: (data: unknown) =>
+    validateSocketEvent(ResOnlineSeatZapPayErrorSchema, data, 'resOnlineSeatZapPayError'),
 
   resOnlineSeatLightning: (data: unknown) =>
     validateSocketEvent(ResOnlineSeatLightningSchema, data, 'resOnlineSeatLightning'),
