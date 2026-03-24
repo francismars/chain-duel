@@ -41,7 +41,7 @@ export default function OnlineRoomLobby() {
     () => sessionStorage.getItem('sessionID') ?? ''
   );
   const [currentSocketID, setCurrentSocketID] = useState('');
-  const [kind1View, setKind1View] = useState<'njump' | 'nostr' | 'pubpay' | 'post'>('post');
+  const [kind1View, setKind1View] = useState<'nostr' | 'post'>('post');
   const [kind1PostEvent, setKind1PostEvent] = useState<Kind1PostLoaded | null>(null);
   const [kind1PostStatus, setKind1PostStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [kind1PostRetry, setKind1PostRetry] = useState(0);
@@ -69,6 +69,14 @@ export default function OnlineRoomLobby() {
   const [lightningBusy, setLightningBusy] = useState(false);
   /** Pubkey from last successful kind-1 sign, until server confirms with `resOnlineNostrLinkOk`. */
   const pendingNostrLinkPubkeyRef = useRef<string | null>(null);
+  /** Last successful `requestOnlineKind1Post` for this room + note ref — avoids refetch when switching Kind1 tabs back to POST. */
+  const kind1PostLoadedKeyRef = useRef<string | null>(null);
+
+  const kind1 = useMemo(() => {
+    const rematchPending = Boolean(room?.postGame?.rematchRequested);
+    const rematchNote = room?.postGame?.rematchNote1 ?? '';
+    return rematchPending ? rematchNote : room?.nostrMeta?.note1 ?? '';
+  }, [room?.postGame?.rematchRequested, room?.postGame?.rematchNote1, room?.nostrMeta?.note1]);
 
   const nostrLinkStorageKey = useMemo(
     () => (roomId ? `onlineLobbyNostrLink_${roomId}` : ''),
@@ -282,6 +290,7 @@ export default function OnlineRoomLobby() {
         return;
       }
       if (parsed.ok) {
+        kind1PostLoadedKeyRef.current = `${roomId}:${kind1}`;
         setKind1PostEvent({
           eventId: parsed.eventId,
           tags: parsed.tags,
@@ -295,6 +304,7 @@ export default function OnlineRoomLobby() {
         });
         setKind1PostStatus('idle');
       } else {
+        kind1PostLoadedKeyRef.current = null;
         setKind1PostEvent(null);
         setKind1PostStatus('error');
       }
@@ -375,7 +385,7 @@ export default function OnlineRoomLobby() {
       socket.off('session', onSession);
       socket.off('connect', refreshLocalIdentity);
     };
-  }, [roomId, socket]);
+  }, [roomId, socket, kind1]);
 
   useEffect(() => {
     if (!socket || !roomId) {
@@ -443,7 +453,6 @@ export default function OnlineRoomLobby() {
   const isPostgame = room?.phase === 'postgame';
   const isMatchEnded = isPostgame || isSessionClosed;
   const rematchPending = Boolean(room?.postGame?.rematchRequested);
-  const rematchNote = room?.postGame?.rematchNote1 ?? '';
   const rematchAmount = room?.postGame?.rematchRequiredAmount ?? 0;
   const rematchWaitingForSessionID = room?.postGame?.rematchWaitingForSessionID;
   const amILoserToPay = Boolean(rematchWaitingForSessionID && rematchWaitingForSessionID === currentSessionID);
@@ -453,10 +462,7 @@ export default function OnlineRoomLobby() {
     (room?.snapshot?.state as { p1Name?: string } | undefined)?.p1Name ?? 'Player 1';
   const snapshotP2Name =
     (room?.snapshot?.state as { p2Name?: string } | undefined)?.p2Name ?? 'Player 2';
-  const kind1 = rematchPending ? rematchNote : room?.nostrMeta?.note1 ?? '';
-  const njumpUrl = kind1 ? `https://njump.me/${kind1}` : '';
   const nostrUri = kind1 ? `nostr:${kind1}` : '';
-  const pubpayUrl = kind1 ? `https://pubpay.me/note/${kind1}` : '';
   const roomEmojis = room?.nostrMeta?.emojis ?? '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
@@ -631,6 +637,10 @@ export default function OnlineRoomLobby() {
 
   useEffect(() => {
     if (kind1View !== 'post' || !kind1 || !socket || !roomId) {
+      return;
+    }
+    const fetchKey = `${roomId}:${kind1}`;
+    if (kind1PostLoadedKeyRef.current === fetchKey) {
       return;
     }
     setKind1PostStatus('loading');
@@ -892,18 +902,6 @@ export default function OnlineRoomLobby() {
               NOSTR URI
             </Button>
             <Button
-              className={`online-lobby-action ${kind1View === 'njump' ? 'online-lobby-kind1-view-active' : ''}`}
-              onClick={() => setKind1View('njump')}
-            >
-              NJUMP LINK
-            </Button>
-            <Button
-              className={`online-lobby-action ${kind1View === 'pubpay' ? 'online-lobby-kind1-view-active' : ''}`}
-              onClick={() => setKind1View('pubpay')}
-            >
-              PUBPAY.ME
-            </Button>
-            <Button
               className={`online-lobby-action ${kind1View === 'post' ? 'online-lobby-kind1-view-active' : ''}`}
               onClick={() => setKind1View('post')}
             >
@@ -1069,30 +1067,6 @@ export default function OnlineRoomLobby() {
                       ) : null}
                     </div>
                   ) : null}
-                </>
-              ) : kind1View === 'njump' ? (
-                <>
-                  <QRCodeSVG value={njumpUrl} size={210} includeMargin className="online-lobby-qr" />
-                  <a
-                    className="online-lobby-kind1"
-                    href={njumpUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {kind1}
-                  </a>
-                </>
-              ) : kind1View === 'pubpay' ? (
-                <>
-                  <QRCodeSVG value={pubpayUrl} size={210} includeMargin className="online-lobby-qr" />
-                  <a
-                    className="online-lobby-kind1"
-                    href={pubpayUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {pubpayUrl}
-                  </a>
                 </>
               ) : (
                 <>
