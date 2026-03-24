@@ -1,8 +1,8 @@
-/** Keyboard / gamepad focus model for Testnet paid entry (matches useGamepad: pad1 = WASD+Space, pad2 = arrows+Enter). */
+﻿/** Keyboard / gamepad focus model for P2P paid entry (matches useGamepad: pad1 = WASD+Space, pad2 = arrows+Enter). */
 
 export const BUYIN_STEP_COUNT = 10;
 
-export type TestnetNavFocus =
+export type P2pNavFocus =
   | { kind: 'payment'; idx: 0 | 1 }
   | { kind: 'session'; idx: 0 | 1 }
   | { kind: 'players'; idx: 0 | 1 | 2 }
@@ -12,7 +12,7 @@ export type TestnetNavFocus =
   | { kind: 'start' }
   | { kind: 'back' };
 
-export function isBracketNavFocus(f: TestnetNavFocus): boolean {
+export function isBracketNavFocus(f: P2pNavFocus): boolean {
   return (
     f.kind === 'players' ||
     f.kind === 'buyinPrev' ||
@@ -21,7 +21,7 @@ export function isBracketNavFocus(f: TestnetNavFocus): boolean {
   );
 }
 
-export function navFocusEqual(a: TestnetNavFocus, b: TestnetNavFocus): boolean {
+export function navFocusEqual(a: P2pNavFocus, b: P2pNavFocus): boolean {
   if (a.kind !== b.kind) return false;
   if (a.kind === 'payment' && b.kind === 'payment') return a.idx === b.idx;
   if (a.kind === 'session' && b.kind === 'session') return a.idx === b.idx;
@@ -31,15 +31,15 @@ export function navFocusEqual(a: TestnetNavFocus, b: TestnetNavFocus): boolean {
 }
 
 export function normalizeNavFocusForSession(
-  f: TestnetNavFocus,
+  f: P2pNavFocus,
   tournament: boolean
-): TestnetNavFocus {
+): P2pNavFocus {
   if (tournament || !isBracketNavFocus(f)) return f;
   return { kind: 'session', idx: 1 };
 }
 
-export function buildFlatNavOrder(tournament: boolean): TestnetNavFocus[] {
-  const list: TestnetNavFocus[] = [
+export function buildFlatNavOrder(tournament: boolean): P2pNavFocus[] {
+  const list: P2pNavFocus[] = [
     { kind: 'payment', idx: 0 },
     { kind: 'payment', idx: 1 },
     { kind: 'session', idx: 0 },
@@ -72,12 +72,12 @@ function playerIdxDownFromSession(sessionIdx: 0 | 1): 0 | 1 | 2 {
 }
 
 export function moveNavFocus(
-  f: TestnetNavFocus,
+  f: P2pNavFocus,
   direction: 'up' | 'down' | 'left' | 'right',
   tournament: boolean,
   /** Column for the active session choice (duel = 0, tournament = 1) — used when moving up from Start in duel mode. */
   sessionNavIdx: 0 | 1
-): TestnetNavFocus {
+): P2pNavFocus {
   const lastPill = BUYIN_STEP_COUNT - 1;
 
   switch (direction) {
@@ -186,13 +186,14 @@ export function moveNavFocus(
 }
 
 export function advanceFlatNav(
-  f: TestnetNavFocus,
+  f: P2pNavFocus,
   delta: 1 | -1,
   tournament: boolean
-): TestnetNavFocus {
+): P2pNavFocus {
   const flat = buildFlatNavOrder(tournament);
   const i = flat.findIndex((x) => navFocusEqual(x, f));
   if (i < 0) return flat[0] ?? f;
   const next = (i + delta + flat.length) % flat.length;
   return flat[next] ?? f;
 }
+

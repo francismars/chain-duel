@@ -1,10 +1,10 @@
-/* Testnet paid entry — compact, subtle bracket controls
+/* P2P paid entry — compact, subtle bracket controls
    Brand: ink + paper white (no gold / cyan accents on this route) */
 
 /* Keyboard / gamepad focus ring (roving tabindex + programmatic focus) */
-.testnet-seg-btn.testnet-focus-target,
-.testnet-start.testnet-focus-target,
-.testnet-back-btn.testnet-focus-target {
+.practice-seg-btn.practice-focus-target,
+.practice-start.practice-focus-target,
+.practice-back-btn.practice-focus-target {
   outline: 2px solid rgba(255, 255, 255, 0.55);
   outline-offset: 2px;
 }
@@ -15,44 +15,44 @@
   outline-offset: 2px;
 }
 
-/* Scoped to /testnet-entry: neutral panel + CTA + summary (overrides testnetHub.css gold/cyan) */
-.testnet-entry-hub .testnet-panel {
+/* Scoped to /p2p: neutral panel + CTA + summary (overrides practiceHub.css gold/cyan) */
+.p2p-entry-page .practice-panel {
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.06),
     0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
-.testnet-entry-hub .testnet-summary-code {
+.p2p-entry-page .practice-summary-code {
   color: rgba(255, 255, 255, 0.72);
 }
 
-.testnet-entry-hub .testnet-start {
+.p2p-entry-page .practice-start {
   color: rgba(255, 255, 255, 0.94);
   border-color: rgba(255, 255, 255, 0.28);
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.04);
 }
 
-.testnet-entry-hub .testnet-start:hover {
+.p2p-entry-page .practice-start:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.42);
   box-shadow: 0 0 32px rgba(255, 255, 255, 0.08);
 }
 
-.testnet-entry-hub.testnet-hub--practice {
+.p2p-entry-page.practice-hub--practice {
   max-width: 640px;
   margin: 0 auto;
 }
 
 /* Slightly tighter sections than default hub */
-.testnet-entry-hub .testnet-panel {
+.p2p-entry-page .practice-panel {
   gap: clamp(12px, 1.6vw, 18px);
 }
 
-.testnet-entry-hub .testnet-section {
+.p2p-entry-page .practice-section {
   gap: 0.45em;
 }
 
-.testnet-entry-detail-hint {
+.p2p-entry-detail-hint {
   color: rgba(255, 255, 255, 0.4) !important;
   font-size: clamp(10px, 0.85vw, 12px) !important;
   line-height: 1.45 !important;
@@ -286,3 +286,4 @@
   letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.38);
 }
+

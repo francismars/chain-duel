@@ -4,8 +4,8 @@ import { CornerControls } from './components/ui/CornerControls';
 import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import Index from './pages/Index';
 import GameMenu from './pages/GameMenu';
-import TestnetHub from './pages/TestnetHub';
-import TestnetEntry from './pages/TestnetEntry';
+import LocalHub from './pages/LocalHub';
+import P2pEntry from './pages/P2pEntry';
 import TournamentLobby from './pages/TournamentLobby';
 import TournamentBracket from './pages/TournamentBracket';
 import Game from './pages/Game';
@@ -32,13 +32,15 @@ function App() {
             <Route path="/game" element={<Game />} />
             <Route path="/postgame" element={<PostGame />} />
 
-            {/* Regtest hub: canonical /regtest; /testnet and /solo are legacy aliases */}
-            <Route path="/regtest" element={<TestnetHub />} />
-            <Route path="/testnet" element={<Navigate to="/regtest" replace />} />
-            <Route path="/solo" element={<Navigate to="/regtest" replace />} />
+            {/* Local hub: canonical /local; legacy aliases */}
+            <Route path="/local" element={<LocalHub />} />
+            <Route path="/regtest" element={<Navigate to="/local" replace />} />
+            <Route path="/testnet" element={<Navigate to="/local" replace />} />
+            <Route path="/solo" element={<Navigate to="/local" replace />} />
 
-            {/* Testnet tournament (paid entry + lobby + bracket) */}
-            <Route path="/testnet-entry" element={<TestnetEntry />} />
+            {/* P2P tournament (paid entry + lobby + bracket) */}
+            <Route path="/p2p" element={<P2pEntry />} />
+            <Route path="/testnet-entry" element={<Navigate to="/p2p" replace />} />
             <Route path="/tournlobby" element={<TournamentLobby />} />
             <Route path="/tournbracket" element={<TournamentBracket />} />
 

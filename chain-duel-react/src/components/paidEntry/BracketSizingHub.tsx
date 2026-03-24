@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import type { TestnetNavFocus } from '@/pages/testnetEntryNav';
+import type { P2pNavFocus } from '@/pages/p2pEntryNav';
 
 const PLAYER_OPTIONS = [
   { n: 4 as const, label: '4', desc: 'Small' },
@@ -36,15 +36,15 @@ export interface BracketSizingHubProps {
   onPlayersChange: (n: 4 | 8 | 16) => void;
   onDepositChange: (sats: number) => void;
   playSelect: () => void;
-  /** Keyboard/gamepad highlight (Testnet entry). */
-  menuFocus?: TestnetNavFocus | null;
+  /** Keyboard/gamepad highlight (P2P entry). */
+  menuFocus?: P2pNavFocus | null;
   /** Keep nav model in sync when using mouse / second gamepad. */
-  onMenuFocus?: (f: TestnetNavFocus) => void;
+  onMenuFocus?: (f: P2pNavFocus) => void;
 }
 
 function bracketFocusClass(
-  menuFocus: TestnetNavFocus | null | undefined,
-  match: (f: TestnetNavFocus) => boolean
+  menuFocus: P2pNavFocus | null | undefined,
+  match: (f: P2pNavFocus) => boolean
 ): string {
   return menuFocus && match(menuFocus) ? ' bracket-sizing-hub__focus-target' : '';
 }

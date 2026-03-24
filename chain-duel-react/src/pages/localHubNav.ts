@@ -1,9 +1,9 @@
-/** Keyboard / gamepad focus model for Regtest hub (/regtest). */
+﻿/** Keyboard / gamepad focus model for Local hub (/local). */
 
 export type MatchFormat = 'solo' | 'teams' | 'ffa';
 export type OpponentChoice = 'humans' | 'ai';
 
-export type RegtestNavFocus =
+export type LocalNavFocus =
   | { kind: 'format'; idx: 0 | 1 | 2 }
   | { kind: 'slot'; idx: 0 | 1 | 2 | 3 }
   | { kind: 'opponent'; idx: 0 | 1 }
@@ -13,7 +13,7 @@ export type RegtestNavFocus =
   | { kind: 'start' }
   | { kind: 'back' };
 
-export function navFocusEqual(a: RegtestNavFocus, b: RegtestNavFocus): boolean {
+export function navFocusEqual(a: LocalNavFocus, b: LocalNavFocus): boolean {
   if (a.kind !== b.kind) return false;
   if (a.kind === 'format' && b.kind === 'format') return a.idx === b.idx;
   if (a.kind === 'slot' && b.kind === 'slot') return a.idx === b.idx;
@@ -22,13 +22,13 @@ export function navFocusEqual(a: RegtestNavFocus, b: RegtestNavFocus): boolean {
   return true;
 }
 
-export function buildRegtestFlatNav(
+export function buildLocalHubFlatNav(
   showTeamControl: boolean,
   show1v1Opponent: boolean,
   opponent: OpponentChoice,
   allFourHuman: boolean
-): RegtestNavFocus[] {
-  const list: RegtestNavFocus[] = [
+): LocalNavFocus[] {
+  const list: LocalNavFocus[] = [
     { kind: 'format', idx: 0 },
     { kind: 'format', idx: 1 },
     { kind: 'format', idx: 2 },
@@ -59,15 +59,15 @@ export function buildRegtestFlatNav(
   return list;
 }
 
-export function advanceRegtestFlatNav(
-  f: RegtestNavFocus,
+export function advanceLocalHubFlatNav(
+  f: LocalNavFocus,
   delta: 1 | -1,
   showTeamControl: boolean,
   show1v1Opponent: boolean,
   opponent: OpponentChoice,
   allFourHuman: boolean
-): RegtestNavFocus {
-  const flat = buildRegtestFlatNav(
+): LocalNavFocus {
+  const flat = buildLocalHubFlatNav(
     showTeamControl,
     show1v1Opponent,
     opponent,
@@ -80,9 +80,9 @@ export function advanceRegtestFlatNav(
 }
 
 function horizontalStep(
-  f: RegtestNavFocus,
+  f: LocalNavFocus,
   dir: 'left' | 'right'
-): RegtestNavFocus | null {
+): LocalNavFocus | null {
   const left = dir === 'left';
   const horiz = (n: number, mod: number) =>
     (((n + (left ? -1 : 1)) % mod) + mod) % mod;
@@ -100,16 +100,16 @@ function horizontalStep(
   }
 }
 
-export function moveRegtestNav(
-  f: RegtestNavFocus,
+export function moveLocalHubNav(
+  f: LocalNavFocus,
   direction: 'up' | 'down' | 'left' | 'right',
   showTeamControl: boolean,
   show1v1Opponent: boolean,
   opponent: OpponentChoice,
   allFourHuman: boolean
-): RegtestNavFocus {
+): LocalNavFocus {
   if (direction === 'up') {
-    return advanceRegtestFlatNav(
+    return advanceLocalHubFlatNav(
       f,
       -1,
       showTeamControl,
@@ -119,7 +119,7 @@ export function moveRegtestNav(
     );
   }
   if (direction === 'down') {
-    return advanceRegtestFlatNav(
+    return advanceLocalHubFlatNav(
       f,
       1,
       showTeamControl,
@@ -130,7 +130,7 @@ export function moveRegtestNav(
   }
   const h = horizontalStep(f, direction === 'left' ? 'left' : 'right');
   if (h) return h;
-  return advanceRegtestFlatNav(
+  return advanceLocalHubFlatNav(
     f,
     direction === 'left' ? -1 : 1,
     showTeamControl,
@@ -140,14 +140,14 @@ export function moveRegtestNav(
   );
 }
 
-export function normalizeRegtestNavFocus(
-  f: RegtestNavFocus,
+export function normalizeLocalNavFocus(
+  f: LocalNavFocus,
   showTeamControl: boolean,
   show1v1Opponent: boolean,
   opponent: OpponentChoice,
   allFourHuman: boolean
-): RegtestNavFocus {
-  const flat = buildRegtestFlatNav(
+): LocalNavFocus {
+  const flat = buildLocalHubFlatNav(
     showTeamControl,
     show1v1Opponent,
     opponent,
@@ -156,3 +156,4 @@ export function normalizeRegtestNavFocus(
   if (flat.some((x) => navFocusEqual(x, f))) return f;
   return flat[0] ?? { kind: 'format', idx: 0 };
 }
+

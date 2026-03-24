@@ -88,7 +88,7 @@ export default function Game() {
       if (!raw) return false;
       const cfg = JSON.parse(raw) as Record<string, unknown>;
       const m = String(cfg.mode ?? '').toUpperCase();
-      if (m === 'TESTNET') return Boolean(cfg.powerupMode);
+      if (m === 'LOCAL' || m === 'TESTNET') return Boolean(cfg.powerupMode);
       return m === 'POWERUP' || m === 'POWER-UP ARENA';
     } catch {
       return false;
@@ -99,7 +99,7 @@ export default function Game() {
     if (localBootRef.current) return;
     localBootRef.current = true;
 
-    // sessionStorage from regtest hub (/regtest); legacy POWERUP sessions may remain
+    // sessionStorage from local hub (/local); legacy POWERUP sessions may remain
     let gameConfig: Record<string, unknown> = {};
     try {
       const raw = sessionStorage.getItem('gameConfig');
@@ -109,12 +109,12 @@ export default function Game() {
     }
 
     const configMode = String(gameConfig.mode ?? '').toUpperCase();
-    const isTestnet = configMode === 'TESTNET';
+    const isLocalHub = configMode === 'LOCAL' || configMode === 'TESTNET';
     const isLegacyPowerup =
       configMode === 'POWERUP' || configMode === 'POWER-UP ARENA';
-    const isConvergence = isTestnet && Boolean(gameConfig.convergenceMode);
+    const isConvergence = isLocalHub && Boolean(gameConfig.convergenceMode);
     const isPowerup =
-      isLegacyPowerup || (isTestnet && Boolean(gameConfig.powerupMode));
+      isLegacyPowerup || (isLocalHub && Boolean(gameConfig.powerupMode));
     const isPracticeMode = Boolean(gameConfig.practiceMode);
     const aiTier = (gameConfig.aiTier as string) ?? 'hunter';
     const p1Name = String(gameConfig.p1Name ?? 'Player 1');
@@ -127,13 +127,15 @@ export default function Game() {
     const p3Human = gameConfig.p3Human === true;
     const p4Human = gameConfig.p4Human === true;
 
+    const hudFromConfig =
+      gameConfig.localHudLabel ?? gameConfig.testnetHudLabel;
     const modeLabel =
-      isTestnet && typeof gameConfig.testnetHudLabel === 'string'
-        ? String(gameConfig.testnetHudLabel)
+      isLocalHub && typeof hudFromConfig === 'string'
+        ? String(hudFromConfig)
         : isLegacyPowerup
           ? 'POWER-UP ARENA'
-          : 'TESTNET';
-    const displayP2Name = isTestnet
+          : 'LOCAL';
+    const displayP2Name = isLocalHub
       ? String(gameConfig.p2Name ?? 'Player 2')
       : isPracticeMode
         ? rawP2Name
@@ -231,7 +233,7 @@ export default function Game() {
   }, []);
 
   useEffect(() => {
-    // Regtest (and legacy POWERUP) bootstrap without waiting for socket
+    // Local hub (and legacy POWERUP) bootstrap without waiting for socket
     let gameConfig: Record<string, unknown> = {};
     try {
       const raw = sessionStorage.getItem('gameConfig');
@@ -239,7 +241,7 @@ export default function Game() {
     } catch {
       // ignore
     }
-    const localModes = ['TESTNET', 'POWERUP', 'POWER-UP ARENA'];
+    const localModes = ['LOCAL', 'TESTNET', 'POWERUP', 'POWER-UP ARENA'];
     const configMode = String(gameConfig.mode ?? '').toUpperCase();
     if (localModes.includes(configMode)) {
       bootstrapLocalGame();
@@ -384,9 +386,10 @@ export default function Game() {
     }
     const configMode = String(gameConfig.mode ?? '').toUpperCase();
     const modeRoutes: Record<string, string> = {
-      TESTNET: '/regtest',
-      POWERUP: '/regtest',
-      'POWER-UP ARENA': '/regtest',
+      LOCAL: '/local',
+      TESTNET: '/local',
+      POWERUP: '/local',
+      'POWER-UP ARENA': '/local',
     };
     const modeRoute = modeRoutes[configMode];
     if (modeRoute) { navigate(modeRoute); return; }
