@@ -281,9 +281,51 @@ export const ResOnlineNostrLinkChallengeSchema = z.object({
   expiresAt: z.number(),
 });
 
+export const NostrLinkedProfileSchema = z.object({
+  pubkey: z.string(),
+  name: z.string(),
+  picture: z.string().nullable().optional(),
+});
+
+export type NostrLinkedProfile = z.infer<typeof NostrLinkedProfileSchema>;
+
 export const ResOnlineNostrLinkOkSchema = z.object({
   expiresAt: z.number(),
+  profile: NostrLinkedProfileSchema.optional(),
 });
+
+export const ResOnlineKind1PostOkSchema = z.object({
+  roomId: z.string(),
+  ok: z.literal(true),
+  content: z.string(),
+  created_at: z.number(),
+  pubkey: z.string(),
+  npubDisplay: z.string(),
+});
+
+export const ResOnlineKind1PostErrSchema = z.object({
+  roomId: z.string(),
+  ok: z.literal(false),
+  reason: z.string(),
+});
+
+export const ResOnlineKind1PostSchema = z.discriminatedUnion('ok', [
+  ResOnlineKind1PostOkSchema,
+  ResOnlineKind1PostErrSchema,
+]);
+
+export const ResOnlineSeatLightningSchema = z.object({
+  lnurl: z.string(),
+  lightningUri: z.string(),
+  buyin: z.number(),
+  expiresAt: z.number(),
+});
+
+export const ResOnlineSeatLightningErrorSchema = z.object({
+  reason: z.string(),
+});
+
+export const ResOnlineSeatLightningCancelledSchema = z.object({});
 
 export const OnlineMatchRoundSummarySchema = z.object({
   matchRound: z.number(),

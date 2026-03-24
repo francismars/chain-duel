@@ -319,6 +319,11 @@ export interface ClientToServerEvents {
   /** NIP-07: request hex challenge to sign (kind 1) to bind pubkey → session before zap without PIN. */
   requestOnlineNostrLinkChallenge: (payload: { roomId: string }) => void;
   confirmOnlineNostrLink: (payload: { roomId: string; event: Record<string, unknown> }) => void;
+  /** Load Kind1 note text from relays (server-side). */
+  requestOnlineKind1Post: (payload: { roomId: string }) => void;
+  /** Anonymous seat: LNURL-pay link (unique per session) paid via LNBits webhook; no PIN. */
+  requestOnlineSeatLightning: (payload: { roomId: string }) => void;
+  cancelOnlineSeatLightning: () => void;
   /** Round-trip probe; last arg is ack: `emit('pingLatency', () => { ... })` */
   pingLatency: (ack: () => void) => void;
   /** After measuring RTT, send so server can broadcast both players' ping via `onlineRoomUpdated`. */
@@ -407,7 +412,30 @@ export interface ServerToClientEvents {
   }) => void;
   onlinePinInvalid: (data: { reason: string }) => void;
   resOnlineNostrLinkChallenge: (data: { roomId: string; challenge: string; expiresAt: number }) => void;
-  resOnlineNostrLinkOk: (data: { expiresAt: number }) => void;
+  resOnlineNostrLinkOk: (data: {
+    expiresAt: number;
+    profile?: { pubkey: string; name: string; picture?: string | null };
+  }) => void;
+  resOnlineKind1Post: (
+    data:
+      | {
+          roomId: string;
+          ok: true;
+          content: string;
+          created_at: number;
+          pubkey: string;
+          npubDisplay: string;
+        }
+      | { roomId: string; ok: false; reason: string }
+  ) => void;
+  resOnlineSeatLightning: (data: {
+    lnurl: string;
+    lightningUri: string;
+    buyin: number;
+    expiresAt: number;
+  }) => void;
+  resOnlineSeatLightningError: (data: { reason: string }) => void;
+  resOnlineSeatLightningCancelled: (data: Record<string, never>) => void;
   resOnlinePostGameInfo: (data: {
     roomId: string;
     phase: 'postgame' | 'finished';

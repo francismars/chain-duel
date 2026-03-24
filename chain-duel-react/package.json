@@ -14,7 +14,6 @@
   "dependencies": {
     "@mempool/mempool.js": "^3.0.0",
     "@tanstack/react-query": "^5.56.2",
-    "nostr-tools": "^2.12.0",
     "pixi.js": "^8.0.0",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",

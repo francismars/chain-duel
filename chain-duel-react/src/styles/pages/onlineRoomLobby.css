@@ -134,6 +134,33 @@
   background: rgb(40 80 50 / 0.35);
 }
 
+.online-lobby-nostr-linked-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.45rem;
+  row-gap: 0.25rem;
+}
+
+.online-lobby-nostr-linked-avatar {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgb(140 200 150 / 0.55);
+  flex-shrink: 0;
+}
+
+.online-lobby-nostr-linked-name {
+  font-weight: 600;
+  color: #dff5e6;
+}
+
+.online-lobby-nostr-linked-rest {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
 .online-lobby-text-btn {
   margin: 0;
   padding: 0;
@@ -211,6 +238,13 @@
   color: #c6c6c6;
 }
 
+.online-lobby-modal-nip07-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.7cqw;
+  line-height: 1.4;
+  color: #9a9a9a;
+}
+
 .online-lobby-modal-status {
   margin: 0 0 0.75rem;
   font-size: 0.74cqw;
@@ -228,6 +262,32 @@
 
 .online-lobby-modal-status-idle {
   color: #9a9a9a;
+}
+
+.online-lobby-modal-status-linked {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.online-lobby-modal-nostr-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgb(140 200 150 / 0.45);
+  flex-shrink: 0;
+}
+
+.online-lobby-modal-nostr-inline {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.online-lobby-modal-nostr-display-name {
+  font-weight: 500;
+  color: #c8e8ce;
 }
 
 .online-lobby-modal-actions {
@@ -262,6 +322,56 @@
   background: #fff;
   color: #0a0a0a;
   box-shadow: 0 0 18px rgb(255 255 255 / 18%);
+}
+
+.online-lobby-seat-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45vw;
+  margin: 0.4vw 0 0.55vw;
+}
+
+.online-lobby-seat-mode-row .online-lobby-join-mode-btn {
+  flex: 1;
+  min-width: min(44vw, 200px);
+}
+
+.online-lobby-lightning-pay {
+  margin-top: 0.5vw;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45vw;
+}
+
+.online-lobby-lightning-uri {
+  font-size: 0.65cqw;
+  letter-spacing: 0.04em;
+  word-break: break-all;
+  color: #c8c8c8;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.online-lobby-lightning-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4vw;
+}
+
+.online-lobby-lightning-actions .online-lobby-action {
+  flex: 1;
+  min-width: 120px;
+}
+
+.online-lobby-lightning-status {
+  margin-top: 0.35vw;
+  color: #b0b0b0;
+}
+
+.online-lobby-lightning-aside-copy {
+  margin-top: 0.5vw;
+  line-height: 1.45;
 }
 
 .online-lobby-nostr-actions {
@@ -359,11 +469,55 @@
   color: #ff9b9b;
 }
 
+.online-lobby-code-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55em 0.75em;
+  margin-top: 0.2vw;
+}
+
 .online-lobby-code {
   font-family: 'BureauGrotesque';
   font-size: 2.4cqw;
   letter-spacing: 0.04em;
-  margin-top: 0.2vw;
+  margin: 0;
+}
+
+.online-lobby-emoji-box {
+  flex-shrink: 0;
+  min-width: min(42vw, 220px);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 0;
+  padding: 0.35vw 0.55vw 0.42vw;
+  background: rgb(0 0 0 / 38%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+
+.online-lobby-emoji-box-title {
+  margin: 0 0 0.12em;
+  color: #9a9a9a;
+  font-size: 0.58cqw;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.online-lobby-code-emojis {
+  font-family: 'BureauGrotesque';
+  letter-spacing: 0.07em;
+  font-size: 1.65cqw;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.online-lobby-code-emojis--pending {
+  color: #9a9a9a;
+  letter-spacing: 0.04em;
+  font-size: 0.95cqw;
+}
+
+.online-lobby-code-confirm {
+  margin: 0.35vw 0 0;
 }
 
 .online-lobby-phase {
@@ -418,21 +572,6 @@
   background: rgb(0 0 0 / 35%);
 }
 
-.online-lobby-emojis-card {
-  margin-top: 0.75vw;
-  border: 1px dashed #787878;
-  border-radius: 0;
-  padding: 0.75vw;
-  background: rgb(0 0 0 / 35%);
-}
-
-.online-lobby-emojis {
-  font-family: 'BureauGrotesque';
-  letter-spacing: 0.07em;
-  font-size: 1.9cqw;
-  margin-top: 0.2vw;
-}
-
 .online-lobby-pin {
   font-family: 'BureauGrotesque';
   letter-spacing: 0.08em;
@@ -473,7 +612,7 @@
 .online-lobby-kind1-views {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.35vw;
 }
 
@@ -487,6 +626,51 @@
 .online-lobby-kind1-view-active {
   border-color: #fff;
   box-shadow: 0 0 10px rgb(255 255 255 / 24%);
+}
+
+.online-lobby-kind1-post-status {
+  text-align: center;
+  color: #b8b8b8;
+}
+
+.online-lobby-kind1-post-error {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.online-lobby-kind1-embedded {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  background: rgb(0 0 0 / 0.35);
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.online-lobby-kind1-embedded-meta {
+  margin: 0 0 0.55rem;
+  font-size: 0.62cqw;
+  letter-spacing: 0.04em;
+  color: #9a9a9a;
+}
+
+.online-lobby-kind1-embedded-pubkey {
+  color: #b8d4f0;
+  cursor: default;
+}
+
+.online-lobby-kind1-embedded-body {
+  margin: 0;
+  font-size: 0.78cqw;
+  line-height: 1.5;
+  color: #eaeaea;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .online-lobby-qr {
@@ -718,6 +902,24 @@
     font-size: 28px;
   }
 
+  .online-lobby-code-emojis {
+    font-size: 22px;
+  }
+
+  .online-lobby-code-emojis--pending {
+    font-size: 13px;
+  }
+
+  .online-lobby-emoji-box {
+    min-width: min(52vw, 100%);
+    padding: 6px 8px 8px;
+  }
+
+  .online-lobby-emoji-box-title {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+
   .online-lobby-my-role {
     width: 92vw;
     padding: 8px 10px;
@@ -726,10 +928,6 @@
 
   .online-lobby-pin {
     font-size: 30px;
-  }
-
-  .online-lobby-emojis {
-    font-size: 24px;
   }
 
   .online-lobby-seat-name {
@@ -747,13 +945,21 @@
   }
 
   .online-lobby-kind1-views {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
   }
 
   .online-lobby-kind1-views .online-lobby-action {
     height: 36px;
     font-size: 11px;
+  }
+
+  .online-lobby-kind1-embedded-meta {
+    font-size: 11px;
+  }
+
+  .online-lobby-kind1-embedded-body {
+    font-size: 13px;
   }
 
   .online-lobby-you-tag {

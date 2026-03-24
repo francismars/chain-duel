@@ -9,6 +9,10 @@ import {
   OnlinePinInvalidSchema,
   ResOnlineNostrLinkChallengeSchema,
   ResOnlineNostrLinkOkSchema,
+  ResOnlineKind1PostSchema,
+  ResOnlineSeatLightningSchema,
+  ResOnlineSeatLightningErrorSchema,
+  ResOnlineSeatLightningCancelledSchema,
   OnlineRoomSnapshotEventSchema,
   OnlineRoomStateSchema,
   OnlineSeatAssignedSchema,
@@ -132,6 +136,18 @@ export const SocketValidators = {
 
   resOnlineNostrLinkOk: (data: unknown) =>
     validateSocketEvent(ResOnlineNostrLinkOkSchema, data, 'resOnlineNostrLinkOk'),
+
+  resOnlineKind1Post: (data: unknown) =>
+    validateSocketEvent(ResOnlineKind1PostSchema, data, 'resOnlineKind1Post'),
+
+  resOnlineSeatLightning: (data: unknown) =>
+    validateSocketEvent(ResOnlineSeatLightningSchema, data, 'resOnlineSeatLightning'),
+
+  resOnlineSeatLightningError: (data: unknown) =>
+    validateSocketEvent(ResOnlineSeatLightningErrorSchema, data, 'resOnlineSeatLightningError'),
+
+  resOnlineSeatLightningCancelled: (data: unknown) =>
+    validateSocketEvent(ResOnlineSeatLightningCancelledSchema, data, 'resOnlineSeatLightningCancelled'),
 
   resOnlinePostGameInfo: (data: unknown) =>
     validateSocketEvent(ResOnlinePostGameInfoSchema, data, 'resOnlinePostGameInfo'),
