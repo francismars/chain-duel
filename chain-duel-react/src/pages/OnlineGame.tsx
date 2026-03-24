@@ -156,7 +156,12 @@ export default function OnlineGame() {
     };
     const requestRoomSync = () => {
       socket.emit('spectateOnlineRoom', { roomId });
-      socket.emit('getOnlineRoomState', { roomId });
+      socket.emit(
+        'getOnlineRoomState',
+        replayMode && replayMatchRound != null
+          ? { roomId, matchRound: replayMatchRound }
+          : { roomId }
+      );
       if (replayMode) {
         socket.emit(
           'getOnlineReplay',
