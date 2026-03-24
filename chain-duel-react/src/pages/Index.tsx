@@ -10,39 +10,8 @@ import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
 import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
 
-/** Vertical menu focus — 5 rows: REGTEST, TESTNET, MAINNET, LEDGER, ABOUT+CONFIG */
+/** Vertical menu focus — 5 rows: LOCAL, P2P, NETWORK, LEDGER, ABOUT+CONFIG */
 type MenuState = 1 | 2 | 3 | 4 | 5;
-
-/** Hint row for hover (About and Config share row 5 but have different copy). */
-type MenuHintKey = MenuState | 'config';
-
-const INDEX_MENU_HINTS: Record<MenuState, { title: string; body: string }> = {
-  1: {
-    title: 'REGTEST — Free local practice',
-    body: 'Try formats and AI locally — no wallet or payment.',
-  },
-  2: {
-    title: 'TESTNET — Paid entry',
-    body: 'Fund your session first, then tournament or bracket play.',
-  },
-  3: {
-    title: 'MAINNET — Online rooms',
-    body: 'Browse rooms, stakes, and live opponents on the server.',
-  },
-  4: {
-    title: 'Ledger',
-    body: 'Recorded matches and top prizes — the public ledger.',
-  },
-  5: {
-    title: 'About',
-    body: 'Credits, support links, and what Chain Duel is.',
-  },
-};
-
-const INDEX_MENU_HINT_CONFIG: { title: string; body: string } = {
-  title: 'Config',
-  body: 'Bitcoin Core / RPC and app settings — host split, backend, and developer options.',
-};
 
 function menuStepDown(prev: MenuState): MenuState {
   if (prev === 1) return 2;
@@ -64,11 +33,9 @@ export default function Index() {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
   const [menu, setMenu] = useState<MenuState>(2);
-  /** While set, overrides keyboard `menu` for the side hint (mouse hover). */
-  const [hoverHint, setHoverHint] = useState<MenuHintKey | null>(null);
   const [hostName, setHostName] = useState<string>('@chainduel');
-  const startTestnetRef = useRef<HTMLButtonElement>(null);
-  const startGameRef = useRef<HTMLButtonElement>(null);
+  const startLocalRef = useRef<HTMLButtonElement>(null);
+  const startP2pRef = useRef<HTMLButtonElement>(null);
   const startOnlineRef = useRef<HTMLButtonElement>(null);
   const highscoresRef = useRef<HTMLButtonElement>(null);
   const aboutRef = useRef<HTMLButtonElement>(null);
@@ -133,11 +100,11 @@ export default function Index() {
   // Pulse glow on the focused menu row (legacy look)
   useEffect(() => {
     const updateAnimations = () => {
-      if (startTestnetRef.current) {
-        startTestnetRef.current.style.animationDuration = menu === 1 ? '2s' : '0s';
+      if (startLocalRef.current) {
+        startLocalRef.current.style.animationDuration = menu === 1 ? '2s' : '0s';
       }
-      if (startGameRef.current) {
-        startGameRef.current.style.animationDuration = menu === 2 ? '2s' : '0s';
+      if (startP2pRef.current) {
+        startP2pRef.current.style.animationDuration = menu === 2 ? '2s' : '0s';
       }
       if (startOnlineRef.current) {
         startOnlineRef.current.style.animationDuration = menu === 3 ? '2s' : '0s';
@@ -152,12 +119,6 @@ export default function Index() {
 
     updateAnimations();
   }, [menu]);
-
-  const displayHintKey: MenuHintKey = hoverHint ?? menu;
-  const indexMenuHint =
-    displayHintKey === 'config'
-      ? INDEX_MENU_HINT_CONFIG
-      : INDEX_MENU_HINTS[displayHintKey];
 
   /** Swallow one ghost Enter/Space on the next page when navigation was triggered by keyboard. */
   const keyboardNavState = useMemo(
@@ -182,9 +143,9 @@ export default function Index() {
         playSfx(SFX.MENU_CONFIRM);
         const row = menuRef.current;
         if (row === 1) {
-          navigate('/regtest', { state: keyboardNavState });
+          navigate('/local', { state: keyboardNavState });
         } else if (row === 2) {
-          navigate('/testnet-entry', { state: keyboardNavState });
+          navigate('/p2p', { state: keyboardNavState });
         } else if (row === 3) {
           navigate('/online', { state: keyboardNavState });
         } else if (row === 4) {
@@ -241,124 +202,103 @@ export default function Index() {
       </div>
 
       <div className="index-page__main">
-      <div
-        ref={menuButtonsRootRef}
-        className="menu-buttons menu-buttons--stagger"
-        onMouseLeave={() => setHoverHint(null)}
-      >
-        <div className="menu-buttons__row" data-menu-row={1}>
-          <div className="menu-buttons__row-inner">
-            <Button
-              ref={startTestnetRef}
-              id="startregtest"
-              onMouseEnter={() => setHoverHint(1)}
-              onClick={() => {
-                playSfx(SFX.MENU_CONFIRM);
-                navigate('/regtest');
-              }}
-            >
-              REGTEST
-            </Button>
-          </div>
-        </div>
-
-        <div className="menu-buttons__row" data-menu-row={2}>
-          <div className="menu-buttons__row-inner">
-            <Button
-              ref={startGameRef}
-              id="starttestnet"
-              onMouseEnter={() => setHoverHint(2)}
-              onClick={() => {
-                playSfx(SFX.MENU_CONFIRM);
-                navigate('/testnet-entry');
-              }}
-            >
-              TESTNET
-            </Button>
-          </div>
-        </div>
-
-        <div className="menu-buttons__row" data-menu-row={3}>
-          <div className="menu-buttons__row-inner">
-            <Button
-              ref={startOnlineRef}
-              id="startmainnet"
-              onMouseEnter={() => setHoverHint(3)}
-              onClick={() => {
-                playSfx(SFX.MENU_CONFIRM);
-                navigate('/online');
-              }}
-            >
-              MAINNET
-            </Button>
-          </div>
-        </div>
-
-        <div className="menu-buttons__row" data-menu-row={4}>
-          <div className="menu-buttons__row-inner">
-            <Button
-              ref={highscoresRef}
-              id="highscoresbutton"
-              onMouseEnter={() => setHoverHint(4)}
-              onClick={() => {
-                playSfx(SFX.MENU_CONFIRM);
-                navigate('/highscores');
-              }}
-            >
-              LEDGER
-            </Button>
-          </div>
-        </div>
-
-        <div className="menu-buttons__row" data-menu-row={5}>
-          <div className="double-button menu-buttons__double-row">
-            <div
-              className="menu-buttons__row-inner menu-buttons__double-cell"
-              data-menu-kbd-focus
-            >
+        <div
+          ref={menuButtonsRootRef}
+          className="menu-buttons menu-buttons--stagger"
+        >
+          <div className="menu-buttons__row" data-menu-row={1}>
+            <div className="menu-buttons__row-inner">
               <Button
-                ref={aboutRef}
-                id="aboutbutton"
-                onMouseEnter={() => setHoverHint(5)}
+                ref={startLocalRef}
+                id="startlocal"
                 onClick={() => {
                   playSfx(SFX.MENU_CONFIRM);
-                  navigate('/about');
+                  navigate('/local');
                 }}
               >
-                ABOUT
-              </Button>
-            </div>
-            <div className="menu-buttons__row-inner menu-buttons__double-cell">
-              <Button
-                className="disabled"
-                onMouseEnter={() => setHoverHint('config')}
-                onClick={() => {
-                  playSfx(SFX.MENU_CONFIRM);
-                  navigate('/config');
-                }}
-                id="configbuttonhome"
-              >
-                <span id="backendStatusHome" className="backend-status on">•</span>
-                CONFIG
+                LOCAL
               </Button>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div
-        className="index-menu-hint"
-        data-menu-hint-row={
-          displayHintKey === 'config' ? 'config' : displayHintKey
-        }
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        <div key={displayHintKey} className="index-menu-hint__inner">
-          <p className="index-menu-hint__title">{indexMenuHint.title}</p>
-          <p className="index-menu-hint__body">{indexMenuHint.body}</p>
+          <div className="menu-buttons__row" data-menu-row={2}>
+            <div className="menu-buttons__row-inner">
+              <Button
+                ref={startP2pRef}
+                id="startp2p"
+                onClick={() => {
+                  playSfx(SFX.MENU_CONFIRM);
+                  navigate('/p2p');
+                }}
+              >
+                P2P
+              </Button>
+            </div>
+          </div>
+
+          <div className="menu-buttons__row" data-menu-row={3}>
+            <div className="menu-buttons__row-inner">
+              <Button
+                ref={startOnlineRef}
+                id="startmainnet"
+                onClick={() => {
+                  playSfx(SFX.MENU_CONFIRM);
+                  navigate('/online');
+                }}
+              >
+                NETWORK
+              </Button>
+            </div>
+          </div>
+
+          <div className="menu-buttons__row" data-menu-row={4}>
+            <div className="menu-buttons__row-inner">
+              <Button
+                ref={highscoresRef}
+                id="highscoresbutton"
+                onClick={() => {
+                  playSfx(SFX.MENU_CONFIRM);
+                  navigate('/highscores');
+                }}
+              >
+                LEDGER
+              </Button>
+            </div>
+          </div>
+
+          <div className="menu-buttons__row" data-menu-row={5}>
+            <div className="double-button menu-buttons__double-row">
+              <div
+                className="menu-buttons__row-inner menu-buttons__double-cell"
+                data-menu-kbd-focus
+              >
+                <Button
+                  ref={aboutRef}
+                  id="aboutbutton"
+                  onClick={() => {
+                    playSfx(SFX.MENU_CONFIRM);
+                    navigate('/about');
+                  }}
+                >
+                  ABOUT
+                </Button>
+              </div>
+              <div className="menu-buttons__row-inner menu-buttons__double-cell">
+                <Button
+                  className="disabled"
+                  onClick={() => {
+                    playSfx(SFX.MENU_CONFIRM);
+                    navigate('/config');
+                  }}
+                  id="configbuttonhome"
+                >
+                  <span id="backendStatusHome" className="backend-status on">•</span>
+                  CONFIG
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
       </div>
 
       <div id="bottomInfo">

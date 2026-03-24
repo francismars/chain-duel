@@ -1,6 +1,6 @@
-/* Testnet practice — Chain Duel brand: white / black / sovereign gold / link cyan */
+﻿/* Practice hub — Chain Duel brand: white / black / sovereign gold / link cyan */
 
-.testnet-hub {
+.practice-hub {
   --cd-white-08: rgba(255, 255, 255, 0.08);
   --cd-white-10: rgba(255, 255, 255, 0.1);
   --cd-white-12: rgba(255, 255, 255, 0.12);
@@ -22,17 +22,17 @@
   gap: 1.5vw;
 }
 
-.testnet-hub--practice {
+.practice-hub--practice {
   max-width: 720px;
   margin: 0 auto;
 }
 
-.testnet-hub-header {
+.practice-hub-header {
   text-align: center;
   animation: card-enter 0.35s cubic-bezier(0.22, 0.68, 0, 1.2) both;
 }
 
-.testnet-hub-title {
+.practice-hub-title {
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(26px, 3.8vw, 48px);
   font-weight: 700;
@@ -41,7 +41,7 @@
   margin: 0;
 }
 
-.testnet-hub-subtitle {
+.practice-hub-subtitle {
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(9px, 0.85vw, 11px);
   letter-spacing: 0.28em;
@@ -50,7 +50,7 @@
   text-transform: uppercase;
 }
 
-.testnet-hub-lede {
+.practice-hub-lede {
   font-size: clamp(11px, 1vw, 13px);
   line-height: 1.55;
   color: rgba(255, 255, 255, 0.42);
@@ -70,7 +70,7 @@
 }
 
 /* Panel — same language as Sovereign / format bar */
-.testnet-panel {
+.practice-panel {
   width: 100%;
   border: 1px solid var(--cd-white-10);
   background: rgba(0, 0, 0, 0.42);
@@ -84,13 +84,13 @@
     0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
-.testnet-section {
+.practice-section {
   display: flex;
   flex-direction: column;
   gap: 0.65em;
 }
 
-.testnet-section-title {
+.practice-section-title {
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(11px, 0.95vw, 13px);
   font-weight: 700;
@@ -100,7 +100,7 @@
   text-transform: uppercase;
 }
 
-.testnet-section-hint {
+.practice-section-hint {
   font-size: clamp(10px, 0.85vw, 12px);
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.35);
@@ -108,23 +108,23 @@
 }
 
 /* Segmented control — align with .sov-format-btn */
-.testnet-seg {
+.practice-seg {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
-.testnet-seg--two {
+.practice-seg--two {
   grid-template-columns: 1fr 1fr;
 }
 
-.testnet-four-slot {
+.practice-four-slot {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
-.testnet-slot-btn {
+.practice-slot-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -141,22 +141,22 @@
   font: inherit;
 }
 
-.testnet-slot-btn:hover {
+.practice-slot-btn:hover {
   border-color: var(--cd-white-25);
   background: rgba(255, 255, 255, 0.04);
 }
 
-.testnet-slot-btn.human {
+.practice-slot-btn.human {
   border-color: rgba(0, 183, 255, 0.4);
   box-shadow: 0 0 0 1px rgba(0, 183, 255, 0.08);
 }
 
-.testnet-slot-btn.ai {
+.practice-slot-btn.ai {
   border-color: var(--cd-gold-50);
   box-shadow: 0 0 0 1px rgba(230, 195, 40, 0.06);
 }
 
-.testnet-slot-id {
+.practice-slot-id {
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(12px, 1.1vw, 15px);
   font-weight: 700;
@@ -164,14 +164,14 @@
   color: rgba(255, 255, 255, 0.88);
 }
 
-.testnet-slot-role {
+.practice-slot-role {
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(8px, 0.7vw, 10px);
   letter-spacing: 0.22em;
   color: rgba(255, 255, 255, 0.45);
 }
 
-.testnet-seg-btn {
+.practice-seg-btn {
   text-align: left;
   padding: 10px 12px;
   border: 1px solid var(--cd-white-10);
@@ -183,18 +183,18 @@
   font: inherit;
 }
 
-.testnet-seg-btn:hover {
+.practice-seg-btn:hover {
   border-color: var(--cd-white-25);
   background: rgba(255, 255, 255, 0.05);
 }
 
-.testnet-seg-btn.active {
+.practice-seg-btn.active {
   border-color: var(--cd-white-40);
   background: rgba(255, 255, 255, 0.07);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-.testnet-seg-label {
+.practice-seg-label {
   display: block;
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(11px, 1vw, 14px);
@@ -204,7 +204,7 @@
   text-transform: uppercase;
 }
 
-.testnet-seg-desc {
+.practice-seg-desc {
   display: block;
   margin-top: 3px;
   font-size: clamp(9px, 0.75vw, 11px);
@@ -212,14 +212,14 @@
   letter-spacing: 0.04em;
 }
 
-.testnet-field {
+.practice-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
   margin-top: 4px;
 }
 
-.testnet-field-label {
+.practice-field-label {
   display: block;
   font-size: clamp(9px, 0.72vw, 10px);
   letter-spacing: 0.18em;
@@ -379,7 +379,7 @@
   }
 }
 
-.testnet-toggle {
+.practice-toggle {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -389,14 +389,14 @@
   color: rgba(255, 255, 255, 0.65);
 }
 
-.testnet-toggle input {
+.practice-toggle input {
   position: absolute;
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.testnet-toggle-ui {
+.practice-toggle-ui {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
@@ -408,12 +408,12 @@
   transition: border-color 0.12s, background 0.12s;
 }
 
-.testnet-toggle input:checked + .testnet-toggle-ui {
+.practice-toggle input:checked + .practice-toggle-ui {
   border-color: var(--cd-gold-65);
   background: rgba(230, 195, 40, 0.12);
 }
 
-.testnet-toggle input:checked + .testnet-toggle-ui::after {
+.practice-toggle input:checked + .practice-toggle-ui::after {
   content: '';
   position: absolute;
   left: 5px;
@@ -425,17 +425,17 @@
   transform: rotate(45deg);
 }
 
-.testnet-toggle strong {
+.practice-toggle strong {
   color: rgba(255, 255, 255, 0.95);
   font-weight: 700;
 }
 
-.testnet-conv-note {
+.practice-conv-note {
   color: rgba(255, 255, 255, 0.38);
   font-weight: 400;
 }
 
-.testnet-summary {
+.practice-summary {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -445,27 +445,27 @@
   background: rgba(0, 0, 0, 0.25);
 }
 
-.testnet-summary-label {
+.practice-summary-label {
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.35);
 }
 
-.testnet-summary-code {
+.practice-summary-code {
   font-family: ui-monospace, 'Cascadia Code', monospace;
   font-size: 11px;
   color: var(--cd-cyan-dim);
   word-break: break-all;
 }
 
-.testnet-actions {
+.practice-actions {
   display: flex;
   justify-content: stretch;
 }
 
 /* Primary CTA — sovereign gold outline, matches tier CTAs */
-.testnet-start {
+.practice-start {
   flex: 1;
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(13px, 1.2vw, 16px);
@@ -485,17 +485,17 @@
     transform 0.1s;
 }
 
-.testnet-start:hover {
+.practice-start:hover {
   background: rgba(230, 195, 40, 0.08);
   border-color: var(--cd-gold-65);
   box-shadow: 0 0 40px rgba(230, 195, 40, 0.22);
 }
 
-.testnet-start:active {
+.practice-start:active {
   transform: scale(0.99);
 }
 
-.testnet-hub-footer {
+.practice-hub-footer {
   display: flex;
   align-items: center;
   gap: 1.5em;
@@ -503,7 +503,7 @@
   padding-top: 0.5em;
 }
 
-.testnet-back-btn {
+.practice-back-btn {
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(11px, 1vw, 14px);
   font-weight: 700;
@@ -517,12 +517,12 @@
   text-transform: uppercase;
 }
 
-.testnet-back-btn:hover {
+.practice-back-btn:hover {
   color: rgba(255, 255, 255, 0.75);
   border-color: var(--cd-white-34);
 }
 
-.testnet-hub-hint {
+.practice-hub-hint {
   font-size: clamp(9px, 0.7vw, 10px);
   letter-spacing: 0.18em;
   color: rgba(255, 255, 255, 0.18);
@@ -530,11 +530,12 @@
 }
 
 @media (max-width: 640px) {
-  .testnet-seg:not(.testnet-seg--two) {
+  .practice-seg:not(.practice-seg--two) {
     grid-template-columns: 1fr;
   }
 
-  .testnet-hub {
+  .practice-hub {
     padding: 5vw 4vw;
   }
 }
+

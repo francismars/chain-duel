@@ -11,27 +11,27 @@ import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNa
 import {
   modalHintsFor,
   type ModalPitch,
-} from '@/shared/paidEntry/testnetModeHints';
+} from '@/shared/paidEntry/p2pEntryHints';
 import {
   advanceFlatNav,
   isBracketNavFocus,
   moveNavFocus,
   normalizeNavFocusForSession,
-  type TestnetNavFocus,
-} from '@/pages/testnetEntryNav';
+  type P2pNavFocus,
+} from '@/pages/p2pEntryNav';
 import '@/components/ui/Button.css';
-import './testnetHub.css';
-import '@/styles/pages/testnet-entry.css';
+import './practiceHub.css';
+import '@/styles/pages/p2p-entry.css';
 
 type SessionKind = 'duel' | 'tournament';
 type PaymentKind = 'lightning' | 'nostr';
 
-export default function TestnetEntry() {
+export default function P2pEntry() {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
   useGamepad(true);
 
-  const [navFocus, setNavFocus] = useState<TestnetNavFocus>({
+  const [navFocus, setNavFocus] = useState<P2pNavFocus>({
     kind: 'payment',
     idx: 0,
   });
@@ -105,7 +105,7 @@ export default function TestnetEntry() {
   }, [tournament]);
 
   const activateNavFocus = useCallback(
-    (f: TestnetNavFocus) => {
+    (f: P2pNavFocus) => {
       switch (f.kind) {
         case 'payment':
           setPayment(f.idx === 0 ? 'lightning' : 'nostr');
@@ -230,40 +230,40 @@ export default function TestnetEntry() {
     sessionKind === 'duel' ? 'Open game menu' : 'Start bracket';
 
   return (
-    <div className="testnet-hub testnet-hub--practice testnet-entry-hub">
-      <header className="testnet-hub-header">
-        <h2 className="testnet-hub-title">TESTNET</h2>
-        <p className="testnet-hub-subtitle">PAID ENTRY</p>
-        <p className="testnet-hub-lede">
+    <div className="practice-hub practice-hub--practice p2p-entry-page">
+      <header className="practice-hub-header">
+        <h2 className="practice-hub-title">P2P</h2>
+        <p className="practice-hub-subtitle">PAID ENTRY</p>
+        <p className="practice-hub-lede">
           Choose how you pay first, then duel or bracket. Tournament field and
-          buy-in use the same controls as Regtest — just with real stakes.
+          buy-in use the same controls as Local — just with real stakes.
         </p>
       </header>
 
-      <div className="testnet-panel" role="main" aria-label="Testnet paid entry">
-        <section className="testnet-section" aria-labelledby="te-pay">
-          <h3 id="te-pay" className="testnet-section-title">
+      <div className="practice-panel" role="main" aria-label="P2P paid entry">
+        <section className="practice-section" aria-labelledby="te-pay">
+          <h3 id="te-pay" className="practice-section-title">
             Payment
           </h3>
-          <p className="testnet-section-hint">
+          <p className="practice-section-hint">
             Lightning invoices or Nostr zaps — pick the rail before session type.
           </p>
-          <div className="testnet-seg testnet-seg--two" role="group" aria-label="Payment method">
+          <div className="practice-seg practice-seg--two" role="group" aria-label="Payment method">
             <button
               ref={(el) => {
                 paymentRefs.current[0] = el;
               }}
               type="button"
               tabIndex={navFocus.kind === 'payment' && navFocus.idx === 0 ? 0 : -1}
-              className={`testnet-seg-btn ${payment === 'lightning' ? 'active' : ''}${navFocus.kind === 'payment' && navFocus.idx === 0 ? ' testnet-focus-target' : ''}`}
+              className={`practice-seg-btn ${payment === 'lightning' ? 'active' : ''}${navFocus.kind === 'payment' && navFocus.idx === 0 ? ' practice-focus-target' : ''}`}
               onClick={() => {
                 setNavFocus({ kind: 'payment', idx: 0 });
                 playSfx(SFX.MENU_SELECT);
                 setPayment('lightning');
               }}
             >
-              <span className="testnet-seg-label">Lightning</span>
-              <span className="testnet-seg-desc">LNURL · QR</span>
+              <span className="practice-seg-label">Lightning</span>
+              <span className="practice-seg-desc">LNURL · QR</span>
             </button>
             <button
               ref={(el) => {
@@ -271,43 +271,43 @@ export default function TestnetEntry() {
               }}
               type="button"
               tabIndex={navFocus.kind === 'payment' && navFocus.idx === 1 ? 0 : -1}
-              className={`testnet-seg-btn ${payment === 'nostr' ? 'active' : ''}${navFocus.kind === 'payment' && navFocus.idx === 1 ? ' testnet-focus-target' : ''}`}
+              className={`practice-seg-btn ${payment === 'nostr' ? 'active' : ''}${navFocus.kind === 'payment' && navFocus.idx === 1 ? ' practice-focus-target' : ''}`}
               onClick={() => {
                 setNavFocus({ kind: 'payment', idx: 1 });
                 playSfx(SFX.MENU_SELECT);
                 setPayment('nostr');
               }}
             >
-              <span className="testnet-seg-label">Nostr</span>
-              <span className="testnet-seg-desc">Zaps · notes</span>
+              <span className="practice-seg-label">Nostr</span>
+              <span className="practice-seg-desc">Zaps · notes</span>
             </button>
           </div>
         </section>
 
-        <section className="testnet-section" aria-labelledby="te-session">
-          <h3 id="te-session" className="testnet-section-title">
+        <section className="practice-section" aria-labelledby="te-session">
+          <h3 id="te-session" className="practice-section-title">
             Session
           </h3>
-          <p className="testnet-section-hint">
+          <p className="practice-section-hint">
             Duel jumps to the paid game menu. Tournament keeps you here for
             field & buy-in, then opens the bracket.
           </p>
-          <div className="testnet-seg testnet-seg--two" role="group" aria-label="Session type">
+          <div className="practice-seg practice-seg--two" role="group" aria-label="Session type">
             <button
               ref={(el) => {
                 sessionRefs.current[0] = el;
               }}
               type="button"
               tabIndex={navFocus.kind === 'session' && navFocus.idx === 0 ? 0 : -1}
-              className={`testnet-seg-btn ${sessionKind === 'duel' ? 'active' : ''}${navFocus.kind === 'session' && navFocus.idx === 0 ? ' testnet-focus-target' : ''}`}
+              className={`practice-seg-btn ${sessionKind === 'duel' ? 'active' : ''}${navFocus.kind === 'session' && navFocus.idx === 0 ? ' practice-focus-target' : ''}`}
               onClick={() => {
                 setNavFocus({ kind: 'session', idx: 0 });
                 playSfx(SFX.MENU_SELECT);
                 setSessionKind('duel');
               }}
             >
-              <span className="testnet-seg-label">Duel</span>
-              <span className="testnet-seg-desc">1v1 game menu</span>
+              <span className="practice-seg-label">Duel</span>
+              <span className="practice-seg-desc">1v1 game menu</span>
             </button>
             <button
               ref={(el) => {
@@ -315,25 +315,25 @@ export default function TestnetEntry() {
               }}
               type="button"
               tabIndex={navFocus.kind === 'session' && navFocus.idx === 1 ? 0 : -1}
-              className={`testnet-seg-btn ${sessionKind === 'tournament' ? 'active' : ''}${navFocus.kind === 'session' && navFocus.idx === 1 ? ' testnet-focus-target' : ''}`}
+              className={`practice-seg-btn ${sessionKind === 'tournament' ? 'active' : ''}${navFocus.kind === 'session' && navFocus.idx === 1 ? ' practice-focus-target' : ''}`}
               onClick={() => {
                 setNavFocus({ kind: 'session', idx: 1 });
                 playSfx(SFX.MENU_SELECT);
                 setSessionKind('tournament');
               }}
             >
-              <span className="testnet-seg-label">Tournament</span>
-              <span className="testnet-seg-desc">Bracket flow</span>
+              <span className="practice-seg-label">Tournament</span>
+              <span className="practice-seg-desc">Bracket flow</span>
             </button>
           </div>
         </section>
 
         {sessionKind === 'tournament' ? (
-          <section className="testnet-section" aria-labelledby="te-bracket">
-            <h3 id="te-bracket" className="testnet-section-title">
+          <section className="practice-section" aria-labelledby="te-bracket">
+            <h3 id="te-bracket" className="practice-section-title">
               Bracket size
             </h3>
-            <p className="testnet-section-hint">
+            <p className="practice-section-hint">
               Field count and buy-in (same as tournament prefs).
             </p>
             <BracketSizingHub
@@ -349,26 +349,26 @@ export default function TestnetEntry() {
           </section>
         ) : null}
 
-        <section className="testnet-section" aria-labelledby="te-detail">
-          <h3 id="te-detail" className="testnet-section-title">
+        <section className="practice-section" aria-labelledby="te-detail">
+          <h3 id="te-detail" className="practice-section-title">
             Selected rail
           </h3>
-          <p className="testnet-section-hint testnet-entry-detail-hint">
+          <p className="practice-section-hint p2p-entry-detail-hint">
             {detailHint}
           </p>
         </section>
 
-        <div className="testnet-summary" aria-live="polite">
-          <span className="testnet-summary-label">Setup</span>
-          <code className="testnet-summary-code">{summaryLine}</code>
+        <div className="practice-summary" aria-live="polite">
+          <span className="practice-summary-label">Setup</span>
+          <code className="practice-summary-code">{summaryLine}</code>
         </div>
 
-        <div className="testnet-actions">
+        <div className="practice-actions">
           <button
             ref={startRef}
             type="button"
             tabIndex={navFocus.kind === 'start' ? 0 : -1}
-            className={`testnet-start${navFocus.kind === 'start' ? ' testnet-focus-target' : ''}`}
+            className={`practice-start${navFocus.kind === 'start' ? ' practice-focus-target' : ''}`}
             onClick={() => {
               setNavFocus({ kind: 'start' });
               start();
@@ -379,12 +379,12 @@ export default function TestnetEntry() {
         </div>
       </div>
 
-      <div className="testnet-hub-footer">
+      <div className="practice-hub-footer">
         <button
           ref={backRef}
           type="button"
           tabIndex={navFocus.kind === 'back' ? 0 : -1}
-          className={`testnet-back-btn${navFocus.kind === 'back' ? ' testnet-focus-target' : ''}`}
+          className={`practice-back-btn${navFocus.kind === 'back' ? ' practice-focus-target' : ''}`}
           onClick={() => {
             setNavFocus({ kind: 'back' });
             playSfx(SFX.MENU_SELECT);
@@ -393,7 +393,7 @@ export default function TestnetEntry() {
         >
           ← MAIN MENU
         </button>
-        <span className="testnet-hub-hint">
+        <span className="practice-hub-hint">
           Arrows / WASD · Enter · Tab · ESC back
         </span>
       </div>

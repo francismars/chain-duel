@@ -13,16 +13,16 @@ import { useAudio, SFX } from '@/contexts/AudioContext';
 import { useGamepad } from '@/hooks/useGamepad';
 import type { AiTier, TeamMode } from '@/game/engine/types';
 import '@/components/ui/Button.css';
-import './testnetHub.css';
-import '@/styles/pages/testnet-regtest.css';
+import './practiceHub.css';
+import '@/styles/pages/local-hub.css';
 import {
-  advanceRegtestFlatNav,
-  moveRegtestNav,
-  normalizeRegtestNavFocus,
-  type RegtestNavFocus,
-} from '@/pages/testnetHubNav';
+  advanceLocalHubFlatNav,
+  moveLocalHubNav,
+  normalizeLocalNavFocus,
+  type LocalNavFocus,
+} from '@/pages/localHubNav';
 
-// ── Convergence: fixed Soldier preset (regtest / engine) ──────────────────
+// ── Convergence: fixed Soldier preset (local hub / engine) ──────────────────
 
 const CONVERGENCE_SOLDIER = {
   shrinkIntervalTicks: 150,
@@ -165,7 +165,7 @@ function BotTierPicker({
             role="option"
             aria-selected={i === idx}
             tabIndex={focusTierIndex === i ? 0 : -1}
-            className={`tn-tier-pick ${i === idx ? 'active' : ''}${focusTierIndex === i ? ' testnet-focus-target' : ''}`}
+            className={`tn-tier-pick ${i === idx ? 'active' : ''}${focusTierIndex === i ? ' practice-focus-target' : ''}`}
             style={{ '--accent': p.accentColor } as CSSProperties}
             onClick={() => {
               onTierNavFocus?.(i);
@@ -191,7 +191,7 @@ function buildHudLabel(
   convergence: boolean,
   powerup: boolean
 ): string {
-  const parts: string[] = ['REGTEST'];
+  const parts: string[] = ['LOCAL'];
   if (format === 'teams') parts.push('2v2');
   else if (format === 'ffa') parts.push('FFA');
   else parts.push('1v1');
@@ -201,7 +201,7 @@ function buildHudLabel(
   return parts.join(' · ');
 }
 
-export default function TestnetHub() {
+export default function LocalHub() {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
   useGamepad(true);
@@ -214,7 +214,7 @@ export default function TestnetHub() {
   const [convergence, setConvergence] = useState(false);
   const [powerup, setPowerup] = useState(false);
 
-  const [navFocus, setNavFocus] = useState<RegtestNavFocus>({
+  const [navFocus, setNavFocus] = useState<LocalNavFocus>({
     kind: 'format',
     idx: 0,
   });
@@ -272,8 +272,8 @@ export default function TestnetHub() {
     }
 
     const config: Record<string, unknown> = {
-      mode: 'TESTNET',
-      testnetHudLabel: summaryLine,
+      mode: 'LOCAL',
+      localHudLabel: summaryLine,
       teamMode: format as TeamMode,
       practiceMode,
       p1Human,
@@ -312,8 +312,8 @@ export default function TestnetHub() {
     summaryLine,
   ]);
 
-  const activateRegtestNavFocus = useCallback(
-    (f: RegtestNavFocus) => {
+  const activateLocalNavFocus = useCallback(
+    (f: LocalNavFocus) => {
       switch (f.kind) {
         case 'format':
           setFormat((['solo', 'teams', 'ffa'] as const)[f.idx]);
@@ -354,7 +354,7 @@ export default function TestnetHub() {
 
   useEffect(() => {
     setNavFocus((f) =>
-      normalizeRegtestNavFocus(
+      normalizeLocalNavFocus(
         f,
         showTeamControl,
         show1v1Opponent,
@@ -398,7 +398,7 @@ export default function TestnetHub() {
       if (isTab) {
         e.preventDefault();
         setNavFocus((prev) =>
-          advanceRegtestFlatNav(
+          advanceLocalHubFlatNav(
             prev,
             1,
             showTeamControl,
@@ -412,7 +412,7 @@ export default function TestnetHub() {
       if (isTabBack) {
         e.preventDefault();
         setNavFocus((prev) =>
-          advanceRegtestFlatNav(
+          advanceLocalHubFlatNav(
             prev,
             -1,
             showTeamControl,
@@ -426,13 +426,13 @@ export default function TestnetHub() {
 
       if (isActivate) {
         e.preventDefault();
-        activateRegtestNavFocus(navFocus);
+        activateLocalNavFocus(navFocus);
         return;
       }
 
       e.preventDefault();
       setNavFocus((prev) =>
-        moveRegtestNav(
+        moveLocalHubNav(
           prev,
           isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right',
           showTeamControl,
@@ -445,7 +445,7 @@ export default function TestnetHub() {
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [
-    activateRegtestNavFocus,
+    activateLocalNavFocus,
     allFourHuman,
     navigate,
     navFocus,
@@ -478,44 +478,44 @@ export default function TestnetHub() {
   const tierFocusIdx = navFocus.kind === 'tier' ? navFocus.idx : null;
 
   return (
-    <div className="testnet-hub testnet-hub--practice testnet-regtest-hub">
-      <header className="testnet-hub-header">
-        <h2 className="testnet-hub-title">REGTEST</h2>
-        <p className="testnet-hub-subtitle">
+    <div className="practice-hub practice-hub--practice local-hub-page">
+      <header className="practice-hub-header">
+        <h2 className="practice-hub-title">LOCAL</h2>
+        <p className="practice-hub-subtitle">
           LOCAL · FREE
         </p>
-        <p className="testnet-hub-lede">
+        <p className="practice-hub-lede">
           Grind 1v1, stack four humans, or let the bots hunt you. Shrink the
           arena, flip on power-ups, or keep it raw classic — tune the chaos
           below.
         </p>
       </header>
 
-      <div className="testnet-panel" role="main" aria-label="Regtest practice setup">
-        <section className="testnet-section" aria-labelledby="tn-format">
-          <h3 id="tn-format" className="testnet-section-title">
+      <div className="practice-panel" role="main" aria-label="Local practice setup">
+        <section className="practice-section" aria-labelledby="tn-format">
+          <h3 id="tn-format" className="practice-section-title">
             Match format
           </h3>
-          <p className="testnet-section-hint">
+          <p className="practice-section-hint">
             1v1 is the default duel. In 2v2 / FFA you get four human/AI toggles
             (all human is supported) plus bot tier for any AI slots.
           </p>
-          <div className="testnet-seg" role="group" aria-label="Match format">
+          <div className="practice-seg" role="group" aria-label="Match format">
             <button
               ref={(el) => {
                 formatRefs.current[0] = el;
               }}
               type="button"
               tabIndex={navFocus.kind === 'format' && navFocus.idx === 0 ? 0 : -1}
-              className={`testnet-seg-btn ${format === 'solo' ? 'active' : ''}${navFocus.kind === 'format' && navFocus.idx === 0 ? ' testnet-focus-target' : ''}`}
+              className={`practice-seg-btn ${format === 'solo' ? 'active' : ''}${navFocus.kind === 'format' && navFocus.idx === 0 ? ' practice-focus-target' : ''}`}
               onClick={() => {
                 setNavFocus({ kind: 'format', idx: 0 });
                 playSfx(SFX.MENU_SELECT);
                 setFormat('solo');
               }}
             >
-              <span className="testnet-seg-label">1v1 duel</span>
-              <span className="testnet-seg-desc">White vs black</span>
+              <span className="practice-seg-label">1v1 duel</span>
+              <span className="practice-seg-desc">White vs black</span>
             </button>
             <button
               ref={(el) => {
@@ -523,15 +523,15 @@ export default function TestnetHub() {
               }}
               type="button"
               tabIndex={navFocus.kind === 'format' && navFocus.idx === 1 ? 0 : -1}
-              className={`testnet-seg-btn ${format === 'teams' ? 'active' : ''}${navFocus.kind === 'format' && navFocus.idx === 1 ? ' testnet-focus-target' : ''}`}
+              className={`practice-seg-btn ${format === 'teams' ? 'active' : ''}${navFocus.kind === 'format' && navFocus.idx === 1 ? ' practice-focus-target' : ''}`}
               onClick={() => {
                 setNavFocus({ kind: 'format', idx: 1 });
                 playSfx(SFX.MENU_SELECT);
                 setFormat('teams');
               }}
             >
-              <span className="testnet-seg-label">2v2 teams</span>
-              <span className="testnet-seg-desc">Allies + shadows</span>
+              <span className="practice-seg-label">2v2 teams</span>
+              <span className="practice-seg-desc">Allies + shadows</span>
             </button>
             <button
               ref={(el) => {
@@ -539,25 +539,25 @@ export default function TestnetHub() {
               }}
               type="button"
               tabIndex={navFocus.kind === 'format' && navFocus.idx === 2 ? 0 : -1}
-              className={`testnet-seg-btn ${format === 'ffa' ? 'active' : ''}${navFocus.kind === 'format' && navFocus.idx === 2 ? ' testnet-focus-target' : ''}`}
+              className={`practice-seg-btn ${format === 'ffa' ? 'active' : ''}${navFocus.kind === 'format' && navFocus.idx === 2 ? ' practice-focus-target' : ''}`}
               onClick={() => {
                 setNavFocus({ kind: 'format', idx: 2 });
                 playSfx(SFX.MENU_SELECT);
                 setFormat('ffa');
               }}
             >
-              <span className="testnet-seg-label">4-way FFA</span>
-              <span className="testnet-seg-desc">Four chains</span>
+              <span className="practice-seg-label">4-way FFA</span>
+              <span className="practice-seg-desc">Four chains</span>
             </button>
           </div>
         </section>
 
         {showTeamControl ? (
-          <section className="testnet-section" aria-labelledby="tn-four">
-            <h3 id="tn-four" className="testnet-section-title">
+          <section className="practice-section" aria-labelledby="tn-four">
+            <h3 id="tn-four" className="practice-section-title">
               Four chains — human or AI
             </h3>
-            <p className="testnet-section-hint">
+            <p className="practice-section-hint">
               Tap a slot to flip Human ↔ AI. Four locals: WASD · arrows · IJKL ·
               TFGH.
               {!allFourHuman && (
@@ -568,7 +568,7 @@ export default function TestnetHub() {
                 </>
               )}
             </p>
-            <div className="testnet-four-slot" role="group" aria-label="P1 through P4">
+            <div className="practice-four-slot" role="group" aria-label="P1 through P4">
               {(['P1', 'P2', 'P3', 'P4'] as const).map((label, idx) => (
                 <button
                   key={label}
@@ -579,14 +579,14 @@ export default function TestnetHub() {
                   tabIndex={
                     navFocus.kind === 'slot' && navFocus.idx === idx ? 0 : -1
                   }
-                  className={`testnet-slot-btn ${slotHuman[idx] ? 'human' : 'ai'}${navFocus.kind === 'slot' && navFocus.idx === idx ? ' testnet-focus-target' : ''}`}
+                  className={`practice-slot-btn ${slotHuman[idx] ? 'human' : 'ai'}${navFocus.kind === 'slot' && navFocus.idx === idx ? ' practice-focus-target' : ''}`}
                   onClick={() => {
                     setNavFocus({ kind: 'slot', idx: idx as 0 | 1 | 2 | 3 });
                     toggleSlot(idx);
                   }}
                 >
-                  <span className="testnet-slot-id">{label}</span>
-                  <span className="testnet-slot-role">
+                  <span className="practice-slot-id">{label}</span>
+                  <span className="practice-slot-role">
                     {slotHuman[idx] ? 'HUMAN' : 'AI'}
                   </span>
                 </button>
@@ -596,17 +596,17 @@ export default function TestnetHub() {
         ) : null}
 
         {(!showTeamControl || !allFourHuman) && (
-          <section className="testnet-section" aria-labelledby="tn-opp">
-            <h3 id="tn-opp" className="testnet-section-title">
+          <section className="practice-section" aria-labelledby="tn-opp">
+            <h3 id="tn-opp" className="practice-section-title">
               {show1v1Opponent ? 'Black chain' : 'Bot strength'}
             </h3>
             {show1v1Opponent ? (
               <>
-                <p className="testnet-section-hint">
+                <p className="practice-section-hint">
                   Two humans = P1 on WASD (or pad 1), P2 on arrows (or pad 2). Vs
                   AI = you steer white only; black is played by the bot.
                 </p>
-                <div className="testnet-seg testnet-seg--two" role="group" aria-label="Black chain">
+                <div className="practice-seg practice-seg--two" role="group" aria-label="Black chain">
                   <button
                     ref={(el) => {
                       opponentRefs.current[0] = el;
@@ -615,15 +615,15 @@ export default function TestnetHub() {
                     tabIndex={
                       navFocus.kind === 'opponent' && navFocus.idx === 0 ? 0 : -1
                     }
-                    className={`testnet-seg-btn ${opponent === 'humans' ? 'active' : ''}${navFocus.kind === 'opponent' && navFocus.idx === 0 ? ' testnet-focus-target' : ''}`}
+                    className={`practice-seg-btn ${opponent === 'humans' ? 'active' : ''}${navFocus.kind === 'opponent' && navFocus.idx === 0 ? ' practice-focus-target' : ''}`}
                     onClick={() => {
                       setNavFocus({ kind: 'opponent', idx: 0 });
                       playSfx(SFX.MENU_SELECT);
                       setOpponent('humans');
                     }}
                   >
-                    <span className="testnet-seg-label">Two humans</span>
-                    <span className="testnet-seg-desc">Free practice</span>
+                    <span className="practice-seg-label">Two humans</span>
+                    <span className="practice-seg-desc">Free practice</span>
                   </button>
                   <button
                     ref={(el) => {
@@ -633,20 +633,20 @@ export default function TestnetHub() {
                     tabIndex={
                       navFocus.kind === 'opponent' && navFocus.idx === 1 ? 0 : -1
                     }
-                    className={`testnet-seg-btn ${opponent === 'ai' ? 'active' : ''}${navFocus.kind === 'opponent' && navFocus.idx === 1 ? ' testnet-focus-target' : ''}`}
+                    className={`practice-seg-btn ${opponent === 'ai' ? 'active' : ''}${navFocus.kind === 'opponent' && navFocus.idx === 1 ? ' practice-focus-target' : ''}`}
                     onClick={() => {
                       setNavFocus({ kind: 'opponent', idx: 1 });
                       playSfx(SFX.MENU_SELECT);
                       setOpponent('ai');
                     }}
                   >
-                    <span className="testnet-seg-label">Vs AI</span>
-                    <span className="testnet-seg-desc">Solo vs bot</span>
+                    <span className="practice-seg-label">Vs AI</span>
+                    <span className="practice-seg-desc">Solo vs bot</span>
                   </button>
                 </div>
                 {opponent === 'ai' && (
                   <>
-                    <span className="testnet-field-label">Bot tier</span>
+                    <span className="practice-field-label">Bot tier</span>
                     <BotTierPicker
                       value={aiTier}
                       onChange={setAiTier}
@@ -662,11 +662,11 @@ export default function TestnetHub() {
               </>
             ) : (
               <>
-                <p className="testnet-section-hint">
+                <p className="practice-section-hint">
                   Every AI-controlled chain uses this tier (main two and extras).
                 </p>
                 <>
-                  <span className="testnet-field-label">Bot tier</span>
+                  <span className="practice-field-label">Bot tier</span>
                   <BotTierPicker
                     value={aiTier}
                     onChange={setAiTier}
@@ -683,17 +683,17 @@ export default function TestnetHub() {
           </section>
         )}
 
-        <section className="testnet-section" aria-labelledby="tn-rules">
-          <h3 id="tn-rules" className="testnet-section-title">
+        <section className="practice-section" aria-labelledby="tn-rules">
+          <h3 id="tn-rules" className="practice-section-title">
             Arena rules
           </h3>
-          <p className="testnet-section-hint">
+          <p className="practice-section-hint">
             Mix and match — classic board, shrinking walls, power-ups, or any
             combination.
           </p>
 
           <label
-            className={`testnet-toggle${navFocus.kind === 'ruleConvergence' ? ' testnet-focus-target' : ''}`}
+            className={`practice-toggle${navFocus.kind === 'ruleConvergence' ? ' practice-focus-target' : ''}`}
             onClick={() => setNavFocus({ kind: 'ruleConvergence' })}
           >
             <input
@@ -706,15 +706,15 @@ export default function TestnetHub() {
                 setConvergence((v) => !v);
               }}
             />
-            <span className="testnet-toggle-ui" />
+            <span className="practice-toggle-ui" />
             <span>
               <strong>Convergence</strong> — arena shrinks toward the center
-              <span className="testnet-conv-note"> (Soldier pacing)</span>
+              <span className="practice-conv-note"> (Soldier pacing)</span>
             </span>
           </label>
 
           <label
-            className={`testnet-toggle${navFocus.kind === 'rulePowerup' ? ' testnet-focus-target' : ''}`}
+            className={`practice-toggle${navFocus.kind === 'rulePowerup' ? ' practice-focus-target' : ''}`}
             onClick={() => setNavFocus({ kind: 'rulePowerup' })}
           >
             <input
@@ -727,7 +727,7 @@ export default function TestnetHub() {
                 setPowerup((v) => !v);
               }}
             />
-            <span className="testnet-toggle-ui" />
+            <span className="practice-toggle-ui" />
             <span>
               <strong>Power-up arena</strong> — SHIFT chain abilities (Surge,
               Freeze, Phantom…)
@@ -735,17 +735,17 @@ export default function TestnetHub() {
           </label>
         </section>
 
-        <div className="testnet-summary" aria-live="polite">
-          <span className="testnet-summary-label">Session</span>
-          <code className="testnet-summary-code">{summaryLine}</code>
+        <div className="practice-summary" aria-live="polite">
+          <span className="practice-summary-label">Session</span>
+          <code className="practice-summary-code">{summaryLine}</code>
         </div>
 
-        <div className="testnet-actions">
+        <div className="practice-actions">
           <button
             ref={startRef}
             type="button"
             tabIndex={navFocus.kind === 'start' ? 0 : -1}
-            className={`testnet-start${navFocus.kind === 'start' ? ' testnet-focus-target' : ''}`}
+            className={`practice-start${navFocus.kind === 'start' ? ' practice-focus-target' : ''}`}
             onClick={() => {
               setNavFocus({ kind: 'start' });
               start();
@@ -756,12 +756,12 @@ export default function TestnetHub() {
         </div>
       </div>
 
-      <div className="testnet-hub-footer">
+      <div className="practice-hub-footer">
         <button
           ref={backRef}
           type="button"
           tabIndex={navFocus.kind === 'back' ? 0 : -1}
-          className={`testnet-back-btn${navFocus.kind === 'back' ? ' testnet-focus-target' : ''}`}
+          className={`practice-back-btn${navFocus.kind === 'back' ? ' practice-focus-target' : ''}`}
           onClick={() => {
             setNavFocus({ kind: 'back' });
             playSfx(SFX.MENU_SELECT);
@@ -770,7 +770,7 @@ export default function TestnetHub() {
         >
           ← MAIN MENU
         </button>
-        <span className="testnet-hub-hint">
+        <span className="practice-hub-hint">
           Arrows / WASD · Enter · Tab · ESC back
         </span>
       </div>

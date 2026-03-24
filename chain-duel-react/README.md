@@ -49,10 +49,10 @@ src/
 
 ### Implemented
 
-- Core routes implemented in React: `Index`, `TestnetHub` (regtest), `TestnetEntry`, `GameMenu`, `Game`, `PostGame`, `TournamentLobby`, `TournamentBracket`, plus online flow (`OnlineRooms`, `OnlineRoomLobby`, `OnlineGame`, `OnlinePostGame`).
+- Core routes implemented in React: `Index`, `LocalHub` (`/local`), `P2pEntry` (`/p2p`), `GameMenu`, `Game`, `PostGame`, `TournamentLobby`, `TournamentBracket`, plus online flow (`OnlineRooms`, `OnlineRoomLobby`, `OnlineGame`, `OnlinePostGame`). Legacy paths `/regtest` → `/local` and `/testnet-entry` → `/p2p` redirect.
 - Game engine/render/audio/io stack implemented under `src/game/*` with Pixi renderer + Canvas fallback.
 - Socket/config/env flow implemented (`VITE_SOCKET_URL` primary path, legacy `/loadconfig` fallback where applicable).
-- Payment-gated entry logic is active (`GameMenu` requires both players funded; testnet tournament entry uses `TestnetEntry`).
+- Payment-gated entry logic is active (`GameMenu` requires both players funded; P2P tournament entry uses `P2pEntry`).
 - Tournament flow parity has advanced substantially:
   - `TournamentBracket` now uses legacy-style loading overlay timing, cancel/confirm flow, and stricter QR/deposit rendering behavior.
   - `Game` no longer shows the tournament bottom strip during active match flow (matching legacy hidden state).

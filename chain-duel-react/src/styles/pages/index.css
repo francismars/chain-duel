@@ -1,18 +1,12 @@
 /* Index page styles - matching legacy exactly */
 
-/* Chain Duel home — muted hint copy; menu buttons use legacy glowing pulse */
+/* Chain Duel home — menu buttons use legacy glowing pulse */
 .index-page {
-  --cd-gold: #c9a43a;
-  --cd-gold-soft: rgba(201, 164, 58, 0.22);
-  --cd-gold-line: rgba(201, 164, 58, 0.38);
-  --cd-text-muted: rgba(255, 255, 255, 0.42);
-  --cd-text-body: rgba(255, 255, 255, 0.58);
   position: relative;
   box-sizing: border-box;
   padding-bottom: clamp(4.25rem, 11vh, 7rem);
 }
 
-/* 16:9 TV / landscape: menu left, description right — less vertical stacking */
 .index-page__hero {
   flex-shrink: 0;
   width: 100%;
@@ -22,10 +16,9 @@
 
 .index-page__main {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(1rem, 2.8vw, 2.75rem);
   width: min(96vw, 72rem);
   margin: 0 auto;
   padding: 0 clamp(0.5rem, 1.5vw, 1.25rem);
@@ -34,118 +27,23 @@
 }
 
 .index-page__main .menu-buttons {
-  flex: 0 0 auto;
-  width: min(22vw, 20rem);
-  min-width: min(16rem, 42vw);
-  margin: 0;
+  width: min(88vw, 22rem);
+  min-width: min(16rem, 88vw);
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.index-menu-hint {
-  flex: 1 1 0;
-  min-width: 0;
-  width: auto;
-  max-width: min(28rem, 48vw);
-  margin: 0;
-  min-height: 4rem;
-  padding: 0.5rem 0.85rem 0.55rem 1rem;
-  border-radius: 1px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-left: 2px solid var(--cd-gold-line);
-  background: rgba(0, 0, 0, 0.38);
-  box-shadow: none;
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* Modal open: only menu column — center and match prior menu width */
-.index-page__main > .menu-buttons:only-child {
-  width: min(28vw, 22rem);
-}
-
-.index-menu-hint__title {
-  margin: 0 0 0.28rem;
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(0.62rem, 1.05vw, 0.72rem);
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--cd-text-muted);
-}
-
-.index-menu-hint__body {
-  margin: 0;
-  font-size: clamp(0.72rem, 1.25vw, 0.82rem);
-  line-height: 1.42;
-  color: var(--cd-text-body);
-  font-weight: 400;
-}
-
-/* Default glow on the default-selected row (TESTNET); JS sets 2s / 0s per focus */
-#starttestnet {
+/* Default glow on the default-selected row (P2P); JS sets 2s / 0s per focus */
+#startp2p {
   animation: glowing 2000ms infinite;
 }
 
 #aboutbutton,
 #highscoresbutton,
-#startregtest,
+#startlocal,
 #startmainnet,
 #startpractice {
   animation: glowing 0ms infinite;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .index-menu-hint__inner {
-    animation: index-hint-swap-x 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  @keyframes index-hint-swap-x {
-    from {
-      opacity: 0;
-      transform: translateX(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes index-hint-swap-y {
-    from {
-      opacity: 0;
-      transform: translateY(5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-}
-
-/* Phones / portrait: stack hint under menu */
-@media (max-width: 52rem), (orientation: portrait) and (max-width: 64rem) {
-  .index-page__main {
-    flex-direction: column;
-    gap: clamp(0.55rem, 1.8vh, 0.95rem);
-  }
-
-  .index-page__main .menu-buttons {
-    width: min(88vw, 24rem);
-    min-width: 0;
-  }
-
-  .index-menu-hint {
-    max-width: min(92vw, 36rem);
-    width: 100%;
-    align-self: center;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .index-menu-hint__inner {
-      animation-name: index-hint-swap-y;
-    }
-  }
 }
 
 .index-page #chainduel {
@@ -168,9 +66,9 @@
 .menu-buttons {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 0.55vw;
-  width: 30vw;
+  width: min(88vw, 22rem);
   margin: 1.5rem auto 0;
 }
 
