@@ -16,6 +16,9 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
+      allowedHosts: [
+        '.ngrok-free.app',
+      ],
       proxy: {
         // Backend (marspayTS); target from .env VITE_PROXY_TARGET
         '/loadconfig': {

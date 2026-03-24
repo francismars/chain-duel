@@ -435,6 +435,17 @@ export interface ServerToClientEvents {
     rematchNote1?: string;
     rematchWaitingForSessionID?: string;
     doubleOrNothingVotes: number;
+    matchRounds?: Array<{
+      matchRound: number;
+      finishedAt: number;
+      winnerName: string;
+      p1Name: string;
+      p2Name: string;
+      p1Score: number;
+      p2Score: number;
+      netPrize: number;
+      winnerRole?: PlayerRole.Player1 | PlayerRole.Player2;
+    }>;
   }) => void;
   resCreateOnlineWithdrawal: (data: { roomId: string; lnurlw: string }) => void;
   resCreateOnlineNostrPayout: (data: {
