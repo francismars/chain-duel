@@ -311,6 +311,8 @@ export const ResOnlineKind1PostOkSchema = z.object({
   created_at: z.number(),
   pubkey: z.string(),
   npubDisplay: z.string(),
+  authorName: z.string(),
+  authorPicture: z.string().nullable().optional(),
 });
 
 export const ResOnlineSeatZapPayPrepareSchema = z.object({

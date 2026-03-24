@@ -652,6 +652,49 @@
   box-sizing: border-box;
 }
 
+.online-lobby-kind1-author {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.45rem;
+}
+
+.online-lobby-kind1-author-avatar {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-shrink: 0;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  background: rgb(0 0 0 / 0.4);
+}
+
+.online-lobby-kind1-author-avatar--placeholder {
+  background: linear-gradient(135deg, rgb(60 80 120 / 0.6), rgb(30 40 70 / 0.7));
+}
+
+.online-lobby-kind1-author-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.online-lobby-kind1-author-name {
+  font-size: 0.78cqw;
+  font-weight: 600;
+  color: #f0f0f0;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.online-lobby-kind1-author-npub {
+  font-size: 0.58cqw;
+  letter-spacing: 0.02em;
+  color: #8eb8dc;
+  cursor: default;
+}
+
 .online-lobby-kind1-embedded-meta {
   margin: 0 0 0.55rem;
   font-size: 0.62cqw;
@@ -993,6 +1036,14 @@
   }
 
   .online-lobby-kind1-embedded-meta {
+    font-size: 11px;
+  }
+
+  .online-lobby-kind1-author-name {
+    font-size: 14px;
+  }
+
+  .online-lobby-kind1-author-npub {
     font-size: 11px;
   }
 
