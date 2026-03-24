@@ -307,7 +307,7 @@ export interface ClientToServerEvents {
   spectateOnlineRoom: (payload: { roomId: string }) => void;
   leaveOnlineRoom: (payload?: { roomId?: string }) => void;
   cancelOnlineRoom: (payload: { roomId: string }) => void;
-  getOnlineRoomState: (payload: { roomId: string }) => void;
+  getOnlineRoomState: (payload: { roomId: string; matchRound?: number }) => void;
   roomInput: (payload: { roomId: string; input: OnlineInputState }) => void;
   startOnlineGame: (payload: { roomId: string }) => void;
   onlineSetReady: (payload: { roomId: string; ready: boolean }) => void;
