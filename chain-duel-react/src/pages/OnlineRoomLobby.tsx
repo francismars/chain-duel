@@ -41,7 +41,9 @@ export default function OnlineRoomLobby() {
     () => sessionStorage.getItem('sessionID') ?? ''
   );
   const [currentSocketID, setCurrentSocketID] = useState('');
-  const [kind1View, setKind1View] = useState<'nostr' | 'post'>('post');
+  const [nostrUriQrOpen, setNostrUriQrOpen] = useState(false);
+  const [nostrUriCopied, setNostrUriCopied] = useState(false);
+  const nostrUriCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [kind1PostEvent, setKind1PostEvent] = useState<Kind1PostLoaded | null>(null);
   const [kind1PostStatus, setKind1PostStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [kind1PostRetry, setKind1PostRetry] = useState(0);
@@ -57,9 +59,6 @@ export default function OnlineRoomLobby() {
   const [nostrModalOpen, setNostrModalOpen] = useState(false);
   const [nostrLinkBusy, setNostrLinkBusy] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
-  const [seatPayMode, setSeatPayMode] = useState<'nostr' | 'lightning'>(() =>
-    sessionStorage.getItem('onlineLobbySeatPayMode') === 'lightning' ? 'lightning' : 'nostr'
-  );
   const [lightningPay, setLightningPay] = useState<{
     lnurl: string;
     lightningUri: string;
@@ -82,10 +81,6 @@ export default function OnlineRoomLobby() {
     () => (roomId ? `onlineLobbyNostrLink_${roomId}` : ''),
     [roomId]
   );
-
-  useEffect(() => {
-    sessionStorage.setItem('onlineLobbySeatPayMode', seatPayMode);
-  }, [seatPayMode]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowTick(Date.now()), 4000);
@@ -243,7 +238,6 @@ export default function OnlineRoomLobby() {
           /* ignore quota */
         }
       }
-      setKind1View('post');
     };
     const onNostrChallenge = async (payload: unknown) => {
       const parsed = SocketBoundaryParsers.resOnlineNostrLinkChallenge(payload);
@@ -526,10 +520,6 @@ export default function OnlineRoomLobby() {
 
   const hasPaidMySeat = Boolean(mySeat);
 
-  const showKind1QrPanel =
-    Boolean(kind1) &&
-    (rematchPending || hasPaidMySeat || seatPayMode === 'nostr' || nostrLinkActive);
-
   useEffect(() => {
     if (hasPaidMySeat) {
       setLightningPay(null);
@@ -547,15 +537,6 @@ export default function OnlineRoomLobby() {
     setLightningBusy(false);
   }, [nostrLinkActive, socket]);
 
-  const switchSeatPayMode = (mode: 'nostr' | 'lightning') => {
-    if (mode === 'nostr' && seatPayMode === 'lightning' && socket) {
-      socket.emit('cancelOnlineSeatLightning');
-      setLightningPay(null);
-      setLightningBusy(false);
-    }
-    setSeatPayMode(mode);
-  };
-
   const startSeatZapPay = () => {
     if (!socket || !roomId || !nostrLinkActive) {
       return;
@@ -572,12 +553,8 @@ export default function OnlineRoomLobby() {
     }
     setSeatZapInvoice(null);
     setError('');
-    if (seatPayMode === 'lightning') {
-      setLightningBusy(true);
-      socket.emit('requestOnlineSeatLightning', { roomId });
-    } else {
-      switchSeatPayMode('lightning');
-    }
+    setLightningBusy(true);
+    socket.emit('requestOnlineSeatLightning', { roomId });
   };
 
   const tryWeblnPaySeatZap = async () => {
@@ -599,36 +576,6 @@ export default function OnlineRoomLobby() {
   };
 
   useEffect(() => {
-    if (!socket || !roomId) {
-      return;
-    }
-    if (seatPayMode !== 'lightning') {
-      return;
-    }
-    if (nostrLinkActive) {
-      return;
-    }
-    if (hasPaidMySeat) {
-      return;
-    }
-    if (rematchPending || isMatchEnded || room?.phase !== 'lobby') {
-      return;
-    }
-    setLightningBusy(true);
-    setError('');
-    socket.emit('requestOnlineSeatLightning', { roomId });
-  }, [
-    socket,
-    roomId,
-    seatPayMode,
-    nostrLinkActive,
-    hasPaidMySeat,
-    rematchPending,
-    isMatchEnded,
-    room?.phase,
-  ]);
-
-  useEffect(() => {
     if (!roomId || room?.phase !== 'playing') {
       return;
     }
@@ -636,7 +583,7 @@ export default function OnlineRoomLobby() {
   }, [navigate, room?.phase, roomId]);
 
   useEffect(() => {
-    if (kind1View !== 'post' || !kind1 || !socket || !roomId) {
+    if (!kind1 || !socket || !roomId) {
       return;
     }
     const fetchKey = `${roomId}:${kind1}`;
@@ -646,7 +593,21 @@ export default function OnlineRoomLobby() {
     setKind1PostStatus('loading');
     setKind1PostEvent(null);
     socket.emit('requestOnlineKind1Post', { roomId });
-  }, [kind1View, kind1, kind1PostRetry, socket, roomId]);
+  }, [kind1, kind1PostRetry, socket, roomId]);
+
+  useEffect(() => {
+    setNostrUriQrOpen(false);
+  }, [kind1]);
+
+  useEffect(() => {
+    if (!nostrUriQrOpen) {
+      setNostrUriCopied(false);
+      if (nostrUriCopyResetRef.current) {
+        clearTimeout(nostrUriCopyResetRef.current);
+        nostrUriCopyResetRef.current = null;
+      }
+    }
+  }, [nostrUriQrOpen]);
 
   if (!roomId) {
     return (
@@ -670,7 +631,7 @@ export default function OnlineRoomLobby() {
               ? amILoserToPay
                 ? `Double or Nothing is active. Scan and zap exactly ${Math.floor(rematchAmount)} sats to continue.`
                 : `Double or Nothing is active. Waiting for loser to zap exactly ${Math.floor(rematchAmount)} sats.`
-              : 'Claim your seat with a Nostr zap, or pay with Lightning (anonymous) below.'}
+              : 'Claim seat (left): PIN or Nostr link. Pay from the post (right): PAY or PAY anonymously.'}
       </p>
 
       <div className="online-lobby-top">
@@ -753,126 +714,53 @@ export default function OnlineRoomLobby() {
                 </>
               ) : (
                 <>
-                  <p className="online-lobby-label">CLAIM SEAT</p>
+                  <p className="online-lobby-label">CLAIM SEAT (NOSTR)</p>
                   {!nostrLinkActive ? (
-                    <div className="online-lobby-seat-mode-row" role="group" aria-label="Seat payment method">
-                      <button
-                        type="button"
-                        className={`online-lobby-join-mode-btn ${seatPayMode === 'nostr' ? 'online-lobby-join-mode-btn--active' : ''}`}
-                        onClick={() => switchSeatPayMode('nostr')}
-                      >
-                        NOSTR ZAP
-                      </button>
-                      <button
-                        type="button"
-                        className={`online-lobby-join-mode-btn ${seatPayMode === 'lightning' ? 'online-lobby-join-mode-btn--active' : ''}`}
-                        onClick={() => switchSeatPayMode('lightning')}
-                      >
-                        LIGHTNING (ANON)
-                      </button>
+                    <>
+                      <p className="online-lobby-sublabel">PIN</p>
+                      <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
+                      <p className="online-lobby-copy">
+                        Paste this PIN in the zap comment when zapping from another client, or sign in below to zap
+                        without a PIN.
+                      </p>
+                      <div className="online-lobby-claim-nostr-row">
+                        <div className="online-lobby-or-divider" aria-hidden="true">
+                          <span className="online-lobby-or-line" />
+                          <span className="online-lobby-or-text">or</span>
+                          <span className="online-lobby-or-line" />
+                        </div>
+                        <Button type="button" className="online-lobby-signin-nostr-btn" onClick={openNostrModal}>
+                          Sign in with Nostr
+                        </Button>
+                      </div>
+                    </>
+                  ) : null}
+                  {nostrLinkActive ? (
+                    <div className="online-lobby-nostr-linked-pill">
+                      <div className="online-lobby-nostr-linked-row">
+                        {nostrLinkedProfile?.picture ? (
+                          <img
+                            className="online-lobby-nostr-linked-avatar"
+                            src={nostrLinkedProfile.picture}
+                            alt=""
+                            onError={(ev) => {
+                              (ev.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                        <span className="online-lobby-nostr-linked-name">
+                          {nostrLinkedProfile?.name ?? 'Nostr profile'}
+                        </span>
+                        <span className="online-lobby-nostr-linked-rest">
+                          — zap without PIN · expires{' '}
+                          {new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}{' '}
+                          <button type="button" className="online-lobby-text-btn" onClick={openNostrModal}>
+                            Update
+                          </button>
+                        </span>
+                      </div>
                     </div>
                   ) : null}
-                  {seatPayMode === 'lightning' && !nostrLinkActive ? (
-                    <>
-                      <p className="online-lobby-sublabel">LIGHTNING DEPOSIT</p>
-                      <p className="online-lobby-copy">
-                        Pay this invoice with your Lightning wallet — scan the QR or copy the link. Send the exact
-                        amount shown. You don’t need a PIN or a Nostr account; keep this page open until your seat
-                        updates.
-                      </p>
-                      {lightningBusy && !lightningPay ? (
-                        <p className="online-lobby-copy online-lobby-lightning-status">Preparing invoice…</p>
-                      ) : null}
-                      {lightningPay ? (
-                        <div className="online-lobby-lightning-pay">
-                          <QRCodeSVG
-                            value={lightningPay.lightningUri}
-                            size={180}
-                            includeMargin
-                            className="online-lobby-qr"
-                          />
-                          <p className="online-lobby-lightning-uri">{lightningPay.lightningUri}</p>
-                          <div className="online-lobby-lightning-actions">
-                            <Button
-                              type="button"
-                              className="online-lobby-action"
-                              onClick={() => {
-                                void navigator.clipboard.writeText(lightningPay.lightningUri);
-                              }}
-                            >
-                              Copy link
-                            </Button>
-                            <Button
-                              type="button"
-                              className="online-lobby-action"
-                              onClick={() => {
-                                if (!socket || !roomId) {
-                                  return;
-                                }
-                                setLightningBusy(true);
-                                setError('');
-                                socket.emit('requestOnlineSeatLightning', { roomId });
-                              }}
-                            >
-                              New invoice
-                            </Button>
-                          </div>
-                          <p className="online-lobby-copy">
-                            Pay exactly <b>{lightningPay.buyin} sats</b>. This link expires at{' '}
-                            {new Date(lightningPay.expiresAt).toLocaleTimeString()}.
-                          </p>
-                        </div>
-                      ) : null}
-                    </>
-                  ) : (
-                    <>
-                      {!nostrLinkActive ? (
-                        <>
-                          <p className="online-lobby-sublabel">PIN</p>
-                          <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
-                          <p className="online-lobby-copy">
-                            Paste this PIN in the zap comment (shared screens / arcades).
-                          </p>
-                          <div className="online-lobby-claim-nostr-row">
-                            <div className="online-lobby-or-divider" aria-hidden="true">
-                              <span className="online-lobby-or-line" />
-                              <span className="online-lobby-or-text">or</span>
-                              <span className="online-lobby-or-line" />
-                            </div>
-                            <Button type="button" className="online-lobby-signin-nostr-btn" onClick={openNostrModal}>
-                              Sign in with Nostr
-                            </Button>
-                          </div>
-                        </>
-                      ) : null}
-                      {nostrLinkActive ? (
-                        <div className="online-lobby-nostr-linked-pill">
-                          <div className="online-lobby-nostr-linked-row">
-                            {nostrLinkedProfile?.picture ? (
-                              <img
-                                className="online-lobby-nostr-linked-avatar"
-                                src={nostrLinkedProfile.picture}
-                                alt=""
-                                onError={(ev) => {
-                                  (ev.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            ) : null}
-                            <span className="online-lobby-nostr-linked-name">
-                              {nostrLinkedProfile?.name ?? 'Nostr profile'}
-                            </span>
-                            <span className="online-lobby-nostr-linked-rest">
-                              — zap without PIN · expires{' '}
-                              {new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}{' '}
-                              <button type="button" className="online-lobby-text-btn" onClick={openNostrModal}>
-                                Update
-                              </button>
-                            </span>
-                          </div>
-                        </div>
-                      ) : null}
-                    </>
-                  )}
                 </>
               )}
             </div>
@@ -883,52 +771,115 @@ export default function OnlineRoomLobby() {
         </section>
 
         <section className="online-lobby-panel online-lobby-panel-qr">
-          {!showKind1QrPanel ? (
-            <>
-              <p className="online-lobby-label">NOSTR KIND1</p>
-              <p className="online-lobby-copy online-lobby-lightning-aside-copy">
-                You’re paying with Lightning on the left. Switch “Claim seat” to <strong>Nostr zap</strong> if you
-                want the Kind1 QR codes and PIN / linked pubkey flow instead.
-              </p>
-            </>
+          {!kind1 ? (
+            <div className="online-lobby-kind1-pending">
+              {rematchPending ? 'Publishing rematch Kind1...' : 'Publishing Kind1...'}
+            </div>
           ) : (
             <>
-          <p className="online-lobby-label">{rematchPending ? 'DOUBLE OR NOTHING KIND1' : 'ROOM KIND1'}</p>
-          <div className="online-lobby-kind1-views">
-            <Button
-              className={`online-lobby-action ${kind1View === 'nostr' ? 'online-lobby-kind1-view-active' : ''}`}
-              onClick={() => setKind1View('nostr')}
-            >
-              NOSTR URI
-            </Button>
-            <Button
-              className={`online-lobby-action ${kind1View === 'post' ? 'online-lobby-kind1-view-active' : ''}`}
-              onClick={() => setKind1View('post')}
-            >
-              POST
-            </Button>
-          </div>
-          {kind1 ? (
-            <>
-              {kind1View === 'post' ? (
-                <>
-                  {kind1PostStatus === 'loading' ? (
-                    <p className="online-lobby-copy online-lobby-kind1-post-status">Loading note from relays…</p>
-                  ) : kind1PostStatus === 'error' ? (
-                    <div className="online-lobby-kind1-post-error">
-                      <p className="online-lobby-copy">
-                        Couldn’t load this note from relays. Check your connection or try again.
+              <p className="online-lobby-label">{rematchPending ? 'DOUBLE OR NOTHING KIND1' : 'ROOM KIND1'}</p>
+              {kind1PostStatus === 'loading' ? (
+                <p className="online-lobby-copy online-lobby-kind1-post-status">Loading note from relays…</p>
+              ) : kind1PostStatus === 'error' ? (
+                <div className="online-lobby-kind1-post-error">
+                  <p className="online-lobby-copy">
+                    Couldn’t load this note from relays. Check your connection or try again.
+                  </p>
+                  <Button
+                    type="button"
+                    className="online-lobby-action"
+                    onClick={() => setKind1PostRetry((n) => n + 1)}
+                  >
+                    Try again
+                  </Button>
+                </div>
+              ) : kind1PostEvent ? (
+                <div className="online-lobby-kind1-embedded">
+                  {nostrUriQrOpen ? (
+                    <div
+                      className="online-lobby-kind1-uri-panel"
+                      id="online-lobby-nostr-uri-qr-panel"
+                      role="region"
+                      aria-label="Nostr URI"
+                    >
+                      <div className="online-lobby-kind1-uri-panel-head">
+                        <button
+                          type="button"
+                          className="online-lobby-kind1-uri-back"
+                          onClick={() => setNostrUriQrOpen(false)}
+                        >
+                          ← Post
+                        </button>
+                      </div>
+                      <QRCodeSVG
+                        value={nostrUri}
+                        size={168}
+                        includeMargin
+                        className="online-lobby-kind1-uri-panel-qr"
+                      />
+                      <div className="online-lobby-kind1-uri-line">
+                        <p className="online-lobby-kind1-uri-text" title={nostrUri}>
+                          {nostrUri}
+                        </p>
+                        <button
+                          type="button"
+                          className={[
+                            'online-lobby-kind1-uri-copy-iconbtn',
+                            nostrUriCopied ? 'online-lobby-kind1-uri-copy-iconbtn--ok' : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                          onClick={() => {
+                            void navigator.clipboard.writeText(nostrUri).then(() => {
+                              if (nostrUriCopyResetRef.current) {
+                                clearTimeout(nostrUriCopyResetRef.current);
+                              }
+                              setNostrUriCopied(true);
+                              nostrUriCopyResetRef.current = setTimeout(() => {
+                                setNostrUriCopied(false);
+                                nostrUriCopyResetRef.current = null;
+                              }, 2200);
+                            });
+                          }}
+                          aria-label={nostrUriCopied ? 'Copied' : 'Copy URI'}
+                          title={nostrUriCopied ? 'Copied' : 'Copy'}
+                        >
+                          {nostrUriCopied ? (
+                            <svg
+                              width={16}
+                              height={16}
+                              viewBox="0 0 24 24"
+                              aria-hidden
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              width={16}
+                              height={16}
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden
+                            >
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                      <p className="online-lobby-copy online-lobby-kind1-uri-hint">
+                        Open in a Nostr client or share this link.
                       </p>
-                      <Button
-                        type="button"
-                        className="online-lobby-action"
-                        onClick={() => setKind1PostRetry((n) => n + 1)}
-                      >
-                        Try again
-                      </Button>
                     </div>
-                  ) : kind1PostEvent ? (
-                    <div className="online-lobby-kind1-embedded">
+                  ) : (
+                    <>
                       <div className="online-lobby-kind1-author">
                         {kind1PostEvent.authorPicture ? (
                           <img
@@ -952,6 +903,16 @@ export default function OnlineRoomLobby() {
                             {kind1PostEvent.npubDisplay}
                           </span>
                         </div>
+                        <button
+                          type="button"
+                          className="online-lobby-kind1-uri-qr-btn"
+                          onClick={() => setNostrUriQrOpen(true)}
+                          aria-expanded={nostrUriQrOpen}
+                          aria-controls="online-lobby-nostr-uri-qr-panel"
+                          id="online-lobby-nostr-uri-qr-toggle"
+                        >
+                          URI QR
+                        </button>
                       </div>
                       <p className="online-lobby-kind1-embedded-meta">
                         {new Date(kind1PostEvent.created_at * 1000).toLocaleString()}
@@ -1008,7 +969,7 @@ export default function OnlineRoomLobby() {
                           <p className="online-lobby-copy online-lobby-post-pay-hint">
                             {nostrLinkActive
                               ? 'Prepares a zap request (server + your extension), then shows a Lightning invoice. Pay it with your wallet; the room detects the zap like a normal Nostr zap.'
-                              : 'Uses the same anonymous Lightning invoice flow as the Lightning tab — no Nostr sign-in.'}
+                              : 'Anonymous Lightning invoice below — no Nostr sign-in.'}
                           </p>
                         </div>
                       ) : null}
@@ -1042,7 +1003,7 @@ export default function OnlineRoomLobby() {
                           </div>
                         </div>
                       ) : null}
-                      {seatPayMode === 'lightning' && !nostrLinkActive && lightningPay ? (
+                      {!nostrLinkActive && lightningPay ? (
                         <div className="online-lobby-post-inline-lightning">
                           <p className="online-lobby-sublabel">ANONYMOUS LIGHTNING</p>
                           <QRCodeSVG
@@ -1062,18 +1023,31 @@ export default function OnlineRoomLobby() {
                             >
                               Copy link
                             </Button>
+                            <Button
+                              type="button"
+                              className="online-lobby-action"
+                              onClick={() => {
+                                if (!socket || !roomId) {
+                                  return;
+                                }
+                                setLightningBusy(true);
+                                setError('');
+                                socket.emit('requestOnlineSeatLightning', { roomId });
+                              }}
+                            >
+                              New invoice
+                            </Button>
                           </div>
+                          <p className="online-lobby-copy">
+                            Pay exactly <b>{lightningPay.buyin} sats</b>. Expires{' '}
+                            {new Date(lightningPay.expiresAt).toLocaleTimeString()}.
+                          </p>
                         </div>
                       ) : null}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <QRCodeSVG value={nostrUri} size={210} includeMargin className="online-lobby-qr" />
-                  <div className="online-lobby-kind1">{nostrUri}</div>
-                </>
-              )}
+                    </>
+                  )}
+                </div>
+              ) : null}
               {rematchPending ? (
                 <p className="online-lobby-copy">
                   {amILoserToPay
@@ -1081,12 +1055,6 @@ export default function OnlineRoomLobby() {
                     : `Waiting for loser to zap exactly ${Math.floor(rematchAmount)} sats on this post.`}
                 </p>
               ) : null}
-            </>
-          ) : (
-            <div className="online-lobby-kind1-pending">
-              {rematchPending ? 'Publishing rematch Kind1...' : 'Publishing Kind1...'}
-            </div>
-          )}
             </>
           )}
         </section>
