@@ -493,12 +493,39 @@ export default function OnlinePostGame() {
             <div className="online-postgame-qr-wrap">
               <p className="online-postgame-qr-title">WITHDRAWAL QR</p>
               {withdrawalValue ? (
-                <QRCodeSVG value={withdrawalValue} size={220} includeMargin className={lnurlw ? '' : 'online-postgame-qr-blur'} />
+                lnurlw ? (
+                  <a
+                    className="online-postgame-qr-lnurl-anchor"
+                    href={`lightning:${lnurlw.replace(/^lightning:/i, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open withdrawal LNURL in a Lightning wallet"
+                  >
+                    <QRCodeSVG value={withdrawalValue} size={220} includeMargin />
+                  </a>
+                ) : (
+                  <QRCodeSVG
+                    value={withdrawalValue}
+                    size={220}
+                    includeMargin
+                    className="online-postgame-qr-blur"
+                  />
+                )
               ) : (
                 <img src="/images/loading.gif" alt="Creating withdrawal" />
               )}
+              {lnurlw ? (
+                <a
+                  className="online-postgame-qr-lnurl-link"
+                  href={`lightning:${lnurlw.replace(/^lightning:/i, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open LNURL in wallet
+                </a>
+              ) : null}
               <p className="online-postgame-qr-note">
-                {lnurlw ? 'Scan with a compatible wallet.' : 'Winner can reveal QR by creating withdrawal.'}
+                {lnurlw ? 'Scan with a compatible wallet, or use the link above.' : 'Winner can reveal QR by creating withdrawal.'}
               </p>
             </div>
           ) : null}

@@ -570,6 +570,32 @@
   font-size: 0.75rem;
 }
 
+.online-postgame-qr-lnurl-anchor {
+  display: inline-block;
+  line-height: 0;
+  cursor: pointer;
+  border-radius: 2px;
+  outline-offset: 3px;
+}
+
+.online-postgame-qr-lnurl-anchor:focus-visible {
+  outline: 2px solid rgb(120 200 255 / 0.85);
+}
+
+.online-postgame-qr-lnurl-link {
+  display: inline-block;
+  margin: 0.55rem 0 0;
+  color: #9fd4ff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.online-postgame-qr-lnurl-link:hover {
+  color: #c8e8ff;
+}
+
 .online-postgame-qr-note {
   margin: 0.45rem 0 0;
   color: rgb(255 255 255 / 0.74);
