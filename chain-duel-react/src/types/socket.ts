@@ -321,6 +321,10 @@ export interface ClientToServerEvents {
   confirmOnlineNostrLink: (payload: { roomId: string; event: Record<string, unknown> }) => void;
   /** Load Kind1 note text from relays (server-side). */
   requestOnlineKind1Post: (payload: { roomId: string }) => void;
+  /** Build unsigned NIP-57 zap request; client signs then sends `confirmOnlineSeatZapPay`. */
+  requestOnlineSeatZapPayPrepare: (payload: { roomId: string }) => void;
+  /** Signed kind 9734 zap request → server returns bolt11 from recipient LNURL. */
+  confirmOnlineSeatZapPay: (payload: { roomId: string; event: Record<string, unknown> }) => void;
   /** Anonymous seat: LNURL-pay link (unique per session) paid via LNBits webhook; no PIN. */
   requestOnlineSeatLightning: (payload: { roomId: string }) => void;
   cancelOnlineSeatLightning: () => void;
@@ -421,6 +425,14 @@ export interface ServerToClientEvents {
       | {
           roomId: string;
           ok: true;
+          eventId: string;
+          tags: string[][];
+          pubpayZap: {
+            isPubpay: boolean;
+            zapMinSats?: number;
+            zapMaxSats?: number;
+            zapUses?: string;
+          };
           content: string;
           created_at: number;
           pubkey: string;
@@ -428,6 +440,26 @@ export interface ServerToClientEvents {
         }
       | { roomId: string; ok: false; reason: string }
   ) => void;
+  resOnlineSeatZapPayPrepare: (data: {
+    roomId: string;
+    unsignedZap: {
+      kind: number;
+      created_at: number;
+      tags: string[][];
+      content: string;
+    };
+    millisats: number;
+    lnurlBech32: string;
+    buyinSats: number;
+    hostLud16: string;
+  }) => void;
+  resOnlineSeatZapPayInvoice: (data: {
+    roomId: string;
+    pr: string;
+    lightningUri: string;
+    buyinSats: number;
+  }) => void;
+  resOnlineSeatZapPayError: (data: { reason: string }) => void;
   resOnlineSeatLightning: (data: {
     lnurl: string;
     lightningUri: string;

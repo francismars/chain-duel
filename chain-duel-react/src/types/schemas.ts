@@ -294,13 +294,48 @@ export const ResOnlineNostrLinkOkSchema = z.object({
   profile: NostrLinkedProfileSchema.optional(),
 });
 
+export const PubpayZapMetaSchema = z.object({
+  isPubpay: z.boolean(),
+  zapMinSats: z.number().optional(),
+  zapMaxSats: z.number().optional(),
+  zapUses: z.string().optional(),
+});
+
 export const ResOnlineKind1PostOkSchema = z.object({
   roomId: z.string(),
   ok: z.literal(true),
+  eventId: z.string(),
+  tags: z.array(z.array(z.string())),
+  pubpayZap: PubpayZapMetaSchema,
   content: z.string(),
   created_at: z.number(),
   pubkey: z.string(),
   npubDisplay: z.string(),
+});
+
+export const ResOnlineSeatZapPayPrepareSchema = z.object({
+  roomId: z.string(),
+  unsignedZap: z.object({
+    kind: z.number(),
+    created_at: z.number(),
+    tags: z.array(z.array(z.string())),
+    content: z.string(),
+  }),
+  millisats: z.number(),
+  lnurlBech32: z.string(),
+  buyinSats: z.number(),
+  hostLud16: z.string(),
+});
+
+export const ResOnlineSeatZapPayInvoiceSchema = z.object({
+  roomId: z.string(),
+  pr: z.string(),
+  lightningUri: z.string(),
+  buyinSats: z.number(),
+});
+
+export const ResOnlineSeatZapPayErrorSchema = z.object({
+  reason: z.string(),
 });
 
 export const ResOnlineKind1PostErrSchema = z.object({

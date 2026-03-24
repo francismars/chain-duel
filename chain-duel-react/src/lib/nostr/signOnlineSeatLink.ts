@@ -1,5 +1,5 @@
 /**
- * Signs the ONLINE seat-link challenge (kind 1, content = server challenge) via NIP-07 browser extension.
+ * Signs events via NIP-07 browser extension.
  * Relay reads and profile lookup are done on the backend.
  */
 export type SignedSeatLinkEvent = {
@@ -11,6 +11,20 @@ export type SignedSeatLinkEvent = {
   pubkey: string;
   sig: string;
 };
+
+/** Sign any unsigned event (e.g. kind 9734 zap request) with the browser extension. */
+export async function signNostrEvent(unsigned: {
+  kind: number;
+  tags: string[][];
+  content: string;
+  created_at: number;
+}): Promise<SignedSeatLinkEvent> {
+  if (!window.nostr) {
+    throw new Error('no_nostr_extension');
+  }
+  const signed = await window.nostr.signEvent(unsigned);
+  return signed as SignedSeatLinkEvent;
+}
 
 export async function signOnlineSeatLinkChallenge(params: {
   challenge: string;

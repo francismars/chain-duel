@@ -8,11 +8,19 @@ import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { OnlineRoomState } from '@/types/socket';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
-import { signOnlineSeatLinkChallenge } from '@/lib/nostr/signOnlineSeatLink';
+import { signNostrEvent, signOnlineSeatLinkChallenge } from '@/lib/nostr/signOnlineSeatLink';
 import type { NostrLinkedProfile } from '@/types/schemas';
 import '@/styles/pages/onlineRoomLobby.css';
 
 type Kind1PostLoaded = {
+  eventId: string;
+  tags: string[][];
+  pubpayZap: {
+    isPubpay: boolean;
+    zapMinSats?: number;
+    zapMaxSats?: number;
+    zapUses?: string;
+  };
   content: string;
   created_at: number;
   pubkey: string;
@@ -31,10 +39,16 @@ export default function OnlineRoomLobby() {
     () => sessionStorage.getItem('sessionID') ?? ''
   );
   const [currentSocketID, setCurrentSocketID] = useState('');
-  const [kind1View, setKind1View] = useState<'njump' | 'nostr' | 'pubpay' | 'post'>('nostr');
+  const [kind1View, setKind1View] = useState<'njump' | 'nostr' | 'pubpay' | 'post'>('post');
   const [kind1PostEvent, setKind1PostEvent] = useState<Kind1PostLoaded | null>(null);
   const [kind1PostStatus, setKind1PostStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [kind1PostRetry, setKind1PostRetry] = useState(0);
+  const [zapPayBusy, setZapPayBusy] = useState(false);
+  const [seatZapInvoice, setSeatZapInvoice] = useState<{
+    pr: string;
+    lightningUri: string;
+    buyinSats: number;
+  } | null>(null);
   const [yourPingMs, setYourPingMs] = useState<number | null>(null);
   const [nostrLinkExpiresAt, setNostrLinkExpiresAt] = useState<number | null>(null);
   const [nostrLinkedProfile, setNostrLinkedProfile] = useState<NostrLinkedProfile | null>(null);
@@ -219,6 +233,7 @@ export default function OnlineRoomLobby() {
           /* ignore quota */
         }
       }
+      setKind1View('post');
     };
     const onNostrChallenge = async (payload: unknown) => {
       const parsed = SocketBoundaryParsers.resOnlineNostrLinkChallenge(payload);
@@ -266,6 +281,9 @@ export default function OnlineRoomLobby() {
       }
       if (parsed.ok) {
         setKind1PostEvent({
+          eventId: parsed.eventId,
+          tags: parsed.tags,
+          pubpayZap: parsed.pubpayZap,
           content: parsed.content,
           created_at: parsed.created_at,
           pubkey: parsed.pubkey,
@@ -278,6 +296,46 @@ export default function OnlineRoomLobby() {
       }
     };
 
+    const onZapPayPrepare = async (payload: unknown) => {
+      const parsed = SocketBoundaryParsers.resOnlineSeatZapPayPrepare(payload);
+      if (!parsed || parsed.roomId !== roomId) {
+        return;
+      }
+      try {
+        const signed = await signNostrEvent(parsed.unsignedZap);
+        socket.emit('confirmOnlineSeatZapPay', {
+          roomId,
+          event: signed as unknown as Record<string, unknown>,
+        });
+      } catch (e) {
+        setZapPayBusy(false);
+        const msg = e instanceof Error ? e.message : 'sign_failed';
+        setError(msg);
+      }
+    };
+
+    const onZapPayInvoice = (payload: unknown) => {
+      const parsed = SocketBoundaryParsers.resOnlineSeatZapPayInvoice(payload);
+      if (!parsed || parsed.roomId !== roomId) {
+        return;
+      }
+      setZapPayBusy(false);
+      setSeatZapInvoice({
+        pr: parsed.pr,
+        lightningUri: parsed.lightningUri,
+        buyinSats: parsed.buyinSats,
+      });
+    };
+
+    const onZapPayError = (payload: unknown) => {
+      const parsed = SocketBoundaryParsers.resOnlineSeatZapPayError(payload);
+      if (!parsed) {
+        return;
+      }
+      setZapPayBusy(false);
+      setError(parsed.reason);
+    };
+
     socket.on('onlineRoomUpdated', onUpdated);
     socket.on('resJoinOnlineRoom', onJoin);
     socket.on('resCreateOnlineRoom', onCreate);
@@ -285,6 +343,9 @@ export default function OnlineRoomLobby() {
     socket.on('resOnlineNostrLinkOk', onNostrOk);
     socket.on('resOnlineNostrLinkChallenge', onNostrChallenge);
     socket.on('resOnlineKind1Post', onKind1Post);
+    socket.on('resOnlineSeatZapPayPrepare', onZapPayPrepare);
+    socket.on('resOnlineSeatZapPayInvoice', onZapPayInvoice);
+    socket.on('resOnlineSeatZapPayError', onZapPayError);
     socket.on('resOnlineSeatLightning', onLightning);
     socket.on('resOnlineSeatLightningError', onLightningErr);
     socket.on('resOnlineSeatLightningCancelled', onLightningCancelled);
@@ -301,6 +362,9 @@ export default function OnlineRoomLobby() {
       socket.off('resOnlineNostrLinkOk', onNostrOk);
       socket.off('resOnlineNostrLinkChallenge', onNostrChallenge);
       socket.off('resOnlineKind1Post', onKind1Post);
+      socket.off('resOnlineSeatZapPayPrepare', onZapPayPrepare);
+      socket.off('resOnlineSeatZapPayInvoice', onZapPayInvoice);
+      socket.off('resOnlineSeatZapPayError', onZapPayError);
       socket.off('resOnlineSeatLightning', onLightning);
       socket.off('resOnlineSeatLightningError', onLightningErr);
       socket.off('resOnlineSeatLightningCancelled', onLightningCancelled);
@@ -459,6 +523,8 @@ export default function OnlineRoomLobby() {
   useEffect(() => {
     if (hasPaidMySeat) {
       setLightningPay(null);
+      setSeatZapInvoice(null);
+      setZapPayBusy(false);
     }
   }, [hasPaidMySeat]);
 
@@ -478,6 +544,48 @@ export default function OnlineRoomLobby() {
       setLightningBusy(false);
     }
     setSeatPayMode(mode);
+  };
+
+  const startSeatZapPay = () => {
+    if (!socket || !roomId || !nostrLinkActive) {
+      return;
+    }
+    setSeatZapInvoice(null);
+    setError('');
+    setZapPayBusy(true);
+    socket.emit('requestOnlineSeatZapPayPrepare', { roomId });
+  };
+
+  const payAnonymouslyFromPost = () => {
+    if (!socket || !roomId) {
+      return;
+    }
+    setSeatZapInvoice(null);
+    setError('');
+    if (seatPayMode === 'lightning') {
+      setLightningBusy(true);
+      socket.emit('requestOnlineSeatLightning', { roomId });
+    } else {
+      switchSeatPayMode('lightning');
+    }
+  };
+
+  const tryWeblnPaySeatZap = async () => {
+    if (!seatZapInvoice) {
+      return;
+    }
+    const win = window as Window & {
+      webln?: { enable?: () => Promise<void>; sendPayment?: (p: string) => Promise<unknown> };
+    };
+    if (!win.webln?.enable || !win.webln.sendPayment) {
+      return;
+    }
+    try {
+      await win.webln.enable();
+      await win.webln.sendPayment(seatZapInvoice.pr);
+    } catch {
+      /* user cancelled or wallet unsupported */
+    }
   };
 
   useEffect(() => {
@@ -827,6 +935,114 @@ export default function OnlineRoomLobby() {
                         </span>
                       </p>
                       <div className="online-lobby-kind1-embedded-body">{kind1PostEvent.content}</div>
+                      {kind1PostEvent.pubpayZap.isPubpay ? (
+                        <div className="online-lobby-pubpay-zap-meta">
+                          <p className="online-lobby-label">PAYMENT (FROM NOTE TAGS)</p>
+                          <p className="online-lobby-copy">
+                            {kind1PostEvent.pubpayZap.zapMinSats != null &&
+                            kind1PostEvent.pubpayZap.zapMaxSats != null
+                              ? `Pubpay zap range: ${kind1PostEvent.pubpayZap.zapMinSats}${
+                                  kind1PostEvent.pubpayZap.zapMinSats === kind1PostEvent.pubpayZap.zapMaxSats
+                                    ? ''
+                                    : `–${kind1PostEvent.pubpayZap.zapMaxSats}`
+                                } sats`
+                              : 'Zap terms from host'}
+                            {kind1PostEvent.pubpayZap.zapUses
+                              ? ` · Uses: ${kind1PostEvent.pubpayZap.zapUses}`
+                              : ''}
+                            {room?.buyin != null ? (
+                              <>
+                                {' '}
+                                · Room buy-in: <b>{room.buyin} sats</b>
+                              </>
+                            ) : null}
+                          </p>
+                        </div>
+                      ) : null}
+                      {!hasPaidMySeat &&
+                      room?.phase === 'lobby' &&
+                      !rematchPending &&
+                      !isMatchEnded ? (
+                        <div className="online-lobby-post-pay-row">
+                          {nostrLinkActive ? (
+                            <Button
+                              type="button"
+                              className="online-lobby-action online-lobby-post-pay-btn"
+                              disabled={zapPayBusy || !socket}
+                              onClick={startSeatZapPay}
+                            >
+                              {zapPayBusy ? 'PREPARING…' : 'PAY'}
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              className="online-lobby-action online-lobby-post-pay-btn"
+                              disabled={lightningBusy && !lightningPay}
+                              onClick={payAnonymouslyFromPost}
+                            >
+                              {lightningBusy && !lightningPay ? 'PREPARING…' : 'PAY anonymously'}
+                            </Button>
+                          )}
+                          <p className="online-lobby-copy online-lobby-post-pay-hint">
+                            {nostrLinkActive
+                              ? 'Prepares a zap request (server + your extension), then shows a Lightning invoice. Pay it with your wallet; the room detects the zap like a normal Nostr zap.'
+                              : 'Uses the same anonymous Lightning invoice flow as the Lightning tab — no Nostr sign-in.'}
+                          </p>
+                        </div>
+                      ) : null}
+                      {seatZapInvoice ? (
+                        <div className="online-lobby-seat-zap-invoice">
+                          <p className="online-lobby-sublabel">ZAP INVOICE ({seatZapInvoice.buyinSats} sats)</p>
+                          <QRCodeSVG
+                            value={seatZapInvoice.lightningUri}
+                            size={180}
+                            includeMargin
+                            className="online-lobby-qr"
+                          />
+                          <p className="online-lobby-lightning-uri">{seatZapInvoice.lightningUri}</p>
+                          <div className="online-lobby-lightning-actions">
+                            <Button
+                              type="button"
+                              className="online-lobby-action"
+                              onClick={() => {
+                                void navigator.clipboard.writeText(seatZapInvoice.lightningUri);
+                              }}
+                            >
+                              Copy
+                            </Button>
+                            <Button
+                              type="button"
+                              className="online-lobby-action"
+                              onClick={() => void tryWeblnPaySeatZap()}
+                            >
+                              Pay in browser wallet
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
+                      {seatPayMode === 'lightning' && !nostrLinkActive && lightningPay ? (
+                        <div className="online-lobby-post-inline-lightning">
+                          <p className="online-lobby-sublabel">ANONYMOUS LIGHTNING</p>
+                          <QRCodeSVG
+                            value={lightningPay.lightningUri}
+                            size={180}
+                            includeMargin
+                            className="online-lobby-qr"
+                          />
+                          <p className="online-lobby-lightning-uri">{lightningPay.lightningUri}</p>
+                          <div className="online-lobby-lightning-actions">
+                            <Button
+                              type="button"
+                              className="online-lobby-action"
+                              onClick={() => {
+                                void navigator.clipboard.writeText(lightningPay.lightningUri);
+                              }}
+                            >
+                              Copy link
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </>
