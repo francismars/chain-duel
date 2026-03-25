@@ -34,7 +34,7 @@ function menuStepUp(prev: MenuState): MenuState {
 export default function Index() {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
-  const [menu, setMenu] = useState<MenuState>(2);
+  const [menu, setMenu] = useState<MenuState>(1);
   const [hostName, setHostName] = useState<string>('@chainduel');
   const startLocalRef = useRef<HTMLButtonElement>(null);
   const startSoloRef = useRef<HTMLButtonElement>(null);
