@@ -1,60 +1,326 @@
-﻿/* Local hub (/local) — monochrome ink + paper (aligned with P2P paid entry) */
+/* Local hub (/local) — monochrome ink design, P2P design language */
 
+/* ── Page shell ── */
+.local-hub-page.practice-hub--practice {
+  max-width: clamp(480px, 52vw, 1040px);
+  gap: clamp(10px, 1.2vw, 18px);
+  justify-content: center;
+}
+
+.local-hub-page .practice-hub-title {
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+/* Strip panel chrome so content floats on the page background */
 .local-hub-page .practice-panel {
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 20px 40px rgba(0, 0, 0, 0.5);
+  border: none;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  gap: clamp(10px, 1.2vw, 18px);
 }
 
-.local-hub-page .practice-summary-code {
-  color: rgba(255, 255, 255, 0.72);
+/* ── Mode config overlay (same-cell grid — no layout shift on format switch) ── */
+.local-mode-config-area {
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: 1fr;
 }
 
-.local-hub-page .practice-start {
-  color: rgba(255, 255, 255, 0.94);
-  border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.04);
+.local-mode-config-area > .practice-section {
+  grid-row: 1;
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0s;
 }
 
-.local-hub-page .practice-start:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.42);
-  box-shadow: 0 0 32px rgba(255, 255, 255, 0.08);
+.local-mode-config-area > .practice-section.local-mode-inactive {
+  opacity: 0;
+  transform: translateY(6px);
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0.22s;
 }
 
-/* Slot tiles — neutral (no cyan / gold) */
+/* ── FFA, HUMANS, AI picker cards — white glow (same as 1V1/duel) ── */
+.p2p-picker-card--ffa.p2p-picker-card--selected,
+.p2p-picker-card--humans.p2p-picker-card--selected,
+.p2p-picker-card--ai.p2p-picker-card--selected {
+  --button-glow-bg-low: rgb(255 255 255 / 5%);
+  --button-glow-bg-peak: rgb(255 255 255 / 12%);
+  --button-glow-shadow-low: 0 0 8px rgb(255 255 255 / 20%), inset 0 0 6px rgb(255 255 255 / 6%);
+  --button-glow-shadow-peak: 0 0 22px rgb(255 255 255 / 45%), inset 0 0 12px rgb(255 255 255 / 10%);
+  --button-glow-border: rgba(255, 255, 255, 0.55);
+  animation: glowing 2000ms ease-in-out infinite;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.p2p-picker-card--ffa.p2p-picker-card--selected::before,
+.p2p-picker-card--humans.p2p-picker-card--selected::before,
+.p2p-picker-card--ai.p2p-picker-card--selected::before {
+  background: rgba(255, 255, 255, 0.28);
+  left: 0;
+  right: 0;
+}
+
+.p2p-picker-card--ffa.p2p-picker-card--selected.practice-focus-target,
+.p2p-picker-card--humans.p2p-picker-card--selected.practice-focus-target,
+.p2p-picker-card--ai.p2p-picker-card--selected.practice-focus-target {
+  --button-glow-shadow-low: 0 0 12px rgb(255 255 255 / 40%), inset 0 0 10px rgb(255 255 255 / 10%);
+  --button-glow-shadow-peak: 0 0 28px rgb(255 255 255 / 70%), inset 0 0 14px rgb(255 255 255 / 14%);
+  outline: none;
+}
+
+/* ── FFA icon: 4-square pop animation on selection ── */
+.p2p-picker-card--ffa .lh-ffa-icon > * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes lh-ffa-node-in {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(1) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
+}
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(2) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s both;
+}
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(3) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s both;
+}
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(4) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s both;
+}
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(5) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
+}
+
+/* ── Tier area ── */
+.local-tier-area {
+  margin-top: clamp(8px, 0.8vw, 14px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.4vw, 8px);
+}
+
+.local-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+
+/* Tier card layout */
+.local-tier-card {
+  gap: 4px;
+}
+
+/* ── Per-tier brightness progression (no hues) ── */
+.local-tier-card[data-tier="wanderer"] { --tier-brightness: 0.38; }
+.local-tier-card[data-tier="hunter"]   { --tier-brightness: 0.56; }
+.local-tier-card[data-tier="tactician"]{ --tier-brightness: 0.74; }
+.local-tier-card[data-tier="sovereign"]{ --tier-brightness: 0.94; }
+
+/* Label opacity scales with difficulty */
+.local-tier-card .p2p-duel-format__label {
+  color: rgba(255, 255, 255, var(--tier-brightness, 0.88));
+  transition: color 0.12s;
+}
+
+/* Non-active: even dimmer */
+.local-tier-card:not(.p2p-duel-format__card--active) .p2p-duel-format__label {
+  opacity: 0.6;
+}
+
+/* ── Pip row — white only, opacity varies with tier ── */
+.local-tier-pips {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.local-tier-pip {
+  width: clamp(6px, 0.55vw, 8px);
+  height: clamp(3px, 0.25vw, 4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.local-tier-pip--filled {
+  background: rgba(255, 255, 255, var(--tier-brightness, 0.6));
+  border-color: rgba(255, 255, 255, var(--tier-brightness, 0.6));
+}
+
+/* ── P1-P4 slot buttons restyled to match duel-format cards ── */
+.local-hub-page .practice-four-slot {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.local-hub-page .practice-slot-btn {
+  border-radius: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  font: inherit;
+  color: rgba(255, 255, 255, 0.55);
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.local-hub-page .practice-slot-btn:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .local-hub-page .practice-slot-btn.human {
-  border-color: rgba(255, 255, 255, 0.32);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .local-hub-page .practice-slot-btn.ai {
-  border-color: rgba(255, 255, 255, 0.22);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.42);
 }
 
-/* Toggle checked — white ink */
-.local-hub-page .practice-toggle input:checked + .practice-toggle-ui {
-  border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.1);
+.local-hub-page .practice-slot-id {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(20px, 2.2vw, 30px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
-.local-hub-page .practice-toggle input:checked + .practice-toggle-ui::after {
-  border-color: rgba(255, 255, 255, 0.92);
+.local-hub-page .practice-slot-role {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.75vw, 11px);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.65;
 }
 
-/* Keyboard / gamepad focus */
+/* ── Modifiers row ── */
+.local-modifiers-section .p2p-picker-group-label {
+  font-size: clamp(8px, 0.65vw, 10px);
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.32);
+  margin-bottom: 0.2rem;
+}
+
+.local-modifier-row {
+  display: flex;
+  gap: 5px;
+}
+
+.local-modifier-row .p2p-duel-format__card {
+  flex: 0 0 auto;
+  min-width: clamp(100px, 11vw, 160px);
+}
+
+/* ── Actions row ── */
+.local-hub-page .practice-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+}
+
+.local-hub-page .practice-start.button,
+.local-hub-page .practice-back.button {
+  flex: 1 1 0;
+  width: auto;
+  height: 3vw;
+  min-height: 30px;
+  margin: 0;
+  padding: 1%;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8cqw;
+  font-weight: 400;
+  letter-spacing: 0.1rem;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: none;
+  animation: glowing 0ms infinite;
+}
+
+.local-hub-page .practice-start.button.practice-start--focused,
+.local-hub-page .practice-back.button.practice-start--focused {
+  animation: glowing 2000ms ease-in-out infinite;
+}
+
+/* ── Keyboard / gamepad focus ── */
 .local-hub-page .practice-seg-btn.practice-focus-target,
 .local-hub-page .practice-start.practice-focus-target,
-.local-hub-page .practice-back-btn.practice-focus-target,
+.local-hub-page .practice-back.practice-focus-target,
 .local-hub-page .practice-slot-btn.practice-focus-target,
-.local-hub-page .practice-toggle.practice-focus-target {
+.local-hub-page .p2p-duel-format__card.practice-focus-target {
   outline: 2px solid rgba(255, 255, 255, 0.55);
   outline-offset: 2px;
 }
 
-.local-hub-page .tn-tier-pick.practice-focus-target {
-  outline: 2px solid rgba(255, 255, 255, 0.55);
-  outline-offset: 2px;
+/* Suppress double outline when card is already glowing */
+.local-hub-page .p2p-duel-format__card--active.practice-focus-target {
+  outline: none;
 }
 
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .local-mode-config-area > .practice-section,
+  .local-mode-config-area > .practice-section.local-mode-inactive {
+    transition: none;
+  }
+  .lh-ffa-icon > * {
+    animation: none !important;
+  }
+}
+
+/* ── Large screen / TV (≥1400px) ── */
+@media (min-width: 1400px) {
+  .local-hub-page.practice-hub--practice {
+    max-width: clamp(700px, 60vw, 1200px);
+    gap: clamp(14px, 1.5vw, 24px);
+  }
+
+  .local-hub-page .practice-hub-title {
+    font-size: clamp(32px, 4vw, 68px);
+  }
+
+  .local-hub-page .practice-actions {
+    gap: clamp(6px, 0.6vw, 12px);
+  }
+
+  .local-tier-grid {
+    gap: clamp(5px, 0.5vw, 10px);
+  }
+
+  .local-tier-rank {
+    font-size: clamp(10px, 0.8vw, 14px);
+  }
+
+  .local-hub-page .practice-slot-id {
+    font-size: clamp(22px, 2.4vw, 36px);
+  }
+
+  .local-hub-page .practice-slot-role {
+    font-size: clamp(9px, 0.75vw, 13px);
+  }
+}
