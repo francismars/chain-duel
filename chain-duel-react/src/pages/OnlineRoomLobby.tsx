@@ -785,6 +785,10 @@ export default function OnlineRoomLobby() {
   return (
     <div className="online-lobby-page">
       <Sponsorship id="sponsorship-online-lobby" />
+      <header id="brand">
+        <h2 id="chain">CHAIN</h2>
+        <h2 id="duel">DUEL</h2>
+      </header>
 
       {/* ── Zone 1: Page Header ── */}
       <div className="online-lobby-header">
