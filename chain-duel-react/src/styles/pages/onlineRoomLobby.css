@@ -6,9 +6,9 @@
 /* ── Brand corners (CHAIN … DUEL) ── */
 #brand {
   position: fixed;
-  top: 0;
-  margin-top: 1rem;
-  width: 100%;
+  top: 1rem;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: space-between;
   pointer-events: none;
@@ -17,26 +17,35 @@
 
 #chain {
   color: white;
-  margin: 0 0 0 1%;
+  margin: 0;
+  padding-left: 1%;
   text-align: left;
-  font-size: 2.5cqw;
+  font-size: clamp(12px, 2vw, 28px);
 }
 
 #duel {
   color: white;
-  margin: 0 1% 0 0;
+  margin: 0;
+  padding-right: 1%;
   text-align: right;
-  font-size: 2.5cqw;
+  font-size: clamp(12px, 2vw, 28px);
 }
 
 .online-lobby-page {
   width: 100vw;
   min-height: 100vh;
-  padding: 2.8vw 3vw 0;
   color: #fff;
   display: flex;
   flex-direction: column;
+}
+
+.online-lobby-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: 0.6vw;
+  padding: 3.5rem 3vw 2vw;
 }
 
 .online-lobby-page-missing {
@@ -865,6 +874,48 @@
   font-size: clamp(11px, 0.82cqw, 14px);
 }
 
+.online-lobby-kind1-section--room-error {
+  min-height: 160px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  text-align: center;
+  border-color: rgb(255 100 100 / 0.2);
+  background: rgb(180 30 30 / 8%);
+}
+
+.online-lobby-room-error-icon {
+  width: clamp(28px, 2.2cqw, 38px);
+  height: clamp(28px, 2.2cqw, 38px);
+  color: #ff7b7b;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.online-lobby-room-error-title {
+  margin: 0;
+  font-size: clamp(14px, 1.1cqw, 18px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.online-lobby-room-error-detail {
+  margin: 0;
+  font-size: clamp(10px, 0.75cqw, 13px);
+  color: #ff9a9a;
+  letter-spacing: 0.04em;
+}
+
+/* Inline payment error (inside loaded kind1 section) */
+.online-lobby-inline-pay-error {
+  margin: 0.3rem 0 0;
+  font-size: clamp(10px, 0.75cqw, 13px);
+  color: #ff7b7b;
+  letter-spacing: 0.04em;
+}
+
 .online-lobby-kind1-section-label {
   margin-bottom: 0.1rem;
 }
@@ -935,6 +986,7 @@
   width: auto;
   min-width: 130px;
   height: 44px;
+  padding: 0 1.4em;
   font-size: clamp(11px, 0.78cqw, 13px);
 }
 
@@ -1761,9 +1813,9 @@
 }
 
 @media (max-width: 1024px) {
-  .online-lobby-page {
+  .online-lobby-main {
     gap: 8px;
-    padding: 20px 16px 0;
+    padding: 3rem 16px 16px;
   }
 
   .online-lobby-header,
@@ -1858,8 +1910,76 @@
      left  → header (full), don-banner, arena, action, leave
      right → kind1 sidebar spanning all content rows
    ───────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   16:9 TV layout — safe-zone padding + larger type
+   Applied on top of the 16/10 widescreen rules above.
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 1600px) and (min-aspect-ratio: 16/9) {
+  /* 5 % horizontal safe-zone */
+  .online-lobby-main {
+    padding: 1.4vw 5vw 1vw;
+  }
+
+  /* Wider kind1 sidebar on true 16:9 */
+  .online-lobby-main {
+    grid-template-columns: 1fr 420px;
+    column-gap: 1.8vw;
+  }
+
+  /* Title */
+  .online-lobby-title {
+    font-size: clamp(32px, 3.6vw, 58px);
+  }
+
+  /* Meta row */
+  .online-lobby-header-meta {
+    font-size: 1vw;
+  }
+
+  /* Arena seat name */
+  .online-lobby-arena-seat-name {
+    font-size: clamp(20px, 1.7vw, 32px);
+  }
+
+  /* Arena seat meta */
+  .online-lobby-arena-seat-meta {
+    font-size: clamp(13px, 0.88vw, 17px);
+  }
+
+  /* VS label */
+  .online-lobby-arena-vs {
+    font-size: clamp(20px, 2.2vw, 38px);
+  }
+
+  /* DoN amount */
+  .online-lobby-don-banner-amount {
+    font-size: clamp(26px, 2.5vw, 44px);
+  }
+
+  /* Pin / seat paid amount */
+  .online-lobby-pin {
+    font-size: clamp(28px, 2.6vw, 46px);
+  }
+
+  /* Action buttons */
+  .online-lobby-action {
+    height: 52px;
+    font-size: 1vw;
+    padding: 0 2em;
+  }
+
+  /* Label / utility text */
+  .online-lobby-label {
+    font-size: clamp(11px, 0.78vw, 15px);
+  }
+
+  .online-lobby-copy {
+    font-size: clamp(12px, 0.82vw, 16px);
+  }
+}
+
 @media (min-width: 1400px) and (min-aspect-ratio: 16/10) {
-  .online-lobby-page {
+  .online-lobby-main {
     display: grid;
     grid-template-columns: 1fr 380px;
     column-gap: 1.2vw;
@@ -1867,6 +1987,8 @@
     padding: 1.2vw 2vw 0.8vw;
     align-items: start;
     box-sizing: border-box;
+    /* Override the flex centering — grid handles layout */
+    justify-content: unset;
   }
 
   /* Header spans both columns */

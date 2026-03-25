@@ -52,6 +52,7 @@
   #online-title,
   #online-subtitle,
   .online-room-list-panel,
+  .online-room-list,
   .online-room-card,
   .online-action-card,
   .online-footer-controls {
@@ -60,9 +61,11 @@
 }
 
 #online-title {
-  font-size: 7.4cqw;
+  font-size: 4.5cqw;
   letter-spacing: 0;
-  margin: 0;
+  margin: 0 auto;
+  width: min(70vw, 1200px);
+  text-align: center;
   color: #fff;
   text-shadow: 0 0 16px rgb(255 255 255 / 35%);
   animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -73,85 +76,120 @@
   color: #d8d8d8;
   letter-spacing: 0.06rem;
   font-size: 0.9cqw;
-  margin-top: -0.4vw;
+  margin: -0.4vw auto 0;
+  width: min(70vw, 1200px);
+}
+
+/* ── Mode-switch entrance animation ── */
+@keyframes action-mode-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.online-action-label {
+  animation: action-mode-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.online-buyin-stepper,
+.online-code-input {
+  animation: action-mode-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both;
+}
+
+.online-create-btn-label {
+  display: inline-block;
+  animation: action-mode-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
+}
+
+.online-action-switch-label {
+  display: inline-block;
+  animation: action-mode-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-action-label,
+  .online-buyin-stepper,
+  .online-code-input,
+  .online-create-btn-label,
+  .online-action-switch-label {
+    animation: none;
+  }
 }
 
 /* ── Simple action card (below room list) ── */
+/* ── Action card ── */
 .online-action-card {
   width: min(70vw, 1200px);
   margin: 0 auto;
-  border: none;
-  background: none;
+  padding-top: 1rem;
 }
 
-/* Label + field + button in one row */
 .online-action-card-body {
-  display: flex;
-  align-items: flex-end;
-  gap: 0;
-  padding: 0.45em 0 0.35em;
+  display: grid;
+  grid-template-columns: 1fr minmax(120px, 26%);
+  grid-template-rows: auto auto;
+  column-gap: 1rem;
+  row-gap: 0.3rem;
+  align-items: stretch;
+  padding-bottom: 0.7rem;
 }
 
-.online-action-field {
+.online-action-label {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-size: clamp(8px, 0.55cqw, 10px);
+  letter-spacing: 0.18em;
+  color: rgb(255 255 255 / 0.38);
+  text-transform: uppercase;
+}
+
+/* Field wrapper: holds the bordered stepper + loose presets row */
+.online-buyin-field,
+.online-code-input {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.online-buyin-field {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+/* Buy-in stepper: bordered box − / value / + */
+.online-buyin-stepper {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 0.25em;
-  min-width: 0;
-  justify-content: center;
-}
-
-.online-action-field-label {
-  margin: 0;
-  padding: 0;
-  font-size: clamp(8px, 0.55cqw, 10px);
-  letter-spacing: 0.14em;
-  color: #fff;
-  text-transform: uppercase;
-  line-height: 1;
-}
-
-/* Footer: error left, mode toggle right */
-.online-action-card-footer {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.3em 0.5em 0.35em;
-  border-top: 1px solid rgb(255 255 255 / 0.07);
+  gap: 0.6rem;
+  padding: 0 0.45rem;
+  min-height: clamp(36px, 2.8vw, 46px);
+  border: 1px solid rgb(255 255 255 / 0.07);
+  overflow: hidden;
 }
 
-.online-action-switch {
-  background: none;
-  border: none;
-  color: rgb(255 255 255 / 0.35);
-  font-size: clamp(9px, 0.6cqw, 11px);
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.14s;
-  margin-left: auto;
-}
-
-.online-action-switch:hover { color: rgb(255 255 255 / 0.7); }
-
-/* Buy-in stepper */
-.online-buyin-stepper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5em;
-  height: clamp(34px, 2.6vw, 44px);
+/* Override generic .online-selected bottom-border for the stepper box */
+.online-buyin-stepper.online-selected {
+  border-color: rgb(255 255 255 / 0.45) !important;
+  box-shadow: none !important;
 }
 
 .online-buyin-btn {
-  width: clamp(32px, 2.4vw, 42px);
-  height: clamp(32px, 2.4vw, 42px);
-  font-size: 1.25rem;
+  width: clamp(30px, 2.2vw, 38px);
+  height: clamp(30px, 2.2vw, 38px);
+  font-size: 1.15rem;
   line-height: 1;
   font-family: inherit;
-  color: rgb(255 255 255 / 0.55);
+  color: rgb(255 255 255 / 0.5);
   background: transparent;
-  border: 1px solid rgb(255 255 255 / 0.18);
+  border: 1px solid rgb(255 255 255 / 0.15);
   cursor: pointer;
   transition: color 0.12s, background 0.12s, border-color 0.12s;
   display: flex;
@@ -162,26 +200,21 @@
 
 .online-buyin-btn:hover {
   color: #fff;
-  border-color: rgb(255 255 255 / 0.5);
+  border-color: rgb(255 255 255 / 0.45);
   background: rgb(255 255 255 / 0.06);
 }
 
 .online-buyin-btn:active { background: rgb(255 255 255 / 0.12); }
 
-/* Amount + unit centred together */
 .online-buyin-center {
   display: flex;
   align-items: baseline;
   gap: 0.35em;
-  flex: 1;
-  justify-content: center;
-  min-width: 0;
 }
 
 .online-buyin-value {
-  text-align: right;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.4cqw, 22px);
+  font-size: clamp(18px, 1.8cqw, 28px);
   letter-spacing: 0.03em;
   color: #fff;
   background: transparent;
@@ -191,36 +224,127 @@
   min-width: 2ch;
   max-width: 8ch;
   padding: 0;
+  text-align: left;
 }
 
 .online-buyin-unit {
   font-family: BureauGrotesque, sans-serif;
   font-size: clamp(10px, 0.7cqw, 12px);
-  letter-spacing: 0.08em;
-  color: rgb(255 255 255 / 0.4);
-  flex-shrink: 0;
+  letter-spacing: 0.1em;
+  color: rgb(255 255 255 / 0.38);
   text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Quick-amount preset group — vertical stack beside the stepper */
+.online-buyin-presets {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border: 1px solid rgb(255 255 255 / 0.07);
+  overflow: hidden;
+}
+
+.online-buyin-preset {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+  color: rgb(255 255 255 / 0.3);
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(8px, 0.6cqw, 10px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0 0.6rem;
+  transition: color 0.12s, background 0.12s;
+  line-height: 1;
+  min-width: 2.8rem;
+}
+
+.online-buyin-preset:last-child {
+  border-bottom: none;
+}
+
+.online-buyin-preset:hover {
+  color: rgb(255 255 255 / 0.75);
+  background: rgb(255 255 255 / 0.05);
+}
+
+.online-buyin-preset:active {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.online-buyin-preset--active {
+  color: rgb(255 255 255 / 0.82);
+  background: rgb(255 255 255 / 0.04);
+}
+
+.online-buyin-preset.online-selected {
+  color: #fff !important;
+  background: rgb(255 255 255 / 0.1) !important;
+  border-bottom-color: rgb(255 255 255 / 0.07) !important;
+  box-shadow: none !important;
 }
 
 /* Room code input */
 .online-code-input {
-  font-family: BureauGrotesque, sans-serif !important;
-  font-size: clamp(14px, 1.2cqw, 19px) !important;
-  letter-spacing: 0.14em !important;
-  border: none !important;
-  background: transparent !important;
-  flex: 1 !important;
-  padding: 0 0.4em !important;
-  box-shadow: none !important;
-  height: clamp(34px, 2.6vw, 44px) !important;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(16px, 1.6cqw, 26px);
+  letter-spacing: 0.22em;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgb(255 255 255 / 0.2);
+  color: #fff;
+  width: 100%;
+  min-height: clamp(36px, 2.8vw, 46px);
+  padding: 0;
+  outline: none;
+  transition: border-color 0.14s;
 }
 
-/* CTA button */
+.online-code-input:focus { border-bottom-color: rgb(255 255 255 / 0.55); }
+.online-code-input::placeholder { color: rgb(255 255 255 / 0.18); letter-spacing: 0.18em; }
+
+/* CTA button — right column, spans label + field rows */
 .online-create-btn {
-  align-self: center;
-  flex-shrink: 0;
-  margin: 0;
-  min-width: clamp(70px, 6vw, 100px);
+  grid-column: 2 !important;
+  grid-row: 1 / span 2 !important;
+  width: 100% !important;
+  min-width: unset !important;
+  margin: 0 !important;
+  align-self: stretch !important;
+  height: auto !important;
+  min-height: clamp(38px, 3vw, 46px) !important;
+}
+
+/* Footer: error left, mode toggle right */
+.online-action-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0.4rem 0 0.7rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.online-action-switch {
+  background: none;
+  border: none;
+  color: rgb(255 255 255 / 0.3);
+  font-size: clamp(9px, 0.6cqw, 11px);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.14s;
+}
+
+.online-action-switch:hover { color: rgb(255 255 255 / 0.65); }
+
+.online-action-switch.online-selected {
+  color: rgb(255 255 255 / 0.85) !important;
+  border-bottom: 1px solid rgb(255 255 255 / 0.5) !important;
+  box-shadow: none !important;
 }
 
 /* Inline error inside card */
@@ -257,8 +381,8 @@
 .online-action {
   margin: 0;
   min-width: 7rem;
-  height: 2.6vw;
-  min-height: 38px;
+  height: auto;
+  min-height: clamp(38px, 3vw, 46px);
 }
 
 .online-room-list-panel {
@@ -276,47 +400,144 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.6vw;
-  margin-bottom: 0.6vw;
+  margin-bottom: 0;   /* removed — tab border bleeds into list top border */
 }
 
 .online-room-list-head h3 {
-  margin: 0;
-  font-size: 1.45cqw;
+  margin: 0 0 0.4rem;
+  font-size: clamp(18px, 2.2cqw, 30px);
+  letter-spacing: 0;
 }
 
 .online-tab-row {
   display: flex;
   gap: 0;
-  border: 1px solid rgb(255 255 255 / 0.18);
-  background: rgb(0 0 0 / 0.35);
+  background: none;
+  border: none;
 }
 
 .online-tab {
-  font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(10px, 0.75cqw, 13px);
-  letter-spacing: 0.1em;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(11px, 0.88cqw, 15px);
+  letter-spacing: 0;
   text-transform: uppercase;
-  padding: 0.3em 0.9em;
+  padding: 0.35em 1.2em;
   border: none;
-  border-right: 1px solid rgb(255 255 255 / 0.18);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;   /* sink bottom border flush with list top border */
   background: transparent;
   color: rgb(255 255 255 / 0.35);
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-
-.online-tab:last-child {
-  border-right: none;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .online-tab:hover {
   color: rgb(255 255 255 / 0.75);
-  background: rgb(255 255 255 / 0.04);
+  background: none;
 }
 
 .online-tab-active {
   color: #fff !important;
-  background: rgb(255 255 255 / 0.08) !important;
+  background: none !important;
+  border-bottom-color: #fff !important;
+}
+
+/* Controller / keyboard nav focus — white underline matching active style */
+.online-tab.online-selected {
+  color: #fff !important;
+  background: none !important;
+  border-bottom-color: rgb(255 255 255 / 0.55) !important;
+  outline: none;
+  box-shadow: none;
+}
+
+/* Active tab status dot */
+.online-tab--live {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.online-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgb(255 255 255 / 0.2);
+  transition: background 0.2s;
+}
+
+.online-tab-dot--active {
+  background: #e04040;
+  box-shadow: 0 0 5px rgb(220 50 50 / 0.6);
+}
+
+/* Finished tab hourglass icon */
+.online-tab--history {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.online-tab-history-icon {
+  width: 0.75em;
+  height: 0.75em;
+  flex-shrink: 0;
+  color: rgb(255 255 255 / 0.3);
+  transition: color 0.15s;
+}
+
+.online-tab--history:hover .online-tab-history-icon,
+.online-tab--history.online-tab-active .online-tab-history-icon {
+  color: rgb(255 255 255 / 0.55);
+}
+
+/* Hall-of-Fame tab — star yellow, label matches normal tabs */
+.online-tab--hof {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.online-tab-hof-icon {
+  width: 0.9em;
+  height: 0.9em;
+  flex-shrink: 0;
+  color: rgb(212 170 60 / 0.7);
+  transition: color 0.15s;
+}
+
+.online-tab--hof:hover .online-tab-hof-icon { color: rgb(232 190 80); }
+.online-tab--hof.online-tab-active .online-tab-hof-icon { color: rgb(240 200 80); }
+
+/* ── HoF crown badge inside room-code cell ── */
+.online-hof-crown {
+  display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
+  vertical-align: middle;
+  margin-right: 0.25em;
+  color: rgb(212 170 80 / 0.9);
+  position: relative;
+  top: -0.1em;
+}
+
+/* ── HoF highlight on cards shown in Finished tab ── */
+.online-room-card--hof {
+  border-bottom-color: rgb(255 255 255 / 0.3);
+}
+
+.online-room-card--hof .online-history-room-code {
+  color: rgb(232 190 90);
+}
+
+/* ── HoF view — cards are always HoF so give the whole row a subtle warmth ── */
+.online-room-card--hof-view {
+  border-bottom-color: rgb(180 130 30 / 0.25);
+}
+
+.online-room-card--hof-view .online-history-room-code {
+  color: rgb(232 190 90);
 }
 
 /* ── History card — single-line compressed rows ── */
@@ -329,7 +550,7 @@
 /* 3-col grid: narrow badge | flex matchup | actions flush right */
 .online-room-card--history .online-postgame-round-row-inner {
   width: 100%;
-  padding: 0.28rem 0.5rem 0.28rem 0.55rem;
+  padding: 0.28rem 0;
   gap: 0.25rem 0.6rem;
   grid-template-columns: minmax(8rem, 9.5rem) minmax(0, 1fr) auto;
   align-items: center;
@@ -442,9 +663,22 @@
   margin: 0;
 }
 
+/* Tab-switch: fade only — height is fixed so no height animation needed */
+@keyframes list-tab-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 .online-room-list {
-  max-height: 40vh;
+  /* Fixed height keeps the layout stable on every tab */
+  height: clamp(200px, 30vh, 440px);
   overflow-y: auto;
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+  animation: list-tab-fade 0.28s ease both;
+  /* stretch empty state to fill the whole container */
+  display: flex;
+  flex-direction: column;
 }
 
 .online-room-card {
@@ -476,9 +710,30 @@
   font-size: 1.12cqw;
 }
 
+/* Generic: tabs / inputs use bottom-border underline */
 .online-selected {
   border-bottom-color: #fff !important;
   box-shadow: 0 1px 0 rgb(255 255 255 / 24%);
+}
+
+/* Buttons use a pulsing outline instead of the underline */
+@keyframes btn-nav-pulse {
+  0%, 100% { outline-color: rgb(255 255 255 / 0.55); outline-offset: 2px; }
+  50%       { outline-color: rgb(255 255 255 / 0.08); outline-offset: 6px; }
+}
+
+.button.online-selected {
+  outline: 2px solid rgb(255 255 255 / 0.55);
+  outline-offset: 2px;
+  animation: btn-nav-pulse 1.4s ease-in-out infinite;
+  border-bottom-color: initial !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button.online-selected {
+    animation: none;
+  }
 }
 
 .online-room-card.online-selected {
@@ -545,9 +800,38 @@
 }
 
 .online-empty {
-  color: #afafaf;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0;
+  margin: 0;
+  color: #686868;
   text-align: center;
-  padding: 1vw;
+}
+
+.online-empty-icon {
+  width: clamp(64px, 6vw, 96px);
+  height: auto;
+  opacity: 0.5;
+  margin-bottom: 0.3rem;
+}
+
+.online-empty-title {
+  margin: 0;
+  font-size: clamp(11px, 0.9cqw, 15px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #808080;
+}
+
+.online-empty-hint {
+  margin: 0;
+  font-size: clamp(10px, 0.72cqw, 12px);
+  color: #505050;
+  letter-spacing: 0.04em;
 }
 
 .online-error {
@@ -560,6 +844,9 @@
 
 .online-footer-controls {
   margin-top: auto;
+  margin-left: auto;
+  margin-right: auto;
+  width: min(70vw, 1200px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -609,9 +896,21 @@
   font-size: 0.95rem;
 }
 
+/* ── Default: wrappers are transparent (flex children of page) ── */
+.online-rooms-body {
+  display: contents;
+}
+
+.online-rooms-side {
+  display: contents;
+}
+
 @media (max-width: 1024px) {
+  #online-title,
+  #online-subtitle,
   .online-action-card,
   .online-room-list-panel,
+  .online-footer-controls,
   .online-error {
     width: 90vw;
   }
@@ -626,5 +925,169 @@
   .online-room-meta,
   #online-subtitle {
     font-size: 12px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   16:9 TV layout — 1920×1080 optimised
+   • 5 % side safe-zones (overscan)
+   • 2-column: room list left, action + back right
+   • Larger fonts and hit-targets for 10-foot / controller use
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 1400px) and (min-aspect-ratio: 16/9) {
+  .online-rooms-page {
+    /* 5 % horizontal safe-zone */
+    padding: 2.8vw 5vw 2vw;
+    gap: 1.8vw;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  /* Title and subtitle stay full-width and centred */
+  #online-title {
+    font-size: 4.8vw;
+  }
+
+  #online-subtitle {
+    font-size: 1.15vw;
+    margin-top: -0.3vw;
+  }
+
+  /* Body becomes a 2-column grid */
+  .online-rooms-body {
+    display: grid;
+    grid-template-columns: 1fr minmax(300px, 360px);
+    column-gap: 2.5vw;
+    align-items: start;
+    width: 100%;
+  }
+
+  /* Sidebar column: action card + back stacked, sticky within the viewport */
+  .online-rooms-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.8vw;
+    position: sticky;
+    top: 3.5vw;
+  }
+
+  /* All content fills its grid column — override the default centering widths */
+  #online-title,
+  #online-subtitle,
+  .online-room-list-panel,
+  .online-action-card,
+  .online-footer-controls,
+  .online-error {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  /* Room list: taller on TV */
+  .online-room-list {
+    height: clamp(320px, 55vh, 680px);
+  }
+
+  /* ── Larger typography for 10-foot viewing ── */
+  .online-room-list-head h3 {
+    font-size: 2.4vw;
+  }
+
+  .online-tab {
+    font-size: 1.05vw;
+    padding: 0.5em 1.6em;
+  }
+
+  .online-room-code {
+    font-size: 1.7vw;
+  }
+
+  .online-room-meta {
+    font-size: 0.88vw;
+    gap: 1.1vw;
+  }
+
+  .online-room-card {
+    padding: 0.9vw 0;
+  }
+
+  .online-room-card.online-room-card--history {
+    padding: 0.55vw 0;
+  }
+
+  /* ── Action card — larger inputs and buttons ── */
+  .online-action-label {
+    font-size: 0.75vw;
+  }
+
+  .online-action-card-body {
+    grid-template-rows: auto auto;
+  }
+
+  .online-buyin-stepper {
+    min-height: clamp(52px, 4vw, 68px);
+  }
+
+  .online-buyin-preset {
+    font-size: clamp(11px, 0.72vw, 14px);
+    padding: 0 0.75rem;
+  }
+
+  .online-buyin-btn {
+    width: clamp(44px, 3.2vw, 56px);
+    height: clamp(44px, 3.2vw, 56px);
+    font-size: 1.5rem;
+  }
+
+  .online-buyin-value {
+    font-size: clamp(28px, 2.4vw, 42px);
+  }
+
+  .online-buyin-unit {
+    font-size: clamp(13px, 0.85vw, 16px);
+  }
+
+  .online-code-input {
+    font-size: clamp(22px, 2vw, 36px);
+    min-height: clamp(52px, 4vw, 68px);
+  }
+
+  .online-create-btn,
+  .online-action {
+    min-height: clamp(52px, 4vw, 68px) !important;
+    font-size: 1vw !important;
+  }
+
+  .online-action-switch {
+    font-size: 0.72vw;
+  }
+
+  /* ── Footer ── */
+  .online-footer-controls {
+    margin-top: 0;
+  }
+
+  .online-back {
+    min-width: 280px;
+    height: clamp(48px, 3.5vw, 60px);
+    font-size: 1vw !important;
+  }
+
+  .online-controls-hint {
+    font-size: 0.85vw;
+  }
+
+  /* ── Empty state — stays centred via flex: 1 from base rule ── */
+
+  .online-empty-icon {
+    width: clamp(72px, 6.5vw, 110px);
+  }
+
+  .online-empty-title {
+    font-size: clamp(13px, 1.05vw, 18px);
+  }
+
+  .online-empty-hint {
+    font-size: clamp(11px, 0.82vw, 15px);
   }
 }

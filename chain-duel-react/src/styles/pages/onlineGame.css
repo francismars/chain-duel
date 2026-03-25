@@ -227,36 +227,116 @@
   color: rgb(255 255 255 / 0.78);
 }
 
-.online-replay-speed select {
-  appearance: none;
-  background-color: transparent;
-  color: #fff;
+.online-replay-speed-label {
+  /* inherits from .online-replay-speed */
+}
+
+/* ── Custom speed picker ──────────────────────────────────── */
+.online-replay-speed-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35vw;
+  padding: 0.32vw 0.55vw;
+  min-width: 3.6vw;
   border: 1px solid rgba(255, 255, 255, 0.34);
-  border-radius: 0;
-  padding: 0.32vw 1.55vw 0.32vw 0.55vw;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
   font-family: 'Inter', sans-serif;
   font-size: 0.62cqw;
   font-weight: 500;
   letter-spacing: 0.05rem;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23ffffff' fill-opacity='0.85' d='M0 0h10L5 6z'/%3E%3C/svg%3E");
-  background-position: calc(100% - 0.45vw) 50%;
-  background-size: 9px 5px;
-  background-repeat: no-repeat;
+  user-select: none;
+  outline: none;
+  transition: border-color 0.12s, background-color 0.12s, box-shadow 0.12s;
 }
 
-.online-replay-speed select:hover,
-.online-replay-speed select:focus-visible {
-  border-color: var(--button-glow-border, #fff);
+.online-replay-speed-picker:hover,
+.online-replay-speed-picker:focus-visible,
+.online-replay-speed-picker--open {
+  border-color: #fff;
   background-color: rgb(255 255 255 / 8%);
 }
 
-.online-replay-speed select:focus {
-  outline: none;
+.online-replay-speed-picker:focus-visible {
+  box-shadow: var(--button-glow-shadow-low, 0 0 15px rgb(255 255 255 / 45%));
 }
 
-.online-replay-speed select:focus-visible {
-  box-shadow: var(--button-glow-shadow-low, 0 0 15px rgb(255 255 255));
+.online-replay-speed-value {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.online-replay-speed-chevron {
+  width: 8px;
+  height: 5px;
+  flex-shrink: 0;
+  opacity: 0.72;
+  transition: transform 0.14s ease;
+}
+
+.online-replay-speed-picker--open .online-replay-speed-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown list ─────────────────────────────────────────── */
+.online-replay-speed-list {
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgb(8 8 14 / 96%);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 -6px 24px rgb(0 0 0 / 65%),
+    inset 0 1px 0 rgb(255 255 255 / 7%);
+  overflow: hidden;
+  z-index: 200;
+  animation: speed-list-in 0.11s ease-out both;
+}
+
+@keyframes speed-list-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.online-replay-speed-option {
+  display: block;
+  width: 100%;
+  padding: 0.28vw 0.55vw;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.60cqw;
+  font-weight: 500;
+  letter-spacing: 0.04rem;
+  color: rgb(255 255 255 / 0.52);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgb(255 255 255 / 0.05);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.08s, color 0.08s;
+}
+
+.online-replay-speed-option:last-child {
+  border-bottom: none;
+}
+
+.online-replay-speed-option--active {
+  color: #fff;
+}
+
+.online-replay-speed-option--focused {
+  color: #fff;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.online-replay-speed-option--active.online-replay-speed-option--focused {
+  background: rgb(255 255 255 / 0.13);
 }
 
 /* Progress scrubber — same glass / glow language as buttons */

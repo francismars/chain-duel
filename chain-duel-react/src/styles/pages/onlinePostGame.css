@@ -646,10 +646,10 @@
 }
 
 .online-postgame-btn-back {
-  border-color: rgb(255 255 255 / 0.7);
-  color: rgb(248 248 248 / 0.94);
-  background: linear-gradient(180deg, rgb(255 255 255 / 14%) 0%, rgb(255 255 255 / 4%) 100%);
-  box-shadow: 0 0 18px rgb(255 255 255 / 14%), inset 0 0 0 1px rgb(255 255 255 / 10%);
+  border-color: #fff;
+  color: #fff;
+  background: transparent;
+  box-shadow: none;
 }
 
 .online-postgame-actions .button:hover:not(.disabled):not(:disabled) {
@@ -892,6 +892,28 @@
     width: 100%;
     min-width: 0;
     height: 44px;
+  }
+}
+
+/* —— Gamepad / keyboard selection highlight — matches home-menu glowing —— */
+@keyframes postgame-btn-glowing {
+  0%   { background-color: rgb(255 255 255 / 15%); box-shadow: 0 0 15px #fff; }
+  50%  { background-color: rgb(255 255 255 / 30%); box-shadow: 0 0 35px #fff; }
+  100% { background-color: rgb(255 255 255 / 15%); box-shadow: 0 0 15px #fff; }
+}
+
+.online-postgame-btn.online-selected,
+.online-postgame-round-replay-btn.button.online-selected {
+  animation: postgame-btn-glowing 2000ms ease-in-out infinite;
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-postgame-btn.online-selected,
+  .online-postgame-round-replay-btn.button.online-selected {
+    animation: none;
+    outline: 2px solid rgb(255 255 255 / 0.8);
+    outline-offset: 3px;
   }
 }
 

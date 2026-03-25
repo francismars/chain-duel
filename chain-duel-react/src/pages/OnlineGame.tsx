@@ -16,6 +16,8 @@ import type { GameState } from '@/game/engine/types';
 import './game.css';
 import '@/styles/pages/onlineGame.css';
 
+const REPLAY_SPEEDS = [0.25, 0.5, 1, 1.5, 2, 4, 8, 16, 32, 64] as const;
+
 export default function OnlineGame() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -75,6 +77,8 @@ export default function OnlineGame() {
   const [replayError, setReplayError] = useState('');
   /** Server-recorded mempool block cosmetics, keyed by replay frame index. */
   const [replayBlockEvents, setReplayBlockEvents] = useState<OnlineReplayBlockEvent[]>([]);
+  /** Set to true while the speed picker dropdown is open so the global key handler yields to it. */
+  const replaySpeedOpenRef = useRef(false);
   const audioRef = useRef<GameAudioSystem | null>(null);
   if (!audioRef.current) {
     audioRef.current = new GameAudioSystem();
@@ -488,6 +492,93 @@ export default function OnlineGame() {
     };
   }, [navigate, replayMode, roomId, socket]);
 
+  // ── Replay keyboard navigation ──────────────────────────────────────────
+  useEffect(() => {
+    if (!replayMode) return;
+
+    const SCRUB = Math.max(1, Math.round(replayFrames.length * 0.03)); // ~3 % of total
+
+    const onKey = (event: KeyboardEvent) => {
+      // Let speed picker handle its own keys when the dropdown is open
+      if (replaySpeedOpenRef.current) return;
+      // Let native range slider handle its own keys when focused
+      const tag = (document.activeElement as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT') return;
+
+      switch (event.key) {
+        case ' ':
+        case 'Enter': {
+          event.preventDefault();
+          if (!replayFrames.length) break;
+          setReplayPlaying((prev) => {
+            if (prev) return false;
+            // restart from top if at end
+            if (replayIndex >= replayFrames.length - 1) {
+              setReplayIndex(0);
+              setSnapshot(replayFrames[0] ?? null);
+            }
+            return true;
+          });
+          break;
+        }
+        case 'ArrowLeft': {
+          event.preventDefault();
+          setReplayPlaying(false);
+          const prev = Math.max(0, replayIndex - SCRUB);
+          setReplayIndex(prev);
+          if (replayFrames[prev]) setSnapshot(replayFrames[prev]);
+          break;
+        }
+        case 'ArrowRight': {
+          event.preventDefault();
+          const next = Math.min(replayFrames.length - 1, replayIndex + SCRUB);
+          setReplayIndex(next);
+          if (replayFrames[next]) setSnapshot(replayFrames[next]);
+          break;
+        }
+        case 'ArrowUp': {
+          event.preventDefault();
+          setReplaySpeed((prev) => {
+            const idx = (REPLAY_SPEEDS as readonly number[]).indexOf(prev);
+            return idx < REPLAY_SPEEDS.length - 1 ? REPLAY_SPEEDS[idx + 1] : prev;
+          });
+          break;
+        }
+        case 'ArrowDown': {
+          event.preventDefault();
+          setReplaySpeed((prev) => {
+            const idx = (REPLAY_SPEEDS as readonly number[]).indexOf(prev);
+            return idx > 0 ? REPLAY_SPEEDS[idx - 1] : prev;
+          });
+          break;
+        }
+        case 'r':
+        case 'R': {
+          event.preventDefault();
+          setReplayPlaying(false);
+          setReplayIndex(0);
+          if (replayFrames[0]) setSnapshot(replayFrames[0]);
+          break;
+        }
+        case 'v':
+        case 'V': {
+          event.preventDefault();
+          setReplayPlaying(false);
+          navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
+          break;
+        }
+        case 'Escape': {
+          setReplayPlaying(false);
+          navigate('/online');
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [replayMode, replayFrames, replayIndex, navigate, roomId, setSnapshot]);
+
   const canAttemptContinue = Boolean(snapshot?.state?.gameEnded);
   const effectiveSessionID = currentSessionID || sessionStorage.getItem('sessionID') || '';
   const isP1 =
@@ -718,24 +809,11 @@ export default function OnlineGame() {
                   <span className="online-replay-btn__label">EXIT ROOM</span>
                 </button>
                 <div className="online-replay-trailing">
-                  <label className="online-replay-speed">
-                    Speed
-                    <select
-                      value={String(replaySpeed)}
-                      onChange={(event) => setReplaySpeed(Number(event.target.value))}
-                    >
-                      <option value="0.25">0.25x</option>
-                      <option value="0.5">0.5x</option>
-                      <option value="1">1x</option>
-                      <option value="1.5">1.5x</option>
-                      <option value="2">2x</option>
-                      <option value="4">4x</option>
-                      <option value="8">8x</option>
-                      <option value="16">16x</option>
-                      <option value="32">32x</option>
-                      <option value="64">64x</option>
-                    </select>
-                  </label>
+                  <ReplaySpeedPicker
+                    value={replaySpeed}
+                    onChange={setReplaySpeed}
+                    onOpenChange={(o) => { replaySpeedOpenRef.current = o; }}
+                  />
                   <div className="online-replay-time" aria-label="Replay position">
                     {formatSeconds(replayPositionSec)} / {formatSeconds(replayDurationSec)}
                   </div>
@@ -1095,6 +1173,128 @@ function ReplayIconExitRoom() {
     >
       <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
     </svg>
+  );
+}
+
+function ReplaySpeedPicker({
+  value,
+  onChange,
+  onOpenChange,
+}: {
+  value: number;
+  onChange: (s: number) => void;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(2); // default: 1x
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const currentIdx = (REPLAY_SPEEDS as readonly number[]).indexOf(value);
+
+  function openList() {
+    const idx = currentIdx >= 0 ? currentIdx : 2;
+    setFocusIdx(idx);
+    setOpen(true);
+    onOpenChange(true);
+  }
+
+  function closeList() {
+    setOpen(false);
+    onOpenChange(false);
+  }
+
+  function selectIdx(idx: number) {
+    onChange(REPLAY_SPEEDS[idx]);
+    closeList();
+    containerRef.current?.querySelector<HTMLElement>('[tabindex="0"]')?.focus();
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) closeList();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (!open) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        openList();
+      }
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    switch (e.key) {
+      case 'Escape':
+        closeList();
+        break;
+      case 'ArrowUp':
+        setFocusIdx((p) => Math.max(0, p - 1));
+        break;
+      case 'ArrowDown':
+        setFocusIdx((p) => Math.min(REPLAY_SPEEDS.length - 1, p + 1));
+        break;
+      case 'Enter':
+      case ' ':
+        selectIdx(focusIdx);
+        break;
+    }
+  }
+
+  return (
+    <div className="online-replay-speed" ref={containerRef} onKeyDown={onKeyDown}>
+      <span className="online-replay-speed-label" aria-hidden>
+        SPEED
+      </span>
+      <div
+        className={`online-replay-speed-picker${open ? ' online-replay-speed-picker--open' : ''}`}
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Playback speed: ${value}x`}
+        tabIndex={0}
+        onClick={() => (open ? closeList() : openList())}
+      >
+        <span className="online-replay-speed-value">{value}x</span>
+        <svg className="online-replay-speed-chevron" viewBox="0 0 10 6" aria-hidden>
+          <path fill="currentColor" fillOpacity="0.85" d="M0 0h10L5 6z" />
+        </svg>
+
+        {open && (
+          <div className="online-replay-speed-list" role="listbox" aria-label="Playback speed">
+            {REPLAY_SPEEDS.map((speed, idx) => (
+              <button
+                key={speed}
+                type="button"
+                role="option"
+                aria-selected={speed === value}
+                tabIndex={-1}
+                className={[
+                  'online-replay-speed-option',
+                  speed === value ? 'online-replay-speed-option--active' : '',
+                  idx === focusIdx ? 'online-replay-speed-option--focused' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectIdx(idx);
+                }}
+                onMouseEnter={() => setFocusIdx(idx)}
+              >
+                {speed}x
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
