@@ -1,12 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { useSocket } from '@/hooks/useSocket';
+import { useGamepad } from '@/hooks/useGamepad';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import '@/styles/pages/onlinePostGame.css';
+
+type PostGameNav =
+  | { type: 'replay'; index: number }   // round replay buttons
+  | { type: 'don' }                      // double-or-nothing vote
+  | { type: 'payout'; slot: 'withdraw' | 'nostr' }  // payout row
+  | { type: 'exit' };                    // EXIT ROOM
 
 interface OnlinePostGameInfo {
   roomId: string;
@@ -87,6 +94,10 @@ export default function OnlinePostGame() {
   const [creatingNostrPayout, setCreatingNostrPayout] = useState(false);
   const [lnurlw, setLnurlw] = useState('');
   const [myVoted, setMyVoted] = useState(false);
+  const [navFocus, setNavFocus] = useState<PostGameNav>({ type: 'exit' });
+  const keyRepeatRef = useRef<Record<string, number>>({});
+
+  useGamepad(true);
 
   const isWinner = Boolean(
     info?.winnerSessionID && info.winnerSessionID === currentSessionID
@@ -110,6 +121,116 @@ export default function OnlinePostGame() {
       `/online/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(String(matchRound))}`
     );
   };
+
+  // ── Keyboard / gamepad navigation ──────────────────────────────────
+  useEffect(() => {
+    const rounds = info?.matchRounds ?? [];
+    const roundCount = rounds.length;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const key = event.key;
+      const isEnter = key === 'Enter' || key === ' ';
+      const isUp    = key === 'ArrowUp'    || key === 'w' || key === 'W';
+      const isDown  = key === 'ArrowDown'  || key === 's' || key === 'S';
+      const isLeft  = key === 'ArrowLeft'  || key === 'a' || key === 'A';
+      const isRight = key === 'ArrowRight' || key === 'd' || key === 'D';
+      if (!isEnter && !isUp && !isDown && !isLeft && !isRight) return;
+      event.preventDefault();
+
+      if (isLeft || isRight) {
+        setNavFocus(prev =>
+          prev.type === 'payout'
+            ? { type: 'payout', slot: prev.slot === 'withdraw' ? 'nostr' : 'withdraw' }
+            : prev
+        );
+        return;
+      }
+
+      if (isUp) {
+        setNavFocus(prev => {
+          if (prev.type === 'exit') {
+            if (showPayoutUi) return { type: 'payout', slot: 'withdraw' };
+            if (roundCount > 0) return { type: 'replay', index: roundCount - 1 };
+            return prev;
+          }
+          if (prev.type === 'payout') {
+            if (showPayoutUi) return { type: 'don' };
+            if (roundCount > 0) return { type: 'replay', index: roundCount - 1 };
+            return { type: 'exit' };
+          }
+          if (prev.type === 'don') {
+            if (roundCount > 0) return { type: 'replay', index: roundCount - 1 };
+            return { type: 'exit' };
+          }
+          if (prev.type === 'replay') {
+            if (prev.index > 0) return { type: 'replay', index: prev.index - 1 };
+            return prev;
+          }
+          return prev;
+        });
+        return;
+      }
+
+      if (isDown) {
+        setNavFocus(prev => {
+          if (prev.type === 'replay') {
+            if (prev.index < roundCount - 1) return { type: 'replay', index: prev.index + 1 };
+            if (showPayoutUi) return { type: 'don' };
+            return { type: 'exit' };
+          }
+          if (prev.type === 'don') {
+            if (showPayoutUi) return { type: 'payout', slot: 'withdraw' };
+            return { type: 'exit' };
+          }
+          if (prev.type === 'payout') return { type: 'exit' };
+          return prev;
+        });
+        return;
+      }
+
+      if (isEnter) {
+        if (navFocus.type === 'replay') {
+          const round = rounds[navFocus.index];
+          if (round) openSessionRoundReplay(round.matchRound);
+          return;
+        }
+        if (navFocus.type === 'don') {
+          if (!socket || !roomId || donLocked || myVoted) return;
+          setError('');
+          setMyVoted(true);
+          socket.emit('onlineDoubleOrNothing', { roomId });
+          return;
+        }
+        if (navFocus.type === 'payout') {
+          if (navFocus.slot === 'withdraw') {
+            if (!socket || !roomId || !isWinner || donLocked) return;
+            setError('');
+            setCreatingWithdrawal(true);
+            socket.emit('createOnlineWithdrawal', { roomId });
+          } else {
+            if (!socket || !roomId || !isWinner || !winnerHasNostrLn || donLocked) return;
+            setError('');
+            setCreatingNostrPayout(true);
+            socket.emit('createOnlineNostrPayout', { roomId });
+          }
+          return;
+        }
+        if (navFocus.type === 'exit') {
+          if (socket && roomId) socket.emit('leaveOnlineRoom', { roomId });
+          navigate('/online');
+        }
+      }
+    };
+
+    const onKeyUp = (event: KeyboardEvent) => { keyRepeatRef.current[event.key] = 0; };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [donLocked, info, isWinner, myVoted, navFocus, navigate,
+      openSessionRoundReplay, roomId, showPayoutUi, socket, winnerHasNostrLn]);
 
   useEffect(() => {
     if (!roomId) {
@@ -275,7 +396,7 @@ export default function OnlinePostGame() {
         {info && (info.matchRounds?.length ?? 0) > 0 ? (
           <section className="online-postgame-round-history" aria-label="Session game history">
             <ul className="online-postgame-round-list">
-              {(info.matchRounds ?? []).map((round) => {
+              {(info.matchRounds ?? []).map((round, index) => {
                 const isDon = round.matchRound > 1;
                 const finishedIso = new Date(round.finishedAt).toISOString();
                 const won = roundWinningSide(round);
@@ -399,7 +520,7 @@ export default function OnlinePostGame() {
                       <div className="online-postgame-round-action-col">
                         <Button
                           type="button"
-                          className="online-postgame-round-replay-btn"
+                          className={`online-postgame-round-replay-btn${navFocus.type === 'replay' && navFocus.index === index ? ' online-selected' : ''}`}
                           onClick={() => openSessionRoundReplay(round.matchRound)}
                           aria-label={`Replay game ${round.matchRound}`}
                         >
@@ -490,6 +611,7 @@ export default function OnlinePostGame() {
                   'online-postgame-btn',
                   'online-postgame-btn-don',
                   donLocked || myVoted ? 'disabled' : '',
+                  navFocus.type === 'don' ? 'online-selected' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -533,7 +655,11 @@ export default function OnlinePostGame() {
                 <div className="online-postgame-payout-row">
                   <Button
                     type="button"
-                    className={`${isWinner ? '' : 'disabled'} online-postgame-btn online-postgame-btn-withdraw`}
+                    className={[
+                      isWinner ? '' : 'disabled',
+                      'online-postgame-btn online-postgame-btn-withdraw',
+                      navFocus.type === 'payout' && navFocus.slot === 'withdraw' ? 'online-selected' : '',
+                    ].filter(Boolean).join(' ')}
                     disabled={!isWinner || creatingWithdrawal || donLocked}
                     onClick={() => {
                       if (!socket || !roomId || !isWinner || donLocked) {
@@ -554,7 +680,11 @@ export default function OnlinePostGame() {
                   </Button>
                   <Button
                     type="button"
-                    className={`${isWinner && winnerHasNostrLn && !donLocked ? '' : 'disabled'} online-postgame-btn online-postgame-btn-nostr`}
+                    className={[
+                      isWinner && winnerHasNostrLn && !donLocked ? '' : 'disabled',
+                      'online-postgame-btn online-postgame-btn-nostr',
+                      navFocus.type === 'payout' && navFocus.slot === 'nostr' ? 'online-selected' : '',
+                    ].filter(Boolean).join(' ')}
                     disabled={!isWinner || !winnerHasNostrLn || donLocked || creatingNostrPayout}
                     onClick={() => {
                       if (!socket || !roomId || !isWinner || !winnerHasNostrLn || donLocked) {
@@ -572,7 +702,7 @@ export default function OnlinePostGame() {
             ) : null}
             <Button
               type="button"
-              className="online-postgame-btn online-postgame-btn-back"
+              className={`online-postgame-btn online-postgame-btn-back${navFocus.type === 'exit' ? ' online-selected' : ''}`}
               onClick={() => {
                 if (socket && roomId) {
                   socket.emit('leaveOnlineRoom', { roomId });

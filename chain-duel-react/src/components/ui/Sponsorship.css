@@ -17,6 +17,8 @@
   display: block;
   margin: 0 auto;
   max-width: 16vw;
-  margin-bottom: 1vw;
+  max-height: clamp(16px, 1.4vw, 24px);
+  width: auto;
   height: auto;
+  margin-bottom: 1vw;
 }

@@ -76,6 +76,7 @@ export default function OnlineRoomLobby() {
   } | null>(null);
   const [lightningBusy, setLightningBusy] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'anon' | 'nostr-pay' | 'pin-zap' | null>(null);
+  const [cardNavIndex, setCardNavIndex] = useState(0);
   /** Pubkey from last successful kind-1 sign, until server confirms with `resOnlineNostrLinkOk`. */
   const pendingNostrLinkPubkeyRef = useRef<string | null>(null);
   /** Last successful `requestOnlineKind1Post` for this room + note ref — avoids refetch when switching Kind1 tabs back to POST. */
@@ -655,26 +656,49 @@ export default function OnlineRoomLobby() {
     return () => window.removeEventListener('keydown', onKey);
   }, [nostrModalOpen, paymentMode]);
 
-  // Arrow-key navigation between the three payment cards (Left/Right).
-  // Uses onKeyDown on the container (see JSX) so the handler always has
-  // a fresh closure over setPaymentMode without DOM-listener stale state.
-  const handlePaymentCardsKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (nostrModalOpen) return;
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  // Sync cardNavIndex when paymentMode changes via mouse click
+  useEffect(() => {
+    if (paymentMode === null) return;
+    const idx = ['anon', 'nostr-pay', 'pin-zap'].indexOf(paymentMode);
+    if (idx !== -1) setCardNavIndex(idx);
+  }, [paymentMode]);
+
+  // Global arrow-key / gamepad nav for the three payment cards.
+  // Does NOT require a card to already have native browser focus.
+  useEffect(() => {
+    // Only active when the payment section is in the DOM
     const container = paymentCardsRef.current;
     if (!container) return;
-    const cards = Array.from(container.querySelectorAll<HTMLButtonElement>('.online-lobby-path-card'));
-    const idx = cards.indexOf(document.activeElement as HTMLButtonElement);
-    if (idx === -1) return;
-    e.preventDefault();
-    const nextIdx = e.key === 'ArrowRight'
-      ? (idx + 1) % cards.length
-      : (idx - 1 + cards.length) % cards.length;
-    const next = cards[nextIdx];
-    const mode = next.dataset.mode as 'anon' | 'nostr-pay' | 'pin-zap' | undefined;
-    if (mode) setPaymentMode(mode);
-    next.focus();
-  };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (nostrModalOpen) return;
+      // Don't hijack keys while typing in inputs
+      const tag = (document.activeElement as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+      const modes = ['anon', 'nostr-pay', 'pin-zap'] as const;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const dir = e.key === 'ArrowRight' ? 1 : -1;
+        const next = (cardNavIndex + dir + modes.length) % modes.length;
+        setCardNavIndex(next);
+        setPaymentMode(modes[next]);
+        const cards = container.querySelectorAll<HTMLButtonElement>('.online-lobby-path-card');
+        cards[next]?.focus({ preventScroll: true });
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        const cards = container.querySelectorAll<HTMLButtonElement>('.online-lobby-path-card');
+        const card = cards[cardNavIndex];
+        if (card && document.activeElement !== card) {
+          e.preventDefault();
+          card.click();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardNavIndex, nostrModalOpen]);
 
   // Move focus into the panel when a payment card is activated
   useEffect(() => {
@@ -789,6 +813,9 @@ export default function OnlineRoomLobby() {
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
       </header>
+
+      {/* ── Main centering wrapper (Zones 1–4 + modal) ── */}
+      <div className="online-lobby-main">
 
       {/* ── Zone 1: Page Header ── */}
       <div className="online-lobby-header">
@@ -1011,7 +1038,7 @@ export default function OnlineRoomLobby() {
         {/* Payment paths — seat not yet claimed, game not ended, no rematch in progress */}
         {!hasPaidMySeat && !isMatchEnded && !rematchPending ? (
           <div className="online-lobby-claim">
-            <div className="online-lobby-payment-paths" role="radiogroup" aria-label="Choose a payment method" ref={paymentCardsRef} onKeyDown={handlePaymentCardsKeyDown}>
+            <div className="online-lobby-payment-paths" role="radiogroup" aria-label="Choose a payment method" ref={paymentCardsRef}>
               {/* Anonymous — lightning bolt */}
               <button
                 type="button"
@@ -1020,7 +1047,7 @@ export default function OnlineRoomLobby() {
                 role="radio"
                 aria-checked={paymentMode === 'anon'}
                 data-mode="anon"
-                tabIndex={paymentMode === 'anon' || paymentMode === null ? 0 : -1}
+                tabIndex={cardNavIndex === 0 ? 0 : -1}
               >
                 <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M13 2 4.5 13.5H12L11 22l8.5-11.5H12L13 2Z" />
@@ -1037,7 +1064,7 @@ export default function OnlineRoomLobby() {
                 role="radio"
                 aria-checked={paymentMode === 'nostr-pay'}
                 data-mode="nostr-pay"
-                tabIndex={paymentMode === 'nostr-pay' ? 0 : -1}
+                tabIndex={cardNavIndex === 1 ? 0 : -1}
               >
                 <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="8" cy="7" r="3.5" />
@@ -1056,7 +1083,7 @@ export default function OnlineRoomLobby() {
                 role="radio"
                 aria-checked={paymentMode === 'pin-zap'}
                 data-mode="pin-zap"
-                tabIndex={paymentMode === 'pin-zap' ? 0 : -1}
+                tabIndex={cardNavIndex === 2 ? 0 : -1}
               >
                 <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect x="5" y="2" width="14" height="20" rx="2" />
@@ -1392,6 +1419,10 @@ export default function OnlineRoomLobby() {
                   </p>
                 ) : null}
 
+                {error && !nostrModalOpen ? (
+                  <p className="online-lobby-inline-pay-error">{error}</p>
+                ) : null}
+
                 {!mySeat ? (
                   <Button
                     type="button"
@@ -1407,6 +1438,25 @@ export default function OnlineRoomLobby() {
               </div>
             </div>
           ) : null}
+        </div>
+      ) : error && !nostrModalOpen ? (
+        <div className="online-lobby-kind1-section online-lobby-kind1-section--room-error">
+          <svg className="online-lobby-room-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p className="online-lobby-room-error-title">
+            {error === 'room_not_found' ? 'Room not found' : 'Connection error'}
+          </p>
+          <p className="online-lobby-room-error-detail">{error}</p>
+          <Button
+            type="button"
+            className="online-lobby-action"
+            onClick={() => navigate('/online')}
+          >
+            ← Back to Network
+          </Button>
         </div>
       ) : (
         <div className="online-lobby-kind1-section online-lobby-kind1-section--pending">
@@ -1497,7 +1547,7 @@ export default function OnlineRoomLobby() {
         </div>
       ) : null}
 
-      {error && !nostrModalOpen ? <p className="online-lobby-error">Error: {error}</p> : null}
+      </div>{/* end .online-lobby-main */}
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
     </div>

@@ -11,14 +11,20 @@ import '@/styles/pages/onlineRooms.css';
 import '@/styles/pages/onlinePostGame.css'; // shared card structure for history rows
 
 type NavFocus =
-  | { type: 'mode' }
-  | { type: 'create' }
+  | { type: 'tab'; index: number }      // tab row: 0=Active 1=Finished 2=HoF
+  | { type: 'create' }                  // stepper box
+  | { type: 'preset'; index: number }   // 1K/10K/100K quick amounts
   | { type: 'join' }
+  | { type: 'switch' }                  // mode toggle (Join by code / Create a room)
   | { type: 'room'; index: number }
   | { type: 'back' };
 
+const PRESET_AMOUNTS = [1000, 10000, 100_000] as const;
+
+const TAB_ORDER: OnlineTab[] = ['live', 'history', 'hof'];
+
 type OnlineMode = 'create' | 'join';
-type OnlineTab = 'live' | 'history';
+type OnlineTab = 'live' | 'history' | 'hof';
 
 const BUYIN_MIN = 10;
 const BUYIN_MAX = 1_000_000;
@@ -26,6 +32,16 @@ const BUYIN_STEP = 10;
 const BUYIN_STEP_FAST = 50;
 
 const PLACEHOLDER_AVATAR = '/images/loading.gif';
+
+/** Minimum buy-in (sats) to qualify as a Hall-of-Fame match. */
+const HOF_BUYIN_THRESHOLD = 1_000;
+
+function isHallOfFame(room: OnlineRoomListItem): boolean {
+  return (
+    room.buyin >= HOF_BUYIN_THRESHOLD ||
+    (room.result?.netPrize != null && room.result.netPrize >= HOF_BUYIN_THRESHOLD * 0.9)
+  );
+}
 
 function HistoryMatchupBlock({ result }: { result: NonNullable<OnlineRoomListItem['result']> }) {
   const winP1 =
@@ -127,22 +143,40 @@ export default function OnlineRooms() {
   const [rooms, setRooms] = useState<OnlineRoomListItem[]>([]);
   /** Server-merged: archive index + finished rooms still in RAM (`listOnlineHistory`). */
   const [historyRooms, setHistoryRooms] = useState<OnlineRoomListItem[]>([]);
-  const [onlineTab, setOnlineTab] = useState<OnlineTab>('live');
+  const [onlineTab, setOnlineTab] = useState<OnlineTab>(() => {
+    const saved = sessionStorage.getItem('onlineRoomsTab');
+    if (saved === 'history' || saved === 'hof') return saved;
+    return 'live';
+  });
   const [onlineMode, setOnlineMode] = useState<OnlineMode>('create');
   const [buyin, setBuyin] = useState('100');
   const [roomCode, setRoomCode] = useState('');
   const [error, setError] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
-  const [navFocus, setNavFocus] = useState<NavFocus>({ type: 'create' });
+  const [navFocus, setNavFocus] = useState<NavFocus>(() => {
+    const saved = sessionStorage.getItem('onlineRoomsTab') as OnlineTab | null;
+    const tab: OnlineTab = saved === 'history' || saved === 'hof' ? saved : 'live';
+    return { type: 'tab', index: TAB_ORDER.indexOf(tab) };
+  });
   const creatingRoomRef = useRef(false);
   const pendingRoomIdRef = useRef<string | null>(null);
   const keyRepeatRef = useRef<Record<string, number>>({});
 
   useGamepad(true);
 
+  // Persist selected tab across in-network navigation; cleared on back-to-menu
+  useEffect(() => {
+    sessionStorage.setItem('onlineRoomsTab', onlineTab);
+  }, [onlineTab]);
+
   const sortedRooms = useMemo(
     () => [...rooms].sort((a, b) => b.createdAt - a.createdAt),
     [rooms]
+  );
+
+  const liveRoomCount = useMemo(
+    () => sortedRooms.filter((r) => r.phase !== 'finished').length,
+    [sortedRooms]
   );
 
   const sortedHistoryRooms = useMemo(
@@ -156,6 +190,11 @@ export default function OnlineRooms() {
   const displayedRooms = useMemo(() => {
     if (onlineTab === 'live') {
       return sortedRooms.filter((r) => r.phase !== 'finished');
+    }
+    if (onlineTab === 'hof') {
+      return [...sortedHistoryRooms]
+        .filter(isHallOfFame)
+        .sort((a, b) => b.buyin - a.buyin);
     }
     return sortedHistoryRooms;
   }, [sortedHistoryRooms, onlineTab, sortedRooms]);
@@ -298,7 +337,7 @@ export default function OnlineRooms() {
   }, [navigate, socket]);
 
   useEffect(() => {
-    if (!socket || onlineTab !== 'history') {
+    if (!socket || (onlineTab !== 'history' && onlineTab !== 'hof')) {
       return;
     }
     socket.emit('listOnlineHistory');
@@ -306,15 +345,9 @@ export default function OnlineRooms() {
 
   useEffect(() => {
     setNavFocus((prev) => {
-      if (prev.type !== 'room') {
-        return prev;
-      }
-      if (displayedRooms.length === 0) {
-        return { type: 'create' };
-      }
-      if (prev.index >= displayedRooms.length) {
-        return { type: 'room', index: displayedRooms.length - 1 };
-      }
+      if (prev.type !== 'room') return prev;
+      if (displayedRooms.length === 0) return { type: 'tab', index: TAB_ORDER.indexOf(onlineTab) };
+      if (prev.index >= displayedRooms.length) return { type: 'room', index: displayedRooms.length - 1 };
       return prev;
     });
   }, [displayedRooms.length, onlineTab]);
@@ -334,9 +367,8 @@ export default function OnlineRooms() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (creatingRoom) {
-        return;
-      }
+      if (creatingRoom) return;
+
       const active = document.activeElement as HTMLElement | null;
       const activeIsTextInput =
         active?.tagName === 'INPUT' && !(active as HTMLInputElement).readOnly;
@@ -350,76 +382,112 @@ export default function OnlineRooms() {
 
       const key = event.key;
       const isEnter = key === 'Enter' || key === ' ';
-      const isUp = key === 'ArrowUp' || key === 'w' || key === 'W';
-      const isDown = key === 'ArrowDown' || key === 's' || key === 'S';
-      const isLeft = key === 'ArrowLeft' || key === 'a' || key === 'A';
+      const isUp    = key === 'ArrowUp'    || key === 'w' || key === 'W';
+      const isDown  = key === 'ArrowDown'  || key === 's' || key === 'S';
+      const isLeft  = key === 'ArrowLeft'  || key === 'a' || key === 'A';
       const isRight = key === 'ArrowRight' || key === 'd' || key === 'D';
-      if (!isEnter && !isUp && !isDown && !isLeft && !isRight) {
-        return;
-      }
+      if (!isEnter && !isUp && !isDown && !isLeft && !isRight) return;
       event.preventDefault();
 
+      // ── Left / Right ────────────────────────────────────────────
       if (isLeft || isRight) {
-        if (navFocus.type === 'mode') {
-          setOnlineMode(prev => prev === 'create' ? 'join' : 'create');
-          setError('');
+        if (navFocus.type === 'tab' || navFocus.type === 'room') {
+          // Switch between tabs (also reachable from room list)
+          const curIdx = navFocus.type === 'tab' ? navFocus.index : TAB_ORDER.indexOf(onlineTab);
+          const next = isRight
+            ? (curIdx + 1) % TAB_ORDER.length
+            : (curIdx - 1 + TAB_ORDER.length) % TAB_ORDER.length;
+          setOnlineTab(TAB_ORDER[next]);
+          setNavFocus({ type: 'tab', index: next });
         } else if (navFocus.type === 'create') {
+          // Adjust buy-in with repeat acceleration
           const now = performance.now();
           const last = keyRepeatRef.current[key] ?? 0;
           keyRepeatRef.current[key] = now;
           const step = now - last < 140 ? BUYIN_STEP_FAST : BUYIN_STEP;
           updateBuyinBy(isRight ? step : -step);
+        } else if (navFocus.type === 'preset') {
+          // Move between preset buttons (clamped)
+          const next = isRight
+            ? Math.min(navFocus.index + 1, PRESET_AMOUNTS.length - 1)
+            : Math.max(navFocus.index - 1, 0);
+          setNavFocus({ type: 'preset', index: next });
         }
         return;
       }
 
+      // ── Up ──────────────────────────────────────────────────────
       if (isUp) {
         setNavFocus((prev) => {
           if (prev.type === 'back') {
-            if (displayedRooms.length > 0) {
-              return { type: 'room', index: displayedRooms.length - 1 };
-            }
-            return onlineMode === 'join' ? { type: 'join' } : { type: 'create' };
+            if (displayedRooms.length > 0) return { type: 'room', index: displayedRooms.length - 1 };
+            return { type: 'switch' };
           }
           if (prev.type === 'room') {
-            if (prev.index > 0) {
-              return { type: 'room', index: prev.index - 1 };
-            }
-            return onlineMode === 'join' ? { type: 'join' } : { type: 'create' };
+            if (prev.index > 0) return { type: 'room', index: prev.index - 1 };
+            return { type: 'switch' };
           }
+          if (prev.type === 'switch') {
+            return onlineMode === 'join' ? { type: 'join' } : { type: 'preset', index: PRESET_AMOUNTS.length - 1 };
+          }
+          if (prev.type === 'preset') return { type: 'create' };
           if (prev.type === 'create' || prev.type === 'join') {
-            return { type: 'mode' };
+            return { type: 'tab', index: TAB_ORDER.indexOf(onlineTab) };
           }
+          // already at tab row — stay
           return prev;
         });
         return;
       }
 
+      // ── Down ─────────────────────────────────────────────────────
       if (isDown) {
         setNavFocus((prev) => {
-          if (prev.type === 'mode') {
+          if (prev.type === 'tab') {
             return onlineMode === 'join' ? { type: 'join' } : { type: 'create' };
           }
-          if (prev.type === 'create' || prev.type === 'join') {
-            if (displayedRooms.length > 0) {
-              return { type: 'room', index: 0 };
-            }
+          if (prev.type === 'create') {
+            return { type: 'preset', index: 0 };
+          }
+          if (prev.type === 'preset' || prev.type === 'join') {
+            return { type: 'switch' };
+          }
+          if (prev.type === 'switch') {
+            if (displayedRooms.length > 0) return { type: 'room', index: 0 };
             return { type: 'back' };
           }
           if (prev.type === 'room') {
-            if (prev.index < displayedRooms.length - 1) {
-              return { type: 'room', index: prev.index + 1 };
-            }
+            if (prev.index < displayedRooms.length - 1) return { type: 'room', index: prev.index + 1 };
             return { type: 'back' };
           }
+          // already at back — stay
           return prev;
         });
         return;
       }
 
+      // ── Enter / Space ────────────────────────────────────────────
       if (isEnter) {
-        if (navFocus.type === 'create') {
-          createRoom();
+        if (navFocus.type === 'tab') {
+          // Tab is already active via Left/Right; Enter navigates into the list
+          setNavFocus(
+            displayedRooms.length > 0
+              ? { type: 'room', index: 0 }
+              : onlineMode === 'join' ? { type: 'join' } : { type: 'create' }
+          );
+          return;
+        }
+        if (navFocus.type === 'create') { createRoom(); return; }
+        if (navFocus.type === 'switch') {
+          const next: OnlineMode = onlineMode === 'create' ? 'join' : 'create';
+          setOnlineMode(next);
+          setNavFocus({ type: next });
+          setError('');
+          return;
+        }
+        if (navFocus.type === 'preset') {
+          setBuyin(String(PRESET_AMOUNTS[navFocus.index]));
+          setNavFocus({ type: 'create' }); // return to stepper so next Enter = create
           return;
         }
         if (navFocus.type === 'join') {
@@ -429,17 +497,12 @@ export default function OnlineRooms() {
         if (navFocus.type === 'room') {
           const room = displayedRooms[navFocus.index];
           if (room) {
-            if (onlineTab === 'history') {
-              openHistoryPostGame(room.roomId);
-            } else {
-              activateRoom(room);
-            }
+            if (onlineTab === 'history' || onlineTab === 'hof') openHistoryPostGame(room.roomId);
+            else activateRoom(room);
           }
           return;
         }
-        if (navFocus.type === 'back') {
-          navigate('/');
-        }
+        if (navFocus.type === 'back') { sessionStorage.removeItem('onlineRoomsTab'); navigate('/'); }
       }
     };
 
@@ -466,56 +529,129 @@ export default function OnlineRooms() {
       <h1 id="online-title">NETWORK</h1>
       <p id="online-subtitle">Create a room, share the code, and claim your seat.</p>
 
+      <div className="online-rooms-body">
       <section className="online-room-list-panel">
         <div className="online-room-list-head">
-          <h3>{onlineTab === 'live' ? 'LIVE ROOMS' : 'MATCH HISTORY'}</h3>
+          <h3>
+            {onlineTab === 'live' ? 'LIVE ROOMS' : onlineTab === 'hof' ? 'HALL OF FAME' : 'MATCH HISTORY'}
+          </h3>
           <div className="online-tab-row" role="tablist" aria-label="Online room list">
             <button
               type="button"
               role="tab"
               aria-selected={onlineTab === 'live'}
-              className={`online-tab ${onlineTab === 'live' ? 'online-tab-active' : ''}`}
-              onClick={() => setOnlineTab('live')}
+              className={[
+                'online-tab online-tab--live',
+                onlineTab === 'live' ? 'online-tab-active' : '',
+                navFocus.type === 'tab' && navFocus.index === 0 ? 'online-selected' : '',
+              ].filter(Boolean).join(' ')}
+              onClick={() => { setOnlineTab('live'); setNavFocus({ type: 'tab', index: 0 }); }}
             >
+              <span
+                className={`online-tab-dot ${liveRoomCount > 0 ? 'online-tab-dot--active' : ''}`}
+                aria-hidden="true"
+              />
               Active
             </button>
             <button
               type="button"
               role="tab"
               aria-selected={onlineTab === 'history'}
-              className={`online-tab ${onlineTab === 'history' ? 'online-tab-active' : ''}`}
-              onClick={() => setOnlineTab('history')}
+              className={[
+                'online-tab online-tab--history',
+                onlineTab === 'history' ? 'online-tab-active' : '',
+                navFocus.type === 'tab' && navFocus.index === 1 ? 'online-selected' : '',
+              ].filter(Boolean).join(' ')}
+              onClick={() => { setOnlineTab('history'); setNavFocus({ type: 'tab', index: 1 }); }}
             >
+              <svg viewBox="0 0 10 14" fill="currentColor" aria-hidden="true" className="online-tab-history-icon">
+                <path d="M1 1h8v3.5L6 7l3 2.5V13H1v-3.5L4 7 1 4.5V1zm1.2 1v2.8l2.8 2 2.8-2V2H2.2zm0 10v-2.8l2.8-2 2.8 2V12H2.2z"/>
+              </svg>
               Finished
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={onlineTab === 'hof'}
+              aria-label="Hall of Fame — high-stakes matches"
+              className={[
+                'online-tab online-tab--hof',
+                onlineTab === 'hof' ? 'online-tab-active' : '',
+                navFocus.type === 'tab' && navFocus.index === 2 ? 'online-selected' : '',
+              ].filter(Boolean).join(' ')}
+              onClick={() => { setOnlineTab('hof'); setNavFocus({ type: 'tab', index: 2 }); }}
+            >
+              <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true" className="online-tab-hof-icon">
+                <path d="M6 1l1.2 2.4L10 3.9l-2 1.95.47 2.75L6 7.4l-2.47 1.2.47-2.75L2 3.9l2.8-.5L6 1z"/>
+              </svg>
+              Hall of Fame
             </button>
           </div>
         </div>
 
-        <div className="online-room-list">
+        <div className="online-room-list" key={onlineTab}>
           {displayedRooms.length === 0 ? (
-            <p className="online-empty">
-              {onlineTab === 'live'
-                ? 'No open rooms yet. Create one to start the arena.'
-                : 'No finished matches on this server yet.'}
-            </p>
+            <div className="online-empty">
+              <svg
+                className="online-empty-icon"
+                viewBox="0 0 96 40"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {/* Left seat */}
+                <circle cx="18" cy="13" r="7" />
+                <path d="M7 38 C7 28 29 28 29 38" />
+                {/* Centre dashed divider */}
+                <line x1="36" y1="19" x2="60" y2="19" strokeDasharray="3 3" strokeWidth="0.9" />
+                <text x="48" y="23.5" textAnchor="middle" fontSize="6" stroke="none" fill="currentColor" letterSpacing="1" fontFamily="inherit">VS</text>
+                {/* Right seat */}
+                <circle cx="78" cy="13" r="7" />
+                <path d="M67 38 C67 28 89 28 89 38" />
+              </svg>
+              <p className="online-empty-title">
+                {onlineTab === 'live'
+                  ? 'No open rooms'
+                  : onlineTab === 'hof'
+                  ? 'No hall of fame matches yet'
+                  : 'No finished matches'}
+              </p>
+              <p className="online-empty-hint">
+                {onlineTab === 'live'
+                  ? 'Create a room to open the arena.'
+                  : onlineTab === 'hof'
+                  ? `Games with a ${HOF_BUYIN_THRESHOLD.toLocaleString()}+ sat buy-in will appear here.`
+                  : 'Completed matches will appear here.'}
+              </p>
+            </div>
           ) : null}
           {displayedRooms.map((room, index) => (
             <div
               key={`${room.roomId}-${room.matchRound ?? 'live'}-${room.finishedAt ?? room.createdAt}`}
               className={[
                 'online-room-card',
-                onlineTab === 'history' ? 'online-room-card--history' : '',
+                onlineTab !== 'live' ? 'online-room-card--history' : '',
+                isHallOfFame(room) && onlineTab !== 'hof' ? 'online-room-card--hof' : '',
+                onlineTab === 'hof' ? 'online-room-card--hof-view' : '',
                 navFocus.type === 'room' && navFocus.index === index ? 'online-selected' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
             >
-              {onlineTab === 'history' ? (
-                /* ── History: postgame-style 3-col grid ── */
+              {onlineTab !== 'live' ? (
+                /* ── History / HoF: postgame-style 3-col grid ── */
                 <div className="online-postgame-round-row-inner">
                   {/* Badge col: code + buyin + date */}
                   <div className="online-postgame-round-badge-col">
                     <span className="online-postgame-round-index online-history-room-code">
+                      {isHallOfFame(room) ? (
+                        <svg viewBox="0 0 10 10" fill="currentColor" className="online-hof-crown" aria-label="Hall of Fame" role="img">
+                          <path d="M5 1l1 2 2-.5-1.2 2 .7 2.5H2.5L3.2 4.5 2 2.5l2 .5L5 1z"/>
+                        </svg>
+                      ) : null}
                       {room.roomCode}
                     </span>
                     <span className="online-postgame-round-chip online-postgame-round-chip--open">
@@ -586,19 +722,24 @@ export default function OnlineRooms() {
         </div>
       </section>
 
-      {/* ── Simple action card ── */}
+      <div className="online-rooms-side">
+      {/* ── Action card ── */}
       <div className="online-action-card">
-        {/* Label + field row */}
         <div className="online-action-card-body">
+          {/* key forces remount → entrance animation on every mode switch */}
+          <p key={`label-${onlineMode}`} className="online-action-label">
+            {onlineMode === 'create' ? 'BUY-IN' : 'ROOM CODE'}
+          </p>
+
           {onlineMode === 'create' ? (
-            <div className="online-action-field">
-              <p className="online-action-field-label">BUY-IN</p>
+            <div key="field-create" className="online-buyin-field">
               <div className={`online-buyin-stepper${navFocus.type === 'create' ? ' online-selected' : ''}`}>
                 <button type="button" className="online-buyin-btn" onClick={() => updateBuyinBy(-BUYIN_STEP)} aria-label="Decrease buy-in">−</button>
                 <div className="online-buyin-center">
                   <input
                     className="online-buyin-value"
-                    type="text" inputMode="numeric"
+                    type="text"
+                    inputMode="numeric"
                     value={buyin}
                     onChange={(e) => setBuyin(e.target.value.replace(/[^0-9]/g, ''))}
                     onBlur={() => setBuyin(String(parseBuyin()))}
@@ -608,47 +749,67 @@ export default function OnlineRooms() {
                 </div>
                 <button type="button" className="online-buyin-btn" onClick={() => updateBuyinBy(BUYIN_STEP)} aria-label="Increase buy-in">+</button>
               </div>
+              <div className="online-buyin-presets" aria-label="Quick buy-in amounts">
+                {PRESET_AMOUNTS.map((amount, presetIdx) => (
+                  <button
+                    key={amount}
+                    type="button"
+                    className={[
+                      'online-buyin-preset',
+                      parseBuyin() === amount ? 'online-buyin-preset--active' : '',
+                      navFocus.type === 'preset' && navFocus.index === presetIdx ? 'online-selected' : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => { setBuyin(String(amount)); setNavFocus({ type: 'create' }); }}
+                    aria-label={`Set buy-in to ${amount.toLocaleString()} sats`}
+                  >
+                    {amount / 1000}K
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="online-action-field">
-              <p className="online-action-field-label">ROOM CODE</p>
-              <input
-                className={`online-input online-code-input${navFocus.type === 'join' ? ' online-selected' : ''}`}
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') { e.preventDefault(); socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() }); }
-                }}
-                placeholder="XXXXXX"
-                maxLength={6}
-                autoComplete="off"
-              />
-            </div>
+            <input
+              key="field-join"
+              className={`online-input online-code-input${navFocus.type === 'join' ? ' online-selected' : ''}`}
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() }); }
+              }}
+              placeholder="ENTER CODE"
+              maxLength={6}
+              autoComplete="off"
+              aria-label="Room code"
+            />
           )}
 
           <Button
-            className="online-action online-create-btn"
+            type="button"
+            className="online-create-btn"
             onClick={onlineMode === 'create' ? createRoom : () => socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() })}
             disabled={onlineMode === 'create' && creatingRoom}
           >
-            {onlineMode === 'create' ? (creatingRoom ? 'CREATING…' : 'CREATE') : 'JOIN'}
+            <span key={`btn-${onlineMode}`} className="online-create-btn-label">
+              {onlineMode === 'create' ? (creatingRoom ? 'CREATING…' : 'CREATE ROOM') : 'JOIN ROOM'}
+            </span>
           </Button>
         </div>
 
-        {/* Mode toggle + error */}
         <div className="online-action-card-footer">
-          {error ? <span className="online-inline-error">{error}</span> : <span />}
+          {error ? <span className="online-inline-error">{error}</span> : null}
           <button
             type="button"
-            className="online-action-switch"
+            className={`online-action-switch${navFocus.type === 'switch' ? ' online-selected' : ''}`}
             onClick={() => {
-              const next = onlineMode === 'create' ? 'join' : 'create';
+              const next: OnlineMode = onlineMode === 'create' ? 'join' : 'create';
               setOnlineMode(next);
               setNavFocus({ type: next });
               setError('');
             }}
           >
-            {onlineMode === 'create' ? 'Join by code →' : '← Create a room'}
+            <span key={`switch-${onlineMode}`} className="online-action-switch-label">
+              {onlineMode === 'create' ? 'Join by code →' : '← Create a room'}
+            </span>
           </button>
         </div>
       </div>
@@ -656,12 +817,14 @@ export default function OnlineRooms() {
       <div className="online-footer-controls">
         <Button
           className={`online-back ${navFocus.type === 'back' ? 'online-selected' : ''}`}
-          onClick={() => navigate('/')}
+          onClick={() => { sessionStorage.removeItem('onlineRoomsTab'); navigate('/'); }}
         >
           BACK
         </Button>
-        <p className="online-controls-hint">Keyboard/Gamepad: arrows + Enter</p>
       </div>
+
+      </div>{/* .online-rooms-side */}
+      </div>{/* .online-rooms-body */}
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
     </div>
