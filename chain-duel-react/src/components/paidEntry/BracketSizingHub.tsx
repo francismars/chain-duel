@@ -1,33 +1,23 @@
 import {
   forwardRef,
-  useCallback,
-  useEffect,
   useImperativeHandle,
-  useLayoutEffect,
   useRef,
-  useState,
 } from 'react';
 import type { P2pNavFocus } from '@/pages/p2pEntryNav';
 
 const PLAYER_OPTIONS = [
-  { n: 4 as const, label: '4', desc: 'Small' },
-  { n: 8 as const, label: '8', desc: 'Mid' },
-  { n: 16 as const, label: '16', desc: 'Full' },
+  { n: 4 as const, label: '4P' },
+  { n: 8 as const, label: '8P' },
+  { n: 16 as const, label: '16P' },
 ];
 
 export const BUYIN_STEPS = Array.from({ length: 10 }, (_, i) => (i + 1) * 10000);
 
-const BUYIN_SCROLL_ID = 'bracket-sizing-buyin-scroll';
-
 export type BracketSizingHubHandle = {
   focusPlayer: (i: number) => void;
-  focusBuyinPrev: () => void;
   focusBuyinPill: (i: number) => void;
-  focusBuyinNext: () => void;
   triggerPlayer: (i: number) => void;
   triggerBuyinPill: (i: number) => void;
-  triggerBuyinPrev: () => void;
-  triggerBuyinNext: () => void;
 };
 
 export interface BracketSizingHubProps {
@@ -62,30 +52,8 @@ export const BracketSizingHub = forwardRef<BracketSizingHubHandle, BracketSizing
     },
     ref
   ) {
-    const buyinScrollRef = useRef<HTMLDivElement>(null);
     const playerRefs = useRef<(HTMLButtonElement | null)[]>([]);
     const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
-    const buyinPrevRef = useRef<HTMLButtonElement | null>(null);
-    const buyinNextRef = useRef<HTMLButtonElement | null>(null);
-
-    const [buyinCanPrev, setBuyinCanPrev] = useState(false);
-    const [buyinCanNext, setBuyinCanNext] = useState(false);
-
-    const syncBuyinScrollNav = useCallback(() => {
-      const el = buyinScrollRef.current;
-      if (!el) return;
-      const { scrollLeft, scrollWidth, clientWidth } = el;
-      const eps = 3;
-      setBuyinCanPrev(scrollLeft > eps);
-      setBuyinCanNext(scrollLeft + clientWidth < scrollWidth - eps);
-    }, []);
-
-    const scrollBuyin = useCallback((dir: -1 | 1) => {
-      const el = buyinScrollRef.current;
-      if (!el) return;
-      const step = Math.max(Math.floor(el.clientWidth * 0.55), 96);
-      el.scrollBy({ left: dir * step, behavior: 'smooth' });
-    }, []);
 
     useImperativeHandle(
       ref,
@@ -93,14 +61,8 @@ export const BracketSizingHub = forwardRef<BracketSizingHubHandle, BracketSizing
         focusPlayer: (i: number) => {
           playerRefs.current[i]?.focus();
         },
-        focusBuyinPrev: () => {
-          buyinPrevRef.current?.focus();
-        },
         focusBuyinPill: (i: number) => {
           pillRefs.current[i]?.focus();
-        },
-        focusBuyinNext: () => {
-          buyinNextRef.current?.focus();
         },
         triggerPlayer: (i: number) => {
           const n = PLAYER_OPTIONS[i]?.n;
@@ -114,145 +76,73 @@ export const BracketSizingHub = forwardRef<BracketSizingHubHandle, BracketSizing
           playSelect();
           onDepositChange(sats);
         },
-        triggerBuyinPrev: () => {
-          if (!buyinCanPrev) return;
-          playSelect();
-          scrollBuyin(-1);
-        },
-        triggerBuyinNext: () => {
-          if (!buyinCanNext) return;
-          playSelect();
-          scrollBuyin(1);
-        },
       }),
-      [
-        buyinCanNext,
-        buyinCanPrev,
-        onDepositChange,
-        onPlayersChange,
-        playSelect,
-        scrollBuyin,
-      ]
+      [onDepositChange, onPlayersChange, playSelect]
     );
-
-    useLayoutEffect(() => {
-      const el = buyinScrollRef.current;
-      if (!el) return;
-      syncBuyinScrollNav();
-      const ro = new ResizeObserver(() => syncBuyinScrollNav());
-      ro.observe(el);
-      return () => ro.disconnect();
-    }, [syncBuyinScrollNav]);
-
-    useEffect(() => {
-      const el = buyinScrollRef.current;
-      if (!el) return;
-      const active = el.querySelector<HTMLElement>('.bracket-sizing-hub__pill.active');
-      active?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      requestAnimationFrame(() => syncBuyinScrollNav());
-    }, [deposit, syncBuyinScrollNav]);
 
     return (
       <div className="bracket-sizing-hub">
-        <p className="bracket-sizing-hub__lede">
-          Field size and per-seat minimum — same ladder as tournament prefs.
-        </p>
-
-        <div className="bracket-sizing-hub__row-label">Players</div>
-        <div className="bracket-sizing-hub__players-row" role="group" aria-label="Player count">
-          {PLAYER_OPTIONS.map(({ n, label, desc }, i) => (
-            <button
-              key={n}
-              ref={(el) => {
-                playerRefs.current[i] = el;
-              }}
-              type="button"
-              tabIndex={-1}
-              className={`bracket-sizing-hub__player-card ${playersNumber === n ? 'active' : ''}${bracketFocusClass(menuFocus ?? null, (f) => f.kind === 'players' && f.idx === i)}`}
-              onClick={() => {
-                onMenuFocus?.({ kind: 'players', idx: i as 0 | 1 | 2 });
-                playSelect();
-                onPlayersChange(n);
-              }}
-            >
-              <span className="bracket-sizing-hub__player-num condensed">{label}</span>
-              <span className="bracket-sizing-hub__player-meta">
-                <span className="bracket-sizing-hub__player-unit">pl</span>
-                <span className="bracket-sizing-hub__player-desc">{desc}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <div className="bracket-sizing-hub__row-label">Buy-in (sats)</div>
-        <div className="bracket-sizing-hub__buyin-strip" role="group" aria-label="Buy-in in sats">
-          <button
-            ref={buyinPrevRef}
-            type="button"
-            tabIndex={-1}
-            className={`bracket-sizing-hub__buyin-nav${bracketFocusClass(menuFocus ?? null, (f) => f.kind === 'buyinPrev')}`}
-            aria-label="Scroll to lower buy-in amounts"
-            aria-controls={BUYIN_SCROLL_ID}
-            disabled={!buyinCanPrev}
-            onClick={() => {
-              onMenuFocus?.({ kind: 'buyinPrev' });
-              playSelect();
-              scrollBuyin(-1);
-            }}
-          >
-            ‹
-          </button>
-          <div
-            ref={buyinScrollRef}
-            id={BUYIN_SCROLL_ID}
-            className="bracket-sizing-hub__buyin-scroll"
-            onScroll={syncBuyinScrollNav}
-          >
-            {BUYIN_STEPS.map((sats, i) => {
-              const active = deposit === sats;
-              const short = `${sats / 1000}k`;
-              return (
+        <div className="bracket-sizing-hub__two-col">
+          <div className="bracket-sizing-hub__col bracket-sizing-hub__col--players">
+            <div className="bracket-sizing-hub__row-label">Players</div>
+            <div className="bracket-sizing-hub__players-col" role="group" aria-label="Player count">
+              {PLAYER_OPTIONS.map(({ n, label }, i) => (
                 <button
-                  key={sats}
+                  key={n}
                   ref={(el) => {
-                    pillRefs.current[i] = el;
+                    playerRefs.current[i] = el;
                   }}
                   type="button"
                   tabIndex={-1}
-                  className={`bracket-sizing-hub__pill ${active ? 'active' : ''}${bracketFocusClass(menuFocus ?? null, (f) => f.kind === 'buyinPill' && f.idx === i)}`}
+                  className={`bracket-sizing-hub__player-card ${playersNumber === n ? 'active' : ''}${bracketFocusClass(menuFocus ?? null, (f) => f.kind === 'players' && f.idx === i)}`}
                   onClick={() => {
-                    onMenuFocus?.({ kind: 'buyinPill', idx: i });
+                    onMenuFocus?.({ kind: 'players', idx: i as 0 | 1 | 2 });
                     playSelect();
-                    onDepositChange(sats);
+                    onPlayersChange(n);
                   }}
                 >
-                  {short}
+                  <span className="bracket-sizing-hub__player-num">{label}</span>
                 </button>
-              );
-            })}
+              ))}
+              <button
+                type="button"
+                tabIndex={-1}
+                disabled
+                aria-disabled="true"
+                className="bracket-sizing-hub__player-card bracket-sizing-hub__player-card--soon"
+              >
+                <span className="bracket-sizing-hub__player-num">32P</span>
+              </button>
+            </div>
           </div>
-          <button
-            ref={buyinNextRef}
-            type="button"
-            tabIndex={-1}
-            className={`bracket-sizing-hub__buyin-nav${bracketFocusClass(menuFocus ?? null, (f) => f.kind === 'buyinNext')}`}
-            aria-label="Scroll to higher buy-in amounts"
-            aria-controls={BUYIN_SCROLL_ID}
-            disabled={!buyinCanNext}
-            onClick={() => {
-              onMenuFocus?.({ kind: 'buyinNext' });
-              playSelect();
-              scrollBuyin(1);
-            }}
-          >
-            ›
-          </button>
-        </div>
 
-        <div className="bracket-sizing-hub__readout" aria-live="polite">
-          <span className="bracket-sizing-hub__readout-inner">
-            {playersNumber} players · {deposit.toLocaleString()} sats
-          </span>
+          <div className="bracket-sizing-hub__col bracket-sizing-hub__col--buyin">
+            <div className="bracket-sizing-hub__row-label">Buy-in (sats)</div>
+            <div className="bracket-sizing-hub__buyin-grid" role="group" aria-label="Buy-in in sats">
+              {BUYIN_STEPS.map((sats, i) => {
+                const active = deposit === sats;
+                const short = `${sats / 1000}k`;
+                return (
+                    <button
+                      key={sats}
+                      ref={(el) => {
+                        pillRefs.current[i] = el;
+                      }}
+                      type="button"
+                      tabIndex={-1}
+                      className={`bracket-sizing-hub__pill ${active ? 'active' : ''}${bracketFocusClass(menuFocus ?? null, (f) => f.kind === 'buyinPill' && f.idx === i)}`}
+                      onClick={() => {
+                        onMenuFocus?.({ kind: 'buyinPill', idx: i });
+                        playSelect();
+                        onDepositChange(sats);
+                      }}
+                    >
+                      {sats / 1000}K
+                    </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     );
