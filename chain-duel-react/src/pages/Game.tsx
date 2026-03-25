@@ -55,6 +55,7 @@ export default function Game() {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const winnerSentRef = useRef(false);
   const localBootRef = useRef(false);
+  const readyToStartRef = useRef(false);
   const captureP1Ref = useRef('2%');
   const captureP2Ref = useRef('2%');
 
@@ -210,6 +211,16 @@ export default function Game() {
     // Ensure menu background music is stopped when entering gameplay.
     stop();
   }, [stop]);
+
+  // Gate start-key input until the reveal animations have settled (~1.2 s after load).
+  useEffect(() => {
+    if (loading) return;
+    readyToStartRef.current = false;
+    const timer = window.setTimeout(() => {
+      readyToStartRef.current = true;
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
 
   useEffect(() => {
     audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
@@ -472,6 +483,7 @@ export default function Game() {
     winnerSentRef,
     onEmitWinner: emitWinner,
     onNavigateAfterFinish: handleNavigateAfterFinish,
+    readyToStartRef,
   });
 
   return (
