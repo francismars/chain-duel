@@ -11,11 +11,13 @@
 
 .online-rooms-page {
   width: 100vw;
-  min-height: calc(100vh - 5vw);
-  padding: 2.6vw 3vw 2vw;
+  min-height: 100vh;
+  padding: 0;
   color: #fff;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 1.2vw;
 }
 
@@ -60,11 +62,18 @@
   }
 }
 
+.online-header {
+  width: min(70vw, 1200px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
 #online-title {
   font-size: 4.5cqw;
   letter-spacing: 0;
-  margin: 0 auto;
-  width: min(70vw, 1200px);
+  margin: 0;
   text-align: center;
   color: #fff;
   text-shadow: 0 0 16px rgb(255 255 255 / 35%);
@@ -76,8 +85,8 @@
   color: #d8d8d8;
   letter-spacing: 0.06rem;
   font-size: 0.9cqw;
-  margin: -0.4vw auto 0;
-  width: min(70vw, 1200px);
+  margin: 0.4vw 0 0;
+  animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
 }
 
 /* ── Mode-switch entrance animation ── */
@@ -125,7 +134,7 @@
 /* ── Action card ── */
 .online-action-card {
   width: min(70vw, 1200px);
-  margin: 0 auto;
+  margin: 0;
   padding-top: 1rem;
 }
 
@@ -157,21 +166,22 @@
 }
 
 .online-buyin-field {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr minmax(100px, 38%);
   align-items: stretch;
-  gap: 0.4rem;
 }
 
 /* Buy-in stepper: bordered box − / value / + */
 .online-buyin-stepper {
-  flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0 0.45rem;
+  justify-content: space-between;
+  gap: 0;
+  padding: 0;
+  margin-left: 0.75rem;
   min-height: clamp(36px, 2.8vw, 46px);
   border: 1px solid rgb(255 255 255 / 0.07);
+  border-right: none;
   overflow: hidden;
 }
 
@@ -228,19 +238,19 @@
 }
 
 .online-buyin-unit {
-  font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(10px, 0.7cqw, 12px);
-  letter-spacing: 0.1em;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.6cqw, 11px);
+  font-weight: 500;
+  letter-spacing: 0.06em;
   color: rgb(255 255 255 / 0.38);
   text-transform: uppercase;
   flex-shrink: 0;
 }
 
-/* Quick-amount preset group — vertical stack beside the stepper */
+/* Quick-amount preset group — horizontal row below the stepper */
 .online-buyin-presets {
   display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
+  flex-direction: row;
   border: 1px solid rgb(255 255 255 / 0.07);
   overflow: hidden;
 }
@@ -249,21 +259,22 @@
   flex: 1;
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+  border-right: 1px solid rgb(255 255 255 / 0.07);
   color: rgb(255 255 255 / 0.3);
-  font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(8px, 0.6cqw, 10px);
-  letter-spacing: 0.14em;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.65cqw, 11px);
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 0 0.6rem;
+  padding: 0.3rem 0;
   transition: color 0.12s, background 0.12s;
   line-height: 1;
-  min-width: 2.8rem;
+  text-align: center;
 }
 
 .online-buyin-preset:last-child {
-  border-bottom: none;
+  border-right: none;
 }
 
 .online-buyin-preset:hover {
@@ -283,7 +294,7 @@
 .online-buyin-preset.online-selected {
   color: #fff !important;
   background: rgb(255 255 255 / 0.1) !important;
-  border-bottom-color: rgb(255 255 255 / 0.07) !important;
+  border-right-color: rgb(255 255 255 / 0.07) !important;
   box-shadow: none !important;
 }
 
@@ -318,11 +329,11 @@
   min-height: clamp(38px, 3vw, 46px) !important;
 }
 
-/* Footer: error left, mode toggle right */
+/* Footer: mode toggle centered */
 .online-action-card-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 1rem;
   padding: 0.4rem 0 0.7rem;
   border-bottom: 1px solid rgb(255 255 255 / 0.1);
@@ -387,7 +398,7 @@
 
 .online-room-list-panel {
   width: min(70vw, 1200px);
-  margin: 0 auto;
+  margin: 0;
   border: none;
   background: none;
   box-shadow: none;
@@ -401,6 +412,27 @@
   justify-content: space-between;
   gap: 0.6vw;
   margin-bottom: 0;   /* removed — tab border bleeds into list top border */
+}
+
+.online-tab-enter-hint {
+  width: 100%;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.58cqw, 11px);
+  color: rgb(255 255 255 / 0.38);
+  letter-spacing: 0.04em;
+  animation: rooms-fade 0.2s ease both;
+}
+
+.online-tab-enter-hint kbd {
+  font-family: inherit;
+  font-size: inherit;
+  color: rgb(255 255 255 / 0.6);
+  border: 1px solid rgb(255 255 255 / 0.25);
+  border-radius: 2px;
+  padding: 0 0.3em;
+  line-height: 1.5;
 }
 
 .online-room-list-head h3 {
@@ -730,14 +762,45 @@
   box-shadow: none !important;
 }
 
+/* CREATE ROOM / JOIN ROOM button: use the homepage glowing animation */
+.online-create-btn.online-selected {
+  outline: none !important;
+  animation: glowing 2000ms ease-in-out infinite !important;
+  border-color: var(--button-glow-border, #fff) !important;
+  box-shadow: var(--button-glow-shadow-low, 0 0 15px #fff) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .button.online-selected {
     animation: none;
   }
+  .online-create-btn.online-selected {
+    animation: none !important;
+    background-color: rgb(255 255 255 / 15%);
+    box-shadow: 0 0 15px #fff !important;
+    border-color: #fff !important;
+    outline: none !important;
+  }
+}
+
+@keyframes room-card-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 999px rgb(255 255 255 / 3%), 0 0 6px rgb(255 255 255 / 0.05); }
+  50%       { box-shadow: inset 0 0 0 999px rgb(255 255 255 / 7%), 0 0 12px rgb(255 255 255 / 0.1); }
 }
 
 .online-room-card.online-selected {
-  background: none;
+  border-bottom-color: #4f4f4f !important;
+  border-left: 2px solid rgb(255 255 255 / 0.55);
+  box-shadow: inset 0 0 0 999px rgb(255 255 255 / 4%), 0 0 8px rgb(255 255 255 / 0.06);
+  outline: none;
+  animation: room-card-pulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-room-card.online-selected {
+    animation: none;
+    box-shadow: inset 0 0 0 999px rgb(255 255 255 / 6%);
+  }
 }
 
 .online-room-main {
@@ -836,16 +899,14 @@
 
 .online-error {
   width: min(70vw, 1200px);
-  margin: 0 auto;
+  margin: 0;
   color: #ff7b7b;
   text-align: center;
   font-size: 0.85cqw;
 }
 
 .online-footer-controls {
-  margin-top: auto;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: 0;
   width: min(70vw, 1200px);
   display: flex;
   flex-direction: column;
@@ -901,13 +962,17 @@
   display: contents;
 }
 
+.online-rooms-left {
+  display: contents;
+}
+
 .online-rooms-side {
   display: contents;
 }
 
 @media (max-width: 1024px) {
-  #online-title,
-  #online-subtitle,
+  .online-header,
+  .online-rooms-left,
   .online-action-card,
   .online-room-list-panel,
   .online-footer-controls,
@@ -936,14 +1001,13 @@
    ══════════════════════════════════════════════════════════════ */
 @media (min-width: 1400px) and (min-aspect-ratio: 16/9) {
   .online-rooms-page {
-    /* 5 % horizontal safe-zone */
-    padding: 2.8vw 5vw 2vw;
+    padding: 2.8vw 0 2vw;
     gap: 1.8vw;
     min-height: 100vh;
     box-sizing: border-box;
   }
 
-  /* Title and subtitle stay full-width and centred */
+  /* Title/subtitle wrapper and TV typography */
   #online-title {
     font-size: 4.8vw;
   }
@@ -962,6 +1026,13 @@
     width: 100%;
   }
 
+  /* Left column: header + room list stacked */
+  .online-rooms-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2vw;
+  }
+
   /* Sidebar column: action card + back stacked, sticky within the viewport */
   .online-rooms-side {
     display: flex;
@@ -972,8 +1043,7 @@
   }
 
   /* All content fills its grid column — override the default centering widths */
-  #online-title,
-  #online-subtitle,
+  .online-header,
   .online-room-list-panel,
   .online-action-card,
   .online-footer-controls,
@@ -1029,8 +1099,8 @@
   }
 
   .online-buyin-preset {
-    font-size: clamp(11px, 0.72vw, 14px);
-    padding: 0 0.75rem;
+    font-size: clamp(11px, 0.7vw, 13px);
+    padding: 0.45rem 0;
   }
 
   .online-buyin-btn {
