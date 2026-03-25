@@ -196,7 +196,9 @@ export default function SoloChallenges() {
     if (challenge.powerup) parts.push('PWR');
 
     const config: Record<string, unknown> = {
-      mode: 'LOCAL',
+      mode: 'SOLO',
+      soloChallengeName: challenge.name,
+      soloBounty: challenge.bounty,
       localHudLabel: parts.join(' · '),
       teamMode: isFfa ? 'ffa' : 'solo',
       practiceMode: true,

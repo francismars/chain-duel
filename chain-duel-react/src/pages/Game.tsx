@@ -79,6 +79,7 @@ export default function Game() {
   const [footerHighlight, setFooterHighlight] = useState(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
+  const [soloEndData, setSoloEndData] = useState<{ won: boolean; name: string; bounty: number; preimage: string; lnAddress: string } | null>(null);
 
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
   const canShowP2Image = useMemo(() => player2Img.length > 0, [player2Img]);
@@ -89,7 +90,7 @@ export default function Game() {
       if (!raw) return false;
       const cfg = JSON.parse(raw) as Record<string, unknown>;
       const m = String(cfg.mode ?? '').toUpperCase();
-      if (m === 'LOCAL' || m === 'TESTNET') return Boolean(cfg.powerupMode);
+      if (m === 'LOCAL' || m === 'TESTNET' || m === 'SOLO') return Boolean(cfg.powerupMode);
       return m === 'POWERUP' || m === 'POWER-UP ARENA';
     } catch {
       return false;
@@ -110,7 +111,7 @@ export default function Game() {
     }
 
     const configMode = String(gameConfig.mode ?? '').toUpperCase();
-    const isLocalHub = configMode === 'LOCAL' || configMode === 'TESTNET';
+    const isLocalHub = configMode === 'LOCAL' || configMode === 'TESTNET' || configMode === 'SOLO';
     const isLegacyPowerup =
       configMode === 'POWERUP' || configMode === 'POWER-UP ARENA';
     const isConvergence = isLocalHub && Boolean(gameConfig.convergenceMode);
@@ -222,6 +223,32 @@ export default function Game() {
     return () => window.clearTimeout(timer);
   }, [loading]);
 
+  // Detect P1 win in SOLO mode and surface the mock zap-proof overlay.
+  useEffect(() => {
+    if (loading) return;
+    let cfg: Record<string, unknown> = {};
+    try { const r = sessionStorage.getItem('gameConfig'); if (r) cfg = JSON.parse(r); } catch { /* ignore */ }
+    if (String(cfg.mode ?? '').toUpperCase() !== 'SOLO') return;
+
+    const poll = window.setInterval(() => {
+      const state = stateRef.current;
+      if (!state?.gameEnded || !state.winnerPlayer) return;
+      window.clearInterval(poll);
+      const won    = state.winnerPlayer === 'P1';
+      const bounty = Number(cfg.soloBounty ?? 0);
+      const name   = String(cfg.soloChallengeName ?? 'CHALLENGE');
+      const ln     = localStorage.getItem('arcadeLnAddress') ?? '';
+      const preimage = won
+        ? Array.from({ length: 32 }, () =>
+            Math.floor(Math.random() * 256).toString(16).padStart(2, '0')
+          ).join('')
+        : '';
+      setSoloEndData({ won, name, bounty, preimage, lnAddress: ln });
+    }, 150);
+
+    return () => window.clearInterval(poll);
+  }, [loading, stateRef]);
+
   useEffect(() => {
     audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
   }, [isMuted, isMusicMuted, loading]);
@@ -252,7 +279,7 @@ export default function Game() {
     } catch {
       // ignore
     }
-    const localModes = ['LOCAL', 'TESTNET', 'POWERUP', 'POWER-UP ARENA'];
+    const localModes = ['LOCAL', 'TESTNET', 'POWERUP', 'POWER-UP ARENA', 'SOLO'];
     const configMode = String(gameConfig.mode ?? '').toUpperCase();
     if (localModes.includes(configMode)) {
       bootstrapLocalGame();
@@ -401,6 +428,7 @@ export default function Game() {
       TESTNET: '/local',
       POWERUP: '/local',
       'POWER-UP ARENA': '/local',
+      SOLO: '/solo',
     };
     const modeRoute = modeRoutes[configMode];
     if (modeRoute) { navigate(modeRoute); return; }
@@ -693,6 +721,72 @@ export default function Game() {
       <div className={`overlay ${loading ? '' : 'hide'}`} id="loading">
         <img src="/images/loading.gif" alt="Loading" />
       </div>
+
+      {soloEndData && (
+        <div className={`solo-zap-overlay${soloEndData.won ? '' : ' solo-zap-overlay--lose'}`} role="dialog" aria-modal="true" aria-label={soloEndData.won ? 'Challenge complete' : 'Game over'}>
+          <div className="solo-zap-card">
+            {soloEndData.won ? (
+              <>
+                <div className="solo-zap-header">
+                  <span className="solo-zap-badge">⚡ ZAP SENT</span>
+                  <h2 className="solo-zap-title">CHALLENGE COMPLETE</h2>
+                  <p className="solo-zap-challenge">{soloEndData.name}</p>
+                </div>
+
+                <div className="solo-zap-amount">
+                  <span className="solo-zap-sats">{soloEndData.bounty.toLocaleString()}</span>
+                  <span className="solo-zap-unit">SATS</span>
+                </div>
+
+                <div className="solo-zap-receipt">
+                  <div className="solo-zap-row">
+                    <span className="solo-zap-label">TO</span>
+                    <span className="solo-zap-value solo-zap-value--ln">
+                      {soloEndData.lnAddress || '—'}
+                    </span>
+                  </div>
+                  <div className="solo-zap-row">
+                    <span className="solo-zap-label">PREIMAGE</span>
+                    <span className="solo-zap-value solo-zap-value--hash">
+                      {soloEndData.preimage}
+                    </span>
+                  </div>
+                  <div className="solo-zap-row">
+                    <span className="solo-zap-label">STATUS</span>
+                    <span className="solo-zap-value solo-zap-value--ok">SETTLED ✓</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="solo-zap-header">
+                  <span className="solo-zap-badge solo-zap-badge--lose">✗ DEFEATED</span>
+                  <h2 className="solo-zap-title">GAME OVER</h2>
+                  <p className="solo-zap-challenge">{soloEndData.name}</p>
+                </div>
+
+                <div className="solo-zap-amount solo-zap-amount--lose">
+                  <span className="solo-zap-sats solo-zap-sats--lose">0</span>
+                  <span className="solo-zap-unit">SATS</span>
+                </div>
+
+                <div className="solo-zap-receipt">
+                  <div className="solo-zap-row">
+                    <span className="solo-zap-label">BOUNTY</span>
+                    <span className="solo-zap-value">{soloEndData.bounty.toLocaleString()} sats — not earned</span>
+                  </div>
+                  <div className="solo-zap-row">
+                    <span className="solo-zap-label">TIP</span>
+                    <span className="solo-zap-value solo-zap-value--tip">Study the AI pattern and try again</span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <p className="solo-zap-hint">PRESS ANY BUTTON TO CONTINUE</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
