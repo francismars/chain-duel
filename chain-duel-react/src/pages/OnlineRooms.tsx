@@ -16,6 +16,7 @@ type NavFocus =
   | { type: 'preset'; index: number }   // 1K/10K/100K quick amounts
   | { type: 'join' }
   | { type: 'switch' }                  // mode toggle (Join by code / Create a room)
+  | { type: 'createBtn' }              // CREATE ROOM / JOIN ROOM action button
   | { type: 'room'; index: number }
   | { type: 'back' };
 
@@ -400,24 +401,45 @@ export default function OnlineRooms() {
           setOnlineTab(TAB_ORDER[next]);
           setNavFocus({ type: 'tab', index: next });
         } else if (navFocus.type === 'create') {
-          // Adjust buy-in with repeat acceleration
-          const now = performance.now();
-          const last = keyRepeatRef.current[key] ?? 0;
-          keyRepeatRef.current[key] = now;
-          const step = now - last < 140 ? BUYIN_STEP_FAST : BUYIN_STEP;
-          updateBuyinBy(isRight ? step : -step);
+          if (isRight) {
+            // Right → jump to first preset
+            setNavFocus({ type: 'preset', index: 0 });
+          } else {
+            // Left → escape back to tab row
+            setNavFocus({ type: 'tab', index: TAB_ORDER.indexOf(onlineTab) });
+          }
         } else if (navFocus.type === 'preset') {
-          // Move between preset buttons (clamped)
-          const next = isRight
-            ? Math.min(navFocus.index + 1, PRESET_AMOUNTS.length - 1)
-            : Math.max(navFocus.index - 1, 0);
-          setNavFocus({ type: 'preset', index: next });
+          if (isRight) {
+            // Rightmost preset or any right → jump to action button
+            if (navFocus.index < PRESET_AMOUNTS.length - 1) {
+              setNavFocus({ type: 'preset', index: navFocus.index + 1 });
+            } else {
+              setNavFocus({ type: 'createBtn' });
+            }
+          } else {
+            setNavFocus({ type: 'preset', index: Math.max(navFocus.index - 1, 0) });
+          }
+        } else if (navFocus.type === 'switch' || navFocus.type === 'back') {
+          if (isRight) setNavFocus({ type: 'createBtn' });
+        } else if (navFocus.type === 'createBtn') {
+          if (isLeft) {
+            setNavFocus(onlineMode === 'join' ? { type: 'join' } : { type: 'preset', index: PRESET_AMOUNTS.length - 1 });
+          }
         }
         return;
       }
 
       // ── Up ──────────────────────────────────────────────────────
       if (isUp) {
+        // On stepper: Up increases the buy-in value
+        if (navFocus.type === 'create') {
+          const now = performance.now();
+          const last = keyRepeatRef.current[key] ?? 0;
+          keyRepeatRef.current[key] = now;
+          const step = now - last < 140 ? BUYIN_STEP_FAST : BUYIN_STEP;
+          updateBuyinBy(step);
+          return;
+        }
         setNavFocus((prev) => {
           if (prev.type === 'back') {
             if (displayedRooms.length > 0) return { type: 'room', index: displayedRooms.length - 1 };
@@ -430,8 +452,11 @@ export default function OnlineRooms() {
           if (prev.type === 'switch') {
             return onlineMode === 'join' ? { type: 'join' } : { type: 'preset', index: PRESET_AMOUNTS.length - 1 };
           }
+          if (prev.type === 'createBtn') {
+            return onlineMode === 'join' ? { type: 'join' } : { type: 'preset', index: PRESET_AMOUNTS.length - 1 };
+          }
           if (prev.type === 'preset') return { type: 'create' };
-          if (prev.type === 'create' || prev.type === 'join') {
+          if (prev.type === 'join') {
             return { type: 'tab', index: TAB_ORDER.indexOf(onlineTab) };
           }
           // already at tab row — stay
@@ -442,15 +467,25 @@ export default function OnlineRooms() {
 
       // ── Down ─────────────────────────────────────────────────────
       if (isDown) {
+        // On stepper: Down decreases the buy-in value
+        if (navFocus.type === 'create') {
+          const now = performance.now();
+          const last = keyRepeatRef.current[key] ?? 0;
+          keyRepeatRef.current[key] = now;
+          const step = now - last < 140 ? BUYIN_STEP_FAST : BUYIN_STEP;
+          updateBuyinBy(-step);
+          return;
+        }
         setNavFocus((prev) => {
           if (prev.type === 'tab') {
             return onlineMode === 'join' ? { type: 'join' } : { type: 'create' };
           }
-          if (prev.type === 'create') {
-            return { type: 'preset', index: 0 };
-          }
           if (prev.type === 'preset' || prev.type === 'join') {
             return { type: 'switch' };
+          }
+          if (prev.type === 'createBtn') {
+            if (displayedRooms.length > 0) return { type: 'room', index: 0 };
+            return { type: 'back' };
           }
           if (prev.type === 'switch') {
             if (displayedRooms.length > 0) return { type: 'room', index: 0 };
@@ -478,6 +513,11 @@ export default function OnlineRooms() {
           return;
         }
         if (navFocus.type === 'create') { createRoom(); return; }
+        if (navFocus.type === 'createBtn') {
+          if (onlineMode === 'create') createRoom();
+          else socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() });
+          return;
+        }
         if (navFocus.type === 'switch') {
           const next: OnlineMode = onlineMode === 'create' ? 'join' : 'create';
           setOnlineMode(next);
@@ -526,10 +566,13 @@ export default function OnlineRooms() {
         <h2 id="duel">DUEL</h2>
       </header>
 
-      <h1 id="online-title">NETWORK</h1>
-      <p id="online-subtitle">Create a room, share the code, and claim your seat.</p>
-
       <div className="online-rooms-body">
+      <div className="online-rooms-left">
+      <div className="online-header">
+        <h1 id="online-title">NETWORK</h1>
+        <p id="online-subtitle">Create a room, share the code, and claim your seat.</p>
+      </div>
+
       <section className="online-room-list-panel">
         <div className="online-room-list-head">
           <h3>
@@ -588,6 +631,11 @@ export default function OnlineRooms() {
             </button>
           </div>
         </div>
+        {navFocus.type === 'tab' && (
+          <p className="online-tab-enter-hint" aria-live="polite">
+            Press <kbd>Enter</kbd> to browse the list
+          </p>
+        )}
 
         <div className="online-room-list" key={onlineTab}>
           {displayedRooms.length === 0 ? (
@@ -721,6 +769,7 @@ export default function OnlineRooms() {
           ))}
         </div>
       </section>
+      </div>{/* .online-rooms-left */}
 
       <div className="online-rooms-side">
       {/* ── Action card ── */}
@@ -785,7 +834,7 @@ export default function OnlineRooms() {
 
           <Button
             type="button"
-            className="online-create-btn"
+            className={`online-create-btn${navFocus.type === 'createBtn' ? ' online-selected' : ''}`}
             onClick={onlineMode === 'create' ? createRoom : () => socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() })}
             disabled={onlineMode === 'create' && creatingRoom}
           >
