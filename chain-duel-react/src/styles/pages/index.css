@@ -33,14 +33,15 @@
   margin-right: auto;
 }
 
-/* Default glow on the default-selected row (P2P); JS sets 2s / 0s per focus */
-#startp2p {
+/* Default glow on the default-selected row (LOCAL); JS sets 2s / 0s per focus */
+#startlocal {
   animation: glowing 2000ms infinite;
 }
 
 #aboutbutton,
 #highscoresbutton,
-#startlocal,
+#startsolo,
+#startp2p,
 #startmainnet,
 #startpractice {
   animation: glowing 0ms infinite;
