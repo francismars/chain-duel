@@ -578,7 +578,13 @@ export default function OnlineRooms() {
           <h3>
             {onlineTab === 'live' ? 'LIVE ROOMS' : onlineTab === 'hof' ? 'HALL OF FAME' : 'MATCH HISTORY'}
           </h3>
-          <div className="online-tab-row" role="tablist" aria-label="Online room list">
+          <div className="online-tab-line">
+            {navFocus.type === 'tab' ? (
+              <p className="online-tab-enter-hint" aria-live="polite">
+                Press <kbd>Enter</kbd> to browse the list
+              </p>
+            ) : null}
+            <div className="online-tab-row" role="tablist" aria-label="Online room list">
             <button
               type="button"
               role="tab"
@@ -629,13 +635,9 @@ export default function OnlineRooms() {
               </svg>
               Hall of Fame
             </button>
+            </div>
           </div>
         </div>
-        {navFocus.type === 'tab' && (
-          <p className="online-tab-enter-hint" aria-live="polite">
-            Press <kbd>Enter</kbd> to browse the list
-          </p>
-        )}
 
         <div className="online-room-list" key={onlineTab}>
           {displayedRooms.length === 0 ? (
