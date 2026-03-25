@@ -17,6 +17,7 @@ import OnlineRooms from './pages/OnlineRooms';
 import OnlineRoomLobby from './pages/OnlineRoomLobby';
 import OnlineGame from './pages/OnlineGame';
 import OnlinePostGame from './pages/OnlinePostGame';
+import SoloChallenges from './pages/SoloChallenges';
 import './styles/index.css';
 
 function App() {
@@ -36,7 +37,7 @@ function App() {
             <Route path="/local" element={<LocalHub />} />
             <Route path="/regtest" element={<Navigate to="/local" replace />} />
             <Route path="/testnet" element={<Navigate to="/local" replace />} />
-            <Route path="/solo" element={<Navigate to="/local" replace />} />
+            <Route path="/solo" element={<SoloChallenges />} />
 
             {/* P2P tournament (paid entry + lobby + bracket) */}
             <Route path="/p2p" element={<P2pEntry />} />

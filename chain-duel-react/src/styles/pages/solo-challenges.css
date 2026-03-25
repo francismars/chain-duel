@@ -1,0 +1,513 @@
+/* Solo Challenges (/solo) — 6-row challenge ladder with simulated bounties */
+
+/* ═══════════════════════════════════════════
+   Keyframes
+   ═══════════════════════════════════════════ */
+
+@keyframes sc-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sc-row-pop {
+  0%   { transform: scaleX(1)    scaleY(1); }
+  38%  { transform: scaleX(1.012) scaleY(1.045); }
+  68%  { transform: scaleX(0.997) scaleY(0.992); }
+  100% { transform: scaleX(1)    scaleY(1); }
+}
+
+/* ── Page shell ── */
+.solo-challenges-page.practice-hub--practice {
+  max-width: clamp(480px, 52vw, 860px);
+  gap: clamp(10px, 1.2vw, 18px);
+  justify-content: center;
+}
+
+.solo-challenges-page .solo-challenges-title {
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+/* Page subtitle */
+.sc-page-lede {
+  margin: 0.4em 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(10px, 0.85vw, 12px);
+  color: rgba(255, 255, 255, 0.32);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+/* Strip panel chrome */
+.solo-challenges-page .practice-panel {
+  border: none;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  gap: clamp(10px, 1.2vw, 18px);
+}
+
+/* ── Nostr / LN payout gate ── */
+.sc-gate {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.sc-gate__row {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1vw, 14px);
+  flex-wrap: wrap;
+}
+
+/* Nostr connect button */
+.sc-gate__nostr-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.72vw, 11px);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sc-gate__nostr-btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sc-gate__nostr-btn--connected {
+  border-color: rgba(255, 255, 255, 0.32);
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sc-gate__icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.72;
+}
+
+.sc-gate__icon--ln {
+  color: rgba(255, 200, 40, 0.75);
+}
+
+.sc-gate__label {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.72vw, 11px);
+  letter-spacing: 0.12em;
+}
+
+/* Lightning address input wrapper */
+.sc-gate__ln-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 160px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 7px 10px;
+  transition: border-color 0.18s;
+}
+
+.sc-gate__ln-wrap:focus-within {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.sc-gate__ln-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.72vw, 11px);
+  letter-spacing: 0.06em;
+}
+
+.sc-gate__ln-input::placeholder {
+  color: rgba(255, 255, 255, 0.24);
+  letter-spacing: 0.04em;
+}
+
+/* Status badge */
+.sc-gate__status {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.62vw, 10px);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.25s;
+}
+
+.sc-gate__status--ready {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.sc-gate__error {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.7vw, 11px);
+  color: rgba(255, 120, 100, 0.85);
+  letter-spacing: 0.06em;
+}
+
+/* ── Challenge list ── */
+.sc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Challenge row ── */
+.sc-row {
+  display: block;
+  padding: clamp(10px, 1.1vw, 14px) clamp(12px, 1.4vw, 18px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  font: inherit;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: left;
+  transition:
+    border-color 0.18s,
+    background 0.18s,
+    color 0.18s,
+    box-shadow 0.18s;
+  width: 100%;
+  min-height: clamp(52px, 5.5vw, 70px);
+}
+
+.sc-row:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.sc-row--selected {
+  --button-glow-bg-low: rgb(255 255 255 / 5%);
+  --button-glow-bg-peak: rgb(255 255 255 / 10%);
+  --button-glow-shadow-low: 0 0 8px rgb(255 255 255 / 18%), inset 0 0 6px rgb(255 255 255 / 5%);
+  --button-glow-shadow-peak: 0 0 20px rgb(255 255 255 / 38%), inset 0 0 12px rgb(255 255 255 / 8%);
+  --button-glow-border: rgba(255, 255, 255, 0.45);
+  border-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+  animation: glowing 2000ms ease-in-out infinite;
+  outline: none;
+}
+
+/* ── Row inner (pop target, separate from button's glowing) ── */
+.sc-row__inner {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.2vw, 16px);
+  width: 100%;
+}
+
+/* ── Rank number ── */
+.sc-row__rank {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(22px, 2.8vw, 36px);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+  width: clamp(24px, 2.4vw, 36px);
+  text-align: center;
+  transition: color 0.18s;
+}
+
+.sc-row--selected .sc-row__rank {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Per-difficulty rank brightness */
+.sc-row[data-tier="wanderer"] .sc-row__rank  { color: rgba(255, 255, 255, 0.18); }
+.sc-row[data-tier="hunter"] .sc-row__rank    { color: rgba(255, 255, 255, 0.28); }
+.sc-row[data-tier="tactician"] .sc-row__rank { color: rgba(255, 255, 255, 0.42); }
+.sc-row[data-tier="sovereign"] .sc-row__rank { color: rgba(255, 255, 255, 0.62); }
+
+.sc-row--selected[data-tier="wanderer"] .sc-row__rank  { color: rgba(255, 255, 255, 0.5); }
+.sc-row--selected[data-tier="hunter"] .sc-row__rank    { color: rgba(255, 255, 255, 0.62); }
+.sc-row--selected[data-tier="tactician"] .sc-row__rank { color: rgba(255, 255, 255, 0.76); }
+.sc-row--selected[data-tier="sovereign"] .sc-row__rank { color: rgba(255, 255, 255, 0.92); }
+
+/* ── Info column ── */
+.sc-row__info {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sc-row__name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(13px, 1.3vw, 18px);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: inherit;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Config tags ── */
+.sc-row__tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.sc-tag {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.6vw, 10px);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.32);
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  transition: color 0.18s, border-color 0.18s;
+}
+
+.sc-row--selected .sc-tag {
+  color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Tier tag gets a subtle brightness boost on the selected row */
+.sc-row--selected .sc-tag--tier {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+/* ── Tier difficulty pips ── */
+.sc-tier-pips {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.sc-tier-pip {
+  display: inline-block;
+  width: 5px;
+  height: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  flex-shrink: 0;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+/* Filled pip brightness scales with tier */
+.sc-tag--tier[data-tier="wanderer"]  .sc-tier-pip--filled { background: rgba(255,255,255,0.30); border-color: rgba(255,255,255,0.30); }
+.sc-tag--tier[data-tier="hunter"]    .sc-tier-pip--filled { background: rgba(255,255,255,0.50); border-color: rgba(255,255,255,0.50); }
+.sc-tag--tier[data-tier="tactician"] .sc-tier-pip--filled { background: rgba(255,255,255,0.70); border-color: rgba(255,255,255,0.70); }
+.sc-tag--tier[data-tier="sovereign"] .sc-tier-pip--filled { background: rgba(255,255,255,0.92); border-color: rgba(255,255,255,0.92); }
+
+/* Convergence tag */
+.sc-tag--cvg {
+  color: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.08);
+  letter-spacing: 0.14em;
+}
+
+.sc-row--selected .sc-tag--cvg {
+  color: rgba(255, 255, 255, 0.46);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Mod tag (+ITEMS) */
+.sc-tag--mod {
+  color: rgba(255, 200, 40, 0.55);
+  border-color: rgba(255, 200, 40, 0.18);
+}
+
+.sc-row--selected .sc-tag--mod {
+  color: rgba(255, 200, 40, 0.82);
+  border-color: rgba(255, 200, 40, 0.32);
+}
+
+/* ── Bounty column ── */
+.sc-row__bounty {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.sc-row__sats {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(18px, 2.2vw, 28px);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.38);
+  transition: color 0.18s;
+}
+
+.sc-row__unit {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(7px, 0.55vw, 9px);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.22);
+  transition: color 0.18s;
+}
+
+.sc-row--selected .sc-row__sats {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.sc-row--selected .sc-row__unit {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+/* Sovereign row gets the gold accent on sats */
+.sc-row[data-tier="sovereign"] .sc-row__sats {
+  color: rgba(230, 195, 40, 0.52);
+}
+
+.sc-row--selected[data-tier="sovereign"] .sc-row__sats {
+  color: rgba(230, 195, 40, 0.9);
+}
+
+/* ── Action buttons ── */
+.solo-challenges-page .practice-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  width: 100%;
+}
+
+.solo-challenges-page .practice-back.button {
+  flex: 1 1 0;
+  height: 3vw;
+  min-height: 30px;
+  margin: 0;
+  padding: 1%;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8cqw;
+  font-weight: 400;
+  letter-spacing: 0.1rem;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: none;
+  animation: glowing 0ms infinite;
+}
+
+/* ── TV / large-screen ── */
+@media (min-width: 1400px) {
+  .solo-challenges-page.practice-hub--practice {
+    max-width: clamp(700px, 58vw, 1080px);
+    gap: clamp(14px, 1.4vw, 26px);
+  }
+
+  .sc-row {
+    min-height: clamp(58px, 6vw, 82px);
+    padding: clamp(12px, 1.2vw, 18px) clamp(16px, 1.6vw, 24px);
+  }
+
+  .sc-row__rank {
+    font-size: clamp(26px, 3.2vw, 44px);
+    width: clamp(28px, 3vw, 46px);
+  }
+
+  .sc-row__name {
+    font-size: clamp(15px, 1.5vw, 22px);
+  }
+
+  .sc-row__sats {
+    font-size: clamp(22px, 2.6vw, 34px);
+  }
+}
+
+/* ── Staggered page-reveal (motion-safe only) ── */
+@media (prefers-reduced-motion: no-preference) {
+  /* Header fades in first */
+  .solo-challenges-page .practice-hub-header {
+    opacity: 0;
+    animation: sc-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
+  }
+
+  /* Gate slides up just after */
+  .sc-gate {
+    opacity: 0;
+    animation: sc-fade-up 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards;
+  }
+
+  /* Each challenge row staggers in */
+  .sc-row {
+    opacity: 0;
+    animation: sc-fade-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .sc-list .sc-row:nth-child(1) { animation-delay: 0.22s; }
+  .sc-list .sc-row:nth-child(2) { animation-delay: 0.28s; }
+  .sc-list .sc-row:nth-child(3) { animation-delay: 0.34s; }
+  .sc-list .sc-row:nth-child(4) { animation-delay: 0.40s; }
+  .sc-list .sc-row:nth-child(5) { animation-delay: 0.46s; }
+  .sc-list .sc-row:nth-child(6) { animation-delay: 0.52s; }
+
+  /* Actions slide in last */
+  .solo-challenges-page .practice-actions {
+    opacity: 0;
+    animation: sc-fade-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.60s forwards;
+  }
+
+  /* Pop on the inner wrapper — button's glowing is completely unaffected */
+  .sc-row__inner--pop {
+    animation: sc-row-pop 0.4s cubic-bezier(0.28, 0.82, 0.36, 1.08) both;
+  }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .sc-row--selected,
+  .solo-challenges-page .practice-back.button,
+  .solo-challenges-page .practice-start.button {
+    animation: none;
+  }
+
+  .sc-row,
+  .sc-gate,
+  .sc-gate__ln-wrap {
+    transition: none;
+  }
+}

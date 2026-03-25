@@ -779,23 +779,26 @@
     font-size: clamp(9px, 0.65vw, 13px);
   }
 
-  /* Payment cards (inline compact) */
-  .p2p-picker-card--lightning,
-  .p2p-picker-card--nostr {
-    padding: clamp(12px, 1.4vw, 22px) clamp(12px, 1.4vw, 22px);
-  }
-
-  .p2p-picker-card--lightning .p2p-picker-icon,
-  .p2p-picker-card--nostr .p2p-picker-icon {
-    width: clamp(24px, 2.4vw, 40px);
-    height: clamp(24px, 2.4vw, 40px);
-  }
-
   /* Mode picker cards (tall / heroic) */
   .p2p-picker-card {
     min-height: clamp(130px, 14vw, 240px);
     gap: clamp(8px, 0.8vw, 16px);
     padding: clamp(20px, 2.8vw, 50px) 0.75rem clamp(18px, 2.4vw, 44px);
+  }
+
+  /* Pay-with tiles: must follow the rule above — same specificity, so re-assert compact layout */
+  .p2p-picker-card--lightning,
+  .p2p-picker-card--nostr {
+    min-height: unset;
+    padding: clamp(8px, 0.85vw, 12px) clamp(10px, 1vw, 16px);
+    row-gap: 0.1rem;
+    column-gap: 0.7rem;
+  }
+
+  .p2p-picker-card--lightning .p2p-picker-icon,
+  .p2p-picker-card--nostr .p2p-picker-icon {
+    width: clamp(20px, 2vw, 26px);
+    height: clamp(20px, 2vw, 26px);
   }
 
   .p2p-picker-icon {
@@ -821,6 +824,16 @@
 
   .p2p-picker-sub {
     font-size: clamp(10px, 0.75vw, 14px);
+  }
+
+  .p2p-picker-card--lightning .p2p-picker-label,
+  .p2p-picker-card--nostr .p2p-picker-label {
+    font-size: clamp(11px, 0.9vw, 14px);
+  }
+
+  .p2p-picker-card--lightning .p2p-picker-sub,
+  .p2p-picker-card--nostr .p2p-picker-sub {
+    font-size: clamp(8px, 0.62vw, 10px);
   }
 
   /* Duel format cards */
