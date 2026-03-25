@@ -51,6 +51,25 @@ const PLACEHOLDER_LNURL =
   'MARSURL1DP68GURN8GHJ7MRWVF5HGUEWV3HK5MEWWP6Z7AMFW35XGUNPWUHKZURF9AMRZTMVDE6HYMP0V438Y7NKXUE5S5TFG9X9GE2509N5VMN0G46S0WQJQ4';
 const ONLINE_FEE_MULTIPLIER = 0.95;
 
+function roundWinningSide(
+  round: NonNullable<OnlinePostGameInfo['matchRounds']>[number]
+): 'p1' | 'p2' | null {
+  if (round.winnerRole === 'Player 1') {
+    return 'p1';
+  }
+  if (round.winnerRole === 'Player 2') {
+    return 'p2';
+  }
+  const w = round.winnerName.trim().toLowerCase();
+  if (w && w === round.p1Name.trim().toLowerCase()) {
+    return 'p1';
+  }
+  if (w && w === round.p2Name.trim().toLowerCase()) {
+    return 'p2';
+  }
+  return null;
+}
+
 export default function OnlinePostGame() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -67,11 +86,13 @@ export default function OnlinePostGame() {
   const [creatingWithdrawal, setCreatingWithdrawal] = useState(false);
   const [creatingNostrPayout, setCreatingNostrPayout] = useState(false);
   const [lnurlw, setLnurlw] = useState('');
+  const [myVoted, setMyVoted] = useState(false);
 
   const isWinner = Boolean(
     info?.winnerSessionID && info.winnerSessionID === currentSessionID
   );
   const donLocked = Boolean(lnurlw || info?.payoutMethod === 'nostr_zap' || info?.rematchRequested);
+  const effectiveVotes = myVoted ? Math.max(votes, 1) : votes;
   const winnerHasNostrLn = Boolean(info?.winnerLnAddress);
   const payoutChosen = info?.payoutMethod === 'withdraw_qr' || info?.payoutMethod === 'nostr_zap';
   const payoutStatusText =
@@ -237,35 +258,6 @@ export default function OnlinePostGame() {
   const grossWinnerAmount = Math.floor(info?.winnerPoints ?? 0);
   const netPayoutAmount = Math.floor(grossWinnerAmount * ONLINE_FEE_MULTIPLIER);
   const feeAmount = Math.max(0, grossWinnerAmount - netPayoutAmount);
-  const p1Gross = Math.floor(info?.p1Points ?? 0);
-  const p2Gross = Math.floor(info?.p2Points ?? 0);
-  const p1DisplayAmount =
-    info?.winnerRole === 'Player 1'
-      ? Math.floor(p1Gross * ONLINE_FEE_MULTIPLIER)
-      : p1Gross;
-  const p2DisplayAmount =
-    info?.winnerRole === 'Player 2'
-      ? Math.floor(p2Gross * ONLINE_FEE_MULTIPLIER)
-      : p2Gross;
-
-  const effectiveSessionID =
-    currentSessionID || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sessionID') : '') || '';
-
-  const { isMyP1, isMyP2 } = useMemo(() => {
-    if (!info || !effectiveSessionID) {
-      return { isMyP1: false, isMyP2: false };
-    }
-    const winnerIsMe =
-      Boolean(info.winnerSessionID && info.winnerSessionID === effectiveSessionID);
-    return {
-      isMyP1: info.p1SessionID
-        ? info.p1SessionID === effectiveSessionID
-        : winnerIsMe && info.winnerRole === 'Player 1',
-      isMyP2: info.p2SessionID
-        ? info.p2SessionID === effectiveSessionID
-        : winnerIsMe && info.winnerRole === 'Player 2',
-    };
-  }, [info, effectiveSessionID]);
 
   return (
     <div className="online-postgame-page">
@@ -277,23 +269,16 @@ export default function OnlinePostGame() {
 
       <div className="online-postgame-card">
         <div className="online-postgame-headline">
-          <p className="online-postgame-kicker">MAINNET MATCH COMPLETE</p>
-          <h1 className="online-postgame-title">VICTORY SCREEN</h1>
+          <p className="online-postgame-kicker">NETWORK · VICTORY SCREEN</p>
         </div>
 
         {info && (info.matchRounds?.length ?? 0) > 0 ? (
           <section className="online-postgame-round-history" aria-label="Session game history">
-            <header className="online-postgame-round-history-header">
-              <h2 className="online-postgame-round-history-title">Session history</h2>
-              <p className="online-postgame-round-history-note">
-                Every row is a completed game. Later games are double-or-nothing rounds. Open a replay to
-                watch that game from the server recording.
-              </p>
-            </header>
             <ul className="online-postgame-round-list">
               {(info.matchRounds ?? []).map((round) => {
                 const isDon = round.matchRound > 1;
                 const finishedIso = new Date(round.finishedAt).toISOString();
+                const won = roundWinningSide(round);
                 return (
                   <li
                     key={round.matchRound}
@@ -324,27 +309,88 @@ export default function OnlinePostGame() {
 
                       <div className="online-postgame-round-main">
                         <div className="online-postgame-round-matchup" role="group" aria-label="Score">
-                          <div className="online-postgame-player online-postgame-player--p1">
-                            <span className="online-postgame-player-name">{round.p1Name}</span>
-                            <span className="online-postgame-player-pts">{round.p1Score}</span>
+                          <div
+                            className={[
+                              'online-postgame-player',
+                              'online-postgame-player--p1',
+                              won === 'p1' ? 'online-postgame-player--round-winner' : '',
+                              won === 'p2' ? 'online-postgame-player--round-loser' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                          >
+                            <div className="online-postgame-player-identity">
+                              {info.p1Picture ? (
+                                <img
+                                  className="online-postgame-round-avatar"
+                                  src={info.p1Picture}
+                                  alt={round.p1Name}
+                                />
+                              ) : null}
+                              <span className="online-postgame-player-name">{round.p1Name}</span>
+                            </div>
+                            <span className="online-postgame-player-pts">
+                              {round.p1Score}
+                              <span className="online-postgame-player-denom">sats</span>
+                            </span>
                           </div>
                           <div className="online-postgame-round-vs-pillar" aria-hidden="true">
                             <span className="online-postgame-round-vs-label">vs</span>
                           </div>
-                          <div className="online-postgame-player online-postgame-player--p2">
-                            <span className="online-postgame-player-name">{round.p2Name}</span>
-                            <span className="online-postgame-player-pts">{round.p2Score}</span>
+                          <div
+                            className={[
+                              'online-postgame-player',
+                              'online-postgame-player--p2',
+                              won === 'p2' ? 'online-postgame-player--round-winner' : '',
+                              won === 'p1' ? 'online-postgame-player--round-loser' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                          >
+                            <div className="online-postgame-player-identity">
+                              {info.p2Picture ? (
+                                <img
+                                  className="online-postgame-round-avatar"
+                                  src={info.p2Picture}
+                                  alt={round.p2Name}
+                                />
+                              ) : null}
+                              <span className="online-postgame-player-name">{round.p2Name}</span>
+                            </div>
+                            <span className="online-postgame-player-pts">
+                              {round.p2Score}
+                              <span className="online-postgame-player-denom">sats</span>
+                            </span>
                           </div>
                         </div>
                         <p className="online-postgame-round-winner">
                           <span className="online-postgame-round-winner-crown" aria-hidden="true">
-                            ◆
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 16"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.25"
+                              strokeLinejoin="round"
+                              strokeLinecap="round"
+                              className="online-postgame-crown-svg"
+                            >
+                              {/* crown body — closed silhouette */}
+                              <path d="M1 15h18V9L15 12L10 2L5 12L1 9Z" />
+                              {/* orbs at each peak tip */}
+                              <circle cx="10" cy="2" r="1.1" fill="currentColor" stroke="none" />
+                              <circle cx="1" cy="9" r="0.9" fill="currentColor" stroke="none" />
+                              <circle cx="19" cy="9" r="0.9" fill="currentColor" stroke="none" />
+                            </svg>
                           </span>
-                          <span className="online-postgame-round-winner-text">
-                            <strong>{round.winnerName}</strong>
-                            <span className="online-postgame-round-winner-sep"> · </span>
-                            <span className="online-postgame-round-winner-prize">
-                              {round.netPrize.toLocaleString()} sats net
+                          <span className="online-postgame-round-winner-body">
+                            <span className="online-postgame-round-winner-kicker">Winner</span>
+                            <span className="online-postgame-round-winner-text">
+                              <strong>{round.winnerName}</strong>
+                              <span className="online-postgame-round-winner-sep"> · </span>
+                              <span className="online-postgame-round-winner-prize">
+                                {round.netPrize.toLocaleString()} sats net
+                              </span>
                             </span>
                           </span>
                         </p>
@@ -369,42 +415,103 @@ export default function OnlinePostGame() {
           </section>
         ) : null}
 
-        <div className="online-postgame-winner-panel">
+        <div className="online-postgame-result">
           <div className="online-postgame-winner">
             <img
               className={`online-postgame-avatar ${info?.winnerPicture ? '' : 'hide'}`}
               src={info?.winnerPicture || '/images/loading.gif'}
               alt={info?.winnerName || 'Winner'}
             />
-            <h2>{(info?.winnerName || 'WINNER').toUpperCase()} WINS</h2>
+            <div className="online-postgame-winner-text">
+              <p className="online-postgame-winner-label">WINNER</p>
+              <h2 className="online-postgame-winner-name">
+                {(info?.winnerName || 'WINNER').toUpperCase()}
+              </h2>
+            </div>
           </div>
-          <p className="online-postgame-prize">
-            {netPayoutAmount.toLocaleString()} SATS
-          </p>
-          <p className="online-postgame-sub">
-            Net payout after 5% fee
-          </p>
-          <p className="online-postgame-sub">
-            Gross winner amount: {grossWinnerAmount.toLocaleString()} sats · Fee: {feeAmount.toLocaleString()} sats
-          </p>
+
+          <div className="online-postgame-prize-block">
+            <p className="online-postgame-prize">{netPayoutAmount.toLocaleString()} SATS</p>
+            <p className="online-postgame-sub">
+              Net · gross {grossWinnerAmount.toLocaleString()} · fee {feeAmount.toLocaleString()} sats
+            </p>
+          </div>
         </div>
 
-        <div className="online-postgame-scores">
-          <div className="online-postgame-score-chip">
-            <span className="online-postgame-score-label">
-              {info?.p1Name ?? 'Player 1'}
-              {isMyP1 ? <span className="online-postgame-you-tag">YOU</span> : null}
-            </span>
-            <span className="online-postgame-score-value">{p1DisplayAmount.toLocaleString()} sats</span>
+
+        {showPayoutUi ? (
+          <div
+            className={[
+              'online-postgame-don-panel',
+              donLocked ? 'online-postgame-don-panel--locked' : '',
+              effectiveVotes > 0 && !donLocked ? 'online-postgame-don-panel--active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
+            <div className="online-postgame-don-info">
+              <p className="online-postgame-don-title">DOUBLE OR NOTHING</p>
+              <p className="online-postgame-don-desc">
+                {donLocked
+                  ? 'Locked — a payout has been initiated.'
+                  : 'Both players must agree to double the stakes and play another round.'}
+              </p>
+            </div>
+
+            <div className="online-postgame-don-controls">
+              <div
+                className="online-postgame-don-vote-row"
+                aria-label={`${effectiveVotes} of ${requiredVotes} players agreed`}
+              >
+                <div className="online-postgame-don-pips">
+                  {Array.from({ length: requiredVotes }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={[
+                        'online-postgame-don-pip',
+                        i < effectiveVotes ? 'online-postgame-don-pip--active' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    />
+                  ))}
+                </div>
+                <span className="online-postgame-don-vote-label">
+                  {effectiveVotes}/{requiredVotes} agreed
+                </span>
+                {myVoted && !donLocked ? (
+                  <span className="online-postgame-don-my-vote-tag">Your vote cast</span>
+                ) : null}
+              </div>
+
+              <Button
+                type="button"
+                className={[
+                  'online-postgame-btn',
+                  'online-postgame-btn-don',
+                  donLocked || myVoted ? 'disabled' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                disabled={donLocked || myVoted}
+                onClick={() => {
+                  if (!socket || !roomId || donLocked || myVoted) {
+                    return;
+                  }
+                  setError('');
+                  setMyVoted(true);
+                  socket.emit('onlineDoubleOrNothing', { roomId });
+                }}
+              >
+                {donLocked
+                  ? 'LOCKED'
+                  : myVoted
+                    ? `VOTED — WAITING (${effectiveVotes}/${requiredVotes})`
+                    : 'DOUBLE OR NOTHING'}
+              </Button>
+            </div>
           </div>
-          <div className="online-postgame-score-chip">
-            <span className="online-postgame-score-label">
-              {info?.p2Name ?? 'Player 2'}
-              {isMyP2 ? <span className="online-postgame-you-tag">YOU</span> : null}
-            </span>
-            <span className="online-postgame-score-value">{p2DisplayAmount.toLocaleString()} sats</span>
-          </div>
-        </div>
+        ) : null}
 
         <div
           className={[
@@ -425,6 +532,7 @@ export default function OnlinePostGame() {
                 </div>
                 <div className="online-postgame-payout-row">
                   <Button
+                    type="button"
                     className={`${isWinner ? '' : 'disabled'} online-postgame-btn online-postgame-btn-withdraw`}
                     disabled={!isWinner || creatingWithdrawal || donLocked}
                     onClick={() => {
@@ -445,6 +553,7 @@ export default function OnlinePostGame() {
                       : 'Winner only'}
                   </Button>
                   <Button
+                    type="button"
                     className={`${isWinner && winnerHasNostrLn && !donLocked ? '' : 'disabled'} online-postgame-btn online-postgame-btn-nostr`}
                     disabled={!isWinner || !winnerHasNostrLn || donLocked || creatingNostrPayout}
                     onClick={() => {
@@ -459,24 +568,10 @@ export default function OnlinePostGame() {
                     {creatingNostrPayout ? 'Sending to LN address...' : 'Pay to LN address'}
                   </Button>
                 </div>
-                <Button
-                  className={`online-postgame-btn online-postgame-btn-don ${donLocked ? 'disabled' : ''}`}
-                  disabled={donLocked}
-                  onClick={() => {
-                    if (!socket || !roomId || donLocked) {
-                      return;
-                    }
-                    setError('');
-                    socket.emit('onlineDoubleOrNothing', { roomId });
-                  }}
-                >
-                  {donLocked
-                    ? 'DOUBLE OR NOTHING LOCKED (PAYOUT STARTED)'
-                    : `DOUBLE OR NOTHING (${votes}/${requiredVotes})`}
-                </Button>
               </>
             ) : null}
             <Button
+              type="button"
               className="online-postgame-btn online-postgame-btn-back"
               onClick={() => {
                 if (socket && roomId) {

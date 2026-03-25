@@ -29,6 +29,12 @@ type Kind1PostLoaded = {
   authorPicture?: string | null;
 };
 
+/** Show first `head` + … + last `tail` chars of a string. */
+function midTruncate(s: string, head = 16, tail = 8): string {
+  if (s.length <= head + tail + 1) return s;
+  return `${s.slice(0, head)}…${s.slice(-tail)}`;
+}
+
 export default function OnlineRoomLobby() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -44,6 +50,9 @@ export default function OnlineRoomLobby() {
   const [nostrUriQrOpen, setNostrUriQrOpen] = useState(false);
   const [nostrUriCopied, setNostrUriCopied] = useState(false);
   const nostrUriCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modalDialogRef = useRef<HTMLDivElement | null>(null);
+  const paymentCardsRef = useRef<HTMLDivElement | null>(null);
+  const paymentPanelRef = useRef<HTMLDivElement | null>(null);
   const [kind1PostEvent, setKind1PostEvent] = useState<Kind1PostLoaded | null>(null);
   const [kind1PostStatus, setKind1PostStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [kind1PostRetry, setKind1PostRetry] = useState(0);
@@ -66,6 +75,7 @@ export default function OnlineRoomLobby() {
     expiresAt: number;
   } | null>(null);
   const [lightningBusy, setLightningBusy] = useState(false);
+  const [paymentMode, setPaymentMode] = useState<'anon' | 'nostr-pay' | 'pin-zap' | null>(null);
   /** Pubkey from last successful kind-1 sign, until server confirms with `resOnlineNostrLinkOk`. */
   const pendingNostrLinkPubkeyRef = useRef<string | null>(null);
   /** Last successful `requestOnlineKind1Post` for this room + note ref — avoids refetch when switching Kind1 tabs back to POST. */
@@ -137,9 +147,42 @@ export default function OnlineRoomLobby() {
     }
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+
+    // Focus first focusable element inside the modal
+    const dialog = modalDialogRef.current;
+    if (dialog) {
+      const first = dialog.querySelector<HTMLElement>(
+        'button:not(:disabled), [href], input:not(:disabled), [tabindex]:not([tabindex="-1"])'
+      );
+      first?.focus();
+    }
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setNostrModalOpen(false);
+        return;
+      }
+      // Focus trap: keep Tab inside the modal
+      if (e.key === 'Tab' && dialog) {
+        const focusable = Array.from(
+          dialog.querySelectorAll<HTMLElement>(
+            'button:not(:disabled), [href], input:not(:disabled), [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => el.offsetParent !== null);
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
     window.addEventListener('keydown', onKey);
@@ -452,6 +495,64 @@ export default function OnlineRoomLobby() {
   const amILoserToPay = Boolean(rematchWaitingForSessionID && rematchWaitingForSessionID === currentSessionID);
   /** Seat grid: emphasize your row in lobby; stronger when you are ready to start. */
   const seatHighlightLobby = !isSessionClosed && !rematchPending;
+
+  const mySeatPinState = (() => {
+    if (!mySeat) return null;
+    if (isSessionClosed) {
+      return {
+        cardMod: '',
+        label: 'SESSION CLOSED',
+        pin: 'SESSION OVER',
+        copy: 'The session has ended. View the match result or replay from this room.',
+      };
+    }
+    if (isPostgame) {
+      return {
+        cardMod: '',
+        label: 'ROUND OVER',
+        pin: 'MATCH ENDED',
+        copy: 'Head to the victory screen to claim your prize, vote for double or nothing, or watch the replay.',
+      };
+    }
+    if (rematchPending && amILoserToPay) {
+      return {
+        cardMod: 'online-lobby-pin-card--action',
+        label: 'ACTION REQUIRED',
+        pin: 'ZAP TO CONTINUE',
+        copy: `Zap exactly ${Math.floor(rematchAmount).toLocaleString()} sats on the Kind1 post below to lock in the double or nothing.`,
+      };
+    }
+    if (rematchPending) {
+      return {
+        cardMod: 'online-lobby-pin-card--waiting',
+        label: 'DOUBLE OR NOTHING',
+        pin: 'WAITING FOR ZAP',
+        copy: 'Opponent must zap the Kind1 post to confirm. The room will advance once payment is detected.',
+      };
+    }
+    if (!myReady) {
+      return {
+        cardMod: 'online-lobby-pin-card--ready',
+        label: 'SEAT PAID',
+        pin: 'READY UP',
+        copy: `You're in as ${myRoleLabel}. Hit Mark as Ready below when you're set to play.`,
+      };
+    }
+    if (paidSeats < 2) {
+      return {
+        cardMod: 'online-lobby-pin-card--ready',
+        label: 'SEAT PAID',
+        pin: "YOU'RE READY",
+        copy: 'Waiting for the second player to pay and mark ready. Game starts when both are set.',
+      };
+    }
+    return {
+      cardMod: 'online-lobby-pin-card--go',
+      label: 'SEAT PAID',
+      pin: 'BOTH READY',
+      copy: 'Both players are in. The game is about to start.',
+    };
+  })();
   const snapshotP1Name =
     (room?.snapshot?.state as { p1Name?: string } | undefined)?.p1Name ?? 'Player 1';
   const snapshotP2Name =
@@ -491,6 +592,7 @@ export default function OnlineRoomLobby() {
     : rematchPending
       ? p2?.name || snapshotP2Name
       : p2?.name || 'Open seat';
+  const p1IsReady = !isMatchEnded && !rematchPending && p1?.status === 'paid' && p1.ready === true;
   const p1MetaDisplay = isMatchEnded
     ? room?.postGame?.winnerRole === 'Player 1'
       ? 'Winner'
@@ -504,6 +606,7 @@ export default function OnlineRoomLobby() {
             ? 'Paid · Offline'
             : 'Paid · Not ready'
         : 'Waiting payment';
+  const p2IsReady = !isMatchEnded && !rematchPending && p2?.status === 'paid' && p2.ready === true;
   const p2MetaDisplay = isMatchEnded
     ? room?.postGame?.winnerRole === 'Player 2'
       ? 'Winner'
@@ -525,6 +628,7 @@ export default function OnlineRoomLobby() {
       setLightningPay(null);
       setSeatZapInvoice(null);
       setZapPayBusy(false);
+      setPaymentMode(null);
     }
   }, [hasPaidMySeat]);
 
@@ -536,6 +640,56 @@ export default function OnlineRoomLobby() {
     setLightningPay(null);
     setLightningBusy(false);
   }, [nostrLinkActive, socket]);
+
+  // Escape clears active payment panel when modal is not open
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !nostrModalOpen && paymentMode !== null) {
+        setPaymentMode(null);
+        // Return focus to the card that was active
+        const active = paymentCardsRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]');
+        active?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [nostrModalOpen, paymentMode]);
+
+  // Arrow-key navigation between the three payment cards (Left/Right).
+  // Uses onKeyDown on the container (see JSX) so the handler always has
+  // a fresh closure over setPaymentMode without DOM-listener stale state.
+  const handlePaymentCardsKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (nostrModalOpen) return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const container = paymentCardsRef.current;
+    if (!container) return;
+    const cards = Array.from(container.querySelectorAll<HTMLButtonElement>('.online-lobby-path-card'));
+    const idx = cards.indexOf(document.activeElement as HTMLButtonElement);
+    if (idx === -1) return;
+    e.preventDefault();
+    const nextIdx = e.key === 'ArrowRight'
+      ? (idx + 1) % cards.length
+      : (idx - 1 + cards.length) % cards.length;
+    const next = cards[nextIdx];
+    const mode = next.dataset.mode as 'anon' | 'nostr-pay' | 'pin-zap' | undefined;
+    if (mode) setPaymentMode(mode);
+    next.focus();
+  };
+
+  // Move focus into the panel when a payment card is activated
+  useEffect(() => {
+    if (!paymentMode) return;
+    const panel = paymentPanelRef.current;
+    if (!panel) return;
+    // Small delay so the panel has rendered before we query it
+    const id = setTimeout(() => {
+      const first = panel.querySelector<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      first?.focus();
+    }, 50);
+    return () => clearTimeout(id);
+  }, [paymentMode]);
 
   const startSeatZapPay = () => {
     if (!socket || !roomId || !nostrLinkActive) {
@@ -609,6 +763,16 @@ export default function OnlineRoomLobby() {
     }
   }, [nostrUriQrOpen]);
 
+  const arenaCenterText = (() => {
+    if (isSessionClosed) return 'SESSION CLOSED';
+    if (isPostgame) return 'ROUND OVER';
+    if (rematchPending) return 'DOUBLE OR NOTHING';
+    if (paidSeats === 2 && myReady) return 'BOTH READY';
+    if (paidSeats === 2) return 'BOTH PAID';
+    if (paidSeats === 1) return '1 OF 2 PAID';
+    return 'AWAITING PLAYERS';
+  })();
+
   if (!roomId) {
     return (
       <div className="online-lobby-page online-lobby-page-missing">
@@ -617,449 +781,636 @@ export default function OnlineRoomLobby() {
     );
   }
 
+
   return (
     <div className="online-lobby-page">
       <Sponsorship id="sponsorship-online-lobby" />
 
-      <h1 id="online-lobby-title">MAINNET LOBBY</h1>
-      <p id="online-lobby-subtitle">
-        {room?.phase === 'finished'
-          ? 'Session finished — winner closed payout. View details or replay from this room.'
-          : room?.phase === 'postgame'
-            ? 'Match ended. Open victory screen for payout, Double or Nothing, or replay.'
-            : rematchPending
-              ? amILoserToPay
-                ? `Double or Nothing is active. Scan and zap exactly ${Math.floor(rematchAmount)} sats to continue.`
-                : `Double or Nothing is active. Waiting for loser to zap exactly ${Math.floor(rematchAmount)} sats.`
-              : 'Claim seat (left): PIN or Nostr link. Pay from the post (right): PAY or PAY anonymously.'}
-      </p>
-
-      <div className="online-lobby-top">
-        <section className="online-lobby-panel online-lobby-panel-main">
-          <div className="online-lobby-meta-row">
-            <div>
-              <p className="online-lobby-label">ROOM CODE</p>
-              <div className="online-lobby-code-row">
-                <span className="online-lobby-code">{room?.roomCode ?? '...'}</span>
-                <div className="online-lobby-emoji-box">
-                  <p className="online-lobby-emoji-box-title">EMOJI ID</p>
-                  <p
-                    className={
-                      roomEmojis
-                        ? 'online-lobby-code-emojis'
-                        : 'online-lobby-code-emojis online-lobby-code-emojis--pending'
-                    }
-                  >
-                    {roomEmojis || 'Publishing...'}
-                  </p>
-                </div>
-              </div>
-              <p className="online-lobby-copy online-lobby-code-confirm">
-                Confirm this emoji id before sending your zap.
-              </p>
-            </div>
-            <div className={`online-lobby-phase online-lobby-phase-${room?.phase ?? 'lobby'}`}>
+      {/* ── Zone 1: Page Header ── */}
+      <div className="online-lobby-header">
+        <div className="online-lobby-header-title-row">
+          <h1 className="online-lobby-title">NETWORK ROOM</h1>
+          {room?.phase && room.phase !== 'lobby' ? (
+            <div className={`online-lobby-phase online-lobby-phase-${room.phase}`}>
               {phaseLabel}
             </div>
-          </div>
-
-          <div className="online-lobby-buyin">
-            Buy-in: <b>{room?.buyin ?? 0} sats</b> · Seats paid: <b>{paidSeats}/2</b>
-          </div>
-
-          {finishedSummary ? (
-            <div className="online-lobby-finished-card">
-              <p className="online-lobby-label">MATCH RESULT</p>
-              <p className="online-lobby-finished-main">
-                {finishedSummary.p1Name} {finishedSummary.p1Score} - {finishedSummary.p2Score}{' '}
-                {finishedSummary.p2Name}
-              </p>
-              <p className="online-lobby-copy">
-                Winner: <b>{finishedSummary.winner}</b> · Net prize: <b>{finishedSummary.netPrize} sats</b>
-              </p>
-            </div>
           ) : null}
-
-          {mySeat ? (
-            <div className="online-lobby-pin-card">
-              <p className="online-lobby-label">SEAT STATUS</p>
-              <p className="online-lobby-pin">SEAT CLAIMED</p>
-              <p className="online-lobby-copy">
-                {isSessionClosed
-                  ? 'Session closed — registration is closed for this room.'
-                  : isPostgame
-                    ? 'Round ended — use postgame actions below (payout / Double or Nothing / replay).'
-                    : rematchPending
-                      ? 'Rematch locked to the same players. Waiting for rematch payment.'
-                      : `You are ${myRoleLabel}. Set ready when you are prepared to start.`}
-              </p>
-            </div>
-          ) : (
-            <div className="online-lobby-pin-card">
-              {isMatchEnded ? (
-                <>
-                  <p className="online-lobby-label">REGISTRATION</p>
-                  <p className="online-lobby-pin">CLOSED</p>
-                  <p className="online-lobby-copy">
-                    {isSessionClosed
-                      ? 'Session closed. View results/replay from this room.'
-                      : 'Round ended — new seats stay closed until rematch or next lobby.'}
-                  </p>
-                </>
-              ) : rematchPending ? (
-                <>
-                  <p className="online-lobby-label">SEAT STATUS</p>
-                  <p className="online-lobby-pin">LOCKED FOR REMATCH</p>
-                  <p className="online-lobby-copy">No open seats while rematch payment is pending.</p>
-                </>
-              ) : (
-                <>
-                  <p className="online-lobby-label">CLAIM SEAT (NOSTR)</p>
-                  {!nostrLinkActive ? (
-                    <>
-                      <p className="online-lobby-sublabel">PIN</p>
-                      <p className="online-lobby-pin">{joinPin || 'WAITING...'}</p>
-                      <p className="online-lobby-copy">
-                        Paste this PIN in the zap comment when zapping from another client, or sign in below to zap
-                        without a PIN.
-                      </p>
-                      <div className="online-lobby-claim-nostr-row">
-                        <div className="online-lobby-or-divider" aria-hidden="true">
-                          <span className="online-lobby-or-line" />
-                          <span className="online-lobby-or-text">or</span>
-                          <span className="online-lobby-or-line" />
-                        </div>
-                        <Button type="button" className="online-lobby-signin-nostr-btn" onClick={openNostrModal}>
-                          Sign in with Nostr
-                        </Button>
-                      </div>
-                    </>
-                  ) : null}
-                  {nostrLinkActive ? (
-                    <div className="online-lobby-nostr-linked-pill">
-                      <div className="online-lobby-nostr-linked-row">
-                        {nostrLinkedProfile?.picture ? (
-                          <img
-                            className="online-lobby-nostr-linked-avatar"
-                            src={nostrLinkedProfile.picture}
-                            alt=""
-                            onError={(ev) => {
-                              (ev.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ) : null}
-                        <span className="online-lobby-nostr-linked-name">
-                          {nostrLinkedProfile?.name ?? 'Nostr profile'}
-                        </span>
-                        <span className="online-lobby-nostr-linked-rest">
-                          — zap without PIN · expires{' '}
-                          {new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}{' '}
-                          <button type="button" className="online-lobby-text-btn" onClick={openNostrModal}>
-                            Update
-                          </button>
-                        </span>
-                      </div>
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </div>
-          )}
-
-          <div className="online-lobby-actions-row">
-          </div>
-        </section>
-
-        <section className="online-lobby-panel online-lobby-panel-qr">
-          {!kind1 ? (
-            <div className="online-lobby-kind1-pending">
-              {rematchPending ? 'Publishing rematch Kind1...' : 'Publishing Kind1...'}
-            </div>
-          ) : (
+        </div>
+        <div className="online-lobby-header-meta">
+          {room ? (
             <>
-              <p className="online-lobby-label">{rematchPending ? 'DOUBLE OR NOTHING KIND1' : 'ROOM KIND1'}</p>
-              {kind1PostStatus === 'loading' ? (
-                <p className="online-lobby-copy online-lobby-kind1-post-status">Loading note from relays…</p>
-              ) : kind1PostStatus === 'error' ? (
-                <div className="online-lobby-kind1-post-error">
-                  <p className="online-lobby-copy">
-                    Couldn’t load this note from relays. Check your connection or try again.
-                  </p>
-                  <Button
-                    type="button"
-                    className="online-lobby-action"
-                    onClick={() => setKind1PostRetry((n) => n + 1)}
-                  >
-                    Try again
-                  </Button>
-                </div>
-              ) : kind1PostEvent ? (
-                <div className="online-lobby-kind1-embedded">
-                  {nostrUriQrOpen ? (
-                    <div
-                      className="online-lobby-kind1-uri-panel"
-                      id="online-lobby-nostr-uri-qr-panel"
-                      role="region"
-                      aria-label="Nostr URI"
-                    >
-                      <div className="online-lobby-kind1-uri-panel-head">
-                        <button
-                          type="button"
-                          className="online-lobby-kind1-uri-back"
-                          onClick={() => setNostrUriQrOpen(false)}
-                        >
-                          ← Post
-                        </button>
-                      </div>
-                      <QRCodeSVG
-                        value={nostrUri}
-                        size={168}
-                        includeMargin
-                        className="online-lobby-kind1-uri-panel-qr"
-                      />
-                      <div className="online-lobby-kind1-uri-line">
-                        <p className="online-lobby-kind1-uri-text" title={nostrUri}>
-                          {nostrUri}
-                        </p>
-                        <button
-                          type="button"
-                          className={[
-                            'online-lobby-kind1-uri-copy-iconbtn',
-                            nostrUriCopied ? 'online-lobby-kind1-uri-copy-iconbtn--ok' : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                          onClick={() => {
-                            void navigator.clipboard.writeText(nostrUri).then(() => {
-                              if (nostrUriCopyResetRef.current) {
-                                clearTimeout(nostrUriCopyResetRef.current);
-                              }
-                              setNostrUriCopied(true);
-                              nostrUriCopyResetRef.current = setTimeout(() => {
-                                setNostrUriCopied(false);
-                                nostrUriCopyResetRef.current = null;
-                              }, 2200);
-                            });
-                          }}
-                          aria-label={nostrUriCopied ? 'Copied' : 'Copy URI'}
-                          title={nostrUriCopied ? 'Copied' : 'Copy'}
-                        >
-                          {nostrUriCopied ? (
-                            <svg
-                              width={16}
-                              height={16}
-                              viewBox="0 0 24 24"
-                              aria-hidden
-                            >
-                              <path
-                                fill="currentColor"
-                                d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-                              />
-                            </svg>
-                          ) : (
-                            <svg
-                              width={16}
-                              height={16}
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              aria-hidden
-                            >
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                      <p className="online-lobby-copy online-lobby-kind1-uri-hint">
-                        Open in a Nostr client or share this link.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="online-lobby-kind1-author">
-                        {kind1PostEvent.authorPicture ? (
-                          <img
-                            className="online-lobby-kind1-author-avatar"
-                            src={kind1PostEvent.authorPicture}
-                            alt=""
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <div
-                            className="online-lobby-kind1-author-avatar online-lobby-kind1-author-avatar--placeholder"
-                            aria-hidden
-                          />
-                        )}
-                        <div className="online-lobby-kind1-author-text">
-                          <span className="online-lobby-kind1-author-name">{kind1PostEvent.authorName}</span>
-                          <span
-                            className="online-lobby-kind1-author-npub"
-                            title={kind1PostEvent.npubDisplay}
-                          >
-                            {kind1PostEvent.npubDisplay}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          className="online-lobby-kind1-uri-qr-btn"
-                          onClick={() => setNostrUriQrOpen(true)}
-                          aria-expanded={nostrUriQrOpen}
-                          aria-controls="online-lobby-nostr-uri-qr-panel"
-                          id="online-lobby-nostr-uri-qr-toggle"
-                        >
-                          URI QR
-                        </button>
-                      </div>
-                      <p className="online-lobby-kind1-embedded-meta">
-                        {new Date(kind1PostEvent.created_at * 1000).toLocaleString()}
-                      </p>
-                      <div className="online-lobby-kind1-embedded-body">{kind1PostEvent.content}</div>
-                      {kind1PostEvent.pubpayZap.isPubpay ? (
-                        <div className="online-lobby-pubpay-zap-meta">
-                          <p className="online-lobby-label">PAYMENT (FROM NOTE TAGS)</p>
-                          <p className="online-lobby-copy">
-                            {kind1PostEvent.pubpayZap.zapMinSats != null &&
-                            kind1PostEvent.pubpayZap.zapMaxSats != null
-                              ? `Pubpay zap range: ${kind1PostEvent.pubpayZap.zapMinSats}${
-                                  kind1PostEvent.pubpayZap.zapMinSats === kind1PostEvent.pubpayZap.zapMaxSats
-                                    ? ''
-                                    : `–${kind1PostEvent.pubpayZap.zapMaxSats}`
-                                } sats`
-                              : 'Zap terms from host'}
-                            {kind1PostEvent.pubpayZap.zapUses
-                              ? ` · Uses: ${kind1PostEvent.pubpayZap.zapUses}`
-                              : ''}
-                            {room?.buyin != null ? (
-                              <>
-                                {' '}
-                                · Room buy-in: <b>{room.buyin} sats</b>
-                              </>
-                            ) : null}
-                          </p>
-                        </div>
-                      ) : null}
-                      {!hasPaidMySeat &&
-                      room?.phase === 'lobby' &&
-                      !rematchPending &&
-                      !isMatchEnded ? (
-                        <div className="online-lobby-post-pay-row">
-                          {nostrLinkActive ? (
-                            <Button
-                              type="button"
-                              className="online-lobby-action online-lobby-post-pay-btn"
-                              disabled={zapPayBusy || !socket}
-                              onClick={startSeatZapPay}
-                            >
-                              {zapPayBusy ? 'PREPARING…' : 'PAY'}
-                            </Button>
-                          ) : (
-                            <Button
-                              type="button"
-                              className="online-lobby-action online-lobby-post-pay-btn"
-                              disabled={lightningBusy && !lightningPay}
-                              onClick={payAnonymouslyFromPost}
-                            >
-                              {lightningBusy && !lightningPay ? 'PREPARING…' : 'PAY anonymously'}
-                            </Button>
-                          )}
-                          <p className="online-lobby-copy online-lobby-post-pay-hint">
-                            {nostrLinkActive
-                              ? 'Prepares a zap request (server + your extension), then shows a Lightning invoice. Pay it with your wallet; the room detects the zap like a normal Nostr zap.'
-                              : 'Anonymous Lightning invoice below — no Nostr sign-in.'}
-                          </p>
-                        </div>
-                      ) : null}
-                      {seatZapInvoice ? (
-                        <div className="online-lobby-seat-zap-invoice">
-                          <p className="online-lobby-sublabel">ZAP INVOICE ({seatZapInvoice.buyinSats} sats)</p>
-                          <QRCodeSVG
-                            value={seatZapInvoice.lightningUri}
-                            size={180}
-                            includeMargin
-                            className="online-lobby-qr"
-                          />
-                          <p className="online-lobby-lightning-uri">{seatZapInvoice.lightningUri}</p>
-                          <div className="online-lobby-lightning-actions">
-                            <Button
-                              type="button"
-                              className="online-lobby-action"
-                              onClick={() => {
-                                void navigator.clipboard.writeText(seatZapInvoice.lightningUri);
-                              }}
-                            >
-                              Copy
-                            </Button>
-                            <Button
-                              type="button"
-                              className="online-lobby-action"
-                              onClick={() => void tryWeblnPaySeatZap()}
-                            >
-                              Pay in browser wallet
-                            </Button>
-                          </div>
-                        </div>
-                      ) : null}
-                      {!nostrLinkActive && lightningPay ? (
-                        <div className="online-lobby-post-inline-lightning">
-                          <p className="online-lobby-sublabel">ANONYMOUS LIGHTNING</p>
-                          <QRCodeSVG
-                            value={lightningPay.lightningUri}
-                            size={180}
-                            includeMargin
-                            className="online-lobby-qr"
-                          />
-                          <p className="online-lobby-lightning-uri">{lightningPay.lightningUri}</p>
-                          <div className="online-lobby-lightning-actions">
-                            <Button
-                              type="button"
-                              className="online-lobby-action"
-                              onClick={() => {
-                                void navigator.clipboard.writeText(lightningPay.lightningUri);
-                              }}
-                            >
-                              Copy link
-                            </Button>
-                            <Button
-                              type="button"
-                              className="online-lobby-action"
-                              onClick={() => {
-                                if (!socket || !roomId) {
-                                  return;
-                                }
-                                setLightningBusy(true);
-                                setError('');
-                                socket.emit('requestOnlineSeatLightning', { roomId });
-                              }}
-                            >
-                              New invoice
-                            </Button>
-                          </div>
-                          <p className="online-lobby-copy">
-                            Pay exactly <b>{lightningPay.buyin} sats</b>. Expires{' '}
-                            {new Date(lightningPay.expiresAt).toLocaleTimeString()}.
-                          </p>
-                        </div>
-                      ) : null}
-                    </>
-                  )}
-                </div>
-              ) : null}
-              {rematchPending ? (
-                <p className="online-lobby-copy">
-                  {amILoserToPay
-                    ? `You must zap exactly ${Math.floor(rematchAmount)} sats on this post to start rematch.`
-                    : `Waiting for loser to zap exactly ${Math.floor(rematchAmount)} sats on this post.`}
-                </p>
+              <span className="online-lobby-header-code">{room.roomCode}</span>
+              {roomEmojis ? (
+                <span className="online-lobby-header-emojis">{roomEmojis}</span>
+              ) : (
+                <span className="online-lobby-header-emojis online-lobby-header-emojis--pending">Publishing…</span>
+              )}
+              <span className="online-lobby-header-sep">·</span>
+              <span className="online-lobby-header-buyin">
+                {room.buyin.toLocaleString()} sats buy-in
+              </span>
+              <span className="online-lobby-header-sep">·</span>
+              <span className="online-lobby-header-seats">{paidSeats}/2 paid</span>
+              {yourPingMs != null ? (
+                <span
+                  className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(yourPingMs)}`}
+                  title="Your round-trip to server"
+                >
+                  {yourPingMs}ms
+                </span>
               ) : null}
             </>
+          ) : (
+            <span className="online-lobby-header-loading">Connecting…</span>
           )}
-        </section>
+        </div>
+        {roomEmojis ? (
+          <p className="online-lobby-header-emoji-confirm">
+            Confirm the emoji ID before sending your zap.
+          </p>
+        ) : null}
       </div>
 
+      {/* DoN Banner */}
+      {rematchPending ? (
+        <div
+          className={[
+            'online-lobby-don-banner',
+            amILoserToPay ? 'online-lobby-don-banner--pay' : 'online-lobby-don-banner--wait',
+          ].join(' ')}
+        >
+          <div className="online-lobby-don-banner-body">
+            <p className="online-lobby-don-banner-label">
+              {amILoserToPay ? 'DOUBLE OR NOTHING — YOUR TURN TO PAY' : 'DOUBLE OR NOTHING — WAITING FOR OPPONENT'}
+            </p>
+            <p className="online-lobby-don-banner-amount">
+              {Math.floor(rematchAmount).toLocaleString()}
+              <span className="online-lobby-don-banner-unit"> sats</span>
+            </p>
+            <p className="online-lobby-don-banner-desc">
+              {amILoserToPay
+                ? 'Zap that exact amount on the Kind1 post below to confirm the rematch. Stakes will double once received.'
+                : 'Waiting for opponent to zap the Kind1 post. Stakes will double once their payment is confirmed.'}
+            </p>
+          </div>
+          {amILoserToPay ? (
+            <p className="online-lobby-don-banner-cta">Scroll to Kind1 below ↓</p>
+          ) : (
+            <p className="online-lobby-don-banner-waiting-dot" aria-label="Waiting" />
+          )}
+        </div>
+      ) : null}
+
+      {/* ── Zone 2: Arena ── */}
+      <div className="online-lobby-arena-zone">
+        {/* P1 Seat */}
+        <div
+          className={[
+            'online-lobby-arena-seat',
+            'online-lobby-arena-seat--p1',
+            isMyP1Seat ? 'online-lobby-arena-seat--mine' : '',
+            seatHighlightLobby && isMyP1Seat && p1?.ready === true ? 'online-lobby-arena-seat--ready' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <div className="online-lobby-arena-seat-header">
+            <span className="online-lobby-label">
+              PLAYER 1{isMyP1Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
+            </span>
+            {p1?.status === 'paid' && typeof p1.pingMs === 'number' ? (
+              <span
+                className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(p1.pingMs)}`}
+                title="Player 1 round-trip to server"
+              >
+                {p1.pingMs}ms
+              </span>
+            ) : null}
+          </div>
+          <div className="online-lobby-arena-seat-identity">
+            {isMatchEnded || p1?.status === 'paid' ? (
+              <img
+                className="online-lobby-arena-avatar"
+                src={p1AvatarSrc || '/images/loading.gif'}
+                alt={p1?.name || 'Player 1'}
+              />
+            ) : (
+              <div className="online-lobby-arena-avatar online-lobby-arena-avatar--empty" aria-hidden="true" />
+            )}
+            <p className="online-lobby-arena-seat-name">{p1NameDisplay}</p>
+          </div>
+          <p className="online-lobby-arena-seat-meta">
+            {p1IsReady ? (
+              <>Paid · <span className="online-lobby-arena-seat-meta--ready">Ready</span></>
+            ) : p1MetaDisplay}
+          </p>
+          {isMyP1Seat && !isMatchEnded && !rematchPending ? (
+            <button
+              type="button"
+              className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
+              onClick={() => socket?.emit('onlineSetReady', { roomId, ready: !myReady })}
+            >
+              {myReady ? 'UNREADY' : 'MARK AS READY'}
+            </button>
+          ) : null}
+        </div>
+
+        {/* Center pillar */}
+        <div className="online-lobby-arena-center">
+          <span className="online-lobby-arena-vs" aria-hidden="true">VS</span>
+          <span className="online-lobby-arena-state">{arenaCenterText}</span>
+          {(room?.spectators.length ?? 0) > 0 ? (
+            <span className="online-lobby-arena-spectators">{room?.spectators.length} watching</span>
+          ) : null}
+        </div>
+
+        {/* P2 Seat */}
+        <div
+          className={[
+            'online-lobby-arena-seat',
+            'online-lobby-arena-seat--p2',
+            isMyP2Seat ? 'online-lobby-arena-seat--mine' : '',
+            seatHighlightLobby && isMyP2Seat && p2?.ready === true ? 'online-lobby-arena-seat--ready' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <div className="online-lobby-arena-seat-header">
+            <span className="online-lobby-label">
+              PLAYER 2{isMyP2Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
+            </span>
+            {p2?.status === 'paid' && typeof p2.pingMs === 'number' ? (
+              <span
+                className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(p2.pingMs)}`}
+                title="Player 2 round-trip to server"
+              >
+                {p2.pingMs}ms
+              </span>
+            ) : null}
+          </div>
+          <div className="online-lobby-arena-seat-identity">
+            {isMatchEnded || p2?.status === 'paid' ? (
+              <img
+                className="online-lobby-arena-avatar"
+                src={p2AvatarSrc || '/images/loading.gif'}
+                alt={p2?.name || 'Player 2'}
+              />
+            ) : (
+              <div className="online-lobby-arena-avatar online-lobby-arena-avatar--empty" aria-hidden="true" />
+            )}
+            <p className="online-lobby-arena-seat-name">{p2NameDisplay}</p>
+          </div>
+          <p className="online-lobby-arena-seat-meta">
+            {p2IsReady ? (
+              <>Paid · <span className="online-lobby-arena-seat-meta--ready">Ready</span></>
+            ) : p2MetaDisplay}
+          </p>
+          {isMyP2Seat && !isMatchEnded && !rematchPending ? (
+            <button
+              type="button"
+              className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
+              onClick={() => socket?.emit('onlineSetReady', { roomId, ready: !myReady })}
+            >
+              {myReady ? 'UNREADY' : 'MARK AS READY'}
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ── Zone 3: Action Zone ── */}
+      <div className="online-lobby-action-zone">
+
+        {/* Finished match summary */}
+        {finishedSummary ? (
+          <div className="online-lobby-finished-card">
+            <p className="online-lobby-label">MATCH RESULT</p>
+            <p className="online-lobby-finished-main">
+              {finishedSummary.p1Name} {finishedSummary.p1Score} – {finishedSummary.p2Score}{' '}
+              {finishedSummary.p2Name}
+            </p>
+            <p className="online-lobby-copy">
+              Winner: <b>{finishedSummary.winner}</b> · Net prize:{' '}
+              <b>{finishedSummary.netPrize.toLocaleString()} sats</b>
+            </p>
+          </div>
+        ) : null}
+
+        {/* Paid seat status card */}
+        {mySeatPinState ? (
+          <div className={`online-lobby-pin-card ${mySeatPinState.cardMod}`}>
+            <p className="online-lobby-label">{mySeatPinState.label}</p>
+            <p className="online-lobby-pin">{mySeatPinState.pin}</p>
+            <p className="online-lobby-copy">{mySeatPinState.copy}</p>
+          </div>
+        ) : null}
+
+        {/* Payment paths — seat not yet claimed, game not ended, no rematch in progress */}
+        {!hasPaidMySeat && !isMatchEnded && !rematchPending ? (
+          <div className="online-lobby-claim">
+            <div className="online-lobby-payment-paths" role="radiogroup" aria-label="Choose a payment method" ref={paymentCardsRef} onKeyDown={handlePaymentCardsKeyDown}>
+              {/* Anonymous — lightning bolt */}
+              <button
+                type="button"
+                className={['online-lobby-path-card', paymentMode === 'anon' ? 'online-lobby-path-card--active' : ''].filter(Boolean).join(' ')}
+                onClick={() => setPaymentMode(paymentMode === 'anon' ? null : 'anon')}
+                role="radio"
+                aria-checked={paymentMode === 'anon'}
+                data-mode="anon"
+                tabIndex={paymentMode === 'anon' || paymentMode === null ? 0 : -1}
+              >
+                <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M13 2 4.5 13.5H12L11 22l8.5-11.5H12L13 2Z" />
+                </svg>
+                <span className="online-lobby-path-card-title">ANONYMOUS</span>
+                <span className="online-lobby-path-card-desc">Lightning invoice — no identity required</span>
+              </button>
+
+              {/* Nostr + Pay here — person with lightning */}
+              <button
+                type="button"
+                className={['online-lobby-path-card', paymentMode === 'nostr-pay' ? 'online-lobby-path-card--active' : ''].filter(Boolean).join(' ')}
+                onClick={() => setPaymentMode(paymentMode === 'nostr-pay' ? null : 'nostr-pay')}
+                role="radio"
+                aria-checked={paymentMode === 'nostr-pay'}
+                data-mode="nostr-pay"
+                tabIndex={paymentMode === 'nostr-pay' ? 0 : -1}
+              >
+                <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="8" cy="7" r="3.5" />
+                  <path d="M2 21c0-4 2.7-6 6-6h.5" />
+                  <path d="M17 11l-3 5h4l-3 5" />
+                </svg>
+                <span className="online-lobby-path-card-title">SIGN IN WITH EXTENSION</span>
+                <span className="online-lobby-path-card-desc">Sign in with extension · lobby generates zap invoice</span>
+              </button>
+
+              {/* Zap with PIN — key */}
+              <button
+                type="button"
+                className={['online-lobby-path-card', paymentMode === 'pin-zap' ? 'online-lobby-path-card--active' : ''].filter(Boolean).join(' ')}
+                onClick={() => setPaymentMode(paymentMode === 'pin-zap' ? null : 'pin-zap')}
+                role="radio"
+                aria-checked={paymentMode === 'pin-zap'}
+                data-mode="pin-zap"
+                tabIndex={paymentMode === 'pin-zap' ? 0 : -1}
+              >
+                <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="5" y="2" width="14" height="20" rx="2" />
+                  <path d="M12 18h.01" />
+                </svg>
+                <span className="online-lobby-path-card-title">PAY FROM MOBILE CLIENT</span>
+                <span className="online-lobby-path-card-desc">No extension needed · include PIN in zap comment · any client</span>
+              </button>
+            </div>
+
+          </div>
+        ) : null}
+
+        {/* Spectator / closed seat message */}
+        {!hasPaidMySeat && (isMatchEnded || rematchPending) ? (
+          <div className="online-lobby-pin-card">
+            {isMatchEnded ? (
+              <>
+                <p className="online-lobby-label">REGISTRATION</p>
+                <p className="online-lobby-pin">CLOSED</p>
+                <p className="online-lobby-copy">
+                  {isSessionClosed
+                    ? 'Session closed. View results or replay from this room.'
+                    : 'Round ended — seats stay closed until rematch or next lobby.'}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="online-lobby-label">SEAT STATUS</p>
+                <p className="online-lobby-pin">LOCKED FOR REMATCH</p>
+                <p className="online-lobby-copy">No open seats while rematch payment is pending.</p>
+              </>
+            )}
+          </div>
+        ) : null}
+
+        {/* Primary action buttons */}
+        <div className="online-lobby-action-buttons">
+          {room?.phase === 'finished' ? (
+            <>
+              <Button
+                type="button"
+                className="online-lobby-action"
+                onClick={() => navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`)}
+              >
+                VIEW POSTGAME DETAILS
+              </Button>
+              <Button
+                type="button"
+                className="online-lobby-action"
+                onClick={() =>
+                  navigate(
+                    `/online/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(
+                      String(room?.matchRound ?? 1)
+                    )}`
+                  )
+                }
+              >
+                WATCH REPLAY
+              </Button>
+              <Button
+                type="button"
+                className="online-lobby-action"
+                onClick={() => {
+                  socket?.emit('leaveOnlineRoom', { roomId });
+                  navigate('/online');
+                }}
+              >
+                EXIT ROOM
+              </Button>
+            </>
+          ) : mySeat && rematchPending ? (
+            <Button
+              type="button"
+              className="online-lobby-action online-lobby-ready-btn"
+              disabled
+            >
+              {amILoserToPay
+                ? 'ZAP KIND1 TO CONFIRM DOUBLE OR NOTHING'
+                : 'WAITING FOR OPPONENT TO ZAP'}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ── Zone 4: Kind1 Post ── */}
+      {kind1 ? (
+        <div className="online-lobby-kind1-section" ref={paymentPanelRef}>
+          {kind1PostStatus === 'loading' ? (
+            <div className="online-lobby-kind1-loading" aria-label="Loading note from relays" role="status">
+              <span className="online-lobby-kind1-loading-chain" aria-hidden="true">
+                <span /><span /><span /><span /><span /><span /><span /><span />
+              </span>
+              <span className="online-lobby-kind1-loading-label">LOADING NOTE FROM RELAYS</span>
+            </div>
+          ) : kind1PostStatus === 'error' ? (
+            <div className="online-lobby-kind1-post-error">
+              <svg className="online-lobby-kind1-post-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <p className="online-lobby-kind1-post-error-msg">
+                Couldn't load this note from relays.
+              </p>
+              <p className="online-lobby-kind1-post-error-hint">Check your connection or try again.</p>
+              <Button
+                type="button"
+                className="online-lobby-action"
+                onClick={() => setKind1PostRetry((n) => n + 1)}
+              >
+                Try again
+              </Button>
+            </div>
+          ) : kind1PostEvent ? (
+            <div className="online-lobby-kind1-embedded">
+              {/* ── Left column: switches based on active payment mode ── */}
+              {paymentMode === 'anon' ? (
+                /* Anonymous Lightning invoice */
+                <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--panel">
+                  {!lightningPay ? (
+                    /* Pre-invoice: label + hint + CTA stacked */
+                    <>
+                      <p className="online-lobby-sublabel">ANONYMOUS ZAP</p>
+                      <p className="online-lobby-kind1-qr-hint">
+                        Generates a Lightning invoice — no identity required. Pay from any wallet.
+                      </p>
+                      <Button
+                        type="button"
+                        className="online-lobby-action"
+                        disabled={lightningBusy && !lightningPay}
+                        onClick={payAnonymouslyFromPost}
+                      >
+                        {lightningBusy && !lightningPay ? 'PREPARING…' : 'GET INVOICE'}
+                      </Button>
+                    </>
+                  ) : (
+                    /* QR + structured details side by side */
+                    <div className="online-lobby-qr-split">
+                      <QRCodeSVG value={lightningPay.lightningUri} size={160} includeMargin className="online-lobby-qr online-lobby-qr--step" aria-label="Anonymous Lightning invoice QR code" />
+                      <div className="online-lobby-qr-split-details">
+                        {/* ── Invoice block ── */}
+                        <div className="online-lobby-qr-split-block">
+                          <p className="online-lobby-sublabel">ANONYMOUS ZAP</p>
+                          <p className="online-lobby-anon-amount">
+                            {lightningPay.buyin.toLocaleString()} <span>sats</span>
+                          </p>
+                          <p className="online-lobby-pin-step-hint">
+                            Expires {new Date(lightningPay.expiresAt).toLocaleTimeString()}
+                          </p>
+                          <div className="online-lobby-kind1-uri-line">
+                            <p className="online-lobby-kind1-uri-text" title={lightningPay.lightningUri}>{lightningPay.lightningUri}</p>
+                            <button type="button" className="online-lobby-kind1-uri-copy-iconbtn" onClick={() => void navigator.clipboard.writeText(lightningPay.lightningUri)} aria-label="Copy invoice" title="Copy">
+                              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                            </button>
+                          </div>
+                        </div>
+                        {/* ── Context note ── */}
+                        <div className="online-lobby-qr-split-block online-lobby-qr-split-block--divided">
+                          <p className="online-lobby-pin-step-hint">
+                            Paying this invoice sends an anonymous zap to the room note. No Nostr account or identity required — pays directly via Lightning.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : paymentMode === 'nostr-pay' ? (
+                /* Sign in + pay — lobby generates zap invoice */
+                <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--panel">
+                  {!nostrLinkActive ? (
+                    <div className="online-lobby-nostr-signin-prompt">
+                      <svg className="online-lobby-nostr-signin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M15 3H9a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" />
+                        <path d="M10 17l5-5-5-5" />
+                        <line x1="15" y1="12" x2="3" y2="12" />
+                      </svg>
+                      <div className="online-lobby-nostr-signin-text">
+                        <p className="online-lobby-nostr-signin-title">SIGN IN WITH NOSTR EXTENSION</p>
+                        <p className="online-lobby-nostr-signin-sub">Connect with Alby, nos2x, or any NIP-07 browser extension.</p>
+                      </div>
+                      <Button type="button" className="online-lobby-action online-lobby-nostr-signin-btn" onClick={openNostrModal}>Sign in</Button>
+                    </div>
+                  ) : !seatZapInvoice ? (
+                    <>
+                      {nostrLinkedProfile ? (
+                        <div className="online-lobby-nostr-linked-pill">
+                          <div className="online-lobby-nostr-linked-row">
+                            {nostrLinkedProfile.picture ? (
+                              <img className="online-lobby-nostr-linked-avatar" src={nostrLinkedProfile.picture} alt="" onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} />
+                            ) : null}
+                            <span className="online-lobby-nostr-linked-name">{nostrLinkedProfile.name ?? 'Nostr profile'}</span>
+                            <span className="online-lobby-nostr-linked-rest">
+                              — expires {new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}{' '}
+                              <button type="button" className="online-lobby-text-btn" onClick={openNostrModal}>Update</button>
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
+                      <Button type="button" className="online-lobby-action" disabled={zapPayBusy || !socket} onClick={startSeatZapPay}>
+                        {zapPayBusy ? 'PREPARING…' : 'PAY'}
+                      </Button>
+                    </>
+                  ) : (
+                    /* QR + details side by side once invoice is ready */
+                    <div className="online-lobby-qr-split">
+                      <QRCodeSVG value={seatZapInvoice.lightningUri} size={160} includeMargin className="online-lobby-qr" aria-label="Zap invoice QR code" />
+                      <div className="online-lobby-qr-split-details">
+                        {nostrLinkedProfile ? (
+                          <div className="online-lobby-nostr-linked-pill">
+                            <div className="online-lobby-nostr-linked-row">
+                              {nostrLinkedProfile.picture ? (
+                                <img className="online-lobby-nostr-linked-avatar" src={nostrLinkedProfile.picture} alt="" onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} />
+                              ) : null}
+                              <span className="online-lobby-nostr-linked-name">{nostrLinkedProfile.name ?? 'Nostr profile'}</span>
+                            </div>
+                          </div>
+                        ) : null}
+                        <p className="online-lobby-sublabel">ZAP INVOICE — {seatZapInvoice.buyinSats.toLocaleString()} sats</p>
+                        <div className="online-lobby-kind1-uri-line">
+                          <p className="online-lobby-kind1-uri-text" title={seatZapInvoice.lightningUri}>{seatZapInvoice.lightningUri}</p>
+                          <button type="button" className="online-lobby-kind1-uri-copy-iconbtn" onClick={() => void navigator.clipboard.writeText(seatZapInvoice.lightningUri)} aria-label="Copy" title="Copy">
+                            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                          </button>
+                        </div>
+                        <Button type="button" className="online-lobby-action" onClick={() => void tryWeblnPaySeatZap()}>Pay in browser wallet</Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : paymentMode === 'pin-zap' ? (
+                /* PIN — numbered 3-step instruction layout */
+                <div className="online-lobby-kind1-qr-col">
+                  <ol className="online-lobby-pin-steps" aria-label="Steps to pay with PIN">
+                    {/* Step 1: Copy PIN */}
+                    <li className="online-lobby-pin-step">
+                      <span className="online-lobby-pin-step-num" aria-hidden>1</span>
+                      <p className="online-lobby-sublabel">COPY YOUR PIN</p>
+                      <p className="online-lobby-pin online-lobby-kind1-pin">{joinPin || '—'}</p>
+                      <p className="online-lobby-pin-step-hint">Paste this in your zap comment so the server identifies your seat.</p>
+                    </li>
+                    {/* Step 2: Open the note */}
+                    <li className="online-lobby-pin-step">
+                      <span className="online-lobby-pin-step-num" aria-hidden>2</span>
+                      <p className="online-lobby-sublabel">OPEN THE NOTE</p>
+                      <QRCodeSVG value={nostrUri} size={112} includeMargin className="online-lobby-qr online-lobby-qr--step" aria-label="Nostr note URI" />
+                      <div className="online-lobby-kind1-uri-line online-lobby-pin-step-uri">
+                        <p className="online-lobby-kind1-uri-text" title={nostrUri}>{midTruncate(nostrUri, 18, 8)}</p>
+                        <button type="button" className={['online-lobby-kind1-uri-copy-iconbtn', nostrUriCopied ? 'online-lobby-kind1-uri-copy-iconbtn--ok' : ''].filter(Boolean).join(' ')} onClick={() => { void navigator.clipboard.writeText(nostrUri).then(() => { if (nostrUriCopyResetRef.current) clearTimeout(nostrUriCopyResetRef.current); setNostrUriCopied(true); nostrUriCopyResetRef.current = setTimeout(() => { setNostrUriCopied(false); nostrUriCopyResetRef.current = null; }, 2200); }); }} aria-label={nostrUriCopied ? 'Copied' : 'Copy URI'} title={nostrUriCopied ? 'Copied' : 'Copy'}>
+                          {nostrUriCopied ? (<svg width={14} height={14} viewBox="0 0 24 24" aria-hidden><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" /></svg>) : (<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>)}
+                        </button>
+                      </div>
+                    </li>
+                    {/* Step 3: Zap */}
+                    <li className="online-lobby-pin-step">
+                      <span className="online-lobby-pin-step-num" aria-hidden>3</span>
+                      <p className="online-lobby-sublabel">ZAP THE NOTE</p>
+                      <p className="online-lobby-pin-step-amount">{(room?.buyin ?? 0).toLocaleString()} <span>sats</span></p>
+                      <p className="online-lobby-pin-step-hint">Include your PIN in the zap comment. The server matches it to your seat automatically.</p>
+                    </li>
+                  </ol>
+                </div>
+              ) : (
+                /* Default: nostrUri QR — 2-col: QR | hint + URI */
+                <div className="online-lobby-kind1-qr-col">
+                  <div className="online-lobby-qr-split">
+                    <QRCodeSVG value={nostrUri} size={160} includeMargin className="online-lobby-qr" aria-label="Nostr note URI" />
+                    <div className="online-lobby-qr-split-details">
+                      <p className="online-lobby-kind1-qr-hint">Scan to open the room note in your Nostr client. Choose a payment path above to claim your seat.</p>
+                      <div className="online-lobby-kind1-uri-line">
+                        <p className="online-lobby-kind1-uri-text" title={nostrUri}>{nostrUri}</p>
+                        <button type="button" className={['online-lobby-kind1-uri-copy-iconbtn', nostrUriCopied ? 'online-lobby-kind1-uri-copy-iconbtn--ok' : ''].filter(Boolean).join(' ')} onClick={() => { void navigator.clipboard.writeText(nostrUri).then(() => { if (nostrUriCopyResetRef.current) clearTimeout(nostrUriCopyResetRef.current); setNostrUriCopied(true); nostrUriCopyResetRef.current = setTimeout(() => { setNostrUriCopied(false); nostrUriCopyResetRef.current = null; }, 2200); }); }} aria-label={nostrUriCopied ? 'Copied' : 'Copy URI'} title={nostrUriCopied ? 'Copied' : 'Copy'}>
+                          {nostrUriCopied ? (<svg width={14} height={14} viewBox="0 0 24 24" aria-hidden><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" /></svg>) : (<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>)}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Right: author + content ── */}
+              <div className="online-lobby-kind1-content-col">
+                <div className="online-lobby-kind1-author">
+                  {kind1PostEvent.authorPicture ? (
+                    <img
+                      className="online-lobby-kind1-author-avatar"
+                      src={kind1PostEvent.authorPicture}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div
+                      className="online-lobby-kind1-author-avatar online-lobby-kind1-author-avatar--placeholder"
+                      aria-hidden
+                    />
+                  )}
+                  <div className="online-lobby-kind1-author-text">
+                    <div className="online-lobby-kind1-author-name-row">
+                      <span className="online-lobby-kind1-author-name">{kind1PostEvent.authorName}</span>
+                      <span className="online-lobby-kind1-author-npub" title={kind1PostEvent.npubDisplay}>
+                        {kind1PostEvent.npubDisplay}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="online-lobby-kind1-embedded-body">{kind1PostEvent.content}</div>
+                <span className="online-lobby-kind1-embedded-meta online-lobby-kind1-timestamp">
+                  {new Date(kind1PostEvent.created_at * 1000).toLocaleString()}
+                </span>
+
+                {kind1PostEvent.pubpayZap.isPubpay ? (
+                  <div className="online-lobby-pubpay-zap-meta">
+                    <p className="online-lobby-copy">
+                      {kind1PostEvent.pubpayZap.zapMinSats != null &&
+                      kind1PostEvent.pubpayZap.zapMaxSats != null
+                        ? `Pubpay zap range: ${kind1PostEvent.pubpayZap.zapMinSats}${
+                            kind1PostEvent.pubpayZap.zapMinSats === kind1PostEvent.pubpayZap.zapMaxSats
+                              ? ''
+                              : `–${kind1PostEvent.pubpayZap.zapMaxSats}`
+                          } sats`
+                        : 'Zap terms from host'}
+                      {kind1PostEvent.pubpayZap.zapUses ? ` · Uses: ${kind1PostEvent.pubpayZap.zapUses}` : ''}
+                      {room?.buyin != null ? <> · Room buy-in: <b>{room.buyin} sats</b></> : null}
+                    </p>
+                  </div>
+                ) : null}
+
+                {rematchPending ? (
+                  <p className="online-lobby-copy online-lobby-kind1-rematch-note">
+                    {amILoserToPay
+                      ? `Zap exactly ${Math.floor(rematchAmount).toLocaleString()} sats on this post to confirm the rematch.`
+                      : `Waiting for opponent to zap exactly ${Math.floor(rematchAmount).toLocaleString()} sats on this post.`}
+                  </p>
+                ) : null}
+
+                {!mySeat ? (
+                  <Button
+                    type="button"
+                    className="online-lobby-action online-lobby-leave-btn"
+                    onClick={() => {
+                      socket?.emit('leaveOnlineRoom', { roomId });
+                      navigate('/online');
+                    }}
+                  >
+                    LEAVE ROOM
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="online-lobby-kind1-section online-lobby-kind1-section--pending">
+          {rematchPending ? 'Publishing rematch Kind1…' : 'Publishing Kind1…'}
+        </div>
+      )}
+
+      {/* Nostr sign-in modal */}
       {nostrModalOpen ? (
         <div
           className="online-lobby-modal-backdrop"
@@ -1076,6 +1427,7 @@ export default function OnlineRoomLobby() {
             aria-modal="true"
             aria-labelledby="online-lobby-nostr-modal-title"
             onClick={(e) => e.stopPropagation()}
+            ref={modalDialogRef}
           >
             <div className="online-lobby-modal-header">
               <h2 id="online-lobby-nostr-modal-title" className="online-lobby-modal-title">
@@ -1091,8 +1443,8 @@ export default function OnlineRoomLobby() {
               </button>
             </div>
             <p className="online-lobby-modal-lead">
-              Link this session to a pubkey, then zap the Kind1 <strong>without</strong> putting the PIN in the
-              comment.
+              Link this session to a pubkey, then zap the Kind1{' '}
+              <strong>without</strong> putting the PIN in the comment.
             </p>
             <p className="online-lobby-modal-status">
               {nostrLinkActive ? (
@@ -1111,12 +1463,10 @@ export default function OnlineRoomLobby() {
                     <span className="online-lobby-modal-status-ok">Linked</span>
                     {nostrLinkedProfile?.name ? (
                       <span className="online-lobby-modal-nostr-display-name">
-                        {' '}
-                        · {nostrLinkedProfile.name}
+                        {' '}· {nostrLinkedProfile.name}
                       </span>
                     ) : null}
-                    {' · '}
-                    expires {new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}
+                    {' · '}expires {new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}
                   </span>
                 </span>
               ) : nostrLinkBusy ? (
@@ -1125,7 +1475,9 @@ export default function OnlineRoomLobby() {
                 <span className="online-lobby-modal-status-idle">Not linked yet</span>
               )}
             </p>
-            <p className="online-lobby-modal-nip07-hint">Uses your browser NIP-07 extension (Alby, nos2x, etc.).</p>
+            <p className="online-lobby-modal-nip07-hint">
+              Uses your browser NIP-07 extension (Alby, nos2x, etc.).
+            </p>
             <div className="online-lobby-nostr-actions online-lobby-modal-actions">
               <Button
                 type="button"
@@ -1142,170 +1494,6 @@ export default function OnlineRoomLobby() {
       ) : null}
 
       {error && !nostrModalOpen ? <p className="online-lobby-error">Error: {error}</p> : null}
-
-      <section className="online-lobby-panel online-lobby-status">
-        <h3>ROOM STATUS</h3>
-        <div className="online-lobby-status-grid">
-          <div
-            className={[
-              'online-lobby-seat',
-              isMyP1Seat ? 'online-lobby-seat-mine' : '',
-              seatHighlightLobby && isMyP1Seat && p1?.ready === true ? 'online-lobby-seat-mine-ready' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            <p className="online-lobby-label">
-              PLAYER 1 {isMyP1Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
-              {p1?.status === 'paid' && typeof p1.pingMs === 'number' ? (
-                <span
-                  className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(
-                    p1.pingMs
-                  )}`}
-                  title="Player 1 round-trip to server"
-                >
-                  {p1.pingMs}ms
-                </span>
-              ) : null}
-            </p>
-            <div className="online-lobby-seat-identity">
-              {isMatchEnded || p1?.status === 'paid' ? (
-                <img
-                  className="online-lobby-seat-avatar"
-                  src={p1AvatarSrc || '/images/loading.gif'}
-                  alt={p1?.name || 'Player 1'}
-                />
-              ) : (
-                <div className="online-lobby-seat-avatar online-lobby-seat-avatar-empty" />
-              )}
-              <p className="online-lobby-seat-name">{p1NameDisplay}</p>
-            </div>
-            <p className="online-lobby-seat-meta">{p1MetaDisplay}</p>
-          </div>
-          <div
-            className={[
-              'online-lobby-seat',
-              isMyP2Seat ? 'online-lobby-seat-mine' : '',
-              seatHighlightLobby && isMyP2Seat && p2?.ready === true ? 'online-lobby-seat-mine-ready' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            <p className="online-lobby-label">
-              PLAYER 2 {isMyP2Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
-              {p2?.status === 'paid' && typeof p2.pingMs === 'number' ? (
-                <span
-                  className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(
-                    p2.pingMs
-                  )}`}
-                  title="Player 2 round-trip to server"
-                >
-                  {p2.pingMs}ms
-                </span>
-              ) : null}
-            </p>
-            <div className="online-lobby-seat-identity">
-              {isMatchEnded || p2?.status === 'paid' ? (
-                <img
-                  className="online-lobby-seat-avatar"
-                  src={p2AvatarSrc || '/images/loading.gif'}
-                  alt={p2?.name || 'Player 2'}
-                />
-              ) : (
-                <div className="online-lobby-seat-avatar online-lobby-seat-avatar-empty" />
-              )}
-              <p className="online-lobby-seat-name">{p2NameDisplay}</p>
-            </div>
-            <p className="online-lobby-seat-meta">{p2MetaDisplay}</p>
-          </div>
-          <div className="online-lobby-seat">
-            <p className="online-lobby-label">SPECTATORS</p>
-            <p className="online-lobby-seat-name">{room?.spectators.length ?? 0}</p>
-            <p className="online-lobby-seat-meta">Watching lobby</p>
-          </div>
-        </div>
-      </section>
-
-      <div
-        className={[
-          'online-lobby-my-role',
-          `online-lobby-my-role-${mySeat ? 'player' : 'spectator'}`,
-          seatHighlightLobby && mySeat && myReady ? 'online-lobby-my-role-ready' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      >
-        <span className="online-lobby-my-role-text">
-          YOU ARE: {myRoleLabel.toUpperCase()}
-        </span>
-        {yourPingMs != null ? (
-          <span
-            className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(
-              yourPingMs
-            )}`}
-            title="Your round-trip to server"
-          >
-            {yourPingMs}ms
-          </span>
-        ) : null}
-      </div>
-
-      <div className="online-lobby-bottom-actions">
-        {room?.phase === 'postgame' || room?.phase === 'finished' ? (
-          <>
-            <Button
-              className="online-lobby-action online-lobby-arena"
-              onClick={() => navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`)}
-            >
-              VIEW POSTGAME DETAILS
-            </Button>
-            <Button
-              className="online-lobby-action online-lobby-arena"
-              onClick={() =>
-                navigate(
-                  `/online/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(
-                    String(room?.matchRound ?? 1)
-                  )}`
-                )
-              }
-            >
-              WATCH REPLAY
-            </Button>
-            <Button
-              className="online-lobby-action"
-              onClick={() => {
-                socket?.emit('leaveOnlineRoom', { roomId });
-                navigate('/online');
-              }}
-            >
-              EXIT ROOM
-            </Button>
-          </>
-        ) : mySeat ? (
-          <Button
-            className="online-lobby-action online-lobby-arena"
-            disabled={rematchPending}
-            onClick={() => {
-              if (rematchPending) {
-                return;
-              }
-              socket?.emit('onlineSetReady', { roomId, ready: !myReady });
-            }}
-          >
-            {rematchPending ? 'WAITING FOR REMATCH PAYMENT' : myReady ? 'UNREADY' : 'MARK AS READY'}
-          </Button>
-        ) : (
-          <Button
-            className="online-lobby-action"
-            onClick={() => {
-              socket?.emit('leaveOnlineRoom', { roomId });
-              navigate('/online');
-            }}
-          >
-            LEAVE ROOM
-          </Button>
-        )}
-      </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
     </div>

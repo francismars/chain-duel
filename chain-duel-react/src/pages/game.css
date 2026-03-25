@@ -427,11 +427,12 @@ body {
 }
 
 #sponsorshipGame .sponsored-img {
-  height: 3vw;
+  height: clamp(32px, 3.2vw, 58px);
   width: auto;
   max-width: none;
-  margin-top: -0.4vw;
-  margin-bottom: -0.4vw;
+  object-fit: contain;
+  margin-top: -0.3vw;
+  margin-bottom: -0.3vw;
 }
 
 .bracketDetails {
