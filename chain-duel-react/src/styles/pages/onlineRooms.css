@@ -1,3 +1,14 @@
+/* ── Reveal keyframes (matches app-wide page-reveal-in style) ── */
+@keyframes rooms-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes rooms-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 .online-rooms-page {
   width: 100vw;
   min-height: calc(100vh - 5vw);
@@ -8,12 +19,53 @@
   gap: 1.2vw;
 }
 
+/* Staggered element reveals */
+#online-subtitle {
+  animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
+}
+
+.online-room-list-panel {
+  animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+/* Room cards cascade */
+.online-room-card:nth-child(1)  { animation: rooms-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both; }
+.online-room-card:nth-child(2)  { animation: rooms-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.20s both; }
+.online-room-card:nth-child(3)  { animation: rooms-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both; }
+.online-room-card:nth-child(4)  { animation: rooms-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both; }
+.online-room-card:nth-child(5)  { animation: rooms-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both; }
+.online-room-card:nth-child(6)  { animation: rooms-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.36s both; }
+.online-room-card:nth-child(7)  { animation: rooms-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.40s both; }
+.online-room-card:nth-child(8)  { animation: rooms-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.44s both; }
+.online-room-card:nth-child(n+9){ animation: rooms-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.48s both; }
+
+/* Action card + footer */
+.online-action-card {
+  animation: rooms-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+
+.online-footer-controls {
+  animation: rooms-fade 0.4s ease 0.35s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #online-title,
+  #online-subtitle,
+  .online-room-list-panel,
+  .online-room-card,
+  .online-action-card,
+  .online-footer-controls {
+    animation: none;
+  }
+}
+
 #online-title {
   font-size: 7.4cqw;
   letter-spacing: 0;
   margin: 0;
   color: #fff;
   text-shadow: 0 0 16px rgb(255 255 255 / 35%);
+  animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 #online-subtitle {
@@ -35,7 +87,7 @@
 /* Label + field + button in one row */
 .online-action-card-body {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 0;
   padding: 0.45em 0 0.35em;
 }
@@ -270,8 +322,8 @@
 /* ── History card — single-line compressed rows ── */
 .online-room-card--history {
   padding: 0;
-  border-color: rgb(255 255 255 / 0.12);
-  background: rgb(0 0 0 / 0.38);
+  border-bottom-color: rgb(255 255 255 / 0.12);
+  background: none;
 }
 
 /* 3-col grid: narrow badge | flex matchup | actions flush right */
@@ -399,18 +451,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border: 1px solid #4f4f4f;
-  background: linear-gradient(90deg, rgb(255 255 255 / 2%) 0%, rgb(255 255 255 / 0%) 100%);
+  border: none;
+  border-bottom: 1px solid #4f4f4f;
+  background: none;
   border-radius: 0;
-  padding: 0.8vw 0.9vw;
-  margin-bottom: 0.55vw;
+  padding: 0.8vw 0;
+  margin-bottom: 0;
 }
 
 /* Compact finished-match rows (must follow .online-room-card so padding wins). */
 .online-room-card.online-room-card--history {
   align-items: flex-start;
-  padding: 0.42vw 0.55vw;
-  margin-bottom: 0.38vw;
+  padding: 0.42vw 0;
+  margin-bottom: 0;
 }
 
 .online-room-card.online-room-card--history .online-room-meta {
@@ -424,12 +477,12 @@
 }
 
 .online-selected {
-  border-color: #fff !important;
-  box-shadow: 0 0 16px rgb(255 255 255 / 24%);
+  border-bottom-color: #fff !important;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 24%);
 }
 
 .online-room-card.online-selected {
-  background: linear-gradient(90deg, rgb(255 255 255 / 9%) 0%, rgb(255 255 255 / 2%) 100%);
+  background: none;
 }
 
 .online-room-main {

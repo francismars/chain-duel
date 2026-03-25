@@ -458,6 +458,10 @@ export default function OnlineRooms() {
   return (
     <div className="online-rooms-page">
       <Sponsorship id="sponsorship-online-rooms" />
+      <header id="brand">
+        <h2 id="chain">CHAIN</h2>
+        <h2 id="duel">DUEL</h2>
+      </header>
 
       <h1 id="online-title">NETWORK</h1>
       <p id="online-subtitle">Create a room, share the code, and claim your seat.</p>
