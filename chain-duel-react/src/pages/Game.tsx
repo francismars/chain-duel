@@ -590,16 +590,34 @@ export default function Game() {
 
           {isPowerupMode && (
             <div id="powerUpKey">
-              {[
-                { type: 'SURGE',     color: '#C8881A', label: 'SURGE',  desc: 'Speed boost · immune to tail collision · 4s' },
-                { type: 'FREEZE',    color: '#2878A8', label: 'FREEZE', desc: 'Opponent slows to half speed · 4s' },
-                { type: 'PHANTOM',   color: '#9898B8', label: 'GHOST',  desc: 'Loops through walls · phase through own tail · semi-invisible · 5s' },
-                { type: 'ANCHOR',    color: '#D0D0D0', label: 'ANCHOR', desc: 'Drops obstacle wall on next collision · 10s' },
-                { type: 'AMPLIFIER', color: '#7AAA70', label: 'AMP',    desc: 'Next 3 coinbases score double' },
-                { type: 'DECOY',     color: '#ffffff', label: 'DECOY',  desc: 'Fake coinbase · teleports opponent back to spawn' },
-              ].map(({ type, color, label, desc }) => (
+              {([
+                {
+                  type: 'SURGE', color: '#C8881A', label: 'SURGE', desc: 'Speed boost · immune to tail collision · 4s',
+                  icon: <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="powerUpKeyIcon"><path d="M10 2L4 9h5l-3 5 8-7H9l1-5z" fill="currentColor"/></svg>,
+                },
+                {
+                  type: 'FREEZE', color: '#2878A8', label: 'FREEZE', desc: 'Opponent slows to half speed · 4s',
+                  icon: <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="powerUpKeyIcon"><path d="M8 1v14M1 8h14M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/></svg>,
+                },
+                {
+                  type: 'PHANTOM', color: '#9898B8', label: 'GHOST', desc: 'Loops through walls · phase through own tail · semi-invisible · 5s',
+                  icon: <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="powerUpKeyIcon"><path d="M3 14V7a5 5 0 0110 0v7l-2-1.5-2 1.5-2-1.5L5 15l-2-1z" fill="currentColor" opacity="0.85"/><circle cx="6" cy="7" r="1.2" fill="#000" opacity="0.6"/><circle cx="10" cy="7" r="1.2" fill="#000" opacity="0.6"/></svg>,
+                },
+                {
+                  type: 'ANCHOR', color: '#D0D0D0', label: 'ANCHOR', desc: 'Drops obstacle wall on next collision · 10s',
+                  icon: <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="powerUpKeyIcon"><circle cx="8" cy="4" r="1.8" stroke="currentColor" strokeWidth="1.4"/><path d="M8 5.8V14M4 8h8M4 14c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+                },
+                {
+                  type: 'AMPLIFIER', color: '#7AAA70', label: 'AMP', desc: 'Next 3 coinbases score double',
+                  icon: <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="powerUpKeyIcon"><path d="M2 12L7 4l3 5 2-3 3 6H2z" fill="currentColor"/></svg>,
+                },
+                {
+                  type: 'DECOY', color: '#ffffff', label: 'DECOY', desc: 'Fake coinbase · teleports opponent back to spawn',
+                  icon: <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="powerUpKeyIcon"><circle cx="8" cy="8" r="5" stroke="currentColor" strokeWidth="1.4" strokeDasharray="3 2"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/></svg>,
+                },
+              ] as { type: string; color: string; label: string; desc: string; icon: React.ReactNode }[]).map(({ type, color, label, desc, icon }) => (
                 <div key={type} className="powerUpKeyEntry">
-                  <span className="powerUpKeySwatch" style={{ borderColor: color, color }} >{type[0]}</span>
+                  <span className="powerUpKeyIconWrap" style={{ color }}>{icon}</span>
                   <span className="powerUpKeyName condensed" style={{ color }}>{label}</span>
                   <span className="powerUpKeyDesc">{desc}</span>
                 </div>
