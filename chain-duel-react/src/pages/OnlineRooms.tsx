@@ -8,13 +8,16 @@ import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { OnlineRoomListItem, PlayerRole } from '@/types/socket';
 import '@/styles/pages/onlineRooms.css';
+import '@/styles/pages/onlinePostGame.css'; // shared card structure for history rows
 
 type NavFocus =
-  | { type: 'amount' }
+  | { type: 'mode' }
   | { type: 'create' }
+  | { type: 'join' }
   | { type: 'room'; index: number }
   | { type: 'back' };
 
+type OnlineMode = 'create' | 'join';
 type OnlineTab = 'live' | 'history';
 
 const BUYIN_MIN = 10;
@@ -32,50 +35,87 @@ function HistoryMatchupBlock({ result }: { result: NonNullable<OnlineRoomListIte
     result.winnerRole === PlayerRole.Player2 ||
     (result.winnerRole == null && result.winnerName === result.p2Name);
   return (
-    <div className="online-history-matchup">
-      <div className="online-history-matchup-row">
+    <div className="online-postgame-round-main">
+      <div className="online-postgame-round-matchup" role="group" aria-label="Score">
+        {/* P1 */}
         <div
-          className={['online-history-player', winP1 ? 'online-history-player--winner' : '']
-            .filter(Boolean)
-            .join(' ')}
+          className={[
+            'online-postgame-player',
+            'online-postgame-player--p1',
+            winP1 ? 'online-postgame-player--round-winner' : 'online-postgame-player--round-loser',
+          ].join(' ')}
         >
-          <img
-            className="online-history-avatar"
-            src={result.p1Picture || PLACEHOLDER_AVATAR}
-            alt={result.p1Name}
-          />
-          <div className="online-history-player-info">
-            <span className="online-history-player-name">{result.p1Name}</span>
-            <span className="online-history-player-sep" aria-hidden="true">
-              ·
-            </span>
-            <span className="online-history-player-score">{result.p1Score}</span>
+          <div className="online-postgame-player-identity">
+            <img
+              className="online-postgame-round-avatar"
+              src={result.p1Picture || PLACEHOLDER_AVATAR}
+              alt={result.p1Name}
+            />
+            <span className="online-postgame-player-name">{result.p1Name}</span>
           </div>
+          <span className="online-postgame-player-pts">
+            {result.p1Score.toLocaleString()}
+            <span className="online-postgame-player-denom">sats</span>
+          </span>
         </div>
-        <span className="online-history-vs" aria-hidden="true">
-          vs
-        </span>
+
+        {/* VS */}
+        <div className="online-postgame-round-vs-pillar" aria-hidden="true">
+          <span className="online-postgame-round-vs-label">vs</span>
+        </div>
+
+        {/* P2 */}
         <div
-          className={['online-history-player', winP2 ? 'online-history-player--winner' : '']
-            .filter(Boolean)
-            .join(' ')}
+          className={[
+            'online-postgame-player',
+            'online-postgame-player--p2',
+            winP2 ? 'online-postgame-player--round-winner' : 'online-postgame-player--round-loser',
+          ].join(' ')}
         >
-          <img
-            className="online-history-avatar"
-            src={result.p2Picture || PLACEHOLDER_AVATAR}
-            alt={result.p2Name}
-          />
-          <div className="online-history-player-info">
-            <span className="online-history-player-name">{result.p2Name}</span>
-            <span className="online-history-player-sep" aria-hidden="true">
-              ·
-            </span>
-            <span className="online-history-player-score">{result.p2Score}</span>
+          <div className="online-postgame-player-identity">
+            <img
+              className="online-postgame-round-avatar"
+              src={result.p2Picture || PLACEHOLDER_AVATAR}
+              alt={result.p2Name}
+            />
+            <span className="online-postgame-player-name">{result.p2Name}</span>
           </div>
+          <span className="online-postgame-player-pts">
+            {result.p2Score.toLocaleString()}
+            <span className="online-postgame-player-denom">sats</span>
+          </span>
         </div>
       </div>
-      <p className="online-history-result">
-        {result.winnerName} won · {result.netPrize} sats net
+
+      {/* Winner line */}
+      <p className="online-postgame-round-winner">
+        <span className="online-postgame-round-winner-crown" aria-hidden="true">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.25"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            className="online-postgame-crown-svg"
+          >
+            <path d="M1 15h18V9L15 12L10 2L5 12L1 9Z" />
+            <circle cx="10" cy="2" r="1.1" fill="currentColor" stroke="none" />
+            <circle cx="1" cy="9" r="0.9" fill="currentColor" stroke="none" />
+            <circle cx="19" cy="9" r="0.9" fill="currentColor" stroke="none" />
+          </svg>
+        </span>
+        <span className="online-postgame-round-winner-body">
+          <span className="online-postgame-round-winner-kicker">Winner</span>
+          <span className="online-postgame-round-winner-text">
+            <strong>{result.winnerName}</strong>
+            <span className="online-postgame-round-winner-sep" aria-hidden="true">·</span>
+            <span className="online-postgame-round-winner-prize">
+              {result.netPrize.toLocaleString()} sats net
+            </span>
+          </span>
+        </span>
       </p>
     </div>
   );
@@ -88,11 +128,12 @@ export default function OnlineRooms() {
   /** Server-merged: archive index + finished rooms still in RAM (`listOnlineHistory`). */
   const [historyRooms, setHistoryRooms] = useState<OnlineRoomListItem[]>([]);
   const [onlineTab, setOnlineTab] = useState<OnlineTab>('live');
+  const [onlineMode, setOnlineMode] = useState<OnlineMode>('create');
   const [buyin, setBuyin] = useState('100');
   const [roomCode, setRoomCode] = useState('');
   const [error, setError] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
-  const [navFocus, setNavFocus] = useState<NavFocus>({ type: 'amount' });
+  const [navFocus, setNavFocus] = useState<NavFocus>({ type: 'create' });
   const creatingRoomRef = useRef(false);
   const pendingRoomIdRef = useRef<string | null>(null);
   const keyRepeatRef = useRef<Record<string, number>>({});
@@ -299,8 +340,11 @@ export default function OnlineRooms() {
       const active = document.activeElement as HTMLElement | null;
       const activeIsTextInput =
         active?.tagName === 'INPUT' && !(active as HTMLInputElement).readOnly;
-      // Keep join-by-code keyboard/mouse oriented for now.
-      if (activeIsTextInput && active?.classList.contains('online-input')) {
+      // Skip global nav when typing in the room code or buy-in inputs.
+      if (activeIsTextInput && (
+        active?.classList.contains('online-input') ||
+        active?.classList.contains('online-buyin-value')
+      )) {
         return;
       }
 
@@ -316,7 +360,10 @@ export default function OnlineRooms() {
       event.preventDefault();
 
       if (isLeft || isRight) {
-        if (navFocus.type === 'amount') {
+        if (navFocus.type === 'mode') {
+          setOnlineMode(prev => prev === 'create' ? 'join' : 'create');
+          setError('');
+        } else if (navFocus.type === 'create') {
           const now = performance.now();
           const last = keyRepeatRef.current[key] ?? 0;
           keyRepeatRef.current[key] = now;
@@ -332,16 +379,16 @@ export default function OnlineRooms() {
             if (displayedRooms.length > 0) {
               return { type: 'room', index: displayedRooms.length - 1 };
             }
-            return { type: 'create' };
+            return onlineMode === 'join' ? { type: 'join' } : { type: 'create' };
           }
           if (prev.type === 'room') {
             if (prev.index > 0) {
               return { type: 'room', index: prev.index - 1 };
             }
-            return { type: 'create' };
+            return onlineMode === 'join' ? { type: 'join' } : { type: 'create' };
           }
-          if (prev.type === 'create') {
-            return { type: 'amount' };
+          if (prev.type === 'create' || prev.type === 'join') {
+            return { type: 'mode' };
           }
           return prev;
         });
@@ -350,10 +397,10 @@ export default function OnlineRooms() {
 
       if (isDown) {
         setNavFocus((prev) => {
-          if (prev.type === 'amount') {
-            return { type: 'create' };
+          if (prev.type === 'mode') {
+            return onlineMode === 'join' ? { type: 'join' } : { type: 'create' };
           }
-          if (prev.type === 'create') {
+          if (prev.type === 'create' || prev.type === 'join') {
             if (displayedRooms.length > 0) {
               return { type: 'room', index: 0 };
             }
@@ -373,6 +420,10 @@ export default function OnlineRooms() {
       if (isEnter) {
         if (navFocus.type === 'create') {
           createRoom();
+          return;
+        }
+        if (navFocus.type === 'join') {
+          socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() });
           return;
         }
         if (navFocus.type === 'room') {
@@ -402,63 +453,14 @@ export default function OnlineRooms() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [creatingRoom, displayedRooms, navFocus, navigate, onlineTab, socket, buyin]);
+  }, [creatingRoom, displayedRooms, navFocus, navigate, onlineTab, onlineMode, socket, buyin, roomCode]);
 
   return (
     <div className="online-rooms-page">
       <Sponsorship id="sponsorship-online-rooms" />
 
-      <h1 id="online-title">MAINNET ARENA</h1>
-      <p id="online-subtitle">Create a room, share the code, and claim seats with PIN-in-zap.</p>
-
-      <div className="online-layout">
-        <section className="online-panel">
-          <h2 className="online-panel-title">CREATE ROOM</h2>
-          <p className="online-panel-copy">Choose a buy-in and open a public room.</p>
-          <p className={`online-controller-hint ${navFocus.type === 'amount' ? 'online-selected' : ''}`}>
-            Buy-in: {parseBuyin()} sats (←/→ change)
-          </p>
-          <div className="online-input-row">
-            <input
-              className="online-input"
-              value={buyin}
-              onChange={(event) => setBuyin(event.target.value)}
-              placeholder="Buy-in sats"
-              inputMode="numeric"
-            />
-            <Button
-              className={`online-action ${navFocus.type === 'create' ? 'online-selected' : ''}`}
-              onClick={createRoom}
-            >
-              CREATE
-            </Button>
-          </div>
-        </section>
-
-        <section className="online-panel">
-          <h2 className="online-panel-title">JOIN BY CODE</h2>
-          <p className="online-panel-copy">Enter room code from host screen.</p>
-          <div className="online-input-row">
-            <input
-              className="online-input"
-              value={roomCode}
-              onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
-              placeholder="Room code"
-              maxLength={6}
-            />
-            <Button
-              className="online-action"
-              onClick={() => {
-                socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() });
-              }}
-            >
-              JOIN
-            </Button>
-          </div>
-        </section>
-      </div>
-
-      {error ? <p className="online-error">{error}</p> : null}
+      <h1 id="online-title">NETWORK</h1>
+      <p id="online-subtitle">Create a room, share the code, and claim your seat.</p>
 
       <section className="online-room-list-panel">
         <div className="online-room-list-head">
@@ -504,53 +506,148 @@ export default function OnlineRooms() {
                 .filter(Boolean)
                 .join(' ')}
             >
-              <div className="online-room-main">
-                <p className="online-room-code">{room.roomCode}</p>
-                <p className="online-room-meta">
-                  <span>{room.buyin} sats</span>
-                  <span>
-                    {room.playersPaid}/{room.seatsTotal} seats
-                  </span>
-                  <span>{room.spectators} spectators</span>
-                  <span className={`online-phase online-phase-${room.phase}`}>
-                    {formatPhase(room.phase)}
-                  </span>
-                  {room.archived ? <span className="online-archived">ARCHIVED</span> : null}
-                </p>
-                {onlineTab === 'history' && room.result ? (
-                  <HistoryMatchupBlock result={room.result} />
-                ) : null}
-              </div>
-              <div className="online-room-actions">
-                {onlineTab === 'live' ? (
-                  <Button
-                    className="online-action"
-                    onClick={() => activateRoom(room)}
-                  >
-                    {room.phase === 'playing' ? 'WATCH LIVE' : 'ENTER ROOM'}
-                  </Button>
-                ) : (
-                  <div className="online-history-actions">
+              {onlineTab === 'history' ? (
+                /* ── History: postgame-style 3-col grid ── */
+                <div className="online-postgame-round-row-inner">
+                  {/* Badge col: code + buyin + date */}
+                  <div className="online-postgame-round-badge-col">
+                    <span className="online-postgame-round-index online-history-room-code">
+                      {room.roomCode}
+                    </span>
+                    <span className="online-postgame-round-chip online-postgame-round-chip--open">
+                      {room.buyin.toLocaleString()} sats
+                    </span>
+                    {room.archived ? (
+                      <span className="online-postgame-round-chip">ARCHIVED</span>
+                    ) : null}
+                    {room.finishedAt ? (
+                      <time className="online-postgame-round-time">
+                        {new Date(room.finishedAt).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </time>
+                    ) : null}
+                  </div>
+
+                  {/* Matchup */}
+                  {room.result ? <HistoryMatchupBlock result={room.result} /> : null}
+
+                  {/* Actions */}
+                  <div className="online-postgame-round-action-col online-history-action-col">
                     <Button
-                      className="online-action"
+                      className="online-postgame-round-replay-btn"
                       onClick={() => openHistoryPostGame(room.roomId)}
                     >
-                      RESULTS
+                      <span className="online-postgame-round-replay-label">RESULTS</span>
                     </Button>
                     <Button
-                      className="online-action"
+                      className="online-postgame-round-replay-btn"
                       onClick={() => openHistoryReplay(room.roomId, room.matchRound)}
                       disabled={!room.replay?.available}
                     >
-                      REPLAY
+                      <span className="online-postgame-round-replay-icon" aria-hidden="true" />
+                      <span className="online-postgame-round-replay-label">REPLAY</span>
                     </Button>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                /* ── Live: existing layout ── */
+                <>
+                  <div className="online-room-main">
+                    <p className="online-room-code">{room.roomCode}</p>
+                    <p className="online-room-meta">
+                      <span>{room.buyin.toLocaleString()} sats</span>
+                      <span>{room.playersPaid}/{room.seatsTotal} seats</span>
+                      <span>{room.spectators} spectators</span>
+                      <span className={`online-phase online-phase-${room.phase}`}>
+                        {formatPhase(room.phase)}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="online-room-actions">
+                    <Button
+                      className="online-action"
+                      onClick={() => activateRoom(room)}
+                    >
+                      {room.phase === 'playing' ? 'WATCH LIVE' : 'ENTER ROOM'}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
       </section>
+
+      {/* ── Simple action card ── */}
+      <div className="online-action-card">
+        {/* Label + field row */}
+        <div className="online-action-card-body">
+          {onlineMode === 'create' ? (
+            <div className="online-action-field">
+              <p className="online-action-field-label">BUY-IN</p>
+              <div className={`online-buyin-stepper${navFocus.type === 'create' ? ' online-selected' : ''}`}>
+                <button type="button" className="online-buyin-btn" onClick={() => updateBuyinBy(-BUYIN_STEP)} aria-label="Decrease buy-in">−</button>
+                <div className="online-buyin-center">
+                  <input
+                    className="online-buyin-value"
+                    type="text" inputMode="numeric"
+                    value={buyin}
+                    onChange={(e) => setBuyin(e.target.value.replace(/[^0-9]/g, ''))}
+                    onBlur={() => setBuyin(String(parseBuyin()))}
+                    aria-label="Buy-in amount in sats"
+                  />
+                  <span className="online-buyin-unit">sats</span>
+                </div>
+                <button type="button" className="online-buyin-btn" onClick={() => updateBuyinBy(BUYIN_STEP)} aria-label="Increase buy-in">+</button>
+              </div>
+            </div>
+          ) : (
+            <div className="online-action-field">
+              <p className="online-action-field-label">ROOM CODE</p>
+              <input
+                className={`online-input online-code-input${navFocus.type === 'join' ? ' online-selected' : ''}`}
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() }); }
+                }}
+                placeholder="XXXXXX"
+                maxLength={6}
+                autoComplete="off"
+              />
+            </div>
+          )}
+
+          <Button
+            className="online-action online-create-btn"
+            onClick={onlineMode === 'create' ? createRoom : () => socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() })}
+            disabled={onlineMode === 'create' && creatingRoom}
+          >
+            {onlineMode === 'create' ? (creatingRoom ? 'CREATING…' : 'CREATE') : 'JOIN'}
+          </Button>
+        </div>
+
+        {/* Mode toggle + error */}
+        <div className="online-action-card-footer">
+          {error ? <span className="online-inline-error">{error}</span> : <span />}
+          <button
+            type="button"
+            className="online-action-switch"
+            onClick={() => {
+              const next = onlineMode === 'create' ? 'join' : 'create';
+              setOnlineMode(next);
+              setNavFocus({ type: next });
+              setError('');
+            }}
+          >
+            {onlineMode === 'create' ? 'Join by code →' : '← Create a room'}
+          </button>
+        </div>
+      </div>
 
       <div className="online-footer-controls">
         <Button
@@ -561,17 +658,6 @@ export default function OnlineRooms() {
         </Button>
         <p className="online-controls-hint">Keyboard/Gamepad: arrows + Enter</p>
       </div>
-
-      {creatingRoom ? (
-        <div className="online-loading-overlay">
-          <div className="online-loading-card">
-            <p className="online-loading-title">Creating Nostr event...</p>
-            <p className="online-loading-copy">
-              Waiting for backend confirmation so lobby can show QR immediately.
-            </p>
-          </div>
-        </div>
-      ) : null}
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
     </div>

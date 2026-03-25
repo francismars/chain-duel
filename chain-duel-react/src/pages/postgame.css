@@ -116,11 +116,30 @@ body {
   border-width: 1.2px;
 }
 
+.don-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45em;
+}
+
 #doubleornotthingbutton {
   margin-top: 0;
   animation: glowing 0ms infinite;
-  border-color: #ffffff;
+  border-color: rgb(255 175 85 / 0.75);
   border-width: 1.2px;
+  color: rgb(255 210 140 / 0.97);
+  background: linear-gradient(180deg, rgb(255 130 40 / 0.16) 0%, rgb(255 90 15 / 0.04) 100%);
+  box-shadow: 0 0 18px rgb(255 140 40 / 0.2);
+  text-shadow: 0 0 12px rgb(255 175 85 / 0.3);
+}
+
+.don-subtitle {
+  font-size: 0.85cqw;
+  color: rgb(255 175 85 / 0.65);
+  letter-spacing: 0.04em;
+  text-align: center;
+  margin: 0;
 }
 
 #qrcodeLink {

@@ -696,13 +696,13 @@ export default function OnlineGame() {
                   className="online-replay-btn"
                   onClick={() => {
                     setReplayPlaying(false);
-                    navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`);
+                    navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
                   }}
                 >
                   <span className="online-replay-btn__icon" aria-hidden>
                     <ReplayIconBackToRoom />
                   </span>
-                  <span className="online-replay-btn__label">BACK TO ROOM</span>
+                  <span className="online-replay-btn__label">VICTORY SCREEN</span>
                 </button>
                 <button
                   type="button"

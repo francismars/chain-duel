@@ -385,15 +385,20 @@ export default function PostGame() {
             {claimButtonText}
           </Button>
           {menu === 3 || tournamentMode ? null : (
-            <Button
-              id="doubleornotthingbutton"
-              className={canDoubleOrNothing ? '' : 'disabled'}
-              disabled={!canDoubleOrNothing}
-              style={{ animationDuration: activeButtonMenu1 === 1 ? '2s' : '0s' }}
-              onClick={onDoubleOrNothing}
-            >
-              {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
-            </Button>
+            <div className="don-section">
+              <Button
+                id="doubleornotthingbutton"
+                className={canDoubleOrNothing ? '' : 'disabled'}
+                disabled={!canDoubleOrNothing}
+                style={{ animationDuration: activeButtonMenu1 === 1 ? '2s' : '0s' }}
+                onClick={onDoubleOrNothing}
+              >
+                {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
+              </Button>
+              {!practiceMode && canDoubleOrNothing ? (
+                <p className="don-subtitle">Risk it all — play again for double the prize</p>
+              ) : null}
+            </div>
           )}
           {menu === 3 ? (
             <Button

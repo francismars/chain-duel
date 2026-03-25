@@ -1,63 +1,85 @@
+/* —— Brand header —— */
+#brand {
+  position: fixed;
+  top: 0;
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#chain {
+  color: white;
+  margin-top: 0;
+  margin-left: 1%;
+  text-align: left;
+  font-size: 2.5cqw;
+}
+
+#duel {
+  color: white;
+  margin-top: 0;
+  margin-right: 1%;
+  text-align: right;
+  font-size: 2.5cqw;
+}
+
+/* —— Page —— */
 .online-postgame-page {
   min-height: 100vh;
-  padding: 4.5rem 1.25rem 2.2rem;
+  padding: 3.4rem 1.25rem 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 }
 
 .online-postgame-card {
   width: min(980px, 100%);
-  border: 1px solid rgb(255 255 255 / 0.28);
-  background: linear-gradient(180deg, rgb(255 255 255 / 5%) 0%, rgb(0 0 0 / 46%) 100%);
-  box-shadow: 0 18px 54px rgb(0 0 0 / 0.48), 0 0 24px rgb(255 255 255 / 10%);
+  border: none;
+  background: none;
+  box-shadow: none;
   border-radius: 0;
-  padding: 1.5rem 1.3rem 1.7rem;
+  padding: 0.9rem 1.1rem 1.1rem;
   text-align: center;
 }
 
 .online-postgame-headline {
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.55rem;
 }
 
 .online-postgame-kicker {
-  color: rgb(208 208 208 / 0.88);
-  letter-spacing: 0.08em;
-  font-size: 0.8rem;
+  color: rgb(255 255 255 / 0.92);
+  letter-spacing: 0;
+  font-size: clamp(1rem, 2vw, 1.6rem);
+  font-family: BureauGrotesque, sans-serif;
+  text-transform: uppercase;
+  text-shadow: 0 0 28px rgb(255 255 255 / 0.22);
   margin: 0;
-}
-
-.online-postgame-title {
-  margin: 0;
-  font-size: clamp(1.6rem, 3vw, 2.8rem);
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 16px rgb(255 255 255 / 30%);
 }
 
 /* —— Session history (multi-round / double-or-nothing) —— */
 .online-postgame-round-history {
-  --h-surface: rgb(6 9 14 / 0.62);
+  --h-surface: rgb(0 0 0 / 0.42);
   --h-border: rgb(255 255 255 / 0.14);
   --h-muted: rgb(255 255 255 / 0.55);
-  --h-accent: rgb(130 205 255 / 0.95);
+  --h-accent: rgb(255 255 255 / 0.75);
   --h-don: rgb(255 175 85 / 0.96);
   --h-hover: rgb(255 255 255 / 0.045);
 
-  margin: 1.1rem 0 1.25rem;
+  margin: 0.65rem 0 0.75rem;
   text-align: left;
-  border: 1px solid var(--h-border);
-  background:
-    linear-gradient(155deg, rgb(255 255 255 / 0.06) 0%, transparent 45%),
-    var(--h-surface);
+  border: none;
+  background: none;
   padding: 0;
-  overflow: hidden;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.07),
-    0 12px 40px rgb(0 0 0 / 0.28);
+  overflow: visible;
+  box-shadow: none;
 }
 
 .online-postgame-round-history-header {
-  padding: 0.95rem 1rem 0.85rem;
+  padding: 0.6rem 0.85rem 0.55rem;
   border-bottom: 1px solid rgb(255 255 255 / 0.1);
   background: rgb(0 0 0 / 32%);
 }
@@ -81,38 +103,30 @@
 .online-postgame-round-list {
   list-style: none;
   margin: 0;
-  padding: 0.55rem 0.5rem 0.65rem;
+  padding: 0;
+  border: none;
+  background: none;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
 .online-postgame-round-row {
-  border: 1px solid rgb(255 255 255 / 0.11);
-  background: rgb(0 0 0 / 38%);
+  border: 1px solid var(--h-border);
+  background: var(--h-surface);
   transition:
     border-color 0.16s ease,
-    background 0.16s ease,
-    box-shadow 0.16s ease;
+    background 0.16s ease;
 }
 
 .online-postgame-round-row:hover {
-  border-color: rgb(255 255 255 / 0.24);
-  background: var(--h-hover);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.05);
-}
-
-.online-postgame-round-row--first {
-  border-left: 3px solid var(--h-accent);
-}
-
-.online-postgame-round-row--don {
-  border-left: 3px solid var(--h-don);
+  border-color: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.06);
 }
 
 .online-postgame-round-row-inner {
   display: grid;
-  grid-template-columns: minmax(5.5rem, 7.5rem) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr) auto;
   gap: 0.65rem 0.9rem;
   align-items: center;
   padding: 0.65rem 0.7rem 0.72rem 0.8rem;
@@ -140,12 +154,13 @@
   font-size: 0.56rem;
   letter-spacing: 0.11em;
   text-transform: uppercase;
-  padding: 0.22rem 0.45rem;
+  padding: 0.32rem 0.55rem;
   border: 1px solid rgb(255 175 85 / 0.42);
   color: var(--h-don);
   background: rgb(255 130 40 / 0.07);
   max-width: 100%;
-  line-height: 1.25;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .online-postgame-round-chip--open {
@@ -179,8 +194,10 @@
 .online-postgame-player {
   display: flex;
   flex-direction: column;
-  gap: 0.12rem;
+  align-items: flex-start;
+  gap: 0.22rem;
   min-width: 0;
+  overflow: hidden;
 }
 
 .online-postgame-player--p1 {
@@ -193,9 +210,36 @@
   text-align: left;
 }
 
+/* avatar + name locked together in a row */
+.online-postgame-player-identity {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.online-postgame-player--p1 .online-postgame-player-identity {
+  flex-direction: row-reverse;
+}
+
+.online-postgame-round-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  flex-shrink: 0;
+  align-self: center;
+}
+
 .online-postgame-player-name {
-  font-size: 0.76rem;
-  color: rgb(255 255 255 / 0.7);
+  font-family: BureauGrotesque, sans-serif;
+  font-size: 0.88rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.88);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -208,6 +252,47 @@
   letter-spacing: 0.04em;
   color: rgb(255 255 255 / 0.96);
   line-height: 1.1;
+  display: flex;
+  align-items: baseline;
+  gap: 0.3em;
+}
+
+.online-postgame-player-denom {
+  font-family: Inter, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: rgb(255 255 255 / 0.35);
+  text-transform: lowercase;
+}
+
+.online-postgame-player--round-winner {
+  padding: 0.42rem 0.5rem;
+  margin: -0.42rem -0.5rem;
+}
+
+.online-postgame-player--round-winner .online-postgame-player-name {
+  color: rgb(255 255 255 / 0.95);
+}
+
+.online-postgame-player--round-winner .online-postgame-player-pts {
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.online-postgame-player--round-winner .online-postgame-round-avatar {
+  border-color: rgb(255 255 255 / 0.5);
+}
+
+.online-postgame-player--round-loser .online-postgame-player-name,
+.online-postgame-player--round-loser .online-postgame-player-pts,
+.online-postgame-player--round-loser .online-postgame-player-denom {
+  opacity: 0.48;
+}
+
+.online-postgame-player--round-loser .online-postgame-round-avatar {
+  opacity: 0.5;
+  filter: grayscale(0.35);
 }
 
 .online-postgame-round-vs-pillar {
@@ -216,9 +301,6 @@
   justify-content: center;
   padding: 0.2rem 0.28rem;
   min-width: 1.65rem;
-  border-left: 1px solid rgb(255 255 255 / 0.12);
-  border-right: 1px solid rgb(255 255 255 / 0.12);
-  background: rgb(0 0 0 / 32%);
   align-self: stretch;
 }
 
@@ -243,10 +325,43 @@
 }
 
 .online-postgame-round-winner-crown {
-  color: rgb(255 210 130 / 0.72);
-  font-size: 0.62rem;
+  display: inline-flex;
+  align-items: center;
+  color: rgb(255 210 130 / 0.8);
   line-height: 1;
   transform: translateY(-1px);
+}
+
+.online-postgame-crown-svg {
+  width: 16px;
+  height: 13px;
+  display: block;
+}
+
+.online-postgame-round-winner-body {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.online-postgame-round-winner-kicker {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.45);
+  line-height: 1;
+}
+
+.online-postgame-round-winner-text {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.15em 0.25em;
 }
 
 .online-postgame-round-winner-text strong {
@@ -347,73 +462,77 @@
   }
 }
 
-.online-postgame-winner-panel {
-  border: 1px solid rgb(255 255 255 / 0.2);
-  border-radius: 0;
-  background: rgb(0 0 0 / 34%);
-  padding: 0.8rem 0.85rem 0.95rem;
+/* —— Result row: winner + prize side by side —— */
+.online-postgame-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0 0.6rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+  text-align: left;
 }
 
 .online-postgame-winner {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 0.7rem;
-}
-
-.online-postgame-winner h2 {
-  margin: 0;
-  font-size: clamp(1.2rem, 2.3vw, 2rem);
+  gap: 0.6rem;
+  min-width: 0;
 }
 
 .online-postgame-avatar {
-  width: 62px;
-  height: 62px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgb(255 255 255 / 0.88);
-  box-shadow: 0 0 16px rgb(255 255 255 / 35%);
+  border: 1.5px solid rgb(255 255 255 / 0.75);
+  box-shadow: 0 0 12px rgb(255 255 255 / 28%);
+  flex-shrink: 0;
+}
+
+.online-postgame-winner-text {
+  min-width: 0;
+}
+
+.online-postgame-winner-label {
+  margin: 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.45);
+  font-family: BureauGrotesque, sans-serif;
+}
+
+.online-postgame-winner-name {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(1.3rem, 2.6vw, 2.2rem);
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.online-postgame-prize-block {
+  flex-shrink: 0;
+  text-align: right;
 }
 
 .online-postgame-prize {
-  margin: 0.8rem 0 0.15rem;
-  font-size: clamp(1.4rem, 3vw, 2.3rem);
+  margin: 0;
+  font-size: clamp(1.6rem, 3.2vw, 2.8rem);
   font-family: BureauGrotesque, sans-serif;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  text-shadow: 0 0 20px rgb(255 255 255 / 18%);
 }
 
 .online-postgame-sub {
-  margin: 0;
-  color: rgb(255 255 255 / 0.75);
-}
-
-.online-postgame-scores {
-  margin-top: 0.9rem;
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.online-postgame-score-chip {
-  border: 1px solid rgb(255 255 255 / 0.2);
-  border-radius: 0;
-  background: rgb(0 0 0 / 26%);
-  padding: 0.45rem 0.65rem;
-  min-width: 245px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-.online-postgame-score-label {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  color: rgb(222 222 222 / 0.9);
-  font-size: 0.9rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.68rem;
+  color: rgb(255 255 255 / 0.45);
+  letter-spacing: 0.02em;
 }
 
 .online-postgame-you-tag {
@@ -430,16 +549,11 @@
   text-transform: uppercase;
 }
 
-.online-postgame-score-value {
-  font-family: BureauGrotesque, sans-serif;
-  font-size: 1.15rem;
-}
-
 .online-postgame-grid {
-  margin-top: 0.95rem;
+  margin-top: 0.6rem;
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
-  gap: 0.8rem;
+  gap: 0.65rem;
 }
 
 .online-postgame-grid--finished {
@@ -450,10 +564,9 @@
 }
 
 .online-postgame-actions {
-  border: 1px solid rgb(255 255 255 / 0.2);
-  border-radius: 0;
-  background: rgb(0 0 0 / 28%);
-  padding: 0.75rem;
+  border: none;
+  background: none;
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -526,20 +639,27 @@
 }
 
 .online-postgame-btn-don {
-  border-color: rgb(255 255 255 / 0.62);
-  color: rgb(250 250 250 / 0.96);
-  background: linear-gradient(180deg, rgb(255 255 255 / 10%) 0%, rgb(255 255 255 / 2%) 100%);
-  box-shadow: 0 0 16px rgb(255 255 255 / 12%);
+  border-color: rgb(255 255 255 / 0.48);
+  color: rgb(248 248 248 / 0.94);
+  background: linear-gradient(180deg, rgb(255 255 255 / 10%) 0%, rgb(255 255 255 / 3%) 100%);
+  box-shadow: 0 0 14px rgb(255 255 255 / 8%);
 }
 
 .online-postgame-btn-back {
-  border-color: rgb(255 255 255 / 0.3);
-  color: rgb(208 208 208 / 0.9);
-  background: rgb(255 255 255 / 0.03);
+  border-color: rgb(255 255 255 / 0.7);
+  color: rgb(248 248 248 / 0.94);
+  background: linear-gradient(180deg, rgb(255 255 255 / 14%) 0%, rgb(255 255 255 / 4%) 100%);
+  box-shadow: 0 0 18px rgb(255 255 255 / 14%), inset 0 0 0 1px rgb(255 255 255 / 10%);
 }
 
-.online-postgame-actions .button:hover:not(.disabled):not(:disabled),
+.online-postgame-actions .button:hover:not(.disabled):not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
 .online-postgame-actions .button:focus-visible:not(.disabled):not(:disabled) {
+  outline: 2px solid rgb(255 255 255 / 0.8);
+  outline-offset: 3px;
   transform: translateY(-1px);
   filter: brightness(1.08);
 }
@@ -612,27 +732,195 @@
   font-size: 0.9rem;
 }
 
+/* —— Double-or-nothing panel —— */
+.online-postgame-don-panel {
+  margin-top: 0.55rem;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-left: 3px solid rgb(255 175 85 / 0.45);
+  background: rgb(0 0 0 / 28%);
+  padding: 0.75rem 0.9rem 0.8rem 0.85rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  transition: border-color 0.22s ease, opacity 0.22s ease;
+}
+
+.online-postgame-don-panel--active {
+  border-left-color: rgb(255 175 85 / 0.75);
+}
+
+.online-postgame-don-panel--locked {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-left: 3px solid rgb(255 255 255 / 0.14);
+  opacity: 0.42;
+}
+
+.online-postgame-don-info {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.online-postgame-don-title {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: 0.88rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.88);
+}
+
+.online-postgame-don-desc {
+  margin: 0.18rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.online-postgame-don-controls {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.online-postgame-don-vote-row {
+  display: flex;
+  align-items: center;
+  gap: 0.48rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.online-postgame-don-pips {
+  display: flex;
+  gap: 0.38rem;
+}
+
+.online-postgame-don-pip {
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  background: transparent;
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.online-postgame-don-pip--active {
+  background: rgb(255 175 85 / 0.78);
+  border-color: rgb(255 175 85 / 0.85);
+  box-shadow: 0 0 6px rgb(255 175 85 / 0.3);
+}
+
+.online-postgame-don-vote-label {
+  font-size: 0.72rem;
+  color: rgb(255 255 255 / 0.45);
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.online-postgame-don-my-vote-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid rgb(255 175 85 / 0.45);
+  color: rgb(255 200 110 / 0.85);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* DoN button inherits .online-postgame-btn base sizing from actions context;
+   re-declare dimensions since it sits outside .online-postgame-actions */
+.online-postgame-don-panel .online-postgame-btn-don {
+  height: 42px;
+  min-width: 13rem;
+  padding: 0 1rem;
+  border-radius: 0;
+  border-width: 1px;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: 0.88rem;
+  letter-spacing: 0.09em;
+  line-height: 1;
+  transition: all 120ms ease-in-out;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 6%);
+}
+
+.online-postgame-don-panel .online-postgame-btn-don:hover:not(.disabled):not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.online-postgame-don-panel .online-postgame-btn-don:active:not(.disabled):not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.96);
+}
+
+.online-postgame-don-panel .online-postgame-btn-don.disabled,
+.online-postgame-don-panel .online-postgame-btn-don:disabled {
+  opacity: 0.35;
+  box-shadow: none;
+}
+
+.online-postgame-don-panel .online-postgame-btn-don:focus-visible {
+  outline: 2px solid rgb(255 175 85 / 0.7);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .online-postgame-don-panel {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.7rem 0.75rem 0.75rem 0.7rem;
+  }
+
+  .online-postgame-don-controls {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .online-postgame-don-vote-row {
+    justify-content: flex-start;
+  }
+
+  .online-postgame-don-panel .online-postgame-btn-don {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+  }
+}
+
 @media (max-width: 900px) {
   .online-postgame-page {
-    padding-top: 5.1rem;
+    padding-top: 4.2rem;
   }
 
   .online-postgame-card {
-    padding: 1.05rem 0.85rem 1.3rem;
+    padding: 0.75rem 0.75rem 1rem;
+  }
+
+  .online-postgame-result {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+
+  .online-postgame-prize-block {
+    text-align: left;
   }
 
   .online-postgame-grid {
     grid-template-columns: 1fr;
   }
 
-  .online-postgame-score-chip {
-    min-width: 0;
-    width: 100%;
-  }
-
   .online-postgame-actions .button {
-    height: 46px;
-    font-size: 0.9rem;
+    height: 44px;
+    font-size: 0.88rem;
   }
 
   .online-postgame-payout-row {

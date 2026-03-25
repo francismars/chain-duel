@@ -1,11 +1,16 @@
+/* ═══════════════════════════════════════════════════
+   Online Lobby — Zone-based layout
+   Zones: Header → DoN Banner → Arena → Action → Kind1
+   ═══════════════════════════════════════════════════ */
+
 .online-lobby-page {
   width: 100vw;
-  min-height: calc(100vh - 5vw);
-  padding: 2.4vw 3vw 2vw;
+  min-height: 100vh;
+  padding: 2.8vw 3vw 0;
   color: #fff;
   display: flex;
   flex-direction: column;
-  gap: 1vw;
+  gap: 0.6vw;
 }
 
 .online-lobby-page-missing {
@@ -13,125 +18,1549 @@
   justify-content: center;
 }
 
-#online-lobby-title {
-  font-size: 6.8cqw;
-  letter-spacing: -0.03em;
-  margin: 0;
-  text-shadow: 0 0 16px rgb(255 255 255 / 28%);
+/* ── Zone 1: Page Header ── */
+.online-lobby-header {
+  width: min(92vw, 1260px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
-.online-lobby-my-role {
-  width: min(75vw, 1260px);
+.online-lobby-header-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.online-lobby-title {
+  font-size: clamp(24px, 3.8cqw, 48px);
+  letter-spacing: -0.03em;
   margin: 0 auto;
-  border: 1px solid rgb(255 255 255 / 0.28);
-  border-radius: 0;
-  background: rgb(255 255 255 / 0.04);
-  padding: 0.38vw 0.65vw;
-  font-family: 'BureauGrotesque';
-  font-size: 1.05cqw;
-  letter-spacing: 0.06em;
   text-align: center;
+  text-shadow: 0 0 16px rgb(255 255 255 / 28%);
+  line-height: 1;
+}
+
+.online-lobby-header-meta {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 0.45vw;
+  gap: 0.4rem 0.65rem;
+  color: #c0c0c0;
+  font-size: clamp(11px, 0.82cqw, 14px);
+  letter-spacing: 0.04em;
 }
 
-.online-lobby-my-role-text {
-  display: inline-block;
+.online-lobby-header-code {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(13px, 1.1cqw, 18px);
+  letter-spacing: 0.08em;
+  color: #fff;
 }
 
-.online-lobby-my-role-player {
-  box-shadow: 0 0 14px rgb(255 255 255 / 14%);
+.online-lobby-header-emojis {
+  font-size: clamp(13px, 1.05cqw, 17px);
+  letter-spacing: 0.05em;
 }
 
-.online-lobby-my-role-spectator {
-  color: #c9c9c9;
+.online-lobby-header-emojis--pending {
+  color: #7a7a7a;
+  font-size: clamp(11px, 0.75cqw, 13px);
 }
 
-.online-lobby-my-role-ready {
+.online-lobby-header-sep {
+  color: rgb(255 255 255 / 0.25);
+}
+
+.online-lobby-header-buyin,
+.online-lobby-header-seats {
+  color: #c0c0c0;
+}
+
+.online-lobby-header-loading {
+  color: #888;
+  font-size: clamp(11px, 0.78cqw, 13px);
+}
+
+.online-lobby-header-emoji-confirm {
+  margin: 0;
+  font-size: clamp(10px, 0.68cqw, 12px);
+  color: #808080;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+/* Phase badge (reused from old layout) */
+.online-lobby-phase {
+  padding: 0.22vw 0.65vw;
+  border: 1px solid #8a8a8a;
+  font-size: clamp(10px, 0.72cqw, 13px);
+  letter-spacing: 0.04rem;
+  flex-shrink: 0;
+  position: absolute;
+  right: 0;
+}
+
+.online-lobby-phase-playing {
+  color: #4dff7a;
+  border-color: #4dff7a;
+}
+
+.online-lobby-phase-finished {
+  color: #ffcd62;
+  border-color: #ffcd62;
+}
+
+.online-lobby-phase-cancelled {
+  color: #ff8181;
+  border-color: #ff8181;
+}
+
+/* Ping badges */
+.online-lobby-ping-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05vw 0.35vw;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(10px, 0.52cqw, 12px);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  vertical-align: middle;
+  opacity: 0.95;
+}
+
+.online-lobby-ping {
+  font-variant-numeric: tabular-nums;
+}
+
+.online-lobby-ping--good { color: #7dffb3; }
+.online-lobby-ping--ok   { color: #ffe08a; }
+.online-lobby-ping--high { color: #ff9b9b; }
+
+/* ── Double-or-nothing payment banner ── */
+.online-lobby-don-banner {
+  width: min(92vw, 1260px);
+  margin: 0 auto;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-left: 3px solid rgb(255 255 255 / 0.22);
+  background: rgb(0 0 0 / 32%);
+  padding: 0.75vw 1vw 0.8vw 0.9vw;
+  display: flex;
+  align-items: center;
+  gap: 1.2vw;
+  transition: border-color 0.22s ease;
+}
+
+.online-lobby-don-banner--pay {
+  border-left-color: rgb(255 175 85 / 0.65);
+  background:
+    linear-gradient(155deg, rgb(255 130 40 / 0.04) 0%, transparent 50%),
+    rgb(0 0 0 / 32%);
+}
+
+.online-lobby-don-banner--wait {
+  border-left-color: rgb(255 255 255 / 0.28);
+}
+
+.online-lobby-don-banner-body {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.online-lobby-don-banner-label {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(10px, 0.78cqw, 13px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.online-lobby-don-banner--pay .online-lobby-don-banner-label {
+  color: rgb(255 175 85 / 0.9);
+}
+
+.online-lobby-don-banner-amount {
+  margin: 0.2vw 0 0.15vw;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(22px, 2.2cqw, 36px);
+  letter-spacing: 0.03em;
+  color: rgb(255 255 255 / 0.95);
+  line-height: 1;
+}
+
+.online-lobby-don-banner--pay .online-lobby-don-banner-amount {
+  color: rgb(255 210 140 / 0.97);
+  text-shadow: 0 0 20px rgb(255 150 50 / 0.18);
+}
+
+.online-lobby-don-banner-unit {
+  font-size: clamp(11px, 0.95cqw, 16px);
+  color: rgb(255 255 255 / 0.55);
+  letter-spacing: 0.08em;
+}
+
+.online-lobby-don-banner--pay .online-lobby-don-banner-unit {
+  color: rgb(255 175 85 / 0.65);
+}
+
+.online-lobby-don-banner-desc {
+  margin: 0;
+  font-size: clamp(11px, 0.72cqw, 13px);
+  color: rgb(255 255 255 / 0.5);
+  line-height: 1.48;
+}
+
+.online-lobby-don-banner-cta {
+  flex-shrink: 0;
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(10px, 0.72cqw, 13px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(255 175 85 / 0.75);
+  white-space: nowrap;
+}
+
+.online-lobby-don-banner-waiting-dot {
+  flex-shrink: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.4);
+  animation: don-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes don-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50%       { opacity: 0.9;  transform: scale(1); }
+}
+
+/* ── Zone 2: Arena ── */
+.online-lobby-arena-zone {
+  width: min(92vw, 1260px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.9vw;
+  align-items: stretch;
+}
+
+.online-lobby-arena-seat {
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(0 0 0 / 28%);
+  padding: 0.9vw 1.1vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3vw;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.online-lobby-arena-seat--mine {
+  border-color: rgb(255 255 255 / 0.78);
+  border-width: 2px;
+  box-shadow:
+    0 0 22px rgb(255 255 255 / 28%),
+    inset 0 0 0 1px rgb(255 255 255 / 10%);
+  background: linear-gradient(
+    155deg,
+    rgb(255 255 255 / 10%) 0%,
+    rgb(255 255 255 / 4%) 55%,
+    rgb(0 0 0 / 28%) 100%
+  );
+}
+
+@keyframes arena-ready-glow {
+  0%, 100% { box-shadow: 0 0 0 2px rgb(255 255 255 / 18%), 0 6px 22px rgb(0 0 0 / 18%); }
+  50%       { box-shadow: 0 0 0 2px rgb(255 255 255 / 45%), 0 10px 30px rgb(0 0 0 / 22%); }
+}
+
+.online-lobby-arena-seat--ready {
   border-color: #0a0a0a;
   background: #fff;
   color: #0a0a0a;
-  box-shadow: 0 4px 22px rgb(0 0 0 / 28%);
+  animation: arena-ready-glow 2.5s ease-in-out infinite;
 }
 
-#online-lobby-subtitle {
+.online-lobby-arena-seat--ready .online-lobby-label,
+.online-lobby-arena-seat--ready .online-lobby-arena-seat-meta {
+  color: #555;
+}
+
+.online-lobby-arena-seat--ready .online-lobby-arena-seat-meta--ready {
+  color: #111;
+  text-shadow: none;
+}
+
+.online-lobby-arena-seat--ready .online-lobby-you-tag {
+  border-color: #0a0a0a;
+  color: #0a0a0a;
+}
+
+/* Ping badge on white ready seat — invert to dark tones for legibility */
+.online-lobby-arena-seat--ready .online-lobby-ping-badge {
+  border-color: rgb(0 0 0 / 0.22);
+  background: rgb(0 0 0 / 0.06);
+}
+
+.online-lobby-arena-seat--ready .online-lobby-ping--good { color: #0a6b30; }
+.online-lobby-arena-seat--ready .online-lobby-ping--ok   { color: #7a5500; }
+.online-lobby-arena-seat--ready .online-lobby-ping--high { color: #8a1010; }
+
+.online-lobby-arena-seat--p1 {
+  text-align: right;
+}
+
+.online-lobby-arena-seat--p2 {
+  text-align: left;
+}
+
+.online-lobby-arena-seat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.online-lobby-arena-seat--p1 .online-lobby-arena-seat-header {
+  justify-content: flex-end;
+  flex-direction: row;
+  text-align: right;
+  align-items: flex-start;
+}
+
+.online-lobby-arena-seat--p1 .online-lobby-arena-seat-header > .online-lobby-label {
+  margin-left: auto;
+}
+
+.online-lobby-arena-seat--p2 .online-lobby-arena-seat-header {
+  justify-content: flex-start;
+}
+
+.online-lobby-arena-seat-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.55vw;
+  margin-top: 0.3vw;
+}
+
+.online-lobby-arena-seat--p1 .online-lobby-arena-seat-identity {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.online-lobby-arena-seat--p2 .online-lobby-arena-seat-identity {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.online-lobby-arena-avatar {
+  width: clamp(32px, 2.8vw, 52px);
+  height: clamp(32px, 2.8vw, 52px);
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #7a7a7a;
+  flex-shrink: 0;
+}
+
+.online-lobby-arena-seat--mine .online-lobby-arena-avatar {
+  border-color: rgb(255 255 255 / 0.85);
+  box-shadow: 0 0 12px rgb(255 255 255 / 35%);
+}
+
+.online-lobby-arena-avatar--empty {
+  background: rgb(255 255 255 / 10%);
+  border-style: dashed;
+}
+
+.online-lobby-arena-seat-name {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(16px, 1.45cqw, 24px);
+  margin: 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.online-lobby-arena-seat-meta {
+  color: #b6b6b6;
+  font-size: clamp(10px, 0.72cqw, 13px);
+  margin: 0;
+}
+
+.online-lobby-arena-seat-meta--ready {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff;
+  text-shadow: 0 0 10px rgb(255 255 255 / 55%);
+}
+
+/* Arena center pillar */
+.online-lobby-arena-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5vw;
+  padding: 0 1.2vw;
+  min-width: 7vw;
+}
+
+.online-lobby-arena-vs {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(16px, 1.8cqw, 30px);
+  letter-spacing: 0.14em;
+  color: #fff;
+}
+
+.online-lobby-arena-state {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(9px, 0.65cqw, 12px);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #fff;
   text-align: center;
-  color: #d0d0d0;
-  font-size: 0.88cqw;
-  letter-spacing: 0.05rem;
-  margin-top: -0.35vw;
+  line-height: 1.35;
 }
 
-.online-lobby-top {
-  width: min(75vw, 1260px);
+.online-lobby-arena-spectators {
+  font-size: clamp(9px, 0.6cqw, 11px);
+  color: #fff;
+  letter-spacing: 0.06em;
+}
+
+/* ── Zone 3: Action Zone ── */
+.online-lobby-action-zone {
+  width: min(92vw, 1260px);
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Finished match summary */
+.online-lobby-finished-card {
+  border: 1px solid #888;
+  padding: 0.75vw;
+  background: rgb(0 0 0 / 40%);
+}
+
+.online-lobby-finished-main {
+  margin-top: 0.2vw;
+  margin-bottom: 0;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(16px, 1.35cqw, 22px);
+  letter-spacing: 0.03em;
+}
+
+/* Seat status card (used when mySeat is paid) */
+.online-lobby-pin-card {
+  border: 1px dashed #838383;
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-left-color: #838383;
+  padding: 0.75vw;
+  background: rgb(0 0 0 / 35%);
+  transition: border-color 0.2s ease;
+}
+
+.online-lobby-pin-card--action {
+  border-color: rgb(255 175 85 / 0.5);
+  border-left-color: rgb(255 175 85 / 0.8);
+  background:
+    linear-gradient(155deg, rgb(255 130 40 / 0.04) 0%, transparent 50%),
+    rgb(0 0 0 / 35%);
+}
+
+.online-lobby-pin-card--action .online-lobby-pin   { color: rgb(255 210 140 / 0.97); }
+.online-lobby-pin-card--action .online-lobby-label  { color: rgb(255 175 85 / 0.85); }
+
+.online-lobby-pin-card--waiting {
+  border-color: rgb(255 255 255 / 0.2);
+  border-left-color: rgb(255 255 255 / 0.3);
+}
+
+.online-lobby-pin-card--ready {
+  border-color: rgb(255 255 255 / 0.28);
+  border-left-color: rgb(255 255 255 / 0.55);
+  /* Compact horizontal strip — this is a confirmation, not a CTA */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem 1.2rem;
+  flex-wrap: wrap;
+  padding: 0.55vw 0.75vw;
+}
+
+.online-lobby-pin-card--ready .online-lobby-label {
+  flex-shrink: 0;
+  order: 1;
+}
+
+.online-lobby-pin-card--ready .online-lobby-pin {
+  font-size: clamp(14px, 1.3cqw, 20px);
+  letter-spacing: 0.06em;
+  margin: 0;
+  flex-shrink: 0;
+  order: 2;
+}
+
+.online-lobby-pin-card--ready .online-lobby-copy {
+  flex: 1;
+  min-width: 18ch;
+  order: 3;
+  font-size: clamp(10px, 0.65cqw, 12px);
+  color: rgb(255 255 255 / 0.5);
+}
+
+.online-lobby-pin-card--go {
+  border-color: rgb(180 240 195 / 0.35);
+  border-left-color: rgb(140 220 160 / 0.7);
+  background:
+    linear-gradient(155deg, rgb(80 180 100 / 0.04) 0%, transparent 50%),
+    rgb(0 0 0 / 35%);
+}
+
+.online-lobby-pin-card--go .online-lobby-pin   { color: rgb(190 245 205 / 0.96); }
+.online-lobby-pin-card--go .online-lobby-label  { color: rgb(140 220 160 / 0.85); }
+
+.online-lobby-pin {
+  font-family: BureauGrotesque, sans-serif;
+  letter-spacing: 0.08em;
+  font-size: clamp(22px, 2.2cqw, 38px);
+  margin-top: 0.25vw;
+  margin-bottom: 0;
+}
+
+/* Claim section */
+.online-lobby-claim {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.online-lobby-claim-title {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(16px, 1.6cqw, 26px);
+  letter-spacing: 0;
+  color: #fff;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0;
+}
+
+/* Payment path cards (4-up grid) */
+.online-lobby-payment-paths {
   display: grid;
-  grid-template-columns: 1.4fr 0.9fr;
-  gap: 1vw;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6vw;
+}
+
+@keyframes path-card-select {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(0.965); }
+  65%  { transform: scale(1.018); }
+  100% { transform: scale(1); }
+}
+
+@keyframes path-card-glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgb(255 255 255 / 10%), 0 4px 18px rgb(0 0 0 / 24%); }
+  50%       { box-shadow: 0 0 28px rgb(255 255 255 / 20%), 0 6px 24px rgb(0 0 0 / 28%); }
+}
+
+@keyframes path-card-icon-pop {
+  0%   { transform: scale(1)    rotate(0deg); }
+  30%  { transform: scale(1.35) rotate(-8deg); }
+  60%  { transform: scale(0.9)  rotate(4deg); }
+  100% { transform: scale(1)    rotate(0deg); }
+}
+
+@keyframes path-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: none;
+  }
+}
+
+.online-lobby-path-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75vw 0.9vw 0.8vw;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-bottom-width: 2px;
+  border-bottom-color: rgb(255 255 255 / 0.12);
+  background: linear-gradient(170deg, rgb(255 255 255 / 6%) 0%, rgb(0 0 0 / 22%) 100%);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    border-bottom-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.1s ease;
+  position: relative;
+  will-change: transform;
+}
+
+.online-lobby-path-card::after {
+  content: '›';
+  position: absolute;
+  top: 0.6vw;
+  right: 0.7vw;
+  font-size: clamp(14px, 1.1cqw, 18px);
+  color: rgb(255 255 255 / 0.28);
+  line-height: 1;
+  transition: color 0.14s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.online-lobby-path-card:hover {
+  border-color: rgb(255 255 255 / 0.55);
+  border-bottom-color: rgb(255 255 255 / 0.35);
+  background: linear-gradient(170deg, rgb(255 255 255 / 11%) 0%, rgb(255 255 255 / 3%) 100%);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 28%);
+  transform: translateY(-2px);
+}
+
+.online-lobby-path-card:hover::after {
+  color: rgb(255 255 255 / 0.65);
+  transform: translateX(3px);
+}
+
+.online-lobby-path-card:active {
+  transform: translateY(1px) scale(0.98);
+  transition-duration: 0.06s;
+}
+
+.online-lobby-path-card:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.75);
+  outline-offset: 2px;
+}
+
+.online-lobby-path-card--active {
+  border-color: rgb(255 255 255 / 0.82);
+  border-bottom-color: rgb(255 255 255 / 0.6);
+  background: linear-gradient(155deg, rgb(255 255 255 / 14%) 0%, rgb(255 255 255 / 4%) 100%);
+  animation:
+    path-card-select 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+    path-card-glow-pulse 2.4s ease-in-out 0.38s infinite;
+  transform: none;
+}
+
+.online-lobby-path-card--active::after {
+  content: '✕';
+  font-size: clamp(10px, 0.72cqw, 13px);
+  color: rgb(255 255 255 / 0.4);
+  top: 0.65vw;
+  transform: none;
+}
+
+.online-lobby-path-card--active .online-lobby-path-card-icon {
+  animation: path-card-icon-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.online-lobby-path-card-icon {
+  width: clamp(20px, 1.6vw, 28px);
+  height: clamp(20px, 1.6vw, 28px);
+  flex-shrink: 0;
+  color: rgb(255 255 255 / 0.55);
+  margin-bottom: 0.25rem;
+  transition: color 0.12s ease;
+}
+
+.online-lobby-path-card:hover .online-lobby-path-card-icon {
+  color: rgb(255 255 255 / 0.8);
+}
+
+.online-lobby-path-card--active .online-lobby-path-card-icon {
+  color: #fff;
+}
+
+.online-lobby-path-card-title {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(12px, 0.88cqw, 15px);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  line-height: 1.2;
+  padding-right: 1.2rem;
+}
+
+.online-lobby-path-card-desc {
+  font-size: clamp(10px, 0.68cqw, 12px);
+  color: rgb(255 255 255 / 0.48);
+  line-height: 1.4;
+}
+
+.online-lobby-path-card--active .online-lobby-path-card-title {
+  color: #fff;
+}
+
+.online-lobby-path-card--active .online-lobby-path-card-desc {
+  color: rgb(255 255 255 / 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-lobby-path-card,
+  .online-lobby-path-card::after {
+    transition: none;
+  }
+  .online-lobby-path-card:hover {
+    transform: none;
+  }
+  .online-lobby-path-card--active,
+  .online-lobby-path-card--active .online-lobby-path-card-icon,
+  .online-lobby-kind1-qr-col {
+    animation: none;
+  }
+}
+
+.online-lobby-path-cta {
+  width: auto;
+  min-width: 180px;
+}
+
+/* Action buttons row */
+.online-lobby-action-buttons {
+  display: flex;
+  gap: 0.6vw;
+  flex-wrap: wrap;
+}
+
+.online-lobby-leave-btn {
+  opacity: 0.45;
+  font-size: clamp(10px, 0.75cqw, 12px);
+  min-width: 0;
+  width: 100%;
+  margin-top: 1rem;
+  transition: opacity 0.18s;
+}
+
+.online-lobby-leave-btn:hover,
+.online-lobby-leave-btn:focus-visible {
+  opacity: 1;
+}
+
+.online-lobby-ready-btn {
+  min-width: 240px;
+}
+
+/* Ready toggle button embedded inside the seat card */
+.online-lobby-seat-ready-btn {
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.75rem;
+  background: none;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  color: rgb(255 255 255 / 0.7);
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(10px, 0.7cqw, 12px);
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  align-self: flex-end;
+}
+
+.online-lobby-seat-ready-btn:hover,
+.online-lobby-seat-ready-btn:focus-visible {
+  border-color: rgb(255 255 255 / 0.75);
+  color: #fff;
+  background: rgb(255 255 255 / 0.06);
+  outline: none;
+}
+
+.online-lobby-seat-ready-btn:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.75);
+  outline-offset: 2px;
+}
+
+/* Active (ready) state — muted, since it's a deactivation action */
+.online-lobby-seat-ready-btn--active {
+  border-color: rgb(255 255 255 / 0.18);
+  color: rgb(255 255 255 / 0.4);
+}
+
+.online-lobby-seat-ready-btn--active:hover,
+.online-lobby-seat-ready-btn--active:focus-visible {
+  border-color: rgb(255 100 100 / 0.6);
+  color: rgb(255 140 140 / 0.9);
+  background: rgb(255 60 60 / 0.06);
+}
+
+/* On the inverted white ready seat, flip to dark */
+.online-lobby-arena-seat--ready .online-lobby-seat-ready-btn {
+  border-color: rgb(0 0 0 / 0.25);
+  color: rgb(0 0 0 / 0.5);
+}
+
+.online-lobby-arena-seat--ready .online-lobby-seat-ready-btn:hover,
+.online-lobby-arena-seat--ready .online-lobby-seat-ready-btn:focus-visible {
+  border-color: rgb(180 0 0 / 0.5);
+  color: rgb(160 0 0 / 0.85);
+  background: rgb(200 0 0 / 0.06);
+}
+
+/* ── Zone 4: Kind1 Post ── */
+.online-lobby-kind1-section {
+  width: min(92vw, 1260px);
+  margin: 0 auto;
+  border: 1px solid rgb(255 255 255 / 0.15);
+  background: rgb(0 0 0 / 25%);
+  padding: 1vw 1.2vw 2vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow: visible;
+  transition: min-height 0.18s ease;
+}
+
+.online-lobby-kind1-section--pending {
+  min-height: 80px;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  border-color: rgb(255 255 255 / 0.14);
+  color: #909090;
+  font-size: clamp(11px, 0.82cqw, 14px);
+}
+
+.online-lobby-kind1-section-label {
+  margin-bottom: 0.1rem;
+}
+
+.online-lobby-kind1-rematch-note {
+  margin-top: 0.35rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+
+/* ── Global focus ring for all native buttons in this page ──
+   Button component gets focus-visible from Button.css.
+   Every other <button> (modal close, text-btn, URI QR, back, etc.) picks this up. */
+.online-lobby-page button:focus {
+  outline: none;
+}
+
+.online-lobby-page button:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.75);
+  outline-offset: 3px;
+}
+
+/* Tighter ring for small icon / text buttons so it doesn't look outsized */
+.online-lobby-modal-close:focus-visible,
+.online-lobby-text-btn:focus-visible {
+  outline-offset: 2px;
+}
+
+/* ── Shared utility classes ── */
+.online-lobby-label {
+  color: #bcbcbc;
+  font-size: clamp(10px, 0.72cqw, 13px);
+  letter-spacing: 0.05rem;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35vw;
+  margin: 0;
 }
 
 .online-lobby-sublabel {
-  font-size: 0.72cqw;
+  font-size: clamp(10px, 0.72cqw, 12px);
   letter-spacing: 0.14em;
   color: #a5a5a5;
   margin: 0.2rem 0 0.15rem;
 }
 
-.online-lobby-claim-nostr-row {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.65rem;
-  margin-top: 0.85rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid rgb(255 255 255 / 0.12);
+.online-lobby-copy {
+  color: #c7c7c7;
+  font-size: clamp(11px, 0.78cqw, 13px);
+  margin: 0;
 }
 
-.online-lobby-or-divider {
-  display: flex;
+.online-lobby-you-tag {
+  display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  margin-left: 0.28vw;
+  padding: 0.05vw 0.35vw;
+  border: 1px solid rgb(255 255 255 / 0.82);
+  color: #fff;
+  font-size: clamp(9px, 0.6cqw, 11px);
+  letter-spacing: 0.03rem;
+}
+
+.online-lobby-action {
+  margin: 0;
+  width: auto;
+  min-width: 130px;
+  height: 44px;
+  font-size: clamp(11px, 0.78cqw, 13px);
+}
+
+.online-lobby-error {
+  width: min(92vw, 1260px);
+  margin: 0 auto;
+  text-align: center;
+  color: #ff7b7b;
+  font-size: clamp(11px, 0.82cqw, 14px);
+}
+
+/* Lightning / invoice display */
+.online-lobby-lightning-uri {
+  font-size: clamp(9px, 0.65cqw, 12px);
+  letter-spacing: 0.04em;
+  word-break: break-all;
+  color: #c8c8c8;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.online-lobby-lightning-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.online-lobby-qr {
+  border: 1px solid #fff;
+  padding: 0.55rem;
+  background: #fff;
+}
+
+/* ── Kind1 embedded post — 2-column layout ── */
+.online-lobby-kind1-embedded {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: 0.7rem 1.6rem;
+  align-items: start;
+  /* Lock floor to tallest tab so the section doesn't jump on tab switch */
+  min-height: 220px;
+  overflow: visible;
+}
+
+/* Pin-steps: inherits the standard 2-column layout (1fr + 230px).
+   The ol is a 3-col internal grid inside the left qr-col — no parent override needed. */
+.online-lobby-kind1-embedded:has(.online-lobby-pin-steps) .online-lobby-kind1-rematch-note {
+  display: none;
+}
+
+/* Left column: hero — QR or interactive payment panel */
+.online-lobby-kind1-qr-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  overflow: visible;
+  animation: path-panel-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Panel variant — left-aligned, for sign-in / invoice flows */
+.online-lobby-kind1-qr-col--panel {
+  align-items: flex-start;
+  overflow: visible;
+}
+
+/* CTA buttons inside the left hero column — constrained, not full-viewport-wide */
+.online-lobby-kind1-qr-col .button {
+  width: min(100%, 300px);
+  align-self: flex-start;
+}
+
+/* In centered (non-panel) column, center the button */
+.online-lobby-kind1-qr-col:not(.online-lobby-kind1-qr-col--panel) .button {
+  align-self: center;
+}
+
+/* Inner 2-col split: QR on left, details on right */
+.online-lobby-qr-split {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 1.2rem;
+  width: 100%;
+  align-items: center;
+}
+
+.online-lobby-qr-split-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: stretch;
+  min-width: 0;
+  text-align: left;
+  justify-content: center;
+  height: 100%;
+}
+
+/* Override centered hint inside split */
+.online-lobby-qr-split-details .online-lobby-kind1-qr-hint {
+  text-align: left;
+  max-width: none;
+}
+
+/* ── PIN steps layout ── */
+.online-lobby-pin-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.online-lobby-pin-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 1.1rem 0.5rem 0;
+  border-right: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.online-lobby-pin-step:first-child {
+  padding-left: 0;
+}
+
+.online-lobby-pin-step:last-child {
+  border-right: none;
+  padding-right: 0;
+  padding-left: 1.1rem;
+}
+
+.online-lobby-pin-step:last-child .online-lobby-pin-step-hint {
+  font-size: clamp(11px, 0.72cqw, 13px);
+  color: rgb(255 255 255 / 0.72);
+  line-height: 1.5;
+}
+
+.online-lobby-pin-step:nth-child(2) {
+  padding-left: 1.1rem;
+}
+
+.online-lobby-pin-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgb(255 255 255 / 0.55);
+  background: rgb(255 255 255 / 0.06);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: BureauGrotesque, sans-serif;
+  color: rgb(255 255 255 / 0.85);
+  letter-spacing: 0;
+  flex-shrink: 0;
+  margin-bottom: 0.15rem;
+}
+
+.online-lobby-pin-step-hint {
+  margin: 0;
+  font-size: clamp(10px, 0.58cqw, 11px);
+  color: rgb(255 255 255 / 0.38);
+  line-height: 1.45;
+}
+
+.online-lobby-pin-step-amount {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(24px, 2.4cqw, 36px);
+  color: #fff;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.online-lobby-pin-step-amount span {
+  font-size: 0.45em;
+  color: rgb(255 255 255 / 0.45);
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+  margin-left: 0.25em;
+}
+
+/* Anon invoice amount — matches pin-step-amount style */
+.online-lobby-anon-amount {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(24px, 2.4cqw, 36px);
+  color: #fff;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.online-lobby-anon-amount span {
+  font-size: 0.45em;
+  color: rgb(255 255 255 / 0.45);
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+  margin-left: 0.25em;
+}
+
+.online-lobby-anon-new-invoice {
+  opacity: 0.55;
+  font-size: clamp(10px, 0.72cqw, 12px);
+  min-width: 0;
+  width: auto !important;
+  padding: 0.35rem 0.8rem;
+  align-self: flex-start;
+  transition: opacity 0.18s;
+}
+
+.online-lobby-anon-new-invoice:hover,
+.online-lobby-anon-new-invoice:focus-visible {
+  opacity: 1;
+}
+
+.online-lobby-qr--step {
+  border-radius: 4px;
+  background: #fff;
+  padding: 0.25rem;
+  align-self: flex-start;
+}
+
+.online-lobby-pin-step-uri {
+  margin-top: auto;
+}
+
+/* Labelled sub-block within the details column */
+.online-lobby-qr-split-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.6rem 0;
+}
+
+.online-lobby-qr-split-block--divided {
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.online-lobby-qr-split-block-hint {
+  margin: 0;
+  font-size: clamp(10px, 0.62cqw, 11px);
+  color: rgb(255 255 255 / 0.4);
+  line-height: 1.4;
+}
+
+/* Buttons inside the details col are naturally sized, not full-column */
+.online-lobby-qr-split-details .button {
+  width: min(100%, 240px);
+  align-self: flex-start;
+}
+
+/* URI line stretches to fill details col */
+.online-lobby-qr-split-details .online-lobby-kind1-uri-line {
   width: 100%;
 }
 
-.online-lobby-or-line {
-  flex: 1;
-  height: 1px;
-  background: rgb(255 255 255 / 0.18);
+.online-lobby-kind1-pin {
+  font-size: clamp(28px, 3cqw, 46px);
+  letter-spacing: 0.22em;
+  margin: 0.2rem 0 0;
+  color: #fff;
+  display: inline-block;
+  padding: 0.25em 0.33em 0.2em 0.55em;
+  border: 1.5px solid rgb(255 255 255 / 0.3);
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.04), inset 0 1px 0 rgb(255 255 255 / 0.08);
+  line-height: 1;
 }
 
-.online-lobby-or-text {
-  font-size: 0.68cqw;
-  letter-spacing: 0.2em;
-  color: #9a9a9a;
+.online-lobby-kind1-qr-hint {
+  margin: 0;
+  font-size: clamp(10px, 0.65cqw, 12px);
+  color: rgb(255 255 255 / 0.45);
+  text-align: center;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  max-width: 240px;
+}
+
+.online-lobby-kind1-qr-col--panel .online-lobby-kind1-qr-hint {
+  text-align: left;
+  max-width: none;
+}
+
+/* URI truncation line — full width of hero column */
+.online-lobby-kind1-qr-col .online-lobby-kind1-uri-line {
+  width: 100%;
+}
+
+/* Right column: secondary reference — muted sidebar */
+.online-lobby-kind1-content-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  padding-left: 1.1rem;
+  border-left: 1px solid rgb(255 255 255 / 0.07);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.online-lobby-kind1-content-col:hover,
+.online-lobby-kind1-content-col:focus-within {
+  opacity: 0.9;
+}
+
+.online-lobby-kind1-author {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.online-lobby-kind1-author-avatar {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  border-radius: 3px;
+  object-fit: cover;
+  border: 1px solid rgb(255 255 255 / 0.15);
+  background: rgb(0 0 0 / 0.4);
+}
+
+.online-lobby-kind1-author-avatar--placeholder {
+  background: linear-gradient(135deg, rgb(60 80 120 / 0.6), rgb(30 40 70 / 0.7));
+}
+
+.online-lobby-kind1-author-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Name + npub on one line */
+.online-lobby-kind1-author-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.online-lobby-kind1-author-name {
+  font-size: clamp(10px, 0.65cqw, 12px);
+  font-weight: 600;
+  color: #d0d0d0;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.online-lobby-kind1-author-npub {
+  font-size: clamp(9px, 0.52cqw, 10px);
+  letter-spacing: 0.02em;
+  color: rgb(255 255 255 / 0.3);
+  cursor: default;
+  word-break: break-all;
+}
+
+.online-lobby-kind1-timestamp {
+  display: block;
+  font-size: clamp(8px, 0.5cqw, 10px);
+  letter-spacing: 0.03em;
+  color: #505050;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: auto;
+  padding-top: 0.4rem;
+}
+
+.online-lobby-kind1-embedded-meta {
+  margin: 0;
+  font-size: clamp(9px, 0.55cqw, 10px);
+  letter-spacing: 0.04em;
+  color: #787878;
+}
+
+.online-lobby-kind1-embedded-body {
+  margin: 0;
+  font-size: clamp(10px, 0.65cqw, 12px);
+  line-height: 1.5;
+  color: #b0b0b0;
+  word-break: break-word;
+  min-width: 0;
+  white-space: pre-wrap;
+}
+
+.online-lobby-pubpay-zap-meta {
+  padding-top: 0.45rem;
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.online-lobby-pubpay-zap-meta .online-lobby-copy {
+  font-size: clamp(8px, 0.55cqw, 10px);
+  color: rgb(255 255 255 / 0.45);
+  line-height: 1.5;
+}
+
+/* ── Kind1 loading state ── */
+.online-lobby-kind1-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0 0.75rem;
+}
+
+.online-lobby-kind1-loading-label {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(10px, 0.65cqw, 12px);
+  letter-spacing: 0.12em;
+  color: rgb(255 255 255 / 0.28);
+  animation: kind1-label-pulse 2.4s ease-in-out infinite;
+}
+
+/* Chain squares — 8 pixel cells lighting sequentially like the game snake */
+.online-lobby-kind1-loading-chain {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.online-lobby-kind1-loading-chain span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 0;
+  background: rgb(255 255 255 / 0.07);
+  animation: kind1-chain-square 1.6s steps(1, end) infinite;
+}
+
+.online-lobby-kind1-loading-chain span:nth-child(1) { animation-delay: 0s; }
+.online-lobby-kind1-loading-chain span:nth-child(2) { animation-delay: 0.2s; }
+.online-lobby-kind1-loading-chain span:nth-child(3) { animation-delay: 0.4s; }
+.online-lobby-kind1-loading-chain span:nth-child(4) { animation-delay: 0.6s; }
+.online-lobby-kind1-loading-chain span:nth-child(5) { animation-delay: 0.8s; }
+.online-lobby-kind1-loading-chain span:nth-child(6) { animation-delay: 1.0s; }
+.online-lobby-kind1-loading-chain span:nth-child(7) { animation-delay: 1.2s; }
+.online-lobby-kind1-loading-chain span:nth-child(8) { animation-delay: 1.4s; }
+
+@keyframes kind1-chain-square {
+  0%    { background: #fff; box-shadow: 0 0 8px rgb(255 255 255 / 0.5); }
+  12.5% { background: rgb(255 255 255 / 0.07); box-shadow: none; }
+  100%  { background: rgb(255 255 255 / 0.07); box-shadow: none; }
+}
+
+@keyframes kind1-label-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-lobby-kind1-loading-chain span,
+  .online-lobby-kind1-loading-label {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+.online-lobby-kind1-post-error {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0 0.5rem;
+  text-align: center;
+}
+
+.online-lobby-kind1-post-error-icon {
+  width: 32px;
+  height: 32px;
+  color: rgb(255 180 100 / 0.6);
+  margin-bottom: 0.25rem;
+  flex-shrink: 0;
+}
+
+.online-lobby-kind1-post-error-msg {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(13px, 0.9cqw, 16px);
+  color: rgb(255 255 255 / 0.75);
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
-.online-lobby-signin-nostr-btn {
+.online-lobby-kind1-post-error-hint {
+  margin: 0;
+  font-size: clamp(10px, 0.62cqw, 12px);
+  color: rgb(255 255 255 / 0.35);
+  margin-bottom: 0.25rem;
+}
+
+/* URI row below the QR */
+.online-lobby-kind1-uri-line {
   width: 100%;
-  font-size: 0.78cqw;
-  letter-spacing: 0.1em;
-  border: 1px solid rgb(255 255 255 / 0.45);
-  background: rgb(255 255 255 / 0.06);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgb(0 0 0 / 0.35);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.online-lobby-kind1-uri-text {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: clamp(8px, 0.52cqw, 9.5px);
+  color: rgb(255 255 255 / 0.35);
+  text-align: left;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.3rem 0.55rem;
+}
+
+.online-lobby-kind1-uri-hint {
+  margin: 0;
+  font-size: clamp(10px, 0.68cqw, 12px);
+  color: rgb(255 255 255 / 0.6);
+}
+
+/* Responsive: stack to single column on narrow screens */
+@media (max-width: 680px) {
+  .online-lobby-kind1-embedded {
+    grid-template-columns: 1fr;
+  }
+
+  .online-lobby-kind1-qr-col {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .online-lobby-kind1-qr-hint {
+    text-align: left;
+    max-width: unset;
+  }
+}
+
+.online-lobby-kind1-uri-copy-iconbtn {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.05);
+  border: none;
+  border-left: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 0;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.online-lobby-kind1-uri-copy-iconbtn:hover {
+  background: rgb(255 255 255 / 0.1);
   color: #fff;
 }
 
-.online-lobby-signin-nostr-btn:hover {
-  border-color: #fff;
-  background: rgb(255 255 255 / 0.12);
+.online-lobby-kind1-uri-copy-iconbtn:active {
+  transform: scale(0.96);
 }
 
+.online-lobby-kind1-uri-copy-iconbtn:focus {
+  outline: none;
+}
+
+.online-lobby-kind1-uri-copy-iconbtn:focus-visible {
+  outline: 2px solid #8ef5dc;
+  outline-offset: 2px;
+}
+
+.online-lobby-kind1-uri-copy-iconbtn--ok {
+  color: #5ee9c4;
+  border-color: rgb(94 233 196 / 0.45);
+  background: rgb(57 208 169 / 0.12);
+}
+
+/* ── Nostr sign-in prompt ── */
+.online-lobby-nostr-signin-prompt {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.online-lobby-nostr-signin-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: rgb(255 255 255 / 0.3);
+  flex-shrink: 0;
+}
+
+.online-lobby-nostr-signin-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.online-lobby-nostr-signin-title {
+  margin: 0;
+  font-size: clamp(10px, 0.7cqw, 12px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgb(255 255 255 / 0.8);
+}
+
+.online-lobby-nostr-signin-sub {
+  margin: 0;
+  font-size: clamp(9px, 0.6cqw, 11px);
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.35);
+}
+
+.online-lobby-nostr-signin-btn {
+  flex-shrink: 0;
+}
+
+/* ── Nostr linked pill ── */
 .online-lobby-nostr-linked-pill {
-  margin: 0.65rem 0 0;
-  font-size: 0.72cqw;
+  font-size: clamp(11px, 0.72cqw, 13px);
   line-height: 1.45;
   color: #c4e8c8;
   padding: 0.45rem 0.55rem;
   border: 1px solid rgb(120 200 140 / 0.45);
   background: rgb(40 80 50 / 0.35);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .online-lobby-nostr-linked-row {
@@ -177,6 +1606,7 @@
   color: #e8ffe8;
 }
 
+/* ── Nostr sign-in modal ── */
 .online-lobby-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -209,7 +1639,7 @@
 
 .online-lobby-modal-title {
   margin: 0;
-  font-size: 1.05cqw;
+  font-size: clamp(14px, 1.05cqw, 18px);
   letter-spacing: 0.06em;
   font-weight: 600;
 }
@@ -233,36 +1663,27 @@
 
 .online-lobby-modal-lead {
   margin: 0 0 0.75rem;
-  font-size: 0.78cqw;
+  font-size: clamp(11px, 0.78cqw, 14px);
   line-height: 1.45;
   color: #c6c6c6;
 }
 
 .online-lobby-modal-nip07-hint {
   margin: 0 0 0.65rem;
-  font-size: 0.7cqw;
+  font-size: clamp(10px, 0.7cqw, 12px);
   line-height: 1.4;
   color: #9a9a9a;
 }
 
 .online-lobby-modal-status {
   margin: 0 0 0.75rem;
-  font-size: 0.74cqw;
+  font-size: clamp(11px, 0.74cqw, 13px);
   color: #b0b0b0;
 }
 
-.online-lobby-modal-status-ok {
-  color: #9fdfac;
-  font-weight: 600;
-}
-
-.online-lobby-modal-status-busy {
-  color: #e8d28a;
-}
-
-.online-lobby-modal-status-idle {
-  color: #9a9a9a;
-}
+.online-lobby-modal-status-ok     { color: #9fdfac; font-weight: 600; }
+.online-lobby-modal-status-busy   { color: #e8d28a; }
+.online-lobby-modal-status-idle   { color: #9a9a9a; }
 
 .online-lobby-modal-status-linked {
   display: inline-flex;
@@ -290,867 +1711,211 @@
   color: #c8e8ce;
 }
 
+.online-lobby-nostr-actions,
 .online-lobby-modal-actions {
   margin-top: 0.75rem;
 }
 
 .online-lobby-modal-error {
   margin: 0.65rem 0 0;
-  font-size: 0.74cqw;
+  font-size: clamp(11px, 0.74cqw, 13px);
   color: #ff9b9b;
 }
 
-.online-lobby-lightning-pay {
-  margin-top: 0.5vw;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.45vw;
-}
-
-.online-lobby-lightning-uri {
-  font-size: 0.65cqw;
-  letter-spacing: 0.04em;
-  word-break: break-all;
-  color: #c8c8c8;
-  line-height: 1.35;
-  margin: 0;
-}
-
-.online-lobby-lightning-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4vw;
-}
-
-.online-lobby-lightning-actions .online-lobby-action {
-  flex: 1;
-  min-width: 120px;
-}
-
-.online-lobby-lightning-status {
-  margin-top: 0.35vw;
-  color: #b0b0b0;
-}
-
-.online-lobby-lightning-aside-copy {
-  margin-top: 0.5vw;
-  line-height: 1.45;
-}
-
-.online-lobby-nostr-actions {
-  margin-top: 0.55rem;
-}
-
-.online-lobby-nostr-signer-row {
-  display: flex;
-  gap: 0.5rem;
-  margin: 0.5rem 0 0.35rem;
-  flex-wrap: wrap;
-}
-
-.online-lobby-bunker-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin: 0.45rem 0 0.25rem;
-  width: 100%;
-}
-
-.online-lobby-bunker-label {
-  font-size: 0.68cqw;
-  letter-spacing: 0.08em;
-  color: #b8b8b8;
-}
-
-.online-lobby-bunker-input {
-  width: 100%;
-  box-sizing: border-box;
-  font-family: ui-monospace, monospace;
-  font-size: 0.72cqw;
-  padding: 0.45rem 0.5rem;
-  border: 1px solid rgb(255 255 255 / 0.28);
-  border-radius: 0;
-  background: rgb(0 0 0 / 35%);
-  color: #eee;
-  resize: vertical;
-  min-height: 3.2rem;
-}
-
-.online-lobby-panel {
-  border: 1px solid #565656;
-  border-radius: 0;
-  background: linear-gradient(180deg, rgb(255 255 255 / 4%) 0%, rgb(255 255 255 / 1%) 100%);
-  box-shadow: 0 0 28px rgb(255 255 255 / 8%);
-  padding: 1vw;
-}
-
-.online-lobby-meta-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5vw;
-}
-
-.online-lobby-label {
-  color: #bcbcbc;
-  font-size: 0.72cqw;
-  letter-spacing: 0.05rem;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.35vw;
-}
-
-.online-lobby-ping-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.05vw 0.32vw;
-  border-radius: 999px;
-  border: 1px solid rgb(255 255 255 / 0.35);
-  font-variant-numeric: tabular-nums;
-  font-size: 0.52cqw;
-  letter-spacing: 0.02em;
-  line-height: 1.15;
-  vertical-align: middle;
-  opacity: 0.95;
-}
-
-.online-lobby-ping {
-  font-variant-numeric: tabular-nums;
-}
-
-.online-lobby-ping--good {
-  color: #7dffb3;
-}
-
-.online-lobby-ping--ok {
-  color: #ffe08a;
-}
-
-.online-lobby-ping--high {
-  color: #ff9b9b;
-}
-
-.online-lobby-code-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.55em 0.75em;
-  margin-top: 0.2vw;
-}
-
-.online-lobby-code {
-  font-family: 'BureauGrotesque';
-  font-size: 2.4cqw;
-  letter-spacing: 0.04em;
-  margin: 0;
-}
-
-.online-lobby-emoji-box {
-  flex-shrink: 0;
-  min-width: min(42vw, 220px);
-  border: 1px solid rgb(255 255 255 / 0.28);
-  border-radius: 0;
-  padding: 0.35vw 0.55vw 0.42vw;
-  background: rgb(0 0 0 / 38%);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.04);
-}
-
-.online-lobby-emoji-box-title {
-  margin: 0 0 0.12em;
-  color: #9a9a9a;
-  font-size: 0.58cqw;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.online-lobby-code-emojis {
-  font-family: 'BureauGrotesque';
-  letter-spacing: 0.07em;
-  font-size: 1.65cqw;
-  line-height: 1.15;
-  margin: 0;
-}
-
-.online-lobby-code-emojis--pending {
-  color: #9a9a9a;
-  letter-spacing: 0.04em;
-  font-size: 0.95cqw;
-}
-
-.online-lobby-code-confirm {
-  margin: 0.35vw 0 0;
-}
-
-.online-lobby-phase {
-  padding: 0.2vw 0.6vw;
-  border-radius: 0;
-  border: 1px solid #8a8a8a;
-  font-size: 0.72cqw;
-  letter-spacing: 0.04rem;
-}
-
-.online-lobby-phase-playing {
-  color: #4dff7a;
-  border-color: #4dff7a;
-}
-
-.online-lobby-phase-finished {
-  color: #ffcd62;
-  border-color: #ffcd62;
-}
-
-.online-lobby-phase-cancelled {
-  color: #ff8181;
-  border-color: #ff8181;
-}
-
-.online-lobby-buyin {
-  color: #dedede;
-  font-size: 0.82cqw;
-  margin-top: 0.45vw;
-}
-
-.online-lobby-finished-card {
-  margin-top: 0.75vw;
-  border: 1px solid #888;
-  border-radius: 0;
-  padding: 0.75vw;
-  background: rgb(0 0 0 / 40%);
-}
-
-.online-lobby-finished-main {
-  margin-top: 0.2vw;
-  font-family: 'BureauGrotesque';
-  font-size: 1.35cqw;
-  letter-spacing: 0.03em;
-}
-
-.online-lobby-pin-card {
-  margin-top: 0.75vw;
-  border: 1px dashed #838383;
-  border-radius: 0;
-  padding: 0.75vw;
-  background: rgb(0 0 0 / 35%);
-}
-
-.online-lobby-pin {
-  font-family: 'BureauGrotesque';
-  letter-spacing: 0.08em;
-  font-size: 2.2cqw;
-  margin-top: 0.25vw;
-}
-
-.online-lobby-copy {
-  color: #c7c7c7;
-  font-size: 0.78cqw;
-}
-
-.online-lobby-expiry {
-  color: #a9a9a9;
-  font-size: 0.74cqw;
-  margin-top: 0.22vw;
-}
-
-.online-lobby-actions-row {
-  margin-top: 0.9vw;
-  display: flex;
-  gap: 0.5vw;
-}
-
-.online-lobby-action {
-  margin: 0;
-  width: 11vw;
-  min-width: 130px;
-}
-
-.online-lobby-panel-qr {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.7vw;
-}
-
-.online-lobby-kind1-post-status {
-  text-align: center;
-  color: #b8b8b8;
-}
-
-.online-lobby-kind1-post-error {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.online-lobby-kind1-embedded {
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  margin-top: 0.25rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.22);
-  background: rgb(0 0 0 / 0.35);
-  text-align: left;
-  box-sizing: border-box;
-}
-
-.online-lobby-kind1-uri-qr-btn {
-  flex-shrink: 0;
-  align-self: center;
-  margin-left: auto;
-  padding: 0.22rem 0.55rem;
-  font-size: 0.55cqw;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: #e8f2ff;
-  background: rgb(255 255 255 / 0.09);
-  border: 1px solid rgb(255 255 255 / 0.3);
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.online-lobby-kind1-uri-qr-btn:hover {
-  background: rgb(255 255 255 / 0.16);
-}
-
-.online-lobby-kind1-uri-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.65rem;
-  padding: 0.35rem 0 0.25rem;
-  text-align: center;
-}
-
-.online-lobby-kind1-uri-panel > .online-lobby-kind1-uri-panel-qr {
-  align-self: center;
-}
-
-.online-lobby-kind1-uri-panel-head {
-  width: 100%;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.online-lobby-kind1-uri-back {
-  padding: 0.2rem 0.45rem;
-  font-size: 0.62cqw;
-  font-weight: 600;
-  color: #b8d4f0;
-  background: rgb(255 255 255 / 0.06);
-  border: 1px solid rgb(255 255 255 / 0.22);
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.online-lobby-kind1-uri-back:hover {
-  background: rgb(255 255 255 / 0.12);
-}
-
-.online-lobby-kind1-uri-panel-qr {
-  display: block;
-}
-
-.online-lobby-kind1-uri-line {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.online-lobby-kind1-uri-text {
-  margin: 0;
-  flex: 1;
-  min-width: 0;
-  font-size: 0.58cqw;
-  color: #c8d8e8;
-  text-align: left;
-  line-height: 1.45;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.online-lobby-kind1-uri-hint {
-  margin: 0;
-  font-size: 0.68cqw;
-  color: rgb(255 255 255 / 0.65);
-  text-align: center;
-  align-self: center;
-}
-
-.online-lobby-kind1-uri-copy-iconbtn {
-  flex-shrink: 0;
-  margin: 0;
-  padding: 0.2rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  color: #b8d4f0;
-  background: rgb(255 255 255 / 0.08);
-  border: 1px solid rgb(255 255 255 / 0.22);
-  border-radius: 4px;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.online-lobby-kind1-uri-copy-iconbtn:hover {
-  background: rgb(255 255 255 / 0.14);
-  color: #fff;
-  border-color: rgb(255 255 255 / 0.35);
-}
-
-.online-lobby-kind1-uri-copy-iconbtn:active {
-  transform: scale(0.96);
-}
-
-.online-lobby-kind1-uri-copy-iconbtn:focus {
-  outline: none;
-}
-
-.online-lobby-kind1-uri-copy-iconbtn:focus-visible {
-  outline: 2px solid #8ef5dc;
-  outline-offset: 2px;
-}
-
-.online-lobby-kind1-uri-copy-iconbtn--ok {
-  color: #5ee9c4;
-  border-color: rgb(94 233 196 / 0.45);
-  background: rgb(57 208 169 / 0.12);
-}
-
-.online-lobby-kind1-author {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  margin-bottom: 0.45rem;
-  width: 100%;
-}
-.online-lobby-kind1-author-avatar {
-  width: 2.4rem;
-  height: 2.4rem;
-  flex-shrink: 0;
-  border-radius: 4px;
-  object-fit: cover;
-  border: 1px solid rgb(255 255 255 / 0.2);
-  background: rgb(0 0 0 / 0.4);
-}
-
-.online-lobby-kind1-author-avatar--placeholder {
-  background: linear-gradient(135deg, rgb(60 80 120 / 0.6), rgb(30 40 70 / 0.7));
-}
-
-.online-lobby-kind1-author-text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.12rem;
-  min-width: 0;
-}
-
-.online-lobby-kind1-author-name {
-  font-size: 0.78cqw;
-  font-weight: 600;
-  color: #f0f0f0;
-  line-height: 1.2;
-  word-break: break-word;
-}
-
-.online-lobby-kind1-author-npub {
-  font-size: 0.58cqw;
-  letter-spacing: 0.02em;
-  color: #8eb8dc;
-  cursor: default;
-}
-
-.online-lobby-kind1-embedded-meta {
-  margin: 0 0 0.55rem;
-  font-size: 0.62cqw;
-  letter-spacing: 0.04em;
-  color: #9a9a9a;
-}
-
-.online-lobby-kind1-embedded-pubkey {
-  color: #b8d4f0;
-  cursor: default;
-}
-
-.online-lobby-kind1-embedded-body {
-  margin: 0;
-  font-size: 0.78cqw;
-  line-height: 1.5;
-  color: #eaeaea;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.online-lobby-pubpay-zap-meta {
-  margin-top: 0.65rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid rgb(255 255 255 / 0.12);
-}
-
-.online-lobby-post-pay-row {
-  margin-top: 0.75rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid rgb(255 255 255 / 0.15);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.45rem;
-}
-
-.online-lobby-post-pay-btn {
-  width: 100%;
-}
-
-.online-lobby-post-pay-hint {
-  margin: 0;
-  font-size: 0.68cqw;
-  color: #a8a8a8;
-}
-
-.online-lobby-seat-zap-invoice,
-.online-lobby-post-inline-lightning {
-  margin-top: 0.75rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid rgb(255 255 255 / 0.12);
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.online-lobby-qr {
-  border: 1px solid #fff;
-  padding: 0.55rem;
-  background: #fff;
-  border-radius: 0;
-}
-
-.online-lobby-kind1 {
-  width: 100%;
-  text-align: center;
-  color: #9fd0ff;
-  font-size: 0.78cqw;
-  word-break: break-all;
-}
-
-.online-lobby-kind1-pending {
-  width: 100%;
-  border: 1px dashed #6b6b6b;
-  border-radius: 0;
-  min-height: 210px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #adadad;
-  font-size: 0.82cqw;
-}
-
-.online-lobby-error {
-  width: min(75vw, 1260px);
-  margin: 0 auto;
-  text-align: center;
-  color: #ff7b7b;
-  font-size: 0.82cqw;
-}
-
-.online-lobby-status {
-  width: min(75vw, 1260px);
-  margin: 0 auto;
-}
-
-.online-lobby-status h3 {
-  font-size: 1.35cqw;
-  margin-bottom: 0.55vw;
-}
-
-.online-lobby-status-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.7vw;
-}
-
-.online-lobby-seat {
-  border: 1px solid #4f4f4f;
-  border-radius: 0;
-  background: rgb(0 0 0 / 30%);
-  padding: 0.7vw;
-}
-
-.online-lobby-seat-mine {
-  border-color: rgb(255 255 255 / 0.78);
-  border-width: 2px;
-  box-shadow:
-    0 0 22px rgb(255 255 255 / 32%),
-    inset 0 0 0 1px rgb(255 255 255 / 14%);
-  background: linear-gradient(
-    155deg,
-    rgb(255 255 255 / 11%) 0%,
-    rgb(255 255 255 / 4%) 55%,
-    rgb(0 0 0 / 28%) 100%
-  );
-}
-
-.online-lobby-seat-mine .online-lobby-seat-avatar {
-  border-color: rgb(255 255 255 / 0.88);
-  box-shadow: 0 0 14px rgb(255 255 255 / 38%);
-}
-
-.online-lobby-seat-mine .online-lobby-you-tag {
-  border-color: rgb(255 255 255 / 0.95);
-  background: rgb(255 255 255 / 0.12);
-}
-
-@keyframes online-lobby-ready-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 0 1px rgb(0 0 0 / 18%), 0 6px 22px rgb(0 0 0 / 22%);
-  }
-  50% {
-    box-shadow: 0 0 0 2px rgb(0 0 0 / 28%), 0 10px 30px rgb(0 0 0 / 28%);
-  }
-}
-
-.online-lobby-seat-mine-ready {
-  border-color: #0a0a0a;
-  outline: none;
-  background: #fff;
-  color: #0a0a0a;
-  animation: online-lobby-ready-glow 2.5s ease-in-out infinite;
-}
-
-.online-lobby-seat-mine-ready .online-lobby-label {
-  color: #333;
-}
-
-.online-lobby-seat-mine-ready .online-lobby-seat-name {
-  color: #0a0a0a;
-}
-
-.online-lobby-seat-mine-ready .online-lobby-seat-avatar {
-  border-color: #222;
-  box-shadow: 0 2px 10px rgb(0 0 0 / 18%);
-}
-
-.online-lobby-seat-mine-ready .online-lobby-you-tag {
-  border-color: #0a0a0a;
-  color: #0a0a0a;
-  background: rgb(0 0 0 / 0.06);
-  box-shadow: none;
-}
-
-.online-lobby-seat-mine-ready .online-lobby-seat-meta {
-  color: #3d3d3d;
-}
-
+/* ── Responsive ── */
 @media (prefers-reduced-motion: reduce) {
-  .online-lobby-seat-mine-ready {
+  .online-lobby-arena-seat--ready {
     animation: none;
     box-shadow: 0 4px 20px rgb(0 0 0 / 24%);
   }
-}
-
-.online-lobby-you-tag {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 0.28vw;
-  padding: 0.05vw 0.35vw;
-  border-radius: 0;
-  border: 1px solid rgb(255 255 255 / 0.82);
-  color: #fff;
-  font-size: 0.6cqw;
-  letter-spacing: 0.03rem;
-}
-
-.online-lobby-seat-identity {
-  margin-top: 0.2vw;
-  display: flex;
-  align-items: center;
-  gap: 0.45vw;
-}
-
-.online-lobby-seat-avatar {
-  width: 1.6vw;
-  height: 1.6vw;
-  min-width: 20px;
-  min-height: 20px;
-  border-radius: 999px;
-  object-fit: cover;
-  border: 1px solid #7a7a7a;
-}
-
-.online-lobby-seat-avatar-empty {
-  background: rgb(255 255 255 / 10%);
-  border-style: dashed;
-}
-
-.online-lobby-seat-name {
-  font-family: 'BureauGrotesque';
-  font-size: 1.2cqw;
-  margin-top: 0;
-}
-
-.online-lobby-seat-meta {
-  color: #b6b6b6;
-  font-size: 0.72cqw;
-  margin-top: 0.12vw;
-}
-
-.online-lobby-bottom-actions {
-  margin-top: auto;
-  display: flex;
-  justify-content: center;
-  gap: 0.6vw;
-}
-
-.online-lobby-arena {
-  min-width: 220px;
+  .online-lobby-don-banner-waiting-dot {
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 @media (max-width: 1024px) {
-  .online-lobby-top {
-    width: 92vw;
-    grid-template-columns: 1fr;
-    gap: 12px;
+  .online-lobby-page {
+    gap: 8px;
+    padding: 20px 16px 0;
   }
 
-  .online-lobby-status,
+  .online-lobby-header,
+  .online-lobby-don-banner,
+  .online-lobby-arena-zone,
+  .online-lobby-action-zone,
+  .online-lobby-kind1-section,
   .online-lobby-error {
     width: 92vw;
   }
 
-  .online-lobby-status-grid {
+  .online-lobby-arena-zone {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
-  .online-lobby-panel {
-    padding: 12px;
+  .online-lobby-arena-center {
+    flex-direction: row;
+    justify-content: center;
+    padding: 8px 0;
+    min-width: unset;
+    gap: 12px;
+    border-top: 1px solid rgb(255 255 255 / 0.1);
+    border-bottom: 1px solid rgb(255 255 255 / 0.1);
   }
 
-  #online-lobby-subtitle {
-    font-size: 12px;
-  }
-
-  .online-lobby-label,
-  .online-lobby-copy,
-  .online-lobby-expiry,
-  .online-lobby-seat-meta,
-  .online-lobby-kind1 {
-    font-size: 12px;
-  }
-
-  .online-lobby-ping-badge {
-    font-size: 11px;
-    padding: 2px 6px;
-  }
-
-  .online-lobby-code {
-    font-size: 28px;
-  }
-
-  .online-lobby-code-emojis {
-    font-size: 22px;
-  }
-
-  .online-lobby-code-emojis--pending {
-    font-size: 13px;
-  }
-
-  .online-lobby-emoji-box {
-    min-width: min(52vw, 100%);
-    padding: 6px 8px 8px;
-  }
-
-  .online-lobby-emoji-box-title {
-    font-size: 10px;
-    letter-spacing: 0.12em;
-  }
-
-  .online-lobby-my-role {
-    width: 92vw;
-    padding: 8px 10px;
+  .online-lobby-arena-vs {
     font-size: 16px;
   }
 
-  .online-lobby-pin {
-    font-size: 30px;
+  .online-lobby-arena-state {
+    font-size: 11px;
   }
 
-  .online-lobby-seat-name {
-    font-size: 20px;
+  .online-lobby-arena-seat--p1 .online-lobby-arena-seat-identity,
+  .online-lobby-arena-seat--p2 .online-lobby-arena-seat-identity {
+    flex-direction: row;
+    justify-content: flex-start;
   }
 
-  .online-lobby-seat-avatar {
-    width: 26px;
-    height: 26px;
+  .online-lobby-arena-seat--p1 {
+    text-align: left;
+  }
+
+  .online-lobby-arena-seat--p1 .online-lobby-arena-seat-header {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .online-lobby-payment-paths {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .online-lobby-don-banner {
+    width: 92vw;
+    padding: 10px 14px 12px 12px;
+    gap: 12px;
+  }
+
+  .online-lobby-kind1-section {
+    padding: 12px 14px 24px;
+  }
+
+  .online-lobby-pin-card--ready {
+    padding: 8px 12px;
+  }
+
+  .online-lobby-action-buttons {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .online-lobby-action {
-    height: 44px;
+    width: 100%;
+    height: 48px;
     font-size: 12px;
   }
 
-  .online-lobby-kind1-uri-qr-btn {
-    font-size: 10px;
-    padding: 6px 10px;
+}
+
+@media (max-width: 600px) {
+  .online-lobby-payment-paths {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   16:9 TV / widescreen layout
+   Switches the page to a 2-column grid so everything fits
+   on one screen without scrolling:
+     left  → header (full), don-banner, arena, action, leave
+     right → kind1 sidebar spanning all content rows
+   ───────────────────────────────────────────────────────── */
+@media (min-width: 1400px) and (min-aspect-ratio: 16/10) {
+  .online-lobby-page {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    column-gap: 1.2vw;
+    row-gap: 0.45vw;
+    padding: 1.2vw 2vw 0.8vw;
+    align-items: start;
+    box-sizing: border-box;
   }
 
-  .online-lobby-kind1-uri-back {
-    font-size: 12px;
-    padding: 6px 10px;
+  /* Header spans both columns */
+  .online-lobby-header {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+    margin: 0;
   }
 
-  .online-lobby-kind1-uri-hint {
-    font-size: 12px;
+  /* Left-column zones — reset individual width/margin overrides */
+  .online-lobby-don-banner,
+  .online-lobby-arena-zone,
+  .online-lobby-action-zone,
+  .online-lobby-leave-row,
+  .online-lobby-error {
+    grid-column: 1;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
   }
 
-  .online-lobby-kind1-uri-copy-iconbtn {
-    width: 30px;
-    height: 30px;
-    padding: 5px;
+  /* Right sidebar: kind1 starts at row 2 (below header) and spans all remaining rows */
+  .online-lobby-kind1-section {
+    grid-column: 2;
+    grid-row: 2 / span 10;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
+    align-self: stretch;
   }
 
-  .online-lobby-kind1-uri-text {
-    font-size: 11px;
+  /* Shrink title slightly — 72px is very tall at TV scale */
+  .online-lobby-title {
+    font-size: clamp(28px, 3.5vw, 52px);
   }
 
-  .online-lobby-kind1-embedded-meta {
-    font-size: 11px;
+  /* Arena seats: reduce vertical padding */
+  .online-lobby-arena-seat {
+    padding: 0.6vw 1vw;
   }
 
-  .online-lobby-kind1-author-name {
-    font-size: 14px;
+  /* Kind1 embedded: stack to single column inside the narrow sidebar */
+  .online-lobby-kind1-embedded {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
   }
 
-  .online-lobby-kind1-author-npub {
-    font-size: 11px;
+  /* Kind1 embedded right col: remove sidebar border, show inline */
+  .online-lobby-kind1-content-col {
+    border-left: none;
+    border-top: 1px solid rgb(255 255 255 / 0.07);
+    padding-left: 0;
+    padding-top: 0.5rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.4rem 0.8rem;
   }
 
+  /* In the sidebar, body can expand freely */
   .online-lobby-kind1-embedded-body {
-    font-size: 13px;
+    -webkit-line-clamp: unset;
+    max-width: none;
   }
 
-  .online-lobby-you-tag {
-    margin-left: 4px;
-    padding: 1px 6px;
-    font-size: 10px;
+  /* Payment paths: 1 per row to save horizontal space in narrow action zone */
+  .online-lobby-payment-paths {
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  .online-lobby-bottom-actions {
-    flex-direction: column;
-    align-items: center;
+  /* Kind1 section: compact padding */
+  .online-lobby-kind1-section {
+    padding: 0.8vw 1vw 1vw;
   }
 }
