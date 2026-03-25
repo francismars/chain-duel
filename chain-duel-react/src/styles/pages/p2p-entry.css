@@ -1,47 +1,588 @@
-/* P2P paid entry — compact, subtle bracket controls
-   Brand: ink + paper white (no gold / cyan accents on this route) */
+/* P2P paid entry — gaming picker cards + subtle bracket controls */
 
 /* Keyboard / gamepad focus ring (roving tabindex + programmatic focus) */
 .practice-seg-btn.practice-focus-target,
-.practice-start.practice-focus-target,
 .practice-back-btn.practice-focus-target {
   outline: 2px solid rgba(255, 255, 255, 0.55);
   outline-offset: 2px;
 }
 
-/* Bracket hub: player cards can use outline (no clipping) */
-.bracket-sizing-hub__player-card.bracket-sizing-hub__focus-target {
-  outline: 2px solid rgba(255, 255, 255, 0.55);
+/* ── Picker card group label ── */
+.p2p-picker-group-label {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.6vw, 10px);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+/* ── Picker row: two equal tiles ── */
+.p2p-picker-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ── Base picker card ── */
+.p2p-picker-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: clamp(20px, 2.8vw, 36px) 0.75rem clamp(18px, 2.4vw, 30px);
+  min-height: clamp(130px, 14vw, 180px);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  font: inherit;
+  color: rgba(255, 255, 255, 0.35);
+  text-align: center;
+  line-height: 1;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
+}
+
+/* Subtle top-edge highlight line */
+.p2p-picker-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.2s, left 0.2s, right 0.2s;
+}
+
+.p2p-picker-card:hover {
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.p2p-picker-card:hover::before {
+  left: 5%;
+  right: 5%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Icon ── */
+.p2p-picker-icon {
+  width: clamp(32px, 3.2vw, 44px);
+  height: clamp(32px, 3.2vw, 44px);
+  flex-shrink: 0;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.p2p-picker-card:hover .p2p-picker-icon,
+.p2p-picker-card--selected .p2p-picker-icon {
+  transform: scale(1.08);
+}
+
+/* ── Primary label ── */
+.p2p-picker-label {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(13px, 1.25vw, 18px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: inherit;
+  transition: color 0.2s;
+}
+
+/* ── Sub-label ── */
+.p2p-picker-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.68vw, 11px);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.22);
+  transition: color 0.2s;
+}
+
+/* ── Payment cards: compact inline layout (icon + text side-by-side) ── */
+.p2p-picker-card--lightning,
+.p2p-picker-card--nostr {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 0.7rem;
+  row-gap: 0.1rem;
+  justify-content: start;
+  align-items: center;
+  padding: clamp(10px, 1.2vw, 14px) clamp(14px, 1.4vw, 20px);
+  min-height: unset;
+  text-align: left;
+}
+
+.p2p-picker-card--lightning .p2p-picker-icon,
+.p2p-picker-card--nostr .p2p-picker-icon {
+  grid-row: 1 / 3;
+  grid-column: 1;
+  align-self: center;
+  width: clamp(22px, 2.2vw, 30px);
+  height: clamp(22px, 2.2vw, 30px);
+}
+
+.p2p-picker-card--duel,
+.p2p-picker-card--tournament {
+  min-height: clamp(80px, 9vw, 120px);
+  padding: clamp(12px, 1.6vw, 20px) 0.75rem clamp(10px, 1.4vw, 18px);
+  gap: 0.35rem;
+}
+
+.p2p-picker-card--duel .p2p-picker-label,
+.p2p-picker-card--tournament .p2p-picker-label {
+  font-size: clamp(16px, 1.65vw, 24px);
+  letter-spacing: 0;
+}
+
+.p2p-picker-card--lightning .p2p-picker-label,
+.p2p-picker-card--nostr .p2p-picker-label {
+  grid-row: 1;
+  grid-column: 2;
+  align-self: end;
+}
+
+.p2p-picker-card--lightning .p2p-picker-sub,
+.p2p-picker-card--nostr .p2p-picker-sub {
+  grid-row: 2;
+  grid-column: 2;
+  align-self: start;
+}
+
+/* ── Lightning selected: Bitcoin amber ── */
+.p2p-picker-card--lightning.p2p-picker-card--selected {
+  border-color: #f7931a;
+  background: rgba(247, 147, 26, 0.09);
+  color: #f7931a;
+  box-shadow:
+    0 0 28px rgba(247, 147, 26, 0.35),
+    0 0 8px  rgba(247, 147, 26, 0.2),
+    inset 0 0 40px rgba(247, 147, 26, 0.06);
+}
+
+.p2p-picker-card--lightning.p2p-picker-card--selected::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(247, 147, 26, 0.45);
+}
+
+.p2p-picker-card--lightning.p2p-picker-card--selected .p2p-picker-sub {
+  color: rgba(247, 147, 26, 0.65);
+}
+
+/* ── Nostr selected: purple ── */
+.p2p-picker-card--nostr.p2p-picker-card--selected {
+  border-color: #9b59b6;
+  background: rgba(155, 89, 182, 0.1);
+  color: #c17ee6;
+  box-shadow:
+    0 0 28px rgba(155, 89, 182, 0.35),
+    0 0 8px  rgba(155, 89, 182, 0.2),
+    inset 0 0 40px rgba(155, 89, 182, 0.06);
+}
+
+.p2p-picker-card--nostr.p2p-picker-card--selected::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(155, 89, 182, 0.5);
+}
+
+.p2p-picker-card--nostr.p2p-picker-card--selected .p2p-picker-sub {
+  color: rgba(193, 126, 230, 0.65);
+}
+
+/* ── Duel selected: white glow ── */
+.p2p-picker-card--duel.p2p-picker-card--selected {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  box-shadow:
+    0 0 28px rgba(255, 255, 255, 0.18),
+    0 0 8px  rgba(255, 255, 255, 0.1),
+    inset 0 0 40px rgba(255, 255, 255, 0.04);
+}
+
+.p2p-picker-card--duel.p2p-picker-card--selected::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.p2p-picker-card--duel.p2p-picker-card--selected .p2p-picker-sub {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Tournament selected: gold ── */
+.p2p-picker-card--tournament.p2p-picker-card--selected {
+  border-color: var(--cd-gold, #e6c328);
+  background: rgba(230, 195, 40, 0.08);
+  color: #eacf55;
+  box-shadow:
+    0 0 28px rgba(230, 195, 40, 0.3),
+    0 0 8px  rgba(230, 195, 40, 0.15),
+    inset 0 0 40px rgba(230, 195, 40, 0.05);
+}
+
+.p2p-picker-card--tournament.p2p-picker-card--selected::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(230, 195, 40, 0.45);
+}
+
+.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-picker-sub {
+  color: rgba(230, 195, 40, 0.6);
+}
+
+/* ── Keyboard / gamepad focus ──
+   Unselected + focused: white outline signals "cursor is here".
+   Selected + focused: the accent border already communicates both states;
+   suppress the outline to avoid double-border, just intensify the glow. */
+.p2p-picker-card.practice-focus-target:not(.p2p-picker-card--selected) {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
   outline-offset: 2px;
 }
 
-/* Scoped to /p2p: neutral panel + CTA + summary (overrides practiceHub.css gold/cyan) */
-.p2p-entry-page .practice-panel {
+.p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target {
+  outline: none;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 20px 40px rgba(0, 0, 0, 0.5);
+    0 0 36px rgba(247, 147, 26, 0.5),
+    0 0 10px rgba(247, 147, 26, 0.3),
+    inset 0 0 40px rgba(247, 147, 26, 0.08);
+}
+
+.p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target {
+  outline: none;
+  box-shadow:
+    0 0 36px rgba(155, 89, 182, 0.5),
+    0 0 10px rgba(155, 89, 182, 0.3),
+    inset 0 0 40px rgba(155, 89, 182, 0.08);
+}
+
+.p2p-picker-card--duel.p2p-picker-card--selected.practice-focus-target {
+  outline: none;
+  box-shadow:
+    0 0 36px rgba(255, 255, 255, 0.28),
+    0 0 10px rgba(255, 255, 255, 0.15),
+    inset 0 0 40px rgba(255, 255, 255, 0.06);
+}
+
+.p2p-picker-card--tournament.p2p-picker-card--selected.practice-focus-target {
+  outline: none;
+  box-shadow:
+    0 0 36px rgba(230, 195, 40, 0.45),
+    0 0 10px rgba(230, 195, 40, 0.25),
+    inset 0 0 40px rgba(230, 195, 40, 0.07);
+}
+
+/* ── Detail callout (replaces "Selected rail" section) ── */
+.p2p-detail-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.p2p-detail-callout-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 0.35em;
+  transition: background 0.2s, box-shadow 0.2s;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.p2p-detail-callout-dot--lightning {
+  background: #f7931a;
+  box-shadow: 0 0 6px rgba(247, 147, 26, 0.6);
+}
+
+.p2p-detail-callout-dot--nostr {
+  background: #9b59b6;
+  box-shadow: 0 0 6px rgba(155, 89, 182, 0.6);
+}
+
+/* ── Mode config area: duel-format and bracket sections stacked in same cell ── */
+.p2p-mode-config-area {
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: 1fr;
+}
+
+.p2p-mode-config-area > .practice-section {
+  grid-row: 1;
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateY(0);
+  /* visibility instantly becomes visible when activated */
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0s;
+}
+
+/* Still occupies space (no layout shift) — fades + slides out, then hides */
+.p2p-mode-config-area > .practice-section.p2p-mode-inactive {
+  opacity: 0;
+  transform: translateY(6px);
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+  /* delay visibility until after the opacity/transform have finished */
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0.22s;
+}
+
+/* ── Duel format picker ── */
+.p2p-duel-format {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  flex: 0 0 auto;
+}
+
+.p2p-duel-format__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.p2p-duel-format__icon {
+  width: clamp(16px, 1.6vw, 22px);
+  height: clamp(16px, 1.6vw, 22px);
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.12s;
+}
+
+.p2p-duel-format__card--active .p2p-duel-format__icon {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.p2p-duel-format__card--active {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.p2p-duel-format__card--disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.p2p-duel-format__label {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(15px, 1.5vw, 20px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.p2p-duel-format__card--disabled .p2p-duel-format__label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.p2p-duel-format__desc {
+  font-size: clamp(8px, 0.65vw, 10px);
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.32);
+  text-transform: uppercase;
+}
+
+.p2p-duel-format__soon {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-family: 'Inter', sans-serif;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 1px 3px;
+  line-height: 1.4;
+}
+
+/* ── Modifiers row: compact horizontal cards ── */
+.p2p-modifiers-section .p2p-picker-group-label {
+  font-size: clamp(8px, 0.65vw, 10px);
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.32);
+  margin-bottom: 0.2rem;
+}
+
+.p2p-modifiers-section .p2p-duel-format {
+  flex: 0 0 auto; /* don't stretch to fill height */
+}
+
+.p2p-modifiers-section .p2p-duel-format__card {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(6px, 0.6vw, 10px);
+  padding: clamp(7px, 0.65vw, 10px) clamp(10px, 1vw, 14px);
+}
+
+.p2p-modifiers-section .p2p-duel-format__icon {
+  width: clamp(14px, 1.3vw, 18px);
+  height: clamp(14px, 1.3vw, 18px);
+}
+
+.p2p-modifiers-section .p2p-duel-format__label {
+  font-size: clamp(11px, 1vw, 14px);
+  letter-spacing: 0;
+}
+
+.p2p-modifiers-section .p2p-duel-format__desc {
+  display: none;
+}
+
+/* ── Duel icon: sword clash on selection ── */
+.p2p-picker-card--duel .p2p-sword {
+  /* SVG-space transforms need fill-box + center origin */
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes p2p-sword-1-clash {
+  from { transform: translate(5px, -5px); opacity: 0; }
+  60%  { transform: translate(-1.5px, 1.5px); opacity: 1; }
+  to   { transform: translate(0, 0); opacity: 1; }
+}
+
+@keyframes p2p-sword-2-clash {
+  from { transform: translate(-5px, -5px); opacity: 0; }
+  60%  { transform: translate(1.5px, 1.5px); opacity: 1; }
+  to   { transform: translate(0, 0); opacity: 1; }
+}
+
+.p2p-picker-card--duel.p2p-picker-card--selected .p2p-sword--1 {
+  animation: p2p-sword-1-clash 0.38s cubic-bezier(0.18, 1.4, 0.4, 1) both;
+}
+
+.p2p-picker-card--duel.p2p-picker-card--selected .p2p-sword--2 {
+  animation: p2p-sword-2-clash 0.38s cubic-bezier(0.18, 1.4, 0.4, 1) 0.04s both;
+}
+
+/* ── Tournament icon: bracket nodes appear in sequence on selection ── */
+.p2p-picker-card--tournament .p2p-bracket > * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes p2p-bracket-node-in {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(1) {
+  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
+}
+.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(2),
+.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(3) {
+  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.07s both;
+}
+.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(4) {
+  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
+}
+.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(5) {
+  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.25s both;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .p2p-picker-card,
+  .p2p-detail-callout-dot,
+  .p2p-mode-config-area > .practice-section,
+  .p2p-mode-config-area > .practice-section.p2p-mode-inactive {
+    transition: none;
+  }
+  .p2p-sword--1,
+  .p2p-sword--2,
+  .p2p-bracket > * {
+    animation: none !important;
+  }
+}
+
+/* Scoped to /p2p: strip panel chrome */
+.p2p-entry-page .practice-hub-title {
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.p2p-entry-page .practice-panel {
+  border: none;
+  background: none;
+  box-shadow: none;
+  padding: 0;
 }
 
 .p2p-entry-page .practice-summary-code {
   color: rgba(255, 255, 255, 0.72);
 }
 
-.p2p-entry-page .practice-start {
-  color: rgba(255, 255, 255, 0.94);
-  border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.04);
+/* ── Actions: start + back stacked tightly ── */
+.p2p-entry-page .practice-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
 }
 
-.p2p-entry-page .practice-start:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.42);
-  box-shadow: 0 0 32px rgba(255, 255, 255, 0.08);
+/* ── Shared button base (start + back) ──
+   Explicitly reset to match the home page .button values so both pages
+   look identical — overrides the practiceHub.css .practice-start rule. */
+.p2p-entry-page .practice-start.button,
+.p2p-entry-page .practice-back.button {
+  flex: 1 1 0;         /* equal share of the row */
+  width: auto;
+  height: 3vw;         /* same as base .button */
+  min-height: 30px;    /* floor for very small viewports */
+  margin: 0;
+  padding: 1%;         /* same as base .button (% = relative to parent width) */
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8cqw;   /* same as base .button — explicit to override practiceHub */
+  font-weight: 400;
+  letter-spacing: 0.1rem; /* same as base .button */
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: none;
+  animation: glowing 0ms infinite;
+}
+
+/* focused pulse */
+.p2p-entry-page .practice-start.button.practice-start--focused,
+.p2p-entry-page .practice-back.button.practice-start--focused {
+  animation: glowing 2000ms ease-in-out infinite;
 }
 
 .p2p-entry-page.practice-hub--practice {
-  max-width: 640px;
+  max-width: clamp(480px, 52vw, 1040px);
   margin: 0 auto;
+  justify-content: center;
+  gap: clamp(10px, 1.2vw, 24px);
+  padding-top: clamp(16px, 2vw, 40px);
+  padding-bottom: clamp(16px, 2vw, 40px);
 }
+
 
 /* Slightly tighter sections than default hub */
 .p2p-entry-page .practice-panel {
@@ -65,17 +606,25 @@
   flex-direction: column;
   gap: 0.45rem;
   margin-top: 0.15rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.28);
 }
 
-.bracket-sizing-hub__lede {
-  margin: 0 0 0.35rem;
-  font-size: clamp(9px, 0.78vw, 11px);
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.34);
+.bracket-sizing-hub__two-col {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.bracket-sizing-hub__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+/* Equal 50/50 columns */
+.bracket-sizing-hub__col--players,
+.bracket-sizing-hub__col--buyin {
+  flex: 1 1 0;
 }
 
 .bracket-sizing-hub__row-label {
@@ -83,30 +632,27 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.32);
-  margin-top: 0.25rem;
   margin-bottom: 0.2rem;
 }
 
-.bracket-sizing-hub__players-row {
+/* Players: stacked vertically in the left column */
+.bracket-sizing-hub__players-col {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  flex: 1 1 0;
 }
 
 .bracket-sizing-hub__player-card {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-height: 0;
-  padding: 8px 6px 6px;
+  padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.25);
   cursor: pointer;
   color: inherit;
   font: inherit;
-  border-radius: 2px;
   transition:
     border-color 0.12s ease,
     background 0.12s ease;
@@ -118,13 +664,17 @@
 }
 
 .bracket-sizing-hub__player-card.active {
-  border-color: rgba(255, 255, 255, 0.38);
-  background: rgba(255, 255, 255, 0.06);
+  --button-glow-bg-low: rgb(255 255 255 / 5%);
+  --button-glow-bg-peak: rgb(255 255 255 / 13%);
+  --button-glow-shadow-low: 0 0 6px rgb(255 255 255 / 22%), inset 0 0 6px rgb(255 255 255 / 5%);
+  --button-glow-shadow-peak: 0 0 16px rgb(255 255 255 / 48%), inset 0 0 10px rgb(255 255 255 / 10%);
+  --button-glow-border: rgba(255, 255, 255, 0.55);
+  animation: glowing 2000ms ease-in-out infinite;
 }
 
 .bracket-sizing-hub__player-num {
   font-family: 'BureauGrotesque', sans-serif;
-  font-size: clamp(18px, 2.8vw, 26px);
+  font-size: clamp(16px, 2.2vw, 22px);
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -135,106 +685,47 @@
   color: rgba(255, 255, 255, 0.96);
 }
 
-.bracket-sizing-hub__player-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  line-height: 1.2;
-}
-
-.bracket-sizing-hub__player-unit {
-  font-size: clamp(7px, 0.55vw, 9px);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.28);
-}
-
-.bracket-sizing-hub__player-desc {
-  font-size: clamp(8px, 0.65vw, 10px);
-  color: rgba(255, 255, 255, 0.28);
-}
-
-/* Buy-in: one row; overflow scrolls; ‹ › for gamepad / D-pad style nav */
-.bracket-sizing-hub__buyin-strip {
-  display: flex;
-  align-items: stretch;
-  gap: 4px;
-  min-width: 0;
-}
-
-.bracket-sizing-hub__buyin-nav {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: clamp(32px, 7vw, 40px);
-  min-height: 36px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 2px;
-  color: rgba(255, 255, 255, 0.75);
-  font-family: inherit;
-  font-size: clamp(16px, 3vw, 22px);
-  line-height: 1;
-  cursor: pointer;
-  transition:
-    border-color 0.12s ease,
-    background 0.12s ease,
-    color 0.12s ease,
-    opacity 0.12s ease;
-}
-
-.bracket-sizing-hub__buyin-nav:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.95);
-}
-
-.bracket-sizing-hub__buyin-nav:disabled {
-  opacity: 0.28;
+.bracket-sizing-hub__player-card--soon {
   cursor: default;
-  pointer-events: none;
+  opacity: 0.3;
+  position: relative;
 }
 
-.bracket-sizing-hub__buyin-scroll {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: stretch;
+.bracket-sizing-hub__player-card--soon::after {
+  content: 'SOON';
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 6px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+
+/* Buy-in: 5×2 grid — all pills visible, no scroll */
+.bracket-sizing-hub__buyin-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 5px;
-  /* Room so focus rings / shadows are not clipped by overflow */
-  padding: 4px 2px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x proximity;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.bracket-sizing-hub__buyin-scroll::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+  flex: 1 1 0;
 }
 
 .bracket-sizing-hub__pill {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
-  min-width: 44px;
-  min-height: 0;
-  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
   border: 1px solid rgba(255, 255, 255, 0.09);
   background: rgba(0, 0, 0, 0.22);
-  border-radius: 2px;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.55);
   font-family: 'BureauGrotesque', sans-serif;
-  font-size: clamp(10px, 0.88vw, 12px);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: clamp(13px, 1.2vw, 16px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
   transition:
     border-color 0.12s ease,
     background 0.12s ease,
@@ -243,47 +734,160 @@
 
 .bracket-sizing-hub__pill:hover {
   border-color: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .bracket-sizing-hub__pill.active {
   border-color: rgba(255, 255, 255, 0.34);
   background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(255, 255, 255, 0.96);
 }
 
-/* Buy-in pills: keyboard focus — inset ring (outlines clip inside overflow-x) */
 .bracket-sizing-hub__pill.bracket-sizing-hub__focus-target {
-  outline: none;
-  position: relative;
-  z-index: 1;
-  border-color: rgba(255, 255, 255, 0.52);
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.98);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.25);
-}
-
-.bracket-sizing-hub__buyin-nav.bracket-sizing-hub__focus-target:not(:disabled) {
   outline: 2px solid rgba(255, 255, 255, 0.5);
   outline-offset: 1px;
 }
 
-.bracket-sizing-hub__buyin-nav.bracket-sizing-hub__focus-target:disabled {
-  outline: none;
+.bracket-sizing-hub__player-card.bracket-sizing-hub__focus-target:not(.active) {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
 }
 
-.bracket-sizing-hub__readout {
-  margin-top: 0.35rem;
-  padding-top: 0.45rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  text-align: center;
+.bracket-sizing-hub__player-card.active.bracket-sizing-hub__focus-target {
+  outline: none; /* glow already indicates focus */
 }
 
-.bracket-sizing-hub__readout-inner {
-  font-size: clamp(9px, 0.75vw, 11px);
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.38);
+/* ── TV / large-screen optimisation (≥ 1400 px, 16:9) ─────────────────────
+   All values stay proportional: vw scales with viewport so the layout
+   fills the wider container naturally. Only the clamp() ceilings are lifted.
+   ────────────────────────────────────────────────────────────────────────── */
+@media (min-width: 1400px) {
+
+  /* Page layout */
+  .p2p-entry-page.practice-hub--practice {
+    gap: clamp(16px, 1.6vw, 28px);
+    padding-top: clamp(24px, 3vw, 52px);
+    padding-bottom: clamp(24px, 3vw, 52px);
+  }
+
+  .p2p-entry-page .practice-panel {
+    gap: clamp(16px, 2vw, 30px);
+  }
+
+  /* Group labels */
+  .p2p-picker-group-label {
+    font-size: clamp(9px, 0.65vw, 13px);
+  }
+
+  /* Payment cards (inline compact) */
+  .p2p-picker-card--lightning,
+  .p2p-picker-card--nostr {
+    padding: clamp(12px, 1.4vw, 22px) clamp(12px, 1.4vw, 22px);
+  }
+
+  .p2p-picker-card--lightning .p2p-picker-icon,
+  .p2p-picker-card--nostr .p2p-picker-icon {
+    width: clamp(24px, 2.4vw, 40px);
+    height: clamp(24px, 2.4vw, 40px);
+  }
+
+  /* Mode picker cards (tall / heroic) */
+  .p2p-picker-card {
+    min-height: clamp(130px, 14vw, 240px);
+    gap: clamp(8px, 0.8vw, 16px);
+    padding: clamp(20px, 2.8vw, 50px) 0.75rem clamp(18px, 2.4vw, 44px);
+  }
+
+  .p2p-picker-icon {
+    width: clamp(36px, 3.6vw, 60px);
+    height: clamp(36px, 3.6vw, 60px);
+  }
+
+  .p2p-picker-label {
+    font-size: clamp(15px, 1.6vw, 28px);
+  }
+
+  .p2p-picker-card--duel,
+  .p2p-picker-card--tournament {
+    min-height: clamp(90px, 10vw, 140px);
+    padding: clamp(14px, 1.8vw, 28px) 0.75rem clamp(12px, 1.6vw, 24px);
+    gap: 0.35rem;
+  }
+
+  .p2p-picker-card--duel .p2p-picker-label,
+  .p2p-picker-card--tournament .p2p-picker-label {
+    font-size: clamp(18px, 1.9vw, 32px);
+  }
+
+  .p2p-picker-sub {
+    font-size: clamp(10px, 0.75vw, 14px);
+  }
+
+  /* Duel format cards */
+  .p2p-duel-format {
+    gap: clamp(6px, 0.6vw, 12px);
+  }
+
+  .p2p-duel-format__icon {
+    width: clamp(18px, 1.8vw, 28px);
+    height: clamp(18px, 1.8vw, 28px);
+  }
+
+  .p2p-duel-format__label {
+    font-size: clamp(16px, 1.6vw, 28px);
+  }
+
+  .p2p-duel-format__desc {
+    font-size: clamp(9px, 0.68vw, 13px);
+  }
+
+  .p2p-duel-format__soon {
+    font-size: clamp(7px, 0.5vw, 10px);
+  }
+
+  .p2p-modifiers-section .p2p-duel-format__icon {
+    width: clamp(16px, 1.5vw, 22px);
+    height: clamp(16px, 1.5vw, 22px);
+  }
+
+  .p2p-modifiers-section .p2p-duel-format__label {
+    font-size: clamp(12px, 1.1vw, 18px);
+  }
+
+  /* Bracket hub */
+  .bracket-sizing-hub__two-col {
+    gap: clamp(10px, 1.2vw, 22px);
+  }
+
+  .bracket-sizing-hub__row-label {
+    font-size: clamp(8px, 0.6vw, 12px);
+  }
+
+  .bracket-sizing-hub__player-card {
+    padding: clamp(6px, 0.8vw, 14px) clamp(8px, 1vw, 18px);
+  }
+
+  .bracket-sizing-hub__player-num {
+    font-size: clamp(18px, 2.4vw, 36px);
+  }
+
+  .bracket-sizing-hub__buyin-grid {
+    gap: clamp(5px, 0.5vw, 10px);
+  }
+
+  .bracket-sizing-hub__pill {
+    font-size: clamp(14px, 1.4vw, 22px);
+    padding: clamp(6px, 0.8vw, 14px) 4px;
+  }
+
+  /* Action buttons — keep height: 3vw so it scales naturally with viewport */
+  .p2p-entry-page .practice-actions {
+    gap: clamp(6px, 0.6vw, 12px);
+  }
+
+  /* Page title */
+  .p2p-entry-page .practice-hub-title {
+    font-size: clamp(32px, 4vw, 68px);
+  }
 }
 
