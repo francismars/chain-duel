@@ -232,8 +232,9 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.3vw 1.6vw;
-  width: 100%;
-  padding: 0.5vw 0.2vw 0.3vw;
+  width: 70vw;
+  margin: 0 auto;
+  padding: 0.5vw 0 0.3vw;
   box-sizing: border-box;
   justify-content: center;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -246,30 +247,32 @@ body {
   white-space: nowrap;
 }
 
-.powerUpKeySwatch {
+.powerUpKeyIconWrap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.3em;
-  height: 1.3em;
-  border: 1px solid;
-  font-size: clamp(7px, 0.65vw, 9px);
-  font-weight: 700;
-  font-family: 'BureauGrotesque', sans-serif;
   flex-shrink: 0;
 }
 
+.powerUpKeyIcon {
+  width: clamp(10px, 1vw, 14px);
+  height: clamp(10px, 1vw, 14px);
+}
+
 .powerUpKeyName {
-  font-size: clamp(8px, 0.7vw, 10px);
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.75vw, 11px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
   flex-shrink: 0;
 }
 
 .powerUpKeyDesc {
-  font-size: clamp(7px, 0.6vw, 8.5px);
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 0.04em;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.65vw, 10px);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0;
 }
 
 /* ── Bitcoin details ─────────────────────────────────────────────────────── */
@@ -539,6 +542,21 @@ body {
     to   { opacity: 1; }
   }
 
+  @keyframes game-slide-from-left {
+    from { opacity: 0; transform: translateX(-24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes game-slide-from-right {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes game-sponsor-pop {
+    from { opacity: 0; transform: scale(0.55); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
   /* HUD row: player names + game info slide down */
   #gameContainer:not(.hide) .flex.players {
     animation: game-hud-slide-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
@@ -549,9 +567,21 @@ body {
     animation: game-fade-in 0.50s ease-out 0.36s both;
   }
 
-  /* Sats score row fades with gameState */
+  /* Sats row — suppress the parent fade and animate each child individually */
   #gameContainer:not(.hide) .flex.points {
-    animation: game-fade-in 0.50s ease-out 0.40s both;
+    animation: none;
+  }
+
+  #gameContainer:not(.hide) .flex.points .player-sats-p1 {
+    animation: game-slide-from-left 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both;
+  }
+
+  #gameContainer:not(.hide) .flex.points .player-sats-p2 {
+    animation: game-slide-from-right 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both;
+  }
+
+  #gameContainer:not(.hide) .flex.points #sponsorshipGame {
+    animation: game-sponsor-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.72s both;
   }
 
   /* Game board: subtle scale-up drop — the centrepiece */
@@ -559,10 +589,21 @@ body {
     animation: game-board-drop-in 0.70s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
   }
 
-  /* Power-up key (when visible) fades up alongside footer */
+  /* Power-up key: suppress parent, stagger each entry rising up */
   #gameContainer:not(.hide) #powerUpKey {
-    animation: game-footer-rise-in 0.50s cubic-bezier(0.22, 1, 0.36, 1) 0.48s both;
+    animation: none;
   }
+
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry {
+    animation: game-footer-rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(1) { animation-delay: 0.48s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(2) { animation-delay: 0.56s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(3) { animation-delay: 0.64s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(4) { animation-delay: 0.72s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(5) { animation-delay: 0.80s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(6) { animation-delay: 0.88s; }
 
   /* Bitcoin block footer rises from below last */
   #gameContainer:not(.hide) #bitcoinDetails {
