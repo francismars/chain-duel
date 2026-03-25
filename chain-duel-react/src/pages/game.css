@@ -512,3 +512,61 @@ body {
   pointer-events: none;
 }
 
+/* ─── Game reveal animations ─────────────────────────────────────────────────
+   Triggered once when #gameContainer's `hide` class is removed (display:none
+   drops, elements become visible, animations start from the beginning).
+   Transforms are on children only — never on an ancestor of position:fixed
+   elements — so overlay positioning stays correct.
+   ──────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes game-hud-slide-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes game-board-drop-in {
+    from { opacity: 0; transform: scale(0.08); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes game-footer-rise-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes game-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* HUD row: player names + game info slide down */
+  #gameContainer:not(.hide) .flex.players {
+    animation: game-hud-slide-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+  }
+
+  /* Capture amounts + distribution bars fade in */
+  #gameContainer:not(.hide) .gameState {
+    animation: game-fade-in 0.50s ease-out 0.36s both;
+  }
+
+  /* Sats score row fades with gameState */
+  #gameContainer:not(.hide) .flex.points {
+    animation: game-fade-in 0.50s ease-out 0.40s both;
+  }
+
+  /* Game board: subtle scale-up drop — the centrepiece */
+  #gameContainer:not(.hide) #gameCanvas {
+    animation: game-board-drop-in 0.70s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+  }
+
+  /* Power-up key (when visible) fades up alongside footer */
+  #gameContainer:not(.hide) #powerUpKey {
+    animation: game-footer-rise-in 0.50s cubic-bezier(0.22, 1, 0.36, 1) 0.48s both;
+  }
+
+  /* Bitcoin block footer rises from below last */
+  #gameContainer:not(.hide) #bitcoinDetails {
+    animation: game-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.52s both;
+  }
+}
+
