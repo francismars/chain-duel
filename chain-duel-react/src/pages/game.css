@@ -515,6 +515,183 @@ body {
   pointer-events: none;
 }
 
+/* ─── Solo win / zap-proof overlay ──────────────────────────────────────────── */
+
+@keyframes solo-zap-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes solo-zap-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.solo-zap-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(4px);
+}
+
+.solo-zap-card {
+  width: min(580px, 90vw);
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 60px rgba(255, 255, 255, 0.04);
+  padding: clamp(24px, 3vw, 40px) clamp(24px, 3.5vw, 48px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 24px);
+  align-items: center;
+  text-align: center;
+  animation: solo-zap-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.solo-zap-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.solo-zap-badge {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.8vw, 11px);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.solo-zap-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(22px, 2.4vw, 32px);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: #fff;
+  margin: 0;
+}
+
+.solo-zap-challenge {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(10px, 0.9vw, 13px);
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.solo-zap-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  width: 100%;
+  padding: clamp(12px, 1.5vw, 20px) 0;
+}
+
+.solo-zap-sats {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight: 400;
+  color: #fff;
+  line-height: 1;
+}
+
+.solo-zap-unit {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.solo-zap-receipt {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.solo-zap-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.solo-zap-label {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.65vw, 9px);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.solo-zap-value {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(10px, 0.85vw, 12px);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  word-break: break-all;
+  text-align: center;
+}
+
+.solo-zap-value--hash {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(8px, 0.65vw, 10px);
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.04em;
+}
+
+.solo-zap-value--ok {
+  color: #4cff8f;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.solo-zap-value--ln {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.solo-zap-hint {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.7vw, 10px);
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.2);
+  text-align: center;
+  margin: 0;
+  animation: solo-zap-pulse 2s ease-in-out infinite;
+}
+
+/* ── Lose variants ── */
+
+.solo-zap-overlay--lose .solo-zap-card {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.solo-zap-badge--lose {
+  color: rgba(255, 80, 80, 0.7);
+}
+
+.solo-zap-amount--lose {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.solo-zap-sats--lose {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.solo-zap-value--tip {
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
 /* ─── Game reveal animations ─────────────────────────────────────────────────
    Triggered once when #gameContainer's `hide` class is removed (display:none
    drops, elements become visible, animations start from the beginning).
