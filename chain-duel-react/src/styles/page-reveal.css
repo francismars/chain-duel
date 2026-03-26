@@ -28,9 +28,8 @@
 }
 
 .page-reveal-scope--gameplay {
-  animation-name: page-reveal-fade;
-  animation-duration: 0.24s;
-  animation-timing-function: ease-out;
+  animation: none;
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

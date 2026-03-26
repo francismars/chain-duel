@@ -253,22 +253,6 @@ export default function Game() {
     audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
   }, [isMuted, isMusicMuted, loading]);
 
-  useEffect(() => {
-    const previousImage = document.body.style.backgroundImage;
-    const previousSize = document.body.style.backgroundSize;
-    const previousPosition = document.body.style.backgroundPosition;
-
-    document.body.style.backgroundImage =
-      "linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url('/images/chainduel_bg_no_sat.jpg')";
-    document.body.style.backgroundSize = 'cover';
-    document.body.style.backgroundPosition = 'center';
-
-    return () => {
-      document.body.style.backgroundImage = previousImage;
-      document.body.style.backgroundSize = previousSize;
-      document.body.style.backgroundPosition = previousPosition;
-    };
-  }, []);
 
   useEffect(() => {
     // Local hub (and legacy POWERUP) bootstrap without waiting for socket
@@ -516,6 +500,7 @@ export default function Game() {
 
   return (
     <>
+      <div id="game-bg-overlay" aria-hidden="true" />
       <header id="brand">
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
@@ -616,45 +601,6 @@ export default function Game() {
             <div id="gameCanvasHost" ref={hostRef} />
           </div>
 
-          <div id="bitcoinDetails" className={footerHighlight ? 'highlight' : ''}>
-            <div className="detail">
-              <div className="label">Latest Block</div>
-              <div className="value" id="bitcoinblockHeight">
-                {bitcoin.height}
-              </div>
-            </div>
-            <div className="detail">
-              <div className="label">Found</div>
-              <div className="value" id="bitcoinblockTimeAgo">
-                {bitcoin.timeAgo}
-              </div>
-            </div>
-            <div className="detail">
-              <div className="label">Size</div>
-              <div className="value" id="bitcoinblockSize">
-                {bitcoin.size}
-              </div>
-            </div>
-            <div className="detail">
-              <div className="label">TX count</div>
-              <div className="value" id="bitcoinblockTXcount">
-                {bitcoin.txCount}
-              </div>
-            </div>
-            <div className="detail hide">
-              <div className="label">Found by</div>
-              <div className="value" id="bitcoinblockMiner">
-                {bitcoin.miner}
-              </div>
-            </div>
-            <div className="detail">
-              <div className="label">Median fee</div>
-              <div className="value" id="bitcoinAvgFee">
-                {bitcoin.medianFee}
-              </div>
-            </div>
-          </div>
-
           {isPowerupMode && (
             <div id="powerUpKey">
               {([
@@ -693,6 +639,45 @@ export default function Game() {
               ))}
             </div>
           )}
+
+          <div id="bitcoinDetails" className={footerHighlight ? 'highlight' : ''}>
+            <div className="detail">
+              <div className="label">Latest Block</div>
+              <div className="value" id="bitcoinblockHeight">
+                {bitcoin.height}
+              </div>
+            </div>
+            <div className="detail">
+              <div className="label">Found</div>
+              <div className="value" id="bitcoinblockTimeAgo">
+                {bitcoin.timeAgo}
+              </div>
+            </div>
+            <div className="detail">
+              <div className="label">Size</div>
+              <div className="value" id="bitcoinblockSize">
+                {bitcoin.size}
+              </div>
+            </div>
+            <div className="detail">
+              <div className="label">TX count</div>
+              <div className="value" id="bitcoinblockTXcount">
+                {bitcoin.txCount}
+              </div>
+            </div>
+            <div className="detail hide">
+              <div className="label">Found by</div>
+              <div className="value" id="bitcoinblockMiner">
+                {bitcoin.miner}
+              </div>
+            </div>
+            <div className="detail">
+              <div className="label">Median fee</div>
+              <div className="value" id="bitcoinAvgFee">
+                {bitcoin.medianFee}
+              </div>
+            </div>
+          </div>
 
         </div>
       </div>
