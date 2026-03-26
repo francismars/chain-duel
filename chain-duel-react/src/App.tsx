@@ -51,10 +51,10 @@ function App() {
             <Route path="/config" element={<Config />} />
 
             {/* Online */}
-            <Route path="/online" element={<OnlineRooms />} />
-            <Route path="/online/lobby" element={<OnlineRoomLobby />} />
-            <Route path="/online/game" element={<OnlineGame />} />
-            <Route path="/online/postgame" element={<OnlinePostGame />} />
+            <Route path="/network" element={<OnlineRooms />} />
+            <Route path="/network/lobby" element={<OnlineRoomLobby />} />
+            <Route path="/network/game" element={<OnlineGame />} />
+            <Route path="/network/postgame" element={<OnlinePostGame />} />
           </Route>
         </Routes>
       </BrowserRouter>

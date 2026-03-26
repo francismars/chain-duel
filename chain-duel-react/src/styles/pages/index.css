@@ -27,7 +27,7 @@
 }
 
 .index-page__main .menu-buttons {
-  width: min(88vw, 22rem);
+  width: 28vw;
   min-width: min(16rem, 88vw);
   margin-left: auto;
   margin-right: auto;
@@ -69,7 +69,7 @@
   flex-direction: column;
   align-items: stretch;
   gap: 0.55vw;
-  width: min(88vw, 22rem);
+  width: 28vw;
   margin: 1.5rem auto 0;
 }
 

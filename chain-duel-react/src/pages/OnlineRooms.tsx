@@ -162,6 +162,7 @@ export default function OnlineRooms() {
   const creatingRoomRef = useRef(false);
   const pendingRoomIdRef = useRef<string | null>(null);
   const keyRepeatRef = useRef<Record<string, number>>({});
+  const roomListRef = useRef<HTMLDivElement>(null);
 
   useGamepad(true);
 
@@ -240,21 +241,21 @@ export default function OnlineRooms() {
   const activateRoom = (room: OnlineRoomListItem) => {
     if (room.phase === 'playing') {
       socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
-      navigate(`/online/game?roomId=${encodeURIComponent(room.roomId)}`);
+      navigate(`/network/game?roomId=${encodeURIComponent(room.roomId)}`);
       return;
     }
     socket?.emit('joinOnlineRoom', { roomId: room.roomId });
-    navigate(`/online/lobby?roomId=${encodeURIComponent(room.roomId)}`);
+    navigate(`/network/lobby?roomId=${encodeURIComponent(room.roomId)}`);
   };
 
   const openHistoryPostGame = (roomId: string) => {
-    navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
+    navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
   };
 
   const openHistoryReplay = (roomId: string, matchRound?: number) => {
     const roundQ =
       matchRound != null ? `&round=${encodeURIComponent(String(matchRound))}` : '';
-    navigate(`/online/game?roomId=${encodeURIComponent(roomId)}&replay=1${roundQ}`);
+    navigate(`/network/game?roomId=${encodeURIComponent(roomId)}&replay=1${roundQ}`);
   };
 
   useEffect(() => {
@@ -282,7 +283,7 @@ export default function OnlineRooms() {
         setCreatingRoom(false);
         creatingRoomRef.current = false;
         pendingRoomIdRef.current = null;
-        navigate(`/online/lobby?roomId=${encodeURIComponent(parsed.roomId)}`);
+        navigate(`/network/lobby?roomId=${encodeURIComponent(parsed.roomId)}`);
         return;
       }
       pendingRoomIdRef.current = parsed.roomId;
@@ -293,7 +294,7 @@ export default function OnlineRooms() {
       if (!parsed) {
         return;
       }
-      navigate(`/online/lobby?roomId=${encodeURIComponent(parsed.roomId)}`);
+      navigate(`/network/lobby?roomId=${encodeURIComponent(parsed.roomId)}`);
     };
     const onInvalid = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlinePinInvalid(payload);
@@ -316,7 +317,7 @@ export default function OnlineRooms() {
       setCreatingRoom(false);
       creatingRoomRef.current = false;
       pendingRoomIdRef.current = null;
-      navigate(`/online/lobby?roomId=${encodeURIComponent(parsed.roomId)}`);
+      navigate(`/network/lobby?roomId=${encodeURIComponent(parsed.roomId)}`);
     };
 
     socket.on('resListOnlineRooms', onList);
@@ -558,6 +559,16 @@ export default function OnlineRooms() {
     };
   }, [creatingRoom, displayedRooms, navFocus, navigate, onlineTab, onlineMode, socket, buyin, roomCode]);
 
+  // Scroll selected room card into view when navigating with keyboard
+  useEffect(() => {
+    if (navFocus.type !== 'room') return;
+    const list = roomListRef.current;
+    if (!list) return;
+    const cards = list.querySelectorAll<HTMLElement>('.online-room-card');
+    const card = cards[navFocus.index];
+    if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [navFocus]);
+
   return (
     <div className="online-rooms-page">
       <Sponsorship id="sponsorship-online-rooms" />
@@ -579,11 +590,12 @@ export default function OnlineRooms() {
             {onlineTab === 'live' ? 'LIVE ROOMS' : onlineTab === 'hof' ? 'HALL OF FAME' : 'MATCH HISTORY'}
           </h3>
           <div className="online-tab-line">
-            {navFocus.type === 'tab' ? (
-              <p className="online-tab-enter-hint" aria-live="polite">
-                Press <kbd>Enter</kbd> to browse the list
-              </p>
-            ) : null}
+            <div className="online-tab-line-right">
+              {navFocus.type === 'tab' ? (
+                <p className="online-tab-enter-hint" aria-live="polite">
+                  Press <kbd>Enter</kbd> to browse the list
+                </p>
+              ) : null}
             <div className="online-tab-row" role="tablist" aria-label="Online room list">
             <button
               type="button"
@@ -636,10 +648,11 @@ export default function OnlineRooms() {
               Hall of Fame
             </button>
             </div>
+            </div>
           </div>
         </div>
 
-        <div className="online-room-list" key={onlineTab}>
+        <div className="online-room-list" key={onlineTab} ref={roomListRef}>
           {displayedRooms.length === 0 ? (
             <div className="online-empty">
               <svg

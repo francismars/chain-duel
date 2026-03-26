@@ -757,7 +757,7 @@ export default function OnlineRoomLobby() {
     if (!roomId || room?.phase !== 'playing') {
       return;
     }
-    navigate(`/online/game?roomId=${encodeURIComponent(roomId)}`);
+    navigate(`/network/game?roomId=${encodeURIComponent(roomId)}`);
   }, [navigate, room?.phase, roomId]);
 
   useEffect(() => {
@@ -1127,7 +1127,7 @@ export default function OnlineRoomLobby() {
               <Button
                 type="button"
                 className="online-lobby-action"
-                onClick={() => navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`)}
+                onClick={() => navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`)}
               >
                 VIEW POSTGAME DETAILS
               </Button>
@@ -1136,7 +1136,7 @@ export default function OnlineRoomLobby() {
                 className="online-lobby-action"
                 onClick={() =>
                   navigate(
-                    `/online/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(
+                    `/network/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(
                       String(room?.matchRound ?? 1)
                     )}`
                   )
@@ -1149,7 +1149,7 @@ export default function OnlineRoomLobby() {
                 className="online-lobby-action"
                 onClick={() => {
                   socket?.emit('leaveOnlineRoom', { roomId });
-                  navigate('/online');
+                  navigate('/network');
                 }}
               >
                 EXIT ROOM
@@ -1429,7 +1429,7 @@ export default function OnlineRoomLobby() {
                     className="online-lobby-action online-lobby-leave-btn"
                     onClick={() => {
                       socket?.emit('leaveOnlineRoom', { roomId });
-                      navigate('/online');
+                      navigate('/network');
                     }}
                   >
                     LEAVE ROOM
@@ -1453,7 +1453,7 @@ export default function OnlineRoomLobby() {
           <Button
             type="button"
             className="online-lobby-action"
-            onClick={() => navigate('/online')}
+            onClick={() => navigate('/network')}
           >
             ← Back to Network
           </Button>

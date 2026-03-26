@@ -118,7 +118,7 @@ export default function OnlinePostGame() {
 
   const openSessionRoundReplay = (matchRound: number) => {
     navigate(
-      `/online/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(String(matchRound))}`
+      `/network/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(String(matchRound))}`
     );
   };
 
@@ -217,7 +217,7 @@ export default function OnlinePostGame() {
         }
         if (navFocus.type === 'exit') {
           if (socket && roomId) socket.emit('leaveOnlineRoom', { roomId });
-          navigate('/online');
+          navigate('/network');
         }
       }
     };
@@ -234,7 +234,7 @@ export default function OnlinePostGame() {
 
   useEffect(() => {
     if (!roomId) {
-      navigate('/online');
+      navigate('/network');
     }
   }, [navigate, roomId]);
 
@@ -305,7 +305,7 @@ export default function OnlinePostGame() {
       setVotes(parsed.votes);
       setRequiredVotes(parsed.required);
       if (parsed.agreed) {
-        navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`);
+        navigate(`/network/lobby?roomId=${encodeURIComponent(roomId)}`);
       }
     };
 
@@ -334,7 +334,7 @@ export default function OnlinePostGame() {
         }
       }
       if (parsed.phase === 'lobby') {
-        navigate(`/online/lobby?roomId=${encodeURIComponent(roomId)}`);
+        navigate(`/network/lobby?roomId=${encodeURIComponent(roomId)}`);
       }
     };
 
@@ -707,7 +707,7 @@ export default function OnlinePostGame() {
                 if (socket && roomId) {
                   socket.emit('leaveOnlineRoom', { roomId });
                 }
-                navigate('/online');
+                navigate('/network');
               }}
             >
               EXIT ROOM

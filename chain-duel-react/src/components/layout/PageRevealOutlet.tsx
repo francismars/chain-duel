@@ -1,7 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import '@/styles/page-reveal.css';
 
-const GAMEPLAY_PATHS = new Set(['/game', '/online/game']);
+const GAMEPLAY_PATHS = new Set(['/game', '/network/game']);
 
 export function PageRevealOutlet() {
   const { pathname } = useLocation();

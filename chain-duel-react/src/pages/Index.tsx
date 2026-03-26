@@ -155,7 +155,7 @@ export default function Index() {
         } else if (row === 3) {
           navigate('/p2p', { state: keyboardNavState });
         } else if (row === 4) {
-          navigate('/online', { state: keyboardNavState });
+          navigate('/network', { state: keyboardNavState });
         } else if (row === 5) {
           navigate('/highscores', { state: keyboardNavState });
         } else if (row === 6) {
@@ -266,7 +266,7 @@ export default function Index() {
                 id="startmainnet"
                 onClick={() => {
                   playSfx(SFX.MENU_CONFIRM);
-                  navigate('/online');
+                  navigate('/network');
                 }}
               >
                 NETWORK
