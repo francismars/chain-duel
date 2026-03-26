@@ -1560,13 +1560,14 @@ function checkCollisions(state: GameState): void {
   checkPassThroughCollision(state, 'Up', 'Down', 0, -1);
   checkPassThroughCollision(state, 'Down', 'Up', 0, 1);
 
-  // Wall / shrink border — PHANTOM wraps (Pac-Man style) instead of resetting
+  // Wall / shrink border — PHANTOM wraps (Pac-Man style) instead of resetting.
+  // Ghost loops through both the outer grid walls and the convergence border.
   if (outOfBounds(state, state.p1.head)) {
-    if (p1HasPhantom && !state.shrinkBorder) wrapSnakeHead(state, 'P1');
+    if (p1HasPhantom) wrapSnakeHead(state, 'P1');
     else resetSnake(state, 'P1');
   }
   if (outOfBounds(state, state.p2.head)) {
-    if (p2HasPhantom && !state.shrinkBorder) wrapSnakeHead(state, 'P2');
+    if (p2HasPhantom) wrapSnakeHead(state, 'P2');
     else resetSnake(state, 'P2');
   }
 
@@ -1616,14 +1617,25 @@ function outOfBounds(state: GameState, pos: GridPos): boolean {
   return pos[0] > state.cols - 1 || pos[1] < 0 || pos[1] > state.rows - 1 || pos[0] < 0;
 }
 
-/** Wrap a snake's head to the opposite wall (Pac-Man style) — PHANTOM power-up. */
+/** Wrap a snake's head to the opposite wall (Pac-Man style) — PHANTOM power-up.
+ *  When a convergence border is active, wraps within that border rather than the full grid. */
 function wrapSnakeHead(state: GameState, player: 'P1' | 'P2'): void {
   const snake = player === 'P1' ? state.p1 : state.p2;
   const [x, y] = snake.head;
-  snake.head = [
-    ((x % state.cols) + state.cols) % state.cols,
-    ((y % state.rows) + state.rows) % state.rows,
-  ];
+  const sb = state.shrinkBorder;
+  if (sb) {
+    const w = sb.right - sb.left + 1;
+    const h = sb.bottom - sb.top + 1;
+    snake.head = [
+      sb.left + (((x - sb.left) % w + w) % w),
+      sb.top  + (((y - sb.top)  % h + h) % h),
+    ];
+  } else {
+    snake.head = [
+      ((x % state.cols) + state.cols) % state.cols,
+      ((y % state.rows) + state.rows) % state.rows,
+    ];
+  }
 }
 
 function hitsObstacle(state: GameState, pos: GridPos): boolean {
