@@ -644,6 +644,10 @@
   color: #fff;
   background: transparent;
   box-shadow: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
 }
 
 /* EXIT ROOM: same glow hover as homepage buttons */

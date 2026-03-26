@@ -71,7 +71,7 @@
 }
 
 #online-title {
-  font-size: 4.5cqw;
+  font-size: 5.5cqw;
   letter-spacing: 0;
   margin: 0;
   text-align: center;
@@ -84,7 +84,7 @@
   text-align: center;
   color: #d8d8d8;
   letter-spacing: 0.06rem;
-  font-size: 0.9cqw;
+  font-size: 1.1cqw;
   margin: 0.4vw 0 0;
   animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
 }
@@ -152,7 +152,7 @@
   grid-column: 1;
   grid-row: 1;
   margin: 0;
-  font-size: clamp(8px, 0.55cqw, 10px);
+  font-size: clamp(10px, 0.68cqw, 12px);
   letter-spacing: 0.18em;
   color: rgb(255 255 255 / 0.38);
   text-transform: uppercase;
@@ -178,7 +178,7 @@
   justify-content: space-between;
   gap: 0;
   padding: 0;
-  margin-left: 0.75rem;
+  margin-left: 0;
   min-height: clamp(36px, 2.8vw, 46px);
   border: 1px solid rgb(255 255 255 / 0.07);
   border-right: none;
@@ -194,7 +194,7 @@
 .online-buyin-btn {
   width: clamp(30px, 2.2vw, 38px);
   height: clamp(30px, 2.2vw, 38px);
-  font-size: 1.15rem;
+  font-size: clamp(16px, 1.35vw, 22px);
   line-height: 1;
   font-family: inherit;
   color: rgb(255 255 255 / 0.5);
@@ -224,7 +224,7 @@
 
 .online-buyin-value {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(18px, 1.8cqw, 28px);
+  font-size: clamp(22px, 2.2cqw, 34px);
   letter-spacing: 0.03em;
   color: #fff;
   background: transparent;
@@ -234,12 +234,14 @@
   min-width: 2ch;
   max-width: 8ch;
   padding: 0;
+  margin-left: 0;
+  margin-right: 0.4em;
   text-align: left;
 }
 
 .online-buyin-unit {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.6cqw, 11px);
+  font-size: clamp(11px, 0.75cqw, 13px);
   font-weight: 500;
   letter-spacing: 0.06em;
   color: rgb(255 255 255 / 0.38);
@@ -262,7 +264,7 @@
   border-right: 1px solid rgb(255 255 255 / 0.07);
   color: rgb(255 255 255 / 0.3);
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.65cqw, 11px);
+  font-size: clamp(11px, 0.8cqw, 13px);
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -301,7 +303,7 @@
 /* Room code input */
 .online-code-input {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.6cqw, 26px);
+  font-size: clamp(19px, 1.95cqw, 32px);
   letter-spacing: 0.22em;
   background: transparent;
   border: none;
@@ -343,7 +345,7 @@
   background: none;
   border: none;
   color: rgb(255 255 255 / 0.3);
-  font-size: clamp(9px, 0.6cqw, 11px);
+  font-size: clamp(11px, 0.75cqw, 13px);
   letter-spacing: 0.06em;
   cursor: pointer;
   padding: 0;
@@ -361,14 +363,14 @@
 /* Inline error inside card */
 .online-inline-error {
   color: #ff7b7b;
-  font-size: clamp(11px, 0.72cqw, 13px);
+  font-size: clamp(13px, 0.9cqw, 16px);
   margin: 0;
   text-align: center;
 }
 
 .online-panel-copy {
   color: #b7b7b7;
-  font-size: clamp(11px, 0.78cqw, 13px);
+  font-size: clamp(13px, 0.96cqw, 16px);
   margin: 0;
 }
 
@@ -377,7 +379,7 @@
   border: none;
   border-radius: 0;
   color: #fff;
-  font-size: clamp(12px, 0.82cqw, 15px);
+  font-size: clamp(14px, 1.0cqw, 18px);
   letter-spacing: 0.04rem;
   padding: 0 0.8vw;
   text-transform: uppercase;
@@ -394,6 +396,7 @@
   min-width: 7rem;
   height: auto;
   min-height: clamp(38px, 3vw, 46px);
+  white-space: nowrap;
 }
 
 .online-room-list-panel {
@@ -424,8 +427,16 @@
   min-width: 0;
 }
 
-.online-tab-line .online-tab-row {
+/* Right-anchored group: tabs always flush right, hint grows leftward */
+.online-tab-line-right {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
   margin-left: auto;
+}
+
+.online-tab-line .online-tab-row {
+  /* sits inside .online-tab-line-right, always at its right edge */
 }
 
 .online-tab-enter-hint {
@@ -434,11 +445,11 @@
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.58cqw, 11px);
+  font-size: clamp(11px, 0.72cqw, 13px);
   color: rgb(255 255 255 / 0.38);
   letter-spacing: 0.04em;
   animation: rooms-fade 0.2s ease both;
-  text-align: left;
+  text-align: right;
 }
 
 .online-tab-enter-hint kbd {
@@ -453,7 +464,7 @@
 
 .online-room-list-head h3 {
   margin: 0 0 0.4rem;
-  font-size: clamp(18px, 2.2cqw, 30px);
+  font-size: clamp(22px, 2.7cqw, 36px);
   letter-spacing: 0;
 }
 
@@ -466,7 +477,7 @@
 
 .online-tab {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(11px, 0.88cqw, 15px);
+  font-size: clamp(13px, 1.08cqw, 18px);
   letter-spacing: 0;
   text-transform: uppercase;
   padding: 0.35em 1.2em;
@@ -614,21 +625,21 @@
 }
 
 .online-room-card--history .online-postgame-round-index {
-  font-size: 0.78rem;
+  font-size: clamp(14px, 1.1vw, 20px);
   letter-spacing: 0.05em;
   line-height: 1.1;
   width: 100%;
 }
 
 .online-room-card--history .online-postgame-round-chip {
-  font-size: 0.42rem;
+  font-size: clamp(7px, 0.52vw, 9px);
   padding: 0.12rem 0.28rem;
   letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
 .online-room-card--history .online-postgame-round-time {
-  font-size: 0.56rem;
+  font-size: clamp(9px, 0.64vw, 11px);
 }
 
 /* Matchup: single row, no gap below */
@@ -658,7 +669,7 @@
 }
 
 .online-room-card--history .online-postgame-player-name {
-  font-size: 0.7rem;
+  font-size: clamp(13px, 1.0vw, 18px);
 }
 
 /* Score inline with name (row direction) */
@@ -674,12 +685,12 @@
 }
 
 .online-room-card--history .online-postgame-player-pts {
-  font-size: 0.76rem;
+  font-size: clamp(14px, 1.1vw, 19px);
   flex-shrink: 0;
 }
 
 .online-room-card--history .online-postgame-player-denom {
-  font-size: 0.54rem;
+  font-size: clamp(9px, 0.62vw, 11px);
 }
 
 /* Action buttons: side-by-side, small, flush right */
@@ -691,17 +702,21 @@
 }
 
 .online-history-action-col .online-postgame-round-replay-btn.button {
-  min-height: 28px;
-  min-width: 4.5rem;
-  font-size: 0.58rem;
-  padding: 0 0.55rem;
-  letter-spacing: 0.12em;
+  width: auto;
+  height: clamp(26px, 2vw, 34px);
+  min-height: unset;
+  min-width: unset;
+  font-size: clamp(9px, 0.75vw, 12px);
+  padding: 0 clamp(0.6rem, 1vw, 1.1rem);
+  letter-spacing: 0.1rem;
+  white-space: nowrap;
+  margin: 0;
 }
 
 .online-archived {
   border: 1px solid #888;
   padding: 0.05vw 0.35vw;
-  font-size: 0.65cqw;
+  font-size: 1.0cqw;
   color: #e0e0e0;
 }
 
@@ -739,6 +754,7 @@
   border-radius: 0;
   padding: 0.8vw 0;
   margin-bottom: 0;
+  transition: box-shadow 0.15s ease, border-left-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
 }
 
 /* Compact finished-match rows (must follow .online-room-card so padding wins). */
@@ -751,11 +767,11 @@
 .online-room-card.online-room-card--history .online-room-meta {
   margin-top: 0.12vw;
   gap: 0.55vw;
-  font-size: 0.68cqw;
+  font-size: 1.05cqw;
 }
 
 .online-room-card.online-room-card--history .online-room-code {
-  font-size: 1.12cqw;
+  font-size: 1.72cqw;
 }
 
 /* Generic: tabs / inputs use bottom-border underline */
@@ -799,24 +815,14 @@
   }
 }
 
-@keyframes room-card-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 999px rgb(255 255 255 / 3%), 0 0 6px rgb(255 255 255 / 0.05); }
-  50%       { box-shadow: inset 0 0 0 999px rgb(255 255 255 / 7%), 0 0 12px rgb(255 255 255 / 0.1); }
-}
-
+/* Selection uses transition (not animation) so the nth-child rooms-rise entrance is never disrupted */
 .online-room-card.online-selected {
   border-bottom-color: #4f4f4f !important;
-  border-left: 2px solid rgb(255 255 255 / 0.55);
-  box-shadow: inset 0 0 0 999px rgb(255 255 255 / 4%), 0 0 8px rgb(255 255 255 / 0.06);
+  border-left: 2px solid rgb(255 255 255 / 0.6);
+  box-shadow: inset 0 0 0 999px rgb(255 255 255 / 5%), 0 0 10px rgb(255 255 255 / 0.08);
+  transform: scaleX(1.004) translateX(2px);
+  padding-left: 0.6rem;
   outline: none;
-  animation: room-card-pulse 1.8s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .online-room-card.online-selected {
-    animation: none;
-    box-shadow: inset 0 0 0 999px rgb(255 255 255 / 6%);
-  }
 }
 
 .online-room-main {
@@ -825,7 +831,7 @@
 
 .online-room-code {
   font-family: 'BureauGrotesque';
-  font-size: 1.45cqw;
+  font-size: 2.2cqw;
   letter-spacing: 0.04em;
 }
 
@@ -834,7 +840,7 @@
   gap: 0.9vw;
   margin-top: 0.2vw;
   color: #d1d1d1;
-  font-size: 0.78cqw;
+  font-size: 0.96cqw;
   flex-wrap: wrap;
 }
 
@@ -900,7 +906,7 @@
 
 .online-empty-title {
   margin: 0;
-  font-size: clamp(11px, 0.9cqw, 15px);
+  font-size: clamp(13px, 1.1cqw, 18px);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #808080;
@@ -908,7 +914,7 @@
 
 .online-empty-hint {
   margin: 0;
-  font-size: clamp(10px, 0.72cqw, 12px);
+  font-size: clamp(12px, 0.88cqw, 15px);
   color: #505050;
   letter-spacing: 0.04em;
 }
@@ -918,7 +924,7 @@
   margin: 0;
   color: #ff7b7b;
   text-align: center;
-  font-size: 0.85cqw;
+  font-size: 1.05cqw;
 }
 
 .online-footer-controls {
@@ -937,7 +943,7 @@
 .online-controls-hint {
   color: #9f9f9f;
   letter-spacing: 0.03rem;
-  font-size: 0.75cqw;
+  font-size: 0.92cqw;
 }
 
 .online-loading-overlay {
@@ -963,14 +969,14 @@
 .online-loading-title {
   font-family: 'BureauGrotesque';
   text-transform: uppercase;
-  font-size: 1.5rem;
+  font-size: clamp(19px, 1.85vw, 32px);
   letter-spacing: 0.06rem;
 }
 
 .online-loading-copy {
   color: #d5d5d5;
   margin-top: 0.45rem;
-  font-size: 0.95rem;
+  font-size: clamp(14px, 1.1vw, 18px);
 }
 
 /* ── Default: wrappers are transparent (flex children of page) ── */
@@ -1005,7 +1011,7 @@
   .online-panel-copy,
   .online-room-meta,
   #online-subtitle {
-    font-size: 12px;
+    font-size: clamp(12px, 1.5vw, 15px);
   }
 }
 
@@ -1025,11 +1031,11 @@
 
   /* Title/subtitle wrapper and TV typography */
   #online-title {
-    font-size: 4.8vw;
+    font-size: 5.8vw;
   }
 
   #online-subtitle {
-    font-size: 1.15vw;
+    font-size: 1.4vw;
     margin-top: -0.3vw;
   }
 
@@ -1076,20 +1082,20 @@
 
   /* ── Larger typography for 10-foot viewing ── */
   .online-room-list-head h3 {
-    font-size: 2.4vw;
+    font-size: 2.9vw;
   }
 
   .online-tab {
-    font-size: 1.05vw;
+    font-size: 1.28vw;
     padding: 0.5em 1.6em;
   }
 
   .online-room-code {
-    font-size: 1.7vw;
+    font-size: 2.6vw;
   }
 
   .online-room-meta {
-    font-size: 0.88vw;
+    font-size: 1.35vw;
     gap: 1.1vw;
   }
 
@@ -1101,9 +1107,15 @@
     padding: 0.55vw 0;
   }
 
+  .online-history-action-col .online-postgame-round-replay-btn.button {
+    height: clamp(30px, 2.2vw, 38px);
+    font-size: clamp(10px, 0.82vw, 13px);
+    padding: 0 clamp(0.7rem, 1.1vw, 1.2rem);
+  }
+
   /* ── Action card — larger inputs and buttons ── */
   .online-action-label {
-    font-size: 0.75vw;
+    font-size: 0.92vw;
   }
 
   .online-action-card-body {
@@ -1115,37 +1127,37 @@
   }
 
   .online-buyin-preset {
-    font-size: clamp(11px, 0.7vw, 13px);
+    font-size: clamp(13px, 0.86vw, 16px);
     padding: 0.45rem 0;
   }
 
   .online-buyin-btn {
     width: clamp(44px, 3.2vw, 56px);
     height: clamp(44px, 3.2vw, 56px);
-    font-size: 1.5rem;
+    font-size: clamp(22px, 1.85vw, 32px);
   }
 
   .online-buyin-value {
-    font-size: clamp(28px, 2.4vw, 42px);
+    font-size: clamp(34px, 2.95vw, 52px);
   }
 
   .online-buyin-unit {
-    font-size: clamp(13px, 0.85vw, 16px);
+    font-size: clamp(16px, 1.04vw, 20px);
   }
 
   .online-code-input {
-    font-size: clamp(22px, 2vw, 36px);
+    font-size: clamp(27px, 2.45vw, 44px);
     min-height: clamp(52px, 4vw, 68px);
   }
 
   .online-create-btn,
   .online-action {
     min-height: clamp(52px, 4vw, 68px) !important;
-    font-size: 1vw !important;
+    font-size: 1.25vw !important;
   }
 
   .online-action-switch {
-    font-size: 0.72vw;
+    font-size: 0.88vw;
   }
 
   /* ── Footer ── */
@@ -1156,11 +1168,11 @@
   .online-back {
     min-width: 280px;
     height: clamp(48px, 3.5vw, 60px);
-    font-size: 1vw !important;
+    font-size: 1.25vw !important;
   }
 
   .online-controls-hint {
-    font-size: 0.85vw;
+    font-size: 1.04vw;
   }
 
   /* ── Empty state — stays centred via flex: 1 from base rule ── */
@@ -1170,10 +1182,10 @@
   }
 
   .online-empty-title {
-    font-size: clamp(13px, 1.05vw, 18px);
+    font-size: clamp(16px, 1.29vw, 22px);
   }
 
   .online-empty-hint {
-    font-size: clamp(11px, 0.82vw, 15px);
+    font-size: clamp(13px, 1.0vw, 18px);
   }
 }

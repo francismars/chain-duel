@@ -98,7 +98,7 @@ export default function OnlineGame() {
 
   useEffect(() => {
     if (roomId) return;
-    navigate('/online');
+    navigate('/network');
   }, [navigate, roomId]);
 
   useEffect(() => {
@@ -442,7 +442,7 @@ export default function OnlineGame() {
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (!replayMode && snapshotRef.current?.state?.gameEnded) {
-        navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
+        navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
         return;
       }
       if (replayMode) {
@@ -564,12 +564,12 @@ export default function OnlineGame() {
         case 'V': {
           event.preventDefault();
           setReplayPlaying(false);
-          navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
+          navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
           break;
         }
         case 'Escape': {
           setReplayPlaying(false);
-          navigate('/online');
+          navigate('/network');
           break;
         }
       }
@@ -718,7 +718,7 @@ export default function OnlineGame() {
               ref={setHostEl}
               onClick={() => {
                 if (!replayMode && canAttemptContinue) {
-                  navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
+                  navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
                 }
               }}
             />
@@ -787,7 +787,7 @@ export default function OnlineGame() {
                   className="online-replay-btn"
                   onClick={() => {
                     setReplayPlaying(false);
-                    navigate(`/online/postgame?roomId=${encodeURIComponent(roomId)}`);
+                    navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
                   }}
                 >
                   <span className="online-replay-btn__icon" aria-hidden>
@@ -800,7 +800,7 @@ export default function OnlineGame() {
                   className="online-replay-btn"
                   onClick={() => {
                     setReplayPlaying(false);
-                    navigate('/online');
+                    navigate('/network');
                   }}
                 >
                   <span className="online-replay-btn__icon" aria-hidden>
