@@ -33,7 +33,11 @@ export class PixiGameRenderer {
   private p1SurgeTrail: { pos: GridPos; time: number }[] = [];
   private p2SurgeTrail: { pos: GridPos; time: number }[] = [];
   private static readonly SURGE_TRAIL_FADE_MS = 480;
-  private startText: Text;
+  private startWords: Text[] = [];
+  private startWordsContainer: Container = new Container();
+  private startRevealTime = -1;
+  private startLayoutWidth = -1;
+  private boardRevealTime = -1;
   private endWinnerText: Text;
   private endContinueText: Text;
   private countdown3: Text;
@@ -43,26 +47,28 @@ export class PixiGameRenderer {
 
 
   constructor() {
-    this.startText = new Text({
-      text: '',
-      style: new TextStyle({
-        fontFamily: 'BureauGrotesque',
-        fill: '#ffffff',
-        fontSize: 64,
-        fontWeight: '500',
-        align: 'center',
-        padding: 48,
-        dropShadow: {
-          color: '#000000',
-          alpha: 0.95,
-          blur: 44,
-          angle: 0,
-          distance: 0,
-        },
-      }),
+    const startWordStyle = new TextStyle({
+      fontFamily: 'BureauGrotesque',
+      fill: '#ffffff',
+      fontSize: 64,
+      fontWeight: '500',
+      padding: 48,
+      dropShadow: {
+        color: '#000000',
+        alpha: 0.95,
+        blur: 44,
+        angle: 0,
+        distance: 0,
+      },
     });
-    this.startText.anchor.set(0.5);
-    this.startText.resolution = 2;
+    for (const word of ['PRESS', 'BUTTON', 'TO', 'START']) {
+      const t = new Text({ text: word, style: startWordStyle.clone() });
+      t.anchor.set(0.5, 0.5);
+      t.resolution = 2;
+      t.alpha = 0;
+      this.startWords.push(t);
+      this.startWordsContainer.addChild(t);
+    }
     this.endWinnerText = new Text({
       text: '',
       style: new TextStyle({
@@ -127,7 +133,7 @@ export class PixiGameRenderer {
       this.root.addChild(this.scene);
       this.root.addChild(this.resolveBlocks);
       this.root.addChild(this.powerUpLabels);
-      this.overlay.addChild(this.startText);
+      this.overlay.addChild(this.startWordsContainer);
       this.overlay.addChild(this.endWinnerText);
       this.overlay.addChild(this.endContinueText);
       this.overlay.addChild(this.countdown3);
@@ -251,6 +257,19 @@ export class PixiGameRenderer {
       this.scene.rect(px, py, colSize, rowSize).stroke({ width: 1, color: 0x333333, alpha: 0.5 });
     }
 
+    // ── Board reveal (pre-start only) ────────────────────────────────────────
+    const preStart = !state.gameStarted && !state.countdownStart && !state.gameEnded;
+    if (preStart) {
+      if (this.boardRevealTime === -1) this.boardRevealTime = performance.now();
+    } else {
+      this.boardRevealTime = -1;
+    }
+    // Infinity = fully visible (during gameplay / after reveal completes).
+    // 800ms initial delay lets the CSS canvas scale-in finish first.
+    const boardElapsed = this.boardRevealTime !== -1
+      ? Math.max(0, performance.now() - this.boardRevealTime - 800)
+      : Infinity;
+
     // Snakes
     const powerUps = state.activePowerUps ?? [];
     const p1Frozen  = powerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P1');
@@ -289,7 +308,7 @@ export class PixiGameRenderer {
     for (const extra of (state.extraSnakes ?? [])) {
       this.drawSnake(extra.snake, extra.color, colSize, rowSize, {
         frozen: false, phantom: false, surging: false, amped: false,
-      }, [], now);
+      }, [], now, boardElapsed);
       // Ally / shadow border: solid inset outline distinguishes them from P1/P2
       if (extra.outline != null) {
         const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
@@ -308,7 +327,7 @@ export class PixiGameRenderer {
 
     this.drawSnake(state.p1, 0xffffff, colSize, rowSize, {
       frozen: p1Frozen, phantom: p1Phantom, surging: p1Surging, amped: p1Amped,
-    }, this.p1Pulses, now);
+    }, this.p1Pulses, now, boardElapsed);
     // Teams mode: P1 gets a red border
     if (state.meta?.teamMode === 'teams') {
       const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
@@ -325,7 +344,7 @@ export class PixiGameRenderer {
       : 0x111111;
     this.drawSnake(state.p2, p2Color, colSize, rowSize, {
       frozen: p2Frozen, phantom: p2Phantom, surging: p2Surging, amped: p2Amped,
-    }, this.p2Pulses, now);
+    }, this.p2Pulses, now, boardElapsed);
     // Teams mode: P2 gets a red border
     if (state.meta?.teamMode === 'teams') {
       const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
@@ -345,7 +364,7 @@ export class PixiGameRenderer {
         reward: cb.reward,
         isDecoy: cb.isDecoy,
         isBounty: cb.isBounty,
-      });
+      }, boardElapsed);
     }
 
     // Teleport portals
@@ -399,14 +418,13 @@ export class PixiGameRenderer {
     }
 
     // ── Text overlays ─────────────────────────────────────────────────────────
-    this.startText.position.set(width / 2, height / 2);
     this.endWinnerText.position.set(width / 2, height / 2 - 15);
     this.endContinueText.position.set(width / 2, height / 2 + 35);
     this.countdown3.position.set(width * 0.24, height / 2);
     this.countdown2.position.set(width * 0.36, height / 2);
     this.countdown1.position.set(width * 0.47, height / 2);
     this.countdownLfg.position.set(width * 0.675, height / 2);
-    this.startText.style.fontSize = Math.max(10, (width / 17) * 1.12);
+    const startFontSize = Math.max(10, (width / 17) * 1.12);
     this.endWinnerText.style.fontSize = Math.max(10, (width / 17) * 1.12);
     this.endContinueText.style.fontSize = Math.max(10, (width / 39) * 1.1);
     const countdownSize = Math.max(18, height * 0.54);
@@ -415,7 +433,6 @@ export class PixiGameRenderer {
     this.countdown1.style.fontSize = countdownSize;
     this.countdownLfg.style.fontSize = countdownSize;
 
-    this.startText.text = '';
     this.endWinnerText.text = '';
     this.endContinueText.text = '';
     this.countdown3.text = '';
@@ -424,18 +441,49 @@ export class PixiGameRenderer {
     this.countdownLfg.text = '';
 
     if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
-      this.startText.text = 'PRESS BUTTON TO START';
-    } else if (state.countdownStart) {
-      this.countdown3.text = '3';
-      this.countdown2.text = '2';
-      this.countdown1.text = '1';
-      this.countdownLfg.text = 'LFG';
-      this.applyCountdownState(state.countdownTicks);
-    } else if (state.gameEnded) {
-      // During the resolving-blocks animation, suppress the text until blocks cover the board
-      if (resolveProgress >= 1.0 || !state.convergenceWallClosed) {
-        this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
-        this.endContinueText.text = opts?.replayView ? '' : 'PRESS ANY BUTTON TO CONTINUE';
+      // ── Staggered word-by-word reveal ─────────────────────────────────────
+      const gap = startFontSize * 0.38;
+      if (this.startLayoutWidth !== width) {
+        this.startLayoutWidth = width;
+        for (const t of this.startWords) t.style.fontSize = startFontSize;
+        // Layout words left-to-right inside the container, then centre it
+        let totalW = 0;
+        const widths = this.startWords.map(t => { totalW += t.width; return t.width; });
+        totalW += gap * (this.startWords.length - 1);
+        let x = -totalW / 2;
+        for (let i = 0; i < this.startWords.length; i++) {
+          this.startWords[i].x = x + widths[i] / 2;
+          x += widths[i] + gap;
+        }
+      }
+      this.startWordsContainer.position.set(width / 2, height / 2);
+      if (this.startRevealTime === -1) this.startRevealTime = performance.now();
+      const elapsed = Math.max(0, performance.now() - this.startRevealTime - 1000);
+      const STAGGER = 110; // ms between each word
+      const DURATION = 420; // ms each word takes to fade+rise in
+      for (let i = 0; i < this.startWords.length; i++) {
+        const t = Math.max(0, Math.min(1, (elapsed - i * STAGGER) / DURATION));
+        const eased = 1 - Math.pow(1 - t, 3); // cubic ease-out
+        this.startWords[i].alpha = eased;
+        this.startWords[i].y = (1 - eased) * 10;
+      }
+    } else {
+      // Hide words and reset state for next time
+      this.startRevealTime = -1;
+      this.startLayoutWidth = -1;
+      for (const t of this.startWords) { t.alpha = 0; t.y = 0; }
+      if (state.countdownStart) {
+        this.countdown3.text = '3';
+        this.countdown2.text = '2';
+        this.countdown1.text = '1';
+        this.countdownLfg.text = 'LFG';
+        this.applyCountdownState(state.countdownTicks);
+      } else if (state.gameEnded) {
+        // During the resolving-blocks animation, suppress the text until blocks cover the board
+        if (resolveProgress >= 1.0 || !state.convergenceWallClosed) {
+          this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
+          this.endContinueText.text = opts?.replayView ? '' : 'PRESS ANY BUTTON TO CONTINUE';
+        }
       }
     }
 
@@ -562,8 +610,15 @@ export class PixiGameRenderer {
     effects: { frozen?: boolean; phantom?: boolean; surging?: boolean; amped?: boolean },
     pulses: number[] = [],
     now: number = 0,
+    boardElapsed: number = Infinity,
   ): void {
-    const headAlpha = effects.phantom ? 0.5 : 1;
+    // Per-segment reveal: head first, then body tail-to-tip with 50ms stagger each
+    const segReveal = (segIdx: number): number => {
+      if (boardElapsed === Infinity) return 1;
+      const t = Math.max(0, Math.min(1, (boardElapsed - segIdx * 80) / 700));
+      return 1 - Math.pow(1 - t, 3); // cubic ease-out
+    };
+    const headAlpha = (effects.phantom ? 0.5 : 1) * segReveal(0);
     const baseBodyAlpha = effects.phantom ? 0.25 : 0.6;
     const totalLen = 1 + snake.body.length;
     const isLight = color === 0xffffff;
@@ -604,7 +659,7 @@ export class PixiGameRenderer {
         .fill({ color: isLight ? 0xffffff : 0xdddddd, alpha: headBoost * 0.35 });
     }
     this.scene.rect(snake.head[0] * colSize, snake.head[1] * rowSize, colSize, rowSize)
-      .fill({ color, alpha: headAlpha });
+      .fill({ color, alpha: Math.max(0, headAlpha) });
 
     // Orange SURGE border on head
     if (effects.surging) {
@@ -632,13 +687,13 @@ export class PixiGameRenderer {
     // Body — pulse wave travels head → tail
     for (let i = 0; i < snake.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, totalLen, pulses, now);
-      const segAlpha = Math.min(1, baseBodyAlpha + boost * 0.36);
+      const segAlpha = Math.min(1, baseBodyAlpha + boost * 0.36) * segReveal(i + 1);
       const px = snake.body[i][0] * colSize;
       const py = snake.body[i][1] * rowSize;
 
       this.scene
         .rect(px, py, colSize, rowSize)
-        .fill({ color, alpha: segAlpha });
+        .fill({ color, alpha: Math.max(0, segAlpha) });
 
       // Dark chains get a white overlay so the pulse is visible on black bg
       if (!isLight && boost > 0.05) {
@@ -687,9 +742,16 @@ export class PixiGameRenderer {
     pos: GridPos,
     colSize: number,
     rowSize: number,
-    opts: { reward?: number; isDecoy?: boolean; isBounty?: boolean }
+    opts: { reward?: number; isDecoy?: boolean; isBounty?: boolean },
+    boardElapsed: number = Infinity,
   ): void {
-    const radius = rowSize / 2 - rowSize / 5.4;
+    const coinReveal = (() => {
+      if (boardElapsed === Infinity) return 1;
+      const t = Math.max(0, Math.min(1, (boardElapsed - 250) / 800));
+      return 1 - Math.pow(1 - t, 3);
+    })();
+    const baseRadius = rowSize / 2 - rowSize / 5.4;
+    const radius = baseRadius * coinReveal;
     const cx = pos[0] * colSize + colSize / 2;
     const cy = pos[1] * rowSize + rowSize / 2;
 
@@ -1557,13 +1619,20 @@ export class PixiGameRenderer {
     ctx.strokeStyle = '#000000';
     if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
       ctx.font = `${Math.floor(width / 17)}px BureauGrotesque`;
-      ctx.fillText('PRESS BUTTON TO START', width / 2, height / 2);
+      if (this.startRevealTime === -1) this.startRevealTime = performance.now();
+      const fbElapsed = Math.max(0, performance.now() - this.startRevealTime - 1000);
+      const words = ['PRESS', 'BUTTON', 'TO', 'START'];
+      const STAGGER = 110;
+      const visibleWords = words.filter((_, i) => fbElapsed > i * STAGGER);
+      ctx.fillText(visibleWords.join(' '), width / 2, height / 2);
     } else if (state.countdownStart) {
+      this.startRevealTime = -1;
       const countdownText =
         state.countdownTicks <= 10 ? '3' : state.countdownTicks <= 20 ? '2' : state.countdownTicks <= 30 ? '1' : 'LFG';
       ctx.font = `${Math.floor(height * 0.5)}px BureauGrotesque`;
       ctx.fillText(countdownText, width / 2, height / 2);
     } else if (state.gameEnded) {
+      this.startRevealTime = -1;
       if (resolveProgressFb >= 1.0 || !state.convergenceWallClosed) {
         ctx.font = `${Math.floor(width / 17)}px BureauGrotesque`;
         ctx.fillText(`${state.winnerName.toUpperCase()} WINS!`, width / 2, height / 2 - 10);

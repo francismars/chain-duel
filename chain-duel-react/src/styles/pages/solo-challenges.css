@@ -392,6 +392,18 @@
 
 .sc-row--selected .sc-row__sats {
   color: rgba(255, 255, 255, 0.88);
+  animation: sc-sats-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes sc-sats-shimmer {
+  0%, 100% {
+    color: rgba(255, 255, 255, 0.75);
+    text-shadow: none;
+  }
+  50% {
+    color: rgba(255, 255, 255, 0.98);
+    text-shadow: 0 0 14px rgba(255, 255, 255, 0.35), 0 0 32px rgba(255, 255, 255, 0.1);
+  }
 }
 
 .sc-row--selected .sc-row__unit {
@@ -405,6 +417,18 @@
 
 .sc-row--selected[data-tier="sovereign"] .sc-row__sats {
   color: rgba(230, 195, 40, 0.9);
+  animation: sc-sats-shimmer-gold 3s ease-in-out infinite;
+}
+
+@keyframes sc-sats-shimmer-gold {
+  0%, 100% {
+    color: rgba(230, 195, 40, 0.78);
+    text-shadow: none;
+  }
+  50% {
+    color: rgba(255, 220, 60, 1);
+    text-shadow: 0 0 14px rgba(230, 195, 40, 0.4), 0 0 32px rgba(230, 195, 40, 0.12);
+  }
 }
 
 /* ── Action buttons ── */

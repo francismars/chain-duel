@@ -128,8 +128,7 @@ function TierPips({ tier }: { tier: AiTier }) {
 }
 
 function formatBounty(sats: number): string {
-  if (sats >= 1000) return `${sats / 1000}K`;
-  return String(sats);
+  return sats.toLocaleString();
 }
 
 const LN_ADDRESS_KEY = 'arcadeLnAddress';
@@ -146,11 +145,14 @@ export default function SoloChallenges() {
   const [nostrLoading, setNostrLoading] = useState(false);
   const [nostrError, setNostrError] = useState<string | null>(null);
 
+  const [displayBounty, setDisplayBounty] = useState(CHALLENGES[0].bounty);
+
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const innerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const backRef = useRef<HTMLButtonElement | null>(null);
   const didMountRef = useRef(false);
   const lnInputRef = useRef<HTMLInputElement | null>(null);
+  const bountyRafRef = useRef<number | null>(null);
 
   const payoutReady = !!npub && lnAddress.trim().includes('@');
 
@@ -160,6 +162,27 @@ export default function SoloChallenges() {
     if (storedPubkey) setNpub(storedPubkey);
     if (storedLn) setLnAddress(storedLn);
   }, []);
+
+  useEffect(() => {
+    if (bountyRafRef.current !== null) cancelAnimationFrame(bountyRafRef.current);
+    const target = CHALLENGES[selected].bounty;
+    const duration = 520;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      setDisplayBounty(Math.round(eased * target));
+      if (t < 1) {
+        bountyRafRef.current = requestAnimationFrame(tick);
+      } else {
+        setDisplayBounty(target);
+        bountyRafRef.current = null;
+      }
+    };
+    bountyRafRef.current = requestAnimationFrame(tick);
+    return () => { if (bountyRafRef.current !== null) cancelAnimationFrame(bountyRafRef.current); };
+  }, [selected]);
 
   const connectNostr = useCallback(async () => {
     if (!window.nostr) {
@@ -415,7 +438,9 @@ export default function SoloChallenges() {
                   </div>
 
                   <div className="sc-row__bounty">
-                    <span className="sc-row__sats">{formatBounty(c.bounty)}</span>
+                    <span className="sc-row__sats">
+                      {i === selected ? formatBounty(displayBounty) : formatBounty(c.bounty)}
+                    </span>
                     <span className="sc-row__unit">SATS</span>
                   </div>
                 </div>

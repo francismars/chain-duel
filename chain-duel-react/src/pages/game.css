@@ -229,50 +229,58 @@ body {
 /* ── Power-up key legend ──────────────────────────────────────────────────── */
 
 #powerUpKey {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3vw 1.6vw;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5vw;
   width: 70vw;
   margin: 0 auto;
-  padding: 0.5vw 0 0.3vw;
+  padding: 0.6vw 0 0.4vw;
   box-sizing: border-box;
-  justify-content: center;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .powerUpKeyEntry {
   display: flex;
+  flex-direction: column;
+  gap: 0.2vw;
+  padding: 0.35vw 0.5vw;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.powerUpKeyHeader {
+  display: flex;
   align-items: center;
-  gap: 0.35em;
-  white-space: nowrap;
+  gap: 0.3vw;
 }
 
 .powerUpKeyIconWrap {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   flex-shrink: 0;
 }
 
 .powerUpKeyIcon {
-  width: clamp(10px, 1vw, 14px);
-  height: clamp(10px, 1vw, 14px);
+  width: 1.1vw;
+  height: 1.1vw;
 }
 
 .powerUpKeyName {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.75vw, 11px);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  flex-shrink: 0;
+  font-size: 0.65vw;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
 }
 
 .powerUpKeyDesc {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(8px, 0.65vw, 10px);
+  font-size: 0.5vw;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.28);
   letter-spacing: 0;
+  line-height: 1.3;
+  white-space: normal;
 }
 
 /* ── Bitcoin details ─────────────────────────────────────────────────────── */
@@ -534,8 +542,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.82);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .solo-zap-card {
@@ -734,9 +741,21 @@ body {
     to   { opacity: 1; transform: scale(1); }
   }
 
-  /* HUD row: player names + game info slide down */
+  /* HUD row: suppress parent, animate each child individually */
   #gameContainer:not(.hide) .flex.players {
-    animation: game-hud-slide-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+    animation: none;
+  }
+
+  #gameContainer:not(.hide) #player1info {
+    animation: game-slide-from-left 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.52s both;
+  }
+
+  #gameContainer:not(.hide) #gameInfo {
+    animation: game-fade-in 0.45s ease-out 0.60s both;
+  }
+
+  #gameContainer:not(.hide) #player2info {
+    animation: game-slide-from-right 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.52s both;
   }
 
   /* Capture amounts + distribution bars fade in */
@@ -763,7 +782,7 @@ body {
 
   /* Game board: subtle scale-up drop — the centrepiece */
   #gameContainer:not(.hide) #gameCanvas {
-    animation: game-board-drop-in 0.70s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+    animation: game-board-drop-in 1.10s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
   }
 
   /* Power-up key: suppress parent, stagger each entry rising up */
@@ -775,14 +794,14 @@ body {
     animation: game-footer-rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(1) { animation-delay: 0.48s; }
-  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(2) { animation-delay: 0.56s; }
-  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(3) { animation-delay: 0.64s; }
-  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(4) { animation-delay: 0.72s; }
-  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(5) { animation-delay: 0.80s; }
-  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(6) { animation-delay: 0.88s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(1) { animation-delay: 0.68s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(2) { animation-delay: 0.76s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(3) { animation-delay: 0.84s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(4) { animation-delay: 0.92s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(5) { animation-delay: 1.00s; }
+  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(6) { animation-delay: 1.08s; }
 
-  /* Bitcoin block footer rises from below last */
+  /* Bitcoin block footer rises from below */
   #gameContainer:not(.hide) #bitcoinDetails {
     animation: game-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.52s both;
   }
