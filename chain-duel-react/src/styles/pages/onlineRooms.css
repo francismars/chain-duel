@@ -163,6 +163,7 @@
 .online-code-input {
   grid-column: 1;
   grid-row: 2;
+  gap: 2vw;
 }
 
 .online-buyin-field {
@@ -177,11 +178,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 0;
-  padding: 0;
+  padding: 0 0.2vw;
   margin-left: 0;
-  min-height: clamp(36px, 2.8vw, 46px);
   border: 1px solid rgb(255 255 255 / 0.07);
-  border-right: none;
+  
   overflow: hidden;
 }
 
@@ -197,6 +197,16 @@
   font-size: clamp(16px, 1.35vw, 22px);
   line-height: 1;
   font-family: inherit;
+}
+
+.online-buyin-btn svg {
+  width: 0.9em;
+  height: 0.9em;
+  display: block;
+  flex-shrink: 0;
+}
+
+.online-buyin-btn {
   color: rgb(255 255 255 / 0.5);
   background: transparent;
   border: 1px solid rgb(255 255 255 / 0.15);
@@ -218,8 +228,9 @@
 
 .online-buyin-center {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.35em;
+  justify-content: flex-start;
 }
 
 .online-buyin-value {
@@ -236,7 +247,7 @@
   padding: 0;
   margin-left: 0;
   margin-right: 0.4em;
-  text-align: left;
+  text-align: right;
 }
 
 .online-buyin-unit {
@@ -322,7 +333,7 @@
 /* CTA button — right column, spans label + field rows */
 .online-create-btn {
   grid-column: 2 !important;
-  grid-row: 1 / span 2 !important;
+  grid-row: 2;
   width: 100% !important;
   min-width: unset !important;
   margin: 0 !important;
@@ -754,7 +765,7 @@
   justify-content: space-between;
   align-items: center;
   border: none;
-  border-bottom: 1px solid #4f4f4f;
+  border-bottom: 1px solid #ffffff1f;
   background: none;
   border-radius: 0;
   padding: 0.8vw 0;
@@ -863,7 +874,7 @@
 .online-room-meta-item {
   display: inline-flex;
   align-items: baseline;
-  gap: 0;
+  gap: 0.3em;
 }
 
 .online-room-meta-val {

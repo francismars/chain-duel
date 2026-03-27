@@ -305,15 +305,23 @@ export default function OnlineRooms() {
     };
     const onRoomUpdated = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlineRoomUpdated(payload);
-      if (!parsed || !creatingRoomRef.current || !pendingRoomIdRef.current) {
-        return;
+      if (!parsed) return;
+
+      // Patch nostrMeta (emojis) into the live rooms list whenever it arrives
+      if (parsed.nostrMeta?.emojis) {
+        setRooms((prev) =>
+          prev.map((r) =>
+            r.roomId === parsed.roomId
+              ? { ...r, nostrMeta: { emojis: parsed.nostrMeta!.emojis } }
+              : r,
+          ),
+        );
       }
-      if (parsed.roomId !== pendingRoomIdRef.current) {
-        return;
-      }
-      if (!parsed.nostrMeta?.note1) {
-        return;
-      }
+
+      if (!creatingRoomRef.current || !pendingRoomIdRef.current) return;
+      if (parsed.roomId !== pendingRoomIdRef.current) return;
+      if (!parsed.nostrMeta?.note1) return;
+
       setCreatingRoom(false);
       creatingRoomRef.current = false;
       pendingRoomIdRef.current = null;
@@ -716,6 +724,9 @@ export default function OnlineRooms() {
                         </svg>
                       ) : null}
                       {room.roomCode}
+                      {room.nostrMeta?.emojis ? (
+                        <span className="online-room-code-emojis">{room.nostrMeta.emojis}</span>
+                      ) : null}
                     </span>
                     <span className="online-postgame-round-chip online-postgame-round-chip--open">
                       {room.buyin.toLocaleString()} sats
@@ -769,15 +780,15 @@ export default function OnlineRooms() {
                     <p className="online-room-meta">
                       <span className="online-room-meta-item">
                         <span className="online-room-meta-val">{room.buyin.toLocaleString()}</span>
-                        <span className="online-room-meta-label"> sats</span>
+                        <span className="online-room-meta-label">sats</span>
                       </span>
                       <span className="online-room-meta-item">
                         <span className={room.playersPaid > 0 ? 'online-room-meta-val online-room-meta-val--active' : 'online-room-meta-val online-room-meta-val--zero'}>{room.playersPaid}</span>
-                        <span className="online-room-meta-label">/{room.seatsTotal} seats</span>
+                        <span className="online-room-meta-label">/ {room.seatsTotal} seats</span>
                       </span>
                       <span className="online-room-meta-item">
                         <span className={room.spectators > 0 ? 'online-room-meta-val' : 'online-room-meta-val online-room-meta-val--zero'}>{room.spectators}</span>
-                        <span className="online-room-meta-label"> spectators</span>
+                        <span className="online-room-meta-label">{room.spectators === 1 ? 'spectator' : 'spectators'}</span>
                       </span>
                       <span className={`online-phase online-phase-${room.phase}`}>
                         {formatPhase(room.phase)}
@@ -812,7 +823,9 @@ export default function OnlineRooms() {
           {onlineMode === 'create' ? (
             <div key="field-create" className="online-buyin-field">
               <div className={`online-buyin-stepper${navFocus.type === 'create' ? ' online-selected' : ''}`}>
-                <button type="button" className="online-buyin-btn" onClick={() => updateBuyinBy(-BUYIN_STEP)} aria-label="Decrease buy-in">−</button>
+                <button type="button" className="online-buyin-btn" onClick={() => updateBuyinBy(-BUYIN_STEP)} aria-label="Decrease buy-in">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="6 9 12 15 18 9" /></svg>
+                </button>
                 <div className="online-buyin-center">
                   <input
                     className="online-buyin-value"
@@ -825,7 +838,9 @@ export default function OnlineRooms() {
                   />
                   <span className="online-buyin-unit">sats</span>
                 </div>
-                <button type="button" className="online-buyin-btn" onClick={() => updateBuyinBy(BUYIN_STEP)} aria-label="Increase buy-in">+</button>
+                <button type="button" className="online-buyin-btn" onClick={() => updateBuyinBy(BUYIN_STEP)} aria-label="Increase buy-in">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="18 15 12 9 6 15" /></svg>
+                </button>
               </div>
               <div className="online-buyin-presets" aria-label="Quick buy-in amounts">
                 {PRESET_AMOUNTS.map((amount, presetIdx) => (
