@@ -238,6 +238,7 @@ export interface OnlineRoomListItem {
   playersPaid: number;
   seatsTotal: number;
   spectators: number;
+  nostrMeta?: Pick<OnlineNostrMeta, 'emojis'>;
   /** From disk archive (vs in-memory finished). */
   archived?: boolean;
   matchRound?: number;

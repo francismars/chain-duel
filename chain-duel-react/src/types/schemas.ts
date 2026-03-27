@@ -218,6 +218,7 @@ export const OnlineRoomListItemSchema = z.object({
       durationMs: z.number(),
     })
     .optional(),
+  nostrMeta: z.object({ emojis: z.string() }).optional(),
   result: z
     .object({
       winnerName: z.string(),

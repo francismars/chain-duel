@@ -760,11 +760,25 @@ export default function OnlineRooms() {
                 /* ── Live: existing layout ── */
                 <>
                   <div className="online-room-main">
-                    <p className="online-room-code">{room.roomCode}</p>
+                    <p className="online-room-code">
+                      {room.roomCode}
+                      {room.nostrMeta?.emojis ? (
+                        <span className="online-room-code-emojis">{room.nostrMeta.emojis}</span>
+                      ) : null}
+                    </p>
                     <p className="online-room-meta">
-                      <span>{room.buyin.toLocaleString()} sats</span>
-                      <span>{room.playersPaid}/{room.seatsTotal} seats</span>
-                      <span>{room.spectators} spectators</span>
+                      <span className="online-room-meta-item">
+                        <span className="online-room-meta-val">{room.buyin.toLocaleString()}</span>
+                        <span className="online-room-meta-label"> sats</span>
+                      </span>
+                      <span className="online-room-meta-item">
+                        <span className={room.playersPaid > 0 ? 'online-room-meta-val online-room-meta-val--active' : 'online-room-meta-val online-room-meta-val--zero'}>{room.playersPaid}</span>
+                        <span className="online-room-meta-label">/{room.seatsTotal} seats</span>
+                      </span>
+                      <span className="online-room-meta-item">
+                        <span className={room.spectators > 0 ? 'online-room-meta-val' : 'online-room-meta-val online-room-meta-val--zero'}>{room.spectators}</span>
+                        <span className="online-room-meta-label"> spectators</span>
+                      </span>
                       <span className={`online-phase online-phase-${room.phase}`}>
                         {formatPhase(room.phase)}
                       </span>

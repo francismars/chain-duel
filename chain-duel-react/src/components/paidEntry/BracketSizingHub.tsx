@@ -121,7 +121,6 @@ export const BracketSizingHub = forwardRef<BracketSizingHubHandle, BracketSizing
             <div className="bracket-sizing-hub__buyin-grid" role="group" aria-label="Buy-in in sats">
               {BUYIN_STEPS.map((sats, i) => {
                 const active = deposit === sats;
-                const short = `${sats / 1000}k`;
                 return (
                     <button
                       key={sats}

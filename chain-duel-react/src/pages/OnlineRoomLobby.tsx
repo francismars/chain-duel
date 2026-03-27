@@ -9,6 +9,10 @@ import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { OnlineRoomState } from '@/types/socket';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import { signNostrEvent, signOnlineSeatLinkChallenge } from '@/lib/nostr/signOnlineSeatLink';
+import { STORED_NOSTR_PUBKEY_KEY, getStoredSignerMode } from '@/lib/nostr/signerSession';
+import { getNwcUri, nwcPay } from '@/lib/nostr/nwcPay';
+import { fetchLatestKind0Profile } from '@/lib/nostr/fetchKind0Profile';
+import { npubEncode } from 'nostr-tools/nip19';
 import type { NostrLinkedProfile } from '@/types/schemas';
 import '@/styles/pages/onlineRoomLobby.css';
 
@@ -56,7 +60,7 @@ export default function OnlineRoomLobby() {
   const [kind1PostEvent, setKind1PostEvent] = useState<Kind1PostLoaded | null>(null);
   const [kind1PostStatus, setKind1PostStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [kind1PostRetry, setKind1PostRetry] = useState(0);
-  const [zapPayBusy, setZapPayBusy] = useState(false);
+  const [, setZapPayBusy] = useState(false);
   const [seatZapInvoice, setSeatZapInvoice] = useState<{
     pr: string;
     lightningUri: string;
@@ -67,6 +71,8 @@ export default function OnlineRoomLobby() {
   const [nostrLinkedProfile, setNostrLinkedProfile] = useState<NostrLinkedProfile | null>(null);
   const [nostrModalOpen, setNostrModalOpen] = useState(false);
   const [nostrLinkBusy, setNostrLinkBusy] = useState(false);
+  const [nostrLinkError, setNostrLinkError] = useState<string | null>(null);
+  const [nostrLinkSourceMode, setNostrLinkSourceMode] = useState<'extension' | 'nip46' | 'nsec' | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [lightningPay, setLightningPay] = useState<{
     lnurl: string;
@@ -75,10 +81,24 @@ export default function OnlineRoomLobby() {
     expiresAt: number;
   } | null>(null);
   const [lightningBusy, setLightningBusy] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<'anon' | 'nostr-pay' | 'pin-zap' | null>(null);
+  const [nwcUri] = useState<string | null>(() => getNwcUri());
+  const [nwcBusy, setNwcBusy] = useState(false);
+  const [nwcError, setNwcError] = useState<string | null>(null);
+  const [paymentMode, setPaymentMode] = useState<'anon' | 'nostr-connect' | 'nostr-pay' | 'pin-zap' | null>(null);
   const [cardNavIndex, setCardNavIndex] = useState(0);
+  /** Nostr session from Config page (NIP-46 / extension / nsec) persisted in localStorage. */
+  const [persistedNostr, setPersistedNostr] = useState<{
+    pubkey: string;
+    npub: string;
+    mode: 'extension' | 'nip46' | 'nsec';
+    displayName: string | null;
+    picture: string | null;
+    nip05: string | null;
+    lud16: string | null;
+  } | null>(null);
   /** Pubkey from last successful kind-1 sign, until server confirms with `resOnlineNostrLinkOk`. */
   const pendingNostrLinkPubkeyRef = useRef<string | null>(null);
+  const paymentModeRef = useRef(paymentMode);
   /** Last successful `requestOnlineKind1Post` for this room + note ref — avoids refetch when switching Kind1 tabs back to POST. */
   const kind1PostLoadedKeyRef = useRef<string | null>(null);
 
@@ -96,6 +116,41 @@ export default function OnlineRoomLobby() {
   useEffect(() => {
     const id = window.setInterval(() => setNowTick(Date.now()), 4000);
     return () => window.clearInterval(id);
+  }, []);
+
+  // Read persisted Nostr session from localStorage (set by Config page after sign-in).
+  // Also listen for storage changes so the chip updates if the user signs in another tab.
+  useEffect(() => {
+    const loadSession = () => {
+      const pubkey = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY) ?? '';
+      const mode = getStoredSignerMode();
+      if (!pubkey || !mode) {
+        setPersistedNostr(null);
+        return;
+      }
+      let npub = '';
+      try { npub = npubEncode(pubkey); } catch { npub = pubkey; }
+      setPersistedNostr({ pubkey, npub, mode, displayName: null, picture: null, nip05: null, lud16: null });
+      // Fetch kind-0 profile in the background to populate the card.
+      void fetchLatestKind0Profile(pubkey).then((profile) => {
+        if (!profile) return;
+        setPersistedNostr((prev) =>
+          prev?.pubkey === pubkey
+            ? {
+                ...prev,
+                displayName: profile.displayTitle ?? prev.displayName,
+                picture: profile.picture ?? null,
+                nip05: profile.nip05 ?? null,
+                lud16: profile.lud16 ?? null,
+              }
+            : prev
+        );
+      });
+    };
+
+    loadSession();
+    window.addEventListener('storage', loadSession);
+    return () => window.removeEventListener('storage', loadSession);
   }, []);
 
   useEffect(() => {
@@ -282,6 +337,13 @@ export default function OnlineRoomLobby() {
           /* ignore quota */
         }
       }
+      // Auto-start zap invoice immediately after signing — skip the PAY button click
+      const mode = paymentModeRef.current;
+      if (mode === 'nostr-pay' || mode === 'nostr-connect') {
+        setSeatZapInvoice(null);
+        setZapPayBusy(true);
+        socket.emit('requestOnlineSeatZapPayPrepare', { roomId });
+      }
     };
     const onNostrChallenge = async (payload: unknown) => {
       const parsed = SocketBoundaryParsers.resOnlineNostrLinkChallenge(payload);
@@ -293,7 +355,7 @@ export default function OnlineRoomLobby() {
         return;
       }
       setNostrLinkBusy(true);
-      setError('');
+      setNostrLinkError(null);
       try {
         const signed = await signOnlineSeatLinkChallenge({
           challenge: parsed.challenge,
@@ -305,8 +367,7 @@ export default function OnlineRoomLobby() {
         });
       } catch (e) {
         pendingNostrLinkPubkeyRef.current = null;
-        const msg = e instanceof Error ? e.message : 'nostr_sign_failed';
-        setError(msg);
+        setNostrLinkError(e instanceof Error ? e.message : 'Signing failed');
         setNostrLinkBusy(false);
       }
     };
@@ -454,12 +515,15 @@ export default function OnlineRoomLobby() {
     [nostrLinkExpiresAt, nowTick]
   );
 
+  paymentModeRef.current = paymentMode;
+
   const startNostrLinkFlow = () => {
     if (!socket || !roomId) {
       return;
     }
-    setError('');
+    setNostrLinkError(null);
     setNostrLinkBusy(true);
+    setNostrLinkSourceMode(persistedNostr?.mode ?? 'extension');
     socket.emit('requestOnlineNostrLinkChallenge', { roomId });
   };
 
@@ -659,7 +723,7 @@ export default function OnlineRoomLobby() {
   // Sync cardNavIndex when paymentMode changes via mouse click
   useEffect(() => {
     if (paymentMode === null) return;
-    const idx = ['anon', 'nostr-pay', 'pin-zap'].indexOf(paymentMode);
+    const idx = ['anon', 'nostr-connect', 'nostr-pay', 'pin-zap'].indexOf(paymentMode);
     if (idx !== -1) setCardNavIndex(idx);
   }, [paymentMode]);
 
@@ -676,7 +740,7 @@ export default function OnlineRoomLobby() {
       const tag = (document.activeElement as HTMLElement | null)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
-      const modes = ['anon', 'nostr-pay', 'pin-zap'] as const;
+      const modes = ['anon', 'nostr-connect', 'nostr-pay', 'pin-zap'] as const;
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
         const dir = e.key === 'ArrowRight' ? 1 : -1;
@@ -715,16 +779,6 @@ export default function OnlineRoomLobby() {
     return () => clearTimeout(id);
   }, [paymentMode]);
 
-  const startSeatZapPay = () => {
-    if (!socket || !roomId || !nostrLinkActive) {
-      return;
-    }
-    setSeatZapInvoice(null);
-    setError('');
-    setZapPayBusy(true);
-    socket.emit('requestOnlineSeatZapPayPrepare', { roomId });
-  };
-
   const payAnonymouslyFromPost = () => {
     if (!socket || !roomId) {
       return;
@@ -735,21 +789,21 @@ export default function OnlineRoomLobby() {
     socket.emit('requestOnlineSeatLightning', { roomId });
   };
 
-  const tryWeblnPaySeatZap = async () => {
-    if (!seatZapInvoice) {
-      return;
-    }
-    const win = window as Window & {
-      webln?: { enable?: () => Promise<void>; sendPayment?: (p: string) => Promise<unknown> };
-    };
-    if (!win.webln?.enable || !win.webln.sendPayment) {
-      return;
-    }
+  const openLightningUri = () => {
+    if (!seatZapInvoice) return;
+    window.location.href = seatZapInvoice.lightningUri;
+  };
+
+  const tryNwcPay = async (bolt11: string) => {
+    if (nwcBusy) return;
+    setNwcBusy(true);
+    setNwcError(null);
     try {
-      await win.webln.enable();
-      await win.webln.sendPayment(seatZapInvoice.pr);
-    } catch {
-      /* user cancelled or wallet unsupported */
+      await nwcPay(bolt11);
+    } catch (e) {
+      setNwcError(e instanceof Error ? e.message : 'Payment failed');
+    } finally {
+      setNwcBusy(false);
     }
   };
 
@@ -808,7 +862,6 @@ export default function OnlineRoomLobby() {
 
   return (
     <div className="online-lobby-page">
-      <Sponsorship id="sponsorship-online-lobby" />
       <header id="brand">
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
@@ -816,6 +869,8 @@ export default function OnlineRoomLobby() {
 
       {/* ── Main centering wrapper (Zones 1–4 + modal) ── */}
       <div className="online-lobby-main">
+
+      <Sponsorship id="sponsorship-online-lobby" />
 
       {/* ── Zone 1: Page Header ── */}
       <div className="online-lobby-header">
@@ -906,6 +961,15 @@ export default function OnlineRoomLobby() {
             .join(' ')}
         >
           <div className="online-lobby-arena-seat-header">
+            {isMyP1Seat && !isMatchEnded && !rematchPending ? (
+              <button
+                type="button"
+                className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
+                onClick={() => socket?.emit('onlineSetReady', { roomId, ready: !myReady })}
+              >
+                {myReady ? 'UNREADY' : 'MARK AS READY'}
+              </button>
+            ) : null}
             <span className="online-lobby-label">
               PLAYER 1{isMyP1Seat ? <span className="online-lobby-you-tag">YOU</span> : null}
             </span>
@@ -935,15 +999,6 @@ export default function OnlineRoomLobby() {
               <>Paid · <span className="online-lobby-arena-seat-meta--ready">Ready</span></>
             ) : p1MetaDisplay}
           </p>
-          {isMyP1Seat && !isMatchEnded && !rematchPending ? (
-            <button
-              type="button"
-              className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
-              onClick={() => socket?.emit('onlineSetReady', { roomId, ready: !myReady })}
-            >
-              {myReady ? 'UNREADY' : 'MARK AS READY'}
-            </button>
-          ) : null}
         </div>
 
         {/* Center pillar */}
@@ -978,6 +1033,15 @@ export default function OnlineRoomLobby() {
                 {p2.pingMs}ms
               </span>
             ) : null}
+            {isMyP2Seat && !isMatchEnded && !rematchPending ? (
+              <button
+                type="button"
+                className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
+                onClick={() => socket?.emit('onlineSetReady', { roomId, ready: !myReady })}
+              >
+                {myReady ? 'UNREADY' : 'MARK AS READY'}
+              </button>
+            ) : null}
           </div>
           <div className="online-lobby-arena-seat-identity">
             {isMatchEnded || p2?.status === 'paid' ? (
@@ -996,15 +1060,6 @@ export default function OnlineRoomLobby() {
               <>Paid · <span className="online-lobby-arena-seat-meta--ready">Ready</span></>
             ) : p2MetaDisplay}
           </p>
-          {isMyP2Seat && !isMatchEnded && !rematchPending ? (
-            <button
-              type="button"
-              className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
-              onClick={() => socket?.emit('onlineSetReady', { roomId, ready: !myReady })}
-            >
-              {myReady ? 'UNREADY' : 'MARK AS READY'}
-            </button>
-          ) : null}
         </div>
       </div>
 
@@ -1029,8 +1084,10 @@ export default function OnlineRoomLobby() {
         {/* Paid seat status card */}
         {mySeatPinState ? (
           <div className={`online-lobby-pin-card ${mySeatPinState.cardMod}`}>
-            <p className="online-lobby-label">{mySeatPinState.label}</p>
-            <p className="online-lobby-pin">{mySeatPinState.pin}</p>
+            <div className="online-lobby-pin-card-title-group">
+              <p className="online-lobby-label">{mySeatPinState.label}</p>
+              <p className="online-lobby-pin">{mySeatPinState.pin}</p>
+            </div>
             <p className="online-lobby-copy">{mySeatPinState.copy}</p>
           </div>
         ) : null}
@@ -1056,15 +1113,46 @@ export default function OnlineRoomLobby() {
                 <span className="online-lobby-path-card-desc">Lightning invoice — no identity required</span>
               </button>
 
-              {/* Nostr + Pay here — person with lightning */}
+              {/* Nostr Connect — signature / pen (sign remotely) */}
+              <button
+                type="button"
+                className={['online-lobby-path-card', paymentMode === 'nostr-connect' ? 'online-lobby-path-card--active' : ''].filter(Boolean).join(' ')}
+                onClick={() => setPaymentMode(paymentMode === 'nostr-connect' ? null : 'nostr-connect')}
+                role="radio"
+                aria-checked={paymentMode === 'nostr-connect'}
+                data-mode="nostr-connect"
+                tabIndex={cardNavIndex === 1 ? 0 : -1}
+              >
+                <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  {/* Desktop monitor (landscape) */}
+                  <rect x="1" y="4" width="16" height="11" rx="1" />
+                  <line x1="4" y1="18" x2="14" y2="18" />
+                  {/* Mobile phone (portrait) in front */}
+                  <rect x="15" y="10" width="8" height="13" rx="1" />
+                  <line x1="18" y1="21" x2="20" y2="21" strokeWidth="1" />
+                </svg>
+                <span className="online-lobby-path-card-title">NOSTR CONNECT</span>
+                <span className="online-lobby-path-card-desc">Pair with Primal, Amber · sign from mobile</span>
+              </button>
+
+              {/* Extension + Pay — person with lightning */}
               <button
                 type="button"
                 className={['online-lobby-path-card', paymentMode === 'nostr-pay' ? 'online-lobby-path-card--active' : ''].filter(Boolean).join(' ')}
-                onClick={() => setPaymentMode(paymentMode === 'nostr-pay' ? null : 'nostr-pay')}
+                onClick={() => {
+                  if (paymentMode === 'nostr-pay') {
+                    setPaymentMode(null);
+                    return;
+                  }
+                  setPaymentMode('nostr-pay');
+                  if (persistedNostr?.mode === 'extension' && !nostrLinkActive && socket && roomId) {
+                    startNostrLinkFlow();
+                  }
+                }}
                 role="radio"
                 aria-checked={paymentMode === 'nostr-pay'}
                 data-mode="nostr-pay"
-                tabIndex={cardNavIndex === 1 ? 0 : -1}
+                tabIndex={cardNavIndex === 2 ? 0 : -1}
               >
                 <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="8" cy="7" r="3.5" />
@@ -1072,10 +1160,10 @@ export default function OnlineRoomLobby() {
                   <path d="M17 11l-3 5h4l-3 5" />
                 </svg>
                 <span className="online-lobby-path-card-title">SIGN IN WITH EXTENSION</span>
-                <span className="online-lobby-path-card-desc">Sign in with extension · lobby generates zap invoice</span>
+                <span className="online-lobby-path-card-desc">Alby, nos2x, or any NIP-07 browser extension</span>
               </button>
 
-              {/* Zap with PIN — key */}
+              {/* Zap with PIN — mobile device */}
               <button
                 type="button"
                 className={['online-lobby-path-card', paymentMode === 'pin-zap' ? 'online-lobby-path-card--active' : ''].filter(Boolean).join(' ')}
@@ -1083,7 +1171,7 @@ export default function OnlineRoomLobby() {
                 role="radio"
                 aria-checked={paymentMode === 'pin-zap'}
                 data-mode="pin-zap"
-                tabIndex={cardNavIndex === 2 ? 0 : -1}
+                tabIndex={cardNavIndex === 3 ? 0 : -1}
               >
                 <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect x="5" y="2" width="14" height="20" rx="2" />
@@ -1205,21 +1293,23 @@ export default function OnlineRoomLobby() {
                 /* Anonymous Lightning invoice */
                 <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--panel">
                   {!lightningPay ? (
-                    /* Pre-invoice: label + hint + CTA stacked */
-                    <>
-                      <p className="online-lobby-sublabel">ANONYMOUS ZAP</p>
-                      <p className="online-lobby-kind1-qr-hint">
-                        Generates a Lightning invoice — no identity required. Pay from any wallet.
-                      </p>
+                    /* Pre-invoice: description left + CTA top-right */
+                    <div className="online-lobby-nostr-connected-top">
+                      <div className="online-lobby-anon-desc">
+                        <p className="online-lobby-sublabel">ANONYMOUS ZAP</p>
+                        <p className="online-lobby-kind1-qr-hint">
+                          Generates a Lightning invoice — no identity required. Pay from any wallet.
+                        </p>
+                      </div>
                       <Button
                         type="button"
-                        className="online-lobby-action"
+                        className="online-lobby-action online-lobby-nostr-zap-btn"
                         disabled={lightningBusy && !lightningPay}
                         onClick={payAnonymouslyFromPost}
                       >
                         {lightningBusy && !lightningPay ? 'PREPARING…' : 'GET INVOICE'}
                       </Button>
-                    </>
+                    </div>
                   ) : (
                     /* QR + structured details side by side */
                     <div className="online-lobby-qr-split">
@@ -1246,70 +1336,263 @@ export default function OnlineRoomLobby() {
                           <p className="online-lobby-pin-step-hint">
                             Paying this invoice sends an anonymous zap to the room note. No Nostr account or identity required — pays directly via Lightning.
                           </p>
+                          {nwcUri ? (
+                            <>
+                              <Button
+                                type="button"
+                                className="online-lobby-action online-lobby-nwc-pay-btn"
+                                disabled={nwcBusy}
+                                onClick={() => void tryNwcPay(lightningPay.lightningUri.replace(/^lightning:/i, ''))}
+                              >
+                                {nwcBusy ? 'PAYING…' : 'PAY WITH WALLET'}
+                              </Button>
+                              {nwcError ? <p className="online-lobby-nwc-error">{nwcError}</p> : null}
+                            </>
+                          ) : null}
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-              ) : paymentMode === 'nostr-pay' ? (
-                /* Sign in + pay — lobby generates zap invoice */
+              ) : paymentMode === 'nostr-connect' ? (
+                /* Nostr Connect (NIP-46 mobile signer — Primal, Amber, etc.) */
                 <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--panel">
-                  {!nostrLinkActive ? (
-                    <div className="online-lobby-nostr-signin-prompt">
-                      <svg className="online-lobby-nostr-signin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M15 3H9a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" />
-                        <path d="M10 17l5-5-5-5" />
-                        <line x1="15" y1="12" x2="3" y2="12" />
-                      </svg>
-                      <div className="online-lobby-nostr-signin-text">
-                        <p className="online-lobby-nostr-signin-title">SIGN IN WITH NOSTR EXTENSION</p>
-                        <p className="online-lobby-nostr-signin-sub">Connect with Alby, nos2x, or any NIP-07 browser extension.</p>
-                      </div>
-                      <Button type="button" className="online-lobby-action online-lobby-nostr-signin-btn" onClick={openNostrModal}>Sign in</Button>
-                    </div>
-                  ) : !seatZapInvoice ? (
-                    <>
-                      {nostrLinkedProfile ? (
-                        <div className="online-lobby-nostr-linked-pill">
-                          <div className="online-lobby-nostr-linked-row">
-                            {nostrLinkedProfile.picture ? (
-                              <img className="online-lobby-nostr-linked-avatar" src={nostrLinkedProfile.picture} alt="" onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} />
-                            ) : null}
-                            <span className="online-lobby-nostr-linked-name">{nostrLinkedProfile.name ?? 'Nostr profile'}</span>
-                            <span className="online-lobby-nostr-linked-rest">
-                              — expires {new Date(nostrLinkExpiresAt ?? 0).toLocaleTimeString()}{' '}
-                              <button type="button" className="online-lobby-text-btn" onClick={openNostrModal}>Update</button>
-                            </span>
+                  {!(nostrLinkActive && nostrLinkSourceMode === 'nip46') ? (
+                    persistedNostr?.mode === 'nip46' ? (
+                      /* NIP-46 session active — profile card + ZAP button */
+                      <div className="online-lobby-nostr-connected-prompt">
+                        <div className="online-lobby-nostr-connected-top">
+                          {/* Profile card */}
+                          <div className="online-lobby-nc-profile-card">
+                            {persistedNostr.picture ? (
+                              <img
+                                className="online-lobby-nc-profile-avatar"
+                                src={persistedNostr.picture}
+                                alt=""
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                            ) : (
+                              <div className="online-lobby-nc-profile-avatar online-lobby-nc-profile-avatar--placeholder" aria-hidden>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="12" cy="8" r="4" />
+                                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                                </svg>
+                              </div>
+                            )}
+                            <div className="online-lobby-nc-profile-info">
+                              <span className="online-lobby-nc-profile-name-row">
+                                <span className="online-lobby-nc-profile-name">
+                                  {persistedNostr.displayName ?? midTruncate(persistedNostr.npub, 14, 6)}
+                                </span>
+                                <span className="online-lobby-nc-profile-npub" title={persistedNostr.npub}>
+                                  {midTruncate(persistedNostr.npub, 12, 6)}
+                                </span>
+                              </span>
+                              {persistedNostr.nip05 ? (
+                                <span className="online-lobby-nc-profile-nip05">
+                                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                  {persistedNostr.nip05.replace(/^_@/, '@')}
+                                </span>
+                              ) : null}
+                              {persistedNostr.lud16 ? (
+                                <span className="online-lobby-nc-profile-ln" title={`Lightning address: ${persistedNostr.lud16}`}>
+                                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                    <path d="M13 2 4.5 13.5H12L11 22l8.5-11.5H12L13 2Z" />
+                                  </svg>
+                                  {persistedNostr.lud16}
+                                </span>
+                              ) : (
+                                <span className="online-lobby-nc-profile-ln online-lobby-nc-profile-ln--missing" title="No Lightning address found on profile — payouts may not be available">
+                                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                    <path d="M13 2 4.5 13.5H12L11 22l8.5-11.5H12L13 2Z" />
+                                  </svg>
+                                  no LN address
+                                </span>
+                              )}
+                            </div>
                           </div>
+                          {/* ZAP button — top right */}
+                          <Button
+                            type="button"
+                            className="online-lobby-action online-lobby-nostr-zap-btn"
+                            disabled={nostrLinkBusy || !socket}
+                            onClick={startNostrLinkFlow}
+                          >
+                            {nostrLinkBusy
+                              ? (persistedNostr.mode === 'nip46' ? 'APPROVE IN APP…' : 'SIGNING…')
+                              : `ZAP WITH ${persistedNostr.displayName ?? midTruncate(persistedNostr.npub, 8, 4)}`}
+                          </Button>
                         </div>
-                      ) : null}
-                      <Button type="button" className="online-lobby-action" disabled={zapPayBusy || !socket} onClick={startSeatZapPay}>
-                        {zapPayBusy ? 'PREPARING…' : 'PAY'}
-                      </Button>
-                    </>
+                        <button
+                          type="button"
+                          className="online-lobby-text-btn online-lobby-nostr-switch-btn"
+                          onClick={() => navigate('/config')}
+                        >
+                          manage connection in settings
+                        </button>
+                        {nostrLinkError ? (
+                          <p className="online-lobby-nostr-sign-error" role="alert">{nostrLinkError}</p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      /* No NIP-46 session — prompt to pair from Settings */
+                      <div className="online-lobby-nostr-signin-prompt">
+                        <svg className="online-lobby-nostr-signin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <rect x="3" y="2" width="11" height="18" rx="2" />
+                          <line x1="6.5" y1="18" x2="10.5" y2="18" />
+                          <path d="M17 8a5 5 0 0 1 0 8" />
+                          <path d="M20 5.5a9 9 0 0 1 0 13" />
+                        </svg>
+                        <div className="online-lobby-nostr-signin-text">
+                          <p className="online-lobby-nostr-signin-title">NOSTR CONNECT</p>
+                          <p className="online-lobby-nostr-signin-sub">Pair with Primal or Amber from Settings → Nostr, then return here to zap.</p>
+                        </div>
+                        <Button
+                          type="button"
+                          className="online-lobby-action online-lobby-nostr-signin-btn"
+                          onClick={() => navigate('/config')}
+                        >
+                          Open Settings
+                        </Button>
+                      </div>
+                    )
                   ) : (
-                    /* QR + details side by side once invoice is ready */
+                    /* QR split — skeleton while preparing, live when invoice arrives */
                     <div className="online-lobby-qr-split">
-                      <QRCodeSVG value={seatZapInvoice.lightningUri} size={160} includeMargin className="online-lobby-qr" aria-label="Zap invoice QR code" />
+                      <div className={['online-lobby-qr-frame', !seatZapInvoice ? 'online-lobby-qr-frame--loading' : 'online-lobby-qr-frame--ready'].join(' ')}>
+                        {seatZapInvoice ? (
+                          <QRCodeSVG value={seatZapInvoice.lightningUri} size={160} includeMargin className="online-lobby-qr" aria-label="Zap invoice QR code" />
+                        ) : (
+                          <div className="online-lobby-qr-skeleton" aria-hidden>
+                            <svg className="online-lobby-qr-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
+                              <circle cx="12" cy="12" r="9" strokeOpacity="0.12" />
+                              <path d="M12 3a9 9 0 0 1 9 9" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
                       <div className="online-lobby-qr-split-details">
                         {nostrLinkedProfile ? (
                           <div className="online-lobby-nostr-linked-pill">
                             <div className="online-lobby-nostr-linked-row">
+                              <svg className="online-lobby-nostr-linked-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-label="Linked">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
                               {nostrLinkedProfile.picture ? (
                                 <img className="online-lobby-nostr-linked-avatar" src={nostrLinkedProfile.picture} alt="" onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} />
                               ) : null}
-                              <span className="online-lobby-nostr-linked-name">{nostrLinkedProfile.name ?? 'Nostr profile'}</span>
+                              <div className="online-lobby-nostr-linked-identity">
+                                <span className="online-lobby-nostr-linked-name">{nostrLinkedProfile.name ?? 'Nostr profile'}</span>
+                                <span className="online-lobby-nostr-linked-npub">{midTruncate(npubEncode(nostrLinkedProfile.pubkey), 12, 6)}</span>
+                              </div>
                             </div>
                           </div>
                         ) : null}
-                        <p className="online-lobby-sublabel">ZAP INVOICE — {seatZapInvoice.buyinSats.toLocaleString()} sats</p>
+                        <p className="online-lobby-sublabel">
+                          {seatZapInvoice ? `ZAP INVOICE — ${seatZapInvoice.buyinSats.toLocaleString()} sats` : 'PREPARING INVOICE…'}
+                        </p>
                         <div className="online-lobby-kind1-uri-line">
-                          <p className="online-lobby-kind1-uri-text" title={seatZapInvoice.lightningUri}>{seatZapInvoice.lightningUri}</p>
-                          <button type="button" className="online-lobby-kind1-uri-copy-iconbtn" onClick={() => void navigator.clipboard.writeText(seatZapInvoice.lightningUri)} aria-label="Copy" title="Copy">
-                            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
-                          </button>
+                          {seatZapInvoice ? (
+                            <>
+                              <p className="online-lobby-kind1-uri-text" title={seatZapInvoice.lightningUri}>{seatZapInvoice.lightningUri}</p>
+                              <button type="button" className="online-lobby-kind1-uri-copy-iconbtn" onClick={() => void navigator.clipboard.writeText(seatZapInvoice.lightningUri)} aria-label="Copy" title="Copy">
+                                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                              </button>
+                            </>
+                          ) : (
+                            <div className="online-lobby-uri-skeleton" aria-hidden />
+                          )}
                         </div>
-                        <Button type="button" className="online-lobby-action" onClick={() => void tryWeblnPaySeatZap()}>Pay in browser wallet</Button>
+                        <div className="online-lobby-pay-btns">
+                          <Button type="button" className="online-lobby-action" disabled={!seatZapInvoice} onClick={openLightningUri}>Launch external wallet</Button>
+                          {nwcUri ? (
+                            <Button type="button" className="online-lobby-action online-lobby-nwc-pay-btn" disabled={!seatZapInvoice || nwcBusy} onClick={() => seatZapInvoice && void tryNwcPay(seatZapInvoice.pr)}>
+                              {nwcBusy ? 'PAYING…' : 'PAY WITH NWC'}
+                            </Button>
+                          ) : null}
+                        </div>
+                        {nwcError ? <p className="online-lobby-nwc-error">{nwcError}</p> : null}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : paymentMode === 'nostr-pay' ? (
+                /* Sign in with browser extension — lobby generates zap invoice */
+                <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--panel">
+                  {!(nostrLinkActive && nostrLinkSourceMode !== 'nip46') ? (
+                    <div className="online-lobby-nostr-signin-prompt">
+                      <div className="online-lobby-nostr-signin-text">
+                        <p className="online-lobby-nostr-signin-title">SIGN IN WITH EXTENSION</p>
+                        <p className="online-lobby-nostr-signin-sub">
+                          {nostrLinkBusy
+                            ? 'Approve the signing request in your extension…'
+                            : 'Connect with Alby, nos2x, or any NIP-07 browser extension.'}
+                        </p>
+                      </div>
+                      {nostrLinkBusy ? (
+                        <span className="online-lobby-nostr-signing-indicator">SIGNING…</span>
+                      ) : (
+                        <Button type="button" className="online-lobby-action online-lobby-nostr-signin-btn" onClick={openNostrModal}>Sign in</Button>
+                      )}
+                    </div>
+                  ) : (
+                    /* QR split — skeleton while preparing, live when invoice arrives */
+                    <div className="online-lobby-qr-split">
+                      <div className={['online-lobby-qr-frame', !seatZapInvoice ? 'online-lobby-qr-frame--loading' : 'online-lobby-qr-frame--ready'].join(' ')}>
+                        {seatZapInvoice ? (
+                          <QRCodeSVG value={seatZapInvoice.lightningUri} size={160} includeMargin className="online-lobby-qr" aria-label="Zap invoice QR code" />
+                        ) : (
+                          <div className="online-lobby-qr-skeleton" aria-hidden>
+                            <svg className="online-lobby-qr-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
+                              <circle cx="12" cy="12" r="9" strokeOpacity="0.12" />
+                              <path d="M12 3a9 9 0 0 1 9 9" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <div className="online-lobby-qr-split-details">
+                        {nostrLinkedProfile ? (
+                          <div className="online-lobby-nostr-linked-pill">
+                            <div className="online-lobby-nostr-linked-row">
+                              <svg className="online-lobby-nostr-linked-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-label="Linked">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              {nostrLinkedProfile.picture ? (
+                                <img className="online-lobby-nostr-linked-avatar" src={nostrLinkedProfile.picture} alt="" onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} />
+                              ) : null}
+                              <div className="online-lobby-nostr-linked-identity">
+                                <span className="online-lobby-nostr-linked-name">{nostrLinkedProfile.name ?? 'Nostr profile'}</span>
+                                <span className="online-lobby-nostr-linked-npub">{midTruncate(npubEncode(nostrLinkedProfile.pubkey), 12, 6)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
+                        <p className="online-lobby-sublabel">
+                          {seatZapInvoice ? `ZAP INVOICE — ${seatZapInvoice.buyinSats.toLocaleString()} sats` : 'PREPARING INVOICE…'}
+                        </p>
+                        <div className="online-lobby-kind1-uri-line">
+                          {seatZapInvoice ? (
+                            <>
+                              <p className="online-lobby-kind1-uri-text" title={seatZapInvoice.lightningUri}>{seatZapInvoice.lightningUri}</p>
+                              <button type="button" className="online-lobby-kind1-uri-copy-iconbtn" onClick={() => void navigator.clipboard.writeText(seatZapInvoice.lightningUri)} aria-label="Copy" title="Copy">
+                                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                              </button>
+                            </>
+                          ) : (
+                            <div className="online-lobby-uri-skeleton" aria-hidden />
+                          )}
+                        </div>
+                        <div className="online-lobby-pay-btns">
+                          <Button type="button" className="online-lobby-action" disabled={!seatZapInvoice} onClick={openLightningUri}>Launch external wallet</Button>
+                          {nwcUri ? (
+                            <Button type="button" className="online-lobby-action online-lobby-nwc-pay-btn" disabled={!seatZapInvoice || nwcBusy} onClick={() => seatZapInvoice && void tryNwcPay(seatZapInvoice.pr)}>
+                              {nwcBusy ? 'PAYING…' : 'PAY WITH NWC'}
+                            </Button>
+                          ) : null}
+                        </div>
+                        {nwcError ? <p className="online-lobby-nwc-error">{nwcError}</p> : null}
                       </div>
                     </div>
                   )}
@@ -1423,18 +1706,6 @@ export default function OnlineRoomLobby() {
                   <p className="online-lobby-inline-pay-error">{error}</p>
                 ) : null}
 
-                {!mySeat ? (
-                  <Button
-                    type="button"
-                    className="online-lobby-action online-lobby-leave-btn"
-                    onClick={() => {
-                      socket?.emit('leaveOnlineRoom', { roomId });
-                      navigate('/network');
-                    }}
-                  >
-                    LEAVE ROOM
-                  </Button>
-                ) : null}
               </div>
             </div>
           ) : null}
@@ -1463,6 +1734,22 @@ export default function OnlineRoomLobby() {
           {rematchPending ? 'Publishing rematch Kind1…' : 'Publishing Kind1…'}
         </div>
       )}
+
+      {/* Leave Room — shown below the kind1 section when seat not yet claimed */}
+      {!mySeat && !isMatchEnded && !rematchPending ? (
+        <div className="online-lobby-leave-row">
+          <Button
+            type="button"
+            className="online-lobby-action online-lobby-leave-btn"
+            onClick={() => {
+              socket?.emit('leaveOnlineRoom', { roomId });
+              navigate('/network');
+            }}
+          >
+            LEAVE ROOM
+          </Button>
+        </div>
+      ) : null}
 
       {/* Nostr sign-in modal */}
       {nostrModalOpen ? (
@@ -1530,7 +1817,7 @@ export default function OnlineRoomLobby() {
               )}
             </p>
             <p className="online-lobby-modal-nip07-hint">
-              Uses your browser NIP-07 extension (Alby, nos2x, etc.).
+              Uses your browser NIP-07 extension (Alby, nos2x, etc.). For mobile signers use the Nostr Connect tab.
             </p>
             <div className="online-lobby-nostr-actions online-lobby-modal-actions">
               <Button

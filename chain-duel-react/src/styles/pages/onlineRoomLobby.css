@@ -45,7 +45,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 0.6vw;
-  padding: 3.5rem 3vw 2vw;
+  padding: 1.5vw 3vw 2vw;
 }
 
 .online-lobby-page-missing {
@@ -72,7 +72,7 @@
 }
 
 .online-lobby-title {
-  font-size: clamp(24px, 3.8cqw, 48px);
+  font-size: clamp(24px, 3.8vw, 48px);
   letter-spacing: -0.03em;
   margin: 0 auto;
   text-align: center;
@@ -226,7 +226,7 @@
 .online-lobby-don-banner-amount {
   margin: 0.2vw 0 0.15vw;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(22px, 2.2cqw, 36px);
+  font-size: clamp(22px, 2.2vw, 36px);
   letter-spacing: 0.03em;
   color: rgb(255 255 255 / 0.95);
   line-height: 1;
@@ -292,7 +292,7 @@
 .online-lobby-arena-seat {
   border: 1px solid rgb(255 255 255 / 0.18);
   background: rgb(0 0 0 / 28%);
-  padding: 0.9vw 1.1vw;
+  padding: 0.9vw;
   display: flex;
   flex-direction: column;
   gap: 0.3vw;
@@ -419,7 +419,7 @@
 
 .online-lobby-arena-seat-name {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.45cqw, 24px);
+  font-size: clamp(16px, 1.45vw, 24px);
   margin: 0;
   line-height: 1.1;
   text-transform: uppercase;
@@ -452,15 +452,15 @@
 
 .online-lobby-arena-vs {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.8cqw, 30px);
+  font-size: clamp(16px, 1.8vw, 30px);
   letter-spacing: 0.14em;
   color: #fff;
 }
 
 .online-lobby-arena-state {
-  font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(9px, 0.65cqw, 12px);
-  letter-spacing: 0.16em;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.65vw, 12px);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #fff;
   text-align: center;
@@ -493,7 +493,7 @@
   margin-top: 0.2vw;
   margin-bottom: 0;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.35cqw, 22px);
+  font-size: clamp(16px, 1.35vw, 22px);
   letter-spacing: 0.03em;
 }
 
@@ -525,36 +525,38 @@
 }
 
 .online-lobby-pin-card--ready {
-  border-color: rgb(255 255 255 / 0.28);
-  border-left-color: rgb(255 255 255 / 0.55);
-  /* Compact horizontal strip — this is a confirmation, not a CTA */
+  border: 1px solid rgb(255 255 255 / 0.28);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.55vw 0.75vw;
+  text-align: center;
+}
+
+.online-lobby-pin-card-title-group {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  gap: 0.75rem 1.2rem;
-  flex-wrap: wrap;
-  padding: 0.55vw 0.75vw;
+  align-items: baseline;
+  gap: 0.6rem;
 }
 
 .online-lobby-pin-card--ready .online-lobby-label {
   flex-shrink: 0;
-  order: 1;
 }
 
 .online-lobby-pin-card--ready .online-lobby-pin {
-  font-size: clamp(14px, 1.3cqw, 20px);
+  font-size: clamp(14px, 1.3vw, 20px);
   letter-spacing: 0.06em;
   margin: 0;
   flex-shrink: 0;
-  order: 2;
 }
 
 .online-lobby-pin-card--ready .online-lobby-copy {
-  flex: 1;
-  min-width: 18ch;
-  order: 3;
-  font-size: clamp(10px, 0.65cqw, 12px);
+  font-size: clamp(10px, 0.65vw, 12px);
   color: rgb(255 255 255 / 0.5);
+  margin: 0;
 }
 
 .online-lobby-pin-card--go {
@@ -571,7 +573,7 @@
 .online-lobby-pin {
   font-family: BureauGrotesque, sans-serif;
   letter-spacing: 0.08em;
-  font-size: clamp(22px, 2.2cqw, 38px);
+  font-size: clamp(22px, 2.2vw, 38px);
   margin-top: 0.25vw;
   margin-bottom: 0;
 }
@@ -585,7 +587,7 @@
 
 .online-lobby-claim-title {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.6cqw, 26px);
+  font-size: clamp(16px, 1.6vw, 26px);
   letter-spacing: 0;
   color: #fff;
   text-transform: uppercase;
@@ -596,7 +598,7 @@
 /* Payment path cards (4-up grid) */
 .online-lobby-payment-paths {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.6vw;
 }
 
@@ -778,12 +780,16 @@
   flex-wrap: wrap;
 }
 
+.online-lobby-leave-row {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0 0.25rem;
+}
+
 .online-lobby-leave-btn {
   opacity: 0.45;
   font-size: clamp(10px, 0.75cqw, 12px);
   min-width: 0;
-  width: 100%;
-  margin-top: 1rem;
   transition: opacity 0.18s;
 }
 
@@ -798,24 +804,38 @@
 
 /* Ready toggle button embedded inside the seat card */
 .online-lobby-seat-ready-btn {
-  margin-top: 0.5rem;
-  padding: 0.3rem 0.75rem;
-  background: none;
-  border: 1px solid rgb(255 255 255 / 0.3);
-  color: rgb(255 255 255 / 0.7);
-  font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(10px, 0.7cqw, 12px);
-  letter-spacing: 0.1em;
+  padding: 0.35rem 0.9rem;
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.55);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(10px, 0.72vw, 12px);
+  font-weight: 600;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-  align-self: flex-end;
+  transition: border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* P1: button is first child of header — sits top-left */
+.online-lobby-arena-seat--p1 .online-lobby-seat-ready-btn {
+  order: -1;
+  margin-right: auto;
+}
+
+/* P2: button is last child of header — sits top-right */
+.online-lobby-arena-seat--p2 .online-lobby-seat-ready-btn {
+  margin-left: auto;
 }
 
 .online-lobby-seat-ready-btn:hover,
 .online-lobby-seat-ready-btn:focus-visible {
-  border-color: rgb(255 255 255 / 0.75);
+  border-color: #fff;
   color: #fff;
-  background: rgb(255 255 255 / 0.06);
+  background: rgb(255 255 255 / 0.16);
+  box-shadow: 0 0 18px rgb(255 255 255 / 0.18);
   outline: none;
 }
 
@@ -856,7 +876,7 @@
   margin: 0 auto;
   border: 1px solid rgb(255 255 255 / 0.15);
   background: rgb(0 0 0 / 25%);
-  padding: 1vw 1.2vw 2vw;
+  padding: 0.75vw 1.2vw 1vw;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -885,8 +905,8 @@
 }
 
 .online-lobby-room-error-icon {
-  width: clamp(28px, 2.2cqw, 38px);
-  height: clamp(28px, 2.2cqw, 38px);
+  width: clamp(28px, 2.2vw, 38px);
+  height: clamp(28px, 2.2vw, 38px);
   color: #ff7b7b;
   opacity: 0.8;
   flex-shrink: 0;
@@ -1046,6 +1066,8 @@
   gap: 0.75rem;
   width: 100%;
   overflow: visible;
+  padding-left: 1rem;
+  box-sizing: border-box;
   animation: path-panel-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -1053,6 +1075,8 @@
 .online-lobby-kind1-qr-col--panel {
   align-items: flex-start;
   overflow: visible;
+  padding: 0.75rem 1rem;
+  box-sizing: border-box;
 }
 
 /* CTA buttons inside the left hero column — constrained, not full-viewport-wide */
@@ -1064,6 +1088,56 @@
 /* In centered (non-panel) column, center the button */
 .online-lobby-kind1-qr-col:not(.online-lobby-kind1-qr-col--panel) .button {
   align-self: center;
+}
+
+/* QR frame — fixed size placeholder matches real QR footprint */
+.online-lobby-qr-frame {
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.online-lobby-qr-frame--ready {
+  animation: online-lobby-qr-fadein 0.35s ease both;
+}
+
+@keyframes online-lobby-qr-fadein {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.online-lobby-qr-skeleton {
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgb(255 255 255 / 0.07);
+  background: rgb(255 255 255 / 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.online-lobby-qr-spinner {
+  width: 2rem;
+  height: 2rem;
+  color: rgb(255 255 255 / 0.35);
+  animation: online-lobby-spin 1.1s linear infinite;
+}
+
+@keyframes online-lobby-spin {
+  to { transform: rotate(360deg); }
+}
+
+.online-lobby-uri-skeleton {
+  height: 0.75em;
+  width: 85%;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.06);
+  animation: online-lobby-pulse 2s ease-in-out infinite;
+}
+
+@keyframes online-lobby-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.9; }
 }
 
 /* Inner 2-col split: QR on left, details on right */
@@ -1139,7 +1213,7 @@
   border-radius: 50%;
   border: 1.5px solid rgb(255 255 255 / 0.55);
   background: rgb(255 255 255 / 0.06);
-  font-size: 12px;
+  font-size: clamp(10px, 0.72vw, 13px);
   font-weight: 700;
   font-family: BureauGrotesque, sans-serif;
   color: rgb(255 255 255 / 0.85);
@@ -1158,7 +1232,7 @@
 .online-lobby-pin-step-amount {
   margin: 0;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(24px, 2.4cqw, 36px);
+  font-size: clamp(24px, 2.4vw, 36px);
   color: #fff;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -1173,10 +1247,18 @@
 }
 
 /* Anon invoice amount — matches pin-step-amount style */
+.online-lobby-anon-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
 .online-lobby-anon-amount {
   margin: 0;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(24px, 2.4cqw, 36px);
+  font-size: clamp(24px, 2.4vw, 36px);
   color: #fff;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -1228,6 +1310,45 @@
   border-top: 1px solid rgb(255 255 255 / 0.08);
 }
 
+.online-lobby-pay-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.online-lobby-nwc-pay-btn {
+  background: rgb(100 200 130 / 0.1) !important;
+  border-color: rgb(100 200 130 / 0.45) !important;
+  color: rgb(140 230 170 / 0.95) !important;
+}
+
+.online-lobby-nwc-pay-btn:hover:not(:disabled),
+.online-lobby-nwc-pay-btn:focus-visible:not(:disabled) {
+  background: rgb(100 200 130 / 0.18) !important;
+  border-color: rgb(120 220 150 / 0.75) !important;
+}
+
+.online-lobby-nwc-pay-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.online-lobby-nwc-error {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.62vw, 11px);
+  color: rgb(255 140 120 / 0.9);
+  margin: 0.3rem 0 0;
+}
+
+.online-lobby-nostr-sign-error {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.62vw, 11px);
+  color: rgb(255 140 120 / 0.9);
+  margin: 0.35rem 0 0;
+  line-height: 1.4;
+}
+
 .online-lobby-qr-split-block-hint {
   margin: 0;
   font-size: clamp(10px, 0.62cqw, 11px);
@@ -1247,7 +1368,7 @@
 }
 
 .online-lobby-kind1-pin {
-  font-size: clamp(28px, 3cqw, 46px);
+  font-size: clamp(28px, 3vw, 46px);
   letter-spacing: 0.22em;
   margin: 0.2rem 0 0;
   color: #fff;
@@ -1402,7 +1523,7 @@
 }
 
 .online-lobby-kind1-loading-label {
-  font-family: BureauGrotesque, sans-serif;
+  font-family: Inter, sans-serif;
   font-size: clamp(10px, 0.65cqw, 12px);
   letter-spacing: 0.12em;
   color: rgb(255 255 255 / 0.28);
@@ -1473,11 +1594,11 @@
 
 .online-lobby-kind1-post-error-msg {
   margin: 0;
-  font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(13px, 0.9cqw, 16px);
+  font-family: Inter, sans-serif;
+  font-size: clamp(13px, 0.9cqw, 15px);
+  font-weight: 500;
   color: rgb(255 255 255 / 0.75);
   letter-spacing: 0;
-  text-transform: uppercase;
 }
 
 .online-lobby-kind1-post-error-hint {
@@ -1589,7 +1710,6 @@
   flex-direction: row;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
   width: 100%;
   box-sizing: border-box;
   overflow: visible;
@@ -1611,15 +1731,17 @@
 }
 
 .online-lobby-nostr-signin-title {
-  margin: 0;
-  font-size: clamp(10px, 0.7cqw, 12px);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: rgb(255 255 255 / 0.8);
+  margin: 0.2rem 0 0.15rem;
+  font-family: Inter, sans-serif;
+  font-size: clamp(10px, 0.72cqw, 12px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #a5a5a5;
 }
 
 .online-lobby-nostr-signin-sub {
   margin: 0;
+  font-family: Inter, sans-serif;
   font-size: clamp(9px, 0.6cqw, 11px);
   line-height: 1.4;
   color: rgb(255 255 255 / 0.35);
@@ -1629,43 +1751,249 @@
   flex-shrink: 0;
 }
 
-/* ── Nostr linked pill ── */
-.online-lobby-nostr-linked-pill {
-  font-size: clamp(11px, 0.72cqw, 13px);
-  line-height: 1.45;
-  color: #c4e8c8;
-  padding: 0.45rem 0.55rem;
-  border: 1px solid rgb(120 200 140 / 0.45);
-  background: rgb(40 80 50 / 0.35);
+.online-lobby-nostr-signing-indicator {
+  font-family: Inter, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: rgb(255 255 255 / 0.5);
+  animation: online-lobby-fade-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes online-lobby-fade-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ── Nostr connected (already paired) prompt ── */
+.online-lobby-nostr-connected-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
   width: 100%;
   box-sizing: border-box;
 }
 
-.online-lobby-nostr-linked-row {
+.online-lobby-nostr-connected-top {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
   align-items: center;
-  column-gap: 0.45rem;
-  row-gap: 0.25rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
 }
 
-.online-lobby-nostr-linked-avatar {
-  width: 1.65rem;
-  height: 1.65rem;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid rgb(140 200 150 / 0.55);
+.online-lobby-nostr-connected-account {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.online-lobby-nostr-connected-label {
+  font-size: clamp(8px, 0.55cqw, 9px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgb(255 255 255 / 0.35);
+  text-transform: uppercase;
   flex-shrink: 0;
 }
 
-.online-lobby-nostr-linked-name {
+.online-lobby-nostr-connected-name {
+  font-size: clamp(10px, 0.68cqw, 12px);
   font-weight: 600;
-  color: #dff5e6;
+  color: rgb(255 255 255 / 0.75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+
+/* ── NIP-46 profile card ── */
+.online-lobby-nc-profile-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.online-lobby-nc-profile-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 50%;
+  display: block;
+}
+
+.online-lobby-nc-profile-avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(255 255 255 / 0.06);
+  border-radius: 50%;
+}
+
+.online-lobby-nc-profile-avatar--placeholder svg {
+  width: 55%;
+  height: 55%;
+  color: rgb(255 255 255 / 0.3);
+}
+
+.online-lobby-nc-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.online-lobby-nc-profile-name-row {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.online-lobby-nc-profile-name {
+  font-size: clamp(11px, 0.76cqw, 13px);
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.88);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.online-lobby-nc-profile-nip05 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: clamp(9px, 0.6cqw, 10px);
+  color: rgb(255 255 255 / 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.online-lobby-nc-profile-nip05 svg {
+  flex-shrink: 0;
+  color: rgb(180 255 200 / 0.7);
+}
+
+.online-lobby-nc-profile-npub {
+  font-size: clamp(9px, 0.58cqw, 10px);
+  font-family: monospace;
+  color: rgb(255 255 255 / 0.28);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.online-lobby-nc-profile-ln {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: clamp(9px, 0.58cqw, 10px);
+  color: rgb(255 255 255 / 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.online-lobby-nc-profile-ln svg {
+  flex-shrink: 0;
+  color: rgb(255 220 100 / 0.7);
+}
+
+.online-lobby-nc-profile-ln--missing {
+  color: rgb(255 255 255 / 0.2);
+}
+
+.online-lobby-nc-profile-ln--missing svg {
+  color: rgb(255 255 255 / 0.18);
+}
+
+.online-lobby-nostr-zap-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  letter-spacing: 0.06em;
+  font-size: clamp(10px, 0.72cqw, 12px);
+}
+
+.online-lobby-text-btn.online-lobby-nostr-switch-btn,
+.online-lobby-text-btn.online-lobby-nostr-switch-btn:hover {
+  font-size: clamp(9px, 0.6cqw, 10px);
+  color: rgb(255 255 255 / 0.22);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
+}
+
+/* ── Nostr linked pill ── */
+.online-lobby-nostr-linked-pill {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.2rem 0;
+}
+
+.online-lobby-nostr-linked-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.online-lobby-nostr-linked-check {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: #4caf72;
+}
+
+.online-lobby-nostr-linked-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  flex-shrink: 0;
+}
+
+.online-lobby-nostr-linked-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.online-lobby-nostr-linked-name {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(14px, 1.05cqw, 18px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  line-height: 1;
+}
+
+.online-lobby-nostr-linked-npub {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: clamp(8px, 0.55cqw, 10px);
+  color: rgb(255 255 255 / 0.3);
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 .online-lobby-nostr-linked-rest {
-  flex: 1 1 12rem;
-  min-width: 0;
+  font-family: Inter, sans-serif;
+  font-size: clamp(9px, 0.58cqw, 11px);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: rgb(255 255 255 / 0.35);
+  white-space: nowrap;
 }
 
 .online-lobby-text-btn {
@@ -1815,7 +2143,7 @@
 @media (max-width: 1024px) {
   .online-lobby-main {
     gap: 8px;
-    padding: 3rem 16px 16px;
+    padding: 2vw 2vw 2vw;
   }
 
   .online-lobby-header,
@@ -1866,7 +2194,7 @@
   }
 
   .online-lobby-payment-paths {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
   }
 
@@ -1877,7 +2205,7 @@
   }
 
   .online-lobby-kind1-section {
-    padding: 12px 14px 24px;
+    padding: 10px 14px 14px;
   }
 
   .online-lobby-pin-card--ready {
@@ -1917,13 +2245,7 @@
 @media (min-width: 1600px) and (min-aspect-ratio: 16/9) {
   /* 5 % horizontal safe-zone */
   .online-lobby-main {
-    padding: 1.4vw 5vw 1vw;
-  }
-
-  /* Wider kind1 sidebar on true 16:9 */
-  .online-lobby-main {
-    grid-template-columns: 1fr 420px;
-    column-gap: 1.8vw;
+    padding: 0.6vw 5vw 1vw;
   }
 
   /* Title */
@@ -1980,47 +2302,7 @@
 
 @media (min-width: 1400px) and (min-aspect-ratio: 16/10) {
   .online-lobby-main {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    column-gap: 1.2vw;
-    row-gap: 0.45vw;
-    padding: 1.2vw 2vw 0.8vw;
-    align-items: start;
-    box-sizing: border-box;
-    /* Override the flex centering — grid handles layout */
-    justify-content: unset;
-  }
-
-  /* Header spans both columns */
-  .online-lobby-header {
-    grid-column: 1 / -1;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-  }
-
-  /* Left-column zones — reset individual width/margin overrides */
-  .online-lobby-don-banner,
-  .online-lobby-arena-zone,
-  .online-lobby-action-zone,
-  .online-lobby-leave-row,
-  .online-lobby-error {
-    grid-column: 1;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    box-sizing: border-box;
-  }
-
-  /* Right sidebar: kind1 starts at row 2 (below header) and spans all remaining rows */
-  .online-lobby-kind1-section {
-    grid-column: 2;
-    grid-row: 2 / span 10;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    box-sizing: border-box;
-    align-self: stretch;
+    padding: 0.4vw 2vw 0.8vw;
   }
 
   /* Shrink title slightly — 72px is very tall at TV scale */
@@ -2033,33 +2315,9 @@
     padding: 0.6vw 1vw;
   }
 
-  /* Kind1 embedded: stack to single column inside the narrow sidebar */
-  .online-lobby-kind1-embedded {
-    grid-template-columns: 1fr;
-    gap: 0.6rem;
-  }
-
-  /* Kind1 embedded right col: remove sidebar border, show inline */
-  .online-lobby-kind1-content-col {
-    border-left: none;
-    border-top: 1px solid rgb(255 255 255 / 0.07);
-    padding-left: 0;
-    padding-top: 0.5rem;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 0.4rem 0.8rem;
-  }
-
-  /* In the sidebar, body can expand freely */
-  .online-lobby-kind1-embedded-body {
-    -webkit-line-clamp: unset;
-    max-width: none;
-  }
-
-  /* Payment paths: 1 per row to save horizontal space in narrow action zone */
+  /* Payment paths: 4 equal columns in the widescreen action zone */
   .online-lobby-payment-paths {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 
   /* Kind1 section: compact padding */
