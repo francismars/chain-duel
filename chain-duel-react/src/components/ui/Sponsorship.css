@@ -5,12 +5,12 @@
 }
 
 .sponsored-by-label {
-  color: white;
+  margin-bottom: 0.15rem;
   text-align: center;
-  margin-bottom: 0px;
-  font-size: 0.8cqw;
+  color: rgba(255, 255, 255, 0.48);
+  letter-spacing: 0.14em;
+  font-size: 0.72cqw;
   text-transform: uppercase;
-  letter-spacing: 0.03rem;
 }
 
 .sponsored-img {

@@ -33,7 +33,7 @@ export function Sponsorship({ id, className = '', showLabel = true }: Sponsorshi
   return (
     <div className={`sponsorship ${className}`} id={id}>
       {showLabel ? (
-        <div className="sponsored-by-label label" id={`sponsored-by-label-${id}`}>
+        <div className="sponsored-by-label" id={`sponsored-by-label-${id}`}>
           {sponsorText}
         </div>
       ) : null}

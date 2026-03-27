@@ -31,6 +31,9 @@
 
 #mainmenubutton {
   animation: glowing 2000ms infinite;
+  width: 25%;
+  display: block;
+  margin: 0 auto;
 }
 
 .pages {
