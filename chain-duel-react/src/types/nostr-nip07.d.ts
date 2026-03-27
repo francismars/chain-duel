@@ -1,5 +1,5 @@
 /**
- * Minimal NIP-07 (`window.nostr`) for ONLINE seat linking.
+ * Minimal signing surface (NIP-07-shaped). Satisfied by `window.nostr`, Nostr Connect (NIP-46), or local nsec.
  * @see https://github.com/nostr-protocol/nips/blob/master/07.md
  */
 export type NostrUnsignedEvent = {

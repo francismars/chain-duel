@@ -39,6 +39,7 @@
 }
 
 #aboutbutton,
+#configbuttonhome,
 #highscoresbutton,
 #startsolo,
 #startp2p,
@@ -200,6 +201,45 @@
   color: #00ff00;
   display: inline-block;
   margin-right: 0.2em;
+}
+
+/* CONFIG menu button: Nostr avatar when signed in (replaces green dot) */
+#configbuttonhome.index-config-home-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38em;
+}
+
+.index-config-home-btn__avatar {
+  width: clamp(0.62rem, 1.05cqw, 0.92rem);
+  height: clamp(0.62rem, 1.05cqw, 0.92rem);
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.12);
+  background: rgba(20, 20, 24, 0.5);
+}
+
+.index-config-home-btn__avatar-skeleton {
+  display: inline-block;
+  width: clamp(0.62rem, 1.05cqw, 0.92rem);
+  height: clamp(0.62rem, 1.05cqw, 0.92rem);
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.12);
+  animation: avatar-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes avatar-skeleton-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 0.7; }
+}
+
+.index-config-home-btn__label {
+  letter-spacing: inherit;
 }
 
 #announcement {

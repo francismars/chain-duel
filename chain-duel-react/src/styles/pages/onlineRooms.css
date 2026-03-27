@@ -71,7 +71,7 @@
 }
 
 #online-title {
-  font-size: 5.5cqw;
+  font-size: 5.5vw;
   letter-spacing: 0;
   margin: 0;
   text-align: center;
@@ -84,7 +84,7 @@
   text-align: center;
   color: #d8d8d8;
   letter-spacing: 0.06rem;
-  font-size: 1.1cqw;
+  font-size: 1.1vw;
   margin: 0.4vw 0 0;
   animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
 }
@@ -152,7 +152,7 @@
   grid-column: 1;
   grid-row: 1;
   margin: 0;
-  font-size: clamp(10px, 0.68cqw, 12px);
+  font-size: clamp(10px, 0.68vw, 12px);
   letter-spacing: 0.18em;
   color: rgb(255 255 255 / 0.38);
   text-transform: uppercase;
@@ -224,7 +224,7 @@
 
 .online-buyin-value {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(22px, 2.2cqw, 34px);
+  font-size: clamp(22px, 2.2vw, 34px);
   letter-spacing: 0.03em;
   color: #fff;
   background: transparent;
@@ -241,7 +241,7 @@
 
 .online-buyin-unit {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(11px, 0.75cqw, 13px);
+  font-size: clamp(11px, 0.75vw, 13px);
   font-weight: 500;
   letter-spacing: 0.06em;
   color: rgb(255 255 255 / 0.38);
@@ -264,7 +264,7 @@
   border-right: 1px solid rgb(255 255 255 / 0.07);
   color: rgb(255 255 255 / 0.3);
   font-family: 'Inter', sans-serif;
-  font-size: clamp(11px, 0.8cqw, 13px);
+  font-size: clamp(11px, 0.8vw, 13px);
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -303,7 +303,7 @@
 /* Room code input */
 .online-code-input {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(19px, 1.95cqw, 32px);
+  font-size: clamp(19px, 1.95vw, 32px);
   letter-spacing: 0.22em;
   background: transparent;
   border: none;
@@ -329,6 +329,8 @@
   align-self: stretch !important;
   height: auto !important;
   min-height: clamp(38px, 3vw, 46px) !important;
+  font-size: clamp(11px, 0.82vw, 14px);
+  letter-spacing: 0.1rem;
 }
 
 /* Footer: mode toggle centered */
@@ -345,7 +347,7 @@
   background: none;
   border: none;
   color: rgb(255 255 255 / 0.3);
-  font-size: clamp(11px, 0.75cqw, 13px);
+  font-size: clamp(11px, 0.75vw, 13px);
   letter-spacing: 0.06em;
   cursor: pointer;
   padding: 0;
@@ -363,14 +365,14 @@
 /* Inline error inside card */
 .online-inline-error {
   color: #ff7b7b;
-  font-size: clamp(13px, 0.9cqw, 16px);
+  font-size: clamp(13px, 0.9vw, 16px);
   margin: 0;
   text-align: center;
 }
 
 .online-panel-copy {
   color: #b7b7b7;
-  font-size: clamp(13px, 0.96cqw, 16px);
+  font-size: clamp(13px, 0.96vw, 16px);
   margin: 0;
 }
 
@@ -379,7 +381,7 @@
   border: none;
   border-radius: 0;
   color: #fff;
-  font-size: clamp(14px, 1.0cqw, 18px);
+  font-size: clamp(14px, 1.0vw, 18px);
   letter-spacing: 0.04rem;
   padding: 0 0.8vw;
   text-transform: uppercase;
@@ -397,6 +399,8 @@
   height: auto;
   min-height: clamp(38px, 3vw, 46px);
   white-space: nowrap;
+  font-size: clamp(11px, 0.82vw, 14px);
+  letter-spacing: 0.1rem;
 }
 
 .online-room-list-panel {
@@ -445,7 +449,7 @@
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
-  font-size: clamp(11px, 0.72cqw, 13px);
+  font-size: clamp(11px, 0.72vw, 13px);
   color: rgb(255 255 255 / 0.38);
   letter-spacing: 0.04em;
   animation: rooms-fade 0.2s ease both;
@@ -464,7 +468,7 @@
 
 .online-room-list-head h3 {
   margin: 0 0 0.4rem;
-  font-size: clamp(22px, 2.7cqw, 36px);
+  font-size: clamp(22px, 2.7vw, 36px);
   letter-spacing: 0;
 }
 
@@ -477,7 +481,7 @@
 
 .online-tab {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(13px, 1.08cqw, 18px);
+  font-size: clamp(13px, 1.08vw, 18px);
   letter-spacing: 0;
   text-transform: uppercase;
   padding: 0.35em 1.2em;
@@ -716,7 +720,7 @@
 .online-archived {
   border: 1px solid #888;
   padding: 0.05vw 0.35vw;
-  font-size: 1.0cqw;
+  font-size: 1.0vw;
   color: #e0e0e0;
 }
 
@@ -736,6 +740,7 @@
   /* Fixed height keeps the layout stable on every tab */
   height: clamp(200px, 30vh, 440px);
   overflow-y: auto;
+  overflow-x: visible;
   border-top: 1px solid rgb(255 255 255 / 0.1);
   border-bottom: 1px solid rgb(255 255 255 / 0.1);
   animation: list-tab-fade 0.28s ease both;
@@ -754,6 +759,7 @@
   border-radius: 0;
   padding: 0.8vw 0;
   margin-bottom: 0;
+  overflow: visible;
   transition: box-shadow 0.15s ease, border-left-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
 }
 
@@ -767,11 +773,11 @@
 .online-room-card.online-room-card--history .online-room-meta {
   margin-top: 0.12vw;
   gap: 0.55vw;
-  font-size: 1.05cqw;
+  font-size: 1.05vw;
 }
 
 .online-room-card.online-room-card--history .online-room-code {
-  font-size: 1.72cqw;
+  font-size: 1.72vw;
 }
 
 /* Generic: tabs / inputs use bottom-border underline */
@@ -831,17 +837,53 @@
 
 .online-room-code {
   font-family: 'BureauGrotesque';
-  font-size: 2.2cqw;
+  font-size: 2.2vw;
   letter-spacing: 0.04em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+
+.online-room-code-emojis {
+  font-family: sans-serif;
+  font-size: 0.72em;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
 }
 
 .online-room-meta {
   display: flex;
   gap: 0.9vw;
   margin-top: 0.2vw;
-  color: #d1d1d1;
-  font-size: 0.96cqw;
+  font-size: 0.96vw;
   flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.online-room-meta-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+}
+
+.online-room-meta-val {
+  color: #fff;
+  font-weight: 600;
+}
+
+.online-room-meta-val--active {
+  color: #fff;
+  font-weight: 700;
+}
+
+.online-room-meta-val--zero {
+  color: rgb(255 255 255 / 0.22);
+  font-weight: 400;
+}
+
+.online-room-meta-label {
+  color: rgb(255 255 255 / 0.28);
+  font-weight: 400;
 }
 
 .online-room-result-chip {
@@ -906,7 +948,7 @@
 
 .online-empty-title {
   margin: 0;
-  font-size: clamp(13px, 1.1cqw, 18px);
+  font-size: clamp(13px, 1.1vw, 18px);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #808080;
@@ -914,7 +956,7 @@
 
 .online-empty-hint {
   margin: 0;
-  font-size: clamp(12px, 0.88cqw, 15px);
+  font-size: clamp(12px, 0.88vw, 15px);
   color: #505050;
   letter-spacing: 0.04em;
 }
@@ -924,7 +966,7 @@
   margin: 0;
   color: #ff7b7b;
   text-align: center;
-  font-size: 1.05cqw;
+  font-size: 1.05vw;
 }
 
 .online-footer-controls {
@@ -938,12 +980,14 @@
 
 .online-back {
   min-width: 220px;
+  font-size: clamp(11px, 0.82vw, 14px);
+  letter-spacing: 0.1rem;
 }
 
 .online-controls-hint {
   color: #9f9f9f;
   letter-spacing: 0.03rem;
-  font-size: 0.92cqw;
+  font-size: 0.92vw;
 }
 
 .online-loading-overlay {
@@ -1039,40 +1083,9 @@
     margin-top: -0.3vw;
   }
 
-  /* Body becomes a 2-column grid */
-  .online-rooms-body {
-    display: grid;
-    grid-template-columns: 1fr minmax(300px, 360px);
-    column-gap: 2.5vw;
-    align-items: start;
-    width: 100%;
-  }
-
-  /* Left column: header + room list stacked */
+  /* Left column: keep stacked */
   .online-rooms-left {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2vw;
-  }
-
-  /* Sidebar column: action card + back stacked, sticky within the viewport */
-  .online-rooms-side {
-    display: flex;
-    flex-direction: column;
-    gap: 1.8vw;
-    position: sticky;
-    top: 3.5vw;
-  }
-
-  /* All content fills its grid column — override the default centering widths */
-  .online-header,
-  .online-room-list-panel,
-  .online-action-card,
-  .online-footer-controls,
-  .online-error {
-    width: 100%;
-    max-width: none;
-    margin: 0;
+    display: contents;
   }
 
   /* Room list: taller on TV */

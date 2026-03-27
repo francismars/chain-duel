@@ -9,9 +9,13 @@ import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
 import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
+import { fetchLatestKind0Profile } from '@/lib/nostr/fetchKind0Profile';
+import { STORED_NOSTR_PUBKEY_KEY } from '@/lib/nostr/signerSession';
+
 
 /** Vertical menu focus — 6 rows: LOCAL, SOLO, P2P, NETWORK, LEDGER, ABOUT+CONFIG */
 type MenuState = 1 | 2 | 3 | 4 | 5 | 6;
+type Row6Focus = 'about' | 'config';
 
 function menuStepDown(prev: MenuState): MenuState {
   if (prev === 1) return 2;
@@ -42,7 +46,12 @@ export default function Index() {
   const startOnlineRef = useRef<HTMLButtonElement>(null);
   const highscoresRef = useRef<HTMLButtonElement>(null);
   const aboutRef = useRef<HTMLButtonElement>(null);
+  const configRef = useRef<HTMLButtonElement>(null);
   const menuButtonsRootRef = useRef<HTMLDivElement>(null);
+  const [row6Focus, setRow6Focus] = useState<Row6Focus>('about');
+  const [nostrPubkeyHex, setNostrPubkeyHex] = useState<string | null>(null);
+  const [configProfilePicture, setConfigProfilePicture] = useState<string | null>(null);
+  const [configAvatarBroken, setConfigAvatarBroken] = useState(false);
   const skipInitialMenuPopRef = useRef(true);
   /** Synced inside setMenu updaters so Enter always matches the latest row (avoids stale closure if Down + Enter land before re-render). */
   const menuRef = useRef<MenuState>(menu);
@@ -69,7 +78,7 @@ export default function Index() {
     const inner =
       menu === 6
         ? (root.querySelector(
-            '[data-menu-row="6"] [data-menu-kbd-focus]'
+            `[data-menu-row="6"] [data-menu-kbd-focus="${row6Focus}"]`
           ) as HTMLElement | null)
         : (root.querySelector(
             `[data-menu-row="${menu}"] > .menu-buttons__row-inner`
@@ -89,7 +98,7 @@ export default function Index() {
       inner.removeEventListener('animationend', onEnd);
       inner.classList.remove('menu-buttons__row-inner--pop');
     };
-  }, [menu]);
+  }, [menu, row6Focus]);
 
   // Load host name from localStorage
   useEffect(() => {
@@ -98,6 +107,48 @@ export default function Index() {
       // Match legacy behavior: use stored value as-is, or default to @chainduel
       setHostName(storedHostName || '@chainduel');
     }
+  }, []);
+
+  // Config button: show Nostr profile image when signed in (same key as Config / Solo).
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncNostrAvatar = () => {
+      const pk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
+      setNostrPubkeyHex(pk);
+      setConfigAvatarBroken(false);
+      if (!pk) {
+        setConfigProfilePicture(null);
+        return;
+      }
+      void fetchLatestKind0Profile(pk).then((p) => {
+        if (cancelled) return;
+        const pic = p?.picture?.trim();
+        setConfigProfilePicture(pic || null);
+      });
+    };
+
+    syncNostrAvatar();
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORED_NOSTR_PUBKEY_KEY || e.key === null) {
+        syncNostrAvatar();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+
+    const onVis = () => {
+      if (document.visibilityState === 'visible') {
+        syncNostrAvatar();
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('storage', onStorage);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   // Pulse glow on the focused menu row (legacy look)
@@ -119,12 +170,17 @@ export default function Index() {
         highscoresRef.current.style.animationDuration = menu === 5 ? '2s' : '0s';
       }
       if (aboutRef.current) {
-        aboutRef.current.style.animationDuration = menu === 6 ? '2s' : '0s';
+        aboutRef.current.style.animationDuration =
+          menu === 6 && row6Focus === 'about' ? '2s' : '0s';
+      }
+      if (configRef.current) {
+        configRef.current.style.animationDuration =
+          menu === 6 && row6Focus === 'config' ? '2s' : '0s';
       }
     };
 
     updateAnimations();
-  }, [menu]);
+  }, [menu, row6Focus]);
 
   /** Swallow one ghost Enter/Space on the next page when navigation was triggered by keyboard. */
   const keyboardNavState = useMemo(
@@ -159,9 +215,28 @@ export default function Index() {
         } else if (row === 5) {
           navigate('/highscores', { state: keyboardNavState });
         } else if (row === 6) {
-          navigate('/about', { state: keyboardNavState });
+          if (row6Focus === 'about') {
+            navigate('/about', { state: keyboardNavState });
+          } else {
+            navigate('/config', { state: keyboardNavState });
+          }
         }
         return;
+      }
+
+      if (menuRef.current === 6) {
+        if (event.key === 'ArrowLeft' || event.code === 'ArrowLeft') {
+          event.preventDefault();
+          playSfx(SFX.MENU_SELECT);
+          setRow6Focus((c) => (c === 'config' ? 'about' : c));
+          return;
+        }
+        if (event.key === 'ArrowRight' || event.code === 'ArrowRight') {
+          event.preventDefault();
+          playSfx(SFX.MENU_SELECT);
+          setRow6Focus((c) => (c === 'about' ? 'config' : c));
+          return;
+        }
       }
 
       if (
@@ -175,6 +250,9 @@ export default function Index() {
         setMenu((prev) => {
           const next = menuStepDown(prev);
           menuRef.current = next;
+          if (prev === 5 && next === 6) {
+            setRow6Focus('about');
+          }
           return next;
         });
         return;
@@ -191,6 +269,9 @@ export default function Index() {
         setMenu((prev) => {
           const next = menuStepUp(prev);
           menuRef.current = next;
+          if (prev === 1 && next === 6) {
+            setRow6Focus('about');
+          }
           return next;
         });
       }
@@ -198,7 +279,7 @@ export default function Index() {
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [navigate, playSfx, keyboardNavState]);
+  }, [navigate, playSfx, keyboardNavState, row6Focus]);
 
   return (
     <div className="flex full flex-center index-page">
@@ -293,7 +374,7 @@ export default function Index() {
             <div className="double-button menu-buttons__double-row">
               <div
                 className="menu-buttons__row-inner menu-buttons__double-cell"
-                data-menu-kbd-focus
+                data-menu-kbd-focus="about"
               >
                 <Button
                   ref={aboutRef}
@@ -306,17 +387,40 @@ export default function Index() {
                   ABOUT
                 </Button>
               </div>
-              <div className="menu-buttons__row-inner menu-buttons__double-cell">
+              <div
+                className="menu-buttons__row-inner menu-buttons__double-cell"
+                data-menu-kbd-focus="config"
+              >
                 <Button
-                  className="disabled"
+                  ref={configRef}
                   onClick={() => {
                     playSfx(SFX.MENU_CONFIRM);
                     navigate('/config');
                   }}
                   id="configbuttonhome"
+                  className="index-config-home-btn"
+                  aria-label={nostrPubkeyHex ? 'Config (signed in with Nostr)' : 'Config'}
                 >
-                  <span id="backendStatusHome" className="backend-status on">•</span>
-                  CONFIG
+                  {nostrPubkeyHex ? (
+                    configProfilePicture && !configAvatarBroken ? (
+                      <img
+                        className="index-config-home-btn__avatar"
+                        src={configProfilePicture}
+                        alt=""
+                        width={22}
+                        height={22}
+                        decoding="async"
+                        onError={() => setConfigAvatarBroken(true)}
+                      />
+                    ) : (
+                      <span className="index-config-home-btn__avatar-skeleton" aria-hidden />
+                    )
+                  ) : (
+                    <span id="backendStatusHome" className="backend-status on" aria-hidden>
+                      •
+                    </span>
+                  )}
+                  <span className="index-config-home-btn__label">CONFIG</span>
                 </Button>
               </div>
             </div>

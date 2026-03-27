@@ -15,6 +15,12 @@ import './practiceHub.css';
 import '@/styles/pages/p2p-entry.css';
 import '@/styles/pages/onlinePostGame.css';
 import '@/styles/pages/solo-challenges.css';
+import {
+  getActiveNostrSigner,
+  normalizeNostrPubkeyHex,
+  recordExtensionSignIn,
+  STORED_NOSTR_PUBKEY_KEY,
+} from '@/lib/nostr/signerSession';
 
 const CONVERGENCE_PRESET = {
   shrinkIntervalTicks: LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
@@ -132,7 +138,6 @@ function formatBounty(sats: number): string {
 }
 
 const LN_ADDRESS_KEY = 'arcadeLnAddress';
-const NOSTR_PUBKEY_KEY = 'arcadeNostrPubkey';
 
 export default function SoloChallenges() {
   const navigate = useNavigate();
@@ -157,7 +162,7 @@ export default function SoloChallenges() {
   const payoutReady = !!npub && lnAddress.trim().includes('@');
 
   useEffect(() => {
-    const storedPubkey = localStorage.getItem(NOSTR_PUBKEY_KEY);
+    const storedPubkey = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
     const storedLn = localStorage.getItem(LN_ADDRESS_KEY);
     if (storedPubkey) setNpub(storedPubkey);
     if (storedLn) setLnAddress(storedLn);
@@ -185,16 +190,24 @@ export default function SoloChallenges() {
   }, [selected]);
 
   const connectNostr = useCallback(async () => {
-    if (!window.nostr) {
-      setNostrError('No Nostr extension found. Install Alby or nos2x.');
-      return;
-    }
     setNostrLoading(true);
     setNostrError(null);
     try {
-      const pubkey = await window.nostr.getPublicKey();
-      setNpub(pubkey);
-      localStorage.setItem(NOSTR_PUBKEY_KEY, pubkey);
+      let signer = await getActiveNostrSigner();
+      if (!signer && window.nostr) {
+        const pk = await window.nostr.getPublicKey();
+        recordExtensionSignIn(pk);
+        signer = await getActiveNostrSigner();
+      }
+      if (!signer) {
+        setNostrError(
+          'No signer found. Open Config and sign in with an extension, Nostr Connect (e.g. Primal), or nsec.'
+        );
+        return;
+      }
+      const pkHex = normalizeNostrPubkeyHex(await signer.getPublicKey());
+      setNpub(pkHex);
+      localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pkHex);
       playSfx(SFX.MENU_CONFIRM);
     } catch {
       setNostrError('Nostr connection rejected.');
