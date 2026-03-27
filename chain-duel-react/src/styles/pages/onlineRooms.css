@@ -313,7 +313,6 @@
 
 /* Room code input */
 .online-code-input {
-  font-family: BureauGrotesque, sans-serif;
   font-size: clamp(19px, 1.95vw, 32px);
   letter-spacing: 0.22em;
   background: transparent;
