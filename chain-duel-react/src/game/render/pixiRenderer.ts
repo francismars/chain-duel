@@ -583,20 +583,21 @@ export class PixiGameRenderer {
 
     // Amber gradient edge at the live boundary (warning glow)
     const edgeAlpha = sb.warningActive ? 0.55 : 0.18;
-    const edgeWidth = colSize * 1.5;
+    const colEdge = colSize;
+    const rowEdge = rowSize;
     const edgeColor = 0xC88820;
 
     if (leftPx > 0) {
-      this.deadZone.rect(leftPx, topPx, edgeWidth, bottomPx - topPx).fill({ color: edgeColor, alpha: edgeAlpha });
+      this.deadZone.rect(leftPx, topPx, colEdge, bottomPx - topPx).fill({ color: edgeColor, alpha: edgeAlpha });
     }
     if (rightPx < width) {
-      this.deadZone.rect(rightPx - edgeWidth, topPx, edgeWidth, bottomPx - topPx).fill({ color: edgeColor, alpha: edgeAlpha });
+      this.deadZone.rect(rightPx - colEdge, topPx, colEdge, bottomPx - topPx).fill({ color: edgeColor, alpha: edgeAlpha });
     }
     if (topPx > 0) {
-      this.deadZone.rect(leftPx, topPx, rightPx - leftPx, edgeWidth).fill({ color: edgeColor, alpha: edgeAlpha });
+      this.deadZone.rect(leftPx, topPx, rightPx - leftPx, rowEdge).fill({ color: edgeColor, alpha: edgeAlpha });
     }
     if (bottomPx < height) {
-      this.deadZone.rect(leftPx, bottomPx - edgeWidth, rightPx - leftPx, edgeWidth).fill({ color: edgeColor, alpha: edgeAlpha });
+      this.deadZone.rect(leftPx, bottomPx - rowEdge, rightPx - leftPx, rowEdge).fill({ color: edgeColor, alpha: edgeAlpha });
     }
   }
 
@@ -1173,9 +1174,8 @@ export class PixiGameRenderer {
       // Amber edge
       const edgeAlpha = sb.warningActive ? 0.5 : 0.15;
       ctx.fillStyle = `rgba(200,136,32,${edgeAlpha})`;
-      const edgeW = colSize * 1.5;
-      ctx.fillRect(sb.left * colSize, sb.top * rowSize, edgeW, (sb.bottom - sb.top + 1) * rowSize);
-      ctx.fillRect((sb.right + 1) * colSize - edgeW, sb.top * rowSize, edgeW, (sb.bottom - sb.top + 1) * rowSize);
+      ctx.fillRect(sb.left * colSize, sb.top * rowSize, colSize, (sb.bottom - sb.top + 1) * rowSize);
+      ctx.fillRect((sb.right + 1) * colSize - colSize, sb.top * rowSize, colSize, (sb.bottom - sb.top + 1) * rowSize);
     }
 
     // Grid

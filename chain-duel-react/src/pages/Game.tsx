@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SimplePool } from 'nostr-tools';
 import { Sponsorship } from '@/components/ui/Sponsorship';
+import { getActiveNostrSigner, STORED_NOSTR_PUBKEY_KEY } from '@/lib/nostr/signerSession';
+import { KIND0_DEFAULT_RELAYS, fetchLatestKind0Profile, formatPubkeyHex } from '@/lib/nostr/fetchKind0Profile';
 import {
   createGameState,
   createNewCoinbase,
@@ -80,6 +83,73 @@ export default function Game() {
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<{ won: boolean; name: string; bounty: number; preimage: string; lnAddress: string } | null>(null);
+  const [soloPendingEndData, setSoloPendingEndData] = useState<{ won: boolean; name: string; bounty: number; preimage: string; lnAddress: string } | null>(null);
+  const [noteState, setNoteState] = useState<'idle' | 'posting' | 'posted' | 'error'>('idle');
+  const [noteError, setNoteError] = useState<string | null>(null);
+  const [noteAuthorPubkey, setNoteAuthorPubkey] = useState<string | null>(null);
+  const [noteAuthorName, setNoteAuthorName] = useState<string>('Nostr user');
+  const [noteAuthorAvatar, setNoteAuthorAvatar] = useState<string | null>(null);
+  const [noteAuthorAvatarBroken, setNoteAuthorAvatarBroken] = useState(false);
+
+  const PUBLISH_RELAYS = [
+    'wss://relay.damus.io',
+    'wss://nos.lol',
+    KIND0_DEFAULT_RELAYS[0],
+  ];
+
+  const buildBountyNoteContent = useCallback((name: string, bounty: number) =>
+    `I just beat the ${name} challenge on Chain Duel ⚡\n\n${bounty.toLocaleString()} sats bounty — challenge accepted and won.\n\nchainduel.xyz\n\n#ChainDuel #Bitcoin #Nostr`,
+  []);
+
+  const postBountyNote = useCallback(async () => {
+    if (!soloEndData) return;
+    setNoteState('posting');
+    setNoteError(null);
+    try {
+      const signer = await getActiveNostrSigner();
+      if (!signer) throw new Error('No Nostr signer found. Connect one on the Config page.');
+      const content = buildBountyNoteContent(soloEndData.name, soloEndData.bounty);
+      const unsigned = {
+        kind: 1 as const,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [['t', 'ChainDuel'], ['t', 'Bitcoin'], ['t', 'Nostr']],
+        content,
+      };
+      const signed = await signer.signEvent(unsigned);
+      const pool = new SimplePool();
+      await Promise.allSettled(pool.publish(PUBLISH_RELAYS, signed));
+      pool.close(PUBLISH_RELAYS);
+      setNoteState('posted');
+    } catch (err) {
+      setNoteState('error');
+      setNoteError(err instanceof Error ? err.message : 'Failed to post note.');
+    }
+  }, [soloEndData, buildBountyNoteContent, PUBLISH_RELAYS]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const pk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
+    setNoteAuthorAvatarBroken(false);
+    if (!pk) {
+      setNoteAuthorPubkey(null);
+      setNoteAuthorName('Nostr user');
+      setNoteAuthorAvatar(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setNoteAuthorPubkey(pk);
+    void fetchLatestKind0Profile(pk).then((profile) => {
+      if (cancelled) return;
+      setNoteAuthorName(profile?.displayTitle ?? 'Nostr user');
+      setNoteAuthorAvatar(profile?.picture?.trim() || null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
   const canShowP2Image = useMemo(() => player2Img.length > 0, [player2Img]);
@@ -243,7 +313,9 @@ export default function Game() {
             Math.floor(Math.random() * 256).toString(16).padStart(2, '0')
           ).join('')
         : '';
-      setSoloEndData({ won, name, bounty, preimage, lnAddress: ln });
+      window.setTimeout(() => {
+        setSoloPendingEndData({ won, name, bounty, preimage, lnAddress: ln });
+      }, 2000);
     }, 150);
 
     return () => window.clearInterval(poll);
@@ -414,10 +486,22 @@ export default function Game() {
       'POWER-UP ARENA': '/local',
       SOLO: '/solo',
     };
+    if (configMode === 'SOLO') {
+      // SOLO flow: first continue key reveals the results modal; second continue key exits to list.
+      if (!soloEndData) {
+        if (soloPendingEndData) {
+          setSoloEndData(soloPendingEndData);
+          setSoloPendingEndData(null);
+        }
+        return;
+      }
+      navigate('/solo');
+      return;
+    }
     const modeRoute = modeRoutes[configMode];
     if (modeRoute) { navigate(modeRoute); return; }
     navigate('/postgame');
-  }, [navigate]);
+  }, [navigate, soloEndData, soloPendingEndData]);
 
   useGameSocketEvents({
     socket,
@@ -715,9 +799,8 @@ export default function Game() {
             {soloEndData.won ? (
               <>
                 <div className="solo-zap-header">
-                  <span className="solo-zap-badge">⚡ ZAP SENT</span>
-                  <h2 className="solo-zap-title">CHALLENGE COMPLETE</h2>
-                  <p className="solo-zap-challenge">{soloEndData.name}</p>
+                  <span className="solo-zap-badge">⚡ CHALLENGE COMPLETE</span>
+                  <h2 className="solo-zap-title">{soloEndData.name}</h2>
                 </div>
 
                 <div className="solo-zap-amount">
@@ -725,23 +808,53 @@ export default function Game() {
                   <span className="solo-zap-unit">SATS</span>
                 </div>
 
-                <div className="solo-zap-receipt">
-                  <div className="solo-zap-row">
-                    <span className="solo-zap-label">TO</span>
-                    <span className="solo-zap-value solo-zap-value--ln">
-                      {soloEndData.lnAddress || '—'}
-                    </span>
+                <div className="solo-zap-note-section">
+                  <p className="solo-zap-note-label">POST THIS NOTE TO CLAIM YOUR ZAP</p>
+                  <div className="solo-zap-note-preview">
+                    {noteAuthorPubkey ? (
+                      <div className="solo-zap-note-author">
+                        <img
+                          className="solo-zap-note-author-avatar"
+                          src={!noteAuthorAvatarBroken && noteAuthorAvatar ? noteAuthorAvatar : '/images/social/Nostr.png'}
+                          alt=""
+                          width={20}
+                          height={20}
+                          onError={() => setNoteAuthorAvatarBroken(true)}
+                        />
+                        <div className="solo-zap-note-author-meta">
+                          <span className="solo-zap-note-author-name">{noteAuthorName}</span>
+                          <span className="solo-zap-note-author-pubkey">{formatPubkeyHex(noteAuthorPubkey)}</span>
+                        </div>
+                      </div>
+                    ) : null}
+                    <p className="solo-zap-note-text">
+                      {buildBountyNoteContent(soloEndData.name, soloEndData.bounty)}
+                    </p>
                   </div>
-                  <div className="solo-zap-row">
-                    <span className="solo-zap-label">PREIMAGE</span>
-                    <span className="solo-zap-value solo-zap-value--hash">
-                      {soloEndData.preimage}
-                    </span>
-                  </div>
-                  <div className="solo-zap-row">
-                    <span className="solo-zap-label">STATUS</span>
-                    <span className="solo-zap-value solo-zap-value--ok">SETTLED ✓</span>
-                  </div>
+
+                  {noteState === 'posted' ? (
+                    <p className="solo-zap-note-ok">✓ Note posted — zap incoming ⚡</p>
+                  ) : (
+                    <button
+                      type="button"
+                      className="solo-zap-post-btn"
+                      disabled={noteState === 'posting'}
+                      onClick={() => { void postBountyNote(); }}
+                    >
+                      {noteState === 'posting' ? (
+                        <>
+                          <svg className="solo-zap-post-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                            <circle cx="12" cy="12" r="9" strokeOpacity="0.15" />
+                            <path d="M12 3a9 9 0 0 1 9 9" />
+                          </svg>
+                          SIGNING…
+                        </>
+                      ) : 'POST NOTE & CLAIM ZAP ⚡'}
+                    </button>
+                  )}
+                  {noteState === 'error' && noteError ? (
+                    <p className="solo-zap-note-err">{noteError}</p>
+                  ) : null}
                 </div>
               </>
             ) : (
