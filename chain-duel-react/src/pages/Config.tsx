@@ -73,6 +73,8 @@ export default function Config() {
   const nip46PairingDoneRef = useRef(false);
   const nip46PairingAbortRef = useRef<AbortController | null>(null);
   const playSfxRef = useRef(playSfx);
+  const profileCardMainRef = useRef<HTMLDivElement | null>(null);
+  const backButtonRef = useRef<HTMLButtonElement | null>(null);
   playSfxRef.current = playSfx;
 
   useEffect(() => {
@@ -307,6 +309,53 @@ export default function Config() {
 
   const signerMode = nostrPubkeyHex ? getStoredSignerMode() : null;
   const avatarSrc = !avatarBroken && profile?.picture?.trim() ? profile.picture.trim() : null;
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!nostrPubkeyHex) return;
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const tag = target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+
+      const active = document.activeElement as HTMLElement | null;
+      const mainEl = profileCardMainRef.current;
+      const fieldEls = Array.from(
+        mainEl?.querySelectorAll('.config-profile-card__field') ?? []
+      ) as HTMLElement[];
+      const fieldIdx = fieldEls.findIndex((el) => el === active);
+      const inProfileCard =
+        !!(mainEl && active && mainEl.contains(active));
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        playSfxRef.current(SFX.MENU_SELECT);
+        backButtonRef.current?.focus({ preventScroll: true });
+        return;
+      }
+
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (fieldEls.length === 0) return;
+
+      if (fieldIdx >= 0) {
+        e.preventDefault();
+        playSfxRef.current(SFX.MENU_SELECT);
+        const delta = e.key === 'ArrowRight' ? 1 : -1;
+        const next = (fieldIdx + delta + fieldEls.length) % fieldEls.length;
+        fieldEls[next]?.focus({ preventScroll: true });
+        return;
+      }
+
+      if (active === backButtonRef.current || inProfileCard) {
+        e.preventDefault();
+        playSfxRef.current(SFX.MENU_SELECT);
+        fieldEls[0]?.focus({ preventScroll: true });
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [nostrPubkeyHex]);
 
   return (
     <div className="flex full flex-center config-page">
@@ -582,7 +631,7 @@ export default function Config() {
                 : undefined
             }
           />
-          <div className="config-profile-card__main">
+          <div className="config-profile-card__main" tabIndex={0} ref={profileCardMainRef}>
             <div className="config-profile-card__identity">
               {avatarSrc ? (
                 <img
@@ -614,13 +663,13 @@ export default function Config() {
 
               <div className="config-profile-card__fields">
                 {profile?.name && profile.displayName ? (
-                  <div className="config-profile-card__field">
+                  <div className="config-profile-card__field" tabIndex={-1}>
                     <div className="config-profile-card__field-label">Username</div>
                     <div className="config-profile-card__field-value">@{profile.name}</div>
                   </div>
                 ) : null}
 
-                <div className="config-profile-card__field">
+                <div className="config-profile-card__field" tabIndex={-1}>
                   <div className="config-profile-card__field-label">Sign-in</div>
                   <div className="config-profile-card__field-value">
                     {signerModeLabel(signerMode)}
@@ -631,7 +680,7 @@ export default function Config() {
                 </div>
 
                 {profile?.nip05 ? (
-                  <div className="config-profile-card__field">
+                  <div className="config-profile-card__field" tabIndex={-1}>
                     <div className="config-profile-card__field-label">NIP-05</div>
                     <div className="config-profile-card__field-value">
                       <span className="config-profile-card__nip05-text">{profile.nip05}</span>
@@ -653,7 +702,7 @@ export default function Config() {
                 ) : null}
 
                 {profile?.lud16 ? (
-                  <div className="config-profile-card__field">
+                  <div className="config-profile-card__field" tabIndex={-1}>
                     <div className="config-profile-card__field-label">Lightning</div>
                     <div className="config-profile-card__field-value config-profile-card__field-value--ln">
                       {profile.lud16}
@@ -665,7 +714,7 @@ export default function Config() {
                 ) : null}
 
                 {profile?.lud06 && !profile?.lud16 ? (
-                  <div className="config-profile-card__field">
+                  <div className="config-profile-card__field" tabIndex={-1}>
                     <div className="config-profile-card__field-label">Lightning</div>
                     <div className="config-profile-card__field-value config-profile-card__field-value--lnurl" title={profile.lud06}>
                       LNURL-pay (kind 0)
@@ -676,7 +725,7 @@ export default function Config() {
                   </div>
                 ) : null}
 
-                <div className="config-profile-card__field">
+                <div className="config-profile-card__field" tabIndex={-1}>
                   <div className="config-profile-card__field-label">Public key</div>
                   <div className="config-profile-card__field-value config-profile-card__field-value--mono">
                     {nostrPubkeyHex ? formatPubkeyHex(nostrPubkeyHex) : ''}
@@ -790,7 +839,7 @@ export default function Config() {
       </div>
 
       <div key={`act-${profileAnimKey}`} className="config-page__actions config-page__actions--animate-in">
-        <Button id="backButton" onClick={() => navigate('/')}>
+        <Button id="backButton" ref={backButtonRef} onClick={() => navigate('/')}>
           Main Menu
         </Button>
       </div>

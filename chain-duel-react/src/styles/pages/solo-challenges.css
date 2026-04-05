@@ -24,7 +24,7 @@
 
 /* ── Page shell ── */
 .solo-challenges-page.practice-hub--practice {
-  max-width: clamp(480px, 52vw, 860px);
+  max-width: clamp(640px, 70vw, 1160px);
   gap: clamp(10px, 1.2vw, 18px);
   justify-content: center;
 }
@@ -53,21 +53,42 @@
   gap: clamp(10px, 1.2vw, 18px);
 }
 
+.solo-challenges-layout {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.95fr) minmax(22rem, 1.4fr);
+  gap: clamp(12px, 1.4vw, 22px);
+  align-items: start;
+}
+
+.solo-challenges-col {
+  min-width: 0;
+}
+
+.solo-challenges-col--left {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.1vw, 16px);
+}
+
 /* ── Nostr / LN payout gate ── */
 .sc-gate {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 6px;
   padding: 0;
   border: none;
   background: none;
 }
 
-.sc-gate__row {
+.sc-gate__top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: clamp(8px, 1vw, 14px);
   flex-wrap: wrap;
+  width: 100%;
 }
 
 /* Nostr connect button */
@@ -88,6 +109,8 @@
   transition: border-color 0.18s, color 0.18s, background 0.18s;
   white-space: nowrap;
   flex-shrink: 0;
+  width: 100%;
+  justify-content: center;
 }
 
 .sc-gate__nostr-btn:hover:not(:disabled) {
@@ -102,6 +125,103 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+.sc-gate__nostr-profile {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.057);
+  background: rgba(0, 0, 0, 0.463);
+  min-width: 0;
+  flex: 1 1 auto;
+  min-height: 6vw;
+}
+
+.sc-gate__nostr-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(20, 20, 24, 0.65);
+  flex-shrink: 0;
+}
+
+.sc-gate__nostr-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.sc-gate__nostr-name {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.72vw, 11px);
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-gate__nostr-pubkey {
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+  font-size: clamp(8px, 0.64vw, 10px);
+  color: rgba(255, 255, 255, 0.48);
+  letter-spacing: 0.03em;
+}
+
+.sc-gate__nostr-ln {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.64vw, 10px);
+  color: rgba(255, 215, 120, 0.82);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-gate__config-link {
+  margin-left: auto;
+  align-self: center;
+  flex-shrink: 0;
+  outline: none;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.72);
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.62vw, 10px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+}
+
+.sc-gate__config-link:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sc-gate__config-link:focus,
+.sc-gate__config-link:focus-visible {
+  border-color: #fff;
+  color: #fff;
+  background: rgb(255 255 255 / 18%);
+  box-shadow: 0 0 15px rgb(255 255 255);
+  outline: none;
+}
+
+.sc-gate__config-link:active {
+  background: rgb(255 255 255 / 15%);
+  box-shadow: 0 0 15px rgb(255 255 255);
+  border-color: #fff;
+}
+
 .sc-gate__icon {
   width: 14px;
   height: 14px;
@@ -109,48 +229,10 @@
   opacity: 0.72;
 }
 
-.sc-gate__icon--ln {
-  color: rgba(255, 200, 40, 0.75);
-}
-
 .sc-gate__label {
   font-family: 'Inter', sans-serif;
   font-size: clamp(9px, 0.72vw, 11px);
   letter-spacing: 0.12em;
-}
-
-/* Lightning address input wrapper */
-.sc-gate__ln-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1 1 160px;
-  min-width: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.3);
-  padding: 7px 10px;
-  transition: border-color 0.18s;
-}
-
-.sc-gate__ln-wrap:focus-within {
-  border-color: rgba(255, 255, 255, 0.28);
-}
-
-.sc-gate__ln-input {
-  flex: 1;
-  min-width: 0;
-  background: none;
-  border: none;
-  outline: none;
-  color: rgba(255, 255, 255, 0.78);
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.72vw, 11px);
-  letter-spacing: 0.06em;
-}
-
-.sc-gate__ln-input::placeholder {
-  color: rgba(255, 255, 255, 0.24);
-  letter-spacing: 0.04em;
 }
 
 /* Status badge */
@@ -163,7 +245,18 @@
   color: rgba(255, 255, 255, 0.28);
   white-space: nowrap;
   flex-shrink: 0;
+  text-align: center;
   transition: color 0.25s;
+}
+
+@media (max-width: 40rem) {
+  .sc-gate__top {
+    justify-content: center;
+  }
+
+  .sc-gate__nostr-profile {
+    max-width: 100%;
+  }
 }
 
 .sc-gate__status--ready {
@@ -211,15 +304,16 @@
 }
 
 .sc-row--selected {
-  --button-glow-bg-low: rgb(255 255 255 / 5%);
-  --button-glow-bg-peak: rgb(255 255 255 / 10%);
-  --button-glow-shadow-low: 0 0 8px rgb(255 255 255 / 18%), inset 0 0 6px rgb(255 255 255 / 5%);
-  --button-glow-shadow-peak: 0 0 20px rgb(255 255 255 / 38%), inset 0 0 12px rgb(255 255 255 / 8%);
-  --button-glow-border: rgba(255, 255, 255, 0.45);
-  border-color: rgba(255, 255, 255, 0.38);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.9);
-  animation: glowing 2000ms ease-in-out infinite;
+  --button-glow-bg-low: rgb(255 255 255 / 15%);
+  --button-glow-bg-peak: rgb(255 255 255 / 30%);
+  --button-glow-shadow-low: 0 0 15px rgb(255 255 255);
+  --button-glow-shadow-peak: 0 0 35px rgb(255 255 255);
+  --button-glow-border: #fff;
+  box-shadow: 0 0 15px rgb(255 255 255);
+  border-color: rgba(255, 255, 255, 0.827);
+  background: rgba(0, 0, 0, 0.531);
+  color: rgb(255, 255, 255);
+  animation: glowing 2000ms infinite;
   outline: none;
 }
 
@@ -370,6 +464,21 @@
   gap: 1px;
 }
 
+.sc-row__sats-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.sc-row__lock {
+  width: clamp(10px, 0.9vw, 13px);
+  height: clamp(10px, 0.9vw, 13px);
+  color: rgba(255, 255, 255, 0.28);
+  margin-top: 1px;
+  opacity: 0.92;
+}
+
 .sc-row__sats {
   font-family: 'BureauGrotesque', sans-serif;
   font-size: clamp(18px, 2.2vw, 28px);
@@ -377,7 +486,22 @@
   letter-spacing: 0.04em;
   line-height: 1;
   color: rgba(255, 255, 255, 0.38);
-  transition: color 0.18s;
+  transition: color 0.18s, text-shadow 0.18s;
+}
+
+@keyframes sc-sats-to-zero {
+  0% {
+    opacity: 0.2;
+    transform: translateY(-2px) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sc-row__sats--to-zero {
+  animation: sc-sats-to-zero 180ms ease-out both;
 }
 
 .sc-row__unit {
@@ -410,6 +534,32 @@
   color: rgba(255, 255, 255, 0.48);
 }
 
+/* Logged-out: prize appears locked/faded until Nostr is connected */
+.sc-row__bounty--locked .sc-row__sats {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.sc-row__bounty--locked .sc-row__unit {
+  color: rgba(255, 255, 255, 0.16);
+}
+
+.sc-row--selected .sc-row__bounty--locked .sc-row__sats {
+  color: rgba(255, 255, 255, 0.3);
+  animation: none;
+  text-shadow: none;
+}
+
+.sc-row--selected .sc-row__bounty--locked .sc-row__unit {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.sc-row[data-tier="sovereign"] .sc-row__bounty--locked .sc-row__sats,
+.sc-row--selected[data-tier="sovereign"] .sc-row__bounty--locked .sc-row__sats {
+  color: rgba(230, 195, 40, 0.28);
+  animation: none;
+  text-shadow: none;
+}
+
 /* Sovereign row gets the gold accent on sats */
 .sc-row[data-tier="sovereign"] .sc-row__sats {
   color: rgba(230, 195, 40, 0.52);
@@ -435,12 +585,12 @@
 .solo-challenges-page .practice-actions {
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: flex-start;
   width: 100%;
 }
 
 .solo-challenges-page .practice-back.button {
-  flex: 1 1 0;
+  flex: 0 1 100%;
   height: 3vw;
   min-height: 30px;
   margin: 0;
@@ -479,6 +629,13 @@
 
   .sc-row__sats {
     font-size: clamp(22px, 2.6vw, 34px);
+  }
+}
+
+@media (max-width: 960px) {
+  .solo-challenges-layout {
+    grid-template-columns: 1fr;
+    gap: clamp(10px, 1.5vh, 16px);
   }
 }
 

@@ -460,7 +460,7 @@ body {
 }
 
 #sponsorshipGame .sponsored-img {
-  height: clamp(32px, 3.2vw, 58px);
+  height: clamp(12px, 3.2vw, 58px);
   width: auto;
   max-width: none;
   object-fit: contain;
@@ -696,6 +696,137 @@ body {
   text-align: center;
   margin: 0;
   animation: solo-zap-pulse 2s ease-in-out infinite;
+}
+
+/* ── Post-note section ── */
+
+.solo-zap-note-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding-top: clamp(14px, 1.5vw, 20px);
+}
+
+.solo-zap-note-label {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.65vw, 9px);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.25);
+  margin: 0;
+}
+
+.solo-zap-note-preview {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: clamp(10px, 1.2vw, 16px) clamp(12px, 1.4vw, 18px);
+  text-align: left;
+}
+
+.solo-zap-note-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.solo-zap-note-author-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(20, 20, 24, 0.65);
+  flex-shrink: 0;
+}
+
+.solo-zap-note-author-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.solo-zap-note-author-name {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.75vw, 11px);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.86);
+  line-height: 1.2;
+}
+
+.solo-zap-note-author-pubkey {
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+  font-size: clamp(8px, 0.65vw, 10px);
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.2;
+}
+
+.solo-zap-note-text {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(10px, 0.85vw, 13px);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.solo-zap-post-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.1em;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: clamp(9px, 1vw, 12px) clamp(20px, 2.2vw, 28px);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.solo-zap-post-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.solo-zap-post-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@keyframes solo-zap-spin {
+  to { transform: rotate(360deg); }
+}
+
+.solo-zap-post-spinner {
+  width: 1em;
+  height: 1em;
+  animation: solo-zap-spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+.solo-zap-note-ok {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(10px, 0.85vw, 12px);
+  font-weight: 600;
+  color: #4cff8f;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.solo-zap-note-err {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.75vw, 11px);
+  color: rgba(255, 100, 100, 0.85);
+  margin: 0;
+  text-align: center;
 }
 
 /* ── Lose variants ── */
