@@ -92,3 +92,21 @@
   opacity: 1;
   transform: translateY(-50%) translateX(0);
 }
+
+@media (max-aspect-ratio: 1/1) {
+  .corner-controls {
+    left: max(2px, 0.5vmin);
+    gap: 3px;
+  }
+
+  .corner-btn {
+    width: clamp(20px, 5.2vw, 26px);
+    height: clamp(20px, 5.2vw, 26px);
+    padding: 2px;
+  }
+
+  .corner-btn::after {
+    font-size: max(0.55rem, 1.1vmax);
+    padding: 0.1rem 0.28rem;
+  }
+}
