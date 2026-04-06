@@ -418,15 +418,27 @@ export class PixiGameRenderer {
     }
 
     // ── Text overlays ─────────────────────────────────────────────────────────
-    this.endWinnerText.position.set(width / 2, height / 2 - 15);
-    this.endContinueText.position.set(width / 2, height / 2 + 35);
+    /* Small boards (narrow viewports / portrait): height in px is tight — blend in height so win / continue copy stays readable */
+    const compactBoard = width < 560 || height < 260;
+    const overlayWinnerPx = compactBoard
+      ? Math.max(14, (width / 14) * 1.05, height / 5.5)
+      : Math.max(10, (width / 17) * 1.12);
+    const overlayContinuePx = compactBoard
+      ? Math.max(12, (width / 30) * 1.05, height / 11)
+      : Math.max(10, (width / 39) * 1.1);
+    const winnerYOffset = Math.min(22, height * 0.09);
+    const continueGap = Math.max(28, overlayWinnerPx * 0.85);
+    this.endWinnerText.position.set(width / 2, height / 2 - winnerYOffset);
+    this.endContinueText.position.set(width / 2, height / 2 - winnerYOffset + continueGap);
     this.countdown3.position.set(width * 0.24, height / 2);
     this.countdown2.position.set(width * 0.36, height / 2);
     this.countdown1.position.set(width * 0.47, height / 2);
     this.countdownLfg.position.set(width * 0.675, height / 2);
-    const startFontSize = Math.max(10, (width / 17) * 1.12);
-    this.endWinnerText.style.fontSize = Math.max(10, (width / 17) * 1.12);
-    this.endContinueText.style.fontSize = Math.max(10, (width / 39) * 1.1);
+    const startFontSize = compactBoard
+      ? Math.max(12, (width / 14) * 1.05, height / 5.5)
+      : Math.max(10, (width / 17) * 1.12);
+    this.endWinnerText.style.fontSize = overlayWinnerPx;
+    this.endContinueText.style.fontSize = overlayContinuePx;
     const countdownSize = Math.max(18, height * 0.54);
     this.countdown3.style.fontSize = countdownSize;
     this.countdown2.style.fontSize = countdownSize;
@@ -1618,7 +1630,11 @@ export class PixiGameRenderer {
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#000000';
     if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
-      ctx.font = `${Math.floor(width / 17)}px BureauGrotesque`;
+      const fbCompact = width < 560 || height < 260;
+      const fbStartPx = fbCompact
+        ? Math.max(12, Math.floor(Math.max(width / 14, height / 5.5)))
+        : Math.max(10, Math.floor(width / 17));
+      ctx.font = `${fbStartPx}px BureauGrotesque`;
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
       const fbElapsed = Math.max(0, performance.now() - this.startRevealTime - 1000);
       const words = ['PRESS', 'BUTTON', 'TO', 'START'];
@@ -1634,11 +1650,20 @@ export class PixiGameRenderer {
     } else if (state.gameEnded) {
       this.startRevealTime = -1;
       if (resolveProgressFb >= 1.0 || !state.convergenceWallClosed) {
-        ctx.font = `${Math.floor(width / 17)}px BureauGrotesque`;
-        ctx.fillText(`${state.winnerName.toUpperCase()} WINS!`, width / 2, height / 2 - 10);
+        const fbC = width < 560 || height < 260;
+        const fbWinPx = fbC
+          ? Math.max(14, Math.floor(Math.max(width / 14, height / 5.5)))
+          : Math.max(10, Math.floor(width / 17));
+        const fbContPx = fbC
+          ? Math.max(12, Math.floor(Math.max(width / 30, height / 11)))
+          : Math.max(10, Math.floor(width / 39));
+        const fbY0 = Math.min(22, height * 0.09);
+        const fbGap = Math.max(28, fbWinPx * 0.85);
+        ctx.font = `${fbWinPx}px BureauGrotesque`;
+        ctx.fillText(`${state.winnerName.toUpperCase()} WINS!`, width / 2, height / 2 - fbY0);
         if (!opts?.replayView) {
-          ctx.font = `${Math.floor(width / 39)}px BureauGrotesque`;
-          ctx.fillText('PRESS ANY BUTTON TO CONTINUE', width / 2, height / 2 + 35);
+          ctx.font = `${fbContPx}px BureauGrotesque`;
+          ctx.fillText('PRESS ANY BUTTON TO CONTINUE', width / 2, height / 2 - fbY0 + fbGap);
         }
       }
     }
