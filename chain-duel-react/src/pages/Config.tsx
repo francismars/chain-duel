@@ -13,7 +13,6 @@ import {
 import {
   beginNostrConnectPairing,
   clearSignerSession,
-  connectNostrConnect,
   connectNsecFromInput,
   disposeNostrConnectPairingAttempt,
   getStoredSignerMode,
@@ -57,7 +56,6 @@ export default function Config() {
   const [nip05Ok, setNip05Ok] = useState<boolean | null>(null);
   const [nip05CheckPending, setNip05CheckPending] = useState(false);
   const [loginTab, setLoginTab] = useState<LoginTab>('extension');
-  const [bunkerInput, setBunkerInput] = useState('');
   const [nsecInput, setNsecInput] = useState('');
   const [pendingAuthUrl, setPendingAuthUrl] = useState<string | null>(null);
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
@@ -132,7 +130,7 @@ export default function Config() {
           const msg = e instanceof Error ? e.message : String(e);
           if (/subscription closed|aborted|AbortError/i.test(msg)) {
             setNostrError(
-              'Timed out or cancelled before your signer connected. Generate a new QR, or use a bunker URL below.'
+              'Timed out or cancelled before your signer connected. Generate a new QR and try again.'
             );
           } else {
             setNostrError(msg || 'Nostr Connect pairing failed.');
@@ -244,30 +242,6 @@ export default function Config() {
       setNostrBusy(false);
     }
   }, [playSfx]);
-
-  const handleNostrConnectBunkerPaste = useCallback(async () => {
-    setNip46Waiting(false);
-    nip46PairingAbortRef.current?.abort();
-    nip46PairingAbortRef.current = null;
-    nip46PairingDoneRef.current = false;
-    disposeNostrConnectPairingAttempt();
-
-    setNostrBusy(true);
-    setNostrError(null);
-    setPendingAuthUrl(null);
-    try {
-      const pubkey = await connectNostrConnect(bunkerInput);
-      setNostrPubkeyHex(pubkey);
-      setBunkerInput('');
-      nip46PairingDoneRef.current = true;
-      playSfx(SFX.MENU_CONFIRM);
-    } catch (e) {
-      setNostrError(e instanceof Error ? e.message : 'Nostr Connect failed.');
-      setPairingKey((k) => k + 1);
-    } finally {
-      setNostrBusy(false);
-    }
-  }, [bunkerInput, playSfx]);
 
   const copyNostrConnectUri = useCallback(() => {
     if (!nostrConnectUri) return;
@@ -517,38 +491,6 @@ export default function Config() {
                   )}
                 </div>
 
-                <div className="config-nc-or">
-                  <span>OR</span>
-                </div>
-
-                <p className="config-login-panel__lede config-login-panel__lede--tight">
-                  <strong>bunker://…</strong> or NIP-05 from your app:
-                </p>
-                <label className="config-login-panel__label" htmlFor="configBunkerInput">
-                  Bunker URL or NIP-05
-                </label>
-                <div className="config-nc-bunker-row">
-                  <input
-                    id="configBunkerInput"
-                    className="config-login-panel__input config-login-panel__input--bunker"
-                    value={bunkerInput}
-                    onChange={(e) => setBunkerInput(e.target.value)}
-                    placeholder="bunker://…"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                  <Button
-                    id="nostrSignInNip46Bunker"
-                    type="button"
-                    onClick={() => {
-                      void handleNostrConnectBunkerPaste();
-                    }}
-                    disabled={nostrBusy || !bunkerInput.trim()}
-                  >
-                    {nostrBusy ? 'Connecting…' : 'Connect'}
-                  </Button>
-                </div>
-
                 <div className="config-page__actions config-page__actions--inline config-page__actions--regen">
                   <Button
                     type="button"
@@ -741,7 +683,7 @@ export default function Config() {
               {!profile ? (
                 <p className="config-profile-card__empty">
                   {signerMode === 'nip46'
-                    ? 'Could not load your profile. The stored key may be a signer key, not your Nostr identity. Sign out and reconnect to fix this.'
+                    ? 'Waiting for signer. Open Primal on your phone and approve any signing prompts — your profile will appear automatically.'
                     : 'No kind\u00a00 metadata found on the default relays yet. You can still use this pubkey; publish a profile from any Nostr client.'}
                 </p>
               ) : null}
@@ -761,7 +703,7 @@ export default function Config() {
                       </svg>
                       <span className="config-signer-ping__text">
                         {signerPingStatus === 'timeout'
-                          ? 'Signer not responding — connection may have been deleted on the signer side. Sign out and reconnect.'
+                          ? 'Waiting for approval. Open Primal on your phone and tap Allow when prompted.'
                           : 'Could not reach signer. Check your connection or sign out and reconnect.'}
                       </span>
                     </>
@@ -845,6 +787,7 @@ export default function Config() {
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
+
     </div>
   );
 }

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@mempool/mempool.js": "^3.0.0",
+    "@nostrify/nostrify": "^0.51.1",
     "@tanstack/react-query": "^5.56.2",
     "nostr-tools": "^2.23.3",
     "pixi.js": "^8.0.0",
