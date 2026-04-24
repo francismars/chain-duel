@@ -39,7 +39,7 @@
   margin-right: 1%;
 }
 
-/* Middle: bracket content */
+/* Middle: bracket content (visible overflow so Nostr avatars can extend past SVG slot) */
 .tournbracket-page .tournbracket-middle {
   flex: 1 1 auto;
   min-height: 100vh;
@@ -50,7 +50,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .tournbracket-page #bracket {
@@ -87,6 +87,7 @@
 /* Inlined bracket SVG: same sizing as img, use app font for text */
 .tournbracket-page .tournbracketSVG-inline {
   font-family: 'Inter', sans-serif;
+  overflow: visible;
 }
 
 .tournbracket-page .tournbracketSVG-inline svg {
@@ -126,6 +127,12 @@
 /* Player slot and winner labels should look bolder like legacy render. */
 .tournbracket-page .tournbracketSVG-inline text[id$="_name"] {
   font-weight: 700;
+}
+
+/* Nostr bracket avatars: circle crop on <image>; 1px ring is <circle data-avatar-ring> (see TournamentBracket.tsx) */
+.tournbracket-page .tournbracketSVG-inline g.bracket-avatar-wrap image[data-avatar="true"] {
+  clip-path: circle(50% at 50% 50%);
+  -webkit-clip-path: circle(50% at 50% 50%);
 }
 
 /* Payment panel (legacy bracketPayment): centered on screen, QR + Cancel/Start */
@@ -446,11 +453,63 @@
 
 .tournbracket-page #nextGamePlayers {
   display: flex;
+  width: 100%;
+  max-width: min(96vw, 56rem);
   margin: 0.5vw auto 1vw;
-  justify-content: center;
-  gap: 1vw;
+  justify-content: space-between;
   align-items: center;
+  gap: 0.75vw 1.25vw;
+  flex-wrap: wrap;
   font-size: 1.5vw;
+  box-sizing: border-box;
+}
+
+.tournbracket-page .next-game-player {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.65vw;
+  min-width: 0;
+  flex: 1 1 0;
+  max-width: min(48%, 26rem);
+}
+
+.tournbracket-page .next-game-player--p1 {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.tournbracket-page .next-game-player--p2 {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.tournbracket-page .next-game-vs {
+  flex-shrink: 0;
+  opacity: 0.85;
+  font-size: inherit;
+}
+
+.tournbracket-page .next-game-player-img {
+  width: clamp(22px, 3.8vw, 44px);
+  height: clamp(22px, 3.8vw, 44px);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.tournbracket-page #nextGamePlayers .playerName {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .tournbracket-page .playerName {
@@ -464,7 +523,10 @@
 }
 
 .tournbracket-page .playerSquare.white { background: #fff; }
-.tournbracket-page .playerSquare.black { background: #000; border: 1px solid #fff; }
+.tournbracket-page .playerSquare.black {
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
 
 .tournbracket-page .nextGameButton {
   animation: glowing 2000ms infinite;
@@ -476,16 +538,60 @@
 .tournbracket-page .tournFinishedDiv {
   width: 100%;
   position: fixed;
-  bottom: 4vw;
+  /* Higher on screen than legacy 4vw — clears thumb reach / bottom chrome */
+  bottom: clamp(2.75rem, 10vw, 6.5rem);
   padding: 1vw;
   box-sizing: border-box;
   text-align: center;
   background: radial-gradient(#000000b3, #000000a1, #00000061, #00000000, #00000000);
 }
 
-.tournbracket-page .tournFinishedDiv h2 {
-  font-size: 2.5vw;
+.tournbracket-page .tournFinishedDiv h2.tourn-finished-headline {
   margin: 0;
+  font-size: clamp(1rem, 3.1vw, 1.6rem);
+  line-height: 1.1;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tournbracket-page .tourn-finished-title {
+  display: inline-block;
+  text-indent: 0.28em;
+  text-transform: uppercase;
+  background: linear-gradient(
+    95deg,
+    #737373 0%,
+    #fde047 28%,
+    #fffbeb 42%,
+    #facc15 55%,
+    #fef9c3 72%,
+    #fde047 88%,
+    #a3a3a3 100%
+  );
+  background-size: 260% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.38));
+  animation: tournFinishedGradientShift 3.5s linear infinite;
+}
+
+@keyframes tournFinishedGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tournbracket-page .tourn-finished-title {
+    animation: none;
+    background-position: 40% 50%;
+  }
 }
 
 .tournbracket-page #winnerName {

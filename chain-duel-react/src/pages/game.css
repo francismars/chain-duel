@@ -62,8 +62,13 @@ body {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   margin: 0.35vw 15%;
+}
+
+.flex.points {
+  padding-top: 0.5vw;
+  padding-bottom: 0.1vw;
 }
 
 .flex.players {
@@ -101,6 +106,12 @@ body {
   color: white;
   padding-top: 0;
   margin-bottom: 0;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45vw;
+  min-width: 0;
 }
 
 #player2info {
@@ -109,10 +120,21 @@ body {
   margin-bottom: 0;
   margin-right: 0;
   text-align: right;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45vw;
+  min-width: 0;
+}
+
+#player1name,
+#player2name {
+  min-width: 0;
 }
 
 #player2name {
-  margin-right: 0.4vw;
+  margin-right: 0;
 }
 
 .player-sats {
@@ -164,8 +186,24 @@ body {
 
 .playerImg {
   width: 3vw;
+  height: 3vw;
+  aspect-ratio: 1;
+  object-fit: cover;
   margin-bottom: -0.5vw;
-  border-radius: 1000px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* Match avatar to name: line box + cap height (Bureau condensed is tight; caps can exceed 1lh) */
+#player1info .playerImg,
+#player2info .playerImg {
+  width: max(1lh, 1cap);
+  height: max(1lh, 1cap);
+  margin-bottom: 0;
+  vertical-align: unset;
 }
 
 .gameState {
@@ -888,6 +926,8 @@ body {
   .flex.points {
     margin-top: 0.45rem;
     margin-bottom: 0.9rem;
+    padding-top: 0.3vw;
+    padding-bottom: 0.3vw;
   }
 
   .playerSquare {
@@ -920,7 +960,21 @@ body {
 
   .playerImg {
     width: clamp(24px, 7.5vmax, 48px);
+    height: clamp(24px, 7.5vmax, 48px);
+    aspect-ratio: 1;
+    object-fit: cover;
     margin-bottom: -0.12rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+
+  #player1info .playerImg,
+  #player2info .playerImg {
+    width: max(1lh, 1cap);
+    height: max(1lh, 1cap);
+    margin-bottom: 0;
+    vertical-align: unset;
   }
 
   .gameState {

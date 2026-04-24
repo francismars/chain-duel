@@ -315,12 +315,12 @@ export default function PostGame() {
           <h2 id="gameOver">GAME OVER</h2>
           <div className="playerInfoGroup">
             <img
-              className={`playerImg inline ${winnerPicture ? '' : 'hide'}`}
+              className={`playerImg ${winnerPicture ? '' : 'hide'}`}
               id="playerImg"
               src={winnerPicture || '/images/loading.gif'}
               alt=""
             />
-            <h1 id="winner" className="inline" style={{ display: practiceMode ? 'none' : undefined }}>
+            <h1 id="winner" style={{ display: practiceMode ? 'none' : undefined }}>
               {winnerName} WINS
             </h1>
           </div>
