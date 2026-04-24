@@ -6,7 +6,10 @@ interface TournamentInfosPayload {
   gameInfo?: {
     numberOfPlayers?: number;
     winners?: string[];
-    players?: Record<string, { name?: string; picture?: string; fallbackLabel?: string }>;
+    players?: Record<
+      string,
+      { name?: string; picture?: string; fallbackLabel?: string; nostrPubkey?: string }
+    >;
   };
   lnurlp?: string;
   lnurlw?: string;
@@ -30,7 +33,10 @@ interface UseTournamentSocketEventsArgs {
   onLoading: (loading: boolean) => void;
   onInfos: (data: TournamentInfosPayload) => void;
   onPayments: (
-    players: Record<string, { name?: string; picture?: string; fallbackLabel?: string }>
+    players: Record<
+      string,
+      { name?: string; picture?: string; fallbackLabel?: string; nostrPubkey?: string }
+    >
   ) => void;
   onCancel: (data: { depositcount: number; lnurlw?: string }) => void;
   onPrizeWithdrawn: () => void;
@@ -72,7 +78,10 @@ export function useTournamentSocketEvents({
     const onPaymentsEvent = (payload: unknown) => {
       if (!payload || typeof payload !== 'object') return;
       const source = payload as {
-        players?: Record<string, { name?: string; picture?: string; fallbackLabel?: string }>;
+        players?: Record<
+          string,
+          { name?: string; picture?: string; fallbackLabel?: string; nostrPubkey?: string }
+        >;
       };
       if (!source.players) return;
       onLoading(false);

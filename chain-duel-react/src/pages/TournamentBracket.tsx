@@ -19,6 +19,7 @@ import {
   TOURNAMENT_MIN_PLAYERS,
 } from '@/shared/constants/payment';
 import { createLogger } from '@/shared/utils/logger';
+import { npubEncode } from 'nostr-tools/nip19';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import './tournbracket.css';
@@ -35,6 +36,8 @@ type TournamentPlayerIdentity = {
   value?: number;
   picture?: string;
   fallbackLabel?: string;
+  /** Hex pubkey (64 chars) — used when `name` is empty to show a trimmed `npub1…` instead of `NPUB:hex…` */
+  nostrPubkey?: string;
 };
 
 export default function TournamentBracket() {
@@ -127,6 +130,28 @@ export default function TournamentBracket() {
     () => computeBracketState(playersList, winnersList, numberOfPlayers),
     [playersList, winnersList, numberOfPlayers],
   );
+
+  /** Profile image for each side of the upcoming match (match display label to paid roster). */
+  const nextGameAvatars = useMemo(() => {
+    const pictureForDisplayName = (displayName: string): string | null => {
+      const t = displayName.trim();
+      if (!t) return null;
+      for (const [key, v] of Object.entries(playersPaid)) {
+        if (resolveIdentityLabel(v, key) === t) {
+          const pic = v.picture?.trim();
+          return pic && pic !== '' ? pic : null;
+        }
+      }
+      return null;
+    };
+    const nostrFallback = '/images/social/Nostr.png';
+    const p1 = pictureForDisplayName(bracketState.nextP1);
+    const p2 = pictureForDisplayName(bracketState.nextP2);
+    return {
+      p1Src: p1 ?? (isNostrTournament ? nostrFallback : null),
+      p2Src: p2 ?? (isNostrTournament ? nostrFallback : null),
+    };
+  }, [playersPaid, bracketState.nextP1, bracketState.nextP2, isNostrTournament]);
 
   // Tournament phase drives which overlay is shown
   const tournamentPhase: 'payment' | 'next-game' | 'finished' = useMemo(() => {
@@ -249,8 +274,10 @@ export default function TournamentBracket() {
     const svgEl = svgWrapperRef.current;
     const svgRoot = svgEl.querySelector('svg');
     if (!svgRoot) return;
-    const oldAvatars = svgRoot.querySelectorAll<SVGImageElement>('image[data-avatar="true"]');
-    oldAvatars.forEach((node) => node.remove());
+    svgRoot.querySelectorAll('g.bracket-avatar-wrap').forEach((node) => node.remove());
+    svgRoot.querySelectorAll<SVGImageElement>('image[data-avatar="true"]').forEach((node) =>
+      node.remove()
+    );
     const paid = playersPaid;
     for (const key of Object.keys(paid)) {
       const idx = parseInt(key.replace('Player ', '')) - 1;
@@ -275,8 +302,9 @@ export default function TournamentBracket() {
           nameEl.setAttribute('transform', originalTransform);
         }
         const baseBBox = textNode.getBBox();
-        const avatarSize = Math.max(12, Math.round(baseBBox.height));
-        const gap = 4;
+        /** Larger than name cap-height; may extend past slot (overflow OK per design) */
+        const avatarSize = Math.max(26, Math.round(baseBBox.height * 1.85));
+        const gap = 5;
         const shift = (avatarSize + gap) / 2;
 
         const transformAttr = nameEl.getAttribute('transform') ?? '';
@@ -300,19 +328,32 @@ export default function TournamentBracket() {
         const picture = paid[key]?.picture;
         const imageHref =
           picture && picture.trim() !== '' ? picture : '/images/social/Nostr.png';
+        const wrap = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        wrap.setAttribute('class', 'bracket-avatar-wrap');
+        const ix = tx + alignedBBox.x - avatarSize - gap;
+        const iy = ty + alignedBBox.y + (alignedBBox.height - avatarSize) / 2;
         const avatar = document.createElementNS('http://www.w3.org/2000/svg', 'image');
         avatar.setAttribute('data-avatar', 'true');
-        avatar.setAttribute('x', `${tx + alignedBBox.x - avatarSize - gap}`);
-        avatar.setAttribute(
-          'y',
-          `${ty + alignedBBox.y + (alignedBBox.height - avatarSize) / 2}`
-        );
+        avatar.setAttribute('x', `${ix}`);
+        avatar.setAttribute('y', `${iy}`);
         avatar.setAttribute('width', `${avatarSize}`);
         avatar.setAttribute('height', `${avatarSize}`);
         avatar.setAttribute('preserveAspectRatio', 'xMidYMid slice');
         avatar.setAttributeNS('http://www.w3.org/1999/xlink', 'href', imageHref);
         avatar.setAttribute('href', imageHref);
-        nameEl.parentNode?.appendChild(avatar);
+        /* Same ring as HUD .playerImg: 1px rgba(255,255,255,0.28) — vector stroke survives clip-path on <image> */
+        const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        ring.setAttribute('cx', `${ix + avatarSize / 2}`);
+        ring.setAttribute('cy', `${iy + avatarSize / 2}`);
+        ring.setAttribute('r', `${avatarSize / 2 - 0.5}`);
+        ring.setAttribute('fill', 'none');
+        ring.setAttribute('stroke', 'rgba(255, 255, 255, 0.28)');
+        ring.setAttribute('stroke-width', '1');
+        ring.setAttribute('pointer-events', 'none');
+        ring.setAttribute('data-avatar-ring', 'true');
+        wrap.appendChild(avatar);
+        wrap.appendChild(ring);
+        nameEl.parentNode?.appendChild(wrap);
       }
     }
   }, [playersPaid, svgMarkup, isNostrTournament]);
@@ -563,7 +604,7 @@ export default function TournamentBracket() {
               </h1>
               <Sponsorship id="sponsorshipBraket" />
             </div>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', overflow: 'visible' }}>
               {svgMarkup ? (
                 <div
                   ref={svgWrapperRef}
@@ -746,11 +787,31 @@ export default function TournamentBracket() {
             GAME <span id="nextGameID">{bracketState.nextGameNumber}</span>
           </h2>
           <div id="nextGamePlayers">
-            <div className="inline playerSquare white" />
-            <span id="nextGame_P1" className="condensed playerName">{bracketState.nextP1}</span>
-            <span> vs </span>
-            <span id="nextGame_P2" className="condensed playerName">{bracketState.nextP2}</span>
-            <div className="inline playerSquare black" />
+            <div className="next-game-player next-game-player--p1">
+              <div className="inline playerSquare white" />
+              {nextGameAvatars.p1Src ? (
+                <img
+                  className="inline next-game-player-img"
+                  id="nextGameImgP1"
+                  src={nextGameAvatars.p1Src}
+                  alt=""
+                />
+              ) : null}
+              <span id="nextGame_P1" className="condensed playerName">{bracketState.nextP1}</span>
+            </div>
+            <span className="next-game-vs"> vs </span>
+            <div className="next-game-player next-game-player--p2">
+              <span id="nextGame_P2" className="condensed playerName">{bracketState.nextP2}</span>
+              {nextGameAvatars.p2Src ? (
+                <img
+                  className="inline next-game-player-img"
+                  id="nextGameImgP2"
+                  src={nextGameAvatars.p2Src}
+                  alt=""
+                />
+              ) : null}
+              <div className="inline playerSquare black" />
+            </div>
           </div>
           <Button
             ref={startGameBtnRef}
@@ -767,7 +828,9 @@ export default function TournamentBracket() {
       {/* ── Tournament finished: champion panel (matches legacy tournFinishedDiv) ── */}
       {tournamentPhase === 'finished' && (
         <div className="tournFinishedDiv" id="tournFinishedDiv">
-          <h2 className="m-0">⚡️🏆 CONGRATULATIONS 🏆⚡️</h2>
+          <h2 className="m-0 tourn-finished-headline">
+            <span className="tourn-finished-title">Champion</span>
+          </h2>
           <h1><span id="winnerName">{bracketState.champion}</span></h1>
           <Button
             ref={claimBtnRef}
@@ -813,9 +876,50 @@ export default function TournamentBracket() {
   );
 }
 
+function midTruncateDisplay(s: string, head: number, tail: number): string {
+  if (s.length <= head + tail + 1) return s;
+  return `${s.slice(0, head)}…${s.slice(-tail)}`;
+}
+
+/** Bracket SVG slots are narrow — keep npub fingerprints short */
+const NPUB_BRACKET_HEAD = 7;
+const NPUB_BRACKET_TAIL = 4;
+
+function isHexPubkey64(s: string): boolean {
+  return /^[0-9a-fA-F]{64}$/.test(s);
+}
+
+/** Display label for roster + bracket: prefer name, else trimmed `npub1…` from hex pubkey, not `NPUB:dead…beef`. */
 function resolveIdentityLabel(player: TournamentPlayerIdentity | undefined, fallbackRole: string): string {
   if (!player) return fallbackRole;
-  if (player.name && player.name.trim() !== '') return player.name;
-  if (player.fallbackLabel && player.fallbackLabel.trim() !== '') return player.fallbackLabel;
+  const name = player.name?.trim() ?? '';
+  if (name !== '') return name;
+
+  const rawPk = player.nostrPubkey?.trim() ?? '';
+  if (rawPk) {
+    if (rawPk.startsWith('npub1')) {
+      return midTruncateDisplay(rawPk, NPUB_BRACKET_HEAD, NPUB_BRACKET_TAIL);
+    }
+    if (isHexPubkey64(rawPk)) {
+      try {
+        return midTruncateDisplay(npubEncode(rawPk), NPUB_BRACKET_HEAD, NPUB_BRACKET_TAIL);
+      } catch {
+        /* fall through */
+      }
+    }
+  }
+
+  const fb = player.fallbackLabel?.trim() ?? '';
+  if (fb.startsWith('npub1')) {
+    return midTruncateDisplay(fb, NPUB_BRACKET_HEAD, NPUB_BRACKET_TAIL);
+  }
+
+  // Server legacy: "NPUB:29a0…aafd" — no full hex, cannot bech32; compact for bracket width
+  const legacy = fb.match(/^NPUB:\s*([0-9a-fA-F]+)\s*\.\.\.\s*([0-9a-fA-F]+)\s*$/i);
+  if (legacy) {
+    return `${legacy[1].slice(0, 5)}…${legacy[2].slice(-4)}`;
+  }
+
+  if (fb !== '') return fb;
   return fallbackRole;
 }

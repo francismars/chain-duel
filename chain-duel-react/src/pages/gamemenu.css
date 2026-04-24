@@ -470,10 +470,19 @@
   border: 0.2vw solid #fff;
 }
 
+/* Avatar thumbs: perfect circle, 1:1 crop (matches in-game .playerImg) */
+.gamemenu-page .playerImg {
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
 .gamemenu-page.is-nostr .playerImg {
   width: 2cqw;
   height: 2cqw;
-  object-fit: cover;
   margin: 0 0.4vw;
-  border-radius: 2px;
 }

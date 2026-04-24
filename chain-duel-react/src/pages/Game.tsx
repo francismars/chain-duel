@@ -17,6 +17,7 @@ import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
 import { useAudio } from '@/contexts/AudioContext';
 import { PlayerRole } from '@/types/socket';
+import { formatHudPlayerName } from '@/features/game/gameSession';
 import { useGameSocketEvents } from '@/features/game/hooks/useGameSocketEvents';
 import { useGameRenderBridge } from '@/features/game/hooks/useGameRenderBridge';
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
@@ -189,7 +190,19 @@ export default function Game() {
       isLegacyPowerup || (isLocalHub && Boolean(gameConfig.powerupMode));
     const isPracticeMode = Boolean(gameConfig.practiceMode);
     const aiTier = (gameConfig.aiTier as string) ?? 'hunter';
-    const p1Name = String(gameConfig.p1Name ?? 'Player 1');
+    const optCfgStr = (v: unknown): string | undefined => {
+      if (v == null) return undefined;
+      const s = String(v).trim();
+      return s === '' ? undefined : s;
+    };
+    const p1Name = formatHudPlayerName(
+      {
+        name: optCfgStr(gameConfig.p1Name),
+        fallbackLabel: optCfgStr(gameConfig.p1FallbackLabel),
+        nostrPubkey: optCfgStr(gameConfig.p1NostrPubkey ?? gameConfig.p1Npub),
+      },
+      'Player 1',
+    );
     const rawP2Name = String(gameConfig.p2Name ?? (isPracticeMode ? 'BigToshi 🌊' : 'Player 2'));
 
     let p1Human = true;
@@ -208,7 +221,14 @@ export default function Game() {
           ? 'POWER-UP ARENA'
           : 'LOCAL';
     const displayP2Name = isLocalHub
-      ? String(gameConfig.p2Name ?? 'Player 2')
+      ? formatHudPlayerName(
+          {
+            name: optCfgStr(gameConfig.p2Name),
+            fallbackLabel: optCfgStr(gameConfig.p2FallbackLabel),
+            nostrPubkey: optCfgStr(gameConfig.p2NostrPubkey ?? gameConfig.p2Npub),
+          },
+          'Player 2',
+        )
       : isPracticeMode
         ? rawP2Name
         : 'Player 2';

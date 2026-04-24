@@ -39,12 +39,11 @@ body {
 
 #winner {
   position: static;
-  margin-top: 0%;
+  margin: 0;
   text-align: center;
   font-size: 3cqw;
   color: white;
-  padding-top: 0%;
-  margin-bottom: 0%;
+  padding: 0;
 }
 
 #fees {
@@ -171,14 +170,30 @@ body {
   filter: blur(10px);
 }
 
+/* Typographic scale for row: avatar size tracks winner line box (global h1 line-height 0.95) */
 .playerInfoGroup {
   margin: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 0.75vw, 16px);
+  font-size: 3cqw;
+  line-height: 0.95;
 }
 
 .playerImg {
-  width: 3vw;
-  margin-bottom: -0.5vw;
+  flex-shrink: 0;
   border-radius: 1000px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.playerInfoGroup .playerImg {
+  width: 0.95em;
+  height: 0.95em;
+  object-fit: cover;
+  display: block;
 }
 
 #socialFollow {
