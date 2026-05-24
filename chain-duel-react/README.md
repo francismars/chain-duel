@@ -32,8 +32,10 @@ src/
 │   ├── input/      # Keyboard/gamepad input
 │   └── audio/       # Sound management
 ├── hooks/          # Custom React hooks
-├── stores/         # Zustand state stores
-└── styles/          # CSS styles
+├── contexts/       # React context providers (e.g. audio)
+├── features/       # Route-specific hooks and UI logic
+├── shared/         # Cross-cutting constants, socket helpers
+└── styles/         # CSS styles
 ```
 
 ## Development
