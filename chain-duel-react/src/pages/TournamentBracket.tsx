@@ -19,6 +19,7 @@ import {
   TOURNAMENT_MIN_PLAYERS,
 } from '@/shared/constants/payment';
 import { createLogger } from '@/shared/utils/logger';
+import { clearClientGameConfig } from '@/pages/practiceHubModes';
 import { npubEncode } from 'nostr-tools/nip19';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
@@ -519,6 +520,7 @@ export default function TournamentBracket() {
       'tournamentMode',
       isNostrTournament ? 'tournamentnostr' : 'tournament'
     );
+    clearClientGameConfig();
     navigate('/game');
   }
 

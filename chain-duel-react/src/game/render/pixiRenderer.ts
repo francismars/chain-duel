@@ -38,13 +38,25 @@ export class PixiGameRenderer {
   private startRevealTime = -1;
   private startLayoutWidth = -1;
   private boardRevealTime = -1;
+  private lastCountdownPhase: '3' | '2' | '1' | 'LFG' | null = null;
+  private lastOverlayWidth = 0;
+  private lastOverlayHeight = 0;
   private endWinnerText: Text;
   private endContinueText: Text;
   private countdown3: Text;
   private countdown2: Text;
   private countdown1: Text;
   private countdownLfg: Text;
+  private gridCacheKey = '';
+  private powerUpLabelPool = new Map<
+    string,
+    { name: Text; letter: Text }
+  >();
 
+  private static readonly BOARD_REVEAL_DELAY_MS = 800;
+  private static readonly BOARD_REVEAL_MAX_MS = 3500;
+  private static readonly START_WORDS_DELAY_MS = 1000;
+  private static readonly START_WORDS_ANIM_MS = 1800;
 
   constructor() {
     const startWordStyle = new TextStyle({
@@ -109,10 +121,10 @@ export class PixiGameRenderer {
     });
     this.endContinueText.anchor.set(0.5);
     this.endContinueText.resolution = 2;
-    this.countdown3 = this.createCountdownText();
-    this.countdown2 = this.createCountdownText();
-    this.countdown1 = this.createCountdownText();
-    this.countdownLfg = this.createCountdownText();
+    this.countdown3 = this.createCountdownText('3');
+    this.countdown2 = this.createCountdownText('2');
+    this.countdown1 = this.createCountdownText('1');
+    this.countdownLfg = this.createCountdownText('LFG');
   }
 
   async mount(host: HTMLElement): Promise<void> {
@@ -151,6 +163,7 @@ export class PixiGameRenderer {
 
   resize(): void {
     if (!this.host) return;
+    this.gridCacheKey = '';
     if (this.app) {
       this.app.renderer.resize(this.host.clientWidth, this.host.clientHeight);
       return;
@@ -159,6 +172,35 @@ export class PixiGameRenderer {
       this.fallbackCanvas.width = Math.max(1, this.host.clientWidth);
       this.fallbackCanvas.height = Math.max(1, this.host.clientHeight);
     }
+  }
+
+  /** True when a paint is needed for time-based motion (bridge still paints on sim ticks). */
+  needsPaint(state: GameState, now: number = performance.now()): boolean {
+    const preStart =
+      !state.gameStarted && !state.countdownStart && !state.gameEnded;
+    if (preStart) {
+      return this.isBoardRevealActive(now) || this.isStartWordsRevealActive(now);
+    }
+    if (state.countdownStart && !state.gameStarted) {
+      return true;
+    }
+    if (state.gameStarted && !state.gameEnded) {
+      if ((state.pointChanges?.length ?? 0) > 0) return true;
+      if ((state.powerUpItems?.length ?? 0) > 0) return true;
+      if ((state.teleportDoors?.length ?? 0) > 0) return true;
+      if (this.p1Pulses.length > 0 || this.p2Pulses.length > 0) return true;
+      if (this.p1SurgeTrail.length > 0 || this.p2SurgeTrail.length > 0) return true;
+      if (state.meta.overclockMode) return true;
+      if (state.activePowerUps?.some((ap) => ap.type === 'SURGE' || ap.type === 'AMPLIFIER')) {
+        return true;
+      }
+      return false;
+    }
+    if (state.gameEnded) {
+      const resolve = this.getResolveProgress(state);
+      return resolve > 0 && resolve < 1;
+    }
+    return false;
   }
 
   render(state: GameState, opts?: { replayView?: boolean }): void {
@@ -171,10 +213,20 @@ export class PixiGameRenderer {
       this.renderFallback(state, opts);
       return;
     }
-    const width = this.host?.clientWidth ?? renderer.width;
-    const height = this.host?.clientHeight ?? renderer.height;
+    let width = this.host?.clientWidth ?? renderer.width;
+    let height = this.host?.clientHeight ?? renderer.height;
     if (width <= 0 || height <= 0) {
       this.resize();
+      width = this.host?.clientWidth ?? renderer.width;
+      height = this.host?.clientHeight ?? renderer.height;
+    }
+    if (width > 0 && height > 0) {
+      this.lastOverlayWidth = width;
+      this.lastOverlayHeight = height;
+    } else if (this.lastOverlayWidth > 0 && this.lastOverlayHeight > 0) {
+      width = this.lastOverlayWidth;
+      height = this.lastOverlayHeight;
+    } else {
       return;
     }
     const colSize = width / state.cols;
@@ -201,19 +253,23 @@ export class PixiGameRenderer {
       }
     }
 
-    // ── Grid ─────────────────────────────────────────────────────────────────
-    this.grid.clear();
+    // ── Grid (cached; rebuild only on size / visibility / overclock bucket change) ──
     if (!state.meta.invisibleGrid) {
+      const stepMs = state.meta.currentStepMs ?? 100;
+      const overclockBucket = state.meta.overclockMode
+        ? Math.floor(stepMs / 10)
+        : -1;
       const gridAlpha = state.meta.overclockMode
-        ? 0.05 + (1 - (state.meta.currentStepMs - 30) / 70) * 0.08
+        ? 0.05 + (1 - (stepMs - 30) / 70) * 0.08
         : 0.05;
-      for (let x = 0; x <= state.cols; x += 1) {
-        for (let y = 0; y <= state.rows; y += 1) {
-          this.grid
-            .rect(x * colSize, y * rowSize, colSize, rowSize)
-            .stroke({ width: 1, color: 0xffffff, alpha: gridAlpha });
-        }
+      const cacheKey = `${width}|${height}|${state.cols}|${state.rows}|${gridAlpha.toFixed(3)}|${overclockBucket}`;
+      if (cacheKey !== this.gridCacheKey) {
+        this.rebuildStaticGrid(state, colSize, rowSize, gridAlpha);
+        this.gridCacheKey = cacheKey;
       }
+    } else if (this.gridCacheKey !== 'hidden') {
+      this.grid.clear();
+      this.gridCacheKey = 'hidden';
     }
 
     // ── Coinbase capture pulse detection ─────────────────────────────────────
@@ -384,12 +440,11 @@ export class PixiGameRenderer {
       }
     }
 
-    // Power-up items + labels
-    this.powerUpLabels.removeChildren().forEach((c) => (c as Text).destroy?.());
+    // Power-up items + labels (pooled texts; items pulse with `now`)
     for (const item of state.powerUpItems ?? []) {
-      this.drawPowerUpItem(item.pos, item.type, colSize, rowSize);
-      this.drawPowerUpLabel(item.pos, item.type, colSize, rowSize);
+      this.drawPowerUpItem(item.pos, item.type, colSize, rowSize, now);
     }
+    this.syncPowerUpLabels(state.powerUpItems ?? [], colSize, rowSize, now);
 
     // Point pop-ups
     for (const change of state.pointChanges ?? []) {
@@ -430,29 +485,16 @@ export class PixiGameRenderer {
     const continueGap = Math.max(28, overlayWinnerPx * 0.85);
     this.endWinnerText.position.set(width / 2, height / 2 - winnerYOffset);
     this.endContinueText.position.set(width / 2, height / 2 - winnerYOffset + continueGap);
-    this.countdown3.position.set(width * 0.24, height / 2);
-    this.countdown2.position.set(width * 0.36, height / 2);
-    this.countdown1.position.set(width * 0.47, height / 2);
-    this.countdownLfg.position.set(width * 0.675, height / 2);
     const startFontSize = compactBoard
       ? Math.max(12, (width / 14) * 1.05, height / 5.5)
       : Math.max(10, (width / 17) * 1.12);
     this.endWinnerText.style.fontSize = overlayWinnerPx;
     this.endContinueText.style.fontSize = overlayContinuePx;
-    const countdownSize = Math.max(18, height * 0.54);
-    this.countdown3.style.fontSize = countdownSize;
-    this.countdown2.style.fontSize = countdownSize;
-    this.countdown1.style.fontSize = countdownSize;
-    this.countdownLfg.style.fontSize = countdownSize;
-
-    this.endWinnerText.text = '';
-    this.endContinueText.text = '';
-    this.countdown3.text = '';
-    this.countdown2.text = '';
-    this.countdown1.text = '';
-    this.countdownLfg.text = '';
 
     if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
+      this.hideCountdownOverlay();
+      this.endWinnerText.text = '';
+      this.endContinueText.text = '';
       // ── Staggered word-by-word reveal ─────────────────────────────────────
       const gap = startFontSize * 0.38;
       if (this.startLayoutWidth !== width) {
@@ -485,16 +527,20 @@ export class PixiGameRenderer {
       this.startLayoutWidth = -1;
       for (const t of this.startWords) { t.alpha = 0; t.y = 0; }
       if (state.countdownStart) {
-        this.countdown3.text = '3';
-        this.countdown2.text = '2';
-        this.countdown1.text = '1';
-        this.countdownLfg.text = 'LFG';
-        this.applyCountdownState(state.countdownTicks);
-      } else if (state.gameEnded) {
-        // During the resolving-blocks animation, suppress the text until blocks cover the board
-        if (resolveProgress >= 1.0 || !state.convergenceWallClosed) {
-          this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
-          this.endContinueText.text = opts?.replayView ? '' : 'PRESS ANY BUTTON TO CONTINUE';
+        this.endWinnerText.text = '';
+        this.endContinueText.text = '';
+        this.renderCountdownOverlay(state, width, height);
+      } else {
+        this.hideCountdownOverlay();
+        if (state.gameEnded) {
+          // During the resolving-blocks animation, suppress the text until blocks cover the board
+          if (resolveProgress >= 1.0 || !state.convergenceWallClosed) {
+            this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
+            this.endContinueText.text = opts?.replayView ? '' : 'PRESS ANY BUTTON TO CONTINUE';
+          }
+        } else {
+          this.endWinnerText.text = '';
+          this.endContinueText.text = '';
         }
       }
     }
@@ -977,12 +1023,119 @@ export class PixiGameRenderer {
 
   // ── Power-up item drawing ──────────────────────────────────────────────────
 
-  private drawPowerUpItem(pos: GridPos, type: string, colSize: number, rowSize: number): void {
+  private isBoardRevealActive(now: number): boolean {
+    if (this.boardRevealTime === -1) return false;
+    const elapsed = Math.max(0, now - this.boardRevealTime - PixiGameRenderer.BOARD_REVEAL_DELAY_MS);
+    return elapsed < PixiGameRenderer.BOARD_REVEAL_MAX_MS;
+  }
+
+  private isStartWordsRevealActive(now: number): boolean {
+    if (this.startRevealTime === -1) return false;
+    const elapsed = Math.max(0, now - this.startRevealTime - PixiGameRenderer.START_WORDS_DELAY_MS);
+    return elapsed < PixiGameRenderer.START_WORDS_ANIM_MS;
+  }
+
+  private rebuildStaticGrid(
+    state: GameState,
+    colSize: number,
+    rowSize: number,
+    gridAlpha: number,
+  ): void {
+    this.grid.clear();
+    for (let x = 0; x <= state.cols; x += 1) {
+      for (let y = 0; y <= state.rows; y += 1) {
+        this.grid
+          .rect(x * colSize, y * rowSize, colSize, rowSize)
+          .stroke({ width: 1, color: 0xffffff, alpha: gridAlpha });
+      }
+    }
+  }
+
+  private syncPowerUpLabels(
+    items: NonNullable<GameState['powerUpItems']>,
+    colSize: number,
+    rowSize: number,
+    now: number,
+  ): void {
+    const pulse = 0.75 + 0.25 * Math.sin((now / 800) * 2);
+    const activeKeys = new Set<string>();
+
+    for (const item of items) {
+      const key = `${item.pos[0]},${item.pos[1]},${item.type}`;
+      activeKeys.add(key);
+      const color = POWERUP_COLORS[item.type] ?? 0xffffff;
+      const cx = item.pos[0] * colSize + colSize / 2;
+      const cy = item.pos[1] * rowSize + rowSize / 2;
+      const hex = `#${color.toString(16).padStart(6, '0')}`;
+      const label = PixiGameRenderer.POWERUP_SHORT[item.type] ?? item.type.slice(0, 5);
+      const nameSize = Math.max(7, rowSize * 0.58);
+      const letterSize = Math.max(10, rowSize * 0.72);
+
+      let entry = this.powerUpLabelPool.get(key);
+      if (!entry) {
+        const name = new Text({
+          text: label,
+          style: new TextStyle({
+            fontFamily: 'BureauGrotesque',
+            fontSize: nameSize,
+            fill: hex,
+            fontWeight: '700',
+            align: 'center',
+            letterSpacing: 0.5,
+          }),
+        });
+        name.anchor.set(0.5, 0);
+        const letter = new Text({
+          text: item.type[0],
+          style: new TextStyle({
+            fontFamily: 'BureauGrotesque',
+            fontSize: letterSize,
+            fill: hex,
+            fontWeight: '700',
+            align: 'center',
+          }),
+        });
+        letter.anchor.set(0.5);
+        entry = { name, letter };
+        this.powerUpLabelPool.set(key, entry);
+        this.powerUpLabels.addChild(name);
+        this.powerUpLabels.addChild(letter);
+      }
+
+      entry.name.visible = true;
+      entry.letter.visible = true;
+      entry.name.style.fontSize = nameSize;
+      entry.letter.style.fontSize = letterSize;
+      entry.name.style.fill = hex;
+      entry.letter.style.fill = hex;
+      entry.name.text = label;
+      entry.letter.text = item.type[0];
+      entry.name.position.set(cx, cy + rowSize * 0.46);
+      entry.letter.position.set(cx, cy - rowSize * 0.04);
+      entry.name.alpha = pulse * 0.95;
+      entry.letter.alpha = pulse;
+    }
+
+    for (const [key, entry] of this.powerUpLabelPool) {
+      if (!activeKeys.has(key)) {
+        entry.name.visible = false;
+        entry.letter.visible = false;
+      }
+    }
+  }
+
+  private drawPowerUpItem(
+    pos: GridPos,
+    type: string,
+    colSize: number,
+    rowSize: number,
+    now: number,
+  ): void {
     const cx = pos[0] * colSize + colSize / 2;
     const cy = pos[1] * rowSize + rowSize / 2;
     const r = Math.min(colSize, rowSize) * 0.42;
     const color = POWERUP_COLORS[type] ?? 0xffffff;
-    const tick = Date.now() / 800;
+    const tick = now / 800;
     const pulse = 0.75 + 0.25 * Math.sin(tick * 2);
 
     // Octagon shape (8 sides)
@@ -1013,52 +1166,15 @@ export class PixiGameRenderer {
     DECOY:     'DECOY',
   };
 
-  private drawPowerUpLabel(pos: GridPos, type: string, colSize: number, rowSize: number): void {
-    const color = POWERUP_COLORS[type] ?? 0xffffff;
-    const cx = pos[0] * colSize + colSize / 2;
-    const cy = pos[1] * rowSize + rowSize / 2;
-    const tick = Date.now() / 800;
-    const pulse = 0.75 + 0.25 * Math.sin(tick * 2);
-    const label = PixiGameRenderer.POWERUP_SHORT[type] ?? type.slice(0, 5);
-    const hex = `#${color.toString(16).padStart(6, '0')}`;
-
-    // Name below octagon
-    const nameText = new Text({
-      text: label,
-      style: new TextStyle({
-        fontFamily: 'BureauGrotesque',
-        fontSize: Math.max(7, rowSize * 0.58),
-        fill: hex,
-        fontWeight: '700',
-        align: 'center',
-        letterSpacing: 0.5,
-      }),
-    });
-    nameText.anchor.set(0.5, 0);
-    nameText.position.set(cx, cy + rowSize * 0.46);
-    nameText.alpha = pulse * 0.95;
-    this.powerUpLabels.addChild(nameText);
-
-    // First letter in center
-    const letterText = new Text({
-      text: type[0],
-      style: new TextStyle({
-        fontFamily: 'BureauGrotesque',
-        fontSize: Math.max(10, rowSize * 0.72),
-        fill: hex,
-        fontWeight: '700',
-        align: 'center',
-      }),
-    });
-    letterText.anchor.set(0.5);
-    letterText.position.set(cx, cy - rowSize * 0.04);
-    letterText.alpha = pulse;
-    this.powerUpLabels.addChild(letterText);
-  }
-
   // ── Point text ─────────────────────────────────────────────────────────────
 
   destroy(): void {
+    this.powerUpLabelPool.forEach((entry) => {
+      entry.name.destroy();
+      entry.letter.destroy();
+    });
+    this.powerUpLabelPool.clear();
+    this.gridCacheKey = '';
     if (this.app) {
       this.app.destroy(true, { children: true });
       this.app = null;
@@ -1098,9 +1214,9 @@ export class PixiGameRenderer {
     }, 0);
   }
 
-  private createCountdownText(): Text {
+  private createCountdownText(label: string): Text {
     const text = new Text({
-      text: '',
+      text: label,
       style: new TextStyle({
         fontFamily: 'BureauGrotesque',
         fill: '#ffffff',
@@ -1120,32 +1236,60 @@ export class PixiGameRenderer {
     });
     text.anchor.set(0.5);
     text.resolution = 2;
+    text.visible = false;
+    text.alpha = 0;
     return text;
   }
 
-  private applyCountdownState(ticks: number): void {
-    this.setCountdownActive(this.countdown3, true);
-    this.setCountdownActive(this.countdown2, ticks > 10);
-    this.setCountdownActive(this.countdown1, ticks > 20);
-    this.setCountdownActive(this.countdownLfg, ticks > 30);
+  /** 3 → 2 → 1 → LFG: swap visibility only (never mutate .text — that flickers in Pixi). */
+  private countdownPhaseFromTicks(ticks: number): '3' | '2' | '1' | 'LFG' {
+    if (ticks <= 10) return '3';
+    if (ticks <= 20) return '2';
+    if (ticks <= 30) return '1';
+    return 'LFG';
   }
 
-  private setCountdownActive(text: Text, active: boolean): void {
-    if (active) {
-      text.style.fill = '#ffffff';
-      text.style.stroke = { color: '#ffffff', width: 0 };
-      text.style.dropShadow = {
-        color: '#000000',
-        alpha: 0.95,
-        blur: 44,
-        angle: 0,
-        distance: 0,
-      };
-    } else {
-      text.style.fill = 'rgba(255,255,255,0)';
-      text.style.stroke = { color: '#ffffff', width: 1 };
-      text.style.dropShadow = false;
+  private layoutCountdownOverlay(width: number, height: number): void {
+    const countdownSize = Math.max(18, Math.floor(height * 0.54));
+    const cx = width / 2;
+    const cy = height / 2;
+    for (const node of [this.countdown3, this.countdown2, this.countdown1, this.countdownLfg]) {
+      node.style.fontSize = countdownSize;
+      node.position.set(cx, cy);
+      node.alpha = 1;
     }
+  }
+
+  private renderCountdownOverlay(state: GameState, width: number, height: number): void {
+    const phase = this.countdownPhaseFromTicks(state.countdownTicks);
+    const sizeChanged =
+      this.lastOverlayWidth !== width || this.lastOverlayHeight !== height;
+    const phaseChanged = this.lastCountdownPhase !== phase;
+
+    if (sizeChanged || phaseChanged) {
+      this.layoutCountdownOverlay(width, height);
+    }
+    this.countdown3.visible = phase === '3';
+    this.countdown2.visible = phase === '2';
+    this.countdown1.visible = phase === '1';
+    this.countdownLfg.visible = phase === 'LFG';
+    if (phase === '3') this.countdown3.alpha = 1;
+    if (phase === '2') this.countdown2.alpha = 1;
+    if (phase === '1') this.countdown1.alpha = 1;
+    if (phase === 'LFG') this.countdownLfg.alpha = 1;
+    this.lastCountdownPhase = phase;
+  }
+
+  private hideCountdownOverlay(): void {
+    this.countdown3.visible = false;
+    this.countdown2.visible = false;
+    this.countdown1.visible = false;
+    this.countdownLfg.visible = false;
+    this.countdown3.alpha = 0;
+    this.countdown2.alpha = 0;
+    this.countdown1.alpha = 0;
+    this.countdownLfg.alpha = 0;
+    this.lastCountdownPhase = null;
   }
 
   private createFallbackCanvas(): void {

@@ -4,7 +4,8 @@ import { CornerControls } from './components/ui/CornerControls';
 import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import Index from './pages/Index';
 import GameMenu from './pages/GameMenu';
-import LocalHub from './pages/LocalHub';
+import PracticeHub from './pages/PracticeHub';
+import { LegacyPracticeRedirect } from './pages/LegacyPracticeRedirect';
 import P2pEntry from './pages/P2pEntry';
 import TournamentLobby from './pages/TournamentLobby';
 import TournamentBracket from './pages/TournamentBracket';
@@ -17,7 +18,6 @@ import OnlineRooms from './pages/OnlineRooms';
 import OnlineRoomLobby from './pages/OnlineRoomLobby';
 import OnlineGame from './pages/OnlineGame';
 import OnlinePostGame from './pages/OnlinePostGame';
-import SoloChallenges from './pages/SoloChallenges';
 import './styles/index.css';
 
 function App() {
@@ -33,11 +33,15 @@ function App() {
             <Route path="/game" element={<Game />} />
             <Route path="/postgame" element={<PostGame />} />
 
-            {/* Local hub: canonical /local; legacy aliases */}
-            <Route path="/local" element={<LocalHub />} />
-            <Route path="/regtest" element={<Navigate to="/local" replace />} />
-            <Route path="/testnet" element={<Navigate to="/local" replace />} />
-            <Route path="/solo" element={<SoloChallenges />} />
+            {/* Practice hub: canonical /practice; legacy aliases */}
+            <Route path="/practice" element={<PracticeHub />} />
+            <Route path="/local" element={<LegacyPracticeRedirect />} />
+            <Route path="/regtest" element={<LegacyPracticeRedirect />} />
+            <Route path="/testnet" element={<LegacyPracticeRedirect />} />
+            <Route
+              path="/solo"
+              element={<Navigate to="/practice?play=challenges" replace />}
+            />
 
             {/* P2P tournament (paid entry + lobby + bracket) */}
             <Route path="/p2p" element={<P2pEntry />} />

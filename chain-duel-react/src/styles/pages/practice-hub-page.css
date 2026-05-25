@@ -1,0 +1,505 @@
+/* Practice hub (/practice) — monochrome ink design, P2P design language */
+
+/* ── Page shell (match P2P: same width, padding, and title position) ── */
+.practice-hub-page.practice-hub,
+.practice-hub-page.practice-hub--practice,
+.practice-hub-page.practice-hub-page--challenges.practice-hub--practice {
+  max-width: clamp(480px, 52vw, 1040px);
+  margin: 0 auto;
+  justify-content: center;
+  gap: clamp(10px, 1.2vw, 24px);
+  padding: clamp(16px, 2vw, 40px) 3vw;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.practice-hub-page .practice-hub-title {
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+/* Strip panel chrome so content floats on the page background */
+.practice-hub-page .practice-panel {
+  border: none;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  gap: clamp(12px, 1.6vw, 18px);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.practice-hub-page .practice-section {
+  gap: clamp(6px, 0.65vw, 10px);
+  flex-shrink: 0;
+  min-height: auto;
+}
+
+/* HOW TO PLAY uses same compact tiles as P2P PAY WITH (lightning / nostr) */
+.practice-hub-page .practice-play-style-section {
+  flex-shrink: 0;
+}
+
+/* Equal-height play-style tiles (selected glow must not change box size) */
+.practice-hub-page .practice-play-style-section .p2p-picker-row {
+  align-items: stretch;
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr {
+  box-sizing: border-box;
+  min-height: clamp(52px, 5.2vw, 68px);
+  height: 100%;
+  overflow: hidden;
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning .p2p-picker-sub,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr .p2p-picker-sub {
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Icon scale on select must not grow the card (grid icon spans both rows) */
+.practice-hub-page .practice-play-style-section .p2p-picker-card--selected .p2p-picker-icon,
+.practice-hub-page .practice-play-style-section .p2p-picker-card:hover .p2p-picker-icon {
+  transform: none;
+}
+
+/* Free play vs Challenges: stacked in the same box (no height jump on toggle) */
+.practice-play-style-area {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.practice-play-style-area > .practice-play-style-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0s;
+}
+
+.practice-play-style-area > .practice-play-style-panel.practice-play-style-inactive {
+  opacity: 0;
+  transform: translateY(6px);
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0.22s;
+}
+
+.practice-play-style-panel .practice-free-play-panel,
+.practice-play-style-panel .practice-challenges-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Shared footer below play-style area (same slot for Free play and Challenges) */
+.practice-hub-page .practice-hub-panel-footer {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: 0;
+}
+
+/* One shared box model — overrides practiceHub .practice-start padding/typography */
+.practice-hub-page .practice-hub-panel-footer .practice-start.button,
+.practice-hub-page .practice-hub-panel-footer .practice-back.button {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  width: auto;
+  height: clamp(30px, 3vw, 44px);
+  min-height: clamp(30px, 3vw, 44px);
+  max-height: clamp(30px, 3vw, 44px);
+  margin: 0;
+  padding: 0 clamp(8px, 1vw, 16px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(10px, 0.8vw, 13px);
+  font-weight: 400;
+  letter-spacing: 0.1rem;
+  text-transform: none;
+  color: #fff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  box-shadow: none;
+  animation: glowing 0ms infinite;
+}
+
+.practice-hub-page .practice-hub-panel-footer .practice-start.button.practice-start--focused,
+.practice-hub-page .practice-hub-panel-footer .practice-back.button.practice-start--focused {
+  animation: glowing 2000ms ease-in-out infinite;
+}
+
+.practice-hub-page .p2p-picker-card.practice-focus-target {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.practice-hub-page #brand,
+.practice-hub-page .practice-hub-header {
+  flex-shrink: 0;
+}
+
+.practice-free-play-panel {
+  gap: 0;
+}
+
+/* Scrollable setup when viewport is tight; hide scrollbar chrome (no stray line) */
+.practice-free-play-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.1vw, 16px);
+  padding-bottom: 4px;
+}
+
+.practice-free-play-panel__body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Sections must not compress — prevents labels sitting on button borders */
+.practice-free-play-panel__body .practice-section {
+  flex-shrink: 0;
+  min-height: auto;
+  gap: clamp(6px, 0.65vw, 10px);
+}
+
+.practice-free-play-panel__body .p2p-picker-group-label {
+  flex-shrink: 0;
+  margin: 0 0 clamp(4px, 0.45vw, 6px);
+  line-height: 1.2;
+}
+
+/* Compact format / opponent tiles so the panel fits without crowding */
+.practice-free-play-panel__body .p2p-picker-card--duel,
+.practice-free-play-panel__body .p2p-picker-card--ffa,
+.practice-free-play-panel__body .p2p-picker-card--humans,
+.practice-free-play-panel__body .p2p-picker-card--ai {
+  min-height: clamp(64px, 6.5vw, 84px);
+  padding: clamp(8px, 1vw, 14px) 0.75rem clamp(6px, 0.85vw, 12px);
+  gap: 0.25rem;
+}
+
+/* Mode config: only the active block (1v1 vs FFA) sets height — inactive is out of flow */
+.practice-free-play-panel .local-mode-config-area {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.practice-free-play-panel .local-mode-config-area > .practice-section {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.65vw, 10px);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0s;
+}
+
+.practice-free-play-panel .local-mode-config-area > .practice-section:not(.local-mode-inactive) {
+  position: relative;
+  z-index: 1;
+}
+
+.practice-free-play-panel .local-mode-config-area > .practice-section.local-mode-inactive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(6px);
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0.22s;
+}
+
+/* ── FFA, HUMANS, AI picker cards — white glow (same as 1V1/duel) ── */
+.p2p-picker-card--ffa.p2p-picker-card--selected,
+.p2p-picker-card--humans.p2p-picker-card--selected,
+.p2p-picker-card--ai.p2p-picker-card--selected {
+  --button-glow-bg-low: rgb(255 255 255 / 5%);
+  --button-glow-bg-peak: rgb(255 255 255 / 12%);
+  --button-glow-shadow-low: 0 0 8px rgb(255 255 255 / 20%), inset 0 0 6px rgb(255 255 255 / 6%);
+  --button-glow-shadow-peak: 0 0 22px rgb(255 255 255 / 45%), inset 0 0 12px rgb(255 255 255 / 10%);
+  --button-glow-border: rgba(255, 255, 255, 0.55);
+  animation: glowing 2000ms ease-in-out infinite;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.p2p-picker-card--ffa.p2p-picker-card--selected::before,
+.p2p-picker-card--humans.p2p-picker-card--selected::before,
+.p2p-picker-card--ai.p2p-picker-card--selected::before {
+  background: rgba(255, 255, 255, 0.28);
+  left: 0;
+  right: 0;
+}
+
+.p2p-picker-card--ffa.p2p-picker-card--selected.practice-focus-target,
+.p2p-picker-card--humans.p2p-picker-card--selected.practice-focus-target,
+.p2p-picker-card--ai.p2p-picker-card--selected.practice-focus-target {
+  --button-glow-shadow-low: 0 0 12px rgb(255 255 255 / 40%), inset 0 0 10px rgb(255 255 255 / 10%);
+  --button-glow-shadow-peak: 0 0 28px rgb(255 255 255 / 70%), inset 0 0 14px rgb(255 255 255 / 14%);
+  outline: none;
+}
+
+/* ── FFA icon: 4-square pop animation on selection ── */
+.p2p-picker-card--ffa .lh-ffa-icon > * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes lh-ffa-node-in {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(1) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
+}
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(2) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s both;
+}
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(3) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s both;
+}
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(4) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s both;
+}
+.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(5) {
+  animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
+}
+
+/* ── Tier area ── */
+.local-tier-area {
+  margin-top: clamp(8px, 0.8vw, 14px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.4vw, 8px);
+}
+
+.local-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+
+/* Tier card layout */
+.local-tier-card {
+  gap: 4px;
+}
+
+/* ── Per-tier brightness progression (no hues) ── */
+.local-tier-card[data-tier="wanderer"] { --tier-brightness: 0.38; }
+.local-tier-card[data-tier="hunter"]   { --tier-brightness: 0.56; }
+.local-tier-card[data-tier="tactician"]{ --tier-brightness: 0.74; }
+.local-tier-card[data-tier="sovereign"]{ --tier-brightness: 0.94; }
+
+/* Label opacity scales with difficulty */
+.local-tier-card .p2p-duel-format__label {
+  color: rgba(255, 255, 255, var(--tier-brightness, 0.88));
+  transition: color 0.12s;
+}
+
+/* Non-active: even dimmer */
+.local-tier-card:not(.p2p-duel-format__card--active) .p2p-duel-format__label {
+  opacity: 0.6;
+}
+
+/* ── Pip row — white only, opacity varies with tier ── */
+.local-tier-pips {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.local-tier-pip {
+  width: clamp(6px, 0.55vw, 8px);
+  height: clamp(3px, 0.25vw, 4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.local-tier-pip--filled {
+  background: rgba(255, 255, 255, var(--tier-brightness, 0.6));
+  border-color: rgba(255, 255, 255, var(--tier-brightness, 0.6));
+}
+
+/* ── P1-P4 slot buttons restyled to match duel-format cards ── */
+.practice-hub-page .practice-four-slot {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.practice-hub-page .practice-slot-btn {
+  border-radius: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  font: inherit;
+  color: rgba(255, 255, 255, 0.55);
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.practice-hub-page .practice-slot-btn:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.practice-hub-page .practice-slot-btn.human {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.practice-hub-page .practice-slot-btn.ai {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.practice-hub-page .practice-slot-id {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(20px, 2.2vw, 30px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.practice-hub-page .practice-slot-role {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.75vw, 11px);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+/* ── Modifiers row ── */
+.local-modifiers-section .p2p-picker-group-label {
+  font-size: clamp(8px, 0.65vw, 10px);
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.32);
+  margin-bottom: 0.2rem;
+}
+
+.local-modifier-row {
+  display: flex;
+  gap: 5px;
+}
+
+.local-modifier-row .p2p-duel-format__card {
+  flex: 0 0 auto;
+  min-width: clamp(100px, 11vw, 160px);
+}
+
+/* ── Keyboard / gamepad focus ── */
+.practice-hub-page .practice-seg-btn.practice-focus-target,
+.practice-hub-page .practice-start.practice-focus-target,
+.practice-hub-page .practice-back.practice-focus-target,
+.practice-hub-page .practice-slot-btn.practice-focus-target,
+.practice-hub-page .p2p-duel-format__card.practice-focus-target {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+/* Suppress double outline when card is already glowing */
+.practice-hub-page .p2p-duel-format__card--active.practice-focus-target {
+  outline: none;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .local-mode-config-area > .practice-section,
+  .local-mode-config-area > .practice-section.local-mode-inactive,
+  .practice-play-style-area > .practice-play-style-panel,
+  .practice-play-style-area > .practice-play-style-panel.practice-play-style-inactive {
+    transition: none;
+  }
+  .lh-ffa-icon > * {
+    animation: none !important;
+  }
+}
+
+/* ── Large screen / TV (≥1400px) ── */
+@media (min-width: 1400px) {
+  .practice-hub-page.practice-hub--practice {
+    gap: clamp(16px, 1.6vw, 28px);
+    padding-top: clamp(24px, 3vw, 52px);
+    padding-bottom: clamp(24px, 3vw, 52px);
+  }
+
+  .practice-hub-page .practice-panel {
+    gap: clamp(16px, 2vw, 30px);
+  }
+
+  .practice-hub-page .practice-hub-title {
+    font-size: clamp(32px, 4vw, 68px);
+  }
+
+  .practice-hub-page .practice-actions {
+    gap: clamp(6px, 0.6vw, 12px);
+  }
+
+  .local-tier-grid {
+    gap: clamp(5px, 0.5vw, 10px);
+  }
+
+  .local-tier-rank {
+    font-size: clamp(10px, 0.8vw, 14px);
+  }
+
+  .practice-hub-page .practice-slot-id {
+    font-size: clamp(22px, 2.4vw, 36px);
+  }
+
+  .practice-hub-page .practice-slot-role {
+    font-size: clamp(9px, 0.75vw, 13px);
+  }
+}

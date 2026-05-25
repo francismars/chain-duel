@@ -1,35 +1,34 @@
 import {
+  forwardRef,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useRef,
   useState,
 } from 'react';
+import type { RefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useAudio, SFX } from '@/contexts/AudioContext';
-import { useGamepad } from '@/hooks/useGamepad';
 import type { AiTier, TeamMode } from '@/game/engine/types';
 import {
   CONVERGENCE_MIN_COLS,
   CONVERGENCE_MIN_ROWS,
-  LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
+  PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
 } from '@/game/engine/constants';
 import '@/components/ui/Button.css';
-import './practiceHub.css';
-import '@/styles/pages/p2p-entry.css';
-import '@/styles/pages/local-hub.css';
 import {
-  advanceLocalHubFlatNav,
-  moveLocalHubNav,
-  normalizeLocalNavFocus,
-  type LocalNavFocus,
-} from '@/pages/localHubNav';
+  advancePracticeHubFlatNav,
+  movePracticeHubNav,
+  normalizePracticeNavFocus,
+  type PracticeNavFocus,
+} from '@/pages/practiceHubNav';
+import type { PracticeFreePlayPanelHandle } from '@/features/practice/practicePanelHandles';
+import { savePracticeGameConfig } from '@/pages/practiceHubModes';
 
 // ── Convergence: fixed Soldier preset ──────────────────────────────────────
 
 const CONVERGENCE_SOLDIER = {
-  shrinkIntervalTicks: LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
+  shrinkIntervalTicks: PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
   stepMs: 100,
   minCols: CONVERGENCE_MIN_COLS,
   minRows: CONVERGENCE_MIN_ROWS,
@@ -50,10 +49,22 @@ const AI_TIER_PRESETS: Array<{
 type MatchFormat    = 'solo' | 'ffa';
 type OpponentChoice = 'humans' | 'ai';
 
-export default function LocalHub() {
+interface PracticeFreePlayPanelProps {
+  isActive: boolean;
+  footerBackRef: RefObject<HTMLButtonElement | null>;
+  footerStartRef: RefObject<HTMLButtonElement | null>;
+  onFooterNav?: (kind: 'back' | 'start' | null) => void;
+}
+
+export const PracticeFreePlayPanel = forwardRef<
+  PracticeFreePlayPanelHandle,
+  PracticeFreePlayPanelProps
+>(function PracticeFreePlayPanel(
+  { isActive, footerBackRef, footerStartRef, onFooterNav },
+  ref
+) {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
-  useGamepad(true);
 
   const [format,    setFormat]    = useState<MatchFormat>('solo');
   const [opponent,  setOpponent]  = useState<OpponentChoice>('humans');
@@ -61,15 +72,13 @@ export default function LocalHub() {
   const [aiTier,    setAiTier]    = useState<AiTier>('hunter');
   const [powerup,   setPowerup]   = useState(false);
 
-  const [navFocus, setNavFocus] = useState<LocalNavFocus>({ kind: 'format', idx: 0 });
+  const [navFocus, setNavFocus] = useState<PracticeNavFocus>({ kind: 'format', idx: 0 });
 
   const formatRefs   = useRef<(HTMLButtonElement | null)[]>([]);
   const slotRefs     = useRef<(HTMLButtonElement | null)[]>([]);
   const opponentRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const tierRefs     = useRef<(HTMLButtonElement | null)[]>([]);
   const powerupRef   = useRef<HTMLButtonElement | null>(null);
-  const startRef     = useRef<HTMLButtonElement | null>(null);
-  const backRef      = useRef<HTMLButtonElement | null>(null);
 
   const show1v1Opponent = format === 'solo';
   const showTeamControl = format === 'ffa';
@@ -107,12 +116,12 @@ export default function LocalHub() {
       practiceMode = !p1Human || !p2Human || !p3Human || !p4Human;
     }
 
-    const parts: string[] = ['LOCAL', format === 'ffa' ? 'FFA' : '1v1', 'CVG'];
+    const parts: string[] = ['PRACTICE', format === 'ffa' ? 'FFA' : '1v1', 'CVG'];
     if (powerup) parts.push('PWR');
 
     const config: Record<string, unknown> = {
-      mode: 'LOCAL',
-      localHudLabel: parts.join(' · '),
+      mode: 'PRACTICE',
+      practiceHudLabel: parts.join(' · '),
       teamMode: format as TeamMode,
       practiceMode,
       p1Human, p2Human, p3Human, p4Human,
@@ -128,12 +137,14 @@ export default function LocalHub() {
     };
     if (format === 'ffa') config.ffaAiTier = aiTier;
 
-    sessionStorage.setItem('gameConfig', JSON.stringify(config));
+    savePracticeGameConfig(config);
     navigate('/game');
   }, [playSfx, navigate, format, opponent, slotHuman, aiTier, powerup]);
 
-  const activateLocalNavFocus = useCallback(
-    (f: LocalNavFocus) => {
+  useImperativeHandle(ref, () => ({ startPractice: start }), [start]);
+
+  const activatePracticeNavFocus = useCallback(
+    (f: PracticeNavFocus) => {
       switch (f.kind) {
         case 'format':
           setFormat((['solo', 'ffa'] as const)[f.idx]);
@@ -170,11 +181,13 @@ export default function LocalHub() {
 
   useEffect(() => {
     setNavFocus((f) =>
-      normalizeLocalNavFocus(f, showTeamControl, show1v1Opponent, opponent, allFourHuman)
+      normalizePracticeNavFocus(f, showTeamControl, show1v1Opponent, opponent, allFourHuman)
     );
   }, [showTeamControl, show1v1Opponent, opponent, allFourHuman]);
 
   useEffect(() => {
+    if (!isActive) return;
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -195,22 +208,22 @@ export default function LocalHub() {
 
       if (isTab) {
         e.preventDefault();
-        setNavFocus((prev) => advanceLocalHubFlatNav(prev, 1, showTeamControl, show1v1Opponent, opponent, allFourHuman));
+        setNavFocus((prev) => advancePracticeHubFlatNav(prev, 1, showTeamControl, show1v1Opponent, opponent, allFourHuman));
         return;
       }
       if (isTabBack) {
         e.preventDefault();
-        setNavFocus((prev) => advanceLocalHubFlatNav(prev, -1, showTeamControl, show1v1Opponent, opponent, allFourHuman));
+        setNavFocus((prev) => advancePracticeHubFlatNav(prev, -1, showTeamControl, show1v1Opponent, opponent, allFourHuman));
         return;
       }
       if (isActivate) {
         e.preventDefault();
-        activateLocalNavFocus(navFocus);
+        activatePracticeNavFocus(navFocus);
         return;
       }
       e.preventDefault();
       setNavFocus((prev) =>
-        moveLocalHubNav(
+        movePracticeHubNav(
           prev,
           isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right',
           showTeamControl, show1v1Opponent, opponent, allFourHuman
@@ -219,7 +232,17 @@ export default function LocalHub() {
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [activateLocalNavFocus, allFourHuman, navigate, navFocus, opponent, playSfx, show1v1Opponent, showTeamControl]);
+  }, [
+    activatePracticeNavFocus,
+    allFourHuman,
+    isActive,
+    navigate,
+    navFocus,
+    opponent,
+    playSfx,
+    show1v1Opponent,
+    showTeamControl,
+  ]);
 
   useEffect(() => {
     if      (navFocus.kind === 'format')    { formatRefs.current[navFocus.idx]?.focus(); }
@@ -227,26 +250,23 @@ export default function LocalHub() {
     else if (navFocus.kind === 'opponent')  { opponentRefs.current[navFocus.idx]?.focus(); }
     else if (navFocus.kind === 'tier')      { tierRefs.current[navFocus.idx]?.focus(); }
     else if (navFocus.kind === 'rulePowerup') { powerupRef.current?.focus(); }
-    else if (navFocus.kind === 'start')     { startRef.current?.focus(); }
-    else if (navFocus.kind === 'back')      { backRef.current?.focus(); }
-  }, [navFocus]);
+    else if (navFocus.kind === 'start')     { footerStartRef.current?.focus(); }
+    else if (navFocus.kind === 'back')      { footerBackRef.current?.focus(); }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+    if (!isActive) {
+      onFooterNav?.(null);
+      return;
+    }
+    if (navFocus.kind === 'back' || navFocus.kind === 'start') {
+      onFooterNav?.(navFocus.kind);
+    } else {
+      onFooterNav?.(null);
+    }
+  }, [navFocus, footerBackRef, footerStartRef, isActive, onFooterNav]);
+
   return (
-    <div className="practice-hub practice-hub--practice local-hub-page">
-
-      {/* Brand header — identical to P2P */}
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
-
-      <header className="practice-hub-header">
-        <h2 className="practice-hub-title">LOCAL</h2>
-      </header>
-
-      <div className="practice-panel" role="main" aria-label="Local practice setup">
-
+    <div className="practice-free-play-panel" role="group" aria-label="Free play setup">
+      <div className="practice-free-play-panel__body">
         {/* ── FORMAT ──────────────────────────────────────────────────── */}
         <section className="practice-section" aria-labelledby="lh-format">
           <h3 id="lh-format" className="p2p-picker-group-label">FORMAT</h3>
@@ -523,37 +543,7 @@ export default function LocalHub() {
             </button>
           </div>
         </section>
-
-        {/* ── Actions ──────────────────────────────────────────────────── */}
-        <div className="practice-actions">
-          <Button
-            ref={backRef}
-            tabIndex={navFocus.kind === 'back' ? 0 : -1}
-            className={`practice-back${navFocus.kind === 'back' ? ' practice-start--focused' : ''}`}
-            onClick={() => {
-              setNavFocus({ kind: 'back' });
-              playSfx(SFX.MENU_SELECT);
-              navigate('/');
-            }}
-          >
-            MAIN MENU
-          </Button>
-          <Button
-            ref={startRef}
-            tabIndex={navFocus.kind === 'start' ? 0 : -1}
-            className={`practice-start${navFocus.kind === 'start' ? ' practice-start--focused' : ''}`}
-            onClick={() => {
-              setNavFocus({ kind: 'start' });
-              start();
-            }}
-          >
-            START PRACTICE
-          </Button>
-        </div>
-
       </div>
-
-      <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </div>
   );
-}
+});

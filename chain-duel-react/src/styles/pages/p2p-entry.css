@@ -114,6 +114,7 @@
   row-gap: 0.1rem;
   justify-content: start;
   align-items: center;
+  min-height: unset; /* compact tiles — do not inherit tall duel-card min-height */
   padding: clamp(10px, 1.2vw, 14px) clamp(14px, 1.4vw, 20px);
   min-height: unset;
   text-align: left;

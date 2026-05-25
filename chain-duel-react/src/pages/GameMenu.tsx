@@ -31,6 +31,7 @@ import {
   clearMenuNavigationState,
   type MenuNavigationState,
 } from '@/shared/constants/menuNavigation';
+import { clearClientGameConfig } from '@/pages/practiceHubModes';
 import './gamemenu.css';
 
 type ButtonSelected =
@@ -84,6 +85,8 @@ export default function GameMenu() {
 
   const lastKnownP1SatsRef = useRef(0);
   const lastKnownP2SatsRef = useRef(0);
+  const prevWinnerRef = useRef<string | null>(null);
+  const nostrNote1Ref = useRef('');
   const highlightTimeoutP1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimeoutP2Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   const setupMenuKeyGraceUntilRef = useRef(0);
@@ -94,6 +97,16 @@ export default function GameMenu() {
   useEffect(() => {
     setupMenuKeyGraceUntilRef.current = performance.now() + SETUP_MENU_KEY_GRACE_MS;
   }, []);
+
+  // Paid P2P uses server session + getDuelInfos — drop any leftover practice blob.
+  useEffect(() => {
+    clearClientGameConfig();
+  }, []);
+
+  const goToPaidGame = useCallback(() => {
+    clearClientGameConfig();
+    navigate('/game');
+  }, [navigate]);
 
   useEffect(() => {
     if (!socket) return;
@@ -124,6 +137,7 @@ export default function GameMenu() {
       }
       if (parsed.nostrMeta && useNostrFromQuery) {
         setNostrCode(parsed.nostrMeta.emojis);
+        nostrNote1Ref.current = parsed.nostrMeta.note1;
         setNostrNote1(parsed.nostrMeta.note1);
         setNostrMinP1(parsed.nostrMeta.min);
         setNostrMinP2(parsed.nostrMeta.min);
@@ -157,6 +171,7 @@ export default function GameMenu() {
       return;
     }
     setNostrCode('');
+    nostrNote1Ref.current = '';
     setNostrNote1('');
     setNostrMinP1(1);
     setNostrMinP2(1);
@@ -173,7 +188,7 @@ export default function GameMenu() {
       ) {
         // Legacy flow can emit updatePayments without re-sending nostr menu metadata.
         // Ensure we fetch note1/emojis payload when switching into Nostr mode.
-        if (!nostrNote1) {
+        if (!nostrNote1Ref.current) {
           const hostLNAddress = localStorage.getItem('hostLNAddress');
           const hostInfo = hostLNAddress ? { LNAddress: hostLNAddress } : undefined;
           if (hostInfo) socket.emit('getGameMenuInfosNostr', hostInfo);
@@ -182,6 +197,7 @@ export default function GameMenu() {
       }
       const latestWinner = body.winners?.length ? body.winners.slice(-1)[0] : null;
       if (body.winners && body.winners.length > 0) {
+        prevWinnerRef.current = latestWinner;
         setPrevWinner(latestWinner);
         const donMultiple = 2 ** body.winners.length;
         setGameMenuTitle(`P2P*${donMultiple}`);
@@ -230,7 +246,7 @@ export default function GameMenu() {
         }
       }
 
-      const effectiveWinner = latestWinner ?? prevWinner;
+      const effectiveWinner = latestWinner ?? prevWinnerRef.current;
       if (effectiveWinner) {
         const loser = effectiveWinner === 'Player 1' ? 'Player 2' : 'Player 1';
         const winnerValue = players[effectiveWinner]?.value ?? 0;
@@ -242,10 +258,18 @@ export default function GameMenu() {
     socket.on('updatePayments', handler);
     return () => {
       socket.off('updatePayments', handler);
-      if (highlightTimeoutP1Ref.current) clearTimeout(highlightTimeoutP1Ref.current);
-      if (highlightTimeoutP2Ref.current) clearTimeout(highlightTimeoutP2Ref.current);
+      if (highlightTimeoutP1Ref.current) {
+        clearTimeout(highlightTimeoutP1Ref.current);
+        highlightTimeoutP1Ref.current = null;
+      }
+      if (highlightTimeoutP2Ref.current) {
+        clearTimeout(highlightTimeoutP2Ref.current);
+        highlightTimeoutP2Ref.current = null;
+      }
     };
-  }, [socket, prevWinner, logger, nostrNote1, useNostrFromQuery]);
+    // Stable subscription: prevWinner/nostrNote1 must not be deps — updating them used to
+    // re-run cleanup and cancel the highlight timeout while highlight state stayed true.
+  }, [socket, logger, useNostrFromQuery]);
 
   useSessionPersistence(socket);
 
@@ -311,7 +335,7 @@ export default function GameMenu() {
         playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
           if (canStartNow) {
-            navigate('/game');
+            goToPaidGame();
           }
         } else if (buttonSelected === 'mainMenuButton') {
           if (player1Sats === 0 && player2Sats === 0) {
@@ -356,6 +380,7 @@ export default function GameMenu() {
     prevWinner,
     loserSats,
     winnerSats,
+    goToPaidGame,
   ]);
 
   useQrExpandState({
@@ -403,7 +428,7 @@ export default function GameMenu() {
         }}
         onStart={() => {
           playSfx(SFX.MENU_CONFIRM);
-          navigate('/game');
+          goToPaidGame();
         }}
         loading={loading}
         showCancelOverlay={showCancelOverlay}

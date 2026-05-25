@@ -1,4 +1,4 @@
-/* Solo Challenges (/solo) — 6-row challenge ladder with simulated bounties */
+/* Challenges (Practice hub ?play=challenges) — 6-row challenge ladder with simulated bounties */
 
 /* ═══════════════════════════════════════════
    Keyframes
@@ -22,7 +22,7 @@
   100% { transform: scaleX(1)    scaleY(1); }
 }
 
-/* ── Page shell ── */
+/* ── Page shell (legacy standalone /solo only — hub width is practice-hub-page.css) ── */
 .solo-challenges-page.practice-hub--practice {
   max-width: clamp(640px, 70vw, 1160px);
   gap: clamp(10px, 1.2vw, 18px);
@@ -45,7 +45,8 @@
 }
 
 /* Strip panel chrome */
-.solo-challenges-page .practice-panel {
+.solo-challenges-page .practice-panel,
+.practice-hub-page--challenges .practice-challenges-panel {
   border: none;
   background: none;
   box-shadow: none;
@@ -59,6 +60,67 @@
   grid-template-columns: minmax(18rem, 0.95fr) minmax(22rem, 1.4fr);
   gap: clamp(12px, 1.4vw, 22px);
   align-items: start;
+}
+
+/* Inside Practice hub: compact grid so the page fits one viewport (no document scroll) */
+.practice-hub-page--challenges .solo-challenges-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  grid-template-columns: minmax(12rem, 0.88fr) minmax(16rem, 1.12fr);
+  gap: clamp(8px, 1vw, 14px);
+  align-items: stretch;
+}
+
+.practice-hub-page--challenges .solo-challenges-col--left {
+  min-height: 0;
+  height: 100%;
+  justify-content: flex-start;
+}
+
+.practice-hub-page--challenges .practice-challenges-panel .solo-challenges-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.practice-hub-page--challenges .solo-challenges-col--right {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.practice-hub-page--challenges .sc-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 3px;
+}
+
+.practice-hub-page--challenges .sc-row {
+  min-height: clamp(36px, 3.6vh, 46px);
+  padding: clamp(6px, 0.65vw, 9px) clamp(10px, 1vw, 14px);
+}
+
+.practice-hub-page--challenges .sc-row__rank {
+  font-size: clamp(18px, 2vw, 28px);
+  width: clamp(20px, 2vw, 28px);
+}
+
+.practice-hub-page--challenges .sc-row__name {
+  font-size: clamp(11px, 1.05vw, 15px);
+}
+
+.practice-hub-page--challenges .sc-row__sats {
+  font-size: clamp(14px, 1.5vw, 20px);
+}
+
+.practice-hub-page--challenges .sc-gate__nostr-profile {
+  min-height: unset;
+  padding: clamp(6px, 0.7vw, 9px) clamp(10px, 1vw, 12px);
+}
+
+.practice-hub-page--challenges .sc-gate__nostr-btn {
+  padding: clamp(6px, 0.7vw, 9px) clamp(10px, 1vw, 12px);
 }
 
 .solo-challenges-col {
@@ -581,7 +643,7 @@
   }
 }
 
-/* ── Action buttons ── */
+/* ── Action buttons (standalone /solo page only; hub uses practice-hub-page.css) ── */
 .solo-challenges-page .practice-actions {
   display: flex;
   flex-direction: row;
@@ -611,6 +673,11 @@
   .solo-challenges-page.practice-hub--practice {
     max-width: clamp(700px, 58vw, 1080px);
     gap: clamp(14px, 1.4vw, 26px);
+  }
+
+  .practice-hub-page--challenges .sc-row {
+    min-height: clamp(40px, 4vh, 52px);
+    padding: clamp(8px, 0.85vw, 12px) clamp(12px, 1.2vw, 16px);
   }
 
   .sc-row {
@@ -667,7 +734,8 @@
   .sc-list .sc-row:nth-child(6) { animation-delay: 0.52s; }
 
   /* Actions slide in last */
-  .solo-challenges-page .practice-actions {
+  .solo-challenges-page .practice-actions,
+  .practice-hub-page--challenges .practice-challenges-panel .practice-actions {
     opacity: 0;
     animation: sc-fade-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.60s forwards;
   }
@@ -682,7 +750,9 @@
 @media (prefers-reduced-motion: reduce) {
   .sc-row--selected,
   .solo-challenges-page .practice-back.button,
-  .solo-challenges-page .practice-start.button {
+  .solo-challenges-page .practice-start.button,
+  .practice-hub-page .practice-back.button,
+  .practice-hub-page .practice-start.button {
     animation: none;
   }
 

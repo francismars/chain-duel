@@ -10,6 +10,10 @@ import type {
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { DUEL_INFO_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { parseZap, resolveDuelInfo } from '@/features/game/gameSession';
+import {
+  clearClientGameConfig,
+  isSocketBackedDuelMode,
+} from '@/pages/practiceHubModes';
 
 interface HudSnapshot {
   captureP1: string;
@@ -23,6 +27,8 @@ interface HudSnapshot {
 interface UseGameSocketEventsArgs {
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
   loading: boolean;
+  /** When true, duel/payment socket payloads must not replace practice-hub HUD. */
+  ignoreSocketSessionUpdates: boolean;
   stateRef: MutableRefObject<GameState | null>;
   localBootRef: MutableRefObject<boolean>;
   winnerSentRef: MutableRefObject<boolean>;
@@ -52,6 +58,7 @@ interface UseGameSocketEventsArgs {
 export function useGameSocketEvents({
   socket,
   loading,
+  ignoreSocketSessionUpdates,
   stateRef,
   localBootRef,
   winnerSentRef,
@@ -66,8 +73,14 @@ export function useGameSocketEvents({
     if (!socket) return;
 
     const onDuel = (payload: unknown) => {
+      if (ignoreSocketSessionUpdates) return;
+
       const data = SocketBoundaryParsers.duelInfos(payload);
       if (!data) return;
+
+      if (isSocketBackedDuelMode(data.mode)) {
+        clearClientGameConfig();
+      }
 
       localBootRef.current = true;
       const info = resolveDuelInfo(data);
@@ -90,6 +103,8 @@ export function useGameSocketEvents({
     };
 
     const onUpdate = (payload: unknown) => {
+      if (ignoreSocketSessionUpdates) return;
+
       const data = SocketBoundaryParsers.payments(payload);
       if (!data) return;
       onPointsUpdated(data);
@@ -118,6 +133,7 @@ export function useGameSocketEvents({
       socket.off('zapReceived', onZap);
     };
   }, [
+    ignoreSocketSessionUpdates,
     loading,
     localBootRef,
     onBootstrapFallback,

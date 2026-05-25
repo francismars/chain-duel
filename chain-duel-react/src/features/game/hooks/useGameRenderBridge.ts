@@ -16,6 +16,19 @@ interface HudSnapshot {
   currentWidthP2: number;
 }
 
+const MAX_SIM_STEPS_PER_FRAME = 8;
+
+function hudSnapshotEqual(a: HudSnapshot, b: HudSnapshot): boolean {
+  return (
+    a.p1Points === b.p1Points &&
+    a.p2Points === b.p2Points &&
+    a.captureP1 === b.captureP1 &&
+    a.captureP2 === b.captureP2 &&
+    a.currentWidthP1 === b.currentWidthP1 &&
+    a.currentWidthP2 === b.currentWidthP2
+  );
+}
+
 interface UseGameRenderBridgeArgs {
   loading: boolean;
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
@@ -57,47 +70,29 @@ export function useGameRenderBridge({
     rendererRef.current = renderer;
 
     let detachResize: (() => void) | undefined;
+    let forcePaint = true;
+    let lastFrameMs = performance.now();
+    let countdownAccum = 0;
+    let gameplayAccum = 0;
+    let lastReportedStepMs = STEP_SPEED_MS;
+    let lastHud: HudSnapshot | null = null;
+
     void renderer.mount(hostRef.current).then(() => {
       if (!mounted) return;
       renderer.resize();
-      const onResize = () => renderer.resize();
+      forcePaint = true;
+      const onResize = () => {
+        renderer.resize();
+        forcePaint = true;
+      };
       window.addEventListener('resize', onResize);
       detachResize = () => window.removeEventListener('resize', onResize);
     });
 
-    // Variable-speed game loop: poll at ~16ms but only step when enough time has elapsed.
-    // This supports both fixed-speed and Overclock modes without changing the interval.
-    let lastStepTime = performance.now();
-    let lastReportedStepMs = STEP_SPEED_MS;
-
-    const gameLoop = window.setInterval(() => {
-      const state = stateRef.current;
-      if (!state) return;
-
-      const now = performance.now();
-      const stepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
-
-      if (now - lastStepTime < stepMs) return;
-      lastStepTime = now;
-
-      const prevCountdown = state.countdownTicks;
-      const prevP1Len = state.p1.body.length;
-      const prevP2Len = state.p2.body.length;
-      const prevP1Head = [...state.p1.head] as [number, number];
-      const prevP2Head = [...state.p2.head] as [number, number];
-      const prevStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
-
-      stepGame(state);
-      const hud = getHudState(state);
-      onHudTick({
-        p1Points: hud.p1Points,
-        p2Points: hud.p2Points,
-        captureP1: hud.captureP1,
-        captureP2: hud.captureP2,
-        currentWidthP1: hud.currentWidthP1,
-        currentWidthP2: hud.currentWidthP2,
-      });
-
+    const applyHud = (hud: HudSnapshot) => {
+      if (lastHud && hudSnapshotEqual(lastHud, hud)) return;
+      lastHud = hud;
+      onHudTick(hud);
       if (hud.captureP1 !== captureP1Ref.current) {
         onCaptureChanged('P1');
       }
@@ -106,54 +101,110 @@ export function useGameRenderBridge({
       }
       captureP1Ref.current = hud.captureP1;
       captureP2Ref.current = hud.captureP2;
+    };
 
-      // Speed change notification (Overclock mode)
-      const newStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
-      if (newStepMs !== prevStepMs && newStepMs !== lastReportedStepMs) {
-        lastReportedStepMs = newStepMs;
-        onSpeedChanged?.(newStepMs);
-        audio?.playBlockFound(); // reuse existing sound as speed-up cue
+    const runSimulation = (state: GameState, deltaMs: number): boolean => {
+      let stepped = false;
+
+      if (state.countdownStart && !state.gameStarted) {
+        countdownAccum += deltaMs;
+        let steps = 0;
+        while (countdownAccum >= STEP_SPEED_MS && steps < MAX_SIM_STEPS_PER_FRAME) {
+          countdownAccum -= STEP_SPEED_MS;
+          steps += 1;
+          const prevCountdown = state.countdownTicks;
+          stepGame(state);
+          stepped = true;
+          if (state.countdownStart && state.countdownTicks !== prevCountdown) {
+            audio?.playCountdownTick(state.countdownTicks);
+          }
+        }
+        return stepped;
       }
 
-      if (state.countdownStart && state.countdownTicks !== prevCountdown) {
-        audio?.playCountdownTick(state.countdownTicks);
-      }
-      if (state.p1.body.length > prevP1Len) audio?.playCapture(state.p1.body.length);
-      if (state.p2.body.length > prevP2Len) audio?.playCapture(state.p2.body.length);
-
-      // Reset detection: compare current head vs spawn position
-      if (
-        (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
-        state.p1.head[0] === 6 &&
-        state.p1.head[1] === 12
-      ) {
-        audio?.playReset('P1');
-      }
-      if (
-        (prevP2Head[0] !== 44 || prevP2Head[1] !== 12) &&
-        state.p2.head[0] === 44 &&
-        state.p2.head[1] === 12
-      ) {
-        audio?.playReset('P2');
+      if (!state.gameStarted || state.gameEnded) {
+        countdownAccum = 0;
+        gameplayAccum = 0;
+        return false;
       }
 
-      if (state.gameEnded && state.winnerPlayer && socket && !winnerSentRef.current) {
-        emitWinner(state.winnerPlayer);
-        winnerSentRef.current = true;
-      }
-    }, 10); // Poll every 10ms for accurate variable-speed stepping
+      countdownAccum = 0;
+      const stepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
+      gameplayAccum += deltaMs;
+      let steps = 0;
+      while (gameplayAccum >= stepMs && steps < MAX_SIM_STEPS_PER_FRAME) {
+        gameplayAccum -= stepMs;
+        steps += 1;
 
-    const frame = () => {
+        const prevP1Len = state.p1.body.length;
+        const prevP2Len = state.p2.body.length;
+        const prevP1Head = [...state.p1.head] as [number, number];
+        const prevP2Head = [...state.p2.head] as [number, number];
+        const prevStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
+
+        stepGame(state);
+        stepped = true;
+
+        const hud = getHudState(state);
+        applyHud(hud);
+
+        const newStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
+        if (newStepMs !== prevStepMs && newStepMs !== lastReportedStepMs) {
+          lastReportedStepMs = newStepMs;
+          onSpeedChanged?.(newStepMs);
+          audio?.playBlockFound();
+        }
+
+        if (state.p1.body.length > prevP1Len) audio?.playCapture(state.p1.body.length);
+        if (state.p2.body.length > prevP2Len) audio?.playCapture(state.p2.body.length);
+
+        if (
+          (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
+          state.p1.head[0] === 6 &&
+          state.p1.head[1] === 12
+        ) {
+          audio?.playReset('P1');
+        }
+        if (
+          (prevP2Head[0] !== 44 || prevP2Head[1] !== 12) &&
+          state.p2.head[0] === 44 &&
+          state.p2.head[1] === 12
+        ) {
+          audio?.playReset('P2');
+        }
+
+        if (state.gameEnded && state.winnerPlayer && socket && !winnerSentRef.current) {
+          emitWinner(state.winnerPlayer);
+          winnerSentRef.current = true;
+        }
+      }
+
+      return stepped;
+    };
+
+    let frameRef = 0;
+    const frame = (now: number) => {
+      if (!mounted) return;
       const state = stateRef.current;
-      if (state && rendererRef.current) rendererRef.current.render(state);
+      const deltaMs = Math.min(100, Math.max(0, now - lastFrameMs));
+      lastFrameMs = now;
+
+      if (state && rendererRef.current) {
+        const simStepped = runSimulation(state, deltaMs);
+        const animActive = rendererRef.current.needsPaint(state, now);
+        if (simStepped || animActive || forcePaint) {
+          rendererRef.current.render(state);
+          forcePaint = false;
+        }
+      }
+
       frameRef = window.requestAnimationFrame(frame);
     };
-    let frameRef = window.requestAnimationFrame(frame);
+    frameRef = window.requestAnimationFrame(frame);
 
     return () => {
       mounted = false;
       if (detachResize) detachResize();
-      window.clearInterval(gameLoop);
       window.cancelAnimationFrame(frameRef);
       renderer.destroy();
       audio?.stopAll();

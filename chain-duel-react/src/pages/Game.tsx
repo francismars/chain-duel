@@ -22,6 +22,14 @@ import { useGameSocketEvents } from '@/features/game/hooks/useGameSocketEvents';
 import { useGameRenderBridge } from '@/features/game/hooks/useGameRenderBridge';
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
 import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
+import {
+  isExplicitPracticeSession,
+  isPracticeChallengeConfig,
+  isPracticeHubGameMode,
+  practiceHubExitPath,
+  readSessionGameConfig,
+  sessionUsesPracticeHubConfig,
+} from '@/pages/practiceHubModes';
 import './game.css';
 
 interface ZapMessage {
@@ -161,33 +169,36 @@ export default function Game() {
       if (!raw) return false;
       const cfg = JSON.parse(raw) as Record<string, unknown>;
       const m = String(cfg.mode ?? '').toUpperCase();
-      if (m === 'LOCAL' || m === 'TESTNET' || m === 'SOLO') return Boolean(cfg.powerupMode);
+      if (
+        m === 'PRACTICE' ||
+        m === 'LOCAL' ||
+        m === 'TESTNET' ||
+        m === 'SOLO'
+      ) {
+        return Boolean(cfg.powerupMode);
+      }
       return m === 'POWERUP' || m === 'POWER-UP ARENA';
     } catch {
       return false;
     }
   }, []);
 
-  const bootstrapLocalGame = useCallback(() => {
-    if (localBootRef.current) return;
-    localBootRef.current = true;
+  const ignoreSocketSessionUpdates = useMemo(
+    () => sessionUsesPracticeHubConfig(),
+    [],
+  );
 
-    // sessionStorage from local hub (/local); legacy POWERUP sessions may remain
-    let gameConfig: Record<string, unknown> = {};
-    try {
-      const raw = sessionStorage.getItem('gameConfig');
-      if (raw) gameConfig = JSON.parse(raw);
-    } catch {
-      // ignore
-    }
+  const bootstrapLocalGame = useCallback(() => {
+    // sessionStorage from practice hub (/practice); legacy POWERUP sessions may remain
+    const gameConfig = readSessionGameConfig();
 
     const configMode = String(gameConfig.mode ?? '').toUpperCase();
-    const isLocalHub = configMode === 'LOCAL' || configMode === 'TESTNET' || configMode === 'SOLO';
+    const isPracticeHub = isPracticeHubGameMode(configMode);
     const isLegacyPowerup =
       configMode === 'POWERUP' || configMode === 'POWER-UP ARENA';
-    const isConvergence = isLocalHub && Boolean(gameConfig.convergenceMode);
+    const isConvergence = isPracticeHub && Boolean(gameConfig.convergenceMode);
     const isPowerup =
-      isLegacyPowerup || (isLocalHub && Boolean(gameConfig.powerupMode));
+      isLegacyPowerup || (isPracticeHub && Boolean(gameConfig.powerupMode));
     const isPracticeMode = Boolean(gameConfig.practiceMode);
     const aiTier = (gameConfig.aiTier as string) ?? 'hunter';
     const optCfgStr = (v: unknown): string | undefined => {
@@ -213,14 +224,16 @@ export default function Game() {
     const p4Human = gameConfig.p4Human === true;
 
     const hudFromConfig =
-      gameConfig.localHudLabel ?? gameConfig.testnetHudLabel;
+      gameConfig.practiceHudLabel ??
+      gameConfig.localHudLabel ??
+      gameConfig.testnetHudLabel;
     const modeLabel =
-      isLocalHub && typeof hudFromConfig === 'string'
+      isPracticeHub && typeof hudFromConfig === 'string'
         ? String(hudFromConfig)
         : isLegacyPowerup
           ? 'POWER-UP ARENA'
-          : 'LOCAL';
-    const displayP2Name = isLocalHub
+          : 'PRACTICE';
+    const displayP2Name = isPracticeHub
       ? formatHudPlayerName(
           {
             name: optCfgStr(gameConfig.p2Name),
@@ -248,11 +261,22 @@ export default function Game() {
       ? Number(gameConfig.convergenceStepMs)
       : undefined;
 
-    const state = createGameState({
+    const p1Points = Math.max(
+      1,
+      Math.floor(Number(gameConfig.p1Points ?? gameConfig.p1Sats ?? 1000)),
+    );
+    const p2Points = Math.max(
+      1,
+      Math.floor(Number(gameConfig.p2Points ?? gameConfig.p2Sats ?? 1000)),
+    );
+
+    if (!localBootRef.current) {
+      localBootRef.current = true;
+      const state = createGameState({
       p1Name,
       p2Name: displayP2Name,
-      p1Points: 1000,
-      p2Points: 1000,
+      p1Points,
+      p2Points,
       modeLabel,
       practiceMode: isPracticeMode,
       p1Human,
@@ -276,26 +300,35 @@ export default function Game() {
       gauntletLevel: 1,
       labyrinthMode: false,
       teamMode,
-    });
-    stateRef.current = state;
-    winnerSentRef.current = false;
+      });
+      stateRef.current = state;
+      winnerSentRef.current = false;
+
+      const hud = getHudState(state);
+      setCaptureP1(hud.captureP1);
+      setCaptureP2(hud.captureP2);
+      captureP1Ref.current = hud.captureP1;
+      captureP2Ref.current = hud.captureP2;
+      setInitialP1Width(hud.initialWidthP1);
+      setInitialP2Width(hud.initialWidthP2);
+      setCurrentP1Width(hud.currentWidthP1);
+      setCurrentP2Width(hud.currentWidthP2);
+    }
+
+    // Always sync React HUD (Strict Mode re-runs must not skip this).
     setPlayer1Name(p1Name);
     setPlayer2Name(displayP2Name);
-    setP1Points(1000);
-    setP2Points(1000);
+    setP1Points(p1Points);
+    setP2Points(p2Points);
     setGameInfo(modeLabel);
-
-    const hud = getHudState(state);
-    setCaptureP1(hud.captureP1);
-    setCaptureP2(hud.captureP2);
-    captureP1Ref.current = hud.captureP1;
-    captureP2Ref.current = hud.captureP2;
-    setInitialP1Width(hud.initialWidthP1);
-    setInitialP2Width(hud.initialWidthP2);
-    setCurrentP1Width(hud.currentWidthP1);
-    setCurrentP2Width(hud.currentWidthP2);
     setLoading(false);
     audioRef.current?.startMusic();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      localBootRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -318,7 +351,7 @@ export default function Game() {
     if (loading) return;
     let cfg: Record<string, unknown> = {};
     try { const r = sessionStorage.getItem('gameConfig'); if (r) cfg = JSON.parse(r); } catch { /* ignore */ }
-    if (String(cfg.mode ?? '').toUpperCase() !== 'SOLO') return;
+    if (!isPracticeChallengeConfig(cfg)) return;
 
     const poll = window.setInterval(() => {
       const state = stateRef.current;
@@ -347,17 +380,8 @@ export default function Game() {
 
 
   useEffect(() => {
-    // Local hub (and legacy POWERUP) bootstrap without waiting for socket
-    let gameConfig: Record<string, unknown> = {};
-    try {
-      const raw = sessionStorage.getItem('gameConfig');
-      if (raw) gameConfig = JSON.parse(raw);
-    } catch {
-      // ignore
-    }
-    const localModes = ['LOCAL', 'TESTNET', 'POWERUP', 'POWER-UP ARENA', 'SOLO'];
-    const configMode = String(gameConfig.mode ?? '').toUpperCase();
-    if (localModes.includes(configMode)) {
+    const gameConfig = readSessionGameConfig();
+    if (isExplicitPracticeSession(gameConfig)) {
       bootstrapLocalGame();
       return;
     }
@@ -430,12 +454,20 @@ export default function Game() {
   }, []);
 
   const handlePointsUpdated = useCallback((data: {
-    players: Record<string, { value?: number }>;
+    players: Record<string, { value?: number; name?: string; picture?: string; nostrPubkey?: string; fallbackLabel?: string }>;
   }) => {
     const p1 = data.players['Player 1'];
     const p2 = data.players['Player 2'];
     if (p1?.value != null) setP1Points(Math.floor(p1.value));
     if (p2?.value != null) setP2Points(Math.floor(p2.value));
+    if (p1?.name?.trim()) {
+      setPlayer1Name(formatHudPlayerName(p1, 'Player 1'));
+    }
+    if (p2?.name?.trim()) {
+      setPlayer2Name(formatHudPlayerName(p2, 'Player 2'));
+    }
+    if (p1?.picture?.trim()) setPlayer1Img(String(p1.picture));
+    if (p2?.picture?.trim()) setPlayer2Img(String(p2.picture));
   }, []);
 
   const handleZapReceived = useCallback((data: {
@@ -499,15 +531,8 @@ export default function Game() {
       // ignore
     }
     const configMode = String(gameConfig.mode ?? '').toUpperCase();
-    const modeRoutes: Record<string, string> = {
-      LOCAL: '/local',
-      TESTNET: '/local',
-      POWERUP: '/local',
-      'POWER-UP ARENA': '/local',
-      SOLO: '/solo',
-    };
-    if (configMode === 'SOLO') {
-      // SOLO flow: first continue key reveals the results modal; second continue key exits to list.
+    if (isPracticeChallengeConfig(gameConfig)) {
+      // Challenge flow: first continue key reveals the results modal; second exits to list.
       if (!soloEndData) {
         if (soloPendingEndData) {
           setSoloEndData(soloPendingEndData);
@@ -515,17 +540,20 @@ export default function Game() {
         }
         return;
       }
-      navigate('/solo');
+      navigate(practiceHubExitPath(gameConfig));
       return;
     }
-    const modeRoute = modeRoutes[configMode];
-    if (modeRoute) { navigate(modeRoute); return; }
+    if (isPracticeHubGameMode(configMode)) {
+      navigate(practiceHubExitPath(gameConfig));
+      return;
+    }
     navigate('/postgame');
   }, [navigate, soloEndData, soloPendingEndData]);
 
   useGameSocketEvents({
     socket,
     loading,
+    ignoreSocketSessionUpdates,
     stateRef,
     localBootRef,
     winnerSentRef,
@@ -557,14 +585,25 @@ export default function Game() {
     if (loading || !stateRef.current) return;
     const stopFeed = startMempoolFeed({
       onInit: (details) => {
-        setBitcoin((prev) => ({
-          height: details.height || prev.height,
-          timeAgo: details.timeAgo || prev.timeAgo,
-          size: details.size || prev.size,
-          txCount: details.txCount || prev.txCount,
-          miner: details.miner || prev.miner,
-          medianFee: details.medianFee || prev.medianFee,
-        }));
+        setBitcoin((prev) => {
+          const timeAgoOnly =
+            !details.height &&
+            !details.size &&
+            !details.txCount &&
+            details.timeAgo &&
+            details.timeAgo !== prev.timeAgo;
+          if (timeAgoOnly) {
+            return { ...prev, timeAgo: details.timeAgo };
+          }
+          return {
+            height: details.height || prev.height,
+            timeAgo: details.timeAgo || prev.timeAgo,
+            size: details.size || prev.size,
+            txCount: details.txCount || prev.txCount,
+            miner: details.miner || prev.miner,
+            medianFee: details.medianFee || prev.medianFee,
+          };
+        });
       },
       onNewBlock: (block, details) => {
         setBitcoin(details);
@@ -580,19 +619,21 @@ export default function Game() {
   }, [loading]);
 
   useEffect(() => {
+    if (zapMessages.length === 0) return;
     const timer = window.setInterval(() => {
-      setZapMessages((prev) =>
-        prev
+      setZapMessages((prev) => {
+        const next = prev
           .map((zap) => ({
             ...zap,
             hidden: zap.top > 17.5 ? false : zap.hidden,
             top: zap.top - 0.04,
           }))
-          .filter((zap) => zap.top > -1)
-      );
+          .filter((zap) => zap.top > -1);
+        return next;
+      });
     }, 16);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [zapMessages.length]);
 
   useGameInputBindings({
     stateRef,

@@ -1,28 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
+import type { RefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useAudio, SFX } from '@/contexts/AudioContext';
-import { useGamepad } from '@/hooks/useGamepad';
+import type { PracticeChallengesPanelHandle } from '@/features/practice/practicePanelHandles';
 import type { AiTier } from '@/game/engine/types';
 import {
   CONVERGENCE_MIN_COLS,
   CONVERGENCE_MIN_ROWS,
-  LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
+  PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
 } from '@/game/engine/constants';
 import '@/components/ui/Button.css';
-import './practiceHub.css';
-import '@/styles/pages/p2p-entry.css';
-import '@/styles/pages/onlinePostGame.css';
-import '@/styles/pages/solo-challenges.css';
 import { npubEncode } from 'nostr-tools/nip19';
 import {
   STORED_NOSTR_PUBKEY_KEY,
 } from '@/lib/nostr/signerSession';
 import { fetchLatestKind0Profile } from '@/lib/nostr/fetchKind0Profile';
+import { savePracticeGameConfig } from '@/pages/practiceHubModes';
 
 const CONVERGENCE_PRESET = {
-  shrinkIntervalTicks: LOCAL_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
+  shrinkIntervalTicks: PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
   stepMs: 100,
   minCols: CONVERGENCE_MIN_COLS,
   minRows: CONVERGENCE_MIN_ROWS,
@@ -138,10 +141,21 @@ function formatBounty(sats: number): string {
 
 const LN_ADDRESS_KEY = 'arcadeLnAddress';
 
-export default function SoloChallenges() {
+interface PracticeChallengesPanelProps {
+  isActive: boolean;
+  footerBackRef: RefObject<HTMLButtonElement | null>;
+  footerStartRef: RefObject<HTMLButtonElement | null>;
+}
+
+export const PracticeChallengesPanel = forwardRef<
+  PracticeChallengesPanelHandle,
+  PracticeChallengesPanelProps
+>(function PracticeChallengesPanel(
+  { isActive, footerBackRef, footerStartRef },
+  ref
+) {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
-  useGamepad(true);
 
   const [selected, setSelected] = useState(0);
   const [npub, setNpub] = useState<string | null>(null);
@@ -157,7 +171,6 @@ export default function SoloChallenges() {
 
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const innerRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const backRef = useRef<HTMLButtonElement | null>(null);
   const gateActionRef = useRef<HTMLButtonElement | null>(null);
   const didMountRef = useRef(false);
   const bountyRafRef = useRef<number | null>(null);
@@ -285,14 +298,15 @@ export default function SoloChallenges() {
     playSfx(SFX.MENU_CONFIRM);
 
     const isFfa = challenge.format === '4P FFA';
-    const parts: string[] = ['SOLO', isFfa ? 'FFA' : '1v1', 'CVG'];
+    const parts: string[] = ['PRACTICE', isFfa ? 'FFA' : '1v1', 'CVG'];
     if (challenge.powerup) parts.push('PWR');
 
     const config: Record<string, unknown> = {
-      mode: 'SOLO',
+      mode: 'PRACTICE',
+      practiceChallenge: true,
       soloChallengeName: challenge.name,
       soloBounty: challenge.bounty,
-      localHudLabel: parts.join(' · '),
+      practiceHudLabel: parts.join(' · '),
       teamMode: isFfa ? 'ffa' : 'solo',
       practiceMode: true,
       p1Human: true,
@@ -311,23 +325,40 @@ export default function SoloChallenges() {
     };
     if (isFfa) config.ffaAiTier = challenge.aiTier;
 
-    sessionStorage.setItem('gameConfig', JSON.stringify(config));
+    savePracticeGameConfig(config);
     navigate('/game');
   }, [selected, playSfx, navigate]);
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      launchSelected: () => {
+        launchChallenge();
+      },
+    }),
+    [launchChallenge]
+  );
+
   useEffect(() => {
+    if (!isActive) return;
+
     const handleKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
       const activeEl = document.activeElement as HTMLElement | null;
-      const onBack = activeEl === backRef.current;
+      const onBack = activeEl === footerBackRef.current;
+      const onStart = activeEl === footerStartRef.current;
       const onGateAction = activeEl === gateActionRef.current;
       const focusedRowIndex = rowRefs.current.findIndex((r) => r === activeEl);
       const onRow = focusedRowIndex >= 0;
       // Clicks on non-focusables leave focus on <body>; keep navigating from last selection.
       const orphanListNav =
-        !onRow && !onGateAction && !onBack && document.body.contains(activeEl);
+        !onRow &&
+        !onGateAction &&
+        !onBack &&
+        !onStart &&
+        document.body.contains(activeEl);
       const rowNavIndex = onRow ? focusedRowIndex : orphanListNav ? selected : -1;
 
       const isDown = e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
@@ -343,6 +374,11 @@ export default function SoloChallenges() {
           rowRefs.current[0]?.focus({ preventScroll: true });
           return;
         }
+        if (onStart) {
+          playSfx(SFX.MENU_SELECT);
+          footerBackRef.current?.focus({ preventScroll: true });
+          return;
+        }
         if (onBack) {
           playSfx(SFX.MENU_SELECT);
           gateActionRef.current?.focus({ preventScroll: true });
@@ -356,7 +392,7 @@ export default function SoloChallenges() {
             return from + 1;
           }
           playSfx(SFX.MENU_SELECT);
-          backRef.current?.focus();
+          footerStartRef.current?.focus({ preventScroll: true });
           return prev;
         });
         return;
@@ -366,14 +402,19 @@ export default function SoloChallenges() {
         e.preventDefault();
         if (onGateAction) {
           playSfx(SFX.MENU_SELECT);
-          backRef.current?.focus({ preventScroll: true });
+          footerBackRef.current?.focus({ preventScroll: true });
           return;
         }
-        if (onBack) {
+        if (onStart) {
           playSfx(SFX.MENU_SELECT);
           const lastIdx = CHALLENGES.length - 1;
           setSelected(lastIdx);
           rowRefs.current[lastIdx]?.focus({ preventScroll: true });
+          return;
+        }
+        if (onBack) {
+          playSfx(SFX.MENU_SELECT);
+          footerStartRef.current?.focus({ preventScroll: true });
           return;
         }
         if (rowNavIndex < 0) return;
@@ -402,7 +443,7 @@ export default function SoloChallenges() {
         if (rowNavIndex < 0) return;
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
-        backRef.current?.focus({ preventScroll: true });
+        footerStartRef.current?.focus({ preventScroll: true });
         return;
       }
 
@@ -415,16 +456,29 @@ export default function SoloChallenges() {
         if (onBack) {
           playSfx(SFX.MENU_CONFIRM);
           navigate('/');
-        } else {
-          launchChallenge();
+          return;
         }
+        if (onStart) {
+          launchChallenge();
+          return;
+        }
+        launchChallenge();
       }
     };
     window.addEventListener('keydown', handleKey, true);
     return () => window.removeEventListener('keydown', handleKey, true);
-  }, [playSfx, navigate, launchChallenge]);
+  }, [
+    isActive,
+    playSfx,
+    navigate,
+    launchChallenge,
+    footerBackRef,
+    footerStartRef,
+  ]);
 
   useEffect(() => {
+    if (!isActive) return;
+
     const el = rowRefs.current[selected];
     if (!el) return;
     el.focus({ preventScroll: true });
@@ -452,21 +506,10 @@ export default function SoloChallenges() {
       inner.removeEventListener('animationend', onEnd);
       inner.classList.remove('sc-row__inner--pop');
     };
-  }, [selected]);
+  }, [isActive, selected]);
 
   return (
-    <div className="practice-hub practice-hub--practice solo-challenges-page">
-      <header id="brand" aria-hidden="true">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
-
-      <header className="practice-hub-header">
-        <h2 className="practice-hub-title solo-challenges-title">SOLO</h2>
-        <p className="sc-page-lede">Beat the bot, earn sats. Connect Nostr&nbsp;+ a Lightning address to receive payouts.</p>
-      </header>
-
-      <div className="practice-panel solo-challenges-panel">
+    <div className="practice-challenges-panel solo-challenges-panel" role="group" aria-label="Challenges">
         <div className="solo-challenges-layout">
           <div className="solo-challenges-col solo-challenges-col--left">
             {/* ── Nostr / LN payout gate ── */}
@@ -533,21 +576,6 @@ export default function SoloChallenges() {
                     ? 'ADD LIGHTNING TO KIND 0 PROFILE'
                     : 'CONNECT TO UNLOCK SATS PRIZES'}
               </div>
-            </div>
-
-            {/* ── Action buttons ── */}
-            <div className="practice-actions">
-              <Button
-                ref={backRef}
-                className="practice-back"
-                tabIndex={0}
-                onClick={() => {
-                  playSfx(SFX.MENU_CONFIRM);
-                  navigate('/');
-                }}
-              >
-                MAIN MENU
-              </Button>
             </div>
           </div>
 
@@ -630,9 +658,6 @@ export default function SoloChallenges() {
             </div>
           </div>
         </div>
-      </div>
-
-      <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={false} />
     </div>
   );
-}
+});

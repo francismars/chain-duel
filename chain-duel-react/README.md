@@ -51,7 +51,7 @@ src/
 
 ### Implemented
 
-- Core routes implemented in React: `Index`, `LocalHub` (`/local`), `P2pEntry` (`/p2p`), `GameMenu`, `Game`, `PostGame`, `TournamentLobby`, `TournamentBracket`, plus online flow (`OnlineRooms`, `OnlineRoomLobby`, `OnlineGame`, `OnlinePostGame`). Legacy paths `/regtest` → `/local` and `/testnet-entry` → `/p2p` redirect.
+- Core routes implemented in React: `Index`, `PracticeHub` (`/practice` — Free play + Challenges via `?play=free|challenges`), `P2pEntry` (`/p2p`), `GameMenu`, `Game`, `PostGame`, `TournamentLobby`, `TournamentBracket`, plus online flow (`OnlineRooms`, `OnlineRoomLobby`, `OnlineGame`, `OnlinePostGame`). Legacy paths `/local`, `/regtest`, `/testnet` → `/practice`; `/testnet-entry` → `/p2p`; `/solo` → `/practice?play=challenges`.
 - Game engine/render/audio/io stack implemented under `src/game/*` with Pixi renderer + Canvas fallback.
 - Socket/config/env flow implemented (`VITE_SOCKET_URL` primary path, legacy `/loadconfig` fallback where applicable).
 - Payment-gated entry logic is active (`GameMenu` requires both players funded; P2P tournament entry uses `P2pEntry`).

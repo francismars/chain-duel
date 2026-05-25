@@ -1,9 +1,9 @@
-/** Keyboard / gamepad focus model for Local hub (/local). */
+/** Keyboard / gamepad focus model for Practice hub (/practice). */
 
 export type MatchFormat = 'solo' | 'ffa';
 export type OpponentChoice = 'humans' | 'ai';
 
-export type LocalNavFocus =
+export type PracticeNavFocus =
   | { kind: 'format'; idx: 0 | 1 }
   | { kind: 'slot'; idx: 0 | 1 | 2 | 3 }
   | { kind: 'opponent'; idx: 0 | 1 }
@@ -12,7 +12,7 @@ export type LocalNavFocus =
   | { kind: 'start' }
   | { kind: 'back' };
 
-export function navFocusEqual(a: LocalNavFocus, b: LocalNavFocus): boolean {
+export function navFocusEqual(a: PracticeNavFocus, b: PracticeNavFocus): boolean {
   if (a.kind !== b.kind) return false;
   if (a.kind === 'format' && b.kind === 'format') return a.idx === b.idx;
   if (a.kind === 'slot' && b.kind === 'slot') return a.idx === b.idx;
@@ -21,13 +21,13 @@ export function navFocusEqual(a: LocalNavFocus, b: LocalNavFocus): boolean {
   return true;
 }
 
-export function buildLocalHubFlatNav(
+export function buildPracticeHubFlatNav(
   showTeamControl: boolean,
   show1v1Opponent: boolean,
   opponent: OpponentChoice,
   allFourHuman: boolean
-): LocalNavFocus[] {
-  const list: LocalNavFocus[] = [
+): PracticeNavFocus[] {
+  const list: PracticeNavFocus[] = [
     { kind: 'format', idx: 0 },
     { kind: 'format', idx: 1 },
   ];
@@ -52,15 +52,15 @@ export function buildLocalHubFlatNav(
   return list;
 }
 
-export function advanceLocalHubFlatNav(
-  f: LocalNavFocus,
+export function advancePracticeHubFlatNav(
+  f: PracticeNavFocus,
   delta: 1 | -1,
   showTeamControl: boolean,
   show1v1Opponent: boolean,
   opponent: OpponentChoice,
   allFourHuman: boolean
-): LocalNavFocus {
-  const flat = buildLocalHubFlatNav(
+): PracticeNavFocus {
+  const flat = buildPracticeHubFlatNav(
     showTeamControl,
     show1v1Opponent,
     opponent,
@@ -73,9 +73,9 @@ export function advanceLocalHubFlatNav(
 }
 
 function horizontalStep(
-  f: LocalNavFocus,
+  f: PracticeNavFocus,
   dir: 'left' | 'right'
-): LocalNavFocus | null {
+): PracticeNavFocus | null {
   const left = dir === 'left';
   const horiz = (n: number, mod: number) =>
     (((n + (left ? -1 : 1)) % mod) + mod) % mod;
@@ -93,16 +93,16 @@ function horizontalStep(
   }
 }
 
-export function moveLocalHubNav(
-  f: LocalNavFocus,
+export function movePracticeHubNav(
+  f: PracticeNavFocus,
   direction: 'up' | 'down' | 'left' | 'right',
   showTeamControl: boolean,
   show1v1Opponent: boolean,
   opponent: OpponentChoice,
   allFourHuman: boolean
-): LocalNavFocus {
+): PracticeNavFocus {
   if (direction === 'up') {
-    return advanceLocalHubFlatNav(
+    return advancePracticeHubFlatNav(
       f,
       -1,
       showTeamControl,
@@ -112,7 +112,7 @@ export function moveLocalHubNav(
     );
   }
   if (direction === 'down') {
-    return advanceLocalHubFlatNav(
+    return advancePracticeHubFlatNav(
       f,
       1,
       showTeamControl,
@@ -123,7 +123,7 @@ export function moveLocalHubNav(
   }
   const h = horizontalStep(f, direction === 'left' ? 'left' : 'right');
   if (h) return h;
-  return advanceLocalHubFlatNav(
+  return advancePracticeHubFlatNav(
     f,
     direction === 'left' ? -1 : 1,
     showTeamControl,
@@ -133,14 +133,14 @@ export function moveLocalHubNav(
   );
 }
 
-export function normalizeLocalNavFocus(
-  f: LocalNavFocus,
+export function normalizePracticeNavFocus(
+  f: PracticeNavFocus,
   showTeamControl: boolean,
   show1v1Opponent: boolean,
   opponent: OpponentChoice,
   allFourHuman: boolean
-): LocalNavFocus {
-  const flat = buildLocalHubFlatNav(
+): PracticeNavFocus {
+  const flat = buildPracticeHubFlatNav(
     showTeamControl,
     show1v1Opponent,
     opponent,

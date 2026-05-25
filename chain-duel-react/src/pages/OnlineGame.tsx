@@ -122,14 +122,21 @@ export default function OnlineGame() {
       detachResize = () => window.removeEventListener('resize', onResize);
     });
     let raf = 0;
-    const frame = () => {
-      if (snapshotRef.current?.state && rendererRef.current) {
-        const raw = snapshotRef.current.state as GameState;
+    let lastPaintedSnapshot: OnlineRoomSnapshot | null = null;
+    const frame = (now: number) => {
+      const snap = snapshotRef.current;
+      if (snap?.state && rendererRef.current) {
+        const raw = snap.state as GameState;
         const renderState =
           raw.meta?.modeLabel === 'ONLINE'
             ? withOnlinePointAnimations(raw, pointAnimationsRef.current)
             : raw;
-        rendererRef.current.render(renderState, { replayView: replayViewRef.current });
+        const snapshotChanged = snap !== lastPaintedSnapshot;
+        const animActive = rendererRef.current.needsPaint(renderState, now);
+        if (snapshotChanged || animActive) {
+          rendererRef.current.render(renderState, { replayView: replayViewRef.current });
+          lastPaintedSnapshot = snap;
+        }
       }
       raf = window.requestAnimationFrame(frame);
     };

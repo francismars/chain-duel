@@ -244,11 +244,25 @@ export function useGamepad(enabled: boolean = true, options?: UseGamepadOptions)
       }
     };
 
-    // Poll at 60Hz for responsive gamepad input without RAF recursion.
-    const intervalId = setInterval(pollGamepads, 1000 / 60);
+    const pollMs = () => {
+      const pads = navigator.getGamepads();
+      for (let i = 0; i < pads.length; i += 1) {
+        if (pads[i]) return 1000 / 60;
+      }
+      return 250;
+    };
+
+    let intervalId = window.setInterval(pollGamepads, pollMs());
+
+    const retunePoll = window.setInterval(() => {
+      const next = pollMs();
+      window.clearInterval(intervalId);
+      intervalId = window.setInterval(pollGamepads, next);
+    }, 2000);
 
     return () => {
-      clearInterval(intervalId);
+      window.clearInterval(intervalId);
+      window.clearInterval(retunePoll);
       dispatchLnurlCompat(1, false);
       dispatchLnurlCompat(2, false);
     };

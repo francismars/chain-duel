@@ -140,7 +140,7 @@ export default function PostGame() {
     // Keep legacy full-page navigation, but allow one frame for websocket frame flush.
     window.setTimeout(() => {
       if (gameMode === 'PRACTICE') {
-        window.location.href = '/local';
+        window.location.href = '/practice';
         return;
       }
       window.location.href = gameMode === 'P2PNOSTR' ? '/gamemenu?nostr=true' : '/gamemenu';

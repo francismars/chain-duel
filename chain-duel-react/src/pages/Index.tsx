@@ -13,8 +13,8 @@ import { fetchLatestKind0Profile } from '@/lib/nostr/fetchKind0Profile';
 import { STORED_NOSTR_PUBKEY_KEY } from '@/lib/nostr/signerSession';
 
 
-/** Vertical menu focus — 6 rows: LOCAL, SOLO, P2P, NETWORK, LEDGER, ABOUT+CONFIG */
-type MenuState = 1 | 2 | 3 | 4 | 5 | 6;
+/** Vertical menu focus — 5 rows: PRACTICE, P2P, NETWORK, LEDGER, ABOUT+CONFIG */
+type MenuState = 1 | 2 | 3 | 4 | 5;
 type Row6Focus = 'about' | 'config';
 
 function menuStepDown(prev: MenuState): MenuState {
@@ -22,17 +22,15 @@ function menuStepDown(prev: MenuState): MenuState {
   if (prev === 2) return 3;
   if (prev === 3) return 4;
   if (prev === 4) return 5;
-  if (prev === 5) return 6;
   return 1;
 }
 
 function menuStepUp(prev: MenuState): MenuState {
-  if (prev === 1) return 6;
+  if (prev === 1) return 5;
   if (prev === 2) return 1;
   if (prev === 3) return 2;
   if (prev === 4) return 3;
-  if (prev === 5) return 4;
-  return 5;
+  return 4;
 }
 
 export default function Index() {
@@ -41,7 +39,6 @@ export default function Index() {
   const [menu, setMenu] = useState<MenuState>(1);
   const [hostName, setHostName] = useState<string>('@chainduel');
   const startLocalRef = useRef<HTMLButtonElement>(null);
-  const startSoloRef = useRef<HTMLButtonElement>(null);
   const startP2pRef = useRef<HTMLButtonElement>(null);
   const startOnlineRef = useRef<HTMLButtonElement>(null);
   const highscoresRef = useRef<HTMLButtonElement>(null);
@@ -76,9 +73,9 @@ export default function Index() {
       return;
     }
     const inner =
-      menu === 6
+      menu === 5
         ? (root.querySelector(
-            `[data-menu-row="6"] [data-menu-kbd-focus="${row6Focus}"]`
+            `[data-menu-row="5"] [data-menu-kbd-focus="${row6Focus}"]`
           ) as HTMLElement | null)
         : (root.querySelector(
             `[data-menu-row="${menu}"] > .menu-buttons__row-inner`
@@ -157,25 +154,22 @@ export default function Index() {
       if (startLocalRef.current) {
         startLocalRef.current.style.animationDuration = menu === 1 ? '2s' : '0s';
       }
-      if (startSoloRef.current) {
-        startSoloRef.current.style.animationDuration = menu === 2 ? '2s' : '0s';
-      }
       if (startP2pRef.current) {
-        startP2pRef.current.style.animationDuration = menu === 3 ? '2s' : '0s';
+        startP2pRef.current.style.animationDuration = menu === 2 ? '2s' : '0s';
       }
       if (startOnlineRef.current) {
-        startOnlineRef.current.style.animationDuration = menu === 4 ? '2s' : '0s';
+        startOnlineRef.current.style.animationDuration = menu === 3 ? '2s' : '0s';
       }
       if (highscoresRef.current) {
-        highscoresRef.current.style.animationDuration = menu === 5 ? '2s' : '0s';
+        highscoresRef.current.style.animationDuration = menu === 4 ? '2s' : '0s';
       }
       if (aboutRef.current) {
         aboutRef.current.style.animationDuration =
-          menu === 6 && row6Focus === 'about' ? '2s' : '0s';
+          menu === 5 && row6Focus === 'about' ? '2s' : '0s';
       }
       if (configRef.current) {
         configRef.current.style.animationDuration =
-          menu === 6 && row6Focus === 'config' ? '2s' : '0s';
+          menu === 5 && row6Focus === 'config' ? '2s' : '0s';
       }
     };
 
@@ -205,16 +199,14 @@ export default function Index() {
         playSfx(SFX.MENU_CONFIRM);
         const row = menuRef.current;
         if (row === 1) {
-          navigate('/local', { state: keyboardNavState });
+          navigate('/practice', { state: keyboardNavState });
         } else if (row === 2) {
-          navigate('/solo', { state: keyboardNavState });
-        } else if (row === 3) {
           navigate('/p2p', { state: keyboardNavState });
-        } else if (row === 4) {
+        } else if (row === 3) {
           navigate('/network', { state: keyboardNavState });
-        } else if (row === 5) {
+        } else if (row === 4) {
           navigate('/highscores', { state: keyboardNavState });
-        } else if (row === 6) {
+        } else if (row === 5) {
           if (row6Focus === 'about') {
             navigate('/about', { state: keyboardNavState });
           } else {
@@ -224,7 +216,7 @@ export default function Index() {
         return;
       }
 
-      if (menuRef.current === 6) {
+      if (menuRef.current === 5) {
         if (event.key === 'ArrowLeft' || event.code === 'ArrowLeft') {
           event.preventDefault();
           playSfx(SFX.MENU_SELECT);
@@ -250,7 +242,7 @@ export default function Index() {
         setMenu((prev) => {
           const next = menuStepDown(prev);
           menuRef.current = next;
-          if (prev === 5 && next === 6) {
+          if (prev === 4 && next === 5) {
             setRow6Focus('about');
           }
           return next;
@@ -269,7 +261,7 @@ export default function Index() {
         setMenu((prev) => {
           const next = menuStepUp(prev);
           menuRef.current = next;
-          if (prev === 1 && next === 6) {
+          if (prev === 1 && next === 5) {
             setRow6Focus('about');
           }
           return next;
@@ -299,33 +291,18 @@ export default function Index() {
             <div className="menu-buttons__row-inner">
               <Button
                 ref={startLocalRef}
-                id="startlocal"
+                id="startpractice"
                 onClick={() => {
                   playSfx(SFX.MENU_CONFIRM);
-                  navigate('/local');
+                  navigate('/practice');
                 }}
               >
-                LOCAL
+                PRACTICE
               </Button>
             </div>
           </div>
 
           <div className="menu-buttons__row" data-menu-row={2}>
-            <div className="menu-buttons__row-inner">
-              <Button
-                ref={startSoloRef}
-                id="startsolo"
-                onClick={() => {
-                  playSfx(SFX.MENU_CONFIRM);
-                  navigate('/solo');
-                }}
-              >
-                SOLO
-              </Button>
-            </div>
-          </div>
-
-          <div className="menu-buttons__row" data-menu-row={3}>
             <div className="menu-buttons__row-inner">
               <Button
                 ref={startP2pRef}
@@ -340,7 +317,7 @@ export default function Index() {
             </div>
           </div>
 
-          <div className="menu-buttons__row" data-menu-row={4}>
+          <div className="menu-buttons__row" data-menu-row={3}>
             <div className="menu-buttons__row-inner">
               <Button
                 ref={startOnlineRef}
@@ -355,7 +332,7 @@ export default function Index() {
             </div>
           </div>
 
-          <div className="menu-buttons__row" data-menu-row={5}>
+          <div className="menu-buttons__row" data-menu-row={4}>
             <div className="menu-buttons__row-inner">
               <Button
                 ref={highscoresRef}
@@ -370,7 +347,7 @@ export default function Index() {
             </div>
           </div>
 
-          <div className="menu-buttons__row" data-menu-row={6}>
+          <div className="menu-buttons__row" data-menu-row={5}>
             <div className="double-button menu-buttons__double-row">
               <div
                 className="menu-buttons__row-inner menu-buttons__double-cell"
