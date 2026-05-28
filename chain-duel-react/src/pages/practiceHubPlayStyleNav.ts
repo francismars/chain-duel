@@ -29,14 +29,12 @@ export function movePlayStyleNav(direction: 'left' | 'right'): 0 | 1 {
   return direction === 'left' ? 0 : 1;
 }
 
+/** Footer row: left = main menu, right = start; up = panel; down = no-op; no wrap. */
 export function movePracticeHubFooter(
-  which: 'back' | 'start',
   direction: 'left' | 'right' | 'up' | 'down'
-): 'back' | 'start' | 'panel' {
+): 'back' | 'start' | 'panel' | null {
   if (direction === 'up') return 'panel';
+  if (direction === 'down') return null;
   if (direction === 'left') return 'back';
-  if (direction === 'right') return 'start';
-  if (which === 'back' && (direction === 'down' || direction === 'right')) return 'start';
-  if (which === 'start' && (direction === 'down' || direction === 'left')) return 'back';
-  return which;
+  return 'start';
 }

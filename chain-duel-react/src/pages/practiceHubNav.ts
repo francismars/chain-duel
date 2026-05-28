@@ -98,17 +98,12 @@ function verticalStep(
       return { kind: 'slot', idx: clampCol(f.idx, 4) as 0 | 1 | 2 | 3 };
     }
     case 'rulePowerup': {
-      if (down) return { kind: 'start' };
+      if (down) return null;
       return rowAboveRulePowerup(ctx);
     }
-    case 'start': {
-      if (down) return { kind: 'back' };
-      return { kind: 'rulePowerup' };
-    }
-    case 'back': {
-      if (down) return null;
-      return { kind: 'start' };
-    }
+    case 'start':
+    case 'back':
+      return null;
     default:
       return null;
   }
@@ -182,9 +177,8 @@ function horizontalStep(
     case 'tier':
       return { kind: 'tier', idx: horiz(f.idx, 4) as 0 | 1 | 2 | 3 };
     case 'start':
-      return left ? { kind: 'back' } : f;
     case 'back':
-      return left ? f : { kind: 'start' };
+      return null;
     default:
       return null;
   }
@@ -228,6 +222,9 @@ export function normalizePracticeNavFocus(
     opponent,
     allFourHuman
   );
+  if (f.kind === 'start' || f.kind === 'back') {
+    return { kind: 'rulePowerup' };
+  }
   if (flat.some((x) => navFocusEqual(x, f))) return f;
   return flat[0] ?? { kind: 'format', idx: 0 };
 }

@@ -128,23 +128,29 @@ export default function PracticeHub() {
         e.preventDefault();
         if (e.repeat && isActivate) return;
 
+        if (isActivate) {
+          if (hubFocus.which === 'back') footerBackRef.current?.click();
+          else footerStartRef.current?.click();
+          return;
+        }
+
+        if (isDown) {
+          return;
+        }
+
         const moved = movePracticeHubFooter(
-          hubFocus.which,
-          isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right'
+          isUp ? 'up' : isLeft ? 'left' : 'right'
         );
         if (moved === 'panel') {
           playSfx(SFX.MENU_SELECT);
           resumePanelFromFooter();
           return;
         }
-        if (moved !== hubFocus.which) {
-          playSfx(SFX.MENU_SELECT);
-          enterFooter(moved);
-          return;
-        }
-        if (isActivate) {
-          if (hubFocus.which === 'back') footerBackRef.current?.click();
-          else footerStartRef.current?.click();
+        if (moved === 'back' || moved === 'start') {
+          if (moved !== hubFocus.which) {
+            playSfx(SFX.MENU_SELECT);
+            enterFooter(moved);
+          }
         }
         return;
       }
@@ -153,6 +159,16 @@ export default function PracticeHub() {
         if (isTabBack) {
           e.preventDefault();
           enterPlayStyle();
+          return;
+        }
+        if (isActivate) {
+          const active = document.activeElement;
+          if (active === footerBackRef.current || active === footerStartRef.current) {
+            e.preventDefault();
+            if (e.repeat) return;
+            (active as HTMLButtonElement).click();
+            return;
+          }
         }
         return;
       }

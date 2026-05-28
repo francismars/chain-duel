@@ -185,17 +185,16 @@ export const PracticeFreePlayPanel = forwardRef<
           playSfx(SFX.MENU_SELECT);
           break;
         case 'start':
-          start();
+          footerStartRef.current?.click();
           break;
         case 'back':
-          playSfx(SFX.MENU_SELECT);
-          navigate('/');
+          footerBackRef.current?.click();
           break;
         default:
           break;
       }
     },
-    [navigate, playSfx, start, toggleSlot]
+    [footerBackRef, footerStartRef, toggleSlot]
   );
 
   useEffect(() => {
@@ -249,6 +248,10 @@ export const PracticeFreePlayPanel = forwardRef<
 
       e.preventDefault();
       setNavFocus((prev) => {
+        if (isDown && prev.kind === 'rulePowerup') {
+          onEnterFooter?.('back');
+          return prev;
+        }
         const next = movePracticeHubNav(
           prev,
           isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right',
@@ -257,9 +260,6 @@ export const PracticeFreePlayPanel = forwardRef<
           opponent,
           allFourHuman
         );
-        if (next.kind === 'back' || next.kind === 'start') {
-          onEnterFooter?.(next.kind);
-        }
         return next;
       });
     };
@@ -286,14 +286,7 @@ export const PracticeFreePlayPanel = forwardRef<
     else if (navFocus.kind === 'opponent')  { opponentRefs.current[navFocus.idx]?.focus(); }
     else if (navFocus.kind === 'tier')      { tierRefs.current[navFocus.idx]?.focus(); }
     else if (navFocus.kind === 'rulePowerup') { powerupRef.current?.focus(); }
-    else if (navFocus.kind === 'start')     { footerStartRef.current?.focus(); }
-    else if (navFocus.kind === 'back')      { footerBackRef.current?.focus(); }
-
-    if (!isActive || menuZone !== 'panel') return;
-    if (navFocus.kind === 'back' || navFocus.kind === 'start') {
-      onEnterFooter?.(navFocus.kind);
-    }
-  }, [navFocus, footerBackRef, footerStartRef, isActive, menuZone, onEnterFooter]);
+  }, [navFocus]);
 
   return (
     <div className="practice-free-play-panel" role="group" aria-label="Free play setup">

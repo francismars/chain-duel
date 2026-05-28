@@ -377,6 +377,10 @@ export const PracticeChallengesPanel = forwardRef<
         document.body.contains(activeEl);
       const rowNavIndex = onRow ? focusedRowIndex : orphanListNav ? selected : -1;
 
+      if (onBack || onStart) {
+        return;
+      }
+
       const isDown = e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
       const isUp   = e.key === 'ArrowUp'   || e.key === 'w' || e.key === 'W';
       const isLeft = e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A';
