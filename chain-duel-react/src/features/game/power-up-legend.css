@@ -1,0 +1,136 @@
+/* Power-up reference strip (below game board) */
+
+.powerUpLegend {
+  width: min(70vw, 100%);
+  margin: 0.5rem auto 0;
+  padding: 0.45rem 0 0.5rem;
+  box-sizing: border-box;
+}
+
+.powerUpLegend__list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.powerUpLegend__card {
+  --pu-color: #fff;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.45rem;
+  row-gap: 0.15rem;
+  align-items: start;
+  padding: 0.5rem 0.55rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--pu-color) 12%, transparent) 0%,
+    rgba(255, 255, 255, 0.02) 55%
+  );
+  overflow: hidden;
+}
+
+.powerUpLegend__swatch {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--pu-color);
+  opacity: 0.9;
+}
+
+.powerUpLegend__icon {
+  grid-row: 1 / span 2;
+  grid-column: 1;
+  align-self: center;
+  display: flex;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+}
+
+.powerUpLegend__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.powerUpLegend__body {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.powerUpLegend__name {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.62rem, 0.78vw, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+}
+
+.powerUpLegend__desc {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.55rem, 0.68vw, 0.65rem);
+  font-weight: 400;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+@media (max-width: 900px) {
+  .powerUpLegend {
+    width: 94vw;
+    margin-top: 0.4rem;
+    padding-top: 0.5rem;
+  }
+
+  .powerUpLegend__list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    padding-bottom: 0.2rem;
+  }
+
+  .powerUpLegend__list::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .powerUpLegend__list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 2px;
+  }
+
+  .powerUpLegend__card {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    width: min(9.25rem, 42vw);
+    padding: 0.45rem 0.5rem 0.4rem;
+  }
+
+  .powerUpLegend__icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .powerUpLegend__name {
+    font-size: clamp(0.58rem, 2.8vw, 0.68rem);
+  }
+
+  .powerUpLegend__desc {
+    font-size: clamp(0.52rem, 2.5vw, 0.6rem);
+  }
+}

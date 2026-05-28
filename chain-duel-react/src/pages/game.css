@@ -283,66 +283,6 @@ body {
   right: 0;
 }
 
-/* ── Power-up key legend ──────────────────────────────────────────────────── */
-
-#powerUpKey {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.5vw;
-  width: 70vw;
-  margin: 0 auto;
-  padding: 0.6vw 0 0.4vw;
-  box-sizing: border-box;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.powerUpKeyEntry {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2vw;
-  padding: 0.35vw 0.5vw;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
-  text-align: center;
-}
-
-.powerUpKeyHeader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3vw;
-}
-
-.powerUpKeyIconWrap {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.powerUpKeyIcon {
-  width: 1.1vw;
-  height: 1.1vw;
-}
-
-.powerUpKeyName {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.65vw;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1.2;
-}
-
-.powerUpKeyDesc {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.5vw;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.28);
-  letter-spacing: 0;
-  line-height: 1.3;
-  white-space: normal;
-}
-
 /* ── Bitcoin details ─────────────────────────────────────────────────────── */
 
 #bitcoinDetails {
@@ -1030,45 +970,6 @@ body {
     max-height: min(46vw, 44dvh);
   }
 
-  #powerUpKey {
-    width: 94vw;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.12rem 0.18rem;
-    margin-top: 0.35rem;
-    padding: 0.45rem 0 0.4rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-  }
-
-  .powerUpKeyEntry {
-    padding: 0.12rem 0.1rem;
-    gap: 0.06rem;
-    border-width: 0;
-    background: rgba(255, 255, 255, 0.015);
-  }
-
-  .powerUpKeyHeader {
-    gap: 0.1rem;
-  }
-
-  .powerUpKeyIcon {
-    width: clamp(8px, 1.85vmax, 12px);
-    height: clamp(8px, 1.85vmax, 12px);
-  }
-
-  .powerUpKeyName {
-    font-size: clamp(0.4rem, 1.25vmax, 0.55rem);
-    letter-spacing: 0.03em;
-  }
-
-  .powerUpKeyDesc {
-    font-size: clamp(0.34rem, 1.05vmax, 0.48rem);
-    line-height: 1.15;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
   /* Match mempool type scale to power-up legend (name + desc) */
   #bitcoinDetails {
     flex-wrap: wrap;
@@ -1294,8 +1195,6 @@ body {
   #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(3) { animation-delay: 0.64s; }
   #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(4) { animation-delay: 0.72s; }
   #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(5) { animation-delay: 0.80s; }
-  #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(6) { animation-delay: 0.88s; }
-
   /* Bitcoin block footer rises from below last */
   #gameContainer:not(.hide) #bitcoinDetails {
     animation: game-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.96s both;

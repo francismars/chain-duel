@@ -5,6 +5,7 @@
 import { RefObject, ReactNode, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
+import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { RulesSection } from './RulesSection';
 import '@/components/ui/Button.css';
@@ -72,16 +73,8 @@ export function GameSetupLayout({
 
   useEffect(() => {
     if (!selectedButton) return;
-    const durations: Record<string, string> = {
-      mainMenuButton: selectedButton === 'mainMenuButton' ? '2s' : '0s',
-      startgame: selectedButton === 'startgame' ? '2s' : '0s',
-      cancelGameAbort: selectedButton === 'cancelGameAbort' ? '2s' : '0s',
-      cancelGameConfirm: selectedButton === 'cancelGameConfirm' ? '2s' : '0s',
-    };
     (Object.keys(refs) as Array<keyof typeof refs>).forEach((key) => {
-      const node = refs[key].current;
-      if (!node) return;
-      node.style.animationDuration = durations[key];
+      setButtonGlow(refs[key].current, selectedButton === key);
     });
   }, [refs, selectedButton]);
 

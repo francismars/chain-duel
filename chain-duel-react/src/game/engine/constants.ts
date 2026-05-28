@@ -27,14 +27,12 @@ export const POWERUP_FIRST_SPAWN_TICKS = 25;
 export const POWERUP_SURGE_DURATION_TICKS = 40;
 export const POWERUP_FREEZE_DURATION_TICKS = 40;
 export const POWERUP_PHANTOM_DURATION_TICKS = 50;
-export const POWERUP_ANCHOR_DURATION_TICKS = 100;
 export const POWERUP_AMPLIFIER_CHARGES = 3;
 
 export const POWERUP_COLORS: Record<string, number> = {
   SURGE: 0xC8881A,
   FREEZE: 0x2878A8,
   PHANTOM: 0x9898B8,
-  ANCHOR: 0xD0D0D0,
   AMPLIFIER: 0x7AAA70,
   DECOY: 0xFFFFFF,
 };
@@ -43,7 +41,6 @@ export const POWERUP_SPAWN_WEIGHTS: Record<string, number> = {
   SURGE: 3,
   FREEZE: 3,
   PHANTOM: 2,
-  ANCHOR: 2,
   AMPLIFIER: 2,
   DECOY: 1,
 };

@@ -895,7 +895,6 @@ export class PixiGameRenderer {
     SURGE:     'SURGE',
     FREEZE:    'FREEZE',
     PHANTOM:   'GHOST',
-    ANCHOR:    'ANCHOR',
     AMPLIFIER: 'AMP',
     DECOY:     'DECOY',
   };

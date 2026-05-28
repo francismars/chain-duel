@@ -33,11 +33,7 @@
   margin-right: auto;
 }
 
-/* Default glow on the default-selected row (PRACTICE); JS sets 2s / 0s per focus */
-#startpractice {
-  animation: glowing 2000ms infinite;
-}
-
+/* Glow only on keyboard-focused row (setButtonGlow); 0s duration flickers */
 #aboutbutton,
 #configbuttonhome,
 #highscoresbutton,
@@ -45,7 +41,7 @@
 #startp2p,
 #startmainnet,
 #startpractice {
-  animation: glowing 0ms infinite;
+  animation: none;
 }
 
 .index-page #chainduel {

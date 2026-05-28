@@ -9,6 +9,7 @@ import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
 import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
+import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { fetchLatestKind0Profile } from '@/lib/nostr/fetchKind0Profile';
 import { STORED_NOSTR_PUBKEY_KEY } from '@/lib/nostr/signerSession';
 
@@ -148,32 +149,13 @@ export default function Index() {
     };
   }, []);
 
-  // Pulse glow on the focused menu row (legacy look)
   useEffect(() => {
-    const updateAnimations = () => {
-      if (startLocalRef.current) {
-        startLocalRef.current.style.animationDuration = menu === 1 ? '2s' : '0s';
-      }
-      if (startP2pRef.current) {
-        startP2pRef.current.style.animationDuration = menu === 2 ? '2s' : '0s';
-      }
-      if (startOnlineRef.current) {
-        startOnlineRef.current.style.animationDuration = menu === 3 ? '2s' : '0s';
-      }
-      if (highscoresRef.current) {
-        highscoresRef.current.style.animationDuration = menu === 4 ? '2s' : '0s';
-      }
-      if (aboutRef.current) {
-        aboutRef.current.style.animationDuration =
-          menu === 5 && row6Focus === 'about' ? '2s' : '0s';
-      }
-      if (configRef.current) {
-        configRef.current.style.animationDuration =
-          menu === 5 && row6Focus === 'config' ? '2s' : '0s';
-      }
-    };
-
-    updateAnimations();
+    setButtonGlow(startLocalRef.current, menu === 1);
+    setButtonGlow(startP2pRef.current, menu === 2);
+    setButtonGlow(startOnlineRef.current, menu === 3);
+    setButtonGlow(highscoresRef.current, menu === 4);
+    setButtonGlow(aboutRef.current, menu === 5 && row6Focus === 'about');
+    setButtonGlow(configRef.current, menu === 5 && row6Focus === 'config');
   }, [menu, row6Focus]);
 
   /** Swallow one ghost Enter/Space on the next page when navigation was triggered by keyboard. */

@@ -31,7 +31,6 @@ export type PowerUpType =
   | 'SURGE'
   | 'FREEZE'
   | 'PHANTOM'
-  | 'ANCHOR'
   | 'AMPLIFIER'
   | 'DECOY';
 

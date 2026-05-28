@@ -12,7 +12,6 @@ import {
   POWERUP_SURGE_DURATION_TICKS,
   POWERUP_FREEZE_DURATION_TICKS,
   POWERUP_PHANTOM_DURATION_TICKS,
-  POWERUP_ANCHOR_DURATION_TICKS,
   POWERUP_AMPLIFIER_CHARGES,
   POWERUP_SPAWN_WEIGHTS,
   STEP_SPEED_MS,
@@ -286,25 +285,13 @@ export function stepGame(state: GameState): TickResult {
       spawnPowerUp(state);
     }
 
-    // Expire timed obstacle walls (ANCHOR)
     state.obstacleWalls = state.obstacleWalls.filter(
       (w) => w.expiresAtTick === undefined || w.expiresAtTick > state.tickCount
     );
 
-    // Expire active power-ups
-    const expiredPowerUps = state.activePowerUps.filter(
-      (ap) => ap.expiresAtTick <= state.tickCount && ap.chargesLeft === undefined
-    );
     state.activePowerUps = state.activePowerUps.filter(
       (ap) => ap.expiresAtTick > state.tickCount || ap.chargesLeft !== undefined
     );
-
-    // Remove ANCHOR walls from expired ANCHOR power-ups
-    for (const expired of expiredPowerUps) {
-      if (expired.type === 'ANCHOR') {
-        // Walls already expire by their own tick — no action needed
-      }
-    }
 
     // AI decision — pathfinding helpers treat P2 as the bot; swap when P1 is the bot.
     if (!state.meta.p1Human) {
@@ -599,16 +586,6 @@ function applyPowerUp(state: GameState, player: PlayerId, type: PowerUpType): vo
       });
       break;
 
-    case 'ANCHOR': {
-      const snake = player === 'P1' ? state.p1 : state.p2;
-      const tailPos = snake.body[snake.body.length - 1];
-      state.obstacleWalls.push({
-        pos: [tailPos[0], tailPos[1]],
-        expiresAtTick: state.tickCount + POWERUP_ANCHOR_DURATION_TICKS,
-      });
-      break;
-    }
-
     case 'AMPLIFIER':
       removeExisting(state, player, 'AMPLIFIER');
       state.activePowerUps.push({
@@ -852,7 +829,7 @@ function increaseBody(snake: GameState['p1']): void {
 function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
   const basePercent = cb.reward != null
     ? cb.reward
-    : capturePercentByLength(getLength(state, player), state);
+    : capturePercentByLength(getLength(state, player));
 
   const hasAmplifier = state.activePowerUps.some(
     (ap) => ap.type === 'AMPLIFIER' && ap.player === player && (ap.chargesLeft ?? 0) > 0
@@ -898,24 +875,17 @@ function getLength(state: GameState, player: PlayerId): number {
   return player === 'P1' ? state.p1.body.length : state.p2.body.length;
 }
 
-function capturePercentByLength(length: number, state: GameState): number {
-  const effectiveLength = state.meta.powerupMode ? length + 1 : length;
+function capturePercentByLength(length: number): number {
   for (const level of CAPTURE_LEVELS) {
-    if (effectiveLength >= level.minLength && effectiveLength <= level.maxLength) {
+    if (length >= level.minLength && length <= level.maxLength) {
       return level.percent;
     }
   }
   return 32;
 }
 
-export function getCaptureLabel(length: number, state?: GameState): string {
-  const effectiveLength = state?.meta.powerupMode ? length + 1 : length;
-  for (const level of CAPTURE_LEVELS) {
-    if (effectiveLength >= level.minLength && effectiveLength <= level.maxLength) {
-      return `${level.percent}%`;
-    }
-  }
-  return '32%';
+export function getCaptureLabel(length: number, _state?: GameState): string {
+  return `${capturePercentByLength(length)}%`;
 }
 
 // ============================================================================

@@ -133,13 +133,11 @@
   font-size: 0.9cqw;
 }
 
-#mainmenubutton {
-  animation: glowing 2000ms infinite;
-}
-
+#mainmenubutton,
 #cancelGameAbort,
-#cancelGameConfirm {
-  animation: glowing 0ms infinite;
+#cancelGameConfirm,
+#startgame {
+  animation: none;
 }
 
 /* Hover / focus match global .button pulse (see Button.css + --button-glow-* in index.css) */
@@ -152,11 +150,7 @@
   color: white;
   border-color: rgba(255, 255, 255, 0.34);
   box-shadow: none;
-  animation: glowing 0ms infinite !important;
-}
-
-#startgame {
-  animation: glowing 0ms infinite;
+  animation: none !important;
 }
 
 #bottomInfo {
