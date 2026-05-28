@@ -296,8 +296,6 @@ export default function Game() {
       convergenceMinRows,
       convergenceStepMs,
       powerupMode: isPowerup,
-      gauntletMode: false,
-      gauntletLevel: 1,
       labyrinthMode: false,
       teamMode,
       });

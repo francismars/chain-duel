@@ -289,28 +289,12 @@ export class PixiGameRenderer {
     // ── Scene ─────────────────────────────────────────────────────────────────
     this.scene.clear();
 
-    // ── 3D ghost layer (the inactive board, drawn dim with depth offset) ─────
-    if (state.meta.layers3D) {
-      this.draw3DGhostLayer(state, colSize, rowSize, now);
-    }
-
-    // Obstacle walls (active layer only in 3D mode)
-    const activeWalls = state.meta.layers3D && state.p1Layer === 1
-      ? (state.board3DLayers[0]?.obstacleWalls ?? [])
-      : (state.obstacleWalls ?? []);
-    for (const wall of activeWalls) {
+    // Obstacle walls
+    for (const wall of state.obstacleWalls ?? []) {
       const px = wall.pos[0] * colSize;
       const py = wall.pos[1] * rowSize;
       this.scene.rect(px, py, colSize, rowSize).fill({ color: 0xffffff, alpha: 0.8 });
       this.scene.rect(px + 1, py + 1, colSize - 2, rowSize - 2).stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
-    }
-
-    // Void cells
-    for (const vc of state.voidCells ?? []) {
-      const px = vc[0] * colSize;
-      const py = vc[1] * rowSize;
-      this.scene.rect(px, py, colSize, rowSize).fill({ color: 0x000000, alpha: 0.85 });
-      this.scene.rect(px, py, colSize, rowSize).stroke({ width: 1, color: 0x333333, alpha: 0.5 });
     }
 
     // ── Board reveal (pre-start only) ────────────────────────────────────────
@@ -411,11 +395,7 @@ export class PixiGameRenderer {
       }
     }
 
-    // Coinbases — in 3D mode only show coinbases on the active layer
-    const activeCoinbases = state.meta.layers3D
-      ? (state.coinbases ?? []).filter((cb) => cb.layer === undefined || cb.layer === state.p1Layer)
-      : (state.coinbases ?? []);
-    for (const cb of activeCoinbases) {
+    for (const cb of state.coinbases ?? []) {
       this.drawCoinbase(cb.pos, colSize, rowSize, {
         reward: cb.reward,
         isDecoy: cb.isDecoy,
@@ -867,126 +847,6 @@ export class PixiGameRenderer {
     }
   }
 
-  // ── 3D ghost layers ───────────────────────────────────────────────────────
-  /**
-   * Render a convincing 3-board perspective stack with connecting "shafts"
-   * (corner-to-corner edges like the sides of a 3D prism) between each floor:
-   *
-   *   Deep echo  (floor 2) — 50% scale, 2× depth offset, 11% alpha
-   *   Near ghost (floor 1) — 72% scale, 1× depth offset, 26% alpha
-   *   Active     (floor 0) — 100% scale, at (0,0), drawn by main render
-   *
-   * Shaft lines connect the 4 corners of each adjacent board pair, giving
-   * the unmistakable look of a stacked building viewed at an angle.
-   */
-  private draw3DGhostLayer(state: GameState, colSize: number, rowSize: number, _now: number): void {
-    const ghostLayer = state.p1Layer === 0 ? 1 : 0;
-    const ghostWalls = ghostLayer === 0
-      ? (state.obstacleWalls ?? [])
-      : (state.board3DLayers[0]?.obstacleWalls ?? []);
-    const ghostCoins = (state.coinbases ?? []).filter((cb) => cb.layer === ghostLayer);
-
-    const boardW = state.cols * colSize;
-    const boardH = state.rows * rowSize;
-
-    // Direction: layer 1 (elevated) → upper-right; layer 0 (ground) → lower-left
-    const sign = ghostLayer === 1 ? 1 : -1;
-    const dX   = sign *  colSize * 3.0;
-    const dY   = sign * -rowSize * 1.85;
-
-    // Pre-compute corners for all 3 boards so we can draw the shafts between them.
-    // Board corners: [topLeft, topRight, bottomLeft, bottomRight]
-    const corners = (scale: number, xs: number, ys: number) => {
-      const gW = state.cols * colSize * scale;
-      const gH = state.rows * rowSize * scale;
-      const ox = (boardW - gW) / 2 + xs;
-      const oy = (boardH - gH) / 2 + ys;
-      return [
-        [ox,      oy     ],   // top-left
-        [ox + gW, oy     ],   // top-right
-        [ox,      oy + gH],   // bottom-left
-        [ox + gW, oy + gH],   // bottom-right
-      ];
-    };
-
-    const c0 = corners(1.00, 0,      0     );   // active board
-    const c1 = corners(0.72, dX,     dY    );   // near ghost
-    const c2 = corners(0.50, dX * 2, dY * 2);  // deep echo
-
-    // Draw shafts deep-to-near first (behind both ghost boards)
-    const drawShafts = (from: number[][], to: number[][], alpha: number) => {
-      for (let i = 0; i < 4; i++) {
-        this.scene
-          .moveTo(from[i][0], from[i][1])
-          .lineTo(to[i][0],   to[i][1])
-          .stroke({ width: 1, color: 0x3355aa, alpha });
-      }
-    };
-
-    drawShafts(c2, c1, 0.18);   // deep-echo → near-ghost shaft
-    drawShafts(c1, c0, 0.28);   // near-ghost → active shaft
-
-    // Boards (deepest first — painter's algorithm)
-    this.drawGhostBoard(state, ghostWalls, ghostCoins, colSize, rowSize,
-      boardW, boardH, 0.50, dX * 2, dY * 2, 0.11, 0.15);
-    this.drawGhostBoard(state, ghostWalls, ghostCoins, colSize, rowSize,
-      boardW, boardH, 0.72, dX,     dY,     0.26, 0.34);
-  }
-
-  /** Render one ghost board at a given scale / depth-offset / alpha. */
-  private drawGhostBoard(
-    state: GameState,
-    walls: Array<{ pos: GridPos }>,
-    coins: Array<{ pos: GridPos }>,
-    colSize: number, rowSize: number,
-    boardW: number, boardH: number,
-    scale: number, xShift: number, yShift: number,
-    wallAlpha: number, coinAlpha: number,
-  ): void {
-    const gCS    = colSize * scale;
-    const gRS    = rowSize * scale;
-    const ghostW = state.cols * gCS;
-    const ghostH = state.rows * gRS;
-    const xOff   = (boardW - ghostW) / 2 + xShift;
-    const yOff   = (boardH - ghostH) / 2 + yShift;
-
-    // Board outline
-    this.scene
-      .rect(xOff, yOff, ghostW, ghostH)
-      .stroke({ width: 1.5, color: 0x4466aa, alpha: wallAlpha * 0.9 });
-
-    // Sparse grid (every 4 cells)
-    for (let x = 0; x <= state.cols; x += 4) {
-      this.scene
-        .rect(xOff + x * gCS, yOff, 1, ghostH)
-        .fill({ color: 0x223366, alpha: wallAlpha * 0.4 });
-    }
-    for (let y = 0; y <= state.rows; y += 4) {
-      this.scene
-        .rect(xOff, yOff + y * gRS, ghostW, 1)
-        .fill({ color: 0x223366, alpha: wallAlpha * 0.4 });
-    }
-
-    // Obstacle walls
-    for (const wall of walls) {
-      const px = xOff + wall.pos[0] * gCS;
-      const py = yOff + wall.pos[1] * gRS;
-      this.scene.rect(px, py, gCS, gRS)
-        .fill({ color: 0x4477cc, alpha: wallAlpha });
-      this.scene.rect(px + 1, py + 1, gCS - 2, gRS - 2)
-        .stroke({ width: 1, color: 0x88aaee, alpha: wallAlpha * 0.5 });
-    }
-
-    // Coinbases
-    for (const cb of coins) {
-      const cx = xOff + (cb.pos[0] + 0.5) * gCS;
-      const cy = yOff + (cb.pos[1] + 0.5) * gRS;
-      const r  = Math.min(gCS, gRS) * 0.26;
-      this.scene.circle(cx, cy, r).fill({ color: 0xff9910, alpha: coinAlpha });
-      this.scene.circle(cx, cy, r).stroke({ width: 1, color: 0xffcc66, alpha: coinAlpha * 0.5 });
-    }
-  }
-
   // ── Teleport portals ─────────────────────────────────────────────────────
 
   private drawPortal(pos: GridPos, colorIndex: number, colSize: number, rowSize: number, now: number): void {
@@ -1351,12 +1211,6 @@ export class PixiGameRenderer {
       ctx.fillRect(wall.pos[0] * colSize, wall.pos[1] * rowSize, colSize, rowSize);
     }
 
-    // Void cells
-    for (const vc of state.voidCells ?? []) {
-      ctx.fillStyle = 'rgba(0,0,0,0.85)';
-      ctx.fillRect(vc[0] * colSize, vc[1] * rowSize, colSize, rowSize);
-    }
-
     // Pulse detection (fallback path shares same pulse arrays as PixiJS path)
     const nowFb = performance.now();
     if (state.gameStarted && !state.gameEnded) {
@@ -1398,78 +1252,6 @@ export class PixiGameRenderer {
       ctx.fillRect(t.pos[0] * colSize + 1, t.pos[1] * rowSize + 1, colSize - 2, rowSize - 2);
     }
     ctx.globalAlpha = 1;
-
-    // ── Fallback 3D ghost layers — 3-board perspective stack ─────────────────
-    if (state.meta.layers3D) {
-      const ghostLayer = state.p1Layer === 0 ? 1 : 0;
-      const ghostWalls = ghostLayer === 0
-        ? (state.obstacleWalls ?? [])
-        : (state.board3DLayers[0]?.obstacleWalls ?? []);
-      const ghostCoins = (state.coinbases ?? []).filter((c) => c.layer === ghostLayer);
-      const boardW = state.cols * colSize;
-      const boardH = state.rows * rowSize;
-      const sign   = ghostLayer === 1 ? 1 : -1;
-      const dX     = sign *  colSize * 3.0;
-      const dY     = sign * -rowSize * 1.85;
-
-      // Corner helper
-      const fbCorners = (scale: number, xs: number, ys: number) => {
-        const gW = state.cols * colSize * scale;
-        const gH = state.rows * rowSize * scale;
-        const ox = (boardW - gW) / 2 + xs;
-        const oy = (boardH - gH) / 2 + ys;
-        return [[ox, oy], [ox + gW, oy], [ox, oy + gH], [ox + gW, oy + gH]];
-      };
-      const fc0 = fbCorners(1.00, 0,      0     );
-      const fc1 = fbCorners(0.72, dX,     dY    );
-      const fc2 = fbCorners(0.50, dX * 2, dY * 2);
-
-      // Shaft lines (drawn before ghost boards so they appear behind)
-      const drawFbShafts = (from: number[][], to: number[][], alpha: number) => {
-        ctx.globalAlpha = alpha; ctx.strokeStyle = '#3355aa'; ctx.lineWidth = 1;
-        for (let i = 0; i < 4; i++) {
-          ctx.beginPath(); ctx.moveTo(from[i][0], from[i][1]); ctx.lineTo(to[i][0], to[i][1]); ctx.stroke();
-        }
-      };
-      drawFbShafts(fc2, fc1, 0.18);
-      drawFbShafts(fc1, fc0, 0.28);
-
-      // Helper: draw one ghost board on the fallback canvas
-      const drawFbGhost = (scale: number, xShift: number, yShift: number, wAlpha: number, cAlpha: number) => {
-        const gCS    = colSize * scale;
-        const gRS    = rowSize * scale;
-        const ghostW = state.cols * gCS;
-        const ghostH = state.rows * gRS;
-        const xOff   = (boardW - ghostW) / 2 + xShift;
-        const yOff   = (boardH - ghostH) / 2 + yShift;
-        // Border
-        ctx.globalAlpha = wAlpha * 0.9; ctx.strokeStyle = '#4466aa'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(xOff, yOff, ghostW, ghostH);
-        // Grid
-        ctx.globalAlpha = wAlpha * 0.35; ctx.strokeStyle = '#223366'; ctx.lineWidth = 1;
-        for (let x = 0; x <= state.cols; x += 4) {
-          ctx.beginPath(); ctx.moveTo(xOff + x * gCS, yOff); ctx.lineTo(xOff + x * gCS, yOff + ghostH); ctx.stroke();
-        }
-        for (let y = 0; y <= state.rows; y += 4) {
-          ctx.beginPath(); ctx.moveTo(xOff, yOff + y * gRS); ctx.lineTo(xOff + ghostW, yOff + y * gRS); ctx.stroke();
-        }
-        // Walls
-        ctx.fillStyle = '#4477cc'; ctx.globalAlpha = wAlpha;
-        for (const w of ghostWalls) ctx.fillRect(xOff + w.pos[0] * gCS, yOff + w.pos[1] * gRS, gCS, gRS);
-        // Coinbases
-        ctx.fillStyle = '#ff9910'; ctx.globalAlpha = cAlpha;
-        for (const cb of ghostCoins) {
-          const cx = xOff + (cb.pos[0] + 0.5) * gCS;
-          const cy = yOff + (cb.pos[1] + 0.5) * gRS;
-          ctx.beginPath(); ctx.arc(cx, cy, Math.min(gCS, gRS) * 0.26, 0, Math.PI * 2); ctx.fill();
-        }
-      };
-
-      // Draw deepest echo then near ghost (painter's order)
-      drawFbGhost(0.50, dX * 2, dY * 2, 0.11, 0.15);
-      drawFbGhost(0.72, dX,     dY,     0.26, 0.34);
-      ctx.globalAlpha = 1;
-    }
 
     // P1
     const p1Total = 1 + state.p1.body.length;
@@ -1686,11 +1468,7 @@ export class PixiGameRenderer {
       }
     }
 
-    // Coinbases (in 3D mode only show active-layer coinbases)
-    const fbActiveCoinbases = state.meta.layers3D
-      ? (state.coinbases ?? []).filter((cb) => cb.layer === undefined || cb.layer === state.p1Layer)
-      : (state.coinbases ?? []);
-    for (const cb of fbActiveCoinbases) {
+    for (const cb of state.coinbases ?? []) {
       const cx = cb.pos[0] * colSize + colSize / 2;
       const cy = cb.pos[1] * rowSize + rowSize / 2;
       const radius = rowSize / 2 - rowSize / 5.4;

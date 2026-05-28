@@ -18,16 +18,12 @@ import {
   POWERUP_ANCHOR_DURATION_TICKS,
   POWERUP_AMPLIFIER_CHARGES,
   POWERUP_SPAWN_WEIGHTS,
-  VOID_CELLS_TOGGLE_INTERVAL_TICKS,
-  VOID_CELLS_COUNT,
-  CHAIN_ABILITY_SHADOW_STEP_SAFE_RADIUS,
   LABYRINTH_REGEN_INTERVAL_TICKS,
   LABYRINTH_REGEN_WARNING_TICKS,
   STEP_SPEED_MS,
 } from '@/game/engine/constants';
 import type {
   AiTier,
-  Board3DLayer,
   Coinbase,
   Direction,
   ExtraSnake,
@@ -41,7 +37,6 @@ import type {
   TeleportDoor,
   TickResult,
 } from '@/game/engine/types';
-import { getGauntletLevel } from '@/game/engine/gauntletLevels';
 
 // ============================================================================
 // Maze generation (recursive backtracking / iterative DFS)
@@ -410,8 +405,6 @@ interface CreateStateArgs {
   convergenceMinRows?: number;
   convergenceStepMs?: number;
   powerupMode?: boolean;
-  gauntletMode?: boolean;
-  gauntletLevel?: number;
   bountyMode?: boolean;
   labyrinthMode?: boolean;
   labyrinthLoopFactor?: number;
@@ -440,14 +433,7 @@ export function createGameState(args: CreateStateArgs): GameState {
   const p1 = Math.max(1, Math.floor(args.p1Points));
   const p2 = Math.max(1, Math.floor(args.p2Points));
 
-  const gauntletLevel = args.gauntletLevel ?? 1;
-  const levelConfig = args.gauntletMode ? getGauntletLevel(gauntletLevel) : null;
-
-  const initialCoinbases: Coinbase[] = levelConfig?.initialCoinbasePositions.length
-    ? levelConfig.initialCoinbasePositions.map((pos) => ({ pos: [pos[0], pos[1]] }))
-    : [{ pos: [25, 12] }];
-
-  const startStepMs = levelConfig?.startStepMs ?? STEP_SPEED_MS;
+  const initialCoinbases: Coinbase[] = [{ pos: [25, 12] }];
 
   // Labyrinth: generate maze, adjust spawn positions
   const labyrinthMode = args.labyrinthMode ?? false;
@@ -485,13 +471,9 @@ export function createGameState(args: CreateStateArgs): GameState {
     ? [{ pos: initialCoinbasePos }]
     : initialCoinbases;
 
-  const gauntletAiOpponent =
-    (args.gauntletMode ?? false) &&
-    getGauntletLevel(gauntletLevel).modifiers.includes('ai_opponent');
   const defaultP2Human = !(
     Boolean(args.practiceMode) ||
-    Boolean(args.sovereignMode) ||
-    gauntletAiOpponent
+    Boolean(args.sovereignMode)
   );
   const p1HumanMeta = args.p1Human !== undefined ? Boolean(args.p1Human) : true;
   const p2HumanMeta = args.p2Human !== undefined ? Boolean(args.p2Human) : defaultP2Human;
@@ -544,8 +526,6 @@ export function createGameState(args: CreateStateArgs): GameState {
       convergenceMinCols: args.convergenceMinCols ?? CONVERGENCE_MIN_COLS,
       convergenceMinRows: args.convergenceMinRows ?? CONVERGENCE_MIN_ROWS,
       powerupMode: args.powerupMode ?? false,
-      gauntletMode: args.gauntletMode ?? false,
-      gauntletLevel,
       bountyMode: args.bountyMode ?? false,
       labyrinthMode,
       labyrinthLoopFactor,
@@ -555,31 +535,17 @@ export function createGameState(args: CreateStateArgs): GameState {
       labyrinthSections,
       labyrinthTeleports,
       teamMode: (args.teamMode ?? 'solo') as TeamMode,
-      layers3D: Boolean(levelConfig?.modifiers.includes('layers_3d')),
-      invisibleGrid: Boolean(levelConfig?.modifiers.includes('invisible_grid')),
-      currentStepMs: args.labyrinthStepMs ?? args.convergenceStepMs ?? args.overclockStartStepMs ?? startStepMs,
-      p1ChainAbilityAvailable: Boolean(args.powerupMode || args.bountyMode),
-      p2ChainAbilityAvailable: Boolean(args.powerupMode || args.bountyMode),
+      invisibleGrid: false,
+      currentStepMs: args.labyrinthStepMs ?? args.convergenceStepMs ?? args.overclockStartStepMs ?? STEP_SPEED_MS,
     },
     tickCount: 0,
     powerUpItems: [],
     activePowerUps: [],
-    obstacleWalls: labyrinthMode
-      ? mazeWalls
-      : levelConfig
-        ? levelConfig.obstacleWalls.map((pos) => ({ pos }))
-        : [],
-    shrinkBorder: (args.convergenceMode || levelConfig?.modifiers.includes('shrinking_border'))
+    obstacleWalls: labyrinthMode ? mazeWalls : [],
+    shrinkBorder: args.convergenceMode
       ? { top: 0, bottom: GAME_ROWS - 1, left: 0, right: GAME_COLS - 1, warningActive: false }
       : null,
     powerUpRespawnCooldownTick: POWERUP_FIRST_SPAWN_TICKS,
-    gauntletStartTick: 0,
-    gauntletCompleted: false,
-    gauntletElapsedSecs: 0,
-    voidCells: [],
-    voidCellsNextToggleTick: args.gauntletMode && levelConfig?.modifiers.includes('void_cells')
-      ? VOID_CELLS_TOGGLE_INTERVAL_TICKS
-      : Number.POSITIVE_INFINITY,
     labyrinthSeed,
     labyrinthNextRegenTick: labyrinthMode && labyrinthRegenInterval > 0
       ? labyrinthRegenInterval
@@ -587,32 +553,9 @@ export function createGameState(args: CreateStateArgs): GameState {
     convergenceWallClosed: false,
     teleportDoors: [],
     extraSnakes: [],
-    board3DLayers: [],
-    p1Layer: 0,
-    p2Layer: 0,
-    layerSwitchCooldown: 0,
   };
-  // Gauntlet 3D layers: build the alternate board layer from altLayerWalls
-  if (levelConfig?.modifiers.includes('layers_3d') && levelConfig.altLayerWalls) {
-    const altWalls: Board3DLayer = {
-      obstacleWalls: levelConfig.altLayerWalls.map((pos) => ({ pos })),
-    };
-    state.board3DLayers = [altWalls];
-    // Assign initial coinbases to alternating layers
-    state.coinbases.forEach((cb, i) => { cb.layer = (i % 2 === 0 ? 0 : 1) as 0 | 1; });
-  }
   if (labyrinthMode && labyrinthTeleports) {
     state.teleportDoors = makeTeleportDoors(state, 2);
-  }
-  // Gauntlet moving walls — populate initial wall cells
-  if (levelConfig?.modifiers.includes('moving_walls')) {
-    initMovingWalls(state);
-  }
-
-  // Gauntlet portal levels — large min-pair-dist so every crossing is meaningful
-  if (levelConfig?.modifiers.includes('portals')) {
-    const pairs = levelConfig.portalPairs ?? 2;
-    state.teleportDoors = makeTeleportDoors(state, pairs, 24, 8);
   }
 
   // ── Spawn extra snakes for teams / FFA ──────────────────────────────────
@@ -733,55 +676,6 @@ export function setExtraSnakeWantedDirection(
 }
 
 // ============================================================================
-// Activate chain special ability
-// ============================================================================
-
-export function activateChainAbility(state: GameState, player: PlayerId): void {
-  if (!state.gameStarted || state.gameEnded) return;
-  if (!state.meta.powerupMode && !state.meta.bountyMode) return;
-
-  if (player === 'P1' && state.meta.p1ChainAbilityAvailable) {
-    // RADIANCE: reveals all coinbase positions (flash effect, visual only — handled by renderer)
-    state.meta.p1ChainAbilityAvailable = false;
-    state.activePowerUps.push({
-      type: 'SURGE',
-      player: 'P1',
-      expiresAtTick: state.tickCount + 15,
-    });
-  } else if (player === 'P2' && state.meta.p2ChainAbilityAvailable) {
-    // SHADOW STEP: teleport P2 to a safe random position
-    state.meta.p2ChainAbilityAvailable = false;
-    const safePos = findSafeTeleportPos(state, 'P2');
-    if (safePos) {
-      state.p2.head = safePos;
-      state.p2.body = [[safePos[0] - 1, safePos[1]]];
-      state.p2.dir = 'Right';
-      state.p2.dirWanted = 'Right';
-    }
-  }
-}
-
-function findSafeTeleportPos(state: GameState, player: PlayerId): GridPos | null {
-  const opponent = player === 'P1' ? state.p2 : state.p1;
-  const border = state.shrinkBorder;
-  const minX = border ? border.left + 1 : 2;
-  const maxX = border ? border.right - 1 : state.cols - 3;
-  const minY = border ? border.top + 1 : 2;
-  const maxY = border ? border.bottom - 1 : state.rows - 3;
-
-  for (let attempts = 0; attempts < 200; attempts++) {
-    const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
-    const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
-    const pos: GridPos = [x, y];
-    const distFromOpponent = Math.hypot(pos[0] - opponent.head[0], pos[1] - opponent.head[1]);
-    if (distFromOpponent >= CHAIN_ABILITY_SHADOW_STEP_SAFE_RADIUS && !hasCollisionAt(state, pos)) {
-      return pos;
-    }
-  }
-  return null;
-}
-
-// ============================================================================
 // stepGame — main tick
 // ============================================================================
 
@@ -799,25 +693,6 @@ export function stepGame(state: GameState): TickResult {
     // Convergence: shrink border
     if (state.meta.convergenceMode && state.shrinkBorder) {
       tickConvergence(state);
-    }
-
-    // Gauntlet: shrinking border modifier
-    if (state.meta.gauntletMode && state.meta.gauntletLevel >= 6 && state.shrinkBorder) {
-      const interval = state.meta.gauntletLevel === 10 ? 80 : 100;
-      if (state.tickCount % interval === 0) {
-        advanceShrinkBorder(state);
-      }
-    }
-
-    // Gauntlet: moving walls (level 4)
-    if (state.meta.gauntletMode) {
-      tickMovingWalls(state);
-    }
-
-    // Void cells toggle
-    if (state.voidCellsNextToggleTick <= state.tickCount) {
-      regenerateVoidCells(state);
-      state.voidCellsNextToggleTick = state.tickCount + VOID_CELLS_TOGGLE_INTERVAL_TICKS;
     }
 
     // Labyrinth: periodic maze regeneration
@@ -848,13 +723,6 @@ export function stepGame(state: GameState): TickResult {
     for (const expired of expiredPowerUps) {
       if (expired.type === 'ANCHOR') {
         // Walls already expire by their own tick — no action needed
-      }
-    }
-
-    // 3D layers: P2 AI occasionally follows P1 to their layer
-    if (state.meta.layers3D && state.meta.gauntletMode) {
-      if (state.tickCount % 30 === 0 && state.p2Layer !== state.p1Layer) {
-        if (Math.random() < 0.45) state.p2Layer = state.p1Layer;
       }
     }
 
@@ -933,26 +801,17 @@ export function stepGame(state: GameState): TickResult {
       }
     }
 
-    // Gauntlet: check completion condition (player collects enough coinbases)
-    if (state.meta.gauntletMode && !state.gauntletCompleted && state.gauntletStartTick > 0) {
-      const elapsed = (state.tickCount - state.gauntletStartTick) * state.meta.currentStepMs / 1000;
-      state.gauntletElapsedSecs = elapsed;
-    }
-
   } else if (state.countdownStart) {
     state.countdownTicks += 1;
     if (state.countdownTicks > COUNTDOWN_END_TICK) {
       state.gameStarted = true;
       state.countdownStart = false;
-      state.gauntletStartTick = state.tickCount;
     }
   }
 
   return {
     winnerChanged: prevWinner !== state.winnerPlayer && state.winnerPlayer !== null,
     winnerPlayer: state.winnerPlayer,
-    gauntletCompleted: state.gauntletCompleted,
-    gauntletElapsedSecs: state.gauntletElapsedSecs,
   };
 }
 
@@ -1053,10 +912,6 @@ export function advanceShrinkBorder(state: GameState): void {
     }
   }
 
-  // Void cells are invalid if the wall moved over them
-  if (state.voidCells.length > 0) {
-    state.voidCells = state.voidCells.filter((c) => isPosInsideActiveBorder(sb, c));
-  }
 }
 
 /** Returns true when pos is safely inside the active (non-wall) area */
@@ -1291,27 +1146,6 @@ function exitTeleport(state: GameState, player: 'P1' | 'P2', exitPos: GridPos): 
   }
 }
 
-function regenerateVoidCells(state: GameState): void {
-  const newCells: GridPos[] = [];
-  const sb = state.shrinkBorder;
-  const minX = sb ? sb.left + 1 : 2;
-  const maxX = sb ? sb.right - 1 : state.cols - 3;
-  const minY = sb ? sb.top + 1 : 2;
-  const maxY = sb ? sb.bottom - 1 : state.rows - 3;
-  let attempts = 0;
-  while (newCells.length < VOID_CELLS_COUNT && attempts < 500) {
-    if (maxX < minX || maxY < minY) break;
-    const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
-    const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
-    const pos: GridPos = [x, y];
-    if (!hasCollisionAt(state, pos) && !newCells.some((c) => samePos(c, pos))) {
-      newCells.push(pos);
-    }
-    attempts++;
-  }
-  state.voidCells = newCells;
-}
-
 // ============================================================================
 // Power-up system
 // ============================================================================
@@ -1444,11 +1278,6 @@ function removeExisting(state: GameState, player: PlayerId, type: PowerUpType): 
 export function createNewCoinbase(state: GameState, feeValue: number = -1): void {
   if (!state.gameStarted || state.gameEnded) return;
 
-  // Reward-only mode (level 10 gauntlet)
-  const rewardOnly = state.meta.gauntletMode &&
-    getGauntletLevel(state.meta.gauntletLevel).modifiers.includes('reward_only');
-  if (rewardOnly && feeValue < 0) return;
-
   let reward: Coinbase['reward'];
   const isBounty = state.meta.bountyMode && Math.random() < 0.1;
 
@@ -1511,10 +1340,6 @@ export function createNewCoinbase(state: GameState, feeValue: number = -1): void
       const cb: Coinbase = { pos: [x, y] };
       if (reward !== undefined) cb.reward = reward;
       if (isBounty) cb.isBounty = true;
-      // In 3D mode alternate coinbase layers so both boards always have one
-      if (state.meta.layers3D) {
-        cb.layer = (state.coinbases.length % 2 === 0 ? 0 : 1) as 0 | 1;
-      }
       state.coinbases.push(cb);
       accepted = true;
     }
@@ -1571,13 +1396,8 @@ function checkCollisions(state: GameState): void {
     else resetSnake(state, 'P2');
   }
 
-  // Obstacle walls (layer-aware in 3D mode)
-  if (hitsObstacleOnLayer(state, state.p1.head, state.p1Layer)) resetSnake(state, 'P1');
-  if (hitsObstacleOnLayer(state, state.p2.head, state.p2Layer)) resetSnake(state, 'P2');
-
-  // Void cells
-  if (state.voidCells.some((c) => samePos(c, state.p1.head))) resetSnake(state, 'P1');
-  if (state.voidCells.some((c) => samePos(c, state.p2.head))) resetSnake(state, 'P2');
+  if (hitsObstacle(state, state.p1.head)) resetSnake(state, 'P1');
+  if (hitsObstacle(state, state.p2.head)) resetSnake(state, 'P2');
 
   for (const pos of state.p1.body) {
     if (!p1HasPhantom && samePos(state.p1.head, pos)) resetSnake(state, 'P1');
@@ -1642,35 +1462,14 @@ function hitsObstacle(state: GameState, pos: GridPos): boolean {
   return state.obstacleWalls.some((w) => samePos(w.pos, pos));
 }
 
-/** Layer-aware obstacle check — uses alternate walls when layer > 0. */
-function hitsObstacleOnLayer(state: GameState, pos: GridPos, layer: 0 | 1): boolean {
-  if (layer === 0) return hitsObstacle(state, pos);
-  const altLayer = state.board3DLayers[layer - 1];
-  return (altLayer?.obstacleWalls ?? []).some((w) => samePos(w.pos, pos));
-}
-
-export function switchPlayerLayer(state: GameState): void {
-  if (!state.meta.layers3D) return;
-  if (!state.gameStarted) return;
-  if (state.tickCount < state.layerSwitchCooldown) return;
-  state.p1Layer = state.p1Layer === 0 ? 1 : 0;
-  state.layerSwitchCooldown = state.tickCount + 8;  // ~800ms cooldown at 100ms/tick
-}
-
 // ============================================================================
 // Coinbase capture
 // ============================================================================
 
-function coinbaseOnLayer(cb: Coinbase, layer: 0 | 1, is3D: boolean): boolean {
-  if (!is3D) return true;
-  return cb.layer === undefined || cb.layer === layer;
-}
-
 function captureCoinbase(state: GameState): void {
-  const is3D = state.meta.layers3D;
   for (let i = 0; i < state.coinbases.length; i += 1) {
     const cb = state.coinbases[i];
-    if (samePos(state.p1.head, cb.pos) && coinbaseOnLayer(cb, state.p1Layer, is3D)) {
+    if (samePos(state.p1.head, cb.pos)) {
       if (cb.isDecoy) {
         // Decoy: teleport P1 back to spawn
         resetSnake(state, 'P1');
@@ -1684,7 +1483,7 @@ function captureCoinbase(state: GameState): void {
       state.currentCaptureP1 = getCaptureLabel(state.p1.body.length, state);
       return;
     }
-    if (samePos(state.p2.head, cb.pos) && coinbaseOnLayer(cb, state.p2Layer, is3D)) {
+    if (samePos(state.p2.head, cb.pos)) {
       if (cb.isDecoy) {
         resetSnake(state, 'P2');
         state.coinbases.splice(i, 1);
@@ -1923,7 +1722,7 @@ function samePos(a: GridPos, b: GridPos): boolean {
 export function canContinueAfterGame(state: GameState, key: string): boolean {
   if (!state.gameEnded || !state.winnerPlayer) return false;
   const normalized = key.toUpperCase();
-  if (state.meta.practiceMode || state.meta.sovereignMode || state.meta.gauntletMode ||
+  if (state.meta.practiceMode || state.meta.sovereignMode ||
       state.meta.overclockMode || state.meta.convergenceMode || state.meta.powerupMode ||
       state.meta.labyrinthMode) {
     return normalized === ' ' || normalized === 'ENTER';
@@ -1931,68 +1730,6 @@ export function canContinueAfterGame(state: GameState, key: string): boolean {
   if (state.winnerPlayer === 'P1') return normalized === ' ';
   return normalized === 'ENTER';
 }
-
-// ============================================================================
-// Moving walls (Gauntlet level 4)
-// ============================================================================
-
-/**
- * Two horizontal bars sweep up and down in opposing phase.
- *  Wall A (left half):  x = 2..24, y slides 5 → 18 → 5  (triangle wave)
- *  Wall B (right half): x = 26..48, y slides 18 → 5 → 18 (opposite phase)
- * They move 1 cell every MOVING_WALL_STEP_TICKS ticks.
- */
-const MOVING_WALL_STEP_TICKS = 5;   // one cell per 500 ms at 100 ms/tick
-const MOVING_WALL_RANGE_TOP  = 4;   // highest y the bar reaches
-const MOVING_WALL_RANGE_BOT  = 19;  // lowest  y the bar reaches
-const MOVING_WALL_TRAVEL = MOVING_WALL_RANGE_BOT - MOVING_WALL_RANGE_TOP; // 15
-
-/** Return the current y of wall A (wall B is mirrored). */
-function movingWallY(tickCount: number): { yA: number; yB: number } {
-  const steps = Math.floor(tickCount / MOVING_WALL_STEP_TICKS);
-  const cycle  = MOVING_WALL_TRAVEL * 2;           // full up-down cycle
-  const pos    = steps % cycle;
-  const phase  = pos <= MOVING_WALL_TRAVEL ? pos : cycle - pos;  // triangle 0..15..0
-  return {
-    yA: MOVING_WALL_RANGE_TOP + phase,
-    yB: MOVING_WALL_RANGE_BOT - phase,
-  };
-}
-
-/** Build the moving-wall cells for the current tick. */
-function buildMovingWallCells(tickCount: number): GridPos[] {
-  const { yA, yB } = movingWallY(tickCount);
-  const cells: GridPos[] = [];
-  // Wall A — left two-thirds (leave a gap at x=25 so player can squeeze through)
-  for (let x = 2; x <= 24; x++) cells.push([x, yA]);
-  // Wall B — right two-thirds
-  for (let x = 26; x <= 48; x++) cells.push([x, yB]);
-  return cells;
-}
-
-export function initMovingWalls(state: GameState): void {
-  // Strip any existing moving walls, then add fresh ones at tick 0
-  state.obstacleWalls = state.obstacleWalls.filter((w) => !w.isMoving);
-  for (const pos of buildMovingWallCells(0)) {
-    state.obstacleWalls.push({ pos, isMoving: true });
-  }
-}
-
-function tickMovingWalls(state: GameState): void {
-  const level = getGauntletLevel(state.meta.gauntletLevel);
-  if (!level.modifiers.includes('moving_walls')) return;
-  if (!state.gameStarted) return;
-  // Move every MOVING_WALL_STEP_TICKS ticks
-  if (state.tickCount % MOVING_WALL_STEP_TICKS !== 0) return;
-  state.obstacleWalls = state.obstacleWalls.filter((w) => !w.isMoving);
-  for (const pos of buildMovingWallCells(state.tickCount)) {
-    state.obstacleWalls.push({ pos, isMoving: true });
-  }
-}
-
-// ============================================================================
-// AI Tiers
-// ============================================================================
 
 // ============================================================================
 // Extra-snake helpers (teams / ffa)
@@ -2205,9 +1942,6 @@ function swapP1P2Snakes(state: GameState): void {
   const t = state.p1;
   state.p1 = state.p2;
   state.p2 = t;
-  const tl = state.p1Layer;
-  state.p1Layer = state.p2Layer;
-  state.p2Layer = tl;
 }
 
 function decideAiDirection(state: GameState): void {
@@ -2475,30 +2209,27 @@ function reconstructPath(cameFrom: Map<string, string>, current: GridPos): GridP
 export function getMetaFromDuel(
   mode: string
 ): Pick<GameMeta, 'modeLabel' | 'practiceMode' | 'isTournament' | 'sovereignMode' |
-  'overclockMode' | 'convergenceMode' | 'powerupMode' | 'gauntletMode' | 'bountyMode'> {
+  'overclockMode' | 'convergenceMode' | 'powerupMode' | 'bountyMode'> {
   const normalized = mode?.toUpperCase() ?? 'P2P';
   if (normalized === 'TOURNAMENT' || normalized === 'TOURNAMENTNOSTR') {
-    return { modeLabel: mode, practiceMode: false, isTournament: true, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, gauntletMode: false, bountyMode: false };
+    return { modeLabel: mode, practiceMode: false, isTournament: true, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, bountyMode: false };
   }
   if (normalized === 'PRACTICE' || normalized === 'SOVEREIGN') {
-    return { modeLabel: normalized === 'SOVEREIGN' ? 'Sovereign' : 'Practice', practiceMode: true, isTournament: false, sovereignMode: normalized === 'SOVEREIGN', overclockMode: false, convergenceMode: false, powerupMode: false, gauntletMode: false, bountyMode: false };
+    return { modeLabel: normalized === 'SOVEREIGN' ? 'Sovereign' : 'Practice', practiceMode: true, isTournament: false, sovereignMode: normalized === 'SOVEREIGN', overclockMode: false, convergenceMode: false, powerupMode: false, bountyMode: false };
   }
   if (normalized === 'OVERCLOCK') {
-    return { modeLabel: 'Overclock', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: true, convergenceMode: false, powerupMode: false, gauntletMode: false, bountyMode: false };
+    return { modeLabel: 'Overclock', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: true, convergenceMode: false, powerupMode: false, bountyMode: false };
   }
   if (normalized === 'CONVERGENCE') {
-    return { modeLabel: 'Convergence', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: true, powerupMode: false, gauntletMode: false, bountyMode: false };
+    return { modeLabel: 'Convergence', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: true, powerupMode: false, bountyMode: false };
   }
   if (normalized === 'POWERUP') {
-    return { modeLabel: 'Power-Up Arena', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: true, gauntletMode: false, bountyMode: false };
-  }
-  if (normalized === 'GAUNTLET') {
-    return { modeLabel: 'Gauntlet', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, gauntletMode: true, bountyMode: false };
+    return { modeLabel: 'Power-Up Arena', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: true, bountyMode: false };
   }
   if (normalized === 'BOUNTY') {
     // Legacy / replay payloads (no Bounty page in client)
-    return { modeLabel: 'Bounty Hunt', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, gauntletMode: false, bountyMode: true };
+    return { modeLabel: 'Bounty Hunt', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, bountyMode: true };
   }
-  return { modeLabel: mode || 'P2P', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, gauntletMode: false, bountyMode: false };
+  return { modeLabel: mode || 'P2P', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, bountyMode: false };
 }
 

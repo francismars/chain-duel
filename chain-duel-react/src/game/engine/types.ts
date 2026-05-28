@@ -16,8 +16,6 @@ export interface Coinbase {
   reward?: 2 | 4 | 8 | 16 | 32;
   isDecoy?: boolean;
   isBounty?: boolean;
-  /** Which 3D board layer this coinbase lives on (undefined = layer 0 / non-3D). */
-  layer?: 0 | 1;
 }
 
 export interface PointChange {
@@ -76,20 +74,9 @@ export interface ExtraSnake {
   spawnDir: Direction;
 }
 
-// ============================================================================
-// 3D layered board
-// ============================================================================
-
-/** Obstacle walls for one alternate board layer (layer 1+). Layer 0 = state.obstacleWalls. */
-export interface Board3DLayer {
-  obstacleWalls: ObstacleWall[];
-}
-
 export interface ObstacleWall {
   pos: GridPos;
   expiresAtTick?: number;
-  /** True for walls that are replaced every tick (oscillating / moving walls). */
-  isMoving?: boolean;
 }
 
 export interface TeleportDoor {
@@ -108,42 +95,6 @@ export interface ShrinkBorder {
   left: number;
   right: number;
   warningActive: boolean;
-}
-
-// ============================================================================
-// Gauntlet level
-// ============================================================================
-
-export type GauntletModifier =
-  | 'ai_opponent'
-  | 'speed_60'
-  | 'shrinking_border'
-  | 'invisible_grid'
-  | 'void_cells'
-  | 'reward_only'
-  | 'multiple_coinbases'
-  | 'portals'
-  | 'moving_walls'
-  | 'layers_3d';
-
-export interface GauntletLevel {
-  id: number;
-  name: string;
-  description: string;
-  parTimeSecs: number;
-  challengeCondition: string;
-  obstacleWalls: GridPos[];
-  initialCoinbasePositions: GridPos[];
-  modifiers: GauntletModifier[];
-  startStepMs?: number;
-  /** Number of teleport portal pairs to generate (used with 'portals' modifier). */
-  portalPairs?: number;
-  /** Obstacle walls for the second 3D board layer (used with 'layers_3d' modifier). */
-  altLayerWalls?: GridPos[];
-  /** Prize in sats for clearing this level (standard Lightning). */
-  prizeNormal: number;
-  /** Prize in sats for clearing this level via Nostr/zap mode (2× bonus). */
-  prizeNostr: number;
 }
 
 // ============================================================================
@@ -169,8 +120,6 @@ export interface GameMeta {
   convergenceMinCols: number;
   convergenceMinRows: number;
   powerupMode: boolean;
-  gauntletMode: boolean;
-  gauntletLevel: number;
   bountyMode: boolean;
   labyrinthMode: boolean;
   labyrinthLoopFactor: number;
@@ -180,11 +129,8 @@ export interface GameMeta {
   labyrinthSections: number;        // 1 | 3
   labyrinthTeleports: boolean;
   teamMode: TeamMode;
-  layers3D: boolean;
   invisibleGrid: boolean;
   currentStepMs: number;
-  p1ChainAbilityAvailable: boolean;
-  p2ChainAbilityAvailable: boolean;
 }
 
 export interface GameState {
@@ -216,11 +162,6 @@ export interface GameState {
   obstacleWalls: ObstacleWall[];
   shrinkBorder: ShrinkBorder | null;
   powerUpRespawnCooldownTick: number;
-  gauntletStartTick: number;
-  gauntletCompleted: boolean;
-  gauntletElapsedSecs: number;
-  voidCells: GridPos[];
-  voidCellsNextToggleTick: number;
   // Labyrinth mode
   labyrinthSeed: number;
   labyrinthNextRegenTick: number;
@@ -230,11 +171,6 @@ export interface GameState {
   teleportDoors: TeleportDoor[];
   // Multi-snake (teams / ffa) extra snakes
   extraSnakes: ExtraSnake[];
-  // 3D layered board
-  board3DLayers: Board3DLayer[];      // index 0 = layer 1 walls (layer 0 = state.obstacleWalls)
-  p1Layer: 0 | 1;                     // which layer P1 is currently on
-  p2Layer: 0 | 1;
-  layerSwitchCooldown: number;        // tick count before P1 can switch again
 }
 
 export interface HudState {
@@ -251,6 +187,4 @@ export interface HudState {
 export interface TickResult {
   winnerChanged: boolean;
   winnerPlayer: PlayerId | null;
-  gauntletCompleted?: boolean;
-  gauntletElapsedSecs?: number;
 }

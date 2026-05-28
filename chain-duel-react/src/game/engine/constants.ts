@@ -81,25 +81,11 @@ export const AI_WANDERER_RANDOM_CHANCE = 60;
 export const AI_TACTICIAN_THREAT_INTERVAL = 3;
 
 // ============================================================================
-// Void cells (level 9 gauntlet)
-// ============================================================================
-
-export const VOID_CELLS_TOGGLE_INTERVAL_TICKS = 50; // 5s
-export const VOID_CELLS_COUNT = 30;
-
-// ============================================================================
 // Bounty
 // ============================================================================
 
 export const BOUNTY_COINBASE_RINGS = 6;
 export const BOUNTY_COINBASE_COLOR = 0xC89020; // gold
-
-// ============================================================================
-// Chain abilities (used in POWERUP and BOUNTY modes)
-// ============================================================================
-
-export const CHAIN_ABILITY_RADIANCE_DURATION_TICKS = 15; // ~1.5s white flash
-export const CHAIN_ABILITY_SHADOW_STEP_SAFE_RADIUS = 5;  // cells from opponent
 
 // ============================================================================
 // Labyrinth mode (recursive-backtracking maze)

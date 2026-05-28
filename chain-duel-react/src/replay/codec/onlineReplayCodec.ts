@@ -38,8 +38,6 @@ function buildMeta(partial: GameMeta): GameMeta {
     convergenceMinCols: (p.convergenceMinCols as number | undefined) ?? 11,
     convergenceMinRows: (p.convergenceMinRows as number | undefined) ?? 11,
     powerupMode: (p.powerupMode as boolean | undefined) ?? false,
-    gauntletMode: (p.gauntletMode as boolean | undefined) ?? false,
-    gauntletLevel: (p.gauntletLevel as number | undefined) ?? 1,
     bountyMode: (p.bountyMode as boolean | undefined) ?? false,
     labyrinthMode: (p.labyrinthMode as boolean | undefined) ?? false,
     labyrinthLoopFactor: (p.labyrinthLoopFactor as number | undefined) ?? 0,
@@ -49,11 +47,8 @@ function buildMeta(partial: GameMeta): GameMeta {
     labyrinthSections: (p.labyrinthSections as number | undefined) ?? 1,
     labyrinthTeleports: (p.labyrinthTeleports as boolean | undefined) ?? false,
     teamMode: (p.teamMode as 'solo' | 'teams' | 'ffa' | undefined) ?? 'solo',
-    layers3D: (p.layers3D as boolean | undefined) ?? false,
     invisibleGrid: (p.invisibleGrid as boolean | undefined) ?? false,
     currentStepMs: (p.currentStepMs as number | undefined) ?? 100,
-    p1ChainAbilityAvailable: (p.p1ChainAbilityAvailable as boolean | undefined) ?? false,
-    p2ChainAbilityAvailable: (p.p2ChainAbilityAvailable as boolean | undefined) ?? false,
   };
 }
 
@@ -312,20 +307,11 @@ function buildState(ef: EncodedFrame, header: CompactReplayHeader): GameState {
     obstacleWalls: [],
     shrinkBorder: null,
     powerUpRespawnCooldownTick: 0,
-    gauntletStartTick: 0,
-    gauntletCompleted: false,
-    gauntletElapsedSecs: 0,
-    voidCells: [],
-    voidCellsNextToggleTick: Number.POSITIVE_INFINITY,
     labyrinthSeed: 0,
     labyrinthNextRegenTick: Number.POSITIVE_INFINITY,
     convergenceWallClosed: false,
     teleportDoors: [],
     extraSnakes: [],
-    board3DLayers: [],
-    p1Layer: 0,
-    p2Layer: 0,
-    layerSwitchCooldown: 0,
   };
   applyFlags(ef.f, st);
   return st;

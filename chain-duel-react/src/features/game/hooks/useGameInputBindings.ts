@@ -4,7 +4,6 @@ import {
   setExtraSnakeWantedDirection,
   setWantedDirection,
   startCountdown,
-  switchPlayerLayer,
 } from '@/game/engine';
 import type { GameState } from '@/game/engine/types';
 import { NAVIGATE_AFTER_FINISH_DELAY_MS } from '@/shared/constants/timeouts';
@@ -122,10 +121,6 @@ export function useGameInputBindings({
           if (state.extraSnakes[1]?.humanControlled) {
             setExtraSnakeWantedDirection(state, 1, 'Right');
           }
-          break;
-        case 'Q':
-          // Phase-shift between 3D board layers (Gauntlet 3D levels)
-          switchPlayerLayer(state);
           break;
         default:
           break;
