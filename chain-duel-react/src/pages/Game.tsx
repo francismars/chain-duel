@@ -246,7 +246,8 @@ export default function Game() {
         ? rawP2Name
         : 'Player 2';
 
-    const teamMode = (gameConfig.teamMode as 'solo' | 'teams' | 'ffa') ?? 'solo';
+    const rawTeamMode = (gameConfig.teamMode as string | undefined) ?? 'solo';
+    const teamMode = rawTeamMode === 'ffa' ? 'ffa' : 'solo';
 
     const convergenceShrinkInterval = gameConfig.convergenceShrinkInterval != null
       ? Number(gameConfig.convergenceShrinkInterval)
@@ -284,19 +285,14 @@ export default function Game() {
       p3Human,
       p4Human,
       isTournament: false,
-      sovereignMode: false,
       aiTier: aiTier as import('@/game/engine/types').AiTier,
-      teamAllyAiTier: gameConfig.teamAllyAiTier as import('@/game/engine/types').AiTier | undefined,
-      teamEnemyAiTier: gameConfig.teamEnemyAiTier as import('@/game/engine/types').AiTier | undefined,
       ffaAiTier: gameConfig.ffaAiTier as import('@/game/engine/types').AiTier | undefined,
-      overclockMode: false,
       convergenceMode: isConvergence,
       convergenceShrinkInterval,
       convergenceMinCols,
       convergenceMinRows,
       convergenceStepMs,
       powerupMode: isPowerup,
-      labyrinthMode: false,
       teamMode,
       });
       stateRef.current = state;

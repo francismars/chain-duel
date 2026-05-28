@@ -18,8 +18,6 @@ var tournLobbyRouter = require('./routes/tournlobby');
 var tournBracketRouter = require('./routes/tournbracket');
 var configRouter = require('./routes/config');
 var practiceMenuRouter = require('./routes/practicemenu');
-var bountyRouter = require('./routes/bounty');
-var demoRouter = require('./routes/demo');
 
 var app = express();
 
@@ -47,8 +45,6 @@ app.use('/tournlobby', tournLobbyRouter);
 app.use('/tournbracket', tournBracketRouter);
 app.use('/config', configRouter) 
 app.use('/practicemenu', practiceMenuRouter);
-app.use('/bounty', bountyRouter);
-app.use('/demo', demoRouter);
 
 
 // catch 404 and forward to error handler

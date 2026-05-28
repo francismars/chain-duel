@@ -13,41 +13,30 @@ import type {
   HudState,
   PlayerId,
   PointChange,
+  TeamMode,
 } from '@/game/engine/types';
 import type { OnlineRoomSnapshot } from '@/types/socket';
 import { ensureReplayVictoryEndFrame } from '@/replay/ensureReplayVictoryEndFrame';
 
 export const COMPACT_REPLAY_FORMAT = 'compact-v2' as const;
 
-/** Backfill new meta fields for replays encoded before the new modes were added. */
+/** Backfill meta for replays encoded before field trims / mode removals. */
 function buildMeta(partial: GameMeta): GameMeta {
   const p = partial as unknown as Record<string, unknown>;
+  const rawTeam = p.teamMode as string | undefined;
+  const teamMode: TeamMode = rawTeam === 'ffa' ? 'ffa' : 'solo';
   return {
     ...partial,
     p1Human: (p.p1Human as boolean | undefined) ?? true,
     p2Human: (p.p2Human as boolean | undefined) ??
       !Boolean((p.practiceMode as boolean | undefined) ?? false),
-    sovereignMode: (p.sovereignMode as boolean | undefined) ?? false,
     aiTier: ((p.aiTier as string | undefined) ?? 'hunter') as AiTier,
-    overclockMode: (p.overclockMode as boolean | undefined) ?? false,
-    overclockMinStepMs: (p.overclockMinStepMs as number | undefined) ?? 30,
-    overclockStepIntervalTicks: (p.overclockStepIntervalTicks as number | undefined) ?? 200,
-    overclockSpeedReductionMs: (p.overclockSpeedReductionMs as number | undefined) ?? 10,
     convergenceMode: (p.convergenceMode as boolean | undefined) ?? false,
     convergenceShrinkInterval: (p.convergenceShrinkInterval as number | undefined) ?? 150,
     convergenceMinCols: (p.convergenceMinCols as number | undefined) ?? 11,
     convergenceMinRows: (p.convergenceMinRows as number | undefined) ?? 11,
     powerupMode: (p.powerupMode as boolean | undefined) ?? false,
-    bountyMode: (p.bountyMode as boolean | undefined) ?? false,
-    labyrinthMode: (p.labyrinthMode as boolean | undefined) ?? false,
-    labyrinthLoopFactor: (p.labyrinthLoopFactor as number | undefined) ?? 0,
-    labyrinthCornerFactor: (p.labyrinthCornerFactor as number | undefined) ?? 0,
-    labyrinthRegenInterval: (p.labyrinthRegenInterval as number | undefined) ?? 450,
-    labyrinthCorridorWidth: (p.labyrinthCorridorWidth as number | undefined) ?? 1,
-    labyrinthSections: (p.labyrinthSections as number | undefined) ?? 1,
-    labyrinthTeleports: (p.labyrinthTeleports as boolean | undefined) ?? false,
-    teamMode: (p.teamMode as 'solo' | 'teams' | 'ffa' | undefined) ?? 'solo',
-    invisibleGrid: (p.invisibleGrid as boolean | undefined) ?? false,
+    teamMode,
     currentStepMs: (p.currentStepMs as number | undefined) ?? 100,
   };
 }
@@ -307,10 +296,7 @@ function buildState(ef: EncodedFrame, header: CompactReplayHeader): GameState {
     obstacleWalls: [],
     shrinkBorder: null,
     powerUpRespawnCooldownTick: 0,
-    labyrinthSeed: 0,
-    labyrinthNextRegenTick: Number.POSITIVE_INFINITY,
     convergenceWallClosed: false,
-    teleportDoors: [],
     extraSnakes: [],
   };
   applyFlags(ef.f, st);

@@ -3,9 +3,6 @@ import {
   COUNTDOWN_END_TICK,
   GAME_COLS,
   GAME_ROWS,
-  OVERCLOCK_MIN_STEP_MS,
-  OVERCLOCK_SPEED_REDUCTION_MS,
-  OVERCLOCK_STEP_INTERVAL_TICKS,
   CONVERGENCE_SHRINK_INTERVAL_TICKS,
   CONVERGENCE_WARNING_TICKS,
   CONVERGENCE_MIN_COLS,
@@ -18,8 +15,6 @@ import {
   POWERUP_ANCHOR_DURATION_TICKS,
   POWERUP_AMPLIFIER_CHARGES,
   POWERUP_SPAWN_WEIGHTS,
-  LABYRINTH_REGEN_INTERVAL_TICKS,
-  LABYRINTH_REGEN_WARNING_TICKS,
   STEP_SPEED_MS,
 } from '@/game/engine/constants';
 import type {
@@ -34,303 +29,8 @@ import type {
   PlayerId,
   PowerUpType,
   TeamMode,
-  TeleportDoor,
   TickResult,
 } from '@/game/engine/types';
-
-// ============================================================================
-// Maze generation (recursive backtracking / iterative DFS)
-// ============================================================================
-
-/** Mulberry32 — fast, deterministic 32-bit PRNG from a numeric seed. */
-function mulberry32(seed: number): () => number {
-  let s = seed >>> 0;
-  return function () {
-    s = (s + 0x6D2B79F5) >>> 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/**
- * Generate a maze using iterative DFS backtracking.
- *
- * corridorWidth=1 (default — period-2 grid, 51×25 → 25×12 cells):
- *   Cells at odd positions (1,1)…(49,23). Corridors 1 cell wide.
- *   loopFactor/cornerFactor can post-process to add shortcuts or wider junctions.
- *
- * corridorWidth=2 (period-3 grid, 51×25 → 16×8 cells):
- *   Each passage is 2 cells wide with 1-cell-thick walls. No post-processing —
- *   walls are always fully closed (perfect maze). loopFactor/cornerFactor ignored.
- *   Maze units: mazeW = floor((cols-3)/3) = 16, mazeH = floor((rows-1)/3) = 8.
- *   Each unit (mx,my) occupies cell cols [1+3mx, 2+3mx], rows [1+3my, 2+3my].
- */
-export function generateMaze(
-  cols: number,
-  rows: number,
-  seed: number,
-  loopFactor = 0,
-  cornerFactor = 0,
-  corridorWidth: 1 | 2 | 4 | 5 = 1,
-  sections = 1,
-): import('@/game/engine/types').ObstacleWall[] {
-  if (sections === 3) return generate3SectionMaze(cols, rows, seed);
-  if (corridorWidth === 5) return generatePeriodMaze(cols, rows, seed, 6);
-  if (corridorWidth === 4) return generatePeriodMaze(cols, rows, seed, 5);
-  if (corridorWidth === 2) return generatePeriodMaze(cols, rows, seed, 3);
-  return generateNarrowMaze(cols, rows, seed, loopFactor, cornerFactor);
-}
-
-/** Period-2 maze — 1-cell-wide corridors, optional loops/corner-opening. */
-function generateNarrowMaze(
-  cols: number,
-  rows: number,
-  seed: number,
-  loopFactor: number,
-  cornerFactor: number,
-): import('@/game/engine/types').ObstacleWall[] {
-  const rng = mulberry32(seed);
-  const mazeW = (cols - 1) / 2;
-  const mazeH = (rows - 1) / 2;
-  const visited: boolean[][] = Array.from({ length: mazeH }, () => new Array(mazeW).fill(false));
-  const openGaps = new Set<string>();
-
-  // Iterative DFS
-  const stack: [number, number][] = [];
-  const startX = Math.floor(rng() * mazeW);
-  const startY = Math.floor(rng() * mazeH);
-  visited[startY][startX] = true;
-  stack.push([startX, startY]);
-  const DIRS: [number, number][] = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-
-  while (stack.length > 0) {
-    const [cx, cy] = stack[stack.length - 1];
-    const dirs: [number, number][] = DIRS.map((d) => [d[0], d[1]]);
-    for (let i = dirs.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
-    }
-    let moved = false;
-    for (const [dx, dy] of dirs) {
-      const nx = cx + dx;
-      const ny = cy + dy;
-      if (nx >= 0 && nx < mazeW && ny >= 0 && ny < mazeH && !visited[ny][nx]) {
-        openGaps.add(`${2 * cx + 1 + dx},${2 * cy + 1 + dy}`);
-        visited[ny][nx] = true;
-        stack.push([nx, ny]);
-        moved = true;
-        break;
-      }
-    }
-    if (!moved) stack.pop();
-  }
-
-  // Optional loops
-  if (loopFactor > 0) {
-    const passageWalls: string[] = [];
-    for (let c = 1; c < cols - 1; c++) {
-      for (let r = 1; r < rows - 1; r++) {
-        if ((c % 2 === 1 && r % 2 === 1) || (c % 2 === 0 && r % 2 === 0)) continue;
-        if (!openGaps.has(`${c},${r}`)) passageWalls.push(`${c},${r}`);
-      }
-    }
-    for (let i = passageWalls.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [passageWalls[i], passageWalls[j]] = [passageWalls[j], passageWalls[i]];
-    }
-    const toOpen = Math.floor(passageWalls.length * loopFactor);
-    for (let i = 0; i < toOpen; i++) openGaps.add(passageWalls[i]);
-  }
-
-  // Optional corner-widening
-  if (cornerFactor > 0) {
-    const corners: string[] = [];
-    for (let c = 2; c < cols - 1; c += 2)
-      for (let r = 2; r < rows - 1; r += 2)
-        corners.push(`${c},${r}`);
-    for (let i = corners.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [corners[i], corners[j]] = [corners[j], corners[i]];
-    }
-    const toOpen = Math.floor(corners.length * cornerFactor);
-    for (let i = 0; i < toOpen; i++) openGaps.add(corners[i]);
-  }
-
-  const walls: import('@/game/engine/types').ObstacleWall[] = [];
-  for (let c = 0; c < cols; c++) {
-    for (let r = 0; r < rows; r++) {
-      if (c % 2 === 1 && r % 2 === 1) continue;
-      if (openGaps.has(`${c},${r}`)) continue;
-      walls.push({ pos: [c, r] });
-    }
-  }
-  return walls;
-}
-
-/**
- * Generic period-P maze — (P-1)-cell-wide corridors, 1-cell-thick walls.
- *
- * P=3 → 2-cell corridors (16×8 units on 51×25)
- * P=5 → 4-cell corridors (10×4 units)
- * P=6 → 5-cell corridors ( 8×4 units)
- *
- * Unit (mx,my): cols [1+P*mx .. P-1+P*mx], rows [1+P*my .. P-1+P*my].
- * Passage between adjacent units: open all P-1 cells in the shared wall strip.
- */
-function generatePeriodMaze(
-  cols: number,
-  rows: number,
-  seed: number,
-  P: number,
-): import('@/game/engine/types').ObstacleWall[] {
-  const rng = mulberry32(seed);
-  const mazeW = Math.floor((cols - 1) / P);
-  const mazeH = Math.floor((rows - 1) / P);
-  const visited: boolean[][] = Array.from({ length: mazeH }, () => new Array(mazeW).fill(false));
-  const openGaps = new Set<string>();
-
-  const stack: [number, number][] = [];
-  const startX = Math.floor(rng() * mazeW);
-  const startY = Math.floor(rng() * mazeH);
-  visited[startY][startX] = true;
-  stack.push([startX, startY]);
-  const DIRS: [number, number][] = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-
-  while (stack.length > 0) {
-    const [cx, cy] = stack[stack.length - 1];
-    const dirs: [number, number][] = DIRS.map((d) => [d[0], d[1]]);
-    for (let i = dirs.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
-    }
-    let moved = false;
-    for (const [dx, dy] of dirs) {
-      const nx = cx + dx;
-      const ny = cy + dy;
-      if (nx >= 0 && nx < mazeW && ny >= 0 && ny < mazeH && !visited[ny][nx]) {
-        if (dx === 1) {
-          const wc = P * (cx + 1);
-          for (let k = 1; k < P; k++) openGaps.add(`${wc},${P * cy + k}`);
-        } else if (dx === -1) {
-          const wc = P * cx;
-          for (let k = 1; k < P; k++) openGaps.add(`${wc},${P * cy + k}`);
-        } else if (dy === 1) {
-          const wr = P * (cy + 1);
-          for (let k = 1; k < P; k++) openGaps.add(`${P * cx + k},${wr}`);
-        } else {
-          const wr = P * cy;
-          for (let k = 1; k < P; k++) openGaps.add(`${P * cx + k},${wr}`);
-        }
-        visited[ny][nx] = true;
-        stack.push([nx, ny]);
-        moved = true;
-        break;
-      }
-    }
-    if (!moved) stack.pop();
-  }
-
-  const walls: import('@/game/engine/types').ObstacleWall[] = [];
-  for (let c = 0; c < cols; c++) {
-    for (let r = 0; r < rows; r++) {
-      const isCell = c >= 1 && c <= P * mazeW - 1 && c % P !== 0
-                  && r >= 1 && r <= P * mazeH - 1 && r % P !== 0;
-      if (isCell) continue;
-      if (openGaps.has(`${c},${r}`)) continue;
-      walls.push({ pos: [c, r] });
-    }
-  }
-  return walls;
-}
-
-/**
- * Triple-section maze — three horizontally-stacked narrow (period-2) mazes
- * connected by short passage shafts through the separator rows.
- *
- * Sections (rows):  0–7 | 9–16 | 18–24   (separator rows 8 and 17 are full walls
- * except for 2–3 connector shafts each, spanning row-1 / sep / row+1).
- */
-function generate3SectionMaze(
-  cols: number,
-  rows: number,
-  seed: number,
-): import('@/game/engine/types').ObstacleWall[] {
-  const rng = mulberry32(seed);
-  const openGaps = new Set<string>();
-  const sections: [number, number][] = [[0, 7], [9, 16], [18, rows - 1]];
-  const separators = [8, 17];
-
-  for (const [sStart, sEnd] of sections) {
-    const sH = sEnd - sStart + 1;
-    const mW = (cols - 1) / 2;
-    const mH = Math.floor((sH - 1) / 2);
-    if (mW <= 0 || mH <= 0) continue;
-    const visited: boolean[][] = Array.from({ length: mH }, () => new Array(mW).fill(false));
-    const stack: [number, number][] = [];
-    const sx = Math.floor(rng() * mW);
-    const sy = Math.floor(rng() * mH);
-    visited[sy][sx] = true;
-    stack.push([sx, sy]);
-    const DIRS: [number, number][] = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-
-    while (stack.length > 0) {
-      const [cx, cy] = stack[stack.length - 1];
-      const dirs: [number, number][] = DIRS.map((d) => [d[0], d[1]]);
-      for (let i = dirs.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
-      }
-      let moved = false;
-      for (const [dx, dy] of dirs) {
-        const nx = cx + dx;
-        const ny = cy + dy;
-        if (nx >= 0 && nx < mW && ny >= 0 && ny < mH && !visited[ny][nx]) {
-          openGaps.add(`${2 * cx + 1 + dx},${sStart + 2 * cy + 1 + dy}`);
-          visited[ny][nx] = true;
-          stack.push([nx, ny]);
-          moved = true;
-          break;
-        }
-      }
-      if (!moved) stack.pop();
-    }
-  }
-
-  // Connector shafts: open (c, sep-1), (c, sep), (c, sep+1) at 2–3 odd columns
-  for (const sep of separators) {
-    const oddCols = Array.from({ length: Math.floor((cols - 1) / 2) }, (_, i) => 2 * i + 1);
-    for (let i = oddCols.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [oddCols[i], oddCols[j]] = [oddCols[j], oddCols[i]];
-    }
-    const n = 2 + Math.floor(rng() * 2);
-    for (let k = 0; k < n; k++) {
-      const c = oddCols[k];
-      openGaps.add(`${c},${sep - 1}`);
-      openGaps.add(`${c},${sep}`);
-      openGaps.add(`${c},${sep + 1}`);
-    }
-  }
-
-  const walls: import('@/game/engine/types').ObstacleWall[] = [];
-  for (let c = 0; c < cols; c++) {
-    for (let r = 0; r < rows; r++) {
-      // Default open cells: inside sections at odd-odd positions
-      let isDefaultOpen = false;
-      if (!separators.includes(r)) {
-        for (const [sStart, sEnd] of sections) {
-          if (r < sStart || r > sEnd) continue;
-          if (c % 2 === 1 && (r - sStart) % 2 === 1) isDefaultOpen = true;
-        }
-      }
-      if (isDefaultOpen) continue;
-      if (openGaps.has(`${c},${r}`)) continue;
-      walls.push({ pos: [c, r] });
-    }
-  }
-  return walls;
-}
 
 // ============================================================================
 // Extra-snake helpers
@@ -373,13 +73,6 @@ function makeExtraSnake(
   };
 }
 
-/** Return one tier below the given tier (floor = wanderer). */
-function downTier(tier: AiTier): AiTier {
-  const order: AiTier[] = ['wanderer', 'hunter', 'tactician', 'sovereign'];
-  const i = order.indexOf(tier);
-  return order[Math.max(0, i - 1)];
-}
-
 // ============================================================================
 // Public API types
 // ============================================================================
@@ -392,35 +85,17 @@ interface CreateStateArgs {
   modeLabel: string;
   practiceMode?: boolean;
   isTournament?: boolean;
-  sovereignMode?: boolean;
   aiTier?: AiTier;
-  overclockMode?: boolean;
-  overclockStartStepMs?: number;
-  overclockMinStepMs?: number;
-  overclockStepIntervalTicks?: number;
-  overclockSpeedReductionMs?: number;
   convergenceMode?: boolean;
   convergenceShrinkInterval?: number;
   convergenceMinCols?: number;
   convergenceMinRows?: number;
   convergenceStepMs?: number;
   powerupMode?: boolean;
-  bountyMode?: boolean;
-  labyrinthMode?: boolean;
-  labyrinthLoopFactor?: number;
-  labyrinthCornerFactor?: number;
-  labyrinthRegenInterval?: number;
-  labyrinthStepMs?: number;
-  labyrinthCorridorWidth?: 1 | 2 | 4 | 5;
-  labyrinthSections?: 1 | 3;
-  labyrinthTeleports?: boolean;
   teamMode?: TeamMode;
-  teamAllyAiTier?: AiTier;    // P3 tier in teams mode (defaults to one below opponent)
-  teamEnemyAiTier?: AiTier;   // P4 tier in teams mode (defaults to same as aiTier)
-  ffaAiTier?: AiTier;         // tier for P2/P3/P4 in FFA (defaults to aiTier)
+  ffaAiTier?: AiTier;
   p1Human?: boolean;
   p2Human?: boolean;
-  /** Extra snakes (teams/FFA slot 3 & 4). Default false = AI when omitted. */
   p3Human?: boolean;
   p4Human?: boolean;
 }
@@ -433,48 +108,7 @@ export function createGameState(args: CreateStateArgs): GameState {
   const p1 = Math.max(1, Math.floor(args.p1Points));
   const p2 = Math.max(1, Math.floor(args.p2Points));
 
-  const initialCoinbases: Coinbase[] = [{ pos: [25, 12] }];
-
-  // Labyrinth: generate maze, adjust spawn positions
-  const labyrinthMode = args.labyrinthMode ?? false;
-  const labyrinthLoopFactor = args.labyrinthLoopFactor ?? 0;
-  const labyrinthCornerFactor = args.labyrinthCornerFactor ?? 0;
-  const labyrinthRegenInterval = args.labyrinthRegenInterval ?? LABYRINTH_REGEN_INTERVAL_TICKS;
-  const labyrinthCorridorWidth = (args.labyrinthCorridorWidth ?? 1) as 1 | 2 | 4 | 5;
-  const labyrinthSections = (args.labyrinthSections ?? 1) as 1 | 3;
-  const labyrinthTeleports = args.labyrinthTeleports ?? false;
-  const labyrinthSeed = labyrinthMode ? Math.floor(Math.random() * 0xFFFFFFFF) : 0;
-  const mazeWalls = labyrinthMode
-    ? generateMaze(GAME_COLS, GAME_ROWS, labyrinthSeed, labyrinthLoopFactor, labyrinthCornerFactor, labyrinthCorridorWidth, labyrinthSections)
-    : [];
-
-  // Spawn corners differ between maze types:
-  //   width=1, sections=1: P1=(1,1),  P2=(49,23)
-  //   width=2 (P=3):       P1=(1,1),  P2=(47,22)
-  //   width=4 (P=5):       P1=(1,1),  P2=(47,17)
-  //   width=5 (P=6):       P1=(1,1),  P2=(43,19)  (last cell in last P=6 unit)
-  //   sections=3:          P1=(1,1),  P2=(49,23)
-  const p1StartPos: GridPos = labyrinthMode ? [1, 1] : [6, 12];
-  const p2StartPos: GridPos = labyrinthMode
-    ? (labyrinthCorridorWidth === 5 ? [43, 19] : labyrinthCorridorWidth === 4 ? [47, 17] : labyrinthCorridorWidth === 2 ? [47, 22] : [49, 23])
-    : [44, 12];
-  const p1BodyPos: GridPos[] = labyrinthMode ? [] : [[5, 12]];
-  const p2BodyPos: GridPos[] = labyrinthMode ? [] : [[45, 12]];
-
-  // Initial coinbase: safe center cell for each maze type
-  const initialCoinbasePos: GridPos =
-    labyrinthCorridorWidth === 5 ? [25, 13] :   // period-6 center-ish cell
-    labyrinthCorridorWidth === 4 ? [26, 11] :   // period-5 center-ish cell
-    labyrinthSections === 3      ? [25, 13] :   // section 2 center
-    [25, 13];                                   // standard
-  const mazeInitialCoinbase: Coinbase[] = labyrinthMode
-    ? [{ pos: initialCoinbasePos }]
-    : initialCoinbases;
-
-  const defaultP2Human = !(
-    Boolean(args.practiceMode) ||
-    Boolean(args.sovereignMode)
-  );
+  const defaultP2Human = !Boolean(args.practiceMode);
   const p1HumanMeta = args.p1Human !== undefined ? Boolean(args.p1Human) : true;
   const p2HumanMeta = args.p2Human !== undefined ? Boolean(args.p2Human) : defaultP2Human;
 
@@ -482,18 +116,18 @@ export function createGameState(args: CreateStateArgs): GameState {
     cols: GAME_COLS,
     rows: GAME_ROWS,
     p1: {
-      head: p1StartPos,
-      body: p1BodyPos,
+      head: [6, 12],
+      body: [[5, 12]],
       dir: '',
       dirWanted: 'Right',
     },
     p2: {
-      head: p2StartPos,
-      body: p2BodyPos,
+      head: [44, 12],
+      body: [[45, 12]],
       dir: '',
       dirWanted: 'Left',
     },
-    coinbases: labyrinthMode ? mazeInitialCoinbase : initialCoinbases,
+    coinbases: [{ pos: [25, 12] }],
     gameStarted: false,
     gameEnded: false,
     countdownStart: false,
@@ -515,86 +149,42 @@ export function createGameState(args: CreateStateArgs): GameState {
       p1Human: p1HumanMeta,
       p2Human: p2HumanMeta,
       isTournament: args.isTournament ?? false,
-      sovereignMode: args.sovereignMode ?? false,
       aiTier: args.aiTier ?? 'hunter',
-      overclockMode: args.overclockMode ?? false,
-      overclockMinStepMs: args.overclockMinStepMs ?? OVERCLOCK_MIN_STEP_MS,
-      overclockStepIntervalTicks: args.overclockStepIntervalTicks ?? OVERCLOCK_STEP_INTERVAL_TICKS,
-      overclockSpeedReductionMs: args.overclockSpeedReductionMs ?? OVERCLOCK_SPEED_REDUCTION_MS,
       convergenceMode: args.convergenceMode ?? false,
       convergenceShrinkInterval: args.convergenceShrinkInterval ?? CONVERGENCE_SHRINK_INTERVAL_TICKS,
       convergenceMinCols: args.convergenceMinCols ?? CONVERGENCE_MIN_COLS,
       convergenceMinRows: args.convergenceMinRows ?? CONVERGENCE_MIN_ROWS,
       powerupMode: args.powerupMode ?? false,
-      bountyMode: args.bountyMode ?? false,
-      labyrinthMode,
-      labyrinthLoopFactor,
-      labyrinthCornerFactor,
-      labyrinthRegenInterval,
-      labyrinthCorridorWidth,
-      labyrinthSections,
-      labyrinthTeleports,
       teamMode: (args.teamMode ?? 'solo') as TeamMode,
-      invisibleGrid: false,
-      currentStepMs: args.labyrinthStepMs ?? args.convergenceStepMs ?? args.overclockStartStepMs ?? STEP_SPEED_MS,
+      currentStepMs: args.convergenceStepMs ?? STEP_SPEED_MS,
     },
     tickCount: 0,
     powerUpItems: [],
     activePowerUps: [],
-    obstacleWalls: labyrinthMode ? mazeWalls : [],
+    obstacleWalls: [],
     shrinkBorder: args.convergenceMode
       ? { top: 0, bottom: GAME_ROWS - 1, left: 0, right: GAME_COLS - 1, warningActive: false }
       : null,
     powerUpRespawnCooldownTick: POWERUP_FIRST_SPAWN_TICKS,
-    labyrinthSeed,
-    labyrinthNextRegenTick: labyrinthMode && labyrinthRegenInterval > 0
-      ? labyrinthRegenInterval
-      : Number.POSITIVE_INFINITY,
     convergenceWallClosed: false,
-    teleportDoors: [],
     extraSnakes: [],
   };
-  if (labyrinthMode && labyrinthTeleports) {
-    state.teleportDoors = makeTeleportDoors(state, 2);
-  }
 
-  // ── Spawn extra snakes for teams / FFA ──────────────────────────────────
   const teamMode = args.teamMode ?? 'solo';
   const p3Human = args.p3Human === true;
   const p4Human = args.p4Human === true;
-  if (teamMode === 'teams') {
-    const allyTier  = args.teamAllyAiTier  ?? downTier(args.aiTier ?? 'hunter');
-    const enemyTier = args.teamEnemyAiTier ?? (args.aiTier ?? 'hunter');
-    state.extraSnakes = [
-      // Ally:   white + blue border
-      makeExtraSnake([4, 15],  'Right', 0, 0xffffff, 'Ally',   allyTier,  p3Human, 0x3366FF),
-      // Shadow: visible dark grey + blue border (0x111111 is invisible on dark bg)
-      makeExtraSnake([46, 15], 'Left',  1, 0x3a3a3a, 'Shadow', enemyTier, p4Human, 0x3366FF),
-    ];
-    // Spread P1/P2 to top slots so allies start below (head + 1 body like 1v1)
-    {
-      const h1: GridPos = [4, 9];
-      const h2: GridPos = [46, 9];
-      state.p1.head = h1;
-      state.p1.body = [bodySegmentBehindHead(h1, 'Right')];
-      state.p2.head = h2;
-      state.p2.body = [bodySegmentBehindHead(h2, 'Left')];
-    }
-  } else if (teamMode === 'ffa') {
+  if (teamMode === 'ffa') {
     const fTier = args.ffaAiTier ?? (args.aiTier ?? 'hunter');
-    // Spread 4 snakes to corners
-    {
-      const h1: GridPos = [4, 4];
-      const h2: GridPos = [46, 4];
-      state.p1.head = h1;
-      state.p1.body = [bodySegmentBehindHead(h1, 'Right')];
-      state.p2.head = h2;
-      state.p2.body = [bodySegmentBehindHead(h2, 'Left')];
-    }
+    const h1: GridPos = [4, 4];
+    const h2: GridPos = [46, 4];
+    state.p1.head = h1;
+    state.p1.body = [bodySegmentBehindHead(h1, 'Right')];
+    state.p2.head = h2;
+    state.p2.body = [bodySegmentBehindHead(h2, 'Left')];
     state.p2.dirWanted = 'Left';
     state.extraSnakes = [
-      makeExtraSnake([46, 20], 'Left',  1, 0x777777, 'Ghost',   fTier, p3Human),
-      makeExtraSnake([4,  20], 'Right', 1, 0xAAAAAA, 'Specter', fTier, p4Human),
+      makeExtraSnake([46, 20], 'Left', 1, 0x777777, 'Ghost', fTier, p3Human),
+      makeExtraSnake([4, 20], 'Right', 1, 0xAAAAAA, 'Specter', fTier, p4Human),
     ];
   }
 
@@ -685,19 +275,9 @@ export function stepGame(state: GameState): TickResult {
   if (state.gameStarted && !state.gameEnded) {
     state.tickCount += 1;
 
-    // Overclock: speed up every N ticks
-    if (state.meta.overclockMode) {
-      tickOverclock(state);
-    }
-
     // Convergence: shrink border
     if (state.meta.convergenceMode && state.shrinkBorder) {
       tickConvergence(state);
-    }
-
-    // Labyrinth: periodic maze regeneration
-    if (state.meta.labyrinthMode) {
-      tickLabyrinth(state);
     }
 
     // Power-up spawn
@@ -766,7 +346,6 @@ export function stepGame(state: GameState): TickResult {
 
     // Intermediate game-logic pass (only when at least one snake double-steps)
     if (p1DoubleStep || p2DoubleStep) {
-      checkTeleports(state);
       checkCollisions(state);
       captureCoinbase(state);
       checkPowerUpPickup(state);
@@ -775,7 +354,6 @@ export function stepGame(state: GameState): TickResult {
       if (p2DoubleStep) moveSnake(state.p2);
     }
 
-    checkTeleports(state);
     checkCollisions(state);
     captureCoinbase(state);
     checkPowerUpPickup(state);
@@ -815,18 +393,6 @@ export function stepGame(state: GameState): TickResult {
   };
 }
 
-// ============================================================================
-// Overclock
-// ============================================================================
-
-function tickOverclock(state: GameState): void {
-  const interval = state.meta.overclockStepIntervalTicks ?? OVERCLOCK_STEP_INTERVAL_TICKS;
-  if (state.tickCount % interval !== 0) return;
-  const current = state.meta.currentStepMs;
-  const minStep = state.meta.overclockMinStepMs ?? OVERCLOCK_MIN_STEP_MS;
-  const reduction = state.meta.overclockSpeedReductionMs ?? OVERCLOCK_SPEED_REDUCTION_MS;
-  state.meta.currentStepMs = Math.max(minStep, current - reduction);
-}
 
 // ============================================================================
 // Convergence
@@ -948,202 +514,6 @@ function scanGridForSafePosInBorder(state: GameState, sb: import('./types').Shri
     }
   }
   return null;
-}
-
-// ============================================================================
-// Void cells
-// ============================================================================
-
-// ============================================================================
-// Labyrinth
-// ============================================================================
-
-function tickLabyrinth(state: GameState): void {
-  if (!state.meta.labyrinthMode) return;
-  // Expose warning phase via invisibleGrid flag (re-used as "maze shaking" visual cue)
-  const ticksUntilRegen = state.labyrinthNextRegenTick - state.tickCount;
-  if (ticksUntilRegen > 0 && ticksUntilRegen <= LABYRINTH_REGEN_WARNING_TICKS) {
-    state.meta.invisibleGrid = true;  // renderer will flash grid as warning
-  } else if (ticksUntilRegen > LABYRINTH_REGEN_WARNING_TICKS) {
-    state.meta.invisibleGrid = false;
-  }
-  if (state.tickCount < state.labyrinthNextRegenTick) return;
-
-  // Generate a new maze with a fresh seed, using stored difficulty params
-  const newSeed = Math.floor(Math.random() * 0xFFFFFFFF);
-  state.labyrinthSeed = newSeed;
-  const newWalls = generateMaze(
-    state.cols, state.rows, newSeed,
-    state.meta.labyrinthLoopFactor,
-    state.meta.labyrinthCornerFactor,
-    (state.meta.labyrinthCorridorWidth ?? 1) as 1 | 2 | 4,
-    (state.meta.labyrinthSections ?? 1) as 1 | 3,
-  );
-  state.obstacleWalls = newWalls;
-
-  // Teleport any snake head that landed inside a new wall back to its spawn corner
-  if (newWalls.some((w) => w.pos[0] === state.p1.head[0] && w.pos[1] === state.p1.head[1])) {
-    resetSnake(state, 'P1');
-  }
-  if (newWalls.some((w) => w.pos[0] === state.p2.head[0] && w.pos[1] === state.p2.head[1])) {
-    resetSnake(state, 'P2');
-  }
-
-  // Move coinbases that ended up inside new walls to the nearest free maze cell
-  state.coinbases = state.coinbases.map((cb) => {
-    const inWall = newWalls.some((w) => w.pos[0] === cb.pos[0] && w.pos[1] === cb.pos[1]);
-    if (!inWall) return cb;
-    return { ...cb, pos: findFreeMazeCell(state) };
-  });
-
-  state.labyrinthNextRegenTick = state.tickCount + state.meta.labyrinthRegenInterval;
-
-  // Regenerate teleport doors with the new maze layout
-  if (state.meta.labyrinthTeleports) {
-    state.teleportDoors = makeTeleportDoors(state, 2);
-  }
-}
-
-/** Pick a random free maze-cell position not occupied by walls or snakes. */
-function findFreeMazeCell(state: GameState): GridPos {
-  const cw = state.meta.labyrinthCorridorWidth ?? 1;
-  const sections = state.meta.labyrinthSections ?? 1;
-
-  // period-6 (5-cell wide) or period-5 (4-cell wide) — generic
-  if (cw === 5 || cw === 4) {
-    const P = cw === 5 ? 6 : 5;
-    const mazeW = Math.floor((state.cols - 1) / P);
-    const mazeH = Math.floor((state.rows - 1) / P);
-    for (let attempt = 0; attempt < 500; attempt++) {
-      const mx = Math.floor(Math.random() * mazeW);
-      const my = Math.floor(Math.random() * mazeH);
-      const dc = 1 + Math.floor(Math.random() * (P - 1));
-      const dr = 1 + Math.floor(Math.random() * (P - 1));
-      const pos: GridPos = [P * mx + dc, P * my + dr];
-      if (!hasCollisionAt(state, pos)) return pos;
-    }
-    return [26, 11];
-  }
-
-  // period-3 (2-cell wide)
-  if (cw === 2) {
-    const mazeW = Math.floor((state.cols - 3) / 3);
-    const mazeH = Math.floor((state.rows - 1) / 3);
-    for (let attempt = 0; attempt < 500; attempt++) {
-      const mx = Math.floor(Math.random() * mazeW);
-      const my = Math.floor(Math.random() * mazeH);
-      const dc = Math.floor(Math.random() * 2);
-      const dr = Math.floor(Math.random() * 2);
-      const pos: GridPos = [1 + 3 * mx + dc, 1 + 3 * my + dr];
-      if (!hasCollisionAt(state, pos)) return pos;
-    }
-    return [25, 13];
-  }
-
-  // 3-section narrow maze — only pick cells within actual section rows
-  if (sections === 3) {
-    const sectionDefs: [number, number][] = [[0, 7], [9, 16], [18, state.rows - 1]];
-    const mW = (state.cols - 1) / 2;
-    for (let attempt = 0; attempt < 500; attempt++) {
-      const [sStart, sEnd] = sectionDefs[Math.floor(Math.random() * 3)];
-      const mH = Math.floor((sEnd - sStart) / 2);
-      if (mH <= 0) continue;
-      const mx = Math.floor(Math.random() * mW);
-      const my = Math.floor(Math.random() * mH);
-      const pos: GridPos = [2 * mx + 1, sStart + 2 * my + 1];
-      if (!hasCollisionAt(state, pos)) return pos;
-    }
-    return [25, 13];
-  }
-
-  // period-2 (1-cell wide, single section)
-  const mazeW = (state.cols - 1) / 2;
-  const mazeH = (state.rows - 1) / 2;
-  for (let attempt = 0; attempt < 500; attempt++) {
-    const mx = Math.floor(Math.random() * mazeW);
-    const my = Math.floor(Math.random() * mazeH);
-    const pos: GridPos = [2 * mx + 1, 2 * my + 1];
-    if (!hasCollisionAt(state, pos)) return pos;
-  }
-  return [25, 13];
-}
-
-// ============================================================================
-// Teleport doors
-// ============================================================================
-
-/**
- * Generate `count` teleport door pairs for the current maze.
- * Each pair is two cells at least 10 Manhattan units apart.
- */
-/**
- * @param minPairDist  Minimum Manhattan distance between the two portals of
- *                     each pair.  Higher = more useful crossings.
- * @param minClearance Minimum distance a new portal must keep from every
- *                     already-placed portal (avoids clustering).
- */
-function makeTeleportDoors(
-  state: GameState,
-  count: number,
-  minPairDist = 10,
-  minClearance = 5,
-): TeleportDoor[] {
-  const doors: TeleportDoor[] = [];
-  const used: GridPos[] = [
-    state.p1.head, state.p2.head,
-    ...state.coinbases.map((c) => c.pos),
-  ];
-
-  for (let i = 0; i < count; i++) {
-    let posA: GridPos | null = null;
-    let posB: GridPos | null = null;
-
-    for (let attempt = 0; attempt < 400 && !posB; attempt++) {
-      const cand = findFreeMazeCell(state);
-      const tooClose = used.some(
-        (u) => Math.abs(u[0] - cand[0]) + Math.abs(u[1] - cand[1]) < minClearance,
-      );
-      if (tooClose) continue;
-      if (!posA) {
-        posA = cand;
-        used.push(cand);
-      } else if (Math.abs(posA[0] - cand[0]) + Math.abs(posA[1] - cand[1]) >= minPairDist) {
-        posB = cand;
-        used.push(cand);
-      }
-    }
-    if (posA && posB) doors.push({ a: posA, b: posB, colorIndex: i % 4 });
-  }
-  return doors;
-}
-
-/**
- * If either snake's head is on a portal, teleport it to the partner portal
- * and advance one step in the current direction (avoids immediate re-trigger).
- */
-function checkTeleports(state: GameState): void {
-  if (!state.teleportDoors.length) return;
-
-  for (const door of state.teleportDoors) {
-    if (samePos(state.p1.head, door.a)) { exitTeleport(state, 'P1', door.b); break; }
-    if (samePos(state.p1.head, door.b)) { exitTeleport(state, 'P1', door.a); break; }
-    if (samePos(state.p2.head, door.a)) { exitTeleport(state, 'P2', door.b); break; }
-    if (samePos(state.p2.head, door.b)) { exitTeleport(state, 'P2', door.a); break; }
-  }
-}
-
-function exitTeleport(state: GameState, player: 'P1' | 'P2', exitPos: GridPos): void {
-  const snake = player === 'P1' ? state.p1 : state.p2;
-  const dir = snake.dir || snake.dirWanted;
-  const dx = dir === 'Right' ? 1 : dir === 'Left' ? -1 : 0;
-  const dy = dir === 'Down' ? 1 : dir === 'Up' ? -1 : 0;
-  const next: GridPos = [exitPos[0] + dx, exitPos[1] + dy];
-  // Advance past the portal so the snake doesn't immediately re-trigger it
-  if (!outOfBounds(state, next) && !hitsObstacle(state, next)) {
-    snake.head = [next[0], next[1]];
-  } else {
-    snake.head = [exitPos[0], exitPos[1]];
-  }
 }
 
 // ============================================================================
@@ -1279,11 +649,7 @@ export function createNewCoinbase(state: GameState, feeValue: number = -1): void
   if (!state.gameStarted || state.gameEnded) return;
 
   let reward: Coinbase['reward'];
-  const isBounty = state.meta.bountyMode && Math.random() < 0.1;
-
-  if (isBounty) {
-    reward = 32;
-  } else if (feeValue >= 0) {
+  if (feeValue >= 0) {
     if (feeValue < 15) reward = 2;
     else if (feeValue < 45) reward = 4;
     else if (feeValue < 135) reward = 8;
@@ -1291,55 +657,20 @@ export function createNewCoinbase(state: GameState, feeValue: number = -1): void
     else reward = 32;
   }
 
+  const border = state.shrinkBorder;
+  const minX = border ? border.left + 1 : 0;
+  const maxX = border ? border.right - 1 : state.cols - 1;
+  const minY = border ? border.top + 1 : 0;
+  const maxY = border ? border.bottom - 1 : state.rows - 1;
+
   let accepted = false;
   let attempts = 0;
   while (!accepted && attempts < 1000) {
-    let x: number;
-    let y: number;
-    if (state.meta.labyrinthMode) {
-      const cw = state.meta.labyrinthCorridorWidth ?? 1;
-      const secs = state.meta.labyrinthSections ?? 1;
-      if (cw === 4 || cw === 5) {
-        const P = cw === 5 ? 6 : 5;
-        const mazeW = Math.floor((state.cols - 1) / P);
-        const mazeH = Math.floor((state.rows - 1) / P);
-        const mx = Math.floor(Math.random() * mazeW);
-        const my = Math.floor(Math.random() * mazeH);
-        x = P * mx + 1 + Math.floor(Math.random() * (P - 1));
-        y = P * my + 1 + Math.floor(Math.random() * (P - 1));
-      } else if (cw === 2) {
-        const mazeW = Math.floor((state.cols - 3) / 3);
-        const mazeH = Math.floor((state.rows - 1) / 3);
-        const mx = Math.floor(Math.random() * mazeW);
-        const my = Math.floor(Math.random() * mazeH);
-        x = 1 + 3 * mx + Math.floor(Math.random() * 2);
-        y = 1 + 3 * my + Math.floor(Math.random() * 2);
-      } else if (secs === 3) {
-        const sectionDefs: [number, number][] = [[0, 7], [9, 16], [18, state.rows - 1]];
-        const [sStart, sEnd] = sectionDefs[Math.floor(Math.random() * 3)];
-        const mW = (state.cols - 1) / 2;
-        const mH = Math.floor((sEnd - sStart) / 2);
-        x = 2 * Math.floor(Math.random() * mW) + 1;
-        y = sStart + 2 * Math.floor(Math.random() * mH) + 1;
-      } else {
-        const mazeW = (state.cols - 1) / 2;
-        const mazeH = (state.rows - 1) / 2;
-        x = 2 * Math.floor(Math.random() * mazeW) + 1;
-        y = 2 * Math.floor(Math.random() * mazeH) + 1;
-      }
-    } else {
-      const border = state.shrinkBorder;
-      const minX = border ? border.left + 1 : 0;
-      const maxX = border ? border.right - 1 : state.cols - 1;
-      const minY = border ? border.top + 1 : 0;
-      const maxY = border ? border.bottom - 1 : state.rows - 1;
-      x = minX + Math.floor(Math.random() * (maxX - minX + 1));
-      y = minY + Math.floor(Math.random() * (maxY - minY + 1));
-    }
+    const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
+    const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
     if (!hasCollisionAt(state, [x, y])) {
       const cb: Coinbase = { pos: [x, y] };
       if (reward !== undefined) cb.reward = reward;
-      if (isBounty) cb.isBounty = true;
       state.coinbases.push(cb);
       accepted = true;
     }
@@ -1541,8 +872,7 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
     }
   }
 
-  const bountyBonus = cb.isBounty ? 50 : 0;
-  const change = Math.floor((state.totalPoints * finalPercent) / 100) + bountyBonus;
+  const change = Math.floor((state.totalPoints * finalPercent) / 100);
   const safeChange = Math.max(1, change);
 
   state.pointChanges.push({
@@ -1569,9 +899,7 @@ function getLength(state: GameState, player: PlayerId): number {
 }
 
 function capturePercentByLength(length: number, state: GameState): number {
-  // White chain (P1 in powerup/bounty modes) — capture tier boosts one level
-  const boosted = state.meta.powerupMode || state.meta.bountyMode;
-  const effectiveLength = boosted ? length + 1 : length;
+  const effectiveLength = state.meta.powerupMode ? length + 1 : length;
   for (const level of CAPTURE_LEVELS) {
     if (effectiveLength >= level.minLength && effectiveLength <= level.maxLength) {
       return level.percent;
@@ -1581,9 +909,7 @@ function capturePercentByLength(length: number, state: GameState): number {
 }
 
 export function getCaptureLabel(length: number, state?: GameState): string {
-  const effectiveLength = state && (state.meta.powerupMode || state.meta.bountyMode)
-    ? length + 1
-    : length;
+  const effectiveLength = state?.meta.powerupMode ? length + 1 : length;
   for (const level of CAPTURE_LEVELS) {
     if (effectiveLength >= level.minLength && effectiveLength <= level.maxLength) {
       return `${level.percent}%`;
@@ -1597,31 +923,13 @@ export function getCaptureLabel(length: number, state?: GameState): string {
 // ============================================================================
 
 function resetSnake(state: GameState, player: PlayerId): void {
-  // Black chain (P2) speed retention in powerup/bounty modes
-  const retainSpeed = (player === 'P2') && (state.meta.powerupMode || state.meta.bountyMode);
-  // In labyrinth mode snakes start as length-1 (no body segment)
-  const isLabyrinth = state.meta.labyrinthMode;
-  const wideLabyrinth = isLabyrinth && state.meta.labyrinthCorridorWidth === 2;
-  const quadLabyrinth = isLabyrinth && (state.meta.labyrinthCorridorWidth === 4 || state.meta.labyrinthCorridorWidth === 5);
+  const retainSpeed = player === 'P2' && state.meta.powerupMode;
   const teamMode = state.meta.teamMode ?? 'solo';
   const conv = Boolean(state.meta.convergenceMode && state.shrinkBorder);
   const sb = state.shrinkBorder;
 
   if (player === 'P1') {
-    if (isLabyrinth) {
-      state.p1.head = [1, 1];
-      state.p1.body = [];
-    } else if (teamMode === 'teams') {
-      let head: GridPos = [4, 9];
-      let body: GridPos[] = [bodySegmentBehindHead(head, 'Right')];
-      if (conv && sb) {
-        const spawnX = Math.max(4, sb.left + 2);
-        head = [spawnX, 9];
-        body = [[Math.max(sb.left + 1, spawnX - 1), 9]];
-      }
-      state.p1.head = head;
-      state.p1.body = body;
-    } else if (teamMode === 'ffa') {
+    if (teamMode === 'ffa') {
       let head: GridPos = [4, 4];
       let body: GridPos[] = [bodySegmentBehindHead(head, 'Right')];
       if (conv && sb) {
@@ -1650,24 +958,7 @@ function resetSnake(state: GameState, player: PlayerId): void {
     return;
   }
 
-  // P2
-  if (isLabyrinth) {
-    state.p2.head =
-      (state.meta.labyrinthCorridorWidth === 5) ? [43, 19] :
-      quadLabyrinth ? [47, 17] :
-      wideLabyrinth ? [47, 22] : [49, 23];
-    state.p2.body = [];
-  } else if (teamMode === 'teams') {
-    let head: GridPos = [46, 9];
-    let body: GridPos[] = [bodySegmentBehindHead(head, 'Left')];
-    if (conv && sb) {
-      const spawnX = Math.min(46, sb.right - 2);
-      head = [spawnX, 9];
-      body = [[Math.min(sb.right - 1, spawnX + 1), 9]];
-    }
-    state.p2.head = head;
-    state.p2.body = body;
-  } else if (teamMode === 'ffa') {
+  if (teamMode === 'ffa') {
     let head: GridPos = [46, 4];
     let body: GridPos[] = [bodySegmentBehindHead(head, 'Left')];
     if (conv && sb) {
@@ -1722,9 +1013,7 @@ function samePos(a: GridPos, b: GridPos): boolean {
 export function canContinueAfterGame(state: GameState, key: string): boolean {
   if (!state.gameEnded || !state.winnerPlayer) return false;
   const normalized = key.toUpperCase();
-  if (state.meta.practiceMode || state.meta.sovereignMode ||
-      state.meta.overclockMode || state.meta.convergenceMode || state.meta.powerupMode ||
-      state.meta.labyrinthMode) {
+  if (state.meta.practiceMode || state.meta.convergenceMode || state.meta.powerupMode) {
     return normalized === ' ' || normalized === 'ENTER';
   }
   if (state.winnerPlayer === 'P1') return normalized === ' ';
@@ -1830,19 +1119,13 @@ function buildBlockedSet(state: GameState, exclude?: ExtraSnake): Set<string> {
   return blocked;
 }
 
-/** Pick the best coinbase target for an extra snake.
- *  In teams/ally mode (teamId=0), prefer coinbases P1 is NOT already closest to. */
 function extraSnakeTarget(state: GameState, extra: ExtraSnake): GridPos | null {
-  const isAlly = state.meta.teamMode === 'teams' && extra.teamId === 0;
   let best: GridPos | null = null;
   let bestScore = -Infinity;
   for (const cb of state.coinbases) {
     if (cb.isDecoy) continue;
     const distExtra = Math.hypot(cb.pos[0] - extra.snake.head[0], cb.pos[1] - extra.snake.head[1]);
-    const distP1    = Math.hypot(cb.pos[0] - state.p1.head[0],   cb.pos[1] - state.p1.head[1]);
-    // Allies yield to P1 when P1 is clearly closer
-    const allyPenalty = isAlly && distP1 < distExtra - 2 ? -20 : 0;
-    const score = -distExtra + allyPenalty + (cb.reward ? cb.reward * 1.5 : 0);
+    const score = -distExtra + (cb.reward ? cb.reward * 1.5 : 0);
     if (score > bestScore) { bestScore = score; best = cb.pos; }
   }
   return best;
@@ -2208,28 +1491,18 @@ function reconstructPath(cameFrom: Map<string, string>, current: GridPos): GridP
 
 export function getMetaFromDuel(
   mode: string
-): Pick<GameMeta, 'modeLabel' | 'practiceMode' | 'isTournament' | 'sovereignMode' |
-  'overclockMode' | 'convergenceMode' | 'powerupMode' | 'bountyMode'> {
+): Pick<GameMeta, 'modeLabel' | 'practiceMode' | 'isTournament'> {
   const normalized = mode?.toUpperCase() ?? 'P2P';
   if (normalized === 'TOURNAMENT' || normalized === 'TOURNAMENTNOSTR') {
-    return { modeLabel: mode, practiceMode: false, isTournament: true, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, bountyMode: false };
+    return { modeLabel: mode, practiceMode: false, isTournament: true };
   }
   if (normalized === 'PRACTICE' || normalized === 'SOVEREIGN') {
-    return { modeLabel: normalized === 'SOVEREIGN' ? 'Sovereign' : 'Practice', practiceMode: true, isTournament: false, sovereignMode: normalized === 'SOVEREIGN', overclockMode: false, convergenceMode: false, powerupMode: false, bountyMode: false };
+    return {
+      modeLabel: normalized === 'SOVEREIGN' ? 'Sovereign' : 'Practice',
+      practiceMode: true,
+      isTournament: false,
+    };
   }
-  if (normalized === 'OVERCLOCK') {
-    return { modeLabel: 'Overclock', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: true, convergenceMode: false, powerupMode: false, bountyMode: false };
-  }
-  if (normalized === 'CONVERGENCE') {
-    return { modeLabel: 'Convergence', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: true, powerupMode: false, bountyMode: false };
-  }
-  if (normalized === 'POWERUP') {
-    return { modeLabel: 'Power-Up Arena', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: true, bountyMode: false };
-  }
-  if (normalized === 'BOUNTY') {
-    // Legacy / replay payloads (no Bounty page in client)
-    return { modeLabel: 'Bounty Hunt', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, bountyMode: true };
-  }
-  return { modeLabel: mode || 'P2P', practiceMode: false, isTournament: false, sovereignMode: false, overclockMode: false, convergenceMode: false, powerupMode: false, bountyMode: false };
+  return { modeLabel: mode || 'P2P', practiceMode: false, isTournament: false };
 }
 

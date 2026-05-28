@@ -1,14 +1,6 @@
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { GameState, GridPos } from '@/game/engine/types';
-import { POWERUP_COLORS, BOUNTY_COINBASE_COLOR, BOUNTY_COINBASE_RINGS } from '@/game/engine/constants';
-
-/** Color palette for teleport portal pairs (4 distinct hues). */
-const PORTAL_COLORS: readonly number[] = [
-  0x00DDFF,  // cyan
-  0xFF22CC,  // magenta
-  0x55FF44,  // lime
-  0xFFAA00,  // amber
-] as const;
+import { POWERUP_COLORS } from '@/game/engine/constants';
 
 export class PixiGameRenderer {
   private app: Application | null = null;
@@ -187,10 +179,8 @@ export class PixiGameRenderer {
     if (state.gameStarted && !state.gameEnded) {
       if ((state.pointChanges?.length ?? 0) > 0) return true;
       if ((state.powerUpItems?.length ?? 0) > 0) return true;
-      if ((state.teleportDoors?.length ?? 0) > 0) return true;
       if (this.p1Pulses.length > 0 || this.p2Pulses.length > 0) return true;
       if (this.p1SurgeTrail.length > 0 || this.p2SurgeTrail.length > 0) return true;
-      if (state.meta.overclockMode) return true;
       if (state.activePowerUps?.some((ap) => ap.type === 'SURGE' || ap.type === 'AMPLIFIER')) {
         return true;
       }
@@ -242,34 +232,12 @@ export class PixiGameRenderer {
     this.resolveBlocks.clear();
     const resolveProgress = this.getResolveProgress(state);
 
-    // ── Overclock vignette ──────────────────────────────────────────────────
-    if (state.meta.overclockMode) {
-      const speedFraction = 1 - (state.meta.currentStepMs - 30) / 70;
-      if (speedFraction > 0) {
-        const vigAlpha = speedFraction * 0.18;
-        this.deadZone
-          .rect(0, 0, width, height)
-          .fill({ color: 0xff2200, alpha: vigAlpha });
-      }
-    }
-
-    // ── Grid (cached; rebuild only on size / visibility / overclock bucket change) ──
-    if (!state.meta.invisibleGrid) {
-      const stepMs = state.meta.currentStepMs ?? 100;
-      const overclockBucket = state.meta.overclockMode
-        ? Math.floor(stepMs / 10)
-        : -1;
-      const gridAlpha = state.meta.overclockMode
-        ? 0.05 + (1 - (stepMs - 30) / 70) * 0.08
-        : 0.05;
-      const cacheKey = `${width}|${height}|${state.cols}|${state.rows}|${gridAlpha.toFixed(3)}|${overclockBucket}`;
-      if (cacheKey !== this.gridCacheKey) {
-        this.rebuildStaticGrid(state, colSize, rowSize, gridAlpha);
-        this.gridCacheKey = cacheKey;
-      }
-    } else if (this.gridCacheKey !== 'hidden') {
-      this.grid.clear();
-      this.gridCacheKey = 'hidden';
+    // ── Grid (cached; rebuild only on size change) ──
+    const gridAlpha = 0.05;
+    const cacheKey = `${width}|${height}|${state.cols}|${state.rows}|${gridAlpha.toFixed(3)}`;
+    if (cacheKey !== this.gridCacheKey) {
+      this.rebuildStaticGrid(state, colSize, rowSize, gridAlpha);
+      this.gridCacheKey = cacheKey;
     }
 
     // ── Coinbase capture pulse detection ─────────────────────────────────────
@@ -368,56 +336,17 @@ export class PixiGameRenderer {
     this.drawSnake(state.p1, 0xffffff, colSize, rowSize, {
       frozen: p1Frozen, phantom: p1Phantom, surging: p1Surging, amped: p1Amped,
     }, this.p1Pulses, now, boardElapsed);
-    // Teams mode: P1 gets a red border
-    if (state.meta?.teamMode === 'teams') {
-      const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
-      for (const seg of [state.p1.head, ...state.p1.body]) {
-        this.scene
-          .rect(seg[0] * colSize + lw / 2, seg[1] * rowSize + lw / 2, colSize - lw, rowSize - lw)
-          .stroke({ width: lw, color: 0xFF3333, alpha: 0.85 });
-      }
-    }
 
-    // FFA: medium grey · Teams: visible dark grey (0x111111 is invisible on dark background)
-    const p2Color = state.meta?.teamMode === 'ffa' ? 0x555555
-      : state.meta?.teamMode === 'teams' ? 0x3a3a3a
-      : 0x111111;
+    const p2Color = state.meta?.teamMode === 'ffa' ? 0x555555 : 0x111111;
     this.drawSnake(state.p2, p2Color, colSize, rowSize, {
       frozen: p2Frozen, phantom: p2Phantom, surging: p2Surging, amped: p2Amped,
     }, this.p2Pulses, now, boardElapsed);
-    // Teams mode: P2 gets a red border
-    if (state.meta?.teamMode === 'teams') {
-      const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
-      for (const seg of [state.p2.head, ...state.p2.body]) {
-        this.scene
-          .rect(seg[0] * colSize + lw / 2, seg[1] * rowSize + lw / 2, colSize - lw, rowSize - lw)
-          .stroke({ width: lw, color: 0xFF3333, alpha: 0.85 });
-      }
-    }
 
     for (const cb of state.coinbases ?? []) {
       this.drawCoinbase(cb.pos, colSize, rowSize, {
         reward: cb.reward,
         isDecoy: cb.isDecoy,
-        isBounty: cb.isBounty,
       }, boardElapsed);
-    }
-
-    // Teleport portals
-    if (state.teleportDoors?.length) {
-      for (const door of state.teleportDoors) {
-        this.drawPortal(door.a, door.colorIndex, colSize, rowSize, now);
-        this.drawPortal(door.b, door.colorIndex, colSize, rowSize, now);
-        // Thin link line between partners
-        const ax = door.a[0] * colSize + colSize / 2;
-        const ay = door.a[1] * rowSize + rowSize / 2;
-        const bx = door.b[0] * colSize + colSize / 2;
-        const by = door.b[1] * rowSize + rowSize / 2;
-        const linkAlpha = 0.07 + 0.04 * Math.sin(now / 300 + door.colorIndex);
-        this.scene
-          .moveTo(ax, ay).lineTo(bx, by)
-          .stroke({ width: 1, color: PORTAL_COLORS[door.colorIndex % PORTAL_COLORS.length], alpha: linkAlpha });
-      }
     }
 
     // Power-up items + labels (pooled texts; items pulse with `now`)
@@ -781,7 +710,7 @@ export class PixiGameRenderer {
     pos: GridPos,
     colSize: number,
     rowSize: number,
-    opts: { reward?: number; isDecoy?: boolean; isBounty?: boolean },
+    opts: { reward?: number; isDecoy?: boolean },
     boardElapsed: number = Infinity,
   ): void {
     const coinReveal = (() => {
@@ -793,27 +722,6 @@ export class PixiGameRenderer {
     const radius = baseRadius * coinReveal;
     const cx = pos[0] * colSize + colSize / 2;
     const cy = pos[1] * rowSize + rowSize / 2;
-
-    if (opts.isBounty) {
-      // Bounty coinbase: double size, 6 rings, slow gold pulse
-      const bigRadius = radius * 1.6;
-      const tick = Date.now() / 1000;
-      const pulse = 0.6 + 0.4 * Math.sin(tick * 1.5);
-
-      this.scene.circle(cx, cy, bigRadius * 2.6).fill({ color: BOUNTY_COINBASE_COLOR, alpha: 0.06 * pulse });
-      this.scene.circle(cx, cy, bigRadius * 2.0).fill({ color: BOUNTY_COINBASE_COLOR, alpha: 0.10 * pulse });
-      this.scene.circle(cx, cy, bigRadius * 1.5).fill({ color: BOUNTY_COINBASE_COLOR, alpha: 0.16 * pulse });
-      this.scene.circle(cx, cy, bigRadius * 1.15).fill({ color: BOUNTY_COINBASE_COLOR, alpha: 0.25 * pulse });
-      this.scene.circle(cx, cy, bigRadius * 0.9).fill({ color: BOUNTY_COINBASE_COLOR, alpha: 1 });
-
-      for (let ring = BOUNTY_COINBASE_RINGS; ring > 0; ring--) {
-        const alpha = (0.15 + ring * 0.05) * pulse;
-        this.scene
-          .circle(cx, cy, bigRadius + ring * rowSize * 0.45)
-          .stroke({ width: 1.5, color: BOUNTY_COINBASE_COLOR, alpha });
-      }
-      return;
-    }
 
     if (opts.isDecoy) {
       // Decoy: looks almost identical to real coinbase but has a faint irregular pulse
@@ -845,40 +753,6 @@ export class PixiGameRenderer {
         transparencyAdder += 1;
       }
     }
-  }
-
-  // ── Teleport portals ─────────────────────────────────────────────────────
-
-  private drawPortal(pos: GridPos, colorIndex: number, colSize: number, rowSize: number, now: number): void {
-    const color = PORTAL_COLORS[colorIndex % PORTAL_COLORS.length];
-    const x0 = pos[0] * colSize;
-    const y0 = pos[1] * rowSize;
-    const pad = Math.min(colSize, rowSize) * 0.1;
-    const pulse = 0.55 + 0.45 * Math.sin(now / 280 + colorIndex * 1.4);
-    const cx = x0 + colSize / 2;
-    const cy = y0 + rowSize / 2;
-
-    // Outer glow square
-    this.scene
-      .rect(x0 - pad, y0 - pad, colSize + pad * 2, rowSize + pad * 2)
-      .fill({ color, alpha: 0.07 + pulse * 0.08 });
-    // Border square
-    this.scene
-      .rect(x0 + pad, y0 + pad, colSize - pad * 2, rowSize - pad * 2)
-      .stroke({ width: Math.max(2, Math.min(colSize, rowSize) * 0.12), color, alpha: 0.55 + pulse * 0.35 });
-    // Inner spinning cross
-    const arm = Math.min(colSize, rowSize) * 0.2;
-    const angle = now / 600 + colorIndex * Math.PI / 2;
-    for (let i = 0; i < 4; i++) {
-      const a = angle + (i * Math.PI) / 2;
-      this.scene
-        .moveTo(cx, cy)
-        .lineTo(cx + Math.cos(a) * arm, cy + Math.sin(a) * arm)
-        .stroke({ width: Math.max(1, Math.min(colSize, rowSize) * 0.07), color, alpha: 0.6 + pulse * 0.35 });
-    }
-    // Bright center square
-    const cs = Math.min(colSize, rowSize) * 0.18;
-    this.scene.rect(cx - cs / 2, cy - cs / 2, cs, cs).fill({ color, alpha: 0.85 });
   }
 
   // ── Power-up item drawing ──────────────────────────────────────────────────
@@ -1195,13 +1069,11 @@ export class PixiGameRenderer {
     }
 
     // Grid
-    if (!state.meta.invisibleGrid) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x <= state.cols; x += 1) {
-        for (let y = 0; y <= state.rows; y += 1) {
-          ctx.strokeRect(x * colSize, y * rowSize, colSize, rowSize);
-        }
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= state.cols; x += 1) {
+      for (let y = 0; y <= state.rows; y += 1) {
+        ctx.strokeRect(x * colSize, y * rowSize, colSize, rowSize);
       }
     }
 
@@ -1342,15 +1214,6 @@ export class PixiGameRenderer {
       }
     }
     ctx.globalAlpha = 1;
-    // Teams mode: P1 red border
-    if (state.meta?.teamMode === 'teams') {
-      const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
-      ctx.strokeStyle = '#FF3333'; ctx.lineWidth = lw; ctx.globalAlpha = 0.85;
-      for (const seg of [state.p1.head, ...state.p1.body]) {
-        ctx.strokeRect(seg[0] * colSize + lw / 2, seg[1] * rowSize + lw / 2, colSize - lw, rowSize - lw);
-      }
-      ctx.globalAlpha = 1;
-    }
 
     // P2
     const p2Total = 1 + state.p2.body.length;
@@ -1365,9 +1228,7 @@ export class PixiGameRenderer {
       }
       ctx.globalAlpha = 1;
     }
-    ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#555555'
-      : state.meta?.teamMode === 'teams' ? '#3a3a3a'
-      : '#111111';
+    ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#555555' : '#111111';
     const p2HeadBoost = this.getSegmentGlow(0, p2Total, this.p2Pulses, nowFb);
     if (p2HeadBoost > 0) {
       const exp = p2HeadBoost * 4;
@@ -1397,9 +1258,7 @@ export class PixiGameRenderer {
     }
     for (let i = 0; i < state.p2.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, p2Total, this.p2Pulses, nowFb);
-      ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#555555'
-        : state.meta?.teamMode === 'teams' ? '#3a3a3a'
-        : '#111111';
+      ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#555555' : '#111111';
       ctx.globalAlpha = Math.min(1, 0.6 + boost * 0.36);
       ctx.fillRect(state.p2.body[i][0] * colSize, state.p2.body[i][1] * rowSize, colSize, rowSize);
       ctx.globalAlpha = 1;
@@ -1423,60 +1282,16 @@ export class PixiGameRenderer {
       }
     }
     ctx.globalAlpha = 1;
-    // Teams mode: P2 red border
-    if (state.meta?.teamMode === 'teams') {
-      const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
-      ctx.strokeStyle = '#FF3333'; ctx.lineWidth = lw; ctx.globalAlpha = 0.85;
-      for (const seg of [state.p2.head, ...state.p2.body]) {
-        ctx.strokeRect(seg[0] * colSize + lw / 2, seg[1] * rowSize + lw / 2, colSize - lw, rowSize - lw);
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // Teleport portals (fallback)
-    if (state.teleportDoors?.length) {
-      for (const door of state.teleportDoors) {
-        for (const pos of [door.a, door.b]) {
-          const pc = PORTAL_COLORS[door.colorIndex % PORTAL_COLORS.length];
-          const pr = (pc >> 16) & 0xff;
-          const pg = (pc >> 8) & 0xff;
-          const pb = pc & 0xff;
-          const pcss = `rgb(${pr},${pg},${pb})`;
-          const pulseFb = 0.55 + 0.45 * Math.sin(nowFb / 280 + door.colorIndex * 1.4);
-          const px0 = pos[0] * colSize;
-          const py0 = pos[1] * rowSize;
-          const pad = Math.min(colSize, rowSize) * 0.1;
-          const lw = Math.max(2, Math.min(colSize, rowSize) * 0.12);
-          // Outer glow square
-          ctx.globalAlpha = 0.07 + pulseFb * 0.08;
-          ctx.fillStyle = pcss;
-          ctx.fillRect(px0 - pad, py0 - pad, colSize + pad * 2, rowSize + pad * 2);
-          // Border square
-          ctx.globalAlpha = 0.55 + pulseFb * 0.35;
-          ctx.strokeStyle = pcss;
-          ctx.lineWidth = lw;
-          ctx.strokeRect(px0 + pad + lw / 2, py0 + pad + lw / 2, colSize - pad * 2 - lw, rowSize - pad * 2 - lw);
-          // Bright center square
-          const cs = Math.min(colSize, rowSize) * 0.18;
-          const pcx = px0 + colSize / 2;
-          const pcy = py0 + rowSize / 2;
-          ctx.globalAlpha = 0.85;
-          ctx.fillStyle = pcss;
-          ctx.fillRect(pcx - cs / 2, pcy - cs / 2, cs, cs);
-          ctx.globalAlpha = 1;
-        }
-      }
-    }
 
     for (const cb of state.coinbases ?? []) {
       const cx = cb.pos[0] * colSize + colSize / 2;
       const cy = cb.pos[1] * rowSize + rowSize / 2;
       const radius = rowSize / 2 - rowSize / 5.4;
       ctx.beginPath();
-      ctx.arc(cx, cy, cb.isBounty ? radius * 1.5 : radius, 0, Math.PI * 2);
-      ctx.fillStyle = cb.isBounty ? `#${BOUNTY_COINBASE_COLOR.toString(16).padStart(6, '0')}` : '#ffffff';
-      ctx.shadowColor = cb.isBounty ? '#C89020' : '#ffffff';
-      ctx.shadowBlur = cb.isBounty ? 30 : 20;
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 20;
       ctx.fill();
       ctx.shadowBlur = 0;
 
