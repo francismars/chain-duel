@@ -13,6 +13,7 @@ import {
   advanceFlatNav,
   isBracketNavFocus,
   moveNavFocus,
+  navFocusEqual,
   normalizeNavFocusForSession,
   type P2pNavFocus,
 } from '@/pages/p2pEntryNav';
@@ -168,19 +169,19 @@ export default function P2pEntry() {
       }
 
       e.preventDefault();
-      setNavFocus((prev) =>
-        moveNavFocus(
-          prev,
-          isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right',
-          tournament,
-          sessionNavIdx
-        )
-      );
+      const dir = isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right';
+      setNavFocus((prev) => {
+        const next = moveNavFocus(prev, dir, tournament, sessionNavIdx);
+        if (!navFocusEqual(prev, next)) {
+          playSelect();
+        }
+        return next;
+      });
     };
 
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [activateNavFocus, navFocus, navigate, playSfx, sessionNavIdx, tournament]);
+  }, [activateNavFocus, navFocus, navigate, playSelect, playSfx, sessionNavIdx, tournament]);
 
   useEffect(() => {
     if (navFocus.kind === 'payment') {

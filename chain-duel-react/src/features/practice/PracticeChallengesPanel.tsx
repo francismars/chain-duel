@@ -72,7 +72,7 @@ const CHALLENGES: Challenge[] = [
     format: '1v1',
     aiTier: 'hunter',
     powerup: true,
-    bounty: 1000,
+    bounty: 420,
   },
   {
     id: 'gauntlet',
@@ -82,7 +82,7 @@ const CHALLENGES: Challenge[] = [
     format: '1v1',
     aiTier: 'tactician',
     powerup: false,
-    bounty: 5000,
+    bounty: 1337,
   },
   {
     id: 'ffa-arena',
@@ -92,7 +92,7 @@ const CHALLENGES: Challenge[] = [
     format: '4P FFA',
     aiTier: 'tactician',
     powerup: false,
-    bounty: 10000,
+    bounty: 2100,
   },
   {
     id: 'sovereign',
@@ -102,7 +102,7 @@ const CHALLENGES: Challenge[] = [
     format: '1v1',
     aiTier: 'sovereign',
     powerup: true,
-    bounty: 21000,
+    bounty: 4200,
   },
 ];
 

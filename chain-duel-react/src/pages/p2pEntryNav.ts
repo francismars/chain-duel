@@ -5,10 +5,14 @@ export const BUYIN_STEP_COUNT = 10;
 const BUYIN_COLS = 5;
 
 function buyinRow(idx: number) {
-  return Math.floor(idx / BUYIN_COLS); // 0 or 1
+  return Math.floor(idx / BUYIN_COLS);
 }
 function buyinCol(idx: number) {
-  return idx % BUYIN_COLS; // 0-4
+  return idx % BUYIN_COLS;
+}
+
+function clampCol(idx: number, cols: number): number {
+  return Math.min(Math.max(idx, 0), cols - 1);
 }
 
 export type P2pNavFocus =
@@ -37,7 +41,10 @@ export function normalizeNavFocusForSession(
   tournament: boolean
 ): P2pNavFocus {
   if (tournament || !isBracketNavFocus(f)) return f;
-  return { kind: 'session', idx: 1 };
+  if (f.kind === 'start' || f.kind === 'back') {
+    return { kind: 'session', idx: 0 };
+  }
+  return { kind: 'session', idx: 0 };
 }
 
 export function buildFlatNavOrder(tournament: boolean): P2pNavFocus[] {
@@ -61,131 +68,118 @@ export function buildFlatNavOrder(tournament: boolean): P2pNavFocus[] {
   return list;
 }
 
-function sessionIdxUpFromPlayers(playerIdx: 0 | 1 | 2): 0 | 1 {
-  if (playerIdx === 0) return 0;
-  return 1;
+function playerIdxDownFromSession(sessionIdx: 0 | 1): 0 | 1 | 2 {
+  return sessionIdx === 0 ? 0 : 2;
 }
 
-function playerIdxDownFromSession(sessionIdx: 0 | 1): 0 | 1 | 2 {
-  if (sessionIdx === 0) return 0;
-  return 2;
+function sessionIdxUpFromPlayers(playerIdx: 0 | 1 | 2): 0 | 1 {
+  return playerIdx === 0 ? 0 : 1;
+}
+
+/** Footer: left = main menu, right = start; up leaves footer; down = no-op. */
+function moveFooterFocus(
+  direction: 'up' | 'down' | 'left' | 'right',
+  tournament: boolean,
+  sessionNavIdx: 0 | 1
+): P2pNavFocus | null {
+  const lastPill = BUYIN_STEP_COUNT - 1;
+
+  if (direction === 'down') return null;
+  if (direction === 'left') return { kind: 'back' };
+  if (direction === 'right') return { kind: 'start' };
+
+  if (!tournament) {
+    return { kind: 'session', idx: sessionNavIdx };
+  }
+  return { kind: 'buyinPill', idx: lastPill };
 }
 
 export function moveNavFocus(
   f: P2pNavFocus,
   direction: 'up' | 'down' | 'left' | 'right',
   tournament: boolean,
-  /** Column for the active session choice (duel = 0, tournament = 1) — used when moving up from Start in duel mode. */
   sessionNavIdx: 0 | 1
 ): P2pNavFocus {
-  const lastPill = BUYIN_STEP_COUNT - 1;
+  const next = moveNavFocusInner(f, direction, tournament, sessionNavIdx);
+  return next ?? f;
+}
 
-  switch (direction) {
-    case 'up': {
-      switch (f.kind) {
-        case 'payment':
-          return { kind: 'back' };
-        case 'session':
-          return { kind: 'payment', idx: f.idx };
-        case 'players':
-          return { kind: 'session', idx: sessionIdxUpFromPlayers(f.idx) };
-        case 'buyinPill':
-          // Row 1 → row 0 (same column)
-          if (buyinRow(f.idx) === 1) {
-            return { kind: 'buyinPill', idx: f.idx - BUYIN_COLS };
-          }
-          // Row 0 → players (exit hub upward)
-          return { kind: 'players', idx: 2 };
-        case 'start':
-          if (!tournament) {
-            return { kind: 'session', idx: sessionNavIdx };
-          }
-          return { kind: 'buyinPill', idx: lastPill };
-        case 'back':
-          return { kind: 'start' };
-        default:
-          return f;
+function moveNavFocusInner(
+  f: P2pNavFocus,
+  direction: 'up' | 'down' | 'left' | 'right',
+  tournament: boolean,
+  sessionNavIdx: 0 | 1
+): P2pNavFocus | null {
+  switch (f.kind) {
+    case 'payment': {
+      if (direction === 'up') return null;
+      if (direction === 'down') {
+        return { kind: 'session', idx: clampCol(f.idx, 2) as 0 | 1 };
       }
+      if (direction === 'left') return { kind: 'payment', idx: 0 };
+      return { kind: 'payment', idx: 1 };
     }
-    case 'down': {
-      switch (f.kind) {
-        case 'back':
-          return { kind: 'payment', idx: 0 };
-        case 'payment':
-          return { kind: 'session', idx: f.idx };
-        case 'session':
-          if (!tournament) {
-            return { kind: 'start' };
-          }
-          return { kind: 'players', idx: playerIdxDownFromSession(f.idx) };
-        case 'players':
-          // Move down within players column, or drop into buy-in on last card
-          if (f.idx < 2) {
-            return { kind: 'players', idx: (f.idx + 1) as 1 | 2 };
-          }
-          return { kind: 'buyinPill', idx: 0 };
-        case 'buyinPill':
-          // Row 0 → row 1 (same column)
-          if (buyinRow(f.idx) === 0) {
-            return { kind: 'buyinPill', idx: f.idx + BUYIN_COLS };
-          }
-          // Row 1 → start (exit hub downward)
-          return { kind: 'start' };
-        case 'start':
-          return { kind: 'back' };
-        default:
-          return f;
+    case 'session': {
+      if (direction === 'up') {
+        return { kind: 'payment', idx: f.idx };
       }
-    }
-    case 'left': {
-      switch (f.kind) {
-        case 'payment':
-          return { kind: 'payment', idx: f.idx === 0 ? 1 : 0 };
-        case 'session':
-          return { kind: 'session', idx: f.idx === 0 ? 1 : 0 };
-        case 'players':
-          // Wrap within players column
-          return { kind: 'players', idx: ((f.idx + 2) % 3) as 0 | 1 | 2 };
-        case 'buyinPill':
-          // Cross to players column when at left edge of buy-in grid
-          if (buyinCol(f.idx) === 0) {
-            return { kind: 'players', idx: buyinRow(f.idx) === 0 ? 0 : 2 };
-          }
-          return { kind: 'buyinPill', idx: f.idx - 1 };
-        case 'start':
-          if (!tournament) {
-            return { kind: 'session', idx: 1 };
-          }
-          return { kind: 'buyinPill', idx: lastPill };
-        case 'back':
-          return { kind: 'start' };
-        default:
-          return f;
+      if (direction === 'down') {
+        if (!tournament) {
+          return f.idx === 0 ? { kind: 'back' } : { kind: 'start' };
+        }
+        return {
+          kind: 'players',
+          idx: playerIdxDownFromSession(f.idx),
+        };
       }
+      if (direction === 'left') return { kind: 'session', idx: 0 };
+      return { kind: 'session', idx: 1 };
     }
-    case 'right': {
-      switch (f.kind) {
-        case 'payment':
-          return { kind: 'payment', idx: f.idx === 0 ? 1 : 0 };
-        case 'session':
-          return { kind: 'session', idx: f.idx === 0 ? 1 : 0 };
-        case 'players':
-          // Cross to buy-in column
-          if (!tournament) return { kind: 'players', idx: ((f.idx + 1) % 3) as 0 | 1 | 2 };
-          return { kind: 'buyinPill', idx: f.idx < 2 ? 0 : BUYIN_COLS };
-        case 'buyinPill':
-          if (f.idx < lastPill) {
-            return { kind: 'buyinPill', idx: f.idx + 1 };
-          }
-          return { kind: 'start' };
-        case 'start':
-          return { kind: 'back' };
-        case 'back':
-          return { kind: 'payment', idx: 0 };
-        default:
-          return f;
+    case 'players': {
+      if (direction === 'left') return null;
+      if (direction === 'right') {
+        return { kind: 'buyinPill', idx: f.idx < 2 ? 0 : BUYIN_COLS };
       }
+      if (direction === 'up') {
+        if (f.idx > 0) {
+          return { kind: 'players', idx: (f.idx - 1) as 0 | 1 | 2 };
+        }
+        return { kind: 'session', idx: sessionIdxUpFromPlayers(f.idx) };
+      }
+      if (f.idx < 2) {
+        return { kind: 'players', idx: (f.idx + 1) as 1 | 2 };
+      }
+      return { kind: 'buyinPill', idx: 0 };
     }
+    case 'buyinPill': {
+      if (direction === 'left') {
+        if (buyinCol(f.idx) === 0) {
+          return { kind: 'players', idx: buyinRow(f.idx) === 0 ? 0 : 2 };
+        }
+        return { kind: 'buyinPill', idx: f.idx - 1 };
+      }
+      if (direction === 'right') {
+        if (buyinCol(f.idx) >= BUYIN_COLS - 1) {
+          return { kind: 'start' };
+        }
+        return { kind: 'buyinPill', idx: f.idx + 1 };
+      }
+      if (direction === 'up') {
+        if (buyinRow(f.idx) === 1) {
+          return { kind: 'buyinPill', idx: f.idx - BUYIN_COLS };
+        }
+        return { kind: 'players', idx: 2 };
+      }
+      if (buyinRow(f.idx) === 0) {
+        return { kind: 'buyinPill', idx: f.idx + BUYIN_COLS };
+      }
+      return { kind: 'start' };
+    }
+    case 'start':
+    case 'back':
+      return moveFooterFocus(direction, tournament, sessionNavIdx);
+    default:
+      return null;
   }
 }
 
