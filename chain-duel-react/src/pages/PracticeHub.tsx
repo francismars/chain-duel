@@ -17,11 +17,12 @@ import '@/styles/pages/practice-hub-page.css';
 import '@/styles/pages/solo-challenges.css';
 import {
   movePlayStyleNav,
+  movePracticeHubFooter,
   parsePlaySearchParam,
   playStyleFromIdx,
   playStyleToIdx,
   playStyleToSearchValue,
-  type PracticeHubPlayStyleFocus,
+  type PracticeHubFocus,
   type PracticePlayStyle,
 } from '@/pages/practiceHubPlayStyleNav';
 
@@ -34,8 +35,8 @@ export default function PracticeHub() {
   const playStyle = parsePlaySearchParam(searchParams.get('play'));
   const playStyleIdx = playStyleToIdx(playStyle);
 
-  const [playStyleNav, setPlayStyleNav] = useState<PracticeHubPlayStyleFocus>({
-    kind: 'playStyle',
+  const [hubFocus, setHubFocus] = useState<PracticeHubFocus>({
+    zone: 'playStyle',
     idx: playStyleIdx,
   });
 
@@ -44,7 +45,6 @@ export default function PracticeHub() {
   const footerStartRef = useRef<HTMLButtonElement | null>(null);
   const freePlayPanelRef = useRef<PracticeFreePlayPanelHandle | null>(null);
   const challengesPanelRef = useRef<PracticeChallengesPanelHandle | null>(null);
-  const [freeFooterNav, setFreeFooterNav] = useState<'back' | 'start' | null>(null);
 
   const setPlayStyle = useCallback(
     (next: PracticePlayStyle) => {
@@ -52,20 +52,18 @@ export default function PracticeHub() {
       if (searchParams.get('play') !== value) {
         setSearchParams({ play: value }, { replace: true });
       }
-      setPlayStyleNav({ kind: 'playStyle', idx: playStyleToIdx(next) });
+      setHubFocus((prev) =>
+        prev.zone === 'playStyle' ? { zone: 'playStyle', idx: playStyleToIdx(next) } : prev
+      );
     },
     [searchParams, setSearchParams]
   );
 
   useEffect(() => {
-    setPlayStyleNav((prev) =>
-      prev.kind === 'playStyle' ? { kind: 'playStyle', idx: playStyleIdx } : prev
+    setHubFocus((prev) =>
+      prev.zone === 'playStyle' ? { zone: 'playStyle', idx: playStyleIdx } : prev
     );
   }, [playStyleIdx]);
-
-  useEffect(() => {
-    if (playStyle !== 'free') setFreeFooterNav(null);
-  }, [playStyle]);
 
   const focusPlayStyleCard = useCallback((idx: 0 | 1) => {
     playStyleRefs.current[idx]?.focus();
@@ -79,18 +77,32 @@ export default function PracticeHub() {
     [playSfx, setPlayStyle]
   );
 
-  const focusFirstInPanel = useCallback(() => {
+  const enterPanel = useCallback(() => {
+    setHubFocus({ zone: 'panel' });
     if (playStyle === 'free') {
-      const el =
-        document.querySelector<HTMLElement>(
-          '.practice-free-play-panel button[tabindex="0"]'
-        ) ??
-        document.querySelector<HTMLElement>('.practice-free-play-panel button');
-      el?.focus();
+      freePlayPanelRef.current?.focusDefault();
     } else {
-      const el =
-        document.querySelector<HTMLElement>('.practice-challenges-panel button');
-      el?.focus();
+      challengesPanelRef.current?.focusDefault();
+    }
+  }, [playStyle]);
+
+  const enterPlayStyle = useCallback(() => {
+    setHubFocus({ zone: 'playStyle', idx: playStyleIdx });
+    focusPlayStyleCard(playStyleIdx);
+  }, [focusPlayStyleCard, playStyleIdx]);
+
+  const enterFooter = useCallback((which: 'back' | 'start') => {
+    setHubFocus({ zone: 'footer', which });
+    if (which === 'back') footerBackRef.current?.focus();
+    else footerStartRef.current?.focus();
+  }, []);
+
+  const resumePanelFromFooter = useCallback(() => {
+    setHubFocus({ zone: 'panel' });
+    if (playStyle === 'free') {
+      freePlayPanelRef.current?.focusBeforeFooter();
+    } else {
+      challengesPanelRef.current?.focusBeforeFooter();
     }
   }, [playStyle]);
 
@@ -103,59 +115,81 @@ export default function PracticeHub() {
         return;
       }
 
-      const active = document.activeElement as HTMLElement | null;
-      const playStyleCardIdx = playStyleRefs.current.indexOf(
-        active as HTMLButtonElement
-      );
-      const onPlayStyleCard = playStyleCardIdx >= 0;
-
-      if (
-        e.key === 'Tab' &&
-        e.shiftKey &&
-        active?.closest('.practice-play-style-area') &&
-        !onPlayStyleCard
-      ) {
-        e.preventDefault();
-        focusPlayStyleCard(playStyleIdx);
-        setPlayStyleNav({ kind: 'playStyle', idx: playStyleIdx });
-        return;
-      }
-
-      if (!onPlayStyleCard) {
-        return;
-      }
-
       const isLeft = e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A';
       const isRight = e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
       const isUp = e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W';
       const isDown = e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
       const isActivate = e.key === 'Enter' || e.key === ' ';
       const isTab = e.key === 'Tab' && !e.shiftKey;
+      const isTabBack = e.key === 'Tab' && e.shiftKey;
 
-      if (isTab) {
+      if (hubFocus.zone === 'footer') {
+        if (!isLeft && !isRight && !isUp && !isDown && !isActivate) return;
         e.preventDefault();
-        focusFirstInPanel();
+        if (e.repeat && isActivate) return;
+
+        const moved = movePracticeHubFooter(
+          hubFocus.which,
+          isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right'
+        );
+        if (moved === 'panel') {
+          playSfx(SFX.MENU_SELECT);
+          resumePanelFromFooter();
+          return;
+        }
+        if (moved !== hubFocus.which) {
+          playSfx(SFX.MENU_SELECT);
+          enterFooter(moved);
+          return;
+        }
+        if (isActivate) {
+          if (hubFocus.which === 'back') footerBackRef.current?.click();
+          else footerStartRef.current?.click();
+        }
+        return;
+      }
+
+      if (hubFocus.zone === 'panel') {
+        if (isTabBack) {
+          e.preventDefault();
+          enterPlayStyle();
+        }
+        return;
+      }
+
+      // playStyle zone ("HOW TO PLAY") — Up is a no-op; nothing above this row
+      if (isUp) {
+        e.preventDefault();
+        return;
+      }
+
+      if (!isLeft && !isRight && !isDown && !isActivate && !isTab && !isTabBack) {
+        return;
+      }
+
+      if (isTab || isDown) {
+        e.preventDefault();
+        enterPanel();
+        return;
+      }
+
+      if (isTabBack) {
         return;
       }
 
       if (isActivate) {
         e.preventDefault();
         if (e.repeat) return;
-        if (playStyleCardIdx === 0 || playStyleCardIdx === 1) {
-          activatePlayStyle(playStyleCardIdx);
-        }
+        activatePlayStyle(hubFocus.idx);
         return;
       }
 
-      if (!isLeft && !isRight && !isUp && !isDown) return;
+      if (!isLeft && !isRight) return;
 
       e.preventDefault();
-      const currentIdx = playStyleCardIdx as 0 | 1;
-      const nextIdx = movePlayStyleNav(
-        currentIdx,
-        isLeft || isUp ? 'left' : 'right'
-      );
-      setPlayStyleNav({ kind: 'playStyle', idx: nextIdx });
+      const nextIdx = movePlayStyleNav(isLeft ? 'left' : 'right');
+      if (nextIdx === hubFocus.idx) return;
+      setHubFocus({ zone: 'playStyle', idx: nextIdx });
       playSfx(SFX.MENU_SELECT);
       setPlayStyle(playStyleFromIdx(nextIdx));
     };
@@ -164,23 +198,34 @@ export default function PracticeHub() {
     return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [
     activatePlayStyle,
-    focusFirstInPanel,
-    focusPlayStyleCard,
+    enterFooter,
+    enterPanel,
+    enterPlayStyle,
+    hubFocus,
     navigate,
     playSfx,
-    playStyleIdx,
+    resumePanelFromFooter,
     setPlayStyle,
   ]);
 
   useEffect(() => {
-    if (playStyleNav.kind !== 'playStyle') return;
-    focusPlayStyleCard(playStyleNav.idx);
-  }, [playStyleNav, focusPlayStyleCard, playStyle]);
+    if (hubFocus.zone === 'playStyle') {
+      focusPlayStyleCard(hubFocus.idx);
+      return;
+    }
+    if (hubFocus.zone === 'footer') {
+      if (hubFocus.which === 'back') footerBackRef.current?.focus();
+      else footerStartRef.current?.focus();
+    }
+  }, [hubFocus, focusPlayStyleCard]);
 
   const playStyleFocusClass = (idx: 0 | 1) =>
-    playStyleNav.kind === 'playStyle' && playStyleNav.idx === idx
-      ? 'practice-focus-target'
-      : '';
+    hubFocus.zone === 'playStyle' && hubFocus.idx === idx ? 'practice-focus-target' : '';
+
+  const footerBackFocused =
+    hubFocus.zone === 'footer' && hubFocus.which === 'back';
+  const footerStartFocused =
+    hubFocus.zone === 'footer' && hubFocus.which === 'start';
 
   return (
     <div
@@ -219,9 +264,7 @@ export default function PracticeHub() {
               type="button"
               role="radio"
               aria-checked={playStyle === 'free'}
-              tabIndex={
-                playStyleNav.kind === 'playStyle' && playStyleNav.idx === 0 ? 0 : -1
-              }
+              tabIndex={hubFocus.zone === 'playStyle' && hubFocus.idx === 0 ? 0 : -1}
               className={[
                 'p2p-picker-card',
                 'p2p-picker-card--lightning',
@@ -231,7 +274,7 @@ export default function PracticeHub() {
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => {
-                setPlayStyleNav({ kind: 'playStyle', idx: 0 });
+                setHubFocus({ zone: 'playStyle', idx: 0 });
                 activatePlayStyle(0);
               }}
             >
@@ -252,9 +295,7 @@ export default function PracticeHub() {
               type="button"
               role="radio"
               aria-checked={playStyle === 'challenges'}
-              tabIndex={
-                playStyleNav.kind === 'playStyle' && playStyleNav.idx === 1 ? 0 : -1
-              }
+              tabIndex={hubFocus.zone === 'playStyle' && hubFocus.idx === 1 ? 0 : -1}
               className={[
                 'p2p-picker-card',
                 'p2p-picker-card--nostr',
@@ -264,7 +305,7 @@ export default function PracticeHub() {
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => {
-                setPlayStyleNav({ kind: 'playStyle', idx: 1 });
+                setHubFocus({ zone: 'playStyle', idx: 1 });
                 activatePlayStyle(1);
               }}
             >
@@ -295,9 +336,11 @@ export default function PracticeHub() {
             <PracticeFreePlayPanel
               ref={freePlayPanelRef}
               isActive={playStyle === 'free'}
+              menuZone={playStyle === 'free' ? hubFocus.zone : 'playStyle'}
               footerBackRef={footerBackRef}
               footerStartRef={footerStartRef}
-              onFooterNav={setFreeFooterNav}
+              onExitToPlayStyle={enterPlayStyle}
+              onEnterFooter={enterFooter}
             />
           </div>
           <div
@@ -312,8 +355,11 @@ export default function PracticeHub() {
             <PracticeChallengesPanel
               ref={challengesPanelRef}
               isActive={playStyle === 'challenges'}
+              menuZone={playStyle === 'challenges' ? hubFocus.zone : 'playStyle'}
               footerBackRef={footerBackRef}
               footerStartRef={footerStartRef}
+              onExitToPlayStyle={enterPlayStyle}
+              onEnterFooter={enterFooter}
             />
           </div>
         </div>
@@ -321,13 +367,14 @@ export default function PracticeHub() {
         <div className="practice-actions practice-hub-panel-footer">
           <Button
             ref={footerBackRef}
-            tabIndex={playStyle === 'free' && freeFooterNav === 'back' ? 0 : playStyle === 'challenges' ? 0 : -1}
+            tabIndex={footerBackFocused ? 0 : -1}
             className={[
               'practice-back',
-              playStyle === 'free' && freeFooterNav === 'back' ? 'practice-start--focused' : '',
+              footerBackFocused ? 'practice-start--focused' : '',
             ]
               .filter(Boolean)
               .join(' ')}
+            onFocus={() => enterFooter('back')}
             onClick={() => {
               playSfx(SFX.MENU_SELECT);
               navigate('/');
@@ -337,13 +384,14 @@ export default function PracticeHub() {
           </Button>
           <Button
             ref={footerStartRef}
-            tabIndex={playStyle === 'free' && freeFooterNav === 'start' ? 0 : playStyle === 'challenges' ? 0 : -1}
+            tabIndex={footerStartFocused ? 0 : -1}
             className={[
               'practice-start',
-              playStyle === 'free' && freeFooterNav === 'start' ? 'practice-start--focused' : '',
+              footerStartFocused ? 'practice-start--focused' : '',
             ]
               .filter(Boolean)
               .join(' ')}
+            onFocus={() => enterFooter('start')}
             onClick={() => {
               playSfx(SFX.MENU_CONFIRM);
               if (playStyle === 'free') {

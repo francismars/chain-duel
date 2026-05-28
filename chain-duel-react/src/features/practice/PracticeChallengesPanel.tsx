@@ -23,6 +23,7 @@ import {
 } from '@/lib/nostr/signerSession';
 import { fetchLatestKind0Profile } from '@/lib/nostr/fetchKind0Profile';
 import { savePracticeGameConfig } from '@/pages/practiceHubModes';
+import type { PracticeHubFocus } from '@/pages/practiceHubPlayStyleNav';
 
 const CONVERGENCE_PRESET = {
   shrinkIntervalTicks: PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
@@ -143,15 +144,18 @@ const LN_ADDRESS_KEY = 'arcadeLnAddress';
 
 interface PracticeChallengesPanelProps {
   isActive: boolean;
+  menuZone: PracticeHubFocus['zone'];
   footerBackRef: RefObject<HTMLButtonElement | null>;
   footerStartRef: RefObject<HTMLButtonElement | null>;
+  onExitToPlayStyle?: () => void;
+  onEnterFooter?: (which: 'back' | 'start') => void;
 }
 
 export const PracticeChallengesPanel = forwardRef<
   PracticeChallengesPanelHandle,
   PracticeChallengesPanelProps
 >(function PracticeChallengesPanel(
-  { isActive, footerBackRef, footerStartRef },
+  { isActive, menuZone, footerBackRef, footerStartRef, onExitToPlayStyle, onEnterFooter },
   ref
 ) {
   const navigate = useNavigate();
@@ -329,18 +333,30 @@ export const PracticeChallengesPanel = forwardRef<
     navigate('/game');
   }, [selected, playSfx, navigate]);
 
+  const focusDefault = useCallback(() => {
+    gateActionRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  const focusBeforeFooter = useCallback(() => {
+    const lastIdx = CHALLENGES.length - 1;
+    setSelected(lastIdx);
+    rowRefs.current[lastIdx]?.focus({ preventScroll: true });
+  }, []);
+
   useImperativeHandle(
     ref,
     () => ({
       launchSelected: () => {
         launchChallenge();
       },
+      focusDefault,
+      focusBeforeFooter,
     }),
-    [launchChallenge]
+    [launchChallenge, focusDefault, focusBeforeFooter]
   );
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || menuZone !== 'panel') return;
 
     const handleKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
@@ -376,12 +392,14 @@ export const PracticeChallengesPanel = forwardRef<
         }
         if (onStart) {
           playSfx(SFX.MENU_SELECT);
+          onEnterFooter?.('back');
           footerBackRef.current?.focus({ preventScroll: true });
           return;
         }
         if (onBack) {
           playSfx(SFX.MENU_SELECT);
-          gateActionRef.current?.focus({ preventScroll: true });
+          onEnterFooter?.('start');
+          footerStartRef.current?.focus({ preventScroll: true });
           return;
         }
         if (rowNavIndex < 0) return;
@@ -392,6 +410,7 @@ export const PracticeChallengesPanel = forwardRef<
             return from + 1;
           }
           playSfx(SFX.MENU_SELECT);
+          onEnterFooter?.('start');
           footerStartRef.current?.focus({ preventScroll: true });
           return prev;
         });
@@ -402,18 +421,17 @@ export const PracticeChallengesPanel = forwardRef<
         e.preventDefault();
         if (onGateAction) {
           playSfx(SFX.MENU_SELECT);
-          footerBackRef.current?.focus({ preventScroll: true });
+          onExitToPlayStyle?.();
           return;
         }
         if (onStart) {
           playSfx(SFX.MENU_SELECT);
-          const lastIdx = CHALLENGES.length - 1;
-          setSelected(lastIdx);
-          rowRefs.current[lastIdx]?.focus({ preventScroll: true });
+          focusBeforeFooter();
           return;
         }
         if (onBack) {
           playSfx(SFX.MENU_SELECT);
+          onEnterFooter?.('start');
           footerStartRef.current?.focus({ preventScroll: true });
           return;
         }
@@ -443,6 +461,7 @@ export const PracticeChallengesPanel = forwardRef<
         if (rowNavIndex < 0) return;
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
+        onEnterFooter?.('start');
         footerStartRef.current?.focus({ preventScroll: true });
         return;
       }
@@ -468,7 +487,11 @@ export const PracticeChallengesPanel = forwardRef<
     window.addEventListener('keydown', handleKey, true);
     return () => window.removeEventListener('keydown', handleKey, true);
   }, [
+    focusBeforeFooter,
     isActive,
+    menuZone,
+    onEnterFooter,
+    onExitToPlayStyle,
     playSfx,
     navigate,
     launchChallenge,
@@ -477,7 +500,7 @@ export const PracticeChallengesPanel = forwardRef<
   ]);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || menuZone !== 'panel') return;
 
     const el = rowRefs.current[selected];
     if (!el) return;
@@ -506,7 +529,7 @@ export const PracticeChallengesPanel = forwardRef<
       inner.removeEventListener('animationend', onEnd);
       inner.classList.remove('sc-row__inner--pop');
     };
-  }, [isActive, selected]);
+  }, [isActive, menuZone, selected]);
 
   return (
     <div className="practice-challenges-panel solo-challenges-panel" role="group" aria-label="Challenges">

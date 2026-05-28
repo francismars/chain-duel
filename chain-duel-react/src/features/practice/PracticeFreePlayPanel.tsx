@@ -24,6 +24,7 @@ import {
 } from '@/pages/practiceHubNav';
 import type { PracticeFreePlayPanelHandle } from '@/features/practice/practicePanelHandles';
 import { savePracticeGameConfig } from '@/pages/practiceHubModes';
+import type { PracticeHubFocus } from '@/pages/practiceHubPlayStyleNav';
 
 // ── Convergence: fixed Soldier preset ──────────────────────────────────────
 
@@ -51,16 +52,18 @@ type OpponentChoice = 'humans' | 'ai';
 
 interface PracticeFreePlayPanelProps {
   isActive: boolean;
+  menuZone: PracticeHubFocus['zone'];
   footerBackRef: RefObject<HTMLButtonElement | null>;
   footerStartRef: RefObject<HTMLButtonElement | null>;
-  onFooterNav?: (kind: 'back' | 'start' | null) => void;
+  onExitToPlayStyle?: () => void;
+  onEnterFooter?: (which: 'back' | 'start') => void;
 }
 
 export const PracticeFreePlayPanel = forwardRef<
   PracticeFreePlayPanelHandle,
   PracticeFreePlayPanelProps
 >(function PracticeFreePlayPanel(
-  { isActive, footerBackRef, footerStartRef, onFooterNav },
+  { isActive, menuZone, footerBackRef, footerStartRef, onExitToPlayStyle, onEnterFooter },
   ref
 ) {
   const navigate = useNavigate();
@@ -141,7 +144,23 @@ export const PracticeFreePlayPanel = forwardRef<
     navigate('/game');
   }, [playSfx, navigate, format, opponent, slotHuman, aiTier, powerup]);
 
-  useImperativeHandle(ref, () => ({ startPractice: start }), [start]);
+  const focusDefault = useCallback(() => {
+    setNavFocus({ kind: 'format', idx: 0 });
+  }, []);
+
+  const focusBeforeFooter = useCallback(() => {
+    setNavFocus({ kind: 'rulePowerup' });
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      startPractice: start,
+      focusDefault,
+      focusBeforeFooter,
+    }),
+    [start, focusDefault, focusBeforeFooter]
+  );
 
   const activatePracticeNavFocus = useCallback(
     (f: PracticeNavFocus) => {
@@ -186,7 +205,7 @@ export const PracticeFreePlayPanel = forwardRef<
   }, [showTeamControl, show1v1Opponent, opponent, allFourHuman]);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || menuZone !== 'panel') return;
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -221,14 +240,28 @@ export const PracticeFreePlayPanel = forwardRef<
         activatePracticeNavFocus(navFocus);
         return;
       }
+
+      if (isUp && navFocus.kind === 'format') {
+        e.preventDefault();
+        onExitToPlayStyle?.();
+        return;
+      }
+
       e.preventDefault();
-      setNavFocus((prev) =>
-        movePracticeHubNav(
+      setNavFocus((prev) => {
+        const next = movePracticeHubNav(
           prev,
           isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right',
-          showTeamControl, show1v1Opponent, opponent, allFourHuman
-        )
-      );
+          showTeamControl,
+          show1v1Opponent,
+          opponent,
+          allFourHuman
+        );
+        if (next.kind === 'back' || next.kind === 'start') {
+          onEnterFooter?.(next.kind);
+        }
+        return next;
+      });
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
@@ -236,8 +269,11 @@ export const PracticeFreePlayPanel = forwardRef<
     activatePracticeNavFocus,
     allFourHuman,
     isActive,
+    menuZone,
     navigate,
     navFocus,
+    onEnterFooter,
+    onExitToPlayStyle,
     opponent,
     playSfx,
     show1v1Opponent,
@@ -253,16 +289,11 @@ export const PracticeFreePlayPanel = forwardRef<
     else if (navFocus.kind === 'start')     { footerStartRef.current?.focus(); }
     else if (navFocus.kind === 'back')      { footerBackRef.current?.focus(); }
 
-    if (!isActive) {
-      onFooterNav?.(null);
-      return;
-    }
+    if (!isActive || menuZone !== 'panel') return;
     if (navFocus.kind === 'back' || navFocus.kind === 'start') {
-      onFooterNav?.(navFocus.kind);
-    } else {
-      onFooterNav?.(null);
+      onEnterFooter?.(navFocus.kind);
     }
-  }, [navFocus, footerBackRef, footerStartRef, isActive, onFooterNav]);
+  }, [navFocus, footerBackRef, footerStartRef, isActive, menuZone, onEnterFooter]);
 
   return (
     <div className="practice-free-play-panel" role="group" aria-label="Free play setup">

@@ -2,7 +2,11 @@
 
 export type PracticePlayStyle = 'free' | 'challenges';
 
-export type PracticeHubPlayStyleFocus = { kind: 'playStyle'; idx: 0 | 1 };
+/** Keyboard focus zones on /practice (play style cards → panel → footer). */
+export type PracticeHubFocus =
+  | { zone: 'playStyle'; idx: 0 | 1 }
+  | { zone: 'panel' }
+  | { zone: 'footer'; which: 'back' | 'start' };
 
 export function parsePlaySearchParam(raw: string | null): PracticePlayStyle {
   return raw === 'challenges' ? 'challenges' : 'free';
@@ -20,11 +24,19 @@ export function playStyleToIdx(style: PracticePlayStyle): 0 | 1 {
   return style === 'challenges' ? 1 : 0;
 }
 
-export function movePlayStyleNav(
-  idx: 0 | 1,
+/** Left = Free play (0), right = Challenges (1); no wrap. */
+export function movePlayStyleNav(direction: 'left' | 'right'): 0 | 1 {
+  return direction === 'left' ? 0 : 1;
+}
+
+export function movePracticeHubFooter(
+  which: 'back' | 'start',
   direction: 'left' | 'right' | 'up' | 'down'
-): 0 | 1 {
-  if (direction === 'left' || direction === 'up') return idx === 0 ? 1 : 0;
-  if (direction === 'right' || direction === 'down') return idx === 0 ? 1 : 0;
-  return idx;
+): 'back' | 'start' | 'panel' {
+  if (direction === 'up') return 'panel';
+  if (direction === 'left') return 'back';
+  if (direction === 'right') return 'start';
+  if (which === 'back' && (direction === 'down' || direction === 'right')) return 'start';
+  if (which === 'start' && (direction === 'down' || direction === 'left')) return 'back';
+  return which;
 }

@@ -21,6 +21,99 @@ export function navFocusEqual(a: PracticeNavFocus, b: PracticeNavFocus): boolean
   return true;
 }
 
+type NavContext = {
+  showTeamControl: boolean;
+  show1v1Opponent: boolean;
+  opponent: OpponentChoice;
+  allFourHuman: boolean;
+};
+
+function clampCol(idx: number, cols: number): number {
+  return Math.min(Math.max(idx, 0), cols - 1);
+}
+
+function hasTierRow(ctx: NavContext): boolean {
+  return (
+    (ctx.show1v1Opponent && ctx.opponent === 'ai') ||
+    (ctx.showTeamControl && !ctx.allFourHuman)
+  );
+}
+
+function rowAboveRulePowerup(ctx: NavContext): PracticeNavFocus {
+  if (hasTierRow(ctx)) {
+    return { kind: 'tier', idx: 0 };
+  }
+  if (ctx.show1v1Opponent) {
+    return { kind: 'opponent', idx: 0 };
+  }
+  if (ctx.showTeamControl) {
+    return { kind: 'slot', idx: 0 };
+  }
+  return { kind: 'format', idx: 0 };
+}
+
+function verticalStep(
+  f: PracticeNavFocus,
+  direction: 'up' | 'down',
+  ctx: NavContext
+): PracticeNavFocus | null {
+  const down = direction === 'down';
+
+  switch (f.kind) {
+    case 'format': {
+      if (down) {
+        if (ctx.show1v1Opponent) {
+          return { kind: 'opponent', idx: clampCol(f.idx, 2) as 0 | 1 };
+        }
+        if (ctx.showTeamControl) {
+          return { kind: 'slot', idx: clampCol(f.idx, 4) as 0 | 1 | 2 | 3 };
+        }
+        return { kind: 'rulePowerup' };
+      }
+      return null;
+    }
+    case 'opponent': {
+      if (down) {
+        if (ctx.opponent === 'ai') {
+          return { kind: 'tier', idx: clampCol(f.idx, 4) as 0 | 1 | 2 | 3 };
+        }
+        return { kind: 'rulePowerup' };
+      }
+      return { kind: 'format', idx: clampCol(f.idx, 2) as 0 | 1 };
+    }
+    case 'slot': {
+      if (down) {
+        if (!ctx.allFourHuman) {
+          return { kind: 'tier', idx: clampCol(f.idx, 4) as 0 | 1 | 2 | 3 };
+        }
+        return { kind: 'rulePowerup' };
+      }
+      return { kind: 'format', idx: clampCol(f.idx, 2) as 0 | 1 };
+    }
+    case 'tier': {
+      if (down) return { kind: 'rulePowerup' };
+      if (ctx.show1v1Opponent) {
+        return { kind: 'opponent', idx: clampCol(f.idx, 2) as 0 | 1 };
+      }
+      return { kind: 'slot', idx: clampCol(f.idx, 4) as 0 | 1 | 2 | 3 };
+    }
+    case 'rulePowerup': {
+      if (down) return { kind: 'start' };
+      return rowAboveRulePowerup(ctx);
+    }
+    case 'start': {
+      if (down) return { kind: 'back' };
+      return { kind: 'rulePowerup' };
+    }
+    case 'back': {
+      if (down) return null;
+      return { kind: 'start' };
+    }
+    default:
+      return null;
+  }
+}
+
 export function buildPracticeHubFlatNav(
   showTeamControl: boolean,
   show1v1Opponent: boolean,
@@ -88,6 +181,10 @@ function horizontalStep(
       return { kind: 'opponent', idx: horiz(f.idx, 2) as 0 | 1 };
     case 'tier':
       return { kind: 'tier', idx: horiz(f.idx, 4) as 0 | 1 | 2 | 3 };
+    case 'start':
+      return left ? { kind: 'back' } : f;
+    case 'back':
+      return left ? f : { kind: 'start' };
     default:
       return null;
   }
@@ -101,36 +198,21 @@ export function movePracticeHubNav(
   opponent: OpponentChoice,
   allFourHuman: boolean
 ): PracticeNavFocus {
-  if (direction === 'up') {
-    return advancePracticeHubFlatNav(
-      f,
-      -1,
-      showTeamControl,
-      show1v1Opponent,
-      opponent,
-      allFourHuman
-    );
-  }
-  if (direction === 'down') {
-    return advancePracticeHubFlatNav(
-      f,
-      1,
-      showTeamControl,
-      show1v1Opponent,
-      opponent,
-      allFourHuman
-    );
-  }
-  const h = horizontalStep(f, direction === 'left' ? 'left' : 'right');
-  if (h) return h;
-  return advancePracticeHubFlatNav(
-    f,
-    direction === 'left' ? -1 : 1,
+  const ctx: NavContext = {
     showTeamControl,
     show1v1Opponent,
     opponent,
-    allFourHuman
-  );
+    allFourHuman,
+  };
+
+  if (direction === 'up' || direction === 'down') {
+    const next = verticalStep(f, direction, ctx);
+    return next ?? f;
+  }
+
+  const h = horizontalStep(f, direction);
+  if (h) return h;
+  return f;
 }
 
 export function normalizePracticeNavFocus(
