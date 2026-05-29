@@ -1,7 +1,7 @@
 import { useEffect, type MutableRefObject } from 'react';
 import type { Socket } from 'socket.io-client';
 import { getHudState, stepGame } from '@/game/engine';
-import type { GameState } from '@/game/engine/types';
+import type { FfaHudPlayer, GameState } from '@/game/engine/types';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
 import type { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import type { GameAudioSystem } from '@/game/audio/gameAudio';
@@ -14,9 +14,23 @@ interface HudSnapshot {
   captureP2: string;
   currentWidthP1: number;
   currentWidthP2: number;
+  ffa?: { players: FfaHudPlayer[] };
 }
 
 const MAX_SIM_STEPS_PER_FRAME = 8;
+
+function ffaHudEqual(a?: HudSnapshot['ffa'], b?: HudSnapshot['ffa']): boolean {
+  if (!a && !b) return true;
+  if (!a || !b || a.players.length !== b.players.length) return false;
+  return a.players.every((p, i) => {
+    const q = b.players[i];
+    return (
+      p.score === q.score &&
+      p.capture === q.capture &&
+      Math.round(p.currentShare * 10) === Math.round(q.currentShare * 10)
+    );
+  });
+}
 
 function hudSnapshotEqual(a: HudSnapshot, b: HudSnapshot): boolean {
   return (
@@ -25,7 +39,8 @@ function hudSnapshotEqual(a: HudSnapshot, b: HudSnapshot): boolean {
     a.captureP1 === b.captureP1 &&
     a.captureP2 === b.captureP2 &&
     a.currentWidthP1 === b.currentWidthP1 &&
-    a.currentWidthP2 === b.currentWidthP2
+    a.currentWidthP2 === b.currentWidthP2 &&
+    ffaHudEqual(a.ffa, b.ffa)
   );
 }
 
@@ -65,6 +80,8 @@ export function useGameRenderBridge({
   useEffect(() => {
     if (!hostRef.current || !stateRef.current || loading) return;
     let mounted = true;
+    let cancelled = false;
+    let mountReady = false;
     const audio = audioRef.current;
     const renderer = createRenderer();
     rendererRef.current = renderer;
@@ -78,15 +95,26 @@ export function useGameRenderBridge({
     let lastHud: HudSnapshot | null = null;
 
     void renderer.mount(hostRef.current).then(() => {
-      if (!mounted) return;
+      if (cancelled || !mounted) {
+        renderer.destroy();
+        return;
+      }
+      mountReady = true;
       renderer.resize();
       forcePaint = true;
+      const host = hostRef.current;
+      if (!host) return;
       const onResize = () => {
         renderer.resize();
         forcePaint = true;
       };
       window.addEventListener('resize', onResize);
-      detachResize = () => window.removeEventListener('resize', onResize);
+      const ro = new ResizeObserver(onResize);
+      ro.observe(host);
+      detachResize = () => {
+        window.removeEventListener('resize', onResize);
+        ro.disconnect();
+      };
     });
 
     const applyHud = (hud: HudSnapshot) => {
@@ -146,7 +174,15 @@ export function useGameRenderBridge({
         stepped = true;
 
         const hud = getHudState(state);
-        applyHud(hud);
+        applyHud({
+          p1Points: hud.p1Points,
+          p2Points: hud.p2Points,
+          captureP1: hud.captureP1,
+          captureP2: hud.captureP2,
+          currentWidthP1: hud.currentWidthP1,
+          currentWidthP2: hud.currentWidthP2,
+          ffa: hud.ffa,
+        });
 
         const newStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
         if (newStepMs !== prevStepMs && newStepMs !== lastReportedStepMs) {
@@ -185,6 +221,10 @@ export function useGameRenderBridge({
     let frameRef = 0;
     const frame = (now: number) => {
       if (!mounted) return;
+      if (!mountReady) {
+        frameRef = window.requestAnimationFrame(frame);
+        return;
+      }
       const state = stateRef.current;
       const deltaMs = Math.min(100, Math.max(0, now - lastFrameMs));
       lastFrameMs = now;
@@ -204,6 +244,7 @@ export function useGameRenderBridge({
 
     return () => {
       mounted = false;
+      cancelled = true;
       if (detachResize) detachResize();
       window.cancelAnimationFrame(frameRef);
       renderer.destroy();

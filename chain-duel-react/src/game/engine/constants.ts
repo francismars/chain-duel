@@ -3,6 +3,24 @@ export const GAME_ROWS = 25;
 export const STEP_SPEED_MS = 100;
 export const COUNTDOWN_END_TICK = 40;
 
+/** 1v1 player 2 snake fill (black). */
+export const P2_SNAKE_COLOR = 0x111111;
+
+/** FFA extras: Ghost darker than Specter, both lighter than P2 black. */
+export const FFA_GHOST_COLOR = 0x2a2a2a;
+export const FFA_SPECTER_COLOR = 0x666666;
+
+/** HUD + distribution bars — match on-board snake fills. */
+export const FFA_HUD_COLORS = [
+  '#ffffff',
+  '#111111',
+  '#2a2a2a',
+  '#666666',
+] as const;
+
+/** FFA: each of the four players starts with this many sats (4000 total pot). */
+export const FFA_START_SATS_PER_PLAYER = 1000;
+
 export const CAPTURE_LEVELS = [
   { minLength: 1, maxLength: 1, percent: 2 },
   { minLength: 2, maxLength: 3, percent: 4 },

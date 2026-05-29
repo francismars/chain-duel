@@ -1,0 +1,303 @@
+/* Unified FFA HUD — stacked rows, 4-column grid for players + sats */
+
+.ffa-hud {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0.35vw 15% 0.45vw;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.58vw;
+  box-sizing: border-box;
+}
+
+.ffa-hud-mode {
+  margin: 0;
+}
+
+/* Match 1v1 #gameInfo — override the 33% width rule from game.css */
+.ffa-hud #gameInfo.ffa-hud-mode {
+  width: auto;
+  font-size: 2.5cqw;
+  line-height: 1;
+  text-align: center;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.ffa-hud-bars {
+  width: 100%;
+  position: relative;
+  text-transform: uppercase;
+  text-align: center;
+  font-size: 0.7vw;
+  letter-spacing: 0.05em;
+  margin-top: 0.12vw;
+}
+
+.ffa-hud-bars .distributionBarOutter {
+  margin-bottom: 0.08vw;
+}
+
+.ffa-hud-bars .distributionBarOutter:last-child {
+  margin-bottom: 0;
+}
+
+/* Initial title above bar; current title centered inside the live bar */
+.ffa-hud-bars #initialDistribution .distributionTitle {
+  position: static;
+  margin-bottom: 0.08vw;
+  color: #828282;
+  font-size: 0.7vw;
+}
+
+.ffa-hud-bars .ffa-distribution-title-in-bar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  margin: 0;
+  pointer-events: none;
+  color: #848484;
+  font-size: 0.9vw;
+  line-height: 1;
+  white-space: nowrap;
+  background: transparent;
+}
+
+.ffa-hud-players {
+  display: flex;
+  flex-direction: column;
+  gap: 0.02vw;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.ffa-hud-names {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  position: relative;
+  align-items: start;
+}
+
+.ffa-hud-names .ffa-hud-mode {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: max-content;
+  max-width: none;
+  pointer-events: none;
+}
+
+.ffa-hud-captures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ffa-hud-sats-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  position: relative;
+  align-items: center;
+  width: 100%;
+  margin-top: 0.45vw;
+  min-height: 2vw;
+}
+
+.ffa-hud-sats-row .ffa-hud-sponsor {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: max-content;
+  margin: 0;
+  padding: 0;
+}
+
+.ffa-hud-slot {
+  min-width: 0;
+}
+
+.ffa-hud-slot-0,
+.ffa-hud-slot-1 {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.ffa-hud-slot-2,
+.ffa-hud-slot-3 {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.ffa-hud-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42vw;
+  font-size: 1.5vw;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  max-width: 100%;
+}
+
+.ffa-hud-name-right {
+  flex-direction: row;
+}
+
+.ffa-hud-swatch {
+  flex-shrink: 0;
+  width: 0.72vw;
+  height: 0.72vw;
+  background: var(--ffa-color, #fff);
+  box-shadow: 0 0 11px #ffffffb0;
+}
+
+.ffa-hud-slot-1 .ffa-hud-swatch,
+.ffa-hud-slot-2 .ffa-hud-swatch {
+  border: 1px solid #1f1f1f;
+}
+
+.ffa-hud-name .condensed {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ffa-hud-capture {
+  font-size: 0.55vw;
+  color: #9a9a9a;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ffa-hud-slot-2 .ffa-hud-capture,
+.ffa-hud-slot-3 .ffa-hud-capture {
+  text-align: right;
+}
+
+.ffa-hud-capture .capturingAmount {
+  font-weight: 900;
+  font-size: 0.62vw;
+  transition: all 0.1s ease-out;
+  display: inline-block;
+}
+
+.ffa-hud-capture.highlight .capturingAmount {
+  font-size: 0.82vw;
+}
+
+.ffa-hud-sats-slot {
+  min-width: 0;
+  font-size: 0.65vw;
+  line-height: 1;
+}
+
+.ffa-hud-sats-slot-0,
+.ffa-hud-sats-slot-1 {
+  text-align: left;
+}
+
+.ffa-hud-sats-slot-2,
+.ffa-hud-sats-slot-3 {
+  text-align: right;
+}
+
+.ffa-hud-sats-slot .condensed {
+  font-size: 1.35vw;
+  color: #fff;
+}
+
+.ffa-hud-sats-slot .grey {
+  font-size: 0.65vw;
+}
+
+.ffa-hud-sponsor #sponsorshipGame {
+  box-shadow: #ffffff21 0 0 24px 12px;
+}
+
+.ffa-hud-sponsor #sponsorshipGame .sponsored-img {
+  height: clamp(10px, 1.6vw, 36px);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.ffa-distribution .ffa-distribution-track {
+  position: relative;
+  width: 100%;
+  height: 0.3vw;
+}
+
+.ffa-hud-bars #initialDistribution .ffa-distribution-track {
+  height: 0.3vw;
+}
+
+.ffa-hud-bars #currentDistribution .ffa-distribution-track {
+  height: 1.7vw;
+  box-shadow: none;
+}
+
+/* Override 1v1 #currentDistribution .distributionBar (50% width, glow, fixed height) */
+.ffa-hud-bars #initialDistribution .distributionBar.ffa-distribution-segment,
+.ffa-hud-bars #currentDistribution .distributionBar.ffa-distribution-segment {
+  position: absolute;
+  top: 0;
+  right: auto;
+  height: 100%;
+  width: auto;
+  box-shadow: none;
+  transition: left 0.15s ease-out, width 0.15s ease-out;
+}
+
+.ffa-distribution-segment {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: left 0.15s ease-out, width 0.15s ease-out;
+}
+
+@media (max-width: 900px), (max-height: 700px) {
+  .ffa-hud #gameInfo.ffa-hud-mode {
+    font-size: clamp(0.65rem, 2.25vmax, 1rem);
+  }
+
+  .ffa-hud-bars #initialDistribution .distributionTitle {
+    font-size: clamp(0.5rem, 1.6vmax, 0.65rem);
+    margin-bottom: 0.4rem;
+  }
+
+  .ffa-hud-bars .ffa-distribution-title-in-bar {
+    font-size: clamp(0.58rem, 2vmax, 0.78rem);
+  }
+
+  .ffa-hud-name {
+    font-size: 16px;
+  }
+
+  .ffa-hud-capture {
+    font-size: 9px;
+  }
+
+  .ffa-hud-capture .capturingAmount {
+    font-size: 10px;
+  }
+
+  .ffa-hud-capture.highlight .capturingAmount {
+    font-size: 12px;
+  }
+
+  .ffa-hud-sats-slot .condensed {
+    font-size: 16px;
+  }
+
+  .ffa-hud-sats-slot .grey {
+    font-size: 11px;
+  }
+}

@@ -76,6 +76,11 @@ body {
   position: relative;
 }
 
+.game-hud-ffa-wrap {
+  position: relative;
+  width: 100%;
+}
+
 .playerSquare {
   width: 2cqw;
   height: 2cqw;

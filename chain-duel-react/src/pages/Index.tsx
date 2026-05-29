@@ -199,13 +199,23 @@ export default function Index() {
       }
 
       if (menuRef.current === 5) {
-        if (event.key === 'ArrowLeft' || event.code === 'ArrowLeft') {
+        const isLeft =
+          event.key === 'ArrowLeft' ||
+          event.code === 'ArrowLeft' ||
+          event.key === 'a' ||
+          event.key === 'A';
+        const isRight =
+          event.key === 'ArrowRight' ||
+          event.code === 'ArrowRight' ||
+          event.key === 'd' ||
+          event.key === 'D';
+        if (isLeft) {
           event.preventDefault();
           playSfx(SFX.MENU_SELECT);
           setRow6Focus((c) => (c === 'config' ? 'about' : c));
           return;
         }
-        if (event.key === 'ArrowRight' || event.code === 'ArrowRight') {
+        if (isRight) {
           event.preventDefault();
           playSfx(SFX.MENU_SELECT);
           setRow6Focus((c) => (c === 'about' ? 'config' : c));

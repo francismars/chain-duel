@@ -22,6 +22,8 @@ import { useGameSocketEvents } from '@/features/game/hooks/useGameSocketEvents';
 import { useGameRenderBridge } from '@/features/game/hooks/useGameRenderBridge';
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
 import { PowerUpLegend } from '@/features/game/PowerUpLegend';
+import { FfaHud } from '@/features/game/FfaGameHud';
+import type { FfaHudPlayer } from '@/game/engine/types';
 import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import {
   isExplicitPracticeSession,
@@ -88,6 +90,10 @@ export default function Game() {
   const [initialP2Width, setInitialP2Width] = useState(50);
   const [currentP1Width, setCurrentP1Width] = useState(50);
   const [currentP2Width, setCurrentP2Width] = useState(50);
+  const [isFfa, setIsFfa] = useState(false);
+  const [ffaPlayers, setFfaPlayers] = useState<FfaHudPlayer[]>([]);
+  const [ffaCaptureHighlights, setFfaCaptureHighlights] = useState([false, false, false, false]);
+  const ffaCapturePrevRef = useRef(['2%', '2%', '2%', '2%']);
   const [bitcoin, setBitcoin] = useState<BitcoinDetails>(DEFAULT_BITCOIN_DETAILS);
   const [footerHighlight, setFooterHighlight] = useState(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
@@ -163,6 +169,7 @@ export default function Game() {
 
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
   const canShowP2Image = useMemo(() => player2Img.length > 0, [player2Img]);
+  const showFfaUi = isFfa && ffaPlayers.length === 4;
 
   const isPowerupMode = useMemo(() => {
     try {
@@ -308,6 +315,11 @@ export default function Game() {
       setInitialP2Width(hud.initialWidthP2);
       setCurrentP1Width(hud.currentWidthP1);
       setCurrentP2Width(hud.currentWidthP2);
+      setIsFfa(teamMode === 'ffa');
+      if (hud.ffa?.players) {
+        setFfaPlayers(hud.ffa.players);
+        ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
+      }
     }
 
     // Always sync React HUD (Strict Mode re-runs must not skip this).
@@ -492,6 +504,7 @@ export default function Game() {
     captureP2: string;
     currentWidthP1: number;
     currentWidthP2: number;
+    ffa?: { players: FfaHudPlayer[] };
   }) => {
     setP1Points(hud.p1Points);
     setP2Points(hud.p2Points);
@@ -499,6 +512,16 @@ export default function Game() {
     setCaptureP2(hud.captureP2);
     setCurrentP1Width(hud.currentWidthP1);
     setCurrentP2Width(hud.currentWidthP2);
+    if (hud.ffa?.players) {
+      setFfaPlayers(hud.ffa.players);
+      const prev = ffaCapturePrevRef.current;
+      const flashes = hud.ffa.players.map((p, i) => p.capture !== prev[i]);
+      if (flashes.some(Boolean)) {
+        setFfaCaptureHighlights(flashes);
+        window.setTimeout(() => setFfaCaptureHighlights([false, false, false, false]), 100);
+      }
+      ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
+    }
   }, []);
 
   const handleCaptureChanged = useCallback((side: 'P1' | 'P2') => {
@@ -651,91 +674,121 @@ export default function Game() {
       </h1>
 
       <div id="gameContainer" className={`flex full game ${loading ? 'hide' : ''}`}>
-        <div>
-          <div className="flex players">
-            <div id="player1info" className="condensed">
-              <div className="inline playerSquare white" />
-              <img className={`inline playerImg ${canShowP1Image ? '' : 'hide'}`} id="player1Img" src={player1Img || '/images/loading.gif'} />
-              <div className="inline" id="player1name">
-                {player1Name}
-              </div>
-            </div>
-            <div id="gameInfo" className="outline condensed">
-              {gameInfo}
-            </div>
-            <div id="player2info" className="condensed">
-              <div className="inline" id="player2name">
-                {player2Name}
-              </div>
-              <img className={`inline playerImg ${canShowP2Image ? '' : 'hide'}`} id="player2Img" src={player2Img || '/images/loading.gif'} />
-              <div className="inline playerSquare black" />
-            </div>
-
-            <div id="zapMessages">
-              {zapMessages.map((zap) => (
-                <div
-                  key={zap.id}
-                  className={`zapMessage ${zap.hidden ? 'hidden' : ''}`}
-                  style={{ top: `${zap.top}vw`, transform: `scale(${zap.scale})` }}
-                >
-                  <div className="zapMessageInner">
-                    <img src={zap.profile} alt="" />
-                    <div className="zapText">
-                      <div className="zapUser">{zap.username}</div>
-                      <div className="zapContent condensed">{zap.content}</div>
-                      <div className="zapAmount">{zap.amount.toLocaleString()} sats</div>
+        <div className={showFfaUi ? 'game-hud-ffa-wrap' : undefined}>
+          {showFfaUi ? (
+            <>
+              <FfaHud
+                players={ffaPlayers}
+                gameInfo={gameInfo}
+                captureHighlights={ffaCaptureHighlights}
+              />
+              <div id="zapMessages">
+                {zapMessages.map((zap) => (
+                  <div
+                    key={zap.id}
+                    className={`zapMessage ${zap.hidden ? 'hidden' : ''}`}
+                    style={{ top: `${zap.top}vw`, transform: `scale(${zap.scale})` }}
+                  >
+                    <div className="zapMessageInner">
+                      <img src={zap.profile} alt="" />
+                      <div className="zapText">
+                        <div className="zapUser">{zap.username}</div>
+                        <div className="zapContent condensed">{zap.content}</div>
+                        <div className="zapAmount">{zap.amount.toLocaleString()} sats</div>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex players">
+                <div id="player1info" className="condensed">
+                  <div className="inline playerSquare white" />
+                  <img className={`inline playerImg ${canShowP1Image ? '' : 'hide'}`} id="player1Img" src={player1Img || '/images/loading.gif'} />
+                  <div className="inline" id="player1name">
+                    {player1Name}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div id="gameInfo" className="outline condensed">
+                  {gameInfo}
+                </div>
+                <div id="player2info" className="condensed">
+                  <div className="inline" id="player2name">
+                    {player2Name}
+                  </div>
+                  <img className={`inline playerImg ${canShowP2Image ? '' : 'hide'}`} id="player2Img" src={player2Img || '/images/loading.gif'} />
+                  <div className="inline playerSquare black" />
+                </div>
 
-          <div className="gameState">
-            <div id="capturing">
-              <div id="capturingP1">
-                <span id="capturingP1Amount" className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}>
-                  {captureP1}
-                </span>{' '}
-                capture
+                <div id="zapMessages">
+                  {zapMessages.map((zap) => (
+                    <div
+                      key={zap.id}
+                      className={`zapMessage ${zap.hidden ? 'hidden' : ''}`}
+                      style={{ top: `${zap.top}vw`, transform: `scale(${zap.scale})` }}
+                    >
+                      <div className="zapMessageInner">
+                        <img src={zap.profile} alt="" />
+                        <div className="zapText">
+                          <div className="zapUser">{zap.username}</div>
+                          <div className="zapContent condensed">{zap.content}</div>
+                          <div className="zapAmount">{zap.amount.toLocaleString()} sats</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div id="capturingP2">
-                capture{' '}
-                <span id="capturingP2Amount" className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}>
-                  {captureP2}
-                </span>
-              </div>
-            </div>
 
-            <div id="distributions">
-              <div id="initialDistribution" className="distributionBarOutter">
-                <div className="distributionTitle">Initial Distribution</div>
-                <div id="initialDistributionP1" className="distributionBar" style={{ width: `${initialP1Width}%` }} />
-                <div id="initialDistributionP2" className="distributionBar" style={{ width: `${initialP2Width}%` }} />
-              </div>
-              <div id="currentDistribution" className="distributionBarOutter">
-                <div className="distributionTitle">Current Distribution</div>
-                <div id="currentDistributionP1" className="distributionBar" style={{ width: `${currentP1Width}%` }} />
-                <div id="currentDistributionP2" className="distributionBar" style={{ width: `${currentP2Width}%` }} />
-              </div>
-            </div>
-          </div>
+              <div className="gameState">
+                <div id="capturing">
+                  <div id="capturingP1">
+                    <span id="capturingP1Amount" className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}>
+                      {captureP1}
+                    </span>{' '}
+                    capture
+                  </div>
+                  <div id="capturingP2">
+                    capture{' '}
+                    <span id="capturingP2Amount" className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}>
+                      {captureP2}
+                    </span>
+                  </div>
+                </div>
 
-          <div className="flex points">
-            <div className="player-sats player-sats-p1">
-              <span id="p1Points" className="condensed">
-                {p1Points.toLocaleString()}
-              </span>{' '}
-              <span className="grey">sats</span>
-            </div>
-            <Sponsorship id="sponsorshipGame" showLabel={false} />
-            <div className="player-sats player-sats-p2">
-              <span className="grey">sats</span>{' '}
-              <span id="p2Points" className="condensed">
-                {p2Points.toLocaleString()}
-              </span>
-            </div>
-          </div>
+                <div id="distributions">
+                  <div id="initialDistribution" className="distributionBarOutter">
+                    <div className="distributionTitle">Initial Distribution</div>
+                    <div id="initialDistributionP1" className="distributionBar" style={{ width: `${initialP1Width}%` }} />
+                    <div id="initialDistributionP2" className="distributionBar" style={{ width: `${initialP2Width}%` }} />
+                  </div>
+                  <div id="currentDistribution" className="distributionBarOutter">
+                    <div className="distributionTitle">Current Distribution</div>
+                    <div id="currentDistributionP1" className="distributionBar" style={{ width: `${currentP1Width}%` }} />
+                    <div id="currentDistributionP2" className="distributionBar" style={{ width: `${currentP2Width}%` }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex points">
+                <div className="player-sats player-sats-p1">
+                  <span id="p1Points" className="condensed">
+                    {p1Points.toLocaleString()}
+                  </span>{' '}
+                  <span className="grey">sats</span>
+                </div>
+                <Sponsorship id="sponsorshipGame" showLabel={false} />
+                <div className="player-sats player-sats-p2">
+                  <span className="grey">sats</span>{' '}
+                  <span id="p2Points" className="condensed">
+                    {p2Points.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
             <div id="gameCanvasHost" ref={hostRef} />

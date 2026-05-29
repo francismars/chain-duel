@@ -41,7 +41,7 @@ export interface PowerUpItem {
 
 export interface ActivePowerUp {
   type: PowerUpType;
-  player: PlayerId;
+  playerIndex: 0 | 1 | 2 | 3;
   expiresAtTick: number;
   chargesLeft?: number;
 }
@@ -120,6 +120,18 @@ export interface GameState {
   powerUpRespawnCooldownTick: number;
   convergenceWallClosed: boolean;
   extraSnakes: ExtraSnake[];
+  /** FFA: per-player starting sats (P1, P2, P3, P4). */
+  ffaInitialScores?: [number, number, number, number];
+}
+
+export interface FfaHudPlayer {
+  index: 0 | 1 | 2 | 3;
+  name: string;
+  color: string;
+  score: number;
+  capture: string;
+  initialShare: number;
+  currentShare: number;
 }
 
 export interface HudState {
@@ -131,6 +143,9 @@ export interface HudState {
   initialWidthP2: number;
   currentWidthP1: number;
   currentWidthP2: number;
+  ffa?: {
+    players: FfaHudPlayer[];
+  };
 }
 
 export interface TickResult {

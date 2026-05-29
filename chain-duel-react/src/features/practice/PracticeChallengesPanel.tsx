@@ -68,7 +68,7 @@ const CHALLENGES: Challenge[] = [
     id: 'power-play',
     rank: 3,
     name: 'POWER PLAY',
-    tagline: 'Items change everything',
+    tagline: 'Power-ups change everything',
     format: '1v1',
     aiTier: 'hunter',
     powerup: true,
@@ -653,7 +653,7 @@ export const PracticeChallengesPanel = forwardRef<
                             <TierPips tier={c.aiTier} />
                           </span>
                           <span className="sc-tag sc-tag--cvg">CVG</span>
-                          {c.powerup && <span className="sc-tag sc-tag--mod">+ITEMS</span>}
+                          {c.powerup && <span className="sc-tag sc-tag--mod">+POWER-UPS</span>}
                         </div>
                       </div>
 

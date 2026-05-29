@@ -1,6 +1,7 @@
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { GameState, GridPos } from '@/game/engine/types';
-import { POWERUP_COLORS } from '@/game/engine/constants';
+import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
+import { getSnakeEffects, type PowerUpPlayerIndex } from '@/game/engine/powerups';
 
 export class PixiGameRenderer {
   private app: Application | null = null;
@@ -40,6 +41,10 @@ export class PixiGameRenderer {
   private countdown1: Text;
   private countdownLfg: Text;
   private gridCacheKey = '';
+  private lastResizeWidth = 0;
+  private lastResizeHeight = 0;
+  /** Bumped on destroy / remount so in-flight async init cannot attach a stale canvas. */
+  private mountGeneration = 0;
   private powerUpLabelPool = new Map<
     string,
     { name: Text; letter: Text }
@@ -119,17 +124,33 @@ export class PixiGameRenderer {
     this.countdownLfg = this.createCountdownText('LFG');
   }
 
+  private static async waitForHostLayout(host: HTMLElement, maxFrames = 12): Promise<void> {
+    for (let i = 0; i < maxFrames; i += 1) {
+      if (host.clientWidth > 0 && host.clientHeight > 0) return;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+  }
+
   async mount(host: HTMLElement): Promise<void> {
+    const generation = ++this.mountGeneration;
     this.host = host;
     host.innerHTML = '';
+    await PixiGameRenderer.waitForHostLayout(host);
+    const initWidth = Math.max(1, host.clientWidth);
+    const initHeight = Math.max(1, host.clientHeight);
     try {
       const app = new Application();
       await app.init({
         backgroundAlpha: 0,
         antialias: true,
-        resizeTo: host,
+        width: initWidth,
+        height: initHeight,
         preference: 'webgl',
       });
+      if (generation !== this.mountGeneration || this.host !== host) {
+        app.destroy(true, { children: true });
+        return;
+      }
       this.app = app;
       host.appendChild(app.canvas);
       this.root.addChild(this.deadZone);
@@ -155,14 +176,19 @@ export class PixiGameRenderer {
 
   resize(): void {
     if (!this.host) return;
+    const width = Math.max(1, this.host.clientWidth);
+    const height = Math.max(1, this.host.clientHeight);
+    if (width === this.lastResizeWidth && height === this.lastResizeHeight) return;
+    this.lastResizeWidth = width;
+    this.lastResizeHeight = height;
     this.gridCacheKey = '';
     if (this.app) {
-      this.app.renderer.resize(this.host.clientWidth, this.host.clientHeight);
+      this.app.renderer.resize(width, height);
       return;
     }
     if (this.fallbackCanvas) {
-      this.fallbackCanvas.width = Math.max(1, this.host.clientWidth);
-      this.fallbackCanvas.height = Math.max(1, this.host.clientHeight);
+      this.fallbackCanvas.width = width;
+      this.fallbackCanvas.height = height;
     }
   }
 
@@ -279,15 +305,16 @@ export class PixiGameRenderer {
       : Infinity;
 
     // Snakes
-    const powerUps = state.activePowerUps ?? [];
-    const p1Frozen  = powerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P1');
-    const p2Frozen  = powerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P2');
-    const p1Phantom = powerUps.some((ap) => ap.type === 'PHANTOM'   && ap.player === 'P1');
-    const p2Phantom = powerUps.some((ap) => ap.type === 'PHANTOM'   && ap.player === 'P2');
-    const p1Surging = powerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P1');
-    const p2Surging = powerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P2');
-    const p1Amped   = powerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P1');
-    const p2Amped   = powerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P2');
+    const p1Effects = getSnakeEffects(state, 0);
+    const p2Effects = getSnakeEffects(state, 1);
+    const p1Frozen = p1Effects.frozen;
+    const p2Frozen = p2Effects.frozen;
+    const p1Phantom = p1Effects.phantom;
+    const p2Phantom = p2Effects.phantom;
+    const p1Surging = p1Effects.surging;
+    const p2Surging = p2Effects.surging;
+    const p1Amped = p1Effects.amped;
+    const p2Amped = p2Effects.amped;
 
     // Record surge trail positions each frame
     const FADE = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
@@ -313,10 +340,10 @@ export class PixiGameRenderer {
     }
 
     // Extra snakes (teams / ffa) — drawn behind main snakes
-    for (const extra of (state.extraSnakes ?? [])) {
-      this.drawSnake(extra.snake, extra.color, colSize, rowSize, {
-        frozen: false, phantom: false, surging: false, amped: false,
-      }, [], now, boardElapsed);
+    for (let ei = 0; ei < (state.extraSnakes ?? []).length; ei += 1) {
+      const extra = state.extraSnakes[ei];
+      const extraEffects = getSnakeEffects(state, (ei + 2) as PowerUpPlayerIndex);
+      this.drawSnake(extra.snake, extra.color, colSize, rowSize, extraEffects, [], now, boardElapsed);
       // Ally / shadow border: solid inset outline distinguishes them from P1/P2
       if (extra.outline != null) {
         const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
@@ -337,7 +364,7 @@ export class PixiGameRenderer {
       frozen: p1Frozen, phantom: p1Phantom, surging: p1Surging, amped: p1Amped,
     }, this.p1Pulses, now, boardElapsed);
 
-    const p2Color = state.meta?.teamMode === 'ffa' ? 0x555555 : 0x111111;
+    const p2Color = P2_SNAKE_COLOR;
     this.drawSnake(state.p2, p2Color, colSize, rowSize, {
       frozen: p2Frozen, phantom: p2Phantom, surging: p2Surging, amped: p2Amped,
     }, this.p2Pulses, now, boardElapsed);
@@ -458,6 +485,17 @@ export class PixiGameRenderer {
     if (resolveProgress > 0) {
       this.renderResolveBlocks(state, width, height, colSize, rowSize, resolveProgress);
     }
+
+    // Keep WebGL buffer in sync with layout (avoids stretched / nested-frame artifacts).
+    const rw = this.app.renderer.width;
+    const rh = this.app.renderer.height;
+    if (Math.abs(rw - width) > 1 || Math.abs(rh - height) > 1) {
+      this.app.renderer.resize(width, height);
+      this.lastResizeWidth = width;
+      this.lastResizeHeight = height;
+      this.gridCacheKey = '';
+    }
+    this.app.render();
   }
 
   // ── Resolving blocks animation ─────────────────────────────────────────────
@@ -902,12 +940,15 @@ export class PixiGameRenderer {
   // ── Point text ─────────────────────────────────────────────────────────────
 
   destroy(): void {
+    this.mountGeneration += 1;
     this.powerUpLabelPool.forEach((entry) => {
       entry.name.destroy();
       entry.letter.destroy();
     });
     this.powerUpLabelPool.clear();
     this.gridCacheKey = '';
+    this.lastResizeWidth = 0;
+    this.lastResizeHeight = 0;
     if (this.app) {
       this.app.destroy(true, { children: true });
       this.app = null;
@@ -1096,13 +1137,14 @@ export class PixiGameRenderer {
     this.p1Pulses = this.p1Pulses.filter((t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS);
     this.p2Pulses = this.p2Pulses.filter((t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS);
 
-    const fbPowerUps = state.activePowerUps ?? [];
-    const fbP1Surging = fbPowerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P1');
-    const fbP2Surging = fbPowerUps.some((ap) => ap.type === 'SURGE'     && ap.player === 'P2');
-    const fbP1Amped   = fbPowerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P1');
-    const fbP2Amped   = fbPowerUps.some((ap) => ap.type === 'AMPLIFIER' && ap.player === 'P2');
-    const fbP1Frozen  = fbPowerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P1');
-    const fbP2Frozen  = fbPowerUps.some((ap) => ap.type === 'FREEZE'    && ap.player === 'P2');
+    const fbP1Effects = getSnakeEffects(state, 0);
+    const fbP2Effects = getSnakeEffects(state, 1);
+    const fbP1Surging = fbP1Effects.surging;
+    const fbP2Surging = fbP2Effects.surging;
+    const fbP1Amped = fbP1Effects.amped;
+    const fbP2Amped = fbP2Effects.amped;
+    const fbP1Frozen = fbP1Effects.frozen;
+    const fbP2Frozen = fbP2Effects.frozen;
 
     // FADE surge trails
     const FADE_FB = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
@@ -1227,7 +1269,7 @@ export class PixiGameRenderer {
       }
       ctx.globalAlpha = 1;
     }
-    ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#555555' : '#111111';
+    ctx.fillStyle = '#111111';
     const p2HeadBoost = this.getSegmentGlow(0, p2Total, this.p2Pulses, nowFb);
     if (p2HeadBoost > 0) {
       const exp = p2HeadBoost * 4;
@@ -1257,7 +1299,7 @@ export class PixiGameRenderer {
     }
     for (let i = 0; i < state.p2.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, p2Total, this.p2Pulses, nowFb);
-      ctx.fillStyle = state.meta?.teamMode === 'ffa' ? '#555555' : '#111111';
+      ctx.fillStyle = '#111111';
       ctx.globalAlpha = Math.min(1, 0.6 + boost * 0.36);
       ctx.fillRect(state.p2.body[i][0] * colSize, state.p2.body[i][1] * rowSize, colSize, rowSize);
       ctx.globalAlpha = 1;
