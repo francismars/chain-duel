@@ -7,6 +7,11 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
+import {
+  ONLINE_HOME,
+  onlineLobbyUrl,
+  onlineReplayUrl,
+} from '@/shared/constants/onlineRoutes';
 import '@/styles/pages/onlinePostGame.css';
 
 type PostGameNav =
@@ -118,7 +123,7 @@ export default function OnlinePostGame() {
 
   const openSessionRoundReplay = (matchRound: number) => {
     navigate(
-      `/network/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(String(matchRound))}`
+      onlineReplayUrl(roomId, matchRound)
     );
   };
 
@@ -217,7 +222,7 @@ export default function OnlinePostGame() {
         }
         if (navFocus.type === 'exit') {
           if (socket && roomId) socket.emit('leaveOnlineRoom', { roomId });
-          navigate('/network');
+          navigate(ONLINE_HOME);
         }
       }
     };
@@ -234,7 +239,7 @@ export default function OnlinePostGame() {
 
   useEffect(() => {
     if (!roomId) {
-      navigate('/network');
+      navigate(ONLINE_HOME);
     }
   }, [navigate, roomId]);
 
@@ -305,7 +310,7 @@ export default function OnlinePostGame() {
       setVotes(parsed.votes);
       setRequiredVotes(parsed.required);
       if (parsed.agreed) {
-        navigate(`/network/lobby?roomId=${encodeURIComponent(roomId)}`);
+        navigate(onlineLobbyUrl(roomId));
       }
     };
 
@@ -334,7 +339,7 @@ export default function OnlinePostGame() {
         }
       }
       if (parsed.phase === 'lobby') {
-        navigate(`/network/lobby?roomId=${encodeURIComponent(roomId)}`);
+        navigate(onlineLobbyUrl(roomId));
       }
     };
 
@@ -390,7 +395,7 @@ export default function OnlinePostGame() {
 
       <div className="online-postgame-card">
         <div className="online-postgame-headline">
-          <p className="online-postgame-kicker">NETWORK · VICTORY SCREEN</p>
+          <p className="online-postgame-kicker">ONLINE · VICTORY SCREEN</p>
         </div>
 
         {info && (info.matchRounds?.length ?? 0) > 0 ? (
@@ -707,7 +712,7 @@ export default function OnlinePostGame() {
                 if (socket && roomId) {
                   socket.emit('leaveOnlineRoom', { roomId });
                 }
-                navigate('/network');
+                navigate(ONLINE_HOME);
               }}
             >
               EXIT ROOM

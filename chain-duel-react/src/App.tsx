@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AudioProvider } from './contexts/AudioContext';
 import { CornerControls } from './components/ui/CornerControls';
 import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
@@ -19,6 +19,11 @@ import OnlineRoomLobby from './pages/OnlineRoomLobby';
 import OnlineGame from './pages/OnlineGame';
 import OnlinePostGame from './pages/OnlinePostGame';
 import './styles/index.css';
+
+function LegacyNetworkRedirect() {
+  const { pathname, search } = useLocation();
+  return <Navigate to={`${pathname.replace(/^\/network/, '/online')}${search}`} replace />;
+}
 
 function App() {
   return (
@@ -54,11 +59,12 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/config" element={<Config />} />
 
-            {/* Online */}
-            <Route path="/network" element={<OnlineRooms />} />
-            <Route path="/network/lobby" element={<OnlineRoomLobby />} />
-            <Route path="/network/game" element={<OnlineGame />} />
-            <Route path="/network/postgame" element={<OnlinePostGame />} />
+            {/* Online (legacy /network/* redirects preserve query strings) */}
+            <Route path="/online" element={<OnlineRooms />} />
+            <Route path="/online/lobby" element={<OnlineRoomLobby />} />
+            <Route path="/online/game" element={<OnlineGame />} />
+            <Route path="/online/postgame" element={<OnlinePostGame />} />
+            <Route path="/network/*" element={<LegacyNetworkRedirect />} />
           </Route>
         </Routes>
       </BrowserRouter>

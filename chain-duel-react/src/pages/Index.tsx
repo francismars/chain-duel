@@ -9,12 +9,13 @@ import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
 import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
+import { ONLINE_HOME } from '@/shared/constants/onlineRoutes';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { fetchLatestKind0Profile } from '@/lib/nostr/fetchKind0Profile';
 import { STORED_NOSTR_PUBKEY_KEY } from '@/lib/nostr/signerSession';
 
 
-/** Vertical menu focus — 5 rows: PRACTICE, P2P, NETWORK, LEDGER, ABOUT+CONFIG */
+/** Vertical menu focus — 5 rows: PRACTICE, P2P, ONLINE, LEDGER, ABOUT+CONFIG */
 type MenuState = 1 | 2 | 3 | 4 | 5;
 type Row6Focus = 'about' | 'config';
 
@@ -185,7 +186,7 @@ export default function Index() {
         } else if (row === 2) {
           navigate('/p2p', { state: keyboardNavState });
         } else if (row === 3) {
-          navigate('/network', { state: keyboardNavState });
+          navigate(ONLINE_HOME, { state: keyboardNavState });
         } else if (row === 4) {
           navigate('/highscores', { state: keyboardNavState });
         } else if (row === 5) {
@@ -316,10 +317,10 @@ export default function Index() {
                 id="startmainnet"
                 onClick={() => {
                   playSfx(SFX.MENU_CONFIRM);
-                  navigate('/network');
+                  navigate(ONLINE_HOME);
                 }}
               >
-                NETWORK
+                ONLINE
               </Button>
             </div>
           </div>

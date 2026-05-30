@@ -4,6 +4,7 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
+import { ONLINE_HOME, onlinePostGameUrl } from '@/shared/constants/onlineRoutes';
 import type { OnlineReplayBlockEvent, OnlineRoomSnapshot } from '@/types/socket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
@@ -98,7 +99,7 @@ export default function OnlineGame() {
 
   useEffect(() => {
     if (roomId) return;
-    navigate('/network');
+    navigate(ONLINE_HOME);
   }, [navigate, roomId]);
 
   useEffect(() => {
@@ -449,7 +450,7 @@ export default function OnlineGame() {
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (!replayMode && snapshotRef.current?.state?.gameEnded) {
-        navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
+        navigate(onlinePostGameUrl(roomId));
         return;
       }
       if (replayMode) {
@@ -571,12 +572,12 @@ export default function OnlineGame() {
         case 'V': {
           event.preventDefault();
           setReplayPlaying(false);
-          navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
+          navigate(onlinePostGameUrl(roomId));
           break;
         }
         case 'Escape': {
           setReplayPlaying(false);
-          navigate('/network');
+          navigate(ONLINE_HOME);
           break;
         }
       }
@@ -725,7 +726,7 @@ export default function OnlineGame() {
               ref={setHostEl}
               onClick={() => {
                 if (!replayMode && canAttemptContinue) {
-                  navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
+                  navigate(onlinePostGameUrl(roomId));
                 }
               }}
             />
@@ -794,7 +795,7 @@ export default function OnlineGame() {
                   className="online-replay-btn"
                   onClick={() => {
                     setReplayPlaying(false);
-                    navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
+                    navigate(onlinePostGameUrl(roomId));
                   }}
                 >
                   <span className="online-replay-btn__icon" aria-hidden>
@@ -807,7 +808,7 @@ export default function OnlineGame() {
                   className="online-replay-btn"
                   onClick={() => {
                     setReplayPlaying(false);
-                    navigate('/network');
+                    navigate(ONLINE_HOME);
                   }}
                 >
                   <span className="online-replay-btn__icon" aria-hidden>

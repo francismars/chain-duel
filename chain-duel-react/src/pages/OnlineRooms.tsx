@@ -6,6 +6,12 @@ import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
+import {
+  onlineGameUrl,
+  onlineLobbyUrl,
+  onlinePostGameUrl,
+  onlineReplayUrl,
+} from '@/shared/constants/onlineRoutes';
 import { OnlineRoomListItem, PlayerRole } from '@/types/socket';
 import '@/styles/pages/onlineRooms.css';
 import '@/styles/pages/onlinePostGame.css'; // shared card structure for history rows
@@ -166,7 +172,7 @@ export default function OnlineRooms() {
 
   useGamepad(true);
 
-  // Persist selected tab across in-network navigation; cleared on back-to-menu
+  // Persist selected tab across in-online navigation; cleared on back-to-menu
   useEffect(() => {
     sessionStorage.setItem('onlineRoomsTab', onlineTab);
   }, [onlineTab]);
@@ -241,21 +247,19 @@ export default function OnlineRooms() {
   const activateRoom = (room: OnlineRoomListItem) => {
     if (room.phase === 'playing') {
       socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
-      navigate(`/network/game?roomId=${encodeURIComponent(room.roomId)}`);
+      navigate(onlineGameUrl(room.roomId));
       return;
     }
     socket?.emit('joinOnlineRoom', { roomId: room.roomId });
-    navigate(`/network/lobby?roomId=${encodeURIComponent(room.roomId)}`);
+    navigate(onlineLobbyUrl(room.roomId));
   };
 
   const openHistoryPostGame = (roomId: string) => {
-    navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`);
+    navigate(onlinePostGameUrl(roomId));
   };
 
   const openHistoryReplay = (roomId: string, matchRound?: number) => {
-    const roundQ =
-      matchRound != null ? `&round=${encodeURIComponent(String(matchRound))}` : '';
-    navigate(`/network/game?roomId=${encodeURIComponent(roomId)}&replay=1${roundQ}`);
+    navigate(onlineReplayUrl(roomId, matchRound));
   };
 
   useEffect(() => {
@@ -283,7 +287,7 @@ export default function OnlineRooms() {
         setCreatingRoom(false);
         creatingRoomRef.current = false;
         pendingRoomIdRef.current = null;
-        navigate(`/network/lobby?roomId=${encodeURIComponent(parsed.roomId)}`);
+        navigate(onlineLobbyUrl(parsed.roomId));
         return;
       }
       pendingRoomIdRef.current = parsed.roomId;
@@ -294,7 +298,7 @@ export default function OnlineRooms() {
       if (!parsed) {
         return;
       }
-      navigate(`/network/lobby?roomId=${encodeURIComponent(parsed.roomId)}`);
+      navigate(onlineLobbyUrl(parsed.roomId));
     };
     const onInvalid = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlinePinInvalid(payload);
@@ -325,7 +329,7 @@ export default function OnlineRooms() {
       setCreatingRoom(false);
       creatingRoomRef.current = false;
       pendingRoomIdRef.current = null;
-      navigate(`/network/lobby?roomId=${encodeURIComponent(parsed.roomId)}`);
+      navigate(onlineLobbyUrl(parsed.roomId));
     };
 
     socket.on('resListOnlineRooms', onList);
@@ -588,7 +592,7 @@ export default function OnlineRooms() {
       <div className="online-rooms-body">
       <div className="online-rooms-left">
       <div className="online-header">
-        <h1 id="online-title">NETWORK</h1>
+        <h1 id="online-title">ONLINE</h1>
         <p id="online-subtitle">Create a room, share the code, and claim your seat.</p>
       </div>
 

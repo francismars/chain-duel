@@ -6,6 +6,12 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
+import {
+  ONLINE_HOME,
+  onlineGameUrl,
+  onlinePostGameUrl,
+  onlineReplayUrl,
+} from '@/shared/constants/onlineRoutes';
 import { OnlineRoomState } from '@/types/socket';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import { signNostrEvent, signOnlineSeatLinkChallenge } from '@/lib/nostr/signOnlineSeatLink';
@@ -811,7 +817,7 @@ export default function OnlineRoomLobby() {
     if (!roomId || room?.phase !== 'playing') {
       return;
     }
-    navigate(`/network/game?roomId=${encodeURIComponent(roomId)}`);
+    navigate(onlineGameUrl(roomId));
   }, [navigate, room?.phase, roomId]);
 
   useEffect(() => {
@@ -875,7 +881,7 @@ export default function OnlineRoomLobby() {
       {/* ── Zone 1: Page Header ── */}
       <div className="online-lobby-header">
         <div className="online-lobby-header-title-row">
-          <h1 className="online-lobby-title">NETWORK ROOM</h1>
+          <h1 className="online-lobby-title">ONLINE ROOM</h1>
           {room?.phase && room.phase !== 'lobby' ? (
             <div className={`online-lobby-phase online-lobby-phase-${room.phase}`}>
               {phaseLabel}
@@ -1215,7 +1221,7 @@ export default function OnlineRoomLobby() {
               <Button
                 type="button"
                 className="online-lobby-action"
-                onClick={() => navigate(`/network/postgame?roomId=${encodeURIComponent(roomId)}`)}
+                onClick={() => navigate(onlinePostGameUrl(roomId))}
               >
                 VIEW POSTGAME DETAILS
               </Button>
@@ -1223,11 +1229,7 @@ export default function OnlineRoomLobby() {
                 type="button"
                 className="online-lobby-action"
                 onClick={() =>
-                  navigate(
-                    `/network/game?roomId=${encodeURIComponent(roomId)}&replay=1&round=${encodeURIComponent(
-                      String(room?.matchRound ?? 1)
-                    )}`
-                  )
+                  navigate(onlineReplayUrl(roomId, room?.matchRound ?? 1))
                 }
               >
                 WATCH REPLAY
@@ -1237,7 +1239,7 @@ export default function OnlineRoomLobby() {
                 className="online-lobby-action"
                 onClick={() => {
                   socket?.emit('leaveOnlineRoom', { roomId });
-                  navigate('/network');
+                  navigate(ONLINE_HOME);
                 }}
               >
                 EXIT ROOM
@@ -1724,9 +1726,9 @@ export default function OnlineRoomLobby() {
           <Button
             type="button"
             className="online-lobby-action"
-            onClick={() => navigate('/network')}
+            onClick={() => navigate(ONLINE_HOME)}
           >
-            ← Back to Network
+            ← Back to Online
           </Button>
         </div>
       ) : (
@@ -1743,7 +1745,7 @@ export default function OnlineRoomLobby() {
             className="online-lobby-action online-lobby-leave-btn"
             onClick={() => {
               socket?.emit('leaveOnlineRoom', { roomId });
-              navigate('/network');
+              navigate(ONLINE_HOME);
             }}
           >
             LEAVE ROOM
