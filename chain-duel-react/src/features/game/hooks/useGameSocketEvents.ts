@@ -1,6 +1,6 @@
 import { useEffect, type MutableRefObject } from 'react';
 import type { Socket } from 'socket.io-client';
-import { getMetaFromDuel, createGameState, getHudState } from '@/game/engine';
+import { getMetaFromDuel, createGameState, getHudState, applyTerminalGameOutcome } from '@/game/engine';
 import type { GameState } from '@/game/engine/types';
 import type {
   ClientToServerEvents,
@@ -45,6 +45,7 @@ interface UseGameSocketEventsArgs {
   onHudSync: (hud: HudSnapshot) => void;
   onLoadingResolved: () => void;
   onBootstrapFallback: () => void;
+  onRedirectToPostGame?: () => void;
   onPointsUpdated: (data: SerializedGameInfo) => void;
   onZapReceived: (data: {
     username: string;
@@ -66,6 +67,7 @@ export function useGameSocketEvents({
   onHudSync,
   onLoadingResolved,
   onBootstrapFallback,
+  onRedirectToPostGame,
   onPointsUpdated,
   onZapReceived,
 }: UseGameSocketEventsArgs) {
@@ -74,6 +76,16 @@ export function useGameSocketEvents({
 
     const onDuel = (payload: unknown) => {
       if (ignoreSocketSessionUpdates) return;
+
+      if (
+        payload !== null &&
+        typeof payload === 'object' &&
+        !Array.isArray(payload) &&
+        'lnurlw' in payload
+      ) {
+        onRedirectToPostGame?.();
+        return;
+      }
 
       const data = SocketBoundaryParsers.duelInfos(payload);
       if (!data) return;
@@ -96,6 +108,7 @@ export function useGameSocketEvents({
         practiceMode: meta.practiceMode || info.practiceMode,
         isTournament: info.isTournament,
       });
+      applyTerminalGameOutcome(state);
       stateRef.current = state;
       winnerSentRef.current = false;
       onHudSync(getHudState(state));
@@ -140,6 +153,7 @@ export function useGameSocketEvents({
     onHudSync,
     onLoadingResolved,
     onPointsUpdated,
+    onRedirectToPostGame,
     onSetGameHeader,
     onZapReceived,
     socket,

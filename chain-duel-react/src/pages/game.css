@@ -1,14 +1,7 @@
-body {
-  background-color: black;
-  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
-    url('/images/chainduel_bg_no_sat.jpg');
-  background-size: cover;
-  background-position: center;
-}
+/* Page background is body.game-page — see page-reveal.css (legacy chainduel_bg_no_sat.jpg). */
 
 /* ── Game background overlay ─────────────────────────────────────────────────
    Adds extra darkness after all reveal animations complete (~1.3 s).
-   Background itself does not change between pages.
    ────────────────────────────────────────────────────────────────────────── */
 #game-bg-overlay {
   position: fixed;

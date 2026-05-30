@@ -21,6 +21,8 @@ import {
 import {
   DEVELOPER_FEE_RATIO,
   DESIGNER_FEE_RATIO,
+  DECOY_LNURL_QR_VALUE,
+  DECOY_NOSTR_QR_VALUE,
   HOST_FEE_RATIO,
   P2P_DEFAULT_MIN_DEPOSIT_SATS,
   SATS_DISPLAY_MAX,
@@ -489,7 +491,11 @@ export default function GameMenu() {
               >
                 <a
                   id="qrcodeLinkNostr"
-                  href={nostrNote1 ? `https://next.nostrudel.ninja/#/n/${nostrNote1}` : undefined}
+                  href={
+                    nostrNote1
+                      ? `https://next.nostrudel.ninja/#/n/${nostrNote1}`
+                      : `nostr:${DECOY_NOSTR_QR_VALUE}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -503,7 +509,15 @@ export default function GameMenu() {
                       includeMargin={false}
                     />
                   ) : (
-                    <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
+                    <QRCodeSVG
+                      id="qrcodeNostr"
+                      className="qrcode"
+                      value={DECOY_NOSTR_QR_VALUE}
+                      size={QR_CODE_CARD_SIZE}
+                      level="M"
+                      includeMargin={false}
+                      aria-hidden
+                    />
                   )}
                   <img
                     id="qrcodeNostrDecoration"
@@ -571,7 +585,15 @@ export default function GameMenu() {
                       includeMargin={compatibleP1}
                     />
                   ) : (
-                    <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
+                    <QRCodeSVG
+                      id="qrcode1"
+                      className="qrcode"
+                      value={DECOY_LNURL_QR_VALUE}
+                      size={QR_CODE_CARD_SIZE}
+                      level="M"
+                      includeMargin={false}
+                      aria-hidden
+                    />
                   )}
                   <img
                     id="qrcode1Decoration"
@@ -665,7 +687,15 @@ export default function GameMenu() {
                       includeMargin={compatibleP2}
                     />
                   ) : (
-                    <span className="qrcode qrcode-placeholder" style={{ display: 'block', width: '9vw', height: '10vw', background: '#333' }} />
+                    <QRCodeSVG
+                      id="qrcode2"
+                      className="qrcode"
+                      value={DECOY_LNURL_QR_VALUE}
+                      size={180}
+                      level="M"
+                      includeMargin={false}
+                      aria-hidden
+                    />
                   )}
                   <img
                     id="qrcode2Decoration"

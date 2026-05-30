@@ -128,8 +128,10 @@ interface CreateStateArgs {
 // ============================================================================
 
 export function createGameState(args: CreateStateArgs): GameState {
-  const p1 = Math.max(1, Math.floor(args.p1Points));
-  const p2 = Math.max(1, Math.floor(args.p2Points));
+  // Practice always needs a playable pot; paid duels preserve 0 sats (legacy parity).
+  const minScore = args.practiceMode ? 1 : 0;
+  const p1 = Math.max(minScore, Math.floor(args.p1Points));
+  const p2 = Math.max(minScore, Math.floor(args.p2Points));
 
   const defaultP2Human = !Boolean(args.practiceMode);
   const p1HumanMeta = args.p1Human !== undefined ? Boolean(args.p1Human) : true;
@@ -244,9 +246,29 @@ export function getHudState(state: GameState): HudState {
 }
 
 export function startCountdown(state: GameState): void {
-  if (!state.gameStarted) {
+  if (!state.gameStarted && !state.gameEnded) {
     state.countdownStart = true;
   }
+}
+
+/** When duel balances already decide the outcome (refresh after game over), lock to winner screen. */
+export function applyTerminalGameOutcome(state: GameState): boolean {
+  if (state.meta.practiceMode || state.meta.isTournament) return false;
+  const [s0, s1] = state.score;
+  if (s0 <= 0 && s1 <= 0) return false;
+  if (s0 > 0 && s1 > 0) return false;
+  state.gameEnded = true;
+  state.gameStarted = false;
+  state.countdownStart = false;
+  state.countdownTicks = 0;
+  if (s0 <= 0) {
+    state.winnerPlayer = 'P2';
+    state.winnerName = state.p2Name;
+  } else {
+    state.winnerPlayer = 'P1';
+    state.winnerName = state.p1Name;
+  }
+  return true;
 }
 
 export function setWantedDirection(

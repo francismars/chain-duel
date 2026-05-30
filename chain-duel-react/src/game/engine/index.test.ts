@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   advanceShrinkBorder,
+  applyTerminalGameOutcome,
   canContinueAfterGame,
   createGameState,
   getHudState,
@@ -11,6 +12,24 @@ import {
 import { applyPowerUpForPlayer, checkPowerUpPickup } from '@/game/engine/powerups';
 
 describe('game engine parity behavior', () => {
+  it('paid duel preserves zero sats and locks to winner on refresh', () => {
+    const state = createGameState({
+      p1Name: 'Winner',
+      p2Name: 'Loser',
+      p1Points: 20_000,
+      p2Points: 0,
+      modeLabel: 'P2P',
+      practiceMode: false,
+    });
+    expect(state.score).toEqual([20_000, 0]);
+    expect(applyTerminalGameOutcome(state)).toBe(true);
+    expect(state.gameEnded).toBe(true);
+    expect(state.winnerPlayer).toBe('P1');
+    expect(state.winnerName).toBe('Winner');
+    startCountdown(state);
+    expect(state.countdownStart).toBe(false);
+  });
+
   it('starts countdown and transitions to started state', () => {
     const state = createGameState({
       p1Name: 'Player 1',

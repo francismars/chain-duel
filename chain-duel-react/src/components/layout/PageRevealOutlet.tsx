@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import '@/styles/page-reveal.css';
 
@@ -6,6 +7,13 @@ const GAMEPLAY_PATHS = new Set(['/game', '/network/game']);
 export function PageRevealOutlet() {
   const { pathname } = useLocation();
   const gameplay = GAMEPLAY_PATHS.has(pathname);
+
+  useEffect(() => {
+    document.body.classList.toggle('game-page', gameplay);
+    return () => {
+      document.body.classList.remove('game-page');
+    };
+  }, [gameplay]);
 
   return (
     <div

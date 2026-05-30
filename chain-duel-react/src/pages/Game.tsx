@@ -5,6 +5,7 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { getActiveNostrSigner, STORED_NOSTR_PUBKEY_KEY } from '@/lib/nostr/signerSession';
 import { KIND0_DEFAULT_RELAYS, fetchLatestKind0Profile, formatPubkeyHex } from '@/lib/nostr/fetchKind0Profile';
 import {
+  applyTerminalGameOutcome,
   createGameState,
   createNewCoinbase,
   getHudState,
@@ -475,7 +476,15 @@ export default function Game() {
     }
     if (p1?.picture?.trim()) setPlayer1Img(String(p1.picture));
     if (p2?.picture?.trim()) setPlayer2Img(String(p2.picture));
-  }, []);
+
+    const state = stateRef.current;
+    if (!state) return;
+    if (p1?.value != null) state.score[0] = Math.floor(p1.value);
+    if (p2?.value != null) state.score[1] = Math.floor(p2.value);
+    if (applyTerminalGameOutcome(state)) {
+      handleHudSync(getHudState(state));
+    }
+  }, [handleHudSync]);
 
   const handleZapReceived = useCallback((data: {
     username: string;
@@ -579,6 +588,7 @@ export default function Game() {
     onHudSync: handleHudSync,
     onLoadingResolved: handleLoadingResolved,
     onBootstrapFallback: bootstrapLocalGame,
+    onRedirectToPostGame: () => navigate('/postgame', { replace: true }),
     onPointsUpdated: handlePointsUpdated,
     onZapReceived: handleZapReceived,
   });

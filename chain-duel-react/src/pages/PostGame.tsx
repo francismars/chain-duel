@@ -396,7 +396,7 @@ export default function PostGame() {
                 {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
               </Button>
               {!practiceMode && canDoubleOrNothing ? (
-                <p className="don-subtitle">Risk it all — play again for double the prize</p>
+                <p className="don-subtitle">Play again for double the prize</p>
               ) : null}
             </div>
           )}
