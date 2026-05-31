@@ -11,8 +11,7 @@ import '@/styles/pages/index.css';
 import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
 import { ONLINE_HOME } from '@/shared/constants/onlineRoutes';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
-import { fetchLatestKind0Profile } from '@/lib/nostr/fetchKind0Profile';
-import { STORED_NOSTR_PUBKEY_KEY } from '@/lib/nostr/signerSession';
+import { useNostrSession } from '@/contexts/NostrSessionContext';
 
 
 /** Vertical menu focus — 5 rows: PRACTICE, P2P, ONLINE, LEDGER, ABOUT+CONFIG */
@@ -48,8 +47,7 @@ export default function Index() {
   const configRef = useRef<HTMLButtonElement>(null);
   const menuButtonsRootRef = useRef<HTMLDivElement>(null);
   const [row6Focus, setRow6Focus] = useState<Row6Focus>('about');
-  const [nostrPubkeyHex, setNostrPubkeyHex] = useState<string | null>(null);
-  const [configProfilePicture, setConfigProfilePicture] = useState<string | null>(null);
+  const nostrSession = useNostrSession();
   const [configAvatarBroken, setConfigAvatarBroken] = useState(false);
   const skipInitialMenuPopRef = useRef(true);
   /** Synced inside setMenu updaters so Enter always matches the latest row (avoids stale closure if Down + Enter land before re-render). */
@@ -108,47 +106,9 @@ export default function Index() {
     }
   }, []);
 
-  // Config button: show Nostr profile image when signed in (same key as Config / Solo).
   useEffect(() => {
-    let cancelled = false;
-
-    const syncNostrAvatar = () => {
-      const pk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
-      setNostrPubkeyHex(pk);
-      setConfigAvatarBroken(false);
-      if (!pk) {
-        setConfigProfilePicture(null);
-        return;
-      }
-      void fetchLatestKind0Profile(pk).then((p) => {
-        if (cancelled) return;
-        const pic = p?.picture?.trim();
-        setConfigProfilePicture(pic || null);
-      });
-    };
-
-    syncNostrAvatar();
-
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORED_NOSTR_PUBKEY_KEY || e.key === null) {
-        syncNostrAvatar();
-      }
-    };
-    window.addEventListener('storage', onStorage);
-
-    const onVis = () => {
-      if (document.visibilityState === 'visible') {
-        syncNostrAvatar();
-      }
-    };
-    document.addEventListener('visibilitychange', onVis);
-
-    return () => {
-      cancelled = true;
-      window.removeEventListener('storage', onStorage);
-      document.removeEventListener('visibilitychange', onVis);
-    };
-  }, []);
+    setConfigAvatarBroken(false);
+  }, [nostrSession.pubkey, nostrSession.picture]);
 
   useEffect(() => {
     setButtonGlow(startLocalRef.current, menu === 1);
@@ -369,13 +329,13 @@ export default function Index() {
                   }}
                   id="configbuttonhome"
                   className="index-config-home-btn"
-                  aria-label={nostrPubkeyHex ? 'Config (signed in with Nostr)' : 'Config'}
+                  aria-label={nostrSession.signedIn ? 'Config (signed in with Nostr)' : 'Config'}
                 >
-                  {nostrPubkeyHex ? (
-                    configProfilePicture && !configAvatarBroken ? (
+                  {nostrSession.signedIn ? (
+                    nostrSession.picture && !configAvatarBroken ? (
                       <img
                         className="index-config-home-btn__avatar"
-                        src={configProfilePicture}
+                        src={nostrSession.picture}
                         alt=""
                         width={22}
                         height={22}

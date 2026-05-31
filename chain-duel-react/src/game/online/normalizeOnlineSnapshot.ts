@@ -26,6 +26,14 @@ export function normalizeOnlineRoomSnapshot(snapshot: OnlineRoomSnapshot): Onlin
     p1Human: typeof metaRaw?.p1Human === 'boolean' ? metaRaw.p1Human : true,
     p2Human:
       typeof metaRaw?.p2Human === 'boolean' ? metaRaw.p2Human : !practiceMode,
+    aiTier: 'hunter' as const,
+    convergenceMode: false,
+    convergenceShrinkInterval: 0,
+    convergenceMinCols: 0,
+    convergenceMinRows: 0,
+    powerupMode: false,
+    teamMode: 'solo' as const,
+    currentStepMs: 0,
   };
 
   return {
@@ -41,6 +49,16 @@ export function normalizeOnlineRoomSnapshot(snapshot: OnlineRoomSnapshot): Onlin
       p2Name: typeof state.p2Name === 'string' ? state.p2Name : 'Player 2',
       sentWinner: typeof state.sentWinner === 'boolean' ? state.sentWinner : false,
       pointChanges: Array.isArray(state.pointChanges) ? state.pointChanges : [],
+      tickCount: typeof state.tickCount === 'number' ? state.tickCount : snapshot.tick,
+      powerUpItems: Array.isArray(state.powerUpItems) ? state.powerUpItems : [],
+      activePowerUps: Array.isArray(state.activePowerUps) ? state.activePowerUps : [],
+      obstacleWalls: Array.isArray(state.obstacleWalls) ? state.obstacleWalls : [],
+      shrinkBorder: state.shrinkBorder ?? null,
+      powerUpRespawnCooldownTick:
+        typeof state.powerUpRespawnCooldownTick === 'number' ? state.powerUpRespawnCooldownTick : 0,
+      convergenceWallClosed:
+        typeof state.convergenceWallClosed === 'boolean' ? state.convergenceWallClosed : false,
+      extraSnakes: Array.isArray(state.extraSnakes) ? state.extraSnakes : [],
     },
   };
 }

@@ -68,6 +68,14 @@ export const SocketBoundaryParsers = {
     parseWithValidator(payload, SocketValidators.resOnlineNostrLinkChallenge),
   resOnlineNostrLinkOk: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.resOnlineNostrLinkOk),
+  resAppNostrLinkChallenge: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resAppNostrLinkChallenge),
+  resAppNostrSession: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resAppNostrSession),
+  resNostrProfile: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resNostrProfile),
+  resPublishNostrEvent: (payload: unknown) =>
+    parseWithValidator(payload, SocketValidators.resPublishNostrEvent),
   resOnlineKind1Post: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.resOnlineKind1Post),
   resOnlineSeatZapPayPrepare: (payload: unknown) =>

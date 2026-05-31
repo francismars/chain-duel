@@ -83,6 +83,7 @@ async function rawNip46Rpc(
   const { clientSk, signerPubkey, relays, timeoutMs = 60_000 } = opts;
   const skHex = bytesToHex(clientSk);
   const clientPubkey = getPublicKey(clientSk);
+  const relayList = [...new Set([...relays, ...DEFAULT_NOSTR_CONNECT_RELAYS])];
 
   const reqId = crypto.randomUUID();
   const requestPayload = JSON.stringify({ id: reqId, method, params });
@@ -100,7 +101,7 @@ async function rawNip46Rpc(
     clientSk,
   );
 
-  console.log(DBG, `[rpc] ${method} id=${reqId.slice(0, 8)}… → ${relays.length} relays`);
+  console.log(DBG, `[rpc] ${method} id=${reqId.slice(0, 8)}… → ${relayList.length} relays`);
 
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -128,7 +129,7 @@ async function rawNip46Rpc(
       timeoutMs,
     );
 
-    for (const relayUrl of relays) {
+    for (const relayUrl of relayList) {
       let ws: WebSocket;
       try { ws = new WebSocket(relayUrl); } catch { continue; }
       sockets.push(ws);
@@ -249,6 +250,15 @@ export function getStoredSignerMode(): StoredSignerMode | null {
   const m = localStorage.getItem(SIGNER_MODE_KEY);
   if (m === 'extension' || m === 'nip46' || m === 'nsec') return m;
   return null;
+}
+
+/** True when a NIP-46 bunker session is persisted (paired, not necessarily server-linked). */
+export function hasStoredNip46Session(): boolean {
+  return Boolean(
+    getStoredSignerMode() === 'nip46' &&
+      localStorage.getItem(NIP46_CLIENT_SK_KEY) &&
+      localStorage.getItem(NIP46_BP_KEY)
+  );
 }
 
 export function resolveSignerMode(): StoredSignerMode | null {
@@ -473,7 +483,12 @@ export async function getActiveNostrSigner(): Promise<NostrNip07Provider | null>
         const resp = await rawNip46Rpc(
           'sign_event',
           [JSON.stringify(ev)],
-          { clientSk: sess.clientSk, signerPubkey: sess.bp.pubkey, relays: sess.bp.relays },
+          {
+            clientSk: sess.clientSk,
+            signerPubkey: sess.bp.pubkey,
+            relays: sess.bp.relays,
+            timeoutMs: kind === 9734 ? 90_000 : 60_000,
+          },
         );
         const signed = JSON.parse(resp.result) as Record<string, unknown>;
         // Auto-correct pubkey

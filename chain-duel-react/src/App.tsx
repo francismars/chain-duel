@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AudioProvider } from './contexts/AudioContext';
+import { NostrSessionProvider } from './contexts/NostrSessionContext';
 import { CornerControls } from './components/ui/CornerControls';
 import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import Index from './pages/Index';
@@ -28,6 +29,7 @@ function LegacyNetworkRedirect() {
 function App() {
   return (
     <AudioProvider>
+      <NostrSessionProvider>
       <BrowserRouter>
         <CornerControls />
         <Routes>
@@ -68,6 +70,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </NostrSessionProvider>
     </AudioProvider>
   );
 }

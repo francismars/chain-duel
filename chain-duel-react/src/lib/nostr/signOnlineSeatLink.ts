@@ -16,8 +16,9 @@ export type SignedSeatLinkEvent = {
 
 /** How long to wait for a `signEvent` RPC before giving up. NIP-46 needs manual approval. */
 const SIGN_TIMEOUT_MS = 45_000;
+const NIP46_ZAP_SIGN_TIMEOUT_MS = 90_000;
 
-function withSignTimeout<T>(label: string, p: Promise<T>): Promise<T> {
+function withSignTimeout<T>(label: string, p: Promise<T>, timeoutMs = SIGN_TIMEOUT_MS): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const t = setTimeout(() => {
       const mode = resolveSignerMode();
@@ -25,7 +26,7 @@ function withSignTimeout<T>(label: string, p: Promise<T>): Promise<T> {
         ? 'Open your Primal / Amber app and approve the signing request.'
         : 'Signing request timed out.';
       reject(new Error(`${label} timed out. ${hint}`));
-    }, SIGN_TIMEOUT_MS);
+    }, timeoutMs);
     p.then(
       (v) => { clearTimeout(t); resolve(v); },
       (e) => { clearTimeout(t); reject(e); }
@@ -44,7 +45,11 @@ export async function signNostrEvent(unsigned: {
   if (!n) {
     throw new Error('no_nostr_signer');
   }
-  const signed = await withSignTimeout('signNostrEvent', n.signEvent(unsigned));
+  const signed = await withSignTimeout(
+    'signNostrEvent',
+    n.signEvent(unsigned),
+    resolveSignerMode() === 'nip46' ? NIP46_ZAP_SIGN_TIMEOUT_MS : SIGN_TIMEOUT_MS,
+  );
   return signed as SignedSeatLinkEvent;
 }
 
@@ -61,6 +66,10 @@ export async function signOnlineSeatLinkChallenge(params: {
     tags: [] as string[][],
     content: params.challenge,
   };
-  const signed = await withSignTimeout('signOnlineSeatLinkChallenge', n.signEvent(unsigned));
+  const signed = await withSignTimeout(
+    'signOnlineSeatLinkChallenge',
+    n.signEvent(unsigned),
+    resolveSignerMode() === 'nip46' ? NIP46_ZAP_SIGN_TIMEOUT_MS : SIGN_TIMEOUT_MS,
+  );
   return signed as SignedSeatLinkEvent;
 }

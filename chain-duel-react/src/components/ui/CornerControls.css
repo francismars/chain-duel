@@ -48,6 +48,19 @@
   border-color: rgba(255, 255, 255, 0.1);
 }
 
+.corner-btn--nostr-signed-in {
+  border-color: rgba(255, 255, 255, 0.45);
+  padding: 0.15vw;
+  overflow: hidden;
+}
+
+.corner-btn__nostr-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
 .corner-btn--muted:hover,
 .corner-btn--muted:focus-visible {
   color: rgba(255, 255, 255, 0.7);

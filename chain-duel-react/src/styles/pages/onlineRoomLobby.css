@@ -595,11 +595,12 @@
   margin: 0;
 }
 
-/* Payment path cards (4-up grid) */
+/* Payment path cards (3-up grid) */
 .online-lobby-payment-paths {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.6vw;
+  width: 100%;
 }
 
 @keyframes path-card-select {
@@ -751,6 +752,28 @@
 
 .online-lobby-path-card--active .online-lobby-path-card-desc {
   color: rgb(255 255 255 / 0.7);
+}
+
+.online-lobby-nip46-auth-banner {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgb(255 200 120 / 0.35);
+  background: rgb(255 160 60 / 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.online-lobby-nip46-auth-banner__text {
+  margin: 0;
+  font-size: clamp(11px, 0.75cqw, 13px);
+  color: rgb(255 220 170 / 0.95);
+  line-height: 1.35;
+}
+
+.online-lobby-nostr-retry-btn {
+  margin-top: 0.5rem;
+  align-self: flex-start;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2194,7 +2217,7 @@
   }
 
   .online-lobby-payment-paths {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
 
@@ -2315,9 +2338,9 @@
     padding: 0.6vw 1vw;
   }
 
-  /* Payment paths: 4 equal columns in the widescreen action zone */
+  /* Payment paths: 3 equal columns in the widescreen action zone */
   .online-lobby-payment-paths {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   /* Kind1 section: compact padding */

@@ -1151,10 +1151,10 @@ function decideExtraSnakeDir(state: GameState, extra: ExtraSnake): void {
   else if (next[1] === y && next[0] < x) dir = 'Left';
   if (!dir) return;
   const cur = extra.snake.dir;
-  if (dir === 'Down'  && (cur === 'Left' || cur === 'Right' || cur === '')) extra.snake.dirWanted = 'Down';
-  else if (dir === 'Up'    && (cur === 'Left' || cur === 'Right' || cur === '')) extra.snake.dirWanted = 'Up';
-  else if (dir === 'Right' && (cur === 'Up'   || cur === 'Down'  || cur === '')) extra.snake.dirWanted = 'Right';
-  else if (dir === 'Left'  && (cur === 'Up'   || cur === 'Down'  || cur === '')) extra.snake.dirWanted = 'Left';
+  if (dir === 'Down'  && (cur === 'Left' || cur === 'Right' || !cur)) extra.snake.dirWanted = 'Down';
+  else if (dir === 'Up'    && (cur === 'Left' || cur === 'Right' || !cur)) extra.snake.dirWanted = 'Up';
+  else if (dir === 'Right' && (cur === 'Up'   || cur === 'Down'  || !cur)) extra.snake.dirWanted = 'Right';
+  else if (dir === 'Left'  && (cur === 'Up'   || cur === 'Down'  || !cur)) extra.snake.dirWanted = 'Left';
 }
 
 function captureExtraSnakeCoinbases(state: GameState): void {

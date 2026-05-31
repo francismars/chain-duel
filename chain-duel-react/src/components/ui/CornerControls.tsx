@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAudio } from '@/contexts/AudioContext';
+import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
 import './CornerControls.css';
 
@@ -13,7 +15,9 @@ function getStoredTvSafeInset(): boolean {
 }
 
 export function CornerControls() {
+  const navigate = useNavigate();
   const { isMusicMuted, isMuted, toggleMusicMute, toggleMute } = useAudio();
+  const nostr = useNostrSession();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [tvSafeInset, setTvSafeInset] = useState(getStoredTvSafeInset);
 
@@ -116,6 +120,38 @@ export function CornerControls() {
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
             <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          </svg>
+        )}
+      </button>
+
+      <button
+        type="button"
+        className={`corner-btn corner-btn--nostr${nostr.signedIn ? ' corner-btn--nostr-signed-in' : ''}`}
+        onClick={() => navigate('/config')}
+        aria-label={
+          nostr.signedIn
+            ? `Nostr: ${nostr.displayName ?? 'signed in'}`
+            : 'Sign in with Nostr (Settings)'
+        }
+        data-tooltip={
+          nostr.signedIn
+            ? nostr.displayName ?? 'Nostr connected'
+            : 'Not signed in — Settings'
+        }
+      >
+        {nostr.signedIn && nostr.picture ? (
+          <img
+            className="corner-btn__nostr-avatar"
+            src={nostr.picture}
+            alt=""
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+            <circle cx="12" cy="8" r="4" />
+            <path d="M5 20c0-4 3.6-7 7-7s7 3 7 7" />
           </svg>
         )}
       </button>

@@ -1,21 +1,25 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useAudio, SFX } from '@/contexts/AudioContext';
 import {
-  fetchLatestKind0Profile,
   verifyNip05,
   formatPubkeyHex,
   type Kind0Profile,
 } from '@/lib/nostr/fetchKind0Profile';
+import { fetchProfileFromServer } from '@/lib/nostr/fetchProfileFromServer';
+import { useNostrSession } from '@/contexts/NostrSessionContext';
+import { useSocket } from '@/hooks/useSocket';
+import type { AppNostrProfile } from '@/types/schemas';
 import {
   beginNostrConnectPairing,
   clearSignerSession,
   connectNsecFromInput,
   disposeNostrConnectPairingAttempt,
   getStoredSignerMode,
+  hasStoredNip46Session,
   isNsecSessionMissing,
   pingNip46Signer,
   recoverNip46UserPubkey,
@@ -43,9 +47,46 @@ function signerModeLabel(mode: StoredSignerMode | null): string {
   return 'Nostr';
 }
 
+function appProfileToKind0(p: AppNostrProfile): Kind0Profile {
+  return {
+    displayTitle: p.name || 'Nostr user',
+    name: p.name,
+    displayName: p.name,
+    picture: p.picture ?? null,
+    banner: null,
+    nip05: p.nip05 ?? null,
+    lud16: p.lud16 ?? null,
+    lud06: p.lud06 ?? null,
+    about: null,
+    eventCreatedAt: 0,
+  };
+}
+
+type ConfigLocationState = { returnTo?: string };
+
 export default function Config() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo =
+    (location.state as ConfigLocationState | null)?.returnTo ??
+    new URLSearchParams(location.search).get('returnTo') ??
+    null;
   const { playSfx } = useAudio();
+  const { socket } = useSocket({ autoConnect: true });
+  const {
+    linkToServer,
+    signOut: signOutNostrSession,
+    linking: serverLinking,
+    signedIn: nostrSignedIn,
+    pubkey: sessionPubkey,
+    linkError: serverLinkError,
+    displayName: sessionDisplayName,
+    picture: sessionPicture,
+    nip05: sessionNip05,
+    lud16: sessionLud16,
+    lud06: sessionLud06,
+    signerMode: sessionSignerMode,
+  } = useNostrSession();
   const [nostrPubkeyHex, setNostrPubkeyHex] = useState<string | null>(null);
   const [nostrBusy, setNostrBusy] = useState(false);
   const [nostrError, setNostrError] = useState<string | null>(null);
@@ -70,6 +111,7 @@ export default function Config() {
   const [nwcError, setNwcError] = useState<string | null>(null);
   const nip46PairingDoneRef = useRef(false);
   const nip46PairingAbortRef = useRef<AbortController | null>(null);
+  const nip46ResumeLinkRef = useRef(false);
   const playSfxRef = useRef(playSfx);
   const profileCardMainRef = useRef<HTMLDivElement | null>(null);
   const backButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -80,11 +122,19 @@ export default function Config() {
       clearSignerSession();
       setNostrPubkeyHex(null);
       setNostrError('nsec sign-in is limited to this browser tab. After a refresh, sign in again.');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (nostrSignedIn && sessionPubkey) {
+      setNostrPubkeyHex(sessionPubkey);
       return;
     }
-    const saved = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
-    if (saved) setNostrPubkeyHex(saved);
-  }, []);
+    if (!nostrSignedIn) {
+      setNostrPubkeyHex(null);
+      setProfile(null);
+    }
+  }, [nostrSignedIn, sessionPubkey]);
 
   useEffect(() => {
     setNip46AuthUrlHandler((url) => setPendingAuthUrl(url));
@@ -92,7 +142,10 @@ export default function Config() {
   }, []);
 
   useEffect(() => {
-    if (loginTab !== 'nip46' || nostrPubkeyHex) {
+    if (nostrSignedIn || serverLinking || hasStoredNip46Session()) {
+      return;
+    }
+    if (loginTab !== 'nip46') {
       return;
     }
 
@@ -118,10 +171,28 @@ export default function Config() {
       setNostrConnectUri(connectionURI);
 
       void finished
-        .then((pk) => {
+        .then(async (pk) => {
           nip46PairingDoneRef.current = true;
-          setNostrPubkeyHex(pk);
-          playSfxRef.current(SFX.MENU_CONFIRM);
+          setNostrBusy(true);
+          setNostrError(null);
+          try {
+            localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pk.toLowerCase());
+            const recovered = await recoverNip46UserPubkey();
+            if (recovered) {
+              localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, recovered);
+            }
+            await linkToServer('nip46');
+            playSfxRef.current(SFX.MENU_CONFIRM);
+            if (returnTo) {
+              navigate(returnTo, { replace: true });
+            }
+          } catch (e) {
+            setNostrError(
+              e instanceof Error ? e.message : 'Could not link Nostr identity to game server.'
+            );
+          } finally {
+            setNostrBusy(false);
+          }
         })
         .catch((e: unknown) => {
           if (ac.signal.aborted) {
@@ -153,43 +224,60 @@ export default function Config() {
         disposeNostrConnectPairingAttempt();
       }
     };
-  }, [loginTab, nostrPubkeyHex, pairingKey]);
+  }, [loginTab, nostrSignedIn, serverLinking, pairingKey, linkToServer, navigate, returnTo]);
 
   useEffect(() => {
     setAvatarBroken(false);
     setNip05Ok(null);
     setNip05CheckPending(false);
-    if (!nostrPubkeyHex) {
+    if (!nostrSignedIn || !sessionPubkey) {
       setProfile(null);
+      setProfileLoading(false);
       return;
     }
 
     let cancelled = false;
     setProfileLoading(true);
-    setProfileAnimKey(k => k + 1);
+    setProfileAnimKey((k) => k + 1);
     void (async () => {
-      let pubkey = nostrPubkeyHex;
-      let p = await fetchLatestKind0Profile(pubkey);
+      let pubkey = sessionPubkey;
+      let p: Kind0Profile | null = null;
+      if (sessionDisplayName || sessionPicture || sessionNip05) {
+        p = appProfileToKind0({
+          pubkey,
+          name: sessionDisplayName ?? '',
+          picture: sessionPicture,
+          nip05: sessionNip05,
+          lud16: sessionLud16,
+          lud06: sessionLud06,
+        });
+      }
+      if (socket?.connected) {
+        const appP = await fetchProfileFromServer(socket, pubkey);
+        if (appP) {
+          p = appProfileToKind0(appP);
+        }
+      }
 
-      // Self-heal: if kind-0 returned nothing and we're in NIP-46 mode, the stored pubkey
-      // may be Primal's remote-signer key rather than the user's actual identity. Ask the
-      // signer to sign a dummy event — the signed event's pubkey is always the real user key.
       if (!p && !cancelled && getStoredSignerMode() === 'nip46') {
         setProfileRecovering(true);
         const recovered = await recoverNip46UserPubkey();
         if (!cancelled) setProfileRecovering(false);
         if (recovered && !cancelled) {
           pubkey = recovered;
-          p = await fetchLatestKind0Profile(recovered);
+          if (socket?.connected) {
+            const appP2 = await fetchProfileFromServer(socket, recovered);
+            if (appP2) {
+              p = appProfileToKind0(appP2);
+            }
+          }
         }
       }
 
       if (cancelled) return;
       setProfile(p);
       setProfileLoading(false);
-      // Update pubkey state AFTER profile is set — calling it earlier cancels this effect
-      // before the second fetchLatestKind0Profile can complete.
-      if (pubkey !== nostrPubkeyHex) {
+      if (pubkey !== sessionPubkey) {
         setNostrPubkeyHex(pubkey);
       }
 
@@ -205,11 +293,20 @@ export default function Config() {
     return () => {
       cancelled = true;
     };
-  }, [nostrPubkeyHex]);
+  }, [
+    nostrSignedIn,
+    sessionPubkey,
+    sessionDisplayName,
+    sessionPicture,
+    sessionNip05,
+    sessionLud16,
+    sessionLud06,
+    socket,
+  ]);
 
   // Ping the NIP-46 signer — verifies remote is live AND fixes wrong stored pubkey.
   useEffect(() => {
-    if (!nostrPubkeyHex || getStoredSignerMode() !== 'nip46') return;
+    if (!nostrSignedIn || !nostrPubkeyHex || getStoredSignerMode() !== 'nip46') return;
     let cancelled = false;
     setSignerPingStatus('pending');
     void pingNip46Signer().then((result: Nip46PingResult) => {
@@ -221,7 +318,29 @@ export default function Config() {
       }
     });
     return () => { cancelled = true; };
-  }, [nostrPubkeyHex]);
+  }, [nostrSignedIn, nostrPubkeyHex]);
+
+  const finishSignIn = useCallback(
+    async (pubkey: string, mode: StoredSignerMode) => {
+      setNostrBusy(true);
+      setNostrError(null);
+      try {
+        localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pubkey.toLowerCase());
+        await linkToServer(mode);
+        playSfx(SFX.MENU_CONFIRM);
+        if (returnTo) {
+          navigate(returnTo, { replace: true });
+        }
+      } catch (e) {
+        setNostrError(
+          e instanceof Error ? e.message : 'Could not link Nostr identity to game server.'
+        );
+      } finally {
+        setNostrBusy(false);
+      }
+    },
+    [linkToServer, navigate, playSfx, returnTo]
+  );
 
   const handleExtensionSignIn = useCallback(async () => {
     if (!window.nostr) {
@@ -234,14 +353,12 @@ export default function Config() {
     try {
       const pubkey = await window.nostr.getPublicKey();
       recordExtensionSignIn(pubkey);
-      setNostrPubkeyHex(pubkey);
-      playSfx(SFX.MENU_CONFIRM);
+      await finishSignIn(pubkey, 'extension');
     } catch {
       setNostrError('Extension declined or sign-in was cancelled.');
-    } finally {
       setNostrBusy(false);
     }
-  }, [playSfx]);
+  }, [finishSignIn]);
 
   const copyNostrConnectUri = useCallback(() => {
     if (!nostrConnectUri) return;
@@ -257,36 +374,39 @@ export default function Config() {
     try {
       const pubkey = await connectNsecFromInput(nsecInput);
       setNsecInput('');
-      setNostrPubkeyHex(pubkey);
-      playSfx(SFX.MENU_CONFIRM);
+      await finishSignIn(pubkey, 'nsec');
     } catch (e) {
       setNostrError(e instanceof Error ? e.message : 'Invalid nsec or hex key.');
-    } finally {
       setNostrBusy(false);
     }
-  }, [nsecInput, playSfx]);
+  }, [nsecInput, finishSignIn]);
 
   const handleNostrSignOut = useCallback(() => {
-    clearSignerSession();
+    nip46ResumeLinkRef.current = false;
+    signOutNostrSession();
     setNostrPubkeyHex(null);
     setProfile(null);
     setNostrError(null);
     setNip05Ok(null);
     setPendingAuthUrl(null);
     playSfx(SFX.MENU_CONFIRM);
-  }, [playSfx]);
+  }, [playSfx, signOutNostrSession]);
 
   const openPendingAuth = useCallback(() => {
     if (!pendingAuthUrl) return;
     window.open(pendingAuthUrl, '_blank', 'noopener,noreferrer');
   }, [pendingAuthUrl]);
 
-  const signerMode = nostrPubkeyHex ? getStoredSignerMode() : null;
+  const signerMode = nostrSignedIn
+    ? (sessionSignerMode ?? getStoredSignerMode())
+    : getStoredSignerMode();
+  const pendingNip46ServerLink =
+    !nostrSignedIn && hasStoredNip46Session() && getStoredSignerMode() === 'nip46';
   const avatarSrc = !avatarBroken && profile?.picture?.trim() ? profile.picture.trim() : null;
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (!nostrPubkeyHex) return;
+      if (!nostrSignedIn) return;
       const target = e.target as HTMLElement | null;
       if (!target) return;
       const tag = target.tagName;
@@ -329,19 +449,69 @@ export default function Config() {
 
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [nostrPubkeyHex]);
+  }, [nostrSignedIn]);
+
+  const retryNip46ServerLink = useCallback(() => {
+    setNostrError(null);
+    nip46ResumeLinkRef.current = false;
+    setNostrBusy(true);
+    void (async () => {
+      try {
+        await recoverNip46UserPubkey();
+        await linkToServer('nip46');
+        playSfx(SFX.MENU_CONFIRM);
+        if (returnTo) {
+          navigate(returnTo, { replace: true });
+        }
+      } catch (e) {
+        setNostrError(
+          e instanceof Error ? e.message : 'Could not link Nostr identity to game server.'
+        );
+      } finally {
+        setNostrBusy(false);
+      }
+    })();
+  }, [linkToServer, navigate, playSfx, returnTo]);
 
   return (
     <div className="flex full flex-center config-page">
       <p className="page-title label">Config</p>
 
-      {!nostrPubkeyHex ? (
+      {!nostrSignedIn ? (
         <>
           <p className="config-nostr-hint">
-            Sign in with an extension, <strong>Nostr Connect</strong>, or nsec. Profile info loads from relays in your
-            browser — not our servers.
+            Sign in with an extension, <strong>Nostr Connect</strong>, or nsec. After pairing, approve the{' '}
+            <strong>sign-in</strong> prompt in your wallet — profile loads from our game server.
           </p>
           {nostrError ? <p className="config-nostr-error">{nostrError}</p> : null}
+          {serverLinkError && !nostrError ? (
+            <p className="config-nostr-error">{serverLinkError}</p>
+          ) : null}
+
+          {pendingNip46ServerLink ? (
+            <div className="config-nip46-auth-banner" role="status">
+              <p className="config-nip46-auth-banner__text">
+                Primal is connected. Open the app and tap <strong>Allow</strong> on the sign-in request to finish.
+              </p>
+              <Button
+                type="button"
+                className="config-nip46-auth-banner__btn"
+                onClick={retryNip46ServerLink}
+                disabled={nostrBusy || serverLinking}
+              >
+                {nostrBusy || serverLinking ? 'Waiting for approval…' : 'Retry server link'}
+              </Button>
+            </div>
+          ) : null}
+
+          {serverLinking ? (
+            <p className="config-nostr-hint config-nostr-hint--linking" role="status">
+              Linking to game server…{' '}
+              {getStoredSignerMode() === 'nip46'
+                ? 'Approve the sign-in request in Primal.'
+                : 'Complete the signing prompt if shown.'}
+            </p>
+          ) : null}
 
           {pendingAuthUrl ? (
             <div className="config-nip46-auth-banner" role="status">
@@ -404,7 +574,7 @@ export default function Config() {
                     onClick={() => {
                       void handleExtensionSignIn();
                     }}
-                    disabled={nostrBusy}
+                    disabled={nostrBusy || serverLinking}
                   >
                     {nostrBusy ? 'Waiting…' : 'Sign in with extension'}
                   </Button>
@@ -412,7 +582,7 @@ export default function Config() {
               </div>
             ) : null}
 
-            {loginTab === 'nip46' ? (
+            {loginTab === 'nip46' && !pendingNip46ServerLink ? (
               <div className="config-login-panel__block" role="tabpanel">
                 <p className="config-login-panel__lede config-nc-lede">
                   NIP-46: scan QR or open the link — Primal, Amber, etc. (
@@ -496,6 +666,9 @@ export default function Config() {
                     type="button"
                     className="config-nc-regen-btn"
                     onClick={() => {
+                      nip46PairingAbortRef.current?.abort();
+                      clearSignerSession();
+                      nip46ResumeLinkRef.current = false;
                       setNostrError(null);
                       setPairingKey((k) => k + 1);
                     }}
@@ -533,7 +706,7 @@ export default function Config() {
                     onClick={() => {
                       void handleNsecSignIn();
                     }}
-                    disabled={nostrBusy || !nsecInput.trim()}
+                    disabled={nostrBusy || serverLinking || !nsecInput.trim()}
                   >
                     {nostrBusy ? 'Unlocking…' : 'Sign in with nsec'}
                   </Button>
@@ -683,8 +856,8 @@ export default function Config() {
               {!profile ? (
                 <p className="config-profile-card__empty">
                   {signerMode === 'nip46'
-                    ? 'Waiting for signer. Open Primal on your phone and approve any signing prompts — your profile will appear automatically.'
-                    : 'No kind\u00a00 metadata found on the default relays yet. You can still use this pubkey; publish a profile from any Nostr client.'}
+                    ? 'Profile not loaded yet. If Primal shows a signing prompt, tap Allow — then refresh this page.'
+                    : 'No profile metadata on file yet. You can still use this pubkey; publish a profile from any Nostr client.'}
                 </p>
               ) : null}
 
@@ -781,7 +954,11 @@ export default function Config() {
       </div>
 
       <div key={`act-${profileAnimKey}`} className="config-page__actions config-page__actions--animate-in">
-        <Button id="backButton" ref={backButtonRef} onClick={() => navigate('/')}>
+        <Button
+          id="backButton"
+          ref={backButtonRef}
+          onClick={() => navigate(returnTo ?? '/')}
+        >
           Main Menu
         </Button>
       </div>

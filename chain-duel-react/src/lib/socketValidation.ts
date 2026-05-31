@@ -9,6 +9,10 @@ import {
   OnlinePinInvalidSchema,
   ResOnlineNostrLinkChallengeSchema,
   ResOnlineNostrLinkOkSchema,
+  ResAppNostrLinkChallengeSchema,
+  ResAppNostrSessionSchema,
+  ResNostrProfileSchema,
+  ResPublishNostrEventSchema,
   ResOnlineKind1PostSchema,
   ResOnlineSeatZapPayPrepareSchema,
   ResOnlineSeatZapPayInvoiceSchema,
@@ -139,6 +143,18 @@ export const SocketValidators = {
 
   resOnlineNostrLinkOk: (data: unknown) =>
     validateSocketEvent(ResOnlineNostrLinkOkSchema, data, 'resOnlineNostrLinkOk'),
+
+  resAppNostrLinkChallenge: (data: unknown) =>
+    validateSocketEvent(ResAppNostrLinkChallengeSchema, data, 'resAppNostrLinkChallenge'),
+
+  resAppNostrSession: (data: unknown) =>
+    validateSocketEvent(ResAppNostrSessionSchema, data, 'resAppNostrSession'),
+
+  resNostrProfile: (data: unknown) =>
+    validateSocketEvent(ResNostrProfileSchema, data, 'resNostrProfile'),
+
+  resPublishNostrEvent: (data: unknown) =>
+    validateSocketEvent(ResPublishNostrEventSchema, data, 'resPublishNostrEvent'),
 
   resOnlineKind1Post: (data: unknown) =>
     validateSocketEvent(ResOnlineKind1PostSchema, data, 'resOnlineKind1Post'),

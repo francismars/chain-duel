@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js 18+ installed
-- Backend server (`marspayTS`) should be running on port 3000
+- Backend server (`marspayTS`) should be running on port 3001 (set `PORT=3001` in marspay `.env`)
 
 ## Initial Setup
 

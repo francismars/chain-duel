@@ -3,6 +3,23 @@
  * These types match the backend socket events in marspayTS
  */
 
+import type {
+  AppNostrProfile,
+  ResAppNostrSession,
+} from '@/types/schemas';
+
+export type ResAppNostrSessionPayload = ResAppNostrSession;
+export type ResNostrProfilePayload = {
+  ok: boolean;
+  profile?: AppNostrProfile;
+  reason?: string;
+};
+export type ResPublishNostrEventPayload = {
+  ok: boolean;
+  eventId?: string;
+  reason?: string;
+};
+
 // ============================================================================
 // Enums (matching backend)
 // ============================================================================
@@ -332,12 +349,28 @@ export interface ClientToServerEvents {
   pingLatency: (ack: () => void) => void;
   /** After measuring RTT, send so server can broadcast both players' ping via `onlineRoomUpdated`. */
   reportOnlineRoomPing: (payload: { roomId: string; latencyMs: number }) => void;
+
+  /** App-wide Nostr identity bound to socket session. */
+  requestAppNostrLinkChallenge: () => void;
+  confirmAppNostrLink: (payload: {
+    event: Record<string, unknown>;
+    signerMode?: 'extension' | 'nip46' | 'nsec';
+  }) => void;
+  getAppNostrSession: () => void;
+  clearAppNostrSession: () => void;
+  getNostrProfile: (payload?: { pubkey?: string }) => void;
+  publishSignedNostrEvent: (payload: { event: Record<string, unknown> }) => void;
 }
 
 // Server -> Client Events
 export interface ServerToClientEvents {
   // Session management
   session: (data: { sessionID: string; userID: string }) => void;
+
+  resAppNostrLinkChallenge: (data: { challenge: string; expiresAt: number }) => void;
+  resAppNostrSession: (data: ResAppNostrSessionPayload) => void;
+  resNostrProfile: (data: ResNostrProfilePayload) => void;
+  resPublishNostrEvent: (data: ResPublishNostrEventPayload) => void;
 
   // Menu responses
   resGetGameMenuInfos: (

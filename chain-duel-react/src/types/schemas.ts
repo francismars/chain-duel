@@ -282,6 +282,45 @@ export const ResOnlineNostrLinkChallengeSchema = z.object({
   expiresAt: z.number(),
 });
 
+export const ResAppNostrLinkChallengeSchema = z.object({
+  challenge: z.string(),
+  expiresAt: z.number(),
+});
+
+export const AppNostrProfileSchema = z.object({
+  pubkey: z.string(),
+  name: z.string(),
+  picture: z.string().nullable().optional(),
+  nip05: z.string().nullable().optional(),
+  lud16: z.string().nullable().optional(),
+  lud06: z.string().nullable().optional(),
+});
+
+export type AppNostrProfile = z.infer<typeof AppNostrProfileSchema>;
+
+export const ResAppNostrSessionSchema = z.object({
+  ok: z.boolean(),
+  pubkey: z.string().optional(),
+  expiresAt: z.number().optional(),
+  signerMode: z.enum(['extension', 'nip46', 'nsec']).nullable().optional(),
+  profile: AppNostrProfileSchema.optional(),
+  reason: z.string().optional(),
+});
+
+export type ResAppNostrSession = z.infer<typeof ResAppNostrSessionSchema>;
+
+export const ResNostrProfileSchema = z.object({
+  ok: z.boolean(),
+  profile: AppNostrProfileSchema.optional(),
+  reason: z.string().optional(),
+});
+
+export const ResPublishNostrEventSchema = z.object({
+  ok: z.boolean(),
+  eventId: z.string().optional(),
+  reason: z.string().optional(),
+});
+
 export const NostrLinkedProfileSchema = z.object({
   pubkey: z.string(),
   name: z.string(),

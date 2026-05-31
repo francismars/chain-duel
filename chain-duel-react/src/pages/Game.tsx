@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SimplePool } from 'nostr-tools';
 import { Sponsorship } from '@/components/ui/Sponsorship';
-import { getActiveNostrSigner, STORED_NOSTR_PUBKEY_KEY } from '@/lib/nostr/signerSession';
-import { KIND0_DEFAULT_RELAYS, fetchLatestKind0Profile, formatPubkeyHex } from '@/lib/nostr/fetchKind0Profile';
+import { getActiveNostrSigner } from '@/lib/nostr/signerSession';
+import { formatPubkeyHex } from '@/lib/nostr/fetchKind0Profile';
+import { publishSignedNostrEvent } from '@/lib/nostr/publishSignedNostrEvent';
+import { useNostrSession } from '@/contexts/NostrSessionContext';
 import {
   applyTerminalGameOutcome,
   createGameState,
@@ -59,6 +60,7 @@ const DEFAULT_BITCOIN_DETAILS: BitcoinDetails = {
 export default function Game() {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
+  const nostrSession = useNostrSession();
   const { stop, isMuted, isMusicMuted } = useAudio();
   useGamepad(true);
 
@@ -108,12 +110,6 @@ export default function Game() {
   const [noteAuthorAvatar, setNoteAuthorAvatar] = useState<string | null>(null);
   const [noteAuthorAvatarBroken, setNoteAuthorAvatarBroken] = useState(false);
 
-  const PUBLISH_RELAYS = [
-    'wss://relay.damus.io',
-    'wss://nos.lol',
-    KIND0_DEFAULT_RELAYS[0],
-  ];
-
   const buildBountyNoteContent = useCallback((name: string, bounty: number) =>
     `I just beat the ${name} challenge on Chain Duel ⚡\n\n${bounty.toLocaleString()} sats bounty — challenge accepted and won.\n\nchainduel.xyz\n\n#ChainDuel #Bitcoin #Nostr`,
   []);
@@ -133,40 +129,37 @@ export default function Game() {
         content,
       };
       const signed = await signer.signEvent(unsigned);
-      const pool = new SimplePool();
-      await Promise.allSettled(pool.publish(PUBLISH_RELAYS, signed));
-      pool.close(PUBLISH_RELAYS);
+      if (!socket) {
+        throw new Error('Not connected to server.');
+      }
+      const result = await publishSignedNostrEvent(socket, signed);
+      if (!result.ok) {
+        throw new Error(result.reason);
+      }
       setNoteState('posted');
     } catch (err) {
       setNoteState('error');
       setNoteError(err instanceof Error ? err.message : 'Failed to post note.');
     }
-  }, [soloEndData, buildBountyNoteContent, PUBLISH_RELAYS]);
+  }, [soloEndData, buildBountyNoteContent, socket]);
 
   useEffect(() => {
-    let cancelled = false;
-    const pk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
     setNoteAuthorAvatarBroken(false);
-    if (!pk) {
+    if (!nostrSession.signedIn || !nostrSession.pubkey) {
       setNoteAuthorPubkey(null);
       setNoteAuthorName('Nostr user');
       setNoteAuthorAvatar(null);
-      return () => {
-        cancelled = true;
-      };
+      return;
     }
-
-    setNoteAuthorPubkey(pk);
-    void fetchLatestKind0Profile(pk).then((profile) => {
-      if (cancelled) return;
-      setNoteAuthorName(profile?.displayTitle ?? 'Nostr user');
-      setNoteAuthorAvatar(profile?.picture?.trim() || null);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    setNoteAuthorPubkey(nostrSession.pubkey);
+    setNoteAuthorName(nostrSession.displayName ?? 'Nostr user');
+    setNoteAuthorAvatar(nostrSession.picture?.trim() || null);
+  }, [
+    nostrSession.signedIn,
+    nostrSession.pubkey,
+    nostrSession.displayName,
+    nostrSession.picture,
+  ]);
 
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
   const canShowP2Image = useMemo(() => player2Img.length > 0, [player2Img]);

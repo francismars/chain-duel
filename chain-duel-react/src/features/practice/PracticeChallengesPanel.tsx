@@ -17,11 +17,7 @@ import {
   PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
 } from '@/game/engine/constants';
 import '@/components/ui/Button.css';
-import { npubEncode } from 'nostr-tools/nip19';
-import {
-  STORED_NOSTR_PUBKEY_KEY,
-} from '@/lib/nostr/signerSession';
-import { fetchLatestKind0Profile } from '@/lib/nostr/fetchKind0Profile';
+import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { savePracticeGameConfig } from '@/pages/practiceHubModes';
 import type { PracticeHubFocus } from '@/pages/practiceHubPlayStyleNav';
 
@@ -160,15 +156,11 @@ export const PracticeChallengesPanel = forwardRef<
 ) {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
+  const nostrSession = useNostrSession();
 
   const [selected, setSelected] = useState(0);
-  const [npub, setNpub] = useState<string | null>(null);
-  const [npubDisplay, setNpubDisplay] = useState<string | null>(null);
   const [lockedPreviewRow, setLockedPreviewRow] = useState<number | null>(null);
   const [lockedPreviewValue, setLockedPreviewValue] = useState<number | null>(null);
-  const [nostrLightning, setNostrLightning] = useState('');
-  const [nostrProfileName, setNostrProfileName] = useState<string>('Nostr user');
-  const [nostrProfilePic, setNostrProfilePic] = useState<string | null>(null);
   const [nostrProfilePicBroken, setNostrProfilePicBroken] = useState(false);
 
   const [displayBounty, setDisplayBounty] = useState(CHALLENGES[0].bounty);
@@ -180,45 +172,25 @@ export const PracticeChallengesPanel = forwardRef<
   const bountyRafRef = useRef<number | null>(null);
   const lockedPreviewRafRef = useRef<number | null>(null);
 
-  const payoutReady = !!npub && nostrLightning.trim().length > 0;
+  const npub = nostrSession.pubkey;
+  const npubDisplay = nostrSession.npub;
+  const nostrLightning = (nostrSession.lud16 ?? nostrSession.lud06 ?? '').trim();
+  const nostrProfileName = nostrSession.displayName ?? 'Nostr user';
+  const nostrProfilePic = nostrSession.picture;
+  const payoutReady = nostrSession.signedIn && nostrLightning.length > 0;
+
+  const openConfigForNostr = useCallback(() => {
+    navigate('/config', { state: { returnTo: '/practice?play=challenges' } });
+  }, [navigate]);
 
   useEffect(() => {
-    const storedPubkey = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
-    if (storedPubkey) setNpub(storedPubkey);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
     setNostrProfilePicBroken(false);
-    if (!npub) {
-      setNpubDisplay(null);
-      setNostrProfileName('Nostr user');
-      setNostrProfilePic(null);
-      setNostrLightning('');
-      return () => {
-        cancelled = true;
-      };
-    }
-    try {
-      setNpubDisplay(npubEncode(npub));
-    } catch {
-      setNpubDisplay(npub);
-    }
-    void fetchLatestKind0Profile(npub).then((p) => {
-      if (cancelled) return;
-      setNostrProfileName(p?.displayTitle ?? 'Nostr user');
-      setNostrProfilePic(p?.picture?.trim() || null);
-      setNostrLightning(p?.lud16?.trim() || p?.lud06?.trim() || '');
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [npub]);
+  }, [nostrSession.pubkey, nostrSession.picture]);
 
   // Keep compatibility with payout surfaces that still read this legacy key.
   useEffect(() => {
-    if (nostrLightning.trim()) {
-      localStorage.setItem(LN_ADDRESS_KEY, nostrLightning.trim());
+    if (nostrLightning) {
+      localStorage.setItem(LN_ADDRESS_KEY, nostrLightning);
     } else {
       localStorage.removeItem(LN_ADDRESS_KEY);
     }
@@ -261,7 +233,7 @@ export const PracticeChallengesPanel = forwardRef<
   }, [lockedPreviewRow]);
 
   const startLockedPreviewToZero = useCallback((rowIndex: number) => {
-    if (npub) return;
+    if (nostrSession.signedIn) return;
     if (lockedPreviewRafRef.current !== null) {
       cancelAnimationFrame(lockedPreviewRafRef.current);
       lockedPreviewRafRef.current = null;
@@ -286,7 +258,7 @@ export const PracticeChallengesPanel = forwardRef<
     };
 
     lockedPreviewRafRef.current = requestAnimationFrame(tick);
-  }, [npub, selected, displayBounty]);
+  }, [nostrSession.signedIn, selected, displayBounty]);
 
   useEffect(() => {
     return () => {
@@ -542,7 +514,7 @@ export const PracticeChallengesPanel = forwardRef<
             {/* ── Nostr / LN payout gate ── */}
             <div className={`sc-gate${payoutReady ? ' sc-gate--ready' : ''}`}>
               <div className="sc-gate__top">
-                {npub ? (
+                {nostrSession.signedIn ? (
                   <div className="sc-gate__nostr-profile" aria-label="Signed in Nostr profile">
                     <img
                       className="sc-gate__nostr-avatar"
@@ -554,7 +526,7 @@ export const PracticeChallengesPanel = forwardRef<
                     />
                     <span className="sc-gate__nostr-meta">
                       <span className="sc-gate__nostr-name">{nostrProfileName}</span>
-                      <span className="sc-gate__nostr-pubkey" title={npubDisplay ?? npub}>
+                      <span className="sc-gate__nostr-pubkey" title={npubDisplay ?? npub ?? undefined}>
                         {npubDisplay
                           ? `${npubDisplay.slice(0, 12)}…${npubDisplay.slice(-8)}`
                           : npub}
@@ -569,7 +541,7 @@ export const PracticeChallengesPanel = forwardRef<
                       ref={gateActionRef}
                       onClick={() => {
                         playSfx(SFX.MENU_CONFIRM);
-                        navigate('/config');
+                        openConfigForNostr();
                       }}
                     >
                       CONFIG
@@ -581,7 +553,7 @@ export const PracticeChallengesPanel = forwardRef<
                     ref={gateActionRef}
                     onClick={() => {
                       playSfx(SFX.MENU_CONFIRM);
-                      navigate('/config');
+                      openConfigForNostr();
                     }}
                     type="button"
                   >
@@ -599,7 +571,7 @@ export const PracticeChallengesPanel = forwardRef<
               <div className={`sc-gate__status${payoutReady ? ' sc-gate__status--ready' : ''}`}>
                 {payoutReady
                   ? 'WIN AND POST SIGNED NOTE TO CLAIM ZAP'
-                  : npub
+                  : nostrSession.signedIn
                     ? 'ADD LIGHTNING TO KIND 0 PROFILE'
                     : 'CONNECT TO UNLOCK SATS PRIZES'}
               </div>
@@ -627,13 +599,13 @@ export const PracticeChallengesPanel = forwardRef<
                       startLockedPreviewToZero(i);
                     }}
                     onMouseLeave={() => {
-                      if (!npub) clearLockedPreview(i);
+                      if (!nostrSession.signedIn) clearLockedPreview(i);
                     }}
                     onFocus={() => {
                       startLockedPreviewToZero(i);
                     }}
                     onBlur={() => {
-                      if (!npub) clearLockedPreview(i);
+                      if (!nostrSession.signedIn) clearLockedPreview(i);
                     }}
                     type="button"
                     data-tier={c.aiTier}

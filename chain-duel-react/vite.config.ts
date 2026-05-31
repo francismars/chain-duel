@@ -5,7 +5,7 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const proxyTarget = env.VITE_PROXY_TARGET ?? 'http://localhost:3000';
+  const proxyTarget = env.VITE_PROXY_TARGET ?? 'http://localhost:3001';
 
   return {
     plugins: [react()],
@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       allowedHosts: [
         '.ngrok-free.app',
+        '.ngrok-free.dev',
+        'purplish-isaac-unimperative.ngrok-free.dev',
       ],
       proxy: {
         // Backend (marspayTS); target from .env VITE_PROXY_TARGET
