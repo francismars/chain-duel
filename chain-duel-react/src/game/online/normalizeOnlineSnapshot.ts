@@ -26,7 +26,7 @@ export function normalizeOnlineRoomSnapshot(snapshot: OnlineRoomSnapshot): Onlin
     p1Human: typeof metaRaw?.p1Human === 'boolean' ? metaRaw.p1Human : true,
     p2Human:
       typeof metaRaw?.p2Human === 'boolean' ? metaRaw.p2Human : !practiceMode,
-    aiTier: 'hunter' as const,
+    aiTier: 'stacker' as const,
     convergenceMode: false,
     convergenceShrinkInterval: 0,
     convergenceMinCols: 0,

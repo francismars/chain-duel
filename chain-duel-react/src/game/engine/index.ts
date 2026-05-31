@@ -12,6 +12,7 @@ import {
   STEP_SPEED_MS,
   FFA_GHOST_COLOR,
   FFA_SPECTER_COLOR,
+  FFA_BOT_NAMES,
 } from '@/game/engine/constants';
 import type {
   AiTier,
@@ -123,6 +124,27 @@ interface CreateStateArgs {
   p4Human?: boolean;
 }
 
+/** One unique bot name per AI slot (P1 → P2 → P3 → P4). */
+function assignFfaDisplayNames(
+  p1Human: boolean,
+  p2Human: boolean,
+  p3Human: boolean,
+  p4Human: boolean,
+  p1Name: string,
+  p2Name: string,
+): { p1Name: string; p2Name: string; extra0Name: string; extra1Name: string } {
+  let botIdx = 0;
+  const nextBotName = (): string =>
+    FFA_BOT_NAMES[botIdx++] ?? `Bot ${botIdx}`;
+
+  return {
+    p1Name: p1Human ? p1Name : nextBotName(),
+    p2Name: p2Human ? p2Name : nextBotName(),
+    extra0Name: p3Human ? 'Player 3' : nextBotName(),
+    extra1Name: p4Human ? 'Player 4' : nextBotName(),
+  };
+}
+
 // ============================================================================
 // createGameState
 // ============================================================================
@@ -174,7 +196,7 @@ export function createGameState(args: CreateStateArgs): GameState {
       p1Human: p1HumanMeta,
       p2Human: p2HumanMeta,
       isTournament: args.isTournament ?? false,
-      aiTier: args.aiTier ?? 'hunter',
+      aiTier: args.aiTier ?? 'stacker',
       convergenceMode: args.convergenceMode ?? false,
       convergenceShrinkInterval: args.convergenceShrinkInterval ?? CONVERGENCE_SHRINK_INTERVAL_TICKS,
       convergenceMinCols: args.convergenceMinCols ?? CONVERGENCE_MIN_COLS,
@@ -199,7 +221,17 @@ export function createGameState(args: CreateStateArgs): GameState {
   const p3Human = args.p3Human === true;
   const p4Human = args.p4Human === true;
   if (teamMode === 'ffa') {
-    const fTier = args.ffaAiTier ?? (args.aiTier ?? 'hunter');
+    const fTier = args.ffaAiTier ?? (args.aiTier ?? 'stacker');
+    const names = assignFfaDisplayNames(
+      p1HumanMeta,
+      p2HumanMeta,
+      p3Human,
+      p4Human,
+      args.p1Name,
+      args.p2Name,
+    );
+    state.p1Name = names.p1Name;
+    state.p2Name = names.p2Name;
     const h1: GridPos = [4, 4];
     const h2: GridPos = [46, 4];
     state.p1.head = h1;
@@ -208,8 +240,8 @@ export function createGameState(args: CreateStateArgs): GameState {
     state.p2.body = [bodySegmentBehindHead(h2, 'Left')];
     state.p2.dirWanted = 'Left';
     state.extraSnakes = [
-      makeExtraSnake([46, 20], 'Left', 1, FFA_GHOST_COLOR, 'Ghost', fTier, p3Human),
-      makeExtraSnake([4, 20], 'Right', 1, FFA_SPECTER_COLOR, 'Specter', fTier, p4Human),
+      makeExtraSnake([46, 20], 'Left', 1, FFA_GHOST_COLOR, names.extra0Name, fTier, p3Human),
+      makeExtraSnake([4, 20], 'Right', 1, FFA_SPECTER_COLOR, names.extra1Name, fTier, p4Human),
     ];
     initFfaEconomy(state, p1, p2);
   }
@@ -651,7 +683,7 @@ function checkCollisions(state: GameState): void {
   checkPassThroughCollision(state, 'Down', 'Up', 0, 1);
 
   // Wall / shrink border — PHANTOM wraps (Pac-Man style) instead of resetting.
-  // Ghost loops through both the outer grid walls and the convergence border.
+  // PHANTOM wraps through outer grid walls and the convergence border.
   if (outOfBounds(state, state.p1.head)) {
     if (p1HasPhantom) wrapSnakeHeadRef(state, state.p1);
     else resetSnake(state, 'P1');
@@ -982,7 +1014,7 @@ export function canContinueAfterGame(state: GameState, key: string): boolean {
   }
   if (state.winnerPlayer === 'P1') return normalized === ' ';
   if (state.winnerPlayer === 'P2') return normalized === 'ENTER';
-  // FFA winner is Ghost/Specter (no P1/P2 slot) — allow either continue key.
+  // FFA winner may be an extra snake (no P1/P2 slot) — allow either continue key.
   return normalized === ' ' || normalized === 'ENTER';
 }
 
@@ -996,9 +1028,9 @@ function ffaExtraSpawnLayout(
 ): { head: GridPos; body: GridPos[]; dirWanted: Direction } {
   const sb = state.shrinkBorder;
   const conv = Boolean(state.meta.convergenceMode && sb);
-  const isGhost = extra.spawnHead[0] === 46 && extra.spawnHead[1] === 20;
+  const isBottomRightSpawn = extra.spawnHead[0] === 46 && extra.spawnHead[1] === 20;
 
-  if (isGhost) {
+  if (isBottomRightSpawn) {
     let head: GridPos = [46, 20];
     const dirWanted: Direction = 'Left';
     if (conv && sb) {
@@ -1252,16 +1284,16 @@ function swapP1P2Snakes(state: GameState): void {
 function decideAiDirection(state: GameState): void {
   const tier = state.meta.aiTier;
   switch (tier) {
-    case 'wanderer': decideWanderer(state); break;
-    case 'hunter':   decideHunter(state); break;
-    case 'tactician': decideTactician(state); break;
-    case 'sovereign': decideSovereign(state); break;
-    default:          decideHunter(state);
+    case 'normie':      decideNormie(state); break;
+    case 'stacker':     decideStacker(state); break;
+    case 'noderunner':  decideNoderunner(state); break;
+    case 'sovereign':   decideSovereign(state); break;
+    default:            decideStacker(state);
   }
 }
 
-/** Wanderer: mostly random with light wall avoidance */
-function decideWanderer(state: GameState): void {
+/** Normie: mostly random with light wall avoidance */
+function decideNormie(state: GameState): void {
   const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
   const safe = dirs.filter((d) => !wouldHitWall(state, state.p2, d));
   if (safe.length === 0) return;
@@ -1285,54 +1317,378 @@ function decideWanderer(state: GameState): void {
   applyAiDir(state, safe[Math.floor(Math.random() * safe.length)]);
 }
 
-/** Hunter: A* toward nearest coinbase (original BigToshi behavior) */
-function decideHunter(state: GameState): void {
+/** Stacker: A* toward nearest coinbase */
+function decideStacker(state: GameState): void {
   const path = findPathP2(state);
   applyPathToAi(state, path);
 }
 
-/** Tactician: A* + threat modeling, occasionally cuts off player */
-function decideTactician(state: GameState): void {
-  // Every 3 ticks, try to intercept player instead of chasing coinbase
-  if (state.tickCount % 3 === 0) {
-    const intercept = findInterceptPath(state);
-    if (intercept && intercept.length > 1) {
-      applyPathToAi(state, intercept);
-      return;
-    }
-  }
-  const path = findPathP2(state, true);
-  applyPathToAi(state, path);
+const SOVEREIGN_INTERCEPT_RANGE = 10;
+const SOVEREIGN_INTERCEPT_COMMIT_RANGE = 20;
+const SOVEREIGN_INTERCEPT_PATH_SLACK = 2;
+const SOVEREIGN_COIN_CONTEST_SLACK = 6;
+const SOVEREIGN_PREDICT_STEPS = 4;
+const SOVEREIGN_TAIL_SIM_MAX_STEPS = 12;
+
+interface SovereignIntercept {
+  headTarget: GridPos;
+  blockCell: GridPos;
+  strategy: 'head-race' | 'tail-block';
 }
 
-/** Sovereign: full lookahead with territory control and power-up usage */
-function decideSovereign(state: GameState): void {
-  // Grab power-up if close
+interface SovereignInterceptPlan {
+  mode: 'intercept';
+  headTarget: GridPos;
+  blockCell: GridPos;
+  strategy: 'head-race' | 'tail-block';
+}
+
+const sovereignInterceptPlans = new WeakMap<GameState, SovereignInterceptPlan>();
+
+interface SimSnake {
+  head: GridPos;
+  body: GridPos[];
+}
+
+function cloneSimSnake(snake: GameState['p2']): SimSnake {
+  return {
+    head: [snake.head[0], snake.head[1]],
+    body: snake.body.map((p) => [p[0], p[1]] as GridPos),
+  };
+}
+
+/** One grid step — mirrors moveSnake body/head update. */
+function simSnakeStep(snake: SimSnake, nextHead: GridPos): void {
+  snake.body.unshift([snake.head[0], snake.head[1]]);
+  snake.body.pop();
+  snake.head = [nextHead[0], nextHead[1]];
+}
+
+function snakeBodyOccupies(snake: SimSnake, cell: GridPos): boolean {
+  return snake.body.some((p) => samePos(p, cell));
+}
+
+function botHeadMoveSafe(state: GameState, head: GridPos, p1Head: GridPos): boolean {
+  if (samePos(head, p1Head)) return false;
+  if (state.p1.body.some((p) => samePos(head, p))) return false;
+  return true;
+}
+
+function bodyOccupiesCell(snake: GameState['p2'], cell: GridPos): boolean {
+  return snake.body.some((p) => samePos(p, cell));
+}
+
+/** Body segment count — same metric used for capture %. */
+function snakeBodyLength(snake: GameState['p1']): number {
+  return snake.body.length;
+}
+
+/** Smaller bot plays aggressive head-race; longer/equal bot lays tail blocks. */
+function sovereignPrefersTailBlock(state: GameState): boolean {
+  return snakeBodyLength(state.p2) >= snakeBodyLength(state.p1);
+}
+
+/** Bot always avoids P1 body; head-race alone may target P1's head cell. */
+type PlayerPathAvoidance = 'none' | 'head-and-body' | 'body-only';
+
+function sovereignPathAvoidance(strategy: SovereignIntercept['strategy']): PlayerPathAvoidance {
+  return strategy === 'head-race' ? 'body-only' : 'head-and-body';
+}
+
+function gridDist(a: GridPos, b: GridPos): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1]);
+}
+
+function nearestCoinbaseTarget(state: GameState): GridPos | null {
+  return state.coinbases.find((cb) => !cb.isDecoy)?.pos ?? null;
+}
+
+/** P1 route toward the coin — models the human going for food, routing around the bot. */
+function findPlayerFoodPath(state: GameState, coinTarget: GridPos): GridPos[] {
+  const blocked = new Set<string>();
+  const add = (p: GridPos) => blocked.add(posKey(p));
+  state.p1.body.forEach(add);
+  state.p2.body.forEach(add);
+  add(state.p2.head);
+  const facing = state.p1.dir || state.p1.dirWanted;
+  return findPathGeneric(state, state.p1.head, coinTarget, blocked, facing || undefined);
+}
+
+/** Candidate head destinations: past the choke on P1's route + flank cells. */
+function collectTailBlockHeadTargets(p1Path: GridPos[], blockIndex: number): GridPos[] {
+  const block = p1Path[blockIndex]!;
+  const targets: GridPos[] = [];
+  if (blockIndex + 1 < p1Path.length) targets.push(p1Path[blockIndex + 1]!);
+  if (blockIndex + 2 < p1Path.length) targets.push(p1Path[blockIndex + 2]!);
+
+  const flanks: GridPos[] = [
+    [block[0] + 1, block[1]],
+    [block[0] - 1, block[1]],
+    [block[0], block[1] + 1],
+    [block[0], block[1] - 1],
+  ];
+  for (const f of flanks) {
+    if (!p1Path.some((p) => samePos(p, f))) targets.push(f);
+  }
+  return targets;
+}
+
+/**
+ * Simulate bot movement along path; succeed if body covers blockCell before/at player arrival
+ * without the bot head hitting P1 head/body.
+ */
+function evaluateTailBlockAlongPath(
+  state: GameState,
+  botPath: GridPos[],
+  p1Path: GridPos[],
+  blockCell: GridPos,
+  playerStepsToBlock: number,
+): { bodyCoverStep: number } | null {
+  const sim = cloneSimSnake(state.p2);
+  const maxSteps = Math.min(botPath.length - 1, SOVEREIGN_TAIL_SIM_MAX_STEPS);
+
+  for (let k = 1; k <= maxSteps; k += 1) {
+    const next = botPath[k]!;
+    simSnakeStep(sim, next);
+
+    const p1Head = p1Path[Math.min(k, p1Path.length - 1)]!;
+    if (!botHeadMoveSafe(state, sim.head, p1Head)) return null;
+
+    if (snakeBodyOccupies(sim, blockCell) && k <= playerStepsToBlock + 1) {
+      return { bodyCoverStep: k };
+    }
+  }
+  return null;
+}
+
+/**
+ * Tail-block intercept: path the head past a choke so body covers it in time.
+ * Used when the bot is at least as long as the player.
+ */
+function findTailBlockIntercept(
+  state: GameState,
+  p1Path: GridPos[],
+  p2Start: GridPos,
+): SovereignIntercept | null {
+  let best: SovereignIntercept | null = null;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  const scanLimit = Math.min(p1Path.length - 1, SOVEREIGN_PREDICT_STEPS + 3);
+  for (let i = 1; i <= scanLimit; i += 1) {
+    const blockCell = p1Path[i]!;
+    const headTargets = collectTailBlockHeadTargets(p1Path, i);
+
+    for (const headTarget of headTargets) {
+      const botPath = findPath(state, p2Start, headTarget, 'head-and-body');
+      if (botPath.length <= 1) continue;
+      if (!botPath.some((p) => samePos(p, blockCell))) continue;
+
+      const tailBlock = evaluateTailBlockAlongPath(state, botPath, p1Path, blockCell, i);
+      if (!tailBlock) continue;
+
+      const score = tailBlock.bodyCoverStep * 10 + botPath.length;
+      if (score < bestScore) {
+        bestScore = score;
+        best = { headTarget, blockCell, strategy: 'tail-block' };
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * Head-race intercept: rush the choke on P1's food path (may head-on collide).
+ * Used when the bot is shorter — tail blocks are weak, reset trade is acceptable.
+ */
+function findHeadRaceIntercept(
+  state: GameState,
+  p1Path: GridPos[],
+  p2Start: GridPos,
+): SovereignIntercept | null {
+  let best: SovereignIntercept | null = null;
+  let bestBotSteps = Number.POSITIVE_INFINITY;
+
+  const scanLimit = Math.min(p1Path.length - 1, SOVEREIGN_PREDICT_STEPS + 3);
+  for (let i = 1; i <= scanLimit; i += 1) {
+    const candidate = p1Path[i]!;
+    const botPath = findPath(state, p2Start, candidate, 'body-only');
+    const botSteps = botPath.length - 1;
+    if (botSteps <= i + 1 && botSteps < bestBotSteps) {
+      bestBotSteps = botSteps;
+      best = { headTarget: candidate, blockCell: candidate, strategy: 'head-race' };
+    }
+  }
+
+  if (best) return best;
+
+  const fallbackIdx = Math.min(SOVEREIGN_PREDICT_STEPS, p1Path.length - 1);
+  const cell = p1Path[fallbackIdx];
+  return cell ? { headTarget: cell, blockCell: cell, strategy: 'head-race' } : null;
+}
+
+function findSovereignInterceptTarget(
+  state: GameState,
+  coinTarget: GridPos,
+): SovereignIntercept | null {
+  const p1Path = findPlayerFoodPath(state, coinTarget);
+  if (p1Path.length <= 1) return null;
+
+  const p2Start: GridPos = [state.p2.head[0], state.p2.head[1]];
+
+  if (sovereignPrefersTailBlock(state)) {
+    return findTailBlockIntercept(state, p1Path, p2Start);
+  }
+  return findHeadRaceIntercept(state, p1Path, p2Start);
+}
+
+function shouldStartSovereignIntercept(
+  state: GameState,
+  coinTarget: GridPos,
+  coinPath: GridPos[],
+  interceptPath: GridPos[],
+): boolean {
+  if (interceptPath.length <= 1) return false;
+  if (gridDist(state.p1.head, state.p2.head) > SOVEREIGN_INTERCEPT_RANGE) return false;
+
+  const distP1Coin = gridDist(state.p1.head, coinTarget);
+  const distP2Coin = gridDist(state.p2.head, coinTarget);
+  if (distP2Coin + 3 < distP1Coin) return false;
+
+  const playerWinningRace = distP1Coin <= distP2Coin + 2;
+  const interceptWorthwhile =
+    interceptPath.length <= coinPath.length + SOVEREIGN_INTERCEPT_PATH_SLACK;
+
+  return interceptWorthwhile && (playerWinningRace || interceptPath.length <= coinPath.length);
+}
+
+/** P1 is still trying for the coin — not a full retreat. */
+function playerStillContestingCoin(state: GameState, coinTarget: GridPos): boolean {
+  const distP1Coin = gridDist(state.p1.head, coinTarget);
+  const distP2Coin = gridDist(state.p2.head, coinTarget);
+  if (distP1Coin > SOVEREIGN_INTERCEPT_COMMIT_RANGE) return false;
+  return distP1Coin <= distP2Coin + SOVEREIGN_COIN_CONTEST_SLACK;
+}
+
+function isHoldingBlockCell(state: GameState, blockCell: GridPos): boolean {
+  return gridDist(state.p2.head, blockCell) <= 1;
+}
+
+function sovereignInterceptMoveTarget(state: GameState, plan: SovereignInterceptPlan): GridPos {
+  if (plan.strategy === 'tail-block' && !bodyOccupiesCell(state.p2, plan.blockCell)) {
+    return plan.headTarget;
+  }
+  return plan.blockCell;
+}
+
+function shouldContinueSovereignIntercept(
+  state: GameState,
+  plan: SovereignInterceptPlan,
+  interceptPath: GridPos[],
+  coinTarget: GridPos,
+): boolean {
+  if (!playerStillContestingCoin(state, coinTarget)) return false;
+  if (plan.strategy === 'tail-block' && bodyOccupiesCell(state.p2, plan.blockCell)) return false;
+  if (isHoldingBlockCell(state, plan.blockCell)) return true;
+  if (interceptPath.length <= 1) return false;
+  if (gridDist(state.p1.head, state.p2.head) > SOVEREIGN_INTERCEPT_COMMIT_RANGE) return false;
+  return true;
+}
+
+/** Hold position on the choke when already in place. */
+function applyHoldAtBlockCell(state: GameState, blockCell: GridPos): void {
+  const preferred = preferredDirToward(state.p2.head, blockCell);
+  if (!wouldHitWall(state, state.p2, preferred)) {
+    applyAiDir(state, preferred);
+    return;
+  }
+  const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
+  const safe = dirs.filter((d) => !wouldHitWall(state, state.p2, d));
+  if (safe.length > 0) applyAiDir(state, safe[0]);
+}
+
+/** Best coin + nearby power-ups, avoids P1 snake. Shared by Tactician and Sovereign fallback. */
+function decideEconomyChase(state: GameState): void {
   const nearbyPowerUp = state.powerUpItems.find(
     (p) => Math.hypot(p.pos[0] - state.p2.head[0], p.pos[1] - state.p2.head[1]) < 6
   );
   if (nearbyPowerUp) {
-    const path = findPath(state, state.p2.head, nearbyPowerUp.pos, true);
+    const path = findPath(state, state.p2.head, nearbyPowerUp.pos, 'head-and-body');
     if (path.length > 1) {
       applyPathToAi(state, path);
       return;
     }
   }
 
-  // Territory-aware coinbase selection
   const bestCoinbase = chooseBestCoinbaseForAi(state);
   if (bestCoinbase) {
-    const path = findPath(state, state.p2.head, bestCoinbase, true);
+    const path = findPath(state, state.p2.head, bestCoinbase, 'head-and-body');
     if (path.length > 1) {
       applyPathToAi(state, path);
       return;
     }
   }
 
-  // Fallback: avoid death
   const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
   const safe = dirs.filter((d) => !wouldHitWall(state, state.p2, d));
   if (safe.length > 0) applyAiDir(state, safe[0]);
+}
+
+/** Noderunner: economy bot — best coin, power-ups, avoids P1. No intercept. */
+function decideNoderunner(state: GameState): void {
+  decideEconomyChase(state);
+}
+
+/** Sovereign: economy play + intercept when racing P1 for the best coin. */
+function decideSovereign(state: GameState): void {
+  const coinTarget = chooseBestCoinbaseForAi(state) ?? nearestCoinbaseTarget(state);
+  const start: GridPos = [state.p2.head[0], state.p2.head[1]];
+  const coinPath = coinTarget ? findPath(state, start, coinTarget, 'head-and-body') : [start];
+
+  const existingPlan = sovereignInterceptPlans.get(state);
+  if (existingPlan?.mode === 'intercept' && coinTarget) {
+    const refreshed = findSovereignInterceptTarget(state, coinTarget);
+    const plan: SovereignInterceptPlan = refreshed
+      ? { mode: 'intercept', ...refreshed }
+      : existingPlan;
+    const moveTarget = sovereignInterceptMoveTarget(state, plan);
+    const avoidance = sovereignPathAvoidance(plan.strategy);
+    const interceptPath = findPath(state, start, moveTarget, avoidance);
+
+    if (shouldContinueSovereignIntercept(state, plan, interceptPath, coinTarget)) {
+      if (interceptPath.length >= 2) {
+        applyPathToAi(state, interceptPath);
+      } else if (isHoldingBlockCell(state, plan.blockCell)) {
+        applyHoldAtBlockCell(state, plan.blockCell);
+      }
+      sovereignInterceptPlans.set(state, {
+        mode: 'intercept',
+        headTarget: plan.headTarget,
+        blockCell: plan.blockCell,
+        strategy: plan.strategy,
+      });
+      return;
+    }
+    sovereignInterceptPlans.delete(state);
+  }
+
+  const intercept = coinTarget ? findSovereignInterceptTarget(state, coinTarget) : null;
+  if (intercept && coinTarget) {
+    const avoidance = sovereignPathAvoidance(intercept.strategy);
+    const interceptPath = findPath(state, start, intercept.headTarget, avoidance);
+    if (shouldStartSovereignIntercept(state, coinTarget, coinPath, interceptPath)) {
+      applyPathToAi(state, interceptPath);
+      sovereignInterceptPlans.set(state, {
+        mode: 'intercept',
+        headTarget: intercept.headTarget,
+        blockCell: intercept.blockCell,
+        strategy: intercept.strategy,
+      });
+      return;
+    }
+  }
+
+  sovereignInterceptPlans.delete(state);
+  decideEconomyChase(state);
 }
 
 function chooseBestCoinbaseForAi(state: GameState): GridPos | null {
@@ -1357,6 +1713,8 @@ function chooseBestCoinbaseForAi(state: GameState): GridPos | null {
 function applyPathToAi(state: GameState, path: GridPos[]): void {
   if (path.length < 2) return;
   const next = path[1];
+  // Never drive into P1 body/tail — stale paths or head-race must not suicide here.
+  if (state.p1.body.some((p) => samePos(p, next))) return;
   const [x, y] = state.p2.head;
 
   let dir: Exclude<Direction, ''> | null = null;
@@ -1414,15 +1772,6 @@ function preferredDirToward(from: GridPos, to: GridPos): Exclude<Direction, ''> 
   return dy > 0 ? 'Down' : 'Up';
 }
 
-function findInterceptPath(state: GameState): GridPos[] | null {
-  const predicted: GridPos = [
-    state.p1.head[0] + (state.p1.dir === 'Right' ? 4 : state.p1.dir === 'Left' ? -4 : 0),
-    state.p1.head[1] + (state.p1.dir === 'Down' ? 4 : state.p1.dir === 'Up' ? -4 : 0),
-  ];
-  const path = findPath(state, state.p2.head, predicted, true);
-  return path.length > 1 ? path : null;
-}
-
 // ============================================================================
 // Pathfinding
 // ============================================================================
@@ -1431,14 +1780,14 @@ function findPathP2(state: GameState, avoidPlayer = false): GridPos[] {
   const start: GridPos = [state.p2.head[0], state.p2.head[1]];
   const target = state.coinbases.find((cb) => !cb.isDecoy)?.pos;
   if (!target) return [start];
-  return findPath(state, start, target, avoidPlayer);
+  return findPath(state, start, target, avoidPlayer ? 'head-and-body' : 'none');
 }
 
 function findPath(
   state: GameState,
   start: GridPos,
   target: GridPos,
-  avoidPlayerBody: boolean
+  playerAvoidance: PlayerPathAvoidance = 'none',
 ): GridPos[] {
   const openSet: GridPos[] = [start];
   const cameFrom = new Map<string, string>();
@@ -1468,7 +1817,8 @@ function findPath(
       if (outOfBounds(state, neighbor)) continue;
       if (hitsObstacle(state, neighbor)) continue;
       if (state.p2.body.some((p) => samePos(p, neighbor))) continue;
-      if (avoidPlayerBody && state.p1.body.some((p) => samePos(p, neighbor))) continue;
+      if (playerAvoidance !== 'none' && state.p1.body.some((p) => samePos(p, neighbor))) continue;
+      if (playerAvoidance === 'head-and-body' && samePos(state.p1.head, neighbor)) continue;
       if (samePos(current, start) && samePos(start, state.p2.head)) {
         const facing = state.p2.dir || state.p2.dirWanted;
         const step = stepDirFromTo(current, neighbor);

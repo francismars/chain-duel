@@ -327,9 +327,9 @@
 }
 
 /* ── Per-tier brightness progression (no hues) ── */
-.local-tier-card[data-tier="wanderer"] { --tier-brightness: 0.38; }
-.local-tier-card[data-tier="hunter"]   { --tier-brightness: 0.56; }
-.local-tier-card[data-tier="tactician"]{ --tier-brightness: 0.74; }
+.local-tier-card[data-tier="normie"]     { --tier-brightness: 0.38; }
+.local-tier-card[data-tier="stacker"]    { --tier-brightness: 0.56; }
+.local-tier-card[data-tier="noderunner"] { --tier-brightness: 0.74; }
 .local-tier-card[data-tier="sovereign"]{ --tier-brightness: 0.94; }
 
 /* Label opacity scales with difficulty */

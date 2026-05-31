@@ -175,6 +175,55 @@ describe('game engine parity behavior', () => {
     expect(state.extraSnakes[1]!.snake.dirWanted).toBe('Right');
   });
 
+  it('FFA assigns four unique bot names when all slots are AI', () => {
+    const state = createGameState({
+      p1Name: 'unused',
+      p2Name: 'unused',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'FFA',
+      practiceMode: true,
+      teamMode: 'ffa',
+      p1Human: false,
+      p2Human: false,
+      p3Human: false,
+      p4Human: false,
+    });
+    const names = [
+      state.p1Name,
+      state.p2Name,
+      state.extraSnakes[0]!.name,
+      state.extraSnakes[1]!.name,
+    ];
+    expect(names).toEqual([
+      'BigToshi 🌊',
+      'Nakamotor ⚡',
+      'XORNOTHING ⛓',
+      '256octans 🐙',
+    ]);
+    expect(new Set(names).size).toBe(4);
+  });
+
+  it('FFA assigns unique bot names per AI slot (no duplicate BigToshi)', () => {
+    const state = createGameState({
+      p1Name: 'Player 1',
+      p2Name: 'Player 2',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'FFA',
+      practiceMode: true,
+      teamMode: 'ffa',
+      p1Human: true,
+      p2Human: true,
+      p3Human: false,
+      p4Human: true,
+    });
+    expect(state.p1Name).toBe('Player 1');
+    expect(state.p2Name).toBe('Player 2');
+    expect(state.extraSnakes[0]!.name).toBe('BigToshi 🌊');
+    expect(state.extraSnakes[1]!.name).toBe('Player 4');
+  });
+
   it('FFA corner spawns place tail at the wall with head inward', () => {
     const state = createGameState({
       p1Name: 'Alpha',
@@ -222,7 +271,7 @@ describe('game engine parity behavior', () => {
     expect(ghost.snake.body).toEqual([[47, 20]]);
   });
 
-  it('FFA Ghost vs Specter pass-through head-on resets both', () => {
+  it('FFA BigToshi vs Nakamotor pass-through head-on resets both', () => {
     const state = createGameState({
       p1Name: 'Alpha',
       p2Name: 'Beta',
@@ -252,7 +301,7 @@ describe('game engine parity behavior', () => {
     expect(specter.snake.head).toEqual([4, 20]);
   });
 
-  it('FFA Ghost vs Specter same-cell head-on resets both', () => {
+  it('FFA BigToshi vs Nakamotor same-cell head-on resets both', () => {
     const state = createGameState({
       p1Name: 'Alpha',
       p2Name: 'Beta',
@@ -320,7 +369,7 @@ describe('game engine parity behavior', () => {
       powerupMode: true,
     });
     state.gameEnded = true;
-    state.winnerName = 'Ghost';
+    state.winnerName = 'BigToshi 🌊';
     state.winnerPlayer = null;
 
     expect(canContinueAfterGame(state, ' ')).toBe(true);

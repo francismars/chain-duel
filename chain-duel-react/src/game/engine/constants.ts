@@ -6,9 +6,21 @@ export const COUNTDOWN_END_TICK = 40;
 /** 1v1 player 2 snake fill (black). */
 export const P2_SNAKE_COLOR = 0x111111;
 
-/** FFA extras: Ghost darker than Specter, both lighter than P2 black. */
+/** FFA extras: darker / lighter greys than P2 black. */
 export const FFA_GHOST_COLOR = 0x2a2a2a;
 export const FFA_SPECTER_COLOR = 0x666666;
+
+/** FFA bot roster — one unique name per AI slot (P1→P4), from legacy tournament cast. */
+export const BOT_NAME_BIGTOSHI = 'BigToshi 🌊';
+export const BOT_NAME_NAKAMOTOR = 'Nakamotor ⚡';
+export const BOT_NAME_XORNOTHING = 'XORNOTHING ⛓';
+export const BOT_NAME_256OCTANS = '256octans 🐙';
+export const FFA_BOT_NAMES = [
+  BOT_NAME_BIGTOSHI,
+  BOT_NAME_NAKAMOTOR,
+  BOT_NAME_XORNOTHING,
+  BOT_NAME_256OCTANS,
+] as const;
 
 /** HUD + distribution bars — match on-board snake fills. */
 export const FFA_HUD_COLORS = [

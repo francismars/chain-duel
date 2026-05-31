@@ -41,10 +41,10 @@ const AI_TIER_PRESETS: Array<{
   rank: number;
   name: string;
 }> = [
-  { id: 'wanderer', rank: 1, name: 'WANDERER' },
-  { id: 'hunter',   rank: 2, name: 'HUNTER'   },
-  { id: 'tactician',rank: 3, name: 'TACTICIAN' },
-  { id: 'sovereign',rank: 4, name: 'SOVEREIGN' },
+  { id: 'normie',     rank: 1, name: 'NORMIE'     },
+  { id: 'stacker',   rank: 2, name: 'STACKER'   },
+  { id: 'noderunner',rank: 3, name: 'NODERUNNER' },
+  { id: 'sovereign', rank: 4, name: 'SOVEREIGN' },
 ];
 
 type MatchFormat    = 'solo' | 'ffa';
@@ -72,7 +72,7 @@ export const PracticeFreePlayPanel = forwardRef<
   const [format,    setFormat]    = useState<MatchFormat>('solo');
   const [opponent,  setOpponent]  = useState<OpponentChoice>('humans');
   const [slotHuman, setSlotHuman] = useState([true, true, true, true]);
-  const [aiTier,    setAiTier]    = useState<AiTier>('hunter');
+  const [aiTier,    setAiTier]    = useState<AiTier>('stacker');
   const [powerup,   setPowerup]   = useState(false);
 
   const [navFocus, setNavFocus] = useState<PracticeNavFocus>({ kind: 'format', idx: 0 });

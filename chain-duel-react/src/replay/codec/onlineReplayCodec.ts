@@ -15,6 +15,7 @@ import type {
   PointChange,
   TeamMode,
 } from '@/game/engine/types';
+import { normalizeAiTier } from '@/game/engine/types';
 import type { OnlineRoomSnapshot } from '@/types/socket';
 import { ensureReplayVictoryEndFrame } from '@/replay/ensureReplayVictoryEndFrame';
 
@@ -30,7 +31,7 @@ function buildMeta(partial: GameMeta): GameMeta {
     p1Human: (p.p1Human as boolean | undefined) ?? true,
     p2Human: (p.p2Human as boolean | undefined) ??
       !Boolean((p.practiceMode as boolean | undefined) ?? false),
-    aiTier: ((p.aiTier as string | undefined) ?? 'hunter') as AiTier,
+    aiTier: normalizeAiTier(p.aiTier as string | undefined),
     convergenceMode: (p.convergenceMode as boolean | undefined) ?? false,
     convergenceShrinkInterval: (p.convergenceShrinkInterval as number | undefined) ?? 150,
     convergenceMinCols: (p.convergenceMinCols as number | undefined) ?? 11,

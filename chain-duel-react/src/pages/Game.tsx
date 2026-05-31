@@ -12,6 +12,7 @@ import {
   getHudState,
 } from '@/game/engine';
 import type { GameState } from '@/game/engine/types';
+import { normalizeAiTier } from '@/game/engine/types';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { startMempoolFeed, type BitcoinDetails } from '@/game/io/mempool';
@@ -202,7 +203,7 @@ export default function Game() {
     const isPowerup =
       isLegacyPowerup || (isPracticeHub && Boolean(gameConfig.powerupMode));
     const isPracticeMode = Boolean(gameConfig.practiceMode);
-    const aiTier = (gameConfig.aiTier as string) ?? 'hunter';
+    const aiTier = normalizeAiTier((gameConfig.aiTier as string | undefined) ?? undefined);
     const optCfgStr = (v: unknown): string | undefined => {
       if (v == null) return undefined;
       const s = String(v).trim();
@@ -287,8 +288,10 @@ export default function Game() {
       p3Human,
       p4Human,
       isTournament: false,
-      aiTier: aiTier as import('@/game/engine/types').AiTier,
-      ffaAiTier: gameConfig.ffaAiTier as import('@/game/engine/types').AiTier | undefined,
+      aiTier,
+      ffaAiTier: gameConfig.ffaAiTier
+        ? normalizeAiTier(gameConfig.ffaAiTier as string)
+        : undefined,
       convergenceMode: isConvergence,
       convergenceShrinkInterval,
       convergenceMinCols,

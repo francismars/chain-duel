@@ -406,14 +406,14 @@
 }
 
 /* Per-difficulty rank brightness */
-.sc-row[data-tier="wanderer"] .sc-row__rank  { color: rgba(255, 255, 255, 0.18); }
-.sc-row[data-tier="hunter"] .sc-row__rank    { color: rgba(255, 255, 255, 0.28); }
-.sc-row[data-tier="tactician"] .sc-row__rank { color: rgba(255, 255, 255, 0.42); }
+.sc-row[data-tier="normie"] .sc-row__rank     { color: rgba(255, 255, 255, 0.18); }
+.sc-row[data-tier="stacker"] .sc-row__rank    { color: rgba(255, 255, 255, 0.28); }
+.sc-row[data-tier="noderunner"] .sc-row__rank { color: rgba(255, 255, 255, 0.42); }
 .sc-row[data-tier="sovereign"] .sc-row__rank { color: rgba(255, 255, 255, 0.62); }
 
-.sc-row--selected[data-tier="wanderer"] .sc-row__rank  { color: rgba(255, 255, 255, 0.5); }
-.sc-row--selected[data-tier="hunter"] .sc-row__rank    { color: rgba(255, 255, 255, 0.62); }
-.sc-row--selected[data-tier="tactician"] .sc-row__rank { color: rgba(255, 255, 255, 0.76); }
+.sc-row--selected[data-tier="normie"] .sc-row__rank     { color: rgba(255, 255, 255, 0.5); }
+.sc-row--selected[data-tier="stacker"] .sc-row__rank    { color: rgba(255, 255, 255, 0.62); }
+.sc-row--selected[data-tier="noderunner"] .sc-row__rank { color: rgba(255, 255, 255, 0.76); }
 .sc-row--selected[data-tier="sovereign"] .sc-row__rank { color: rgba(255, 255, 255, 0.92); }
 
 /* ── Info column ── */
@@ -489,9 +489,9 @@
 }
 
 /* Filled pip brightness scales with tier */
-.sc-tag--tier[data-tier="wanderer"]  .sc-tier-pip--filled { background: rgba(255,255,255,0.30); border-color: rgba(255,255,255,0.30); }
-.sc-tag--tier[data-tier="hunter"]    .sc-tier-pip--filled { background: rgba(255,255,255,0.50); border-color: rgba(255,255,255,0.50); }
-.sc-tag--tier[data-tier="tactician"] .sc-tier-pip--filled { background: rgba(255,255,255,0.70); border-color: rgba(255,255,255,0.70); }
+.sc-tag--tier[data-tier="normie"]     .sc-tier-pip--filled { background: rgba(255,255,255,0.30); border-color: rgba(255,255,255,0.30); }
+.sc-tag--tier[data-tier="stacker"]    .sc-tier-pip--filled { background: rgba(255,255,255,0.50); border-color: rgba(255,255,255,0.50); }
+.sc-tag--tier[data-tier="noderunner"] .sc-tier-pip--filled { background: rgba(255,255,255,0.70); border-color: rgba(255,255,255,0.70); }
 .sc-tag--tier[data-tier="sovereign"] .sc-tier-pip--filled { background: rgba(255,255,255,0.92); border-color: rgba(255,255,255,0.92); }
 
 /* Convergence tag */

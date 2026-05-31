@@ -1,6 +1,22 @@
 export type Direction = 'Up' | 'Down' | 'Left' | 'Right' | '';
 export type PlayerId = 'P1' | 'P2';
-export type AiTier = 'wanderer' | 'hunter' | 'tactician' | 'sovereign';
+export type AiTier = 'normie' | 'stacker' | 'noderunner' | 'sovereign';
+
+const LEGACY_AI_TIER: Record<string, AiTier> = {
+  wanderer: 'normie',
+  hunter: 'stacker',
+  tactician: 'noderunner',
+  sovereign: 'sovereign',
+};
+
+/** Map persisted / legacy tier slugs to current AiTier values. */
+export function normalizeAiTier(tier: string | undefined): AiTier {
+  if (tier === 'normie' || tier === 'stacker' || tier === 'noderunner' || tier === 'sovereign') {
+    return tier;
+  }
+  if (tier && tier in LEGACY_AI_TIER) return LEGACY_AI_TIER[tier]!;
+  return 'stacker';
+}
 
 export type GridPos = [number, number];
 
