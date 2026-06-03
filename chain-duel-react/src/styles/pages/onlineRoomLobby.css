@@ -1081,6 +1081,85 @@
   display: none;
 }
 
+.online-lobby-rematch-pay-label {
+  margin: 0 0 0.45rem;
+  text-align: center;
+  color: rgb(255 210 140 / 0.88);
+}
+
+.online-lobby-kind1-embedded--invite-only {
+  grid-template-columns: 1fr;
+}
+
+.online-lobby-invite-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 1rem 0.75rem;
+  box-sizing: border-box;
+  animation: path-panel-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.online-lobby-invite-lede {
+  margin: 0;
+  font-size: clamp(11px, 0.72cqw, 13px);
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.55);
+  max-width: 52rem;
+}
+
+.online-lobby-invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.online-lobby-invite-actions .online-lobby-action {
+  width: auto;
+  min-width: min(100%, 11rem);
+}
+
+.online-lobby-invite-post-btn {
+  border-color: rgb(120 180 255 / 0.35) !important;
+}
+
+.online-lobby-invite-preview-label {
+  margin: 0.35rem 0 0;
+  font-size: clamp(9px, 0.55cqw, 10px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.35);
+}
+
+.online-lobby-invite-preview {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  max-height: 7.5rem;
+  overflow: auto;
+  font-family: ui-monospace, monospace;
+  font-size: clamp(9px, 0.58cqw, 11px);
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.5);
+  background: rgb(0 0 0 / 0.35);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.online-lobby-invite-error {
+  margin: 0;
+  font-size: clamp(10px, 0.65cqw, 12px);
+  color: #e88;
+}
+
+.online-lobby-invite-ok {
+  margin: 0;
+  font-size: clamp(10px, 0.65cqw, 12px);
+  color: rgb(140 220 160 / 0.9);
+}
+
 /* Left column: hero — QR or interactive payment panel */
 .online-lobby-kind1-qr-col {
   display: flex;
@@ -1418,6 +1497,23 @@
   max-width: none;
 }
 
+/* Default middle panel — no payment path selected yet */
+.online-lobby-kind1-qr-col--idle {
+  justify-content: center;
+  min-height: 160px;
+  padding: 1rem 1.25rem;
+}
+
+.online-lobby-kind1-idle-cta {
+  margin: 0;
+  font-size: clamp(11px, 0.7cqw, 13px);
+  color: rgb(255 255 255 / 0.5);
+  text-align: center;
+  letter-spacing: 0.02em;
+  line-height: 1.55;
+  max-width: 280px;
+}
+
 /* URI truncation line — full width of hero column */
 .online-lobby-kind1-qr-col .online-lobby-kind1-uri-line {
   width: 100%;
@@ -1679,6 +1775,16 @@
   .online-lobby-kind1-qr-hint {
     text-align: left;
     max-width: unset;
+  }
+
+  .online-lobby-kind1-qr-col--idle {
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .online-lobby-kind1-idle-cta {
+    text-align: center;
+    max-width: none;
   }
 }
 

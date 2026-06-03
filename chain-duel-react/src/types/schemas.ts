@@ -132,6 +132,7 @@ export const OnlineSeatStateSchema = z.object({
   picture: z.string().optional(),
   pubkey: z.string().optional(),
   lnAddress: z.string().optional(),
+  payMethod: z.enum(['lightning', 'nostr_web', 'nostr_app']).optional(),
   pingMs: z.number().optional(),
 });
 

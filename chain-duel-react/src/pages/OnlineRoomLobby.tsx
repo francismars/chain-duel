@@ -20,6 +20,15 @@ import { setNip46AuthUrlHandler, resolveSignerMode, recoverNip46UserPubkey } fro
 import { npubEncode } from 'nostr-tools/nip19';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import type { NostrLinkedProfile } from '@/types/schemas';
+import {
+  resolveLobbyPaymentModeForSeat,
+  storeLobbyPaymentMode,
+} from '@/lib/online/resolveLobbyPaymentMode';
+import {
+  buildOnlineRoomLobbyShareUrl,
+  buildOnlineRoomInviteText,
+} from '@/lib/online/buildOnlineRoomInvite';
+import { publishSignedNostrEvent } from '@/lib/nostr/publishSignedNostrEvent';
 import '@/styles/pages/onlineRoomLobby.css';
 
 type Kind1PostLoaded = {
@@ -63,6 +72,16 @@ function formatZapPayError(reason: string): string {
       return 'You already have a paid seat in this room.';
     case 'seats_full':
       return 'Both seats are already taken.';
+    case 'not_loser':
+      return 'That zap did not come from the losing player. Use the same identity or payment method as your buy-in.';
+    case 'amount_too_low':
+      return 'Zap amount is too low for double or nothing. Pay the exact rematch amount on the rematch note.';
+    case 'rematch_use_rematch_note':
+      return 'Zap the rematch note (published after both players agreed), not the original room note.';
+    case 'rematch_not_requested':
+      return 'Double or nothing is no longer waiting for payment.';
+    case 'room_not_finished':
+      return 'The room is not in postgame — rematch payment cannot be applied.';
     case 'no_session':
       return 'Lost connection to game server. Refresh the page and try again.';
     default:
@@ -113,14 +132,20 @@ export default function OnlineRoomLobby() {
     expiresAt: number;
   } | null>(null);
   const [lightningBusy, setLightningBusy] = useState(false);
-  const [nwcUri] = useState<string | null>(() => getNwcUri());
+  const [nwcUri, setNwcUri] = useState<string | null>(() => getNwcUri());
   const [nwcBusy, setNwcBusy] = useState(false);
   const [nwcError, setNwcError] = useState<string | null>(null);
   const [paymentMode, setPaymentMode] = useState<'anon' | 'nostr' | 'pin-zap' | null>(null);
+  const [inviteCopyFeedback, setInviteCopyFeedback] = useState<'link' | 'text' | null>(null);
+  const inviteCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [invitePostBusy, setInvitePostBusy] = useState(false);
+  const [invitePostError, setInvitePostError] = useState<string | null>(null);
+  const [invitePostOk, setInvitePostOk] = useState(false);
   const [cardNavIndex, setCardNavIndex] = useState(0);
   /** Pubkey from last successful kind-1 sign, until server confirms with `resOnlineNostrLinkOk`. */
   const pendingNostrLinkPubkeyRef = useRef<string | null>(null);
   const paymentModeRef = useRef(paymentMode);
+  const rematchPendingRef = useRef(false);
   /** Last successful `requestOnlineKind1Post` for this room + note ref — avoids refetch when switching Kind1 tabs back to POST. */
   const kind1PostLoadedKeyRef = useRef<string | null>(null);
   const zapPayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -269,10 +294,11 @@ export default function OnlineRoomLobby() {
         pendingNostrLinkPubkeyRef.current = null;
         setNostrLinkBusy(false);
         setLightningBusy(false);
-        if (paymentModeRef.current === 'nostr') {
-          setNostrPayError(parsed.reason);
+        const msg = formatZapPayError(parsed.reason);
+        if (paymentModeRef.current === 'nostr' || rematchPendingRef.current) {
+          setNostrPayError(msg);
         } else {
-          setError(parsed.reason);
+          setError(msg);
         }
       }
     };
@@ -552,6 +578,13 @@ export default function OnlineRoomLobby() {
     return Object.values(room.seats).filter((seat) => seat.status === 'paid').length;
   }, [room]);
 
+  const bothPlayersReady = useMemo(() => {
+    if (!room || paidSeats < 2) return false;
+    const s1 = room.seats['Player 1'];
+    const s2 = room.seats['Player 2'];
+    return s1?.status === 'paid' && s1.ready === true && s2?.status === 'paid' && s2.ready === true;
+  }, [room, paidSeats]);
+
   const nostrLinkActive = useMemo(
     () => nostrLinkExpiresAt != null && nostrLinkExpiresAt > nowTick,
     [nostrLinkExpiresAt, nowTick]
@@ -589,6 +622,67 @@ export default function OnlineRoomLobby() {
     navigate('/config', { state: { returnTo: configReturnTo } });
   };
 
+  const openConfigForNwc = () => {
+    navigate('/config', { state: { returnTo: configReturnTo } });
+  };
+
+  const flashInviteCopy = (which: 'link' | 'text') => {
+    if (inviteCopyResetRef.current) clearTimeout(inviteCopyResetRef.current);
+    setInviteCopyFeedback(which);
+    inviteCopyResetRef.current = setTimeout(() => {
+      setInviteCopyFeedback(null);
+      inviteCopyResetRef.current = null;
+    }, 2200);
+  };
+
+  const copyLobbyLink = () => {
+    if (!lobbyInviteUrl) return;
+    void navigator.clipboard.writeText(lobbyInviteUrl).then(() => flashInviteCopy('link'));
+  };
+
+  const copyInviteText = () => {
+    if (!lobbyInviteText) return;
+    void navigator.clipboard.writeText(lobbyInviteText).then(() => flashInviteCopy('text'));
+  };
+
+  const postInviteOnNostr = async () => {
+    if (!socket || !roomId) return;
+    if (!nostrSession.signedIn) {
+      openConfigForNostr();
+      return;
+    }
+    if (!lobbyInviteText) return;
+    setInvitePostBusy(true);
+    setInvitePostError(null);
+    setInvitePostOk(false);
+    try {
+      const signed = await signNostrEvent({
+        kind: 1,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [],
+        content: lobbyInviteText,
+      });
+      const result = await publishSignedNostrEvent(socket, signed);
+      if (!result.ok) {
+        setInvitePostError(result.reason);
+        return;
+      }
+      setInvitePostOk(true);
+    } catch (e) {
+      setInvitePostError(e instanceof Error ? e.message : 'Could not publish note');
+    } finally {
+      setInvitePostBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (paymentMode !== 'anon') return;
+    const syncNwc = () => setNwcUri(getNwcUri());
+    syncNwc();
+    window.addEventListener('focus', syncNwc);
+    return () => window.removeEventListener('focus', syncNwc);
+  }, [paymentMode]);
+
   const openPendingNostrAuth = () => {
     if (!pendingNostrAuthUrl) {
       return;
@@ -607,7 +701,6 @@ export default function OnlineRoomLobby() {
     return matchesSession || matchesSocket;
   });
   const myReady = mySeat?.ready === true;
-  const myRoleLabel = mySeat?.role ?? 'Spectator';
   const isMyP1Seat = mySeat?.role === 'Player 1';
   const isMyP2Seat = mySeat?.role === 'Player 2';
   const phaseLabel = (room?.phase ?? 'lobby').toUpperCase();
@@ -615,6 +708,7 @@ export default function OnlineRoomLobby() {
   const isPostgame = room?.phase === 'postgame';
   const isMatchEnded = isPostgame || isSessionClosed;
   const rematchPending = Boolean(room?.postGame?.rematchRequested);
+  rematchPendingRef.current = rematchPending;
   const rematchAmount = room?.postGame?.rematchRequiredAmount ?? 0;
   const rematchWaitingForSessionID = room?.postGame?.rematchWaitingForSessionID;
   const amILoserToPay = Boolean(rematchWaitingForSessionID && rematchWaitingForSessionID === currentSessionID);
@@ -631,6 +725,9 @@ export default function OnlineRoomLobby() {
         copy: 'The session has ended. View the match result or replay from this room.',
       };
     }
+    if (rematchPending) {
+      return null;
+    }
     if (isPostgame) {
       return {
         cardMod: '',
@@ -639,28 +736,12 @@ export default function OnlineRoomLobby() {
         copy: 'Head to the victory screen to claim your prize, vote for double or nothing, or watch the replay.',
       };
     }
-    if (rematchPending && amILoserToPay) {
-      return {
-        cardMod: 'online-lobby-pin-card--action',
-        label: 'ACTION REQUIRED',
-        pin: 'ZAP TO CONTINUE',
-        copy: `Zap exactly ${Math.floor(rematchAmount).toLocaleString()} sats on the Kind1 post below to lock in the double or nothing.`,
-      };
-    }
-    if (rematchPending) {
-      return {
-        cardMod: 'online-lobby-pin-card--waiting',
-        label: 'DOUBLE OR NOTHING',
-        pin: 'WAITING FOR ZAP',
-        copy: 'Opponent must zap the Kind1 post to confirm. The room will advance once payment is detected.',
-      };
-    }
     if (!myReady) {
       return {
         cardMod: 'online-lobby-pin-card--ready',
         label: 'SEAT PAID',
         pin: 'READY UP',
-        copy: `You're in as ${myRoleLabel}. Hit Mark as Ready below when you're set to play.`,
+        copy: `Use Mark as Ready on your player card when you're set to play.`,
       };
     }
     if (paidSeats < 2) {
@@ -669,6 +750,14 @@ export default function OnlineRoomLobby() {
         label: 'SEAT PAID',
         pin: "YOU'RE READY",
         copy: 'Waiting for the second player to pay and mark ready. Game starts when both are set.',
+      };
+    }
+    if (!bothPlayersReady) {
+      return {
+        cardMod: 'online-lobby-pin-card--ready',
+        label: 'SEAT PAID',
+        pin: "YOU'RE READY",
+        copy: 'Waiting for your opponent to mark ready. Game starts when both are set.',
       };
     }
     return {
@@ -697,7 +786,7 @@ export default function OnlineRoomLobby() {
       (room?.postGame?.winnerRole === 'Player 2' ? room?.postGame?.winnerPicture : undefined)
     : p2?.picture;
   const finishedSummary =
-    isMatchEnded
+    isMatchEnded && !rematchPending
       ? {
           p1Name: snapshotP1Name,
           p2Name: snapshotP2Name,
@@ -707,16 +796,28 @@ export default function OnlineRoomLobby() {
           netPrize: Math.floor((room?.postGame?.winnerPoints ?? 0) * 0.95),
         }
       : null;
+  const lobbySeatName = (seat: (typeof p1) | undefined, fallback: string) => {
+    const trimmed = seat?.name?.trim();
+    if (trimmed) return trimmed;
+    if (seat?.status === 'paid') {
+      if (seat.pubkey) {
+        const hex = seat.pubkey.replace(/[^a-f0-9]/gi, '').slice(0, 6).toLowerCase();
+        return hex ? `Anon${hex}` : 'Anonymous';
+      }
+      return 'Anonymous';
+    }
+    return fallback;
+  };
   const p1NameDisplay = isMatchEnded
     ? p1?.name || snapshotP1Name
     : rematchPending
       ? p1?.name || snapshotP1Name
-      : p1?.name || 'Open seat';
+      : lobbySeatName(p1, 'Open seat');
   const p2NameDisplay = isMatchEnded
     ? p2?.name || snapshotP2Name
     : rematchPending
       ? p2?.name || snapshotP2Name
-      : p2?.name || 'Open seat';
+      : lobbySeatName(p2, 'Open seat');
   const p1IsReady = !isMatchEnded && !rematchPending && p1?.status === 'paid' && p1.ready === true;
   const p1MetaDisplay = isMatchEnded
     ? room?.postGame?.winnerRole === 'Player 1'
@@ -747,15 +848,88 @@ export default function OnlineRoomLobby() {
         : 'Waiting payment';
 
   const hasPaidMySeat = Boolean(mySeat);
+  const isRematchLoserPay = rematchPending && amILoserToPay;
+  const seatsFull = paidSeats >= 2;
+  const isSpectatingFullRoom =
+    !hasPaidMySeat && seatsFull && !isMatchEnded && !rematchPending && !isRematchLoserPay;
+  const rematchPayMode = useMemo(
+    () =>
+      roomId && isRematchLoserPay
+        ? resolveLobbyPaymentModeForSeat({ roomId, payMethod: mySeat?.payMethod })
+        : null,
+    [roomId, isRematchLoserPay, mySeat?.payMethod],
+  );
+  const lobbyPayAmount = isRematchLoserPay ? rematchAmount : (room?.buyin ?? 0);
+  const showSeatPaymentPaths =
+    !hasPaidMySeat && !isMatchEnded && !rematchPending && !seatsFull;
+  const showInviteFinder =
+    hasPaidMySeat && !paymentMode && !rematchPending && !isMatchEnded;
+  const lobbyInviteUrl = roomId ? buildOnlineRoomLobbyShareUrl(roomId) : '';
+  const lobbyInviteText = useMemo(() => {
+    if (!room?.roomCode || !roomId) return '';
+    return buildOnlineRoomInviteText({
+      roomCode: room.roomCode,
+      buyin: room.buyin,
+      lobbyUrl: lobbyInviteUrl,
+      emojis: roomEmojis || room.nostrMeta?.emojis,
+    });
+  }, [room?.roomCode, room?.buyin, room?.nostrMeta?.emojis, roomId, lobbyInviteUrl, roomEmojis]);
+
+  const rematchPayPrimedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (hasPaidMySeat) {
+    if (!isSpectatingFullRoom) {
+      return;
+    }
+    setPaymentMode(null);
+    setLightningPay(null);
+    setSeatZapInvoice(null);
+    setZapPayBusy(false);
+    setLightningBusy(false);
+  }, [isSpectatingFullRoom]);
+
+  useEffect(() => {
+    if (hasPaidMySeat && !isRematchLoserPay) {
+      if (paymentModeRef.current && roomId) {
+        storeLobbyPaymentMode(roomId, paymentModeRef.current);
+      }
       setLightningPay(null);
       setSeatZapInvoice(null);
       setZapPayBusy(false);
       setPaymentMode(null);
     }
-  }, [hasPaidMySeat]);
+  }, [hasPaidMySeat, isRematchLoserPay, roomId]);
+
+  useEffect(() => {
+    if (!isRematchLoserPay || !rematchPayMode || !socket || !roomId) {
+      if (!isRematchLoserPay) {
+        rematchPayPrimedRef.current = null;
+      }
+      return;
+    }
+    const primeKey = `${roomId}:${rematchWaitingForSessionID}:${rematchPayMode}`;
+    if (rematchPayPrimedRef.current === primeKey) {
+      return;
+    }
+    rematchPayPrimedRef.current = primeKey;
+    setLightningPay(null);
+    setSeatZapInvoice(null);
+    setZapPayBusy(false);
+    setPaymentMode(rematchPayMode);
+    if (rematchPayMode === 'anon') {
+      setLightningBusy(true);
+      socket.emit('requestOnlineSeatLightning', { roomId });
+    } else if (rematchPayMode === 'nostr' && nostrSession.signedIn) {
+      startNostrLinkFlow();
+    }
+  }, [
+    isRematchLoserPay,
+    rematchPayMode,
+    socket,
+    roomId,
+    rematchWaitingForSessionID,
+    nostrSession.signedIn,
+  ]);
 
   useEffect(() => {
     if (!nostrLinkActive || !socket) {
@@ -769,7 +943,7 @@ export default function OnlineRoomLobby() {
   // Escape clears active payment panel when modal is not open
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && paymentMode !== null) {
+      if (e.key === 'Escape' && paymentMode !== null && !isRematchLoserPay) {
         setPaymentMode(null);
         // Return focus to the card that was active
         const active = paymentCardsRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]');
@@ -849,8 +1023,9 @@ export default function OnlineRoomLobby() {
   };
 
   const openLightningUri = () => {
-    if (!seatZapInvoice) return;
-    window.location.href = seatZapInvoice.lightningUri;
+    const uri = lightningPay?.lightningUri ?? seatZapInvoice?.lightningUri;
+    if (!uri) return;
+    window.location.href = uri;
   };
 
   const tryNwcPay = async (bolt11: string) => {
@@ -902,9 +1077,9 @@ export default function OnlineRoomLobby() {
 
   const arenaCenterText = (() => {
     if (isSessionClosed) return 'SESSION CLOSED';
-    if (isPostgame) return 'ROUND OVER';
     if (rematchPending) return 'DOUBLE OR NOTHING';
-    if (paidSeats === 2 && myReady) return 'BOTH READY';
+    if (isPostgame) return 'ROUND OVER';
+    if (paidSeats === 2 && bothPlayersReady) return 'BOTH READY';
     if (paidSeats === 2) return 'BOTH PAID';
     if (paidSeats === 1) return '1 OF 2 PAID';
     return 'AWAITING PLAYERS';
@@ -986,7 +1161,7 @@ export default function OnlineRoomLobby() {
         >
           <div className="online-lobby-don-banner-body">
             <p className="online-lobby-don-banner-label">
-              {amILoserToPay ? 'DOUBLE OR NOTHING — YOUR TURN TO PAY' : 'DOUBLE OR NOTHING — WAITING FOR OPPONENT'}
+              {amILoserToPay ? 'DOUBLE OR NOTHING — YOUR TURN' : 'DOUBLE OR NOTHING — WAITING'}
             </p>
             <p className="online-lobby-don-banner-amount">
               {Math.floor(rematchAmount).toLocaleString()}
@@ -994,13 +1169,11 @@ export default function OnlineRoomLobby() {
             </p>
             <p className="online-lobby-don-banner-desc">
               {amILoserToPay
-                ? 'Zap that exact amount on the Kind1 post below to confirm the rematch. Stakes will double once received.'
-                : 'Waiting for opponent to zap the Kind1 post. Stakes will double once their payment is confirmed.'}
+                ? 'Pay below — same method as your buy-in.'
+                : 'Waiting for opponent to pay. Stakes double once confirmed.'}
             </p>
           </div>
-          {amILoserToPay ? (
-            <p className="online-lobby-don-banner-cta">Scroll to Kind1 below ↓</p>
-          ) : (
+          {amILoserToPay ? null : (
             <p className="online-lobby-don-banner-waiting-dot" aria-label="Waiting" />
           )}
         </div>
@@ -1151,8 +1324,14 @@ export default function OnlineRoomLobby() {
           </div>
         ) : null}
 
-        {/* Payment paths — seat not yet claimed, game not ended, no rematch in progress */}
-        {!hasPaidMySeat && !isMatchEnded && !rematchPending ? (
+        {isRematchLoserPay && (nostrPayError || error) ? (
+          <p className="online-lobby-invite-error online-lobby-rematch-pay-error" role="alert">
+            {nostrPayError || error}
+          </p>
+        ) : null}
+
+        {/* Payment paths — initial seat claim or rematch loser */}
+        {showSeatPaymentPaths ? (
           <div className="online-lobby-claim">
             <div className="online-lobby-payment-paths" role="radiogroup" aria-label="Choose a payment method" ref={paymentCardsRef}>
               {/* Anonymous — lightning bolt */}
@@ -1168,8 +1347,8 @@ export default function OnlineRoomLobby() {
                 <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M13 2 4.5 13.5H12L11 22l8.5-11.5H12L13 2Z" />
                 </svg>
-                <span className="online-lobby-path-card-title">ANONYMOUS</span>
-                <span className="online-lobby-path-card-desc">Lightning invoice — no identity required</span>
+                <span className="online-lobby-path-card-title">LIGHTNING ONLY</span>
+                <span className="online-lobby-path-card-desc">No sign-in</span>
               </button>
 
               {/* Pay with Nostr — extension, Nostr Connect, or nsec via Settings */}
@@ -1196,8 +1375,8 @@ export default function OnlineRoomLobby() {
                   <path d="M2 21c0-4 2.7-6 6-6h.5" />
                   <path d="M17 11l-3 5h4l-3 5" />
                 </svg>
-                <span className="online-lobby-path-card-title">PAY WITH NOSTR</span>
-                <span className="online-lobby-path-card-desc">Sign in via Settings · zap without PIN in comment</span>
+                <span className="online-lobby-path-card-title">SIGN IN</span>
+                <span className="online-lobby-path-card-desc">Zap here, no PIN</span>
               </button>
 
               {/* Zap with PIN — mobile device */}
@@ -1214,16 +1393,26 @@ export default function OnlineRoomLobby() {
                   <rect x="5" y="2" width="14" height="20" rx="2" />
                   <path d="M12 18h.01" />
                 </svg>
-                <span className="online-lobby-path-card-title">PAY FROM MOBILE CLIENT</span>
-                <span className="online-lobby-path-card-desc">No extension needed · include PIN in zap comment · any client</span>
+                <span className="online-lobby-path-card-title">ZAP FROM YOUR APP</span>
+                <span className="online-lobby-path-card-desc">Open room note · PIN in comment</span>
               </button>
             </div>
 
           </div>
         ) : null}
 
-        {/* Spectator / closed seat message */}
-        {!hasPaidMySeat && (isMatchEnded || rematchPending) ? (
+        {/* Spectator — room full, or registration closed after match */}
+        {isSpectatingFullRoom ? (
+          <div className="online-lobby-pin-card">
+            <p className="online-lobby-label">SPECTATING</p>
+            <p className="online-lobby-pin">ROOM FULL</p>
+            <p className="online-lobby-copy">
+              Both seats are taken. Watch here — the match starts when both players mark ready.
+            </p>
+          </div>
+        ) : null}
+
+        {!hasPaidMySeat && !isRematchLoserPay && (isMatchEnded || rematchPending) ? (
           <div className="online-lobby-pin-card">
             {isMatchEnded ? (
               <>
@@ -1276,16 +1465,6 @@ export default function OnlineRoomLobby() {
                 EXIT ROOM
               </Button>
             </>
-          ) : mySeat && rematchPending ? (
-            <Button
-              type="button"
-              className="online-lobby-action online-lobby-ready-btn"
-              disabled
-            >
-              {amILoserToPay
-                ? 'ZAP KIND1 TO CONFIRM DOUBLE OR NOTHING'
-                : 'WAITING FOR OPPONENT TO ZAP'}
-            </Button>
           ) : null}
         </div>
       </div>
@@ -1320,8 +1499,15 @@ export default function OnlineRoomLobby() {
               </Button>
             </div>
           ) : kind1PostEvent || paymentMode ? (
-            <div className="online-lobby-kind1-embedded">
-              {/* ── Left column: switches based on active payment mode ── */}
+            <div
+              className={[
+                'online-lobby-kind1-embedded',
+                showInviteFinder ? 'online-lobby-kind1-embedded--invite-only' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {/* ── Left column: payment UI only (status lives in the banner above) ── */}
               {paymentMode === 'anon' ? (
                 /* Anonymous Lightning invoice */
                 <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--panel">
@@ -1329,9 +1515,13 @@ export default function OnlineRoomLobby() {
                     /* Pre-invoice: description left + CTA top-right */
                     <div className="online-lobby-nostr-connected-top">
                       <div className="online-lobby-anon-desc">
-                        <p className="online-lobby-sublabel">ANONYMOUS ZAP</p>
+                        <p className="online-lobby-sublabel">
+                          {isRematchLoserPay ? 'LIGHTNING · REMATCH' : 'LIGHTNING SEAT'}
+                        </p>
                         <p className="online-lobby-kind1-qr-hint">
-                          Generates a Lightning invoice — no identity required. Pay from any wallet.
+                          {isRematchLoserPay
+                            ? 'Get an invoice for the rematch amount, then scan, open in another wallet, or pay with NWC.'
+                            : 'Get an invoice, then scan, open in another wallet app, or pay with NWC from Settings.'}
                         </p>
                       </div>
                       <Button
@@ -1350,7 +1540,9 @@ export default function OnlineRoomLobby() {
                       <div className="online-lobby-qr-split-details">
                         {/* ── Invoice block ── */}
                         <div className="online-lobby-qr-split-block">
-                          <p className="online-lobby-sublabel">ANONYMOUS ZAP</p>
+                          <p className="online-lobby-sublabel">
+                            {isRematchLoserPay ? 'LIGHTNING · REMATCH' : 'LIGHTNING SEAT'}
+                          </p>
                           <p className="online-lobby-anon-amount">
                             {lightningPay.buyin.toLocaleString()} <span>sats</span>
                           </p>
@@ -1367,21 +1559,39 @@ export default function OnlineRoomLobby() {
                         {/* ── Context note ── */}
                         <div className="online-lobby-qr-split-block online-lobby-qr-split-block--divided">
                           <p className="online-lobby-pin-step-hint">
-                            Paying this invoice sends an anonymous zap to the room note. No Nostr account or identity required — pays directly via Lightning.
+                            Scan or copy the invoice, open your usual Lightning app, or use NWC. Anonymous seat — no
+                            sign-in on this site.
                           </p>
-                          {nwcUri ? (
-                            <>
+                          <div className="online-lobby-pay-btns">
+                            <Button
+                              type="button"
+                              className="online-lobby-action"
+                              onClick={openLightningUri}
+                            >
+                              Open external wallet
+                            </Button>
+                            {nwcUri ? (
                               <Button
                                 type="button"
                                 className="online-lobby-action online-lobby-nwc-pay-btn"
                                 disabled={nwcBusy}
                                 onClick={() => void tryNwcPay(lightningPay.lightningUri.replace(/^lightning:/i, ''))}
                               >
-                                {nwcBusy ? 'PAYING…' : 'PAY WITH WALLET'}
+                                {nwcBusy ? 'PAYING…' : 'PAY WITH NWC'}
                               </Button>
-                              {nwcError ? <p className="online-lobby-nwc-error">{nwcError}</p> : null}
-                            </>
+                            ) : null}
+                          </div>
+                          {!nwcUri ? (
+                            <p className="online-lobby-pin-step-hint">
+                              Optional:{' '}
+                              <button type="button" className="online-lobby-text-btn" onClick={openConfigForNwc}>
+                                add NWC in Settings
+                              </button>
+                              {' '}
+                              to pay in one tap from Primal, Alby, etc.
+                            </p>
                           ) : null}
+                          {nwcError ? <p className="online-lobby-nwc-error">{nwcError}</p> : null}
                         </div>
                       </div>
                     </div>
@@ -1392,9 +1602,9 @@ export default function OnlineRoomLobby() {
                   {!nostrSession.signedIn ? (
                     <div className="online-lobby-nostr-signin-prompt">
                       <div className="online-lobby-nostr-signin-text">
-                        <p className="online-lobby-nostr-signin-title">SIGN IN WITH NOSTR</p>
+                        <p className="online-lobby-nostr-signin-title">LINK YOUR KEY IN SETTINGS</p>
                         <p className="online-lobby-nostr-signin-sub">
-                          Connect extension, Nostr Connect, or nsec in Settings, then return here to pay.
+                          Extension, Nostr Connect, or nsec — then zap from this page (no PIN in comment).
                         </p>
                       </div>
                       <Button
@@ -1565,6 +1775,29 @@ export default function OnlineRoomLobby() {
                   ) : null}
                 </div>
               ) : paymentMode === 'pin-zap' ? (
+                isRematchLoserPay ? (
+                <div className="online-lobby-kind1-qr-col">
+                  <ol className="online-lobby-pin-steps" aria-label="Steps to pay rematch from your app">
+                    <li className="online-lobby-pin-step">
+                      <span className="online-lobby-pin-step-num" aria-hidden>1</span>
+                      <p className="online-lobby-sublabel">OPEN THE REMATCH NOTE</p>
+                      <QRCodeSVG value={nostrUri} size={112} includeMargin className="online-lobby-qr online-lobby-qr--step" aria-label="Nostr rematch note URI" />
+                      <div className="online-lobby-kind1-uri-line online-lobby-pin-step-uri">
+                        <p className="online-lobby-kind1-uri-text" title={nostrUri}>{midTruncate(nostrUri, 18, 8)}</p>
+                        <button type="button" className={['online-lobby-kind1-uri-copy-iconbtn', nostrUriCopied ? 'online-lobby-kind1-uri-copy-iconbtn--ok' : ''].filter(Boolean).join(' ')} onClick={() => { void navigator.clipboard.writeText(nostrUri).then(() => { if (nostrUriCopyResetRef.current) clearTimeout(nostrUriCopyResetRef.current); setNostrUriCopied(true); nostrUriCopyResetRef.current = setTimeout(() => { setNostrUriCopied(false); nostrUriCopyResetRef.current = null; }, 2200); }); }} aria-label={nostrUriCopied ? 'Copied' : 'Copy URI'} title={nostrUriCopied ? 'Copied' : 'Copy'}>
+                          {nostrUriCopied ? (<svg width={14} height={14} viewBox="0 0 24 24" aria-hidden><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" /></svg>) : (<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>)}
+                        </button>
+                      </div>
+                    </li>
+                    <li className="online-lobby-pin-step">
+                      <span className="online-lobby-pin-step-num" aria-hidden>2</span>
+                      <p className="online-lobby-sublabel">ZAP THE NOTE</p>
+                      <p className="online-lobby-pin-step-amount">{Math.floor(lobbyPayAmount).toLocaleString()} <span>sats</span></p>
+                      <p className="online-lobby-pin-step-hint">Zap exactly this amount on the rematch note — no PIN needed.</p>
+                    </li>
+                  </ol>
+                </div>
+                ) : (
                 /* PIN — numbered 3-step instruction layout */
                 <div className="online-lobby-kind1-qr-col">
                   <ol className="online-lobby-pin-steps" aria-label="Steps to pay with PIN">
@@ -1591,30 +1824,83 @@ export default function OnlineRoomLobby() {
                     <li className="online-lobby-pin-step">
                       <span className="online-lobby-pin-step-num" aria-hidden>3</span>
                       <p className="online-lobby-sublabel">ZAP THE NOTE</p>
-                      <p className="online-lobby-pin-step-amount">{(room?.buyin ?? 0).toLocaleString()} <span>sats</span></p>
+                      <p className="online-lobby-pin-step-amount">{Math.floor(lobbyPayAmount).toLocaleString()} <span>sats</span></p>
                       <p className="online-lobby-pin-step-hint">Include your PIN in the zap comment. The server matches it to your seat automatically.</p>
                     </li>
                   </ol>
                 </div>
-              ) : (
-                /* Default: nostrUri QR — 2-col: QR | hint + URI */
-                <div className="online-lobby-kind1-qr-col">
-                  <div className="online-lobby-qr-split">
-                    <QRCodeSVG value={nostrUri} size={160} includeMargin className="online-lobby-qr" aria-label="Nostr note URI" />
-                    <div className="online-lobby-qr-split-details">
-                      <p className="online-lobby-kind1-qr-hint">Scan to open the room note in your Nostr client. Choose a payment path above to claim your seat.</p>
-                      <div className="online-lobby-kind1-uri-line">
-                        <p className="online-lobby-kind1-uri-text" title={nostrUri}>{nostrUri}</p>
-                        <button type="button" className={['online-lobby-kind1-uri-copy-iconbtn', nostrUriCopied ? 'online-lobby-kind1-uri-copy-iconbtn--ok' : ''].filter(Boolean).join(' ')} onClick={() => { void navigator.clipboard.writeText(nostrUri).then(() => { if (nostrUriCopyResetRef.current) clearTimeout(nostrUriCopyResetRef.current); setNostrUriCopied(true); nostrUriCopyResetRef.current = setTimeout(() => { setNostrUriCopied(false); nostrUriCopyResetRef.current = null; }, 2200); }); }} aria-label={nostrUriCopied ? 'Copied' : 'Copy URI'} title={nostrUriCopied ? 'Copied' : 'Copy'}>
-                          {nostrUriCopied ? (<svg width={14} height={14} viewBox="0 0 24 24" aria-hidden><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" /></svg>) : (<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>)}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                )
+              ) : !hasPaidMySeat && !isRematchLoserPay ? (
+                <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--idle">
+                  <p className="online-lobby-kind1-idle-cta">
+                    {seatsFull
+                      ? 'Both seats are taken — you’re watching as a spectator. The match starts when both players mark ready.'
+                      : 'Pick how you want to pay above (Lightning, web sign-in, or via your Nostr client), or wait for the game to start to watch as a spectator.'}
+                  </p>
                 </div>
-              )}
+              ) : isRematchLoserPay && !rematchPayMode ? (
+                <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--idle">
+                  <p className="online-lobby-kind1-idle-cta">
+                    Could not detect your original payment method. Zap exactly{' '}
+                    {Math.floor(lobbyPayAmount).toLocaleString()} sats on the rematch note below.
+                  </p>
+                </div>
+              ) : null}
 
-              {/* ── Right: author + content ── */}
+              {showInviteFinder ? (
+                <div className="online-lobby-invite-panel">
+                  <p className="online-lobby-sublabel">FIND PLAYERS</p>
+                  <p className="online-lobby-invite-lede">
+                    {paidSeats < 2
+                      ? 'You’re in — share this room so someone can take the open seat or watch as a spectator.'
+                      : 'Both seats are filled. Share the link if you want spectators before the match starts.'}
+                  </p>
+                  <div className="online-lobby-invite-actions">
+                    <Button
+                      type="button"
+                      className="online-lobby-action"
+                      disabled={!lobbyInviteUrl}
+                      onClick={copyLobbyLink}
+                    >
+                      {inviteCopyFeedback === 'link' ? 'LINK COPIED' : 'COPY ROOM LINK'}
+                    </Button>
+                    <Button
+                      type="button"
+                      className="online-lobby-action"
+                      disabled={!lobbyInviteText}
+                      onClick={copyInviteText}
+                    >
+                      {inviteCopyFeedback === 'text' ? 'TEXT COPIED' : 'COPY INVITE TEXT'}
+                    </Button>
+                    {nostrSession.signedIn ? (
+                      <Button
+                        type="button"
+                        className="online-lobby-action online-lobby-invite-post-btn"
+                        disabled={invitePostBusy || !lobbyInviteText}
+                        onClick={() => void postInviteOnNostr()}
+                      >
+                        {invitePostBusy ? 'POSTING…' : invitePostOk ? 'POSTED' : 'POST ON NOSTR'}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        className="online-lobby-action"
+                        onClick={openConfigForNostr}
+                      >
+                        SIGN IN TO POST
+                      </Button>
+                    )}
+                  </div>
+                  <p className="online-lobby-invite-preview-label">Invite preview</p>
+                  <pre className="online-lobby-invite-preview">{lobbyInviteText}</pre>
+                  {invitePostError ? (
+                    <p className="online-lobby-invite-error" role="alert">{invitePostError}</p>
+                  ) : null}
+                  {invitePostOk ? (
+                    <p className="online-lobby-invite-ok" role="status">Invite note published to your relays.</p>
+                  ) : null}
+                </div>
+              ) : (
               <div className="online-lobby-kind1-content-col">
                 {kind1PostStatus === 'loading' && !kind1PostEvent ? (
                   <div className="online-lobby-kind1-loading online-lobby-kind1-loading--inline" aria-label="Loading note from relays" role="status">
@@ -1670,11 +1956,9 @@ export default function OnlineRoomLobby() {
                   </div>
                 ) : null}
 
-                {rematchPending ? (
+                {rematchPending && !amILoserToPay ? (
                   <p className="online-lobby-copy online-lobby-kind1-rematch-note">
-                    {amILoserToPay
-                      ? `Zap exactly ${Math.floor(rematchAmount).toLocaleString()} sats on this post to confirm the rematch.`
-                      : `Waiting for opponent to zap exactly ${Math.floor(rematchAmount).toLocaleString()} sats on this post.`}
+                    Waiting for opponent to pay exactly {Math.floor(rematchAmount).toLocaleString()} sats.
                   </p>
                 ) : null}
 
@@ -1685,6 +1969,7 @@ export default function OnlineRoomLobby() {
                 ) : null}
 
               </div>
+              )}
             </div>
           ) : kind1PostStatus === 'loading' ? (
             <div className="online-lobby-kind1-loading" aria-label="Loading note from relays" role="status">

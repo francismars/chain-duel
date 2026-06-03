@@ -185,6 +185,7 @@ export interface OnlineSeatState {
   picture?: string;
   pubkey?: string;
   lnAddress?: string;
+  payMethod?: 'lightning' | 'nostr_web' | 'nostr_app';
   /** Reported RTT (ms) for this seat; set by server from `reportOnlineRoomPing`. */
   pingMs?: number;
 }
