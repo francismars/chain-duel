@@ -137,10 +137,12 @@ export function applyPowerUpForPlayer(
       break;
 
     case 'DECOY': {
+      const { minX, maxX, minY, maxY } = getPlayableInteriorBounds(state);
+      if (maxX < minX || maxY < minY) break;
       let decoyAttempts = 0;
       while (decoyAttempts < 200) {
-        const x = Math.floor(gameRandom() * state.cols);
-        const y = Math.floor(gameRandom() * state.rows);
+        const x = minX + Math.floor(gameRandom() * (maxX - minX + 1));
+        const y = minY + Math.floor(gameRandom() * (maxY - minY + 1));
         const pos: GridPos = [x, y];
         if (!hasCollisionAtForDecoy(state, pos)) {
           state.coinbases.push({ pos, isDecoy: true });
@@ -153,7 +155,25 @@ export function applyPowerUpForPlayer(
   }
 }
 
+/** Interior spawn bounds (same as createNewCoinbase / spawnPowerUp). */
+function getPlayableInteriorBounds(state: GameState): {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+} {
+  const border = state.shrinkBorder;
+  return {
+    minX: border ? border.left + 1 : 0,
+    maxX: border ? border.right - 1 : state.cols - 1,
+    minY: border ? border.top + 1 : 0,
+    maxY: border ? border.bottom - 1 : state.rows - 1,
+  };
+}
+
 function hasCollisionAtForDecoy(state: GameState, pos: GridPos): boolean {
+  const { minX, maxX, minY, maxY } = getPlayableInteriorBounds(state);
+  if (pos[0] < minX || pos[0] > maxX || pos[1] < minY || pos[1] > maxY) return true;
   const samePos = (a: GridPos, b: GridPos) => a[0] === b[0] && a[1] === b[1];
   for (let i = 0; i < activePlayerCount(state); i += 1) {
     const snake = getSnakeByIndex(state, i as PowerUpPlayerIndex);
