@@ -37,6 +37,11 @@ import {
   ResGetTournamentInfosNostrSchema,
   ResPostGameInfoRequestSchema,
   ResCancelTournamentSchema,
+  ResChallengeEligibilitySchema,
+  ResChallengeRunSchema,
+  ResSubmitChallengeWinSchema,
+  ResChallengeClaimSchema,
+  ResRetryChallengeZapSchema,
   SessionDataSchema,
   SerializedGameInfoSchema,
 } from '@/types/schemas';
@@ -155,6 +160,21 @@ export const SocketValidators = {
 
   resPublishNostrEvent: (data: unknown) =>
     validateSocketEvent(ResPublishNostrEventSchema, data, 'resPublishNostrEvent'),
+
+  resChallengeEligibility: (data: unknown) =>
+    validateSocketEvent(ResChallengeEligibilitySchema, data, 'resChallengeEligibility'),
+
+  resChallengeRun: (data: unknown) =>
+    validateSocketEvent(ResChallengeRunSchema, data, 'resChallengeRun'),
+
+  resSubmitChallengeWin: (data: unknown) =>
+    validateSocketEvent(ResSubmitChallengeWinSchema, data, 'resSubmitChallengeWin'),
+
+  resChallengeClaim: (data: unknown) =>
+    validateSocketEvent(ResChallengeClaimSchema, data, 'resChallengeClaim'),
+
+  resRetryChallengeZap: (data: unknown) =>
+    validateSocketEvent(ResRetryChallengeZapSchema, data, 'resRetryChallengeZap'),
 
   resOnlineKind1Post: (data: unknown) =>
     validateSocketEvent(ResOnlineKind1PostSchema, data, 'resOnlineKind1Post'),

@@ -14,6 +14,7 @@ import {
   FFA_SPECTER_COLOR,
   FFA_BOT_NAMES,
 } from '@/game/engine/constants';
+import { gameRandom } from '@/game/engine/runRng';
 import type {
   AiTier,
   Coinbase,
@@ -541,8 +542,8 @@ function findSafePosInBorder(state: GameState, sb: import('./types').ShrinkBorde
   const maxY = sb.bottom - 1;
   if (maxX < minX || maxY < minY) return null;
   for (let attempt = 0; attempt < 200; attempt++) {
-    const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
-    const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
+    const x = minX + Math.floor(gameRandom() * (maxX - minX + 1));
+    const y = minY + Math.floor(gameRandom() * (maxY - minY + 1));
     if (!hasCollisionAt(state, [x, y])) return [x, y];
   }
   return scanGridForSafePosInBorder(state, sb);
@@ -577,8 +578,8 @@ export function spawnPowerUp(state: GameState): void {
   const maxY = border ? border.bottom - 1 : state.rows - 1;
   let attempts = 0;
   while (attempts < 200) {
-    const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
-    const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
+    const x = minX + Math.floor(gameRandom() * (maxX - minX + 1));
+    const y = minY + Math.floor(gameRandom() * (maxY - minY + 1));
     const pos: GridPos = [x, y];
     if (!hasCollisionAt(state, pos)) {
       state.powerUpItems.push({ pos, type });
@@ -595,7 +596,7 @@ export function spawnPowerUp(state: GameState): void {
 function weightedRandomPowerUp(): PowerUpType {
   const types = Object.keys(POWERUP_SPAWN_WEIGHTS) as PowerUpType[];
   const totalWeight = types.reduce((sum, t) => sum + POWERUP_SPAWN_WEIGHTS[t], 0);
-  let rand = Math.random() * totalWeight;
+  let rand = gameRandom() * totalWeight;
   for (const type of types) {
     rand -= POWERUP_SPAWN_WEIGHTS[type];
     if (rand <= 0) return type;
@@ -636,8 +637,8 @@ export function createNewCoinbase(state: GameState, feeValue: number = -1): void
   let accepted = false;
   let attempts = 0;
   while (!accepted && attempts < 1000) {
-    const x = minX + Math.floor(Math.random() * (maxX - minX + 1));
-    const y = minY + Math.floor(Math.random() * (maxY - minY + 1));
+    const x = minX + Math.floor(gameRandom() * (maxX - minX + 1));
+    const y = minY + Math.floor(gameRandom() * (maxY - minY + 1));
     if (!hasCollisionAt(state, [x, y])) {
       const cb: Coinbase = { pos: [x, y] };
       if (reward !== undefined) cb.reward = reward;
@@ -1299,8 +1300,8 @@ function decideNormie(state: GameState): void {
   if (safe.length === 0) return;
 
   // 60% chance to just pick a random safe direction
-  if (Math.random() < 0.6) {
-    const random = safe[Math.floor(Math.random() * safe.length)];
+  if (gameRandom() < 0.6) {
+    const random = safe[Math.floor(gameRandom() * safe.length)];
     applyAiDir(state, random);
     return;
   }
@@ -1314,7 +1315,7 @@ function decideNormie(state: GameState): void {
       return;
     }
   }
-  applyAiDir(state, safe[Math.floor(Math.random() * safe.length)]);
+  applyAiDir(state, safe[Math.floor(gameRandom() * safe.length)]);
 }
 
 /** Stacker: A* toward nearest coinbase */

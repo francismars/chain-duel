@@ -7,6 +7,7 @@ import {
   POWERUP_SURGE_DURATION_TICKS,
 } from '@/game/engine/constants';
 import { isFfaMode } from '@/game/engine/ffa';
+import { gameRandom } from '@/game/engine/runRng';
 import type {
   ActivePowerUp,
   Coinbase,
@@ -138,8 +139,8 @@ export function applyPowerUpForPlayer(
     case 'DECOY': {
       let decoyAttempts = 0;
       while (decoyAttempts < 200) {
-        const x = Math.floor(Math.random() * state.cols);
-        const y = Math.floor(Math.random() * state.rows);
+        const x = Math.floor(gameRandom() * state.cols);
+        const y = Math.floor(gameRandom() * state.rows);
         const pos: GridPos = [x, y];
         if (!hasCollisionAtForDecoy(state, pos)) {
           state.coinbases.push({ pos, isDecoy: true });

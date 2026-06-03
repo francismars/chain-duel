@@ -129,5 +129,5 @@ export function useGameInputBindings({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onEmitWinner, onNavigateAfterFinish, stateRef, winnerSentRef]);
+  }, [onEmitWinner, onNavigateAfterFinish, stateRef, winnerSentRef, readyToStartRef]);
 }

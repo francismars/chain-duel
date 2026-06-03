@@ -119,6 +119,20 @@
   padding: clamp(6px, 0.7vw, 9px) clamp(10px, 1vw, 12px);
 }
 
+.practice-hub-page--challenges .sc-gate__card {
+  padding: clamp(8px, 0.85vw, 11px);
+  gap: clamp(6px, 0.7vw, 9px);
+}
+
+.practice-hub-page--challenges .sc-gate__check {
+  padding: clamp(4px, 0.45vw, 6px) clamp(5px, 0.55vw, 7px);
+}
+
+.practice-hub-page--challenges .sc-gate__checks {
+  gap: 2px;
+  padding-top: clamp(6px, 0.7vw, 8px);
+}
+
 .practice-hub-page--challenges .sc-gate__nostr-btn {
   padding: clamp(6px, 0.7vw, 9px) clamp(10px, 1vw, 12px);
 }
@@ -138,18 +152,60 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
-  padding: 0;
-  border: none;
-  background: none;
+  width: 100%;
+  min-height: 0;
+}
+
+.sc-gate__card {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 0.9vw, 12px);
+  padding: clamp(10px, 1.1vw, 14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.42);
+  box-shadow:
+    0 0 0 1px rgba(230, 195, 40, 0.05),
+    0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+.sc-gate--ready .sc-gate__card {
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(230, 195, 40, 0.12),
+    0 0 18px rgba(255, 255, 255, 0.08);
+}
+
+.sc-gate__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sc-gate__title {
+  margin: 0;
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1;
+}
+
+.sc-gate__progress {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(12px, 1.1vw, 16px);
+  letter-spacing: 0.06em;
+  color: rgba(230, 195, 40, 0.82);
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .sc-gate__top {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: clamp(8px, 1vw, 14px);
-  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: stretch;
   width: 100%;
 }
 
@@ -191,13 +247,13 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
-  padding: 7px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.057);
-  background: rgba(0, 0, 0, 0.463);
+  gap: clamp(8px, 0.8vw, 10px);
+  padding: clamp(8px, 0.85vw, 11px) clamp(10px, 1vw, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
   min-width: 0;
   flex: 1 1 auto;
-  min-height: 6vw;
+  width: 100%;
 }
 
 .sc-gate__nostr-avatar {
@@ -220,10 +276,12 @@
 }
 
 .sc-gate__nostr-name {
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.72vw, 11px);
-  color: rgba(255, 255, 255, 0.9);
-  letter-spacing: 0.04em;
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(10px, 0.85vw, 13px);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -237,13 +295,25 @@
 }
 
 .sc-gate__nostr-ln {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-family: 'Inter', sans-serif;
   font-size: clamp(8px, 0.64vw, 10px);
-  color: rgba(255, 215, 120, 0.82);
+  color: rgba(230, 195, 40, 0.88);
   letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.sc-gate__nostr-ln--missing {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.sc-gate__ln-bolt {
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .sc-gate__config-link {
@@ -297,18 +367,118 @@
   letter-spacing: 0.12em;
 }
 
-/* Status badge */
+/* Status line */
 .sc-gate__status {
+  margin: 0;
   font-family: 'Inter', sans-serif;
-  font-size: clamp(8px, 0.62vw, 10px);
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.28);
-  white-space: nowrap;
-  flex-shrink: 0;
-  text-align: center;
+  font-size: clamp(9px, 0.72vw, 11px);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.38);
+  line-height: 1.45;
+  text-align: left;
   transition: color 0.25s;
+}
+
+.sc-gate__status--ready {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.sc-gate__error {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.7vw, 11px);
+  color: rgba(255, 120, 100, 0.9);
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+}
+
+/* Eligibility checklist */
+.sc-gate__checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: clamp(8px, 0.85vw, 10px);
+}
+
+.sc-gate__check {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(7px, 0.7vw, 9px);
+  padding: clamp(5px, 0.55vw, 7px) clamp(6px, 0.65vw, 8px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.22);
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.sc-gate__check--pass {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.sc-gate__check--fail {
+  border-color: rgba(230, 195, 40, 0.22);
+  background: rgba(230, 195, 40, 0.04);
+}
+
+.sc-gate__check-mark {
+  flex-shrink: 0;
+  width: clamp(14px, 1.2vw, 16px);
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(12px, 1vw, 14px);
+  line-height: 1.2;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.sc-gate__check--pass .sc-gate__check-mark {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.sc-gate__check--fail .sc-gate__check-mark {
+  color: rgba(230, 195, 40, 0.75);
+}
+
+.sc-gate__check-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sc-gate__check-label {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(9px, 0.72vw, 11px);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.2;
+}
+
+.sc-gate__check--fail .sc-gate__check-label {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.sc-gate__check-meta {
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+  font-size: clamp(8px, 0.62vw, 10px);
+  color: rgba(255, 255, 255, 0.42);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-gate__check-hint {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8px, 0.64vw, 10px);
+  color: rgba(230, 195, 40, 0.78);
+  letter-spacing: 0.02em;
+  line-height: 1.35;
 }
 
 @media (max-width: 40rem) {
@@ -319,18 +489,6 @@
   .sc-gate__nostr-profile {
     max-width: 100%;
   }
-}
-
-.sc-gate__status--ready {
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.sc-gate__error {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.7vw, 11px);
-  color: rgba(255, 120, 100, 0.85);
-  letter-spacing: 0.06em;
 }
 
 /* ── Challenge list ── */

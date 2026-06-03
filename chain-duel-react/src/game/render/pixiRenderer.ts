@@ -171,6 +171,7 @@ export class PixiGameRenderer {
     } catch {
       this.app = null;
       this.createFallbackCanvas();
+      this.resize();
     }
   }
 
@@ -197,7 +198,9 @@ export class PixiGameRenderer {
     const preStart =
       !state.gameStarted && !state.countdownStart && !state.gameEnded;
     if (preStart) {
-      return this.isBoardRevealActive(now) || this.isStartWordsRevealActive(now);
+      // Keep painting until the player starts — otherwise the loop stops after
+      // reveal animations and the board stays blank (transparent canvas + CSS bg).
+      return true;
     }
     if (state.countdownStart && !state.gameStarted) {
       return true;

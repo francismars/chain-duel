@@ -1,11 +1,9 @@
-import { useEffect, type MutableRefObject } from 'react';
-import type { Socket } from 'socket.io-client';
+import { useEffect, useRef, type MutableRefObject } from 'react';
 import { getHudState, stepGame } from '@/game/engine';
 import type { FfaHudPlayer, GameState } from '@/game/engine/types';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
 import type { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import type { GameAudioSystem } from '@/game/audio/gameAudio';
-import type { ClientToServerEvents, ServerToClientEvents } from '@/types/socket';
 
 interface HudSnapshot {
   p1Points: number;
@@ -46,7 +44,6 @@ function hudSnapshotEqual(a: HudSnapshot, b: HudSnapshot): boolean {
 
 interface UseGameRenderBridgeArgs {
   loading: boolean;
-  socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
   stateRef: MutableRefObject<GameState | null>;
   rendererRef: MutableRefObject<PixiGameRenderer | null>;
   audioRef: MutableRefObject<GameAudioSystem | null>;
@@ -59,11 +56,34 @@ interface UseGameRenderBridgeArgs {
   onHudTick: (hud: HudSnapshot) => void;
   onCaptureChanged: (side: 'P1' | 'P2') => void;
   onSpeedChanged?: (stepMs: number) => void;
+  simStepRef?: MutableRefObject<number>;
+  /** When set, record P1 direction changes at sim step boundaries (challenge replay). */
+  challengeInputLogRef?: MutableRefObject<Array<{ tick: number; dir: string }>>;
+}
+
+/** Wait until #gameContainer is visible and laid out (drops `display:none` hide class). */
+function waitForHostVisible(host: HTMLElement, maxFrames = 24): Promise<void> {
+  return new Promise((resolve) => {
+    let frames = 0;
+    const tick = () => {
+      frames += 1;
+      const rect = host.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        resolve();
+        return;
+      }
+      if (frames >= maxFrames) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
 }
 
 export function useGameRenderBridge({
   loading,
-  socket,
   stateRef,
   rendererRef,
   audioRef,
@@ -76,37 +96,62 @@ export function useGameRenderBridge({
   onHudTick,
   onCaptureChanged,
   onSpeedChanged,
+  simStepRef,
+  challengeInputLogRef,
 }: UseGameRenderBridgeArgs) {
+  const emitWinnerRef = useRef(emitWinner);
+  const onHudTickRef = useRef(onHudTick);
+  const onCaptureChangedRef = useRef(onCaptureChanged);
+  const onSpeedChangedRef = useRef(onSpeedChanged);
+  emitWinnerRef.current = emitWinner;
+  onHudTickRef.current = onHudTick;
+  onCaptureChangedRef.current = onCaptureChanged;
+  onSpeedChangedRef.current = onSpeedChanged;
+
   useEffect(() => {
-    if (!hostRef.current || !stateRef.current || loading) return;
+    if (loading || !hostRef.current || !stateRef.current) return;
+
     let mounted = true;
     let cancelled = false;
     let mountReady = false;
+    const host = hostRef.current;
     const audio = audioRef.current;
     const renderer = createRenderer();
     rendererRef.current = renderer;
 
     let detachResize: (() => void) | undefined;
-    let forcePaint = true;
     let lastFrameMs = performance.now();
     let countdownAccum = 0;
     let gameplayAccum = 0;
     let lastReportedStepMs = STEP_SPEED_MS;
     let lastHud: HudSnapshot | null = null;
+    let lastLoggedP1Dir = '';
 
-    void renderer.mount(hostRef.current).then(() => {
+    const recordChallengeInput = (state: GameState) => {
+      if (!challengeInputLogRef || !simStepRef || !state.meta.p1Human) return;
+      const dir = state.p1.dirWanted;
+      if (!dir || dir === lastLoggedP1Dir) return;
+      lastLoggedP1Dir = dir;
+      challengeInputLogRef.current.push({ tick: simStepRef.current, dir });
+    };
+
+    void (async () => {
+      await waitForHostVisible(host);
+      if (cancelled || !mounted) return;
+      await renderer.mount(host);
       if (cancelled || !mounted) {
         renderer.destroy();
         return;
       }
       mountReady = true;
       renderer.resize();
-      forcePaint = true;
-      const host = hostRef.current;
-      if (!host) return;
+      const initialState = stateRef.current;
+      if (initialState) {
+        lastLoggedP1Dir = initialState.p1.dirWanted || 'Right';
+        renderer.render(initialState);
+      }
       const onResize = () => {
         renderer.resize();
-        forcePaint = true;
       };
       window.addEventListener('resize', onResize);
       const ro = new ResizeObserver(onResize);
@@ -115,25 +160,23 @@ export function useGameRenderBridge({
         window.removeEventListener('resize', onResize);
         ro.disconnect();
       };
-    });
+    })();
 
     const applyHud = (hud: HudSnapshot) => {
       if (lastHud && hudSnapshotEqual(lastHud, hud)) return;
       lastHud = hud;
-      onHudTick(hud);
+      onHudTickRef.current(hud);
       if (hud.captureP1 !== captureP1Ref.current) {
-        onCaptureChanged('P1');
+        onCaptureChangedRef.current('P1');
       }
       if (hud.captureP2 !== captureP2Ref.current) {
-        onCaptureChanged('P2');
+        onCaptureChangedRef.current('P2');
       }
       captureP1Ref.current = hud.captureP1;
       captureP2Ref.current = hud.captureP2;
     };
 
-    const runSimulation = (state: GameState, deltaMs: number): boolean => {
-      let stepped = false;
-
+    const runSimulation = (state: GameState, deltaMs: number): void => {
       if (state.countdownStart && !state.gameStarted) {
         countdownAccum += deltaMs;
         let steps = 0;
@@ -141,19 +184,20 @@ export function useGameRenderBridge({
           countdownAccum -= STEP_SPEED_MS;
           steps += 1;
           const prevCountdown = state.countdownTicks;
+          recordChallengeInput(state);
           stepGame(state);
-          stepped = true;
+          if (simStepRef) simStepRef.current += 1;
           if (state.countdownStart && state.countdownTicks !== prevCountdown) {
             audio?.playCountdownTick(state.countdownTicks);
           }
         }
-        return stepped;
+        return;
       }
 
       if (!state.gameStarted || state.gameEnded) {
         countdownAccum = 0;
         gameplayAccum = 0;
-        return false;
+        return;
       }
 
       countdownAccum = 0;
@@ -170,8 +214,9 @@ export function useGameRenderBridge({
         const prevP2Head = [...state.p2.head] as [number, number];
         const prevStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
 
+        recordChallengeInput(state);
         stepGame(state);
-        stepped = true;
+        if (simStepRef) simStepRef.current += 1;
 
         const hud = getHudState(state);
         applyHud({
@@ -187,7 +232,7 @@ export function useGameRenderBridge({
         const newStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
         if (newStepMs !== prevStepMs && newStepMs !== lastReportedStepMs) {
           lastReportedStepMs = newStepMs;
-          onSpeedChanged?.(newStepMs);
+          onSpeedChangedRef.current?.(newStepMs);
           audio?.playBlockFound();
         }
 
@@ -209,33 +254,23 @@ export function useGameRenderBridge({
           audio?.playReset('P2');
         }
 
-        if (state.gameEnded && state.winnerPlayer && socket && !winnerSentRef.current) {
-          emitWinner(state.winnerPlayer);
+        if (state.gameEnded && state.winnerPlayer && !winnerSentRef.current) {
+          emitWinnerRef.current(state.winnerPlayer);
           winnerSentRef.current = true;
         }
       }
-
-      return stepped;
     };
 
     let frameRef = 0;
     const frame = (now: number) => {
       if (!mounted) return;
-      if (!mountReady) {
-        frameRef = window.requestAnimationFrame(frame);
-        return;
-      }
       const state = stateRef.current;
       const deltaMs = Math.min(100, Math.max(0, now - lastFrameMs));
       lastFrameMs = now;
 
-      if (state && rendererRef.current) {
-        const simStepped = runSimulation(state, deltaMs);
-        const animActive = rendererRef.current.needsPaint(state, now);
-        if (simStepped || animActive || forcePaint) {
-          rendererRef.current.render(state);
-          forcePaint = false;
-        }
+      if (mountReady && state) {
+        runSimulation(state, deltaMs);
+        renderer.render(state);
       }
 
       frameRef = window.requestAnimationFrame(frame);
@@ -247,23 +282,9 @@ export function useGameRenderBridge({
       cancelled = true;
       if (detachResize) detachResize();
       window.cancelAnimationFrame(frameRef);
+      rendererRef.current = null;
       renderer.destroy();
       audio?.stopAll();
     };
-  }, [
-    audioRef,
-    captureP1Ref,
-    captureP2Ref,
-    createRenderer,
-    emitWinner,
-    hostRef,
-    loading,
-    onCaptureChanged,
-    onHudTick,
-    onSpeedChanged,
-    rendererRef,
-    socket,
-    stateRef,
-    winnerSentRef,
-  ]);
+  }, [loading, createRenderer, audioRef, captureP1Ref, captureP2Ref, challengeInputLogRef, hostRef, rendererRef, simStepRef, stateRef, winnerSentRef]);
 }

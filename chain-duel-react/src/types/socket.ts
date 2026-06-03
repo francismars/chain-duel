@@ -360,6 +360,17 @@ export interface ClientToServerEvents {
   clearAppNostrSession: () => void;
   getNostrProfile: (payload?: { pubkey?: string }) => void;
   publishSignedNostrEvent: (payload: { event: Record<string, unknown> }) => void;
+
+  getChallengeEligibility: () => void;
+  getChallengeCatalog: () => void;
+  requestChallengeRun: (payload: { challengeId: string }) => void;
+  submitChallengeWin: (payload: {
+    runId: string;
+    inputLog: Array<{ tick: number; dir: string }>;
+    countdownStartTick?: number;
+  }) => void;
+  claimChallengeBounty: (payload: { claimToken: string; event: Record<string, unknown> }) => void;
+  retryChallengeZap: (payload: { challengeId: string }) => void;
 }
 
 // Server -> Client Events
@@ -371,6 +382,43 @@ export interface ServerToClientEvents {
   resAppNostrSession: (data: ResAppNostrSessionPayload) => void;
   resNostrProfile: (data: ResNostrProfilePayload) => void;
   resPublishNostrEvent: (data: ResPublishNostrEventPayload) => void;
+
+  resChallengeEligibility: (data: {
+    ok: boolean;
+    pubkey: string | null;
+    eligible: boolean;
+    checks: Record<string, { pass: boolean; detail?: string; count?: number; ageDays?: number | null; address?: string | null }>;
+  }) => void;
+  resChallengeCatalog: (data: { ok: boolean; challenges: unknown[] }) => void;
+  resChallengeRun: (data: {
+    ok: boolean;
+    runId?: string;
+    seed?: string;
+    bountySats?: number;
+    challengeId?: string;
+    expiresAt?: number;
+    reason?: string;
+  }) => void;
+  resSubmitChallengeWin: (data: {
+    ok: boolean;
+    claimToken?: string;
+    claimExpiresAt?: number;
+    noteContent?: string;
+    noteTags?: string[][];
+    bountySats?: number;
+    challengeName?: string;
+    reason?: string;
+  }) => void;
+  resChallengeClaim: (data: {
+    ok: boolean;
+    eventId?: string;
+    bountySats?: number;
+    zapPaid?: boolean;
+    zapReason?: string;
+    zapComment?: string;
+    reason?: string;
+  }) => void;
+  resRetryChallengeZap: (data: { ok: boolean; reason?: string }) => void;
 
   // Menu responses
   resGetGameMenuInfos: (

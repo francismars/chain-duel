@@ -1,21 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sponsorship } from '@/components/ui/Sponsorship';
-import { getActiveNostrSigner } from '@/lib/nostr/signerSession';
 import { formatPubkeyHex } from '@/lib/nostr/fetchKind0Profile';
-import { publishSignedNostrEvent } from '@/lib/nostr/publishSignedNostrEvent';
+import { useNoteContentDisplay } from '@/lib/nostr/formatNoteContentForDisplay';
+import { signChallengeBountyNote } from '@/lib/nostr/signChallengeBountyNote';
+import { resolveSignerMode } from '@/lib/nostr/signerSession';
+import { claimChallengeBounty, retryChallengeZap, submitChallengeWin } from '@/lib/challengeBounty';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import {
   applyTerminalGameOutcome,
   createGameState,
-  createNewCoinbase,
   getHudState,
 } from '@/game/engine';
+import { initRunRng, clearRunRng } from '@/game/engine/runRng';
 import type { GameState } from '@/game/engine/types';
 import { normalizeAiTier } from '@/game/engine/types';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { startMempoolFeed, type BitcoinDetails } from '@/game/io/mempool';
+import { createNewCoinbase } from '@/game/engine';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
 import { useAudio } from '@/contexts/AudioContext';
@@ -58,6 +61,20 @@ const DEFAULT_BITCOIN_DETAILS: BitcoinDetails = {
   medianFee: '00 sat/vb',
 };
 
+type SoloEndData = {
+  won: boolean;
+  name: string;
+  bounty: number;
+  claimToken?: string;
+  noteContent?: string;
+  noteTags?: string[][];
+  challengeId?: string;
+  validating?: boolean;
+  validationError?: string;
+  zapPaid?: boolean;
+  zapReason?: string;
+};
+
 export default function Game() {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
@@ -77,6 +94,9 @@ export default function Game() {
   const readyToStartRef = useRef(false);
   const captureP1Ref = useRef('2%');
   const captureP2Ref = useRef('2%');
+  const simStepRef = useRef(0);
+  const challengeInputLogRef = useRef<Array<{ tick: number; dir: string }>>([]);
+  const challengeWinSubmittedRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [player1Name, setPlayer1Name] = useState('Player 1');
@@ -102,47 +122,56 @@ export default function Game() {
   const [footerHighlight, setFooterHighlight] = useState(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
-  const [soloEndData, setSoloEndData] = useState<{ won: boolean; name: string; bounty: number; preimage: string; lnAddress: string } | null>(null);
-  const [soloPendingEndData, setSoloPendingEndData] = useState<{ won: boolean; name: string; bounty: number; preimage: string; lnAddress: string } | null>(null);
-  const [noteState, setNoteState] = useState<'idle' | 'posting' | 'posted' | 'error'>('idle');
+  const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
+  const [soloPendingEndData, setSoloPendingEndData] = useState<SoloEndData | null>(null);
+  const [noteState, setNoteState] = useState<'idle' | 'posting' | 'posted' | 'error' | 'zapping'>('idle');
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteAuthorPubkey, setNoteAuthorPubkey] = useState<string | null>(null);
   const [noteAuthorName, setNoteAuthorName] = useState<string>('Nostr user');
   const [noteAuthorAvatar, setNoteAuthorAvatar] = useState<string | null>(null);
   const [noteAuthorAvatarBroken, setNoteAuthorAvatarBroken] = useState(false);
-
-  const buildBountyNoteContent = useCallback((name: string, bounty: number) =>
-    `I just beat the ${name} challenge on Chain Duel ⚡\n\n${bounty.toLocaleString()} sats bounty — challenge accepted and won.\n\nchainduel.xyz\n\n#ChainDuel #Bitcoin #Nostr`,
-  []);
+  const noteContentDisplay = useNoteContentDisplay(soloEndData?.noteContent);
 
   const postBountyNote = useCallback(async () => {
-    if (!soloEndData) return;
+    if (!soloEndData?.claimToken || !soloEndData.noteContent || !soloEndData.noteTags) return;
     setNoteState('posting');
     setNoteError(null);
     try {
-      const signer = await getActiveNostrSigner();
-      if (!signer) throw new Error('No Nostr signer found. Connect one on the Config page.');
-      const content = buildBountyNoteContent(soloEndData.name, soloEndData.bounty);
+      if (!socket) throw new Error('Not connected to server.');
       const unsigned = {
         kind: 1 as const,
         created_at: Math.floor(Date.now() / 1000),
-        tags: [['t', 'ChainDuel'], ['t', 'Bitcoin'], ['t', 'Nostr']],
-        content,
+        tags: soloEndData.noteTags,
+        content: soloEndData.noteContent,
       };
-      const signed = await signer.signEvent(unsigned);
-      if (!socket) {
-        throw new Error('Not connected to server.');
-      }
-      const result = await publishSignedNostrEvent(socket, signed);
-      if (!result.ok) {
-        throw new Error(result.reason);
-      }
+      const signed = await signChallengeBountyNote(unsigned);
+      setNoteState('zapping');
+      const result = await claimChallengeBounty(socket, {
+        claimToken: soloEndData.claimToken,
+        event: signed,
+      });
+      if (!result.ok) throw new Error(result.reason);
+      setSoloEndData((prev) =>
+        prev ? { ...prev, zapPaid: result.zapPaid, zapReason: result.zapReason } : prev
+      );
       setNoteState('posted');
     } catch (err) {
       setNoteState('error');
-      setNoteError(err instanceof Error ? err.message : 'Failed to post note.');
+      setNoteError(err instanceof Error ? err.message : 'Failed to claim bounty.');
     }
-  }, [soloEndData, buildBountyNoteContent, socket]);
+  }, [soloEndData, socket]);
+
+  const retryZap = useCallback(async () => {
+    if (!soloEndData?.challengeId || !socket) return;
+    setNoteError(null);
+    try {
+      const result = await retryChallengeZap(socket, soloEndData.challengeId);
+      if (!result.ok) throw new Error(result.reason ?? 'Zap retry failed');
+      setSoloEndData((prev) => (prev ? { ...prev, zapPaid: true, zapReason: undefined } : prev));
+    } catch (err) {
+      setNoteError(err instanceof Error ? err.message : 'Zap retry failed.');
+    }
+  }, [soloEndData, socket]);
 
   useEffect(() => {
     setNoteAuthorAvatarBroken(false);
@@ -188,6 +217,11 @@ export default function Game() {
 
   const ignoreSocketSessionUpdates = useMemo(
     () => sessionUsesPracticeHubConfig(),
+    [],
+  );
+
+  const isChallengeSession = useMemo(
+    () => isPracticeChallengeConfig(readSessionGameConfig()),
     [],
   );
 
@@ -276,6 +310,19 @@ export default function Game() {
 
     if (!localBootRef.current) {
       localBootRef.current = true;
+      simStepRef.current = 0;
+      challengeInputLogRef.current = [];
+      challengeWinSubmittedRef.current = false;
+
+      const challengeSeed = typeof gameConfig.challengeRunSeed === 'string'
+        ? gameConfig.challengeRunSeed
+        : '';
+      if (isPracticeChallengeConfig(gameConfig) && challengeSeed) {
+        initRunRng(challengeSeed);
+      } else {
+        clearRunRng();
+      }
+
       const state = createGameState({
       p1Name,
       p2Name: displayP2Name,
@@ -322,6 +369,8 @@ export default function Game() {
     // Always sync React HUD (Strict Mode re-runs must not skip this).
     setPlayer1Name(p1Name);
     setPlayer2Name(displayP2Name);
+    setPlayer1Img(optCfgStr(gameConfig.p1Picture) ?? '');
+    setPlayer2Img(optCfgStr(gameConfig.p2Picture) ?? '');
     setP1Points(p1Points);
     setP2Points(p2Points);
     setGameInfo(modeLabel);
@@ -350,7 +399,7 @@ export default function Game() {
     return () => window.clearTimeout(timer);
   }, [loading]);
 
-  // Detect P1 win in SOLO mode and surface the mock zap-proof overlay.
+  // Challenge win: submit replay to server for validation + claim token.
   useEffect(() => {
     if (loading) return;
     let cfg: Record<string, unknown> = {};
@@ -361,22 +410,78 @@ export default function Game() {
       const state = stateRef.current;
       if (!state?.gameEnded || !state.winnerPlayer) return;
       window.clearInterval(poll);
-      const won    = state.winnerPlayer === 'P1';
+      const won = state.winnerPlayer === 'P1';
+      const name = String(cfg.soloChallengeName ?? 'CHALLENGE');
       const bounty = Number(cfg.soloBounty ?? 0);
-      const name   = String(cfg.soloChallengeName ?? 'CHALLENGE');
-      const ln     = localStorage.getItem('arcadeLnAddress') ?? '';
-      const preimage = won
-        ? Array.from({ length: 32 }, () =>
-            Math.floor(Math.random() * 256).toString(16).padStart(2, '0')
-          ).join('')
-        : '';
-      window.setTimeout(() => {
-        setSoloPendingEndData({ won, name, bounty, preimage, lnAddress: ln });
+      const runId = String(cfg.challengeRunId ?? '');
+      const challengeId = String(cfg.challengeId ?? '');
+
+      window.setTimeout(async () => {
+        if (!won) {
+          setSoloPendingEndData({ won: false, name, bounty, challengeId });
+          return;
+        }
+        if (!socket || !runId || challengeWinSubmittedRef.current) {
+          setSoloPendingEndData({
+            won: true,
+            name,
+            bounty,
+            challengeId,
+            validating: false,
+            validationError: !runId ? 'missing_run' : 'no_socket',
+          });
+          return;
+        }
+        challengeWinSubmittedRef.current = true;
+        setSoloPendingEndData({ won: true, name, bounty, challengeId, validating: true });
+        try {
+          const result = await submitChallengeWin(socket, {
+            runId,
+            inputLog: [...challengeInputLogRef.current],
+          });
+          if (!result.ok) {
+            setSoloPendingEndData({
+              won: true,
+              name,
+              bounty,
+              challengeId,
+              validating: false,
+              validationError: result.reason,
+            });
+            return;
+          }
+          setSoloPendingEndData({
+            won: true,
+            name,
+            bounty: result.bountySats,
+            challengeId,
+            claimToken: result.claimToken,
+            noteContent: result.noteContent,
+            noteTags: result.noteTags,
+            validating: false,
+          });
+        } catch (err) {
+          setSoloPendingEndData({
+            won: true,
+            name,
+            bounty,
+            challengeId,
+            validating: false,
+            validationError: err instanceof Error ? err.message : 'validation_failed',
+          });
+        }
       }, 2000);
     }, 150);
 
     return () => window.clearInterval(poll);
-  }, [loading, stateRef]);
+  }, [loading, stateRef, socket]);
+
+  useEffect(() => {
+    if (soloEndData?.validating && soloPendingEndData && !soloPendingEndData.validating) {
+      setSoloEndData(soloPendingEndData);
+      setSoloPendingEndData(null);
+    }
+  }, [soloEndData?.validating, soloPendingEndData]);
 
   useEffect(() => {
     audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
@@ -591,7 +696,6 @@ export default function Game() {
 
   useGameRenderBridge({
     loading,
-    socket,
     stateRef,
     rendererRef,
     audioRef,
@@ -603,10 +707,19 @@ export default function Game() {
     emitWinner,
     onHudTick: handleHudTick,
     onCaptureChanged: handleCaptureChanged,
+    simStepRef: isChallengeSession ? simStepRef : undefined,
+    challengeInputLogRef: isChallengeSession ? challengeInputLogRef : undefined,
   });
 
   useEffect(() => {
     if (loading || !stateRef.current) return;
+    let cfg: Record<string, unknown> = {};
+    try {
+      const raw = sessionStorage.getItem('gameConfig');
+      if (raw) cfg = JSON.parse(raw);
+    } catch { /* ignore */ }
+    const challengeRun = isPracticeChallengeConfig(cfg);
+
     const stopFeed = startMempoolFeed({
       onInit: (details) => {
         setBitcoin((prev) => {
@@ -635,8 +748,11 @@ export default function Game() {
         setFooterHighlight(true);
         window.setTimeout(() => setCanvasHighlight(false), 1000);
         window.setTimeout(() => setFooterHighlight(false), 2000);
-        createNewCoinbase(stateRef.current!, block.extras?.medianFee ?? -1);
-        audioRef.current?.playBlockFound();
+        // Challenge runs use a seeded arena — no live mempool coinbase spawns.
+        if (!challengeRun) {
+          createNewCoinbase(stateRef.current!, block.extras?.medianFee ?? -1);
+          audioRef.current?.playBlockFound();
+        }
       },
     });
     return () => stopFeed();
@@ -886,8 +1002,16 @@ export default function Game() {
                   <span className="solo-zap-unit">SATS</span>
                 </div>
 
+                {soloEndData.validating ? (
+                  <p className="solo-zap-note-label">VALIDATING WIN ON SERVER…</p>
+                ) : soloEndData.validationError ? (
+                  <p className="solo-zap-note-err">Validation failed: {soloEndData.validationError}</p>
+                ) : (
                 <div className="solo-zap-note-section">
                   <p className="solo-zap-note-label">POST THIS NOTE TO CLAIM YOUR ZAP</p>
+                  {resolveSignerMode() === 'nip46' && (noteState === 'posting' || noteState === 'zapping') ? (
+                    <p className="solo-zap-note-label">Approve in your Nostr app (Primal / Amber)…</p>
+                  ) : null}
                   <div className="solo-zap-note-preview">
                     {noteAuthorPubkey ? (
                       <div className="solo-zap-note-author">
@@ -906,34 +1030,45 @@ export default function Game() {
                       </div>
                     ) : null}
                     <p className="solo-zap-note-text">
-                      {buildBountyNoteContent(soloEndData.name, soloEndData.bounty)}
+                      {noteContentDisplay}
                     </p>
                   </div>
 
                   {noteState === 'posted' ? (
-                    <p className="solo-zap-note-ok">✓ Note posted — zap incoming ⚡</p>
-                  ) : (
+                    soloEndData.zapPaid ? (
+                      <p className="solo-zap-note-ok">✓ Note posted — zap sent ⚡</p>
+                    ) : (
+                      <>
+                        <p className="solo-zap-note-ok">✓ Note posted</p>
+                        <p className="solo-zap-note-err">Zap pending{soloEndData.zapReason ? `: ${soloEndData.zapReason}` : ''}</p>
+                        <button type="button" className="solo-zap-post-btn" onClick={() => { void retryZap(); }}>
+                          RETRY ZAP ⚡
+                        </button>
+                      </>
+                    )
+                  ) : soloEndData.claimToken ? (
                     <button
                       type="button"
                       className="solo-zap-post-btn"
-                      disabled={noteState === 'posting'}
+                      disabled={noteState === 'posting' || noteState === 'zapping'}
                       onClick={() => { void postBountyNote(); }}
                     >
-                      {noteState === 'posting' ? (
+                      {noteState === 'posting' || noteState === 'zapping' ? (
                         <>
                           <svg className="solo-zap-post-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
                             <circle cx="12" cy="12" r="9" strokeOpacity="0.15" />
                             <path d="M12 3a9 9 0 0 1 9 9" />
                           </svg>
-                          SIGNING…
+                          {resolveSignerMode() === 'nip46' ? 'WAITING FOR APPROVAL…' : noteState === 'zapping' ? 'ZAPPING…' : 'SIGNING…'}
                         </>
                       ) : 'POST NOTE & CLAIM ZAP ⚡'}
                     </button>
-                  )}
+                  ) : null}
                   {noteState === 'error' && noteError ? (
                     <p className="solo-zap-note-err">{noteError}</p>
                   ) : null}
                 </div>
+                )}
               </>
             ) : (
               <>
