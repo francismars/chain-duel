@@ -496,3 +496,74 @@ export const ResCancelTournamentSchema = z.object({
   depositcount: z.number(),
   lnurlw: z.string().optional(),
 });
+
+// ============================================================================
+// Challenge bounty
+// ============================================================================
+
+export const EligibilityCheckSchema = z.object({
+  pass: z.boolean(),
+  detail: z.string().optional(),
+  count: z.number().optional(),
+  ageDays: z.number().nullable().optional(),
+  address: z.string().nullable().optional(),
+});
+
+export const ResChallengeEligibilitySchema = z.object({
+  ok: z.boolean(),
+  pubkey: z.string().nullable(),
+  eligible: z.boolean(),
+  checks: z.record(z.string(), EligibilityCheckSchema),
+});
+
+export const ResChallengeRunSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    runId: z.string(),
+    seed: z.string(),
+    bountySats: z.number(),
+    challengeId: z.string(),
+    expiresAt: z.number(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    reason: z.string(),
+    eligibility: ResChallengeEligibilitySchema.optional(),
+  }),
+]);
+
+export const ResSubmitChallengeWinSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    claimToken: z.string(),
+    claimExpiresAt: z.number(),
+    noteContent: z.string(),
+    noteTags: z.array(z.array(z.string())),
+    bountySats: z.number(),
+    challengeName: z.string(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    reason: z.string(),
+  }),
+]);
+
+export const ResChallengeClaimSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    eventId: z.string(),
+    bountySats: z.number(),
+    zapPaid: z.boolean(),
+    zapReason: z.string().optional(),
+    zapComment: z.string().optional(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    reason: z.string(),
+  }),
+]);
+
+export const ResRetryChallengeZapSchema = z.object({
+  ok: z.boolean(),
+  reason: z.string().optional(),
+});
