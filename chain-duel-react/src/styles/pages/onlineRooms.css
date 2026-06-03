@@ -854,13 +854,6 @@
   gap: 0.5em;
 }
 
-.online-room-code-emojis {
-  font-family: sans-serif;
-  font-size: 0.72em;
-  letter-spacing: 0.04em;
-  opacity: 0.85;
-}
-
 .online-room-meta {
   display: flex;
   gap: 0.9vw;

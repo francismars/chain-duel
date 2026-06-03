@@ -36,13 +36,11 @@ export function buildOnlineRoomInviteText(params: {
   roomCode: string;
   buyin: number;
   lobbyUrl: string;
-  emojis?: string;
 }): string {
-  const emojiSuffix = params.emojis?.trim() ? ` ${params.emojis.trim()}` : '';
   const buyin = Math.floor(params.buyin);
   const code = params.roomCode.trim().toUpperCase();
   return [
-    `Chain Duel — you're challenged${emojiSuffix}`,
+    `Chain Duel — you're challenged`,
     '',
     `${buyin} sats on the line · room ${code}`,
     'Join me in the lobby and take the open seat:',

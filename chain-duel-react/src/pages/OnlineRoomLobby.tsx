@@ -772,7 +772,6 @@ export default function OnlineRoomLobby() {
   const snapshotP2Name =
     (room?.snapshot?.state as { p2Name?: string } | undefined)?.p2Name ?? 'Player 2';
   const nostrUri = kind1 ? `nostr:${kind1}` : '';
-  const roomEmojis = room?.nostrMeta?.emojis ?? '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
   const p1AvatarSrc = isMatchEnded
@@ -871,9 +870,8 @@ export default function OnlineRoomLobby() {
       roomCode: room.roomCode,
       buyin: room.buyin,
       lobbyUrl: lobbyInviteUrl,
-      emojis: roomEmojis || room.nostrMeta?.emojis,
     });
-  }, [room?.roomCode, room?.buyin, room?.nostrMeta?.emojis, roomId, lobbyInviteUrl, roomEmojis]);
+  }, [room?.roomCode, room?.buyin, roomId, lobbyInviteUrl]);
 
   const rematchPayPrimedRef = useRef<string | null>(null);
 
@@ -1119,12 +1117,27 @@ export default function OnlineRoomLobby() {
         <div className="online-lobby-header-meta">
           {room ? (
             <>
-              <span className="online-lobby-header-code">{room.roomCode}</span>
-              {roomEmojis ? (
-                <span className="online-lobby-header-emojis">{roomEmojis}</span>
-              ) : (
-                <span className="online-lobby-header-emojis online-lobby-header-emojis--pending">Publishing…</span>
-              )}
+              <span className="online-lobby-header-code-label">Room code</span>
+              <span className="online-lobby-header-code-group">
+                <span className="online-lobby-header-code" title="Use this code to join or verify the Nostr note">
+                  {room.roomCode}
+                </span>
+                <button
+                  type="button"
+                  className={[
+                    'online-lobby-header-copy-emoji',
+                    inviteCopyFeedback === 'link' ? 'online-lobby-header-copy-emoji--ok' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  disabled={!lobbyInviteUrl}
+                  onClick={copyLobbyLink}
+                  aria-label={inviteCopyFeedback === 'link' ? 'Room link copied' : 'Copy room link'}
+                  title={inviteCopyFeedback === 'link' ? 'Copied' : lobbyInviteUrl || 'Copy room link'}
+                >
+                  {inviteCopyFeedback === 'link' ? '✓' : '🔗'}
+                </button>
+              </span>
               <span className="online-lobby-header-sep">·</span>
               <span className="online-lobby-header-buyin">
                 {room.buyin.toLocaleString()} sats buy-in
@@ -1132,23 +1145,21 @@ export default function OnlineRoomLobby() {
               <span className="online-lobby-header-sep">·</span>
               <span className="online-lobby-header-seats">{paidSeats}/2 paid</span>
               {yourPingMs != null ? (
-                <span
-                  className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(yourPingMs)}`}
-                  title="Your round-trip to server"
-                >
-                  {yourPingMs}ms
-                </span>
+                <>
+                  <span className="online-lobby-header-sep">·</span>
+                  <span
+                    className={`online-lobby-ping-badge online-lobby-ping online-lobby-ping--${onlinePingAccent(yourPingMs)}`}
+                    title="Your round-trip to server"
+                  >
+                    {yourPingMs}ms
+                  </span>
+                </>
               ) : null}
             </>
           ) : (
             <span className="online-lobby-header-loading">Connecting…</span>
           )}
         </div>
-        {roomEmojis ? (
-          <p className="online-lobby-header-emoji-confirm">
-            Confirm the emoji ID before sending your zap.
-          </p>
-        ) : null}
       </div>
 
       {/* DoN Banner */}

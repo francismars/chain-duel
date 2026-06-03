@@ -98,7 +98,6 @@ export const TournamentNostrMetaSchema = z.object({
 
 export const OnlineNostrMetaSchema = z.object({
   note1: z.string(),
-  emojis: z.string(),
   min: z.number(),
   mode: z.string(),
 });
@@ -219,7 +218,6 @@ export const OnlineRoomListItemSchema = z.object({
       durationMs: z.number(),
     })
     .optional(),
-  nostrMeta: z.object({ emojis: z.string() }).optional(),
   result: z
     .object({
       winnerName: z.string(),

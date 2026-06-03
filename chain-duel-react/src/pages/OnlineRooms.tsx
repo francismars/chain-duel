@@ -311,17 +311,6 @@ export default function OnlineRooms() {
       const parsed = SocketBoundaryParsers.onlineRoomUpdated(payload);
       if (!parsed) return;
 
-      // Patch nostrMeta (emojis) into the live rooms list whenever it arrives
-      if (parsed.nostrMeta?.emojis) {
-        setRooms((prev) =>
-          prev.map((r) =>
-            r.roomId === parsed.roomId
-              ? { ...r, nostrMeta: { emojis: parsed.nostrMeta!.emojis } }
-              : r,
-          ),
-        );
-      }
-
       if (!creatingRoomRef.current || !pendingRoomIdRef.current) return;
       if (parsed.roomId !== pendingRoomIdRef.current) return;
       if (!parsed.nostrMeta?.note1) return;
@@ -728,9 +717,6 @@ export default function OnlineRooms() {
                         </svg>
                       ) : null}
                       {room.roomCode}
-                      {room.nostrMeta?.emojis ? (
-                        <span className="online-room-code-emojis">{room.nostrMeta.emojis}</span>
-                      ) : null}
                     </span>
                     <span className="online-postgame-round-chip online-postgame-round-chip--open">
                       {room.buyin.toLocaleString()} sats
@@ -777,9 +763,6 @@ export default function OnlineRooms() {
                   <div className="online-room-main">
                     <p className="online-room-code">
                       {room.roomCode}
-                      {room.nostrMeta?.emojis ? (
-                        <span className="online-room-code-emojis">{room.nostrMeta.emojis}</span>
-                      ) : null}
                     </p>
                     <p className="online-room-meta">
                       <span className="online-room-meta-item">

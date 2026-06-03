@@ -107,7 +107,12 @@ export default function OnlinePostGame() {
   const isWinner = Boolean(
     info?.winnerSessionID && info.winnerSessionID === currentSessionID
   );
-  const donLocked = Boolean(lnurlw || info?.payoutMethod === 'nostr_zap' || info?.rematchRequested);
+  const donLocked = Boolean(
+    lnurlw ||
+      info?.payoutMethod === 'withdraw_qr' ||
+      info?.payoutMethod === 'nostr_zap' ||
+      info?.rematchRequested
+  );
   const effectiveVotes = myVoted ? Math.max(votes, 1) : votes;
   const winnerHasNostrLn = Boolean(info?.winnerLnAddress);
   const payoutChosen = info?.payoutMethod === 'withdraw_qr' || info?.payoutMethod === 'nostr_zap';
@@ -334,9 +339,6 @@ export default function OnlinePostGame() {
               }
             : prev
         );
-        if (pg.lnurlw) {
-          setLnurlw(pg.lnurlw);
-        }
       }
       if (parsed.phase === 'lobby') {
         navigate(onlineLobbyUrl(roomId));
