@@ -3,7 +3,9 @@ import type { GameState, GridPos } from '@/game/engine/types';
 import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
 import { preStartControllerBobPx } from '@/game/controllerTest';
 import type { GameSeatIndex } from '@/game/controllerTest';
+import { getPowerUpHudLabel } from '@/game/engine/powerUpDisplay';
 import { getSnakeEffects, type PowerUpPlayerIndex } from '@/game/engine/powerups';
+import type { PowerUpType } from '@/game/engine/types';
 
 export class PixiGameRenderer {
   private app: Application | null = null;
@@ -860,7 +862,7 @@ export class PixiGameRenderer {
       const cx = item.pos[0] * colSize + colSize / 2;
       const cy = item.pos[1] * rowSize + rowSize / 2;
       const hex = `#${color.toString(16).padStart(6, '0')}`;
-      const label = PixiGameRenderer.POWERUP_SHORT[item.type] ?? item.type.slice(0, 5);
+      const label = getPowerUpHudLabel(item.type as PowerUpType);
       const nameSize = Math.max(7, rowSize * 0.58);
       const letterSize = Math.max(10, rowSize * 0.72);
 
@@ -902,7 +904,7 @@ export class PixiGameRenderer {
       entry.name.style.fill = hex;
       entry.letter.style.fill = hex;
       entry.name.text = label;
-      entry.letter.text = item.type[0];
+      entry.letter.text = label[0] ?? item.type[0];
       entry.name.position.set(cx, cy + rowSize * 0.46);
       entry.letter.position.set(cx, cy - rowSize * 0.04);
       entry.name.alpha = pulse * 0.95;
@@ -949,14 +951,6 @@ export class PixiGameRenderer {
     // Inner symbol (small filled circle)
     this.scene.circle(cx, cy, r * 0.35).fill({ color, alpha: 0.85 * pulse });
   }
-
-  private static readonly POWERUP_SHORT: Record<string, string> = {
-    SURGE:     'SURGE',
-    FREEZE:    'FREEZE',
-    PHANTOM:   'GHOST',
-    AMPLIFIER: 'AMP',
-    DECOY:     'DECOY',
-  };
 
   // ── Point text ─────────────────────────────────────────────────────────────
 
@@ -1407,7 +1401,7 @@ export class PixiGameRenderer {
       const b = color & 0xff;
       ctx.fillStyle = `rgba(${r},${g},${b},0.85)`;
       ctx.fillRect(item.pos[0] * colSize + 2, item.pos[1] * rowSize + 2, colSize - 4, rowSize - 4);
-      const shortLabel = PixiGameRenderer.POWERUP_SHORT[item.type] ?? item.type.slice(0, 5);
+      const shortLabel = getPowerUpHudLabel(item.type as PowerUpType);
       const cx2 = item.pos[0] * colSize + colSize / 2;
       const cy2 = item.pos[1] * rowSize + rowSize / 2;
       // First letter centered
@@ -1415,7 +1409,7 @@ export class PixiGameRenderer {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = `bold ${Math.floor(rowSize * 0.72)}px BureauGrotesque`;
-      ctx.fillText(item.type[0], cx2, cy2 - rowSize * 0.04);
+      ctx.fillText(shortLabel[0] ?? item.type[0], cx2, cy2 - rowSize * 0.04);
       // Full short name below
       ctx.font = `bold ${Math.floor(rowSize * 0.58)}px BureauGrotesque`;
       ctx.textBaseline = 'top';
