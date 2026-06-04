@@ -93,6 +93,7 @@ export default function OnlineGame() {
     left: false,
     right: false,
   });
+  const lastAxisRef = useRef<'up' | 'down' | 'left' | 'right' | null>(null);
   const localRoleRef = useRef({ isP1: false, isP2: false });
   const replayViewRef = useRef(replayMode);
   replayViewRef.current = replayMode;
@@ -445,11 +446,18 @@ export default function OnlineGame() {
       }
     };
 
-    const emitHeldInput = () => {
+    const emitHeldInput = (intent?: 'up' | 'down' | 'left' | 'right') => {
       const k = keysHeldRef.current;
       socket.emit('roomInput', {
         roomId,
-        input: { up: k.up, down: k.down, left: k.left, right: k.right },
+        input: {
+          up: k.up,
+          down: k.down,
+          left: k.left,
+          right: k.right,
+          lastAxis: lastAxisRef.current ?? undefined,
+          ...(intent ? { intent } : {}),
+        },
       });
     };
 
@@ -474,7 +482,8 @@ export default function OnlineGame() {
         event.preventDefault();
       }
       keysHeldRef.current[axis] = true;
-      emitHeldInput();
+      lastAxisRef.current = axis;
+      emitHeldInput(axis);
     };
 
     const onKeyUp = (event: KeyboardEvent) => {

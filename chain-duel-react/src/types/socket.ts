@@ -141,11 +141,17 @@ export interface OnlineNostrMeta {
   mode: string;
 }
 
+export type OnlineInputAxis = 'up' | 'down' | 'left' | 'right';
+
 export interface OnlineInputState {
   up?: boolean;
   down?: boolean;
   left?: boolean;
   right?: boolean;
+  /** Keydown edge — server latches direction and queues one tick (couch P2P tap parity). */
+  intent?: OnlineInputAxis;
+  /** Last keydown axis; used when multiple keys are held (diagonal). */
+  lastAxis?: OnlineInputAxis;
 }
 
 /** Replay: frame-aligned block cosmetics (server `room.replay.blockEvents`). */
