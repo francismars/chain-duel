@@ -26,6 +26,7 @@ import {
   requestChallengeRun,
   type ChallengeEligibilityResponse,
 } from '@/lib/challengeBounty';
+import { clearPendingChallengeClaim } from '@/lib/pendingChallengeClaim';
 import {
   countPassedChecks,
   formatEligibilityChecks,
@@ -91,7 +92,7 @@ const CHALLENGES: Challenge[] = [
     bounty: 1337,
   },
   {
-    id: 'ffa-rumble',
+    id: 'ffa',
     rank: 5,
     name: 'FFA RUMBLE',
     tagline: 'Four bots. One survivor.',
@@ -101,7 +102,7 @@ const CHALLENGES: Challenge[] = [
     bounty: 2100,
   },
   {
-    id: 'sovereign',
+    id: 'sovereign-stack',
     rank: 6,
     name: 'SOVEREIGN TRIAL',
     tagline: 'Intercept, power-ups, no escape',
@@ -272,7 +273,7 @@ export const PracticeChallengesPanel = forwardRef<
   }, [lockedPreviewRow]);
 
   const startLockedPreviewToZero = useCallback((rowIndex: number) => {
-    if (payoutReady) return;
+    if (nostrSession.signedIn) return;
     if (lockedPreviewRafRef.current !== null) {
       cancelAnimationFrame(lockedPreviewRafRef.current);
       lockedPreviewRafRef.current = null;
@@ -310,16 +311,12 @@ export const PracticeChallengesPanel = forwardRef<
   const launchChallenge = useCallback(async (idx?: number) => {
     const challenge = CHALLENGES[idx ?? selected];
     if (!challenge) return;
-    if (!payoutReady) {
-      playSfx(SFX.MENU_SELECT);
-      openConfigForNostr();
-      return;
-    }
     if (!socket) {
       setLaunchError('Not connected to server');
       return;
     }
     setLaunchError(null);
+    clearPendingChallengeClaim();
     playSfx(SFX.MENU_CONFIRM);
 
     const runResult = await requestChallengeRun(socket, challenge.id);
@@ -348,9 +345,9 @@ export const PracticeChallengesPanel = forwardRef<
       p2Human: false,
       p3Human: false,
       p4Human: false,
-      p1Name: nostrSession.displayName?.trim() || undefined,
-      p1NostrPubkey: nostrSession.pubkey ?? undefined,
-      p1Picture: nostrProfilePic?.trim() || undefined,
+      p1Name: nostrSession.displayName?.trim() || 'Player 1',
+      ...(nostrSession.pubkey ? { p1NostrPubkey: nostrSession.pubkey } : {}),
+      ...(nostrProfilePic?.trim() ? { p1Picture: nostrProfilePic.trim() } : {}),
       p2Name: 'BigToshi 🌊',
       aiTier: challenge.aiTier,
       convergenceMode: true,
@@ -364,7 +361,7 @@ export const PracticeChallengesPanel = forwardRef<
 
     savePracticeGameConfig(config);
     navigate('/game');
-  }, [selected, playSfx, navigate, payoutReady, socket, openConfigForNostr, nostrProfilePic, nostrSession.pubkey, nostrSession.displayName]);
+  }, [selected, playSfx, navigate, socket, nostrProfilePic, nostrSession.pubkey, nostrSession.displayName]);
 
   const focusDefault = useCallback(() => {
     gateActionRef.current?.focus({ preventScroll: true });
@@ -653,7 +650,7 @@ export const PracticeChallengesPanel = forwardRef<
                       ? 'Eligible — win, sign your note, get zapped'
                       : nostrSession.signedIn
                         ? 'Finish setup in Config to unlock sats'
-                        : 'Connect Nostr to unlock bounty prizes'}
+                        : 'Anyone can play — sign in to claim prizes'}
                 </p>
 
                 {launchError ? (
@@ -708,13 +705,13 @@ export const PracticeChallengesPanel = forwardRef<
                       startLockedPreviewToZero(i);
                     }}
                     onMouseLeave={() => {
-                      if (!payoutReady) clearLockedPreview(i);
+                      if (!nostrSession.signedIn) clearLockedPreview(i);
                     }}
                     onFocus={() => {
                       startLockedPreviewToZero(i);
                     }}
                     onBlur={() => {
-                      if (!payoutReady) clearLockedPreview(i);
+                      if (!nostrSession.signedIn) clearLockedPreview(i);
                     }}
                     type="button"
                     data-tier={c.aiTier}
@@ -738,9 +735,9 @@ export const PracticeChallengesPanel = forwardRef<
                         </div>
                       </div>
 
-                      <div className={`sc-row__bounty${!payoutReady ? ' sc-row__bounty--locked' : ''}`}>
+                      <div className={`sc-row__bounty${!nostrSession.signedIn ? ' sc-row__bounty--locked' : ''}`}>
                         <span className="sc-row__sats-line">
-                          {!payoutReady ? (
+                          {!nostrSession.signedIn ? (
                             <svg className="sc-row__lock" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                               <path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                               <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.6"/>
@@ -749,7 +746,7 @@ export const PracticeChallengesPanel = forwardRef<
                           ) : null}
                           <span className="sc-row__sats">
                             {formatBounty(
-                              !payoutReady && lockedPreviewRow === i && lockedPreviewValue !== null
+                              !nostrSession.signedIn && lockedPreviewRow === i && lockedPreviewValue !== null
                                 ? lockedPreviewValue
                                 : i === selected
                                   ? displayBounty
@@ -757,7 +754,7 @@ export const PracticeChallengesPanel = forwardRef<
                             )}
                           </span>
                         </span>
-                        <span className="sc-row__unit">{npub ? 'SATS' : 'PRIZE LOCKED'}</span>
+                        <span className="sc-row__unit">{nostrSession.signedIn ? 'SATS' : 'SIGN IN TO CLAIM'}</span>
                       </div>
                     </div>
                   </button>

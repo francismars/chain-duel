@@ -5,6 +5,8 @@ import {
   canContinueAfterGame,
   createGameState,
   getHudState,
+  setControllerTestHeld,
+  setExtraControllerTestHeld,
   setWantedDirection,
   startCountdown,
   stepGame,
@@ -390,5 +392,44 @@ describe('game engine parity behavior', () => {
     state.p1.dir = 'Right';
     setWantedDirection(state, 'P1', 'Left');
     expect(state.p1.dirWanted).toBe('Right');
+  });
+
+  it('tracks pre-start controller test until the match begins', () => {
+    const state = createGameState({
+      p1Name: 'A',
+      p2Name: 'B',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'P2P',
+      practiceMode: false,
+    });
+    setControllerTestHeld(state, 'P1', true);
+    setControllerTestHeld(state, 'P2', true);
+    expect(state.controllerTestP1).toBe(true);
+    expect(state.controllerTestP2).toBe(true);
+
+    startCountdown(state);
+    while (!state.gameStarted) {
+      stepGame(state);
+    }
+    expect(state.controllerTestP1).toBe(false);
+    expect(state.controllerTestP2).toBe(false);
+  });
+
+  it('tracks FFA P3/P4 pre-start controller test', () => {
+    const state = createGameState({
+      p1Name: 'A',
+      p2Name: 'B',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'FFA',
+      practiceMode: true,
+      teamMode: 'ffa',
+      p3Human: true,
+      p4Human: true,
+    });
+    setExtraControllerTestHeld(state, 0, true);
+    setExtraControllerTestHeld(state, 1, true);
+    expect(state.controllerTestExtra).toEqual([true, true]);
   });
 });

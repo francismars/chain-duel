@@ -136,6 +136,11 @@ export interface GameState {
   powerUpRespawnCooldownTick: number;
   convergenceWallClosed: boolean;
   extraSnakes: ExtraSnake[];
+  /** Pre-start / countdown: player is holding a direction key (legacy controller test bob). */
+  controllerTestP1: boolean;
+  controllerTestP2: boolean;
+  /** FFA P3/P4 — parallel to `extraSnakes` indices 0 and 1. */
+  controllerTestExtra: boolean[];
   /** FFA: per-player starting sats (P1, P2, P3, P4). */
   ffaInitialScores?: [number, number, number, number];
 }

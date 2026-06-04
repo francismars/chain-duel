@@ -299,6 +299,9 @@ function buildState(ef: EncodedFrame, header: CompactReplayHeader): GameState {
     powerUpRespawnCooldownTick: 0,
     convergenceWallClosed: false,
     extraSnakes: [],
+    controllerTestP1: false,
+    controllerTestP2: false,
+    controllerTestExtra: [],
   };
   applyFlags(ef.f, st);
   return st;

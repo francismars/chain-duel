@@ -6,6 +6,11 @@ import { useNoteContentDisplay } from '@/lib/nostr/formatNoteContentForDisplay';
 import { signChallengeBountyNote } from '@/lib/nostr/signChallengeBountyNote';
 import { resolveSignerMode } from '@/lib/nostr/signerSession';
 import { claimChallengeBounty, retryChallengeZap, submitChallengeWin } from '@/lib/challengeBounty';
+import {
+  clearPendingChallengeClaim,
+  loadPendingChallengeClaim,
+  savePendingChallengeClaim,
+} from '@/lib/pendingChallengeClaim';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import {
   applyTerminalGameOutcome,
@@ -154,6 +159,7 @@ export default function Game() {
       setSoloEndData((prev) =>
         prev ? { ...prev, zapPaid: result.zapPaid, zapReason: result.zapReason } : prev
       );
+      clearPendingChallengeClaim();
       setNoteState('posted');
     } catch (err) {
       setNoteState('error');
@@ -190,6 +196,64 @@ export default function Game() {
     nostrSession.displayName,
     nostrSession.picture,
   ]);
+
+  useEffect(() => {
+    const pending = loadPendingChallengeClaim();
+    if (!pending) return;
+    setSoloEndData({
+      won: true,
+      name: pending.name,
+      bounty: pending.bounty,
+      challengeId: pending.challengeId,
+      claimToken: pending.claimToken,
+      noteContent: pending.noteContent,
+      noteTags: pending.noteTags,
+      validating: false,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!nostrSession.signedIn) return;
+    const pending = loadPendingChallengeClaim();
+    if (!pending) return;
+    setSoloEndData((prev) => {
+      if (prev?.claimToken) return prev;
+      return {
+        won: true,
+        name: pending.name,
+        bounty: pending.bounty,
+        challengeId: pending.challengeId,
+        claimToken: pending.claimToken,
+        noteContent: pending.noteContent,
+        noteTags: pending.noteTags,
+        validating: false,
+      };
+    });
+  }, [nostrSession.signedIn]);
+
+  useEffect(() => {
+    if (
+      !soloEndData?.won ||
+      !soloEndData.claimToken ||
+      !soloEndData.noteContent ||
+      !soloEndData.noteTags ||
+      !soloEndData.challengeId
+    ) {
+      return;
+    }
+    if (soloEndData.zapPaid) {
+      clearPendingChallengeClaim();
+      return;
+    }
+    savePendingChallengeClaim({
+      name: soloEndData.name,
+      bounty: soloEndData.bounty,
+      challengeId: soloEndData.challengeId,
+      claimToken: soloEndData.claimToken,
+      noteContent: soloEndData.noteContent,
+      noteTags: soloEndData.noteTags,
+    });
+  }, [soloEndData]);
 
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
   const canShowP2Image = useMemo(() => player2Img.length > 0, [player2Img]);
@@ -1047,6 +1111,20 @@ export default function Game() {
                       </>
                     )
                   ) : soloEndData.claimToken ? (
+                    !nostrSession.signedIn ? (
+                      <>
+                        <p className="solo-zap-note-label">SIGN IN WITH NOSTR TO CLAIM YOUR ZAP</p>
+                        <button
+                          type="button"
+                          className="solo-zap-post-btn"
+                          onClick={() => {
+                            navigate('/config', { state: { returnTo: '/game' } });
+                          }}
+                        >
+                          SIGN IN WITH NOSTR ⚡
+                        </button>
+                      </>
+                    ) : (
                     <button
                       type="button"
                       className="solo-zap-post-btn"
@@ -1063,6 +1141,7 @@ export default function Game() {
                         </>
                       ) : 'POST NOTE & CLAIM ZAP ⚡'}
                     </button>
+                    )
                   ) : null}
                   {noteState === 'error' && noteError ? (
                     <p className="solo-zap-note-err">{noteError}</p>

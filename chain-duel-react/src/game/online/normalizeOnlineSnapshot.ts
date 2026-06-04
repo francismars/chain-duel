@@ -59,6 +59,13 @@ export function normalizeOnlineRoomSnapshot(snapshot: OnlineRoomSnapshot): Onlin
       convergenceWallClosed:
         typeof state.convergenceWallClosed === 'boolean' ? state.convergenceWallClosed : false,
       extraSnakes: Array.isArray(state.extraSnakes) ? state.extraSnakes : [],
+      controllerTestP1:
+        typeof state.controllerTestP1 === 'boolean' ? state.controllerTestP1 : false,
+      controllerTestP2:
+        typeof state.controllerTestP2 === 'boolean' ? state.controllerTestP2 : false,
+      controllerTestExtra: Array.isArray(state.controllerTestExtra)
+        ? state.controllerTestExtra
+        : [],
     },
   };
 }

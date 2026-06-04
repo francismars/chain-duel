@@ -13,6 +13,7 @@ import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import { startMempoolFeed, type BitcoinDetails } from '@/game/io/mempool';
+import { withLocalOnlineControllerTest } from '@/game/controllerTest';
 import type { GameState } from '@/game/engine/types';
 import './game.css';
 import '@/styles/pages/onlineGame.css';
@@ -92,6 +93,7 @@ export default function OnlineGame() {
     left: false,
     right: false,
   });
+  const localRoleRef = useRef({ isP1: false, isP2: false });
   const replayViewRef = useRef(replayMode);
   replayViewRef.current = replayMode;
 
@@ -127,7 +129,10 @@ export default function OnlineGame() {
     const frame = (now: number) => {
       const snap = snapshotRef.current;
       if (snap?.state && rendererRef.current) {
-        const raw = snap.state as GameState;
+        let raw = snap.state as GameState;
+        if (!replayViewRef.current && !raw.gameStarted && !raw.gameEnded) {
+          raw = withLocalOnlineControllerTest(raw, localRoleRef.current, keysHeldRef.current);
+        }
         const renderState =
           raw.meta?.modeLabel === 'ONLINE'
             ? withOnlinePointAnimations(raw, pointAnimationsRef.current)
@@ -595,6 +600,7 @@ export default function OnlineGame() {
   const isP2 =
     (roomInfo?.p2SessionID && roomInfo.p2SessionID === effectiveSessionID) ||
     (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID);
+  localRoleRef.current = { isP1, isP2 };
   const replayDurationSec = replayFrames.length > 0 ? (replayFrames.length * replayTickMs) / 1000 : 0;
   const replayPositionSec = replayFrames.length > 0 ? (replayIndex * replayTickMs) / 1000 : 0;
 

@@ -1,6 +1,8 @@
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { GameState, GridPos } from '@/game/engine/types';
 import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
+import { preStartControllerBobPx } from '@/game/controllerTest';
+import type { GameSeatIndex } from '@/game/controllerTest';
 import { getSnakeEffects, type PowerUpPlayerIndex } from '@/game/engine/powerups';
 
 export class PixiGameRenderer {
@@ -346,31 +348,37 @@ export class PixiGameRenderer {
     for (let ei = 0; ei < (state.extraSnakes ?? []).length; ei += 1) {
       const extra = state.extraSnakes[ei];
       const extraEffects = getSnakeEffects(state, (ei + 2) as PowerUpPlayerIndex);
-      this.drawSnake(extra.snake, extra.color, colSize, rowSize, extraEffects, [], now, boardElapsed);
+      const extraBob = preStartControllerBobPx(state, (ei + 2) as GameSeatIndex, rowSize);
+      this.drawSnake(extra.snake, extra.color, colSize, rowSize, extraEffects, [], now, boardElapsed, extraBob);
       // Ally / shadow border: solid inset outline distinguishes them from P1/P2
       if (extra.outline != null) {
         const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
+        const bob = extraBob;
+        const segTop = (gy: number) => gy * rowSize - bob;
+        const segH = rowSize + bob * 2;
         for (const seg of [extra.snake.head, ...extra.snake.body]) {
           this.scene
             .rect(
               seg[0] * colSize + lw / 2,
-              seg[1] * rowSize + lw / 2,
+              segTop(seg[1]) + lw / 2,
               colSize - lw,
-              rowSize - lw,
+              segH - lw,
             )
             .stroke({ width: lw, color: extra.outline, alpha: 0.85 });
         }
       }
     }
 
+    const p1Bob = preStartControllerBobPx(state, 0, rowSize);
     this.drawSnake(state.p1, 0xffffff, colSize, rowSize, {
       frozen: p1Frozen, phantom: p1Phantom, surging: p1Surging, amped: p1Amped,
-    }, this.p1Pulses, now, boardElapsed);
+    }, this.p1Pulses, now, boardElapsed, p1Bob);
 
     const p2Color = P2_SNAKE_COLOR;
+    const p2Bob = preStartControllerBobPx(state, 1, rowSize);
     this.drawSnake(state.p2, p2Color, colSize, rowSize, {
       frozen: p2Frozen, phantom: p2Phantom, surging: p2Surging, amped: p2Amped,
-    }, this.p2Pulses, now, boardElapsed);
+    }, this.p2Pulses, now, boardElapsed, p2Bob);
 
     for (const cb of state.coinbases ?? []) {
       this.drawCoinbase(cb.pos, colSize, rowSize, {
@@ -620,7 +628,12 @@ export class PixiGameRenderer {
     pulses: number[] = [],
     now: number = 0,
     boardElapsed: number = Infinity,
+    preStartBobPx: number = 0,
   ): void {
+    const bob = preStartBobPx;
+    const segTop = (gy: number) => gy * rowSize - bob;
+    const segHeight = rowSize + bob * 2;
+
     // Per-segment reveal: head first, then body tail-to-tip with 50ms stagger each
     const segReveal = (segIdx: number): number => {
       if (boardElapsed === Infinity) return 1;
@@ -641,15 +654,20 @@ export class PixiGameRenderer {
       this.scene
         .rect(
           snake.head[0] * colSize - expand,
-          snake.head[1] * rowSize - expand,
+          segTop(snake.head[1]) - expand,
           colSize + expand * 2,
-          rowSize + expand * 2,
+          segHeight + expand * 2,
         )
         .fill({ color: 0xFFBB00, alpha: ampAlpha * 1.4 });
       // Body glow
       for (const seg of snake.body) {
         this.scene
-          .rect(seg[0] * colSize - expand * 0.5, seg[1] * rowSize - expand * 0.5, colSize + expand, rowSize + expand)
+          .rect(
+            seg[0] * colSize - expand * 0.5,
+            segTop(seg[1]) - expand * 0.5,
+            colSize + expand,
+            segHeight + expand,
+          )
           .fill({ color: 0xFFBB00, alpha: ampAlpha * 0.7 });
       }
     }
@@ -661,20 +679,20 @@ export class PixiGameRenderer {
       this.scene
         .rect(
           snake.head[0] * colSize - expand,
-          snake.head[1] * rowSize - expand,
+          segTop(snake.head[1]) - expand,
           colSize + expand * 2,
-          rowSize + expand * 2,
+          segHeight + expand * 2,
         )
         .fill({ color: isLight ? 0xffffff : 0xdddddd, alpha: headBoost * 0.35 });
     }
-    this.scene.rect(snake.head[0] * colSize, snake.head[1] * rowSize, colSize, rowSize)
+    this.scene.rect(snake.head[0] * colSize, segTop(snake.head[1]), colSize, segHeight)
       .fill({ color, alpha: Math.max(0, headAlpha) });
 
     // Orange SURGE border on head
     if (effects.surging) {
       const surgePulse = 0.7 + 0.3 * Math.sin(now / 80);
       this.scene
-        .rect(snake.head[0] * colSize - 2, snake.head[1] * rowSize - 2, colSize + 4, rowSize + 4)
+        .rect(snake.head[0] * colSize - 2, segTop(snake.head[1]) - 2, colSize + 4, segHeight + 4)
         .stroke({ width: 2.5, color: 0xFF7200, alpha: surgePulse });
     }
 
@@ -682,14 +700,14 @@ export class PixiGameRenderer {
     if (effects.amped) {
       const ampPulse = 0.6 + 0.4 * Math.sin(now / 220);
       this.scene
-        .rect(snake.head[0] * colSize - 2, snake.head[1] * rowSize - 2, colSize + 4, rowSize + 4)
+        .rect(snake.head[0] * colSize - 2, segTop(snake.head[1]) - 2, colSize + 4, segHeight + 4)
         .stroke({ width: 2, color: 0xFFBB00, alpha: ampPulse });
     }
 
     // Frozen ring around head
     if (effects.frozen) {
       this.scene
-        .rect(snake.head[0] * colSize - 2, snake.head[1] * rowSize - 2, colSize + 4, rowSize + 4)
+        .rect(snake.head[0] * colSize - 2, segTop(snake.head[1]) - 2, colSize + 4, segHeight + 4)
         .stroke({ width: 2, color: 0x3090C8, alpha: 0.7 });
     }
 
@@ -698,16 +716,16 @@ export class PixiGameRenderer {
       const boost = this.getSegmentGlow(i + 1, totalLen, pulses, now);
       const segAlpha = Math.min(1, baseBodyAlpha + boost * 0.36) * segReveal(i + 1);
       const px = snake.body[i][0] * colSize;
-      const py = snake.body[i][1] * rowSize;
+      const py = segTop(snake.body[i][1]);
 
       this.scene
-        .rect(px, py, colSize, rowSize)
+        .rect(px, py, colSize, segHeight)
         .fill({ color, alpha: Math.max(0, segAlpha) });
 
       // Dark chains get a white overlay so the pulse is visible on black bg
       if (!isLight && boost > 0.05) {
         this.scene
-          .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
+          .rect(px + 1, py + 1, colSize - 2, segHeight - 2)
           .fill({ color: 0xffffff, alpha: boost * 0.28 });
       }
 
@@ -715,7 +733,7 @@ export class PixiGameRenderer {
       if (effects.surging) {
         const surgePulse = 0.5 + 0.3 * Math.sin(now / 80 + i * 0.4);
         this.scene
-          .rect(px - 1, py - 1, colSize + 2, rowSize + 2)
+          .rect(px - 1, py - 1, colSize + 2, segHeight + 2)
           .stroke({ width: 1.5, color: 0xFF7200, alpha: surgePulse });
       }
 
@@ -723,7 +741,7 @@ export class PixiGameRenderer {
       if (effects.amped) {
         const ampPulse = 0.4 + 0.3 * Math.sin(now / 220 + i * 0.2);
         this.scene
-          .rect(px - 1, py - 1, colSize + 2, rowSize + 2)
+          .rect(px - 1, py - 1, colSize + 2, segHeight + 2)
           .stroke({ width: 1.5, color: 0xFFBB00, alpha: ampPulse * 0.7 });
       }
     }
@@ -1184,13 +1202,17 @@ export class PixiGameRenderer {
       ctx.globalAlpha = 1;
     }
     // Extra snakes (teams / ffa) – drawn behind main snakes
-    for (const extra of (state.extraSnakes ?? [])) {
+    for (let ei = 0; ei < (state.extraSnakes ?? []).length; ei += 1) {
+      const extra = state.extraSnakes[ei]!;
+      const extraBob = preStartControllerBobPx(state, (ei + 2) as GameSeatIndex, rowSize);
+      const extraTop = (gy: number) => gy * rowSize - extraBob;
+      const extraH = rowSize + extraBob * 2;
       const hexStr = '#' + extra.color.toString(16).padStart(6, '0');
       ctx.fillStyle = hexStr;
-      ctx.fillRect(extra.snake.head[0] * colSize, extra.snake.head[1] * rowSize, colSize, rowSize);
+      ctx.fillRect(extra.snake.head[0] * colSize, extraTop(extra.snake.head[1]), colSize, extraH);
       ctx.globalAlpha = 0.75;
       for (const seg of extra.snake.body) {
-        ctx.fillRect(seg[0] * colSize, seg[1] * rowSize, colSize, rowSize);
+        ctx.fillRect(seg[0] * colSize, extraTop(seg[1]), colSize, extraH);
       }
       ctx.globalAlpha = 1;
       // Ally / shadow: solid inset border
@@ -1202,14 +1224,18 @@ export class PixiGameRenderer {
         for (const seg of [extra.snake.head, ...extra.snake.body]) {
           ctx.strokeRect(
             seg[0] * colSize + lw / 2,
-            seg[1] * rowSize + lw / 2,
+            extraTop(seg[1]) + lw / 2,
             colSize - lw,
-            rowSize - lw,
+            extraH - lw,
           );
         }
         ctx.globalAlpha = 1;
       }
     }
+
+    const p1Bob = preStartControllerBobPx(state, 0, rowSize);
+    const p1SegTop = (gy: number) => gy * rowSize - p1Bob;
+    const p1SegH = rowSize + p1Bob * 2;
 
     ctx.fillStyle = '#ffffff';
     // Head halo
@@ -1217,43 +1243,48 @@ export class PixiGameRenderer {
     if (p1HeadBoost > 0) {
       const exp = p1HeadBoost * 4;
       ctx.globalAlpha = p1HeadBoost * 0.35;
-      ctx.fillRect(state.p1.head[0] * colSize - exp, state.p1.head[1] * rowSize - exp, colSize + exp * 2, rowSize + exp * 2);
+      ctx.fillRect(
+        state.p1.head[0] * colSize - exp,
+        p1SegTop(state.p1.head[1]) - exp,
+        colSize + exp * 2,
+        p1SegH + exp * 2,
+      );
     }
     ctx.globalAlpha = 1;
-    ctx.fillRect(state.p1.head[0] * colSize, state.p1.head[1] * rowSize, colSize, rowSize);
+    ctx.fillRect(state.p1.head[0] * colSize, p1SegTop(state.p1.head[1]), colSize, p1SegH);
     if (fbP1Surging) {
       const sp = 0.7 + 0.3 * Math.sin(nowFb / 80);
       ctx.globalAlpha = sp; ctx.strokeStyle = '#FF7200'; ctx.lineWidth = 2.5;
-      ctx.strokeRect(state.p1.head[0] * colSize - 2, state.p1.head[1] * rowSize - 2, colSize + 4, rowSize + 4);
+      ctx.strokeRect(state.p1.head[0] * colSize - 2, p1SegTop(state.p1.head[1]) - 2, colSize + 4, p1SegH + 4);
       ctx.globalAlpha = 1;
     }
     if (fbP1Amped) {
       const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
       ctx.globalAlpha = ap; ctx.strokeStyle = '#FFBB00'; ctx.lineWidth = 2;
-      ctx.strokeRect(state.p1.head[0] * colSize - 2, state.p1.head[1] * rowSize - 2, colSize + 4, rowSize + 4);
+      ctx.strokeRect(state.p1.head[0] * colSize - 2, p1SegTop(state.p1.head[1]) - 2, colSize + 4, p1SegH + 4);
       ctx.globalAlpha = 1;
     }
     if (fbP1Frozen) {
       ctx.globalAlpha = 0.7; ctx.strokeStyle = '#3090C8'; ctx.lineWidth = 2;
-      ctx.strokeRect(state.p1.head[0] * colSize - 2, state.p1.head[1] * rowSize - 2, colSize + 4, rowSize + 4);
+      ctx.strokeRect(state.p1.head[0] * colSize - 2, p1SegTop(state.p1.head[1]) - 2, colSize + 4, p1SegH + 4);
       ctx.globalAlpha = 1;
     }
     for (let i = 0; i < state.p1.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, p1Total, this.p1Pulses, nowFb);
       ctx.fillStyle = '#ffffff';
       ctx.globalAlpha = Math.min(1, 0.6 + boost * 0.36);
-      ctx.fillRect(state.p1.body[i][0] * colSize, state.p1.body[i][1] * rowSize, colSize, rowSize);
+      ctx.fillRect(state.p1.body[i][0] * colSize, p1SegTop(state.p1.body[i][1]), colSize, p1SegH);
       ctx.globalAlpha = 1;
       if (fbP1Surging) {
         const sp = 0.5 + 0.3 * Math.sin(nowFb / 80 + i * 0.4);
         ctx.globalAlpha = sp; ctx.strokeStyle = '#FF7200'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(state.p1.body[i][0] * colSize - 1, state.p1.body[i][1] * rowSize - 1, colSize + 2, rowSize + 2);
+        ctx.strokeRect(state.p1.body[i][0] * colSize - 1, p1SegTop(state.p1.body[i][1]) - 1, colSize + 2, p1SegH + 2);
         ctx.globalAlpha = 1;
       }
       if (fbP1Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
         ctx.globalAlpha = ap; ctx.strokeStyle = '#FFBB00'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(state.p1.body[i][0] * colSize - 1, state.p1.body[i][1] * rowSize - 1, colSize + 2, rowSize + 2);
+        ctx.strokeRect(state.p1.body[i][0] * colSize - 1, p1SegTop(state.p1.body[i][1]) - 1, colSize + 2, p1SegH + 2);
         ctx.globalAlpha = 1;
       }
     }
@@ -1272,56 +1303,70 @@ export class PixiGameRenderer {
       }
       ctx.globalAlpha = 1;
     }
+    const p2Bob = preStartControllerBobPx(state, 1, rowSize);
+    const p2SegTop = (gy: number) => gy * rowSize - p2Bob;
+    const p2SegH = rowSize + p2Bob * 2;
+
     ctx.fillStyle = '#111111';
     const p2HeadBoost = this.getSegmentGlow(0, p2Total, this.p2Pulses, nowFb);
     if (p2HeadBoost > 0) {
       const exp = p2HeadBoost * 4;
       ctx.globalAlpha = p2HeadBoost * 0.3;
       ctx.fillStyle = '#dddddd';
-      ctx.fillRect(state.p2.head[0] * colSize - exp, state.p2.head[1] * rowSize - exp, colSize + exp * 2, rowSize + exp * 2);
+      ctx.fillRect(
+        state.p2.head[0] * colSize - exp,
+        p2SegTop(state.p2.head[1]) - exp,
+        colSize + exp * 2,
+        p2SegH + exp * 2,
+      );
       ctx.fillStyle = '#111111';
     }
     ctx.globalAlpha = 1;
-    ctx.fillRect(state.p2.head[0] * colSize, state.p2.head[1] * rowSize, colSize, rowSize);
+    ctx.fillRect(state.p2.head[0] * colSize, p2SegTop(state.p2.head[1]), colSize, p2SegH);
     if (fbP2Surging) {
       const sp = 0.7 + 0.3 * Math.sin(nowFb / 80);
       ctx.globalAlpha = sp; ctx.strokeStyle = '#FF7200'; ctx.lineWidth = 2.5;
-      ctx.strokeRect(state.p2.head[0] * colSize - 2, state.p2.head[1] * rowSize - 2, colSize + 4, rowSize + 4);
+      ctx.strokeRect(state.p2.head[0] * colSize - 2, p2SegTop(state.p2.head[1]) - 2, colSize + 4, p2SegH + 4);
       ctx.globalAlpha = 1;
     }
     if (fbP2Amped) {
       const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
       ctx.globalAlpha = ap; ctx.strokeStyle = '#FFBB00'; ctx.lineWidth = 2;
-      ctx.strokeRect(state.p2.head[0] * colSize - 2, state.p2.head[1] * rowSize - 2, colSize + 4, rowSize + 4);
+      ctx.strokeRect(state.p2.head[0] * colSize - 2, p2SegTop(state.p2.head[1]) - 2, colSize + 4, p2SegH + 4);
       ctx.globalAlpha = 1;
     }
     if (fbP2Frozen) {
       ctx.globalAlpha = 0.7; ctx.strokeStyle = '#3090C8'; ctx.lineWidth = 2;
-      ctx.strokeRect(state.p2.head[0] * colSize - 2, state.p2.head[1] * rowSize - 2, colSize + 4, rowSize + 4);
+      ctx.strokeRect(state.p2.head[0] * colSize - 2, p2SegTop(state.p2.head[1]) - 2, colSize + 4, p2SegH + 4);
       ctx.globalAlpha = 1;
     }
     for (let i = 0; i < state.p2.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, p2Total, this.p2Pulses, nowFb);
       ctx.fillStyle = '#111111';
       ctx.globalAlpha = Math.min(1, 0.6 + boost * 0.36);
-      ctx.fillRect(state.p2.body[i][0] * colSize, state.p2.body[i][1] * rowSize, colSize, rowSize);
+      ctx.fillRect(state.p2.body[i][0] * colSize, p2SegTop(state.p2.body[i][1]), colSize, p2SegH);
       ctx.globalAlpha = 1;
       if (boost > 0.05) {
         ctx.globalAlpha = boost * 0.28;
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(state.p2.body[i][0] * colSize + 1, state.p2.body[i][1] * rowSize + 1, colSize - 2, rowSize - 2);
+        ctx.fillRect(
+          state.p2.body[i][0] * colSize + 1,
+          p2SegTop(state.p2.body[i][1]) + 1,
+          colSize - 2,
+          p2SegH - 2,
+        );
       }
       ctx.globalAlpha = 1;
       if (fbP2Surging) {
         const sp = 0.5 + 0.3 * Math.sin(nowFb / 80 + i * 0.4);
         ctx.globalAlpha = sp; ctx.strokeStyle = '#FF7200'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(state.p2.body[i][0] * colSize - 1, state.p2.body[i][1] * rowSize - 1, colSize + 2, rowSize + 2);
+        ctx.strokeRect(state.p2.body[i][0] * colSize - 1, p2SegTop(state.p2.body[i][1]) - 1, colSize + 2, p2SegH + 2);
         ctx.globalAlpha = 1;
       }
       if (fbP2Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
         ctx.globalAlpha = ap; ctx.strokeStyle = '#FFBB00'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(state.p2.body[i][0] * colSize - 1, state.p2.body[i][1] * rowSize - 1, colSize + 2, rowSize + 2);
+        ctx.strokeRect(state.p2.body[i][0] * colSize - 1, p2SegTop(state.p2.body[i][1]) - 1, colSize + 2, p2SegH + 2);
         ctx.globalAlpha = 1;
       }
     }

@@ -50,7 +50,13 @@ import {
   wrapSnakeHeadRef,
   type PowerUpPlayerIndex,
 } from '@/game/engine/powerups';
+import {
+  clearControllerTests,
+  setControllerTestBySeat,
+  type GameSeatIndex,
+} from '@/game/controllerTest';
 
+export { clearControllerTests, setControllerTestBySeat, type GameSeatIndex } from '@/game/controllerTest';
 export { getSnakeEffects } from '@/game/engine/powerups';
 export type { PowerUpPlayerIndex, SnakePowerUpEffects } from '@/game/engine/powerups';
 
@@ -217,6 +223,9 @@ export function createGameState(args: CreateStateArgs): GameState {
     powerUpRespawnCooldownTick: POWERUP_FIRST_SPAWN_TICKS,
     convergenceWallClosed: false,
     extraSnakes: [],
+    controllerTestP1: false,
+    controllerTestP2: false,
+    controllerTestExtra: [],
   };
 
   const teamMode = args.teamMode ?? 'solo';
@@ -245,6 +254,7 @@ export function createGameState(args: CreateStateArgs): GameState {
       makeExtraSnake([46, 20], 'Left', 1, FFA_GHOST_COLOR, names.extra0Name, fTier, p3Human),
       makeExtraSnake([4, 20], 'Right', 1, FFA_SPECTER_COLOR, names.extra1Name, fTier, p4Human),
     ];
+    state.controllerTestExtra = [false, false];
     initFfaEconomy(state, p1, p2);
   }
 
@@ -303,6 +313,16 @@ export function applyTerminalGameOutcome(state: GameState): boolean {
     state.winnerName = state.p1Name;
   }
   return true;
+}
+
+/** Legacy pre-start “controller test”: any held direction key bobs the snake visually. */
+export function setControllerTestHeld(state: GameState, player: PlayerId, held: boolean): void {
+  setControllerTestBySeat(state, player === 'P1' ? 0 : 1, held);
+}
+
+/** FFA P3/P4 (`extraSnakes[0]` / `[1]`). */
+export function setExtraControllerTestHeld(state: GameState, extraIndex: 0 | 1, held: boolean): void {
+  setControllerTestBySeat(state, (extraIndex + 2) as GameSeatIndex, held);
 }
 
 export function setWantedDirection(
@@ -423,6 +443,7 @@ export function stepGame(state: GameState): TickResult {
     if (state.countdownTicks > COUNTDOWN_END_TICK) {
       state.gameStarted = true;
       state.countdownStart = false;
+      clearControllerTests(state);
     }
   }
 
