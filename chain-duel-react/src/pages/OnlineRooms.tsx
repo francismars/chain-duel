@@ -33,7 +33,8 @@ const TAB_ORDER: OnlineTab[] = ['live', 'history', 'hof'];
 type OnlineMode = 'create' | 'join';
 type OnlineTab = 'live' | 'history' | 'hof';
 
-const BUYIN_MIN = 10;
+const BUYIN_MIN = 100;
+const BUYIN_DEFAULT = 1000;
 const BUYIN_MAX = 1_000_000;
 const BUYIN_STEP = 10;
 const BUYIN_STEP_FAST = 50;
@@ -156,7 +157,7 @@ export default function OnlineRooms() {
     return 'live';
   });
   const [onlineMode, setOnlineMode] = useState<OnlineMode>('create');
-  const [buyin, setBuyin] = useState('100');
+  const [buyin, setBuyin] = useState(String(BUYIN_DEFAULT));
   const [roomCode, setRoomCode] = useState('');
   const [error, setError] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
