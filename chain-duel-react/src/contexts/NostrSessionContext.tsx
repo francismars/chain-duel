@@ -179,6 +179,7 @@ export function NostrSessionProvider({ children }: { children: ReactNode }) {
       setState((prev) => ({ ...prev, linking: true, linkError: null }));
       try {
         await linkAppNostrSession(socket, signerMode);
+        setState((prev) => ({ ...prev, linking: false, linkError: null }));
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Link failed';
         setState((prev) => ({ ...prev, linking: false, linkError: msg }));

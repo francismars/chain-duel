@@ -21,13 +21,16 @@ export function linkAppNostrSession(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const timeoutMs = signerMode === 'nip46' ? NIP46_LINK_TIMEOUT_MS : LINK_TIMEOUT_MS;
+    let challengeReceived = false;
+    let confirmSent = false;
+
     const timeout = window.setTimeout(() => {
       cleanup();
       const hint =
         signerMode === 'nip46'
-          ? ' Open Primal on your phone and tap Allow when prompted.'
+          ? ' Check that the game server is reachable and try again.'
           : '';
-      reject(new Error(`Timed out waiting for Nostr session link.${hint}`));
+      reject(new Error(`Timed out linking Nostr to the game server.${hint}`));
     }, timeoutMs);
 
     const onChallenge = async (payload: unknown) => {
@@ -35,10 +38,14 @@ export function linkAppNostrSession(
       if (!parsed) {
         return;
       }
+      challengeReceived = true;
+      console.log('[NIP-46] linkAppNostrSession: signing kind-1 challenge…');
       try {
         const signed = await signOnlineSeatLinkChallenge({
           challenge: parsed.challenge,
         });
+        confirmSent = true;
+        console.log('[NIP-46] linkAppNostrSession: challenge signed, confirming with server…');
         socket.emit('confirmAppNostrLink', {
           event: signed as unknown as Record<string, unknown>,
           signerMode,
@@ -55,14 +62,17 @@ export function linkAppNostrSession(
         return;
       }
       if (parsed.ok) {
+        console.log('[NIP-46] linkAppNostrSession: ✓ server linked pubkey', parsed.pubkey?.slice(0, 12) + '…');
         cleanup();
         resolve();
         return;
       }
-      if (parsed.reason && parsed.reason !== 'challenge_denied') {
-        cleanup();
-        reject(new Error(parsed.reason));
+      // Ignore stale ok:false from getAppNostrSession before we finish linking.
+      if (!challengeReceived && !confirmSent) {
+        return;
       }
+      cleanup();
+      reject(new Error(parsed.reason ?? 'Nostr session link failed'));
     };
 
     const cleanup = () => {
@@ -73,6 +83,7 @@ export function linkAppNostrSession(
 
     socket.on('resAppNostrLinkChallenge', onChallenge);
     socket.on('resAppNostrSession', onSession);
+    console.log('[NIP-46] linkAppNostrSession: requesting server challenge…');
     socket.emit('requestAppNostrLinkChallenge');
   });
 }

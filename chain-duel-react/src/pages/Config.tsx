@@ -141,8 +141,59 @@ export default function Config() {
     return () => setNip46AuthUrlHandler(null);
   }, []);
 
+  // Primal/NIP-46 pairing is done locally; finish by linking pubkey to the socket session on marspay.
   useEffect(() => {
-    if (nostrSignedIn || serverLinking || hasStoredNip46Session()) {
+    if (nostrSignedIn || serverLinking || nostrBusy) {
+      return;
+    }
+    if (loginTab !== 'nip46' || !hasStoredNip46Session()) {
+      return;
+    }
+    if (!socket?.connected) {
+      return;
+    }
+    if (nip46ResumeLinkRef.current) {
+      return;
+    }
+    nip46ResumeLinkRef.current = true;
+
+    setNostrBusy(true);
+    setNostrError(null);
+    void (async () => {
+      try {
+        const recovered = await recoverNip46UserPubkey();
+        if (recovered) {
+          localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, recovered);
+        }
+        await linkToServer('nip46');
+        playSfxRef.current(SFX.MENU_CONFIRM);
+        if (returnTo) {
+          navigate(returnTo, { replace: true });
+        }
+      } catch (e) {
+        setNostrError(
+          e instanceof Error ? e.message : 'Could not link Nostr identity to game server.'
+        );
+      } finally {
+        setNostrBusy(false);
+      }
+    })();
+  }, [
+    loginTab,
+    nostrSignedIn,
+    serverLinking,
+    nostrBusy,
+    socket?.connected,
+    linkToServer,
+    navigate,
+    returnTo,
+  ]);
+
+  useEffect(() => {
+    if (nostrSignedIn || serverLinking) {
+      return;
+    }
+    if (hasStoredNip46Session()) {
       return;
     }
     if (loginTab !== 'nip46') {
@@ -173,6 +224,7 @@ export default function Config() {
       void finished
         .then(async (pk) => {
           nip46PairingDoneRef.current = true;
+          nip46ResumeLinkRef.current = true;
           setNostrBusy(true);
           setNostrError(null);
           try {
@@ -383,6 +435,7 @@ export default function Config() {
 
   const handleNostrSignOut = useCallback(() => {
     nip46ResumeLinkRef.current = false;
+    nip46PairingDoneRef.current = false;
     signOutNostrSession();
     setNostrPubkeyHex(null);
     setProfile(null);
@@ -453,7 +506,7 @@ export default function Config() {
 
   const retryNip46ServerLink = useCallback(() => {
     setNostrError(null);
-    nip46ResumeLinkRef.current = false;
+    nip46ResumeLinkRef.current = true;
     setNostrBusy(true);
     void (async () => {
       try {
@@ -480,8 +533,8 @@ export default function Config() {
       {!nostrSignedIn ? (
         <>
           <p className="config-nostr-hint">
-            Sign in with an extension, <strong>Nostr Connect</strong>, or nsec. After pairing, approve the{' '}
-            <strong>sign-in</strong> prompt in your wallet — profile loads from our game server.
+            Sign in with an extension, <strong>Nostr Connect</strong>, or nsec. After you pair in Primal, we link your
+            pubkey to this game session on our server and load your profile.
           </p>
           {nostrError ? <p className="config-nostr-error">{nostrError}</p> : null}
           {serverLinkError && !nostrError ? (
@@ -491,7 +544,16 @@ export default function Config() {
           {pendingNip46ServerLink ? (
             <div className="config-nip46-auth-banner" role="status">
               <p className="config-nip46-auth-banner__text">
-                Primal is connected. Open the app and tap <strong>Allow</strong> on the sign-in request to finish.
+                {nostrBusy || serverLinking ? (
+                  <>
+                    Primal is connected. <strong>Linking to the game server…</strong>
+                  </>
+                ) : (
+                  <>
+                    Primal is connected. We could not finish linking to the game server — check that marspay is running,
+                    then retry.
+                  </>
+                )}
               </p>
               <Button
                 type="button"
@@ -499,17 +561,14 @@ export default function Config() {
                 onClick={retryNip46ServerLink}
                 disabled={nostrBusy || serverLinking}
               >
-                {nostrBusy || serverLinking ? 'Waiting for approval…' : 'Retry server link'}
+                {nostrBusy || serverLinking ? 'Linking to game server…' : 'Retry server link'}
               </Button>
             </div>
           ) : null}
 
-          {serverLinking ? (
+          {serverLinking && !pendingNip46ServerLink ? (
             <p className="config-nostr-hint config-nostr-hint--linking" role="status">
-              Linking to game server…{' '}
-              {getStoredSignerMode() === 'nip46'
-                ? 'Approve the sign-in request in Primal.'
-                : 'Complete the signing prompt if shown.'}
+              Linking to game server… Complete the signing prompt if your wallet shows one.
             </p>
           ) : null}
 

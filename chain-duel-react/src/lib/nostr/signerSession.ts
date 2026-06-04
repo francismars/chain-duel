@@ -3,10 +3,9 @@
  * @see https://nostrconnect.org/
  *
  * Architecture:
- * - BunkerSigner.fromURI (nostr-tools) for QR handshake only
- * - Raw WebSockets + NIP-44 encryption for all post-handshake RPC (per NIP-46 spec)
- *   (NPool/NRelay1/NConnectSigner have transport issues in Vite-bundled environment)
- * - Dual NIP-44/NIP-04 decrypt for responses (some signers may use NIP-04)
+ * - BunkerSigner + SimplePool for pairing and all post-handshake RPC (sign_event, etc.)
+ * - Raw WebSockets kept only as a last-resort fallback if BunkerSigner cannot be opened
+ * - Dual NIP-44/NIP-04 decrypt on the raw path (some signers may use NIP-04)
  */
 
 import {
@@ -51,16 +50,47 @@ export const NSEC_SESSION_SK_KEY = 'arcadeNostrNsecSkHex';
 
 export type StoredSignerMode = 'extension' | 'nip46' | 'nsec';
 
+/** Relays advertised in nostrconnect:// QR — keep small; pool opens every URL. */
 export const DEFAULT_NOSTR_CONNECT_RELAYS: string[] = [
   'wss://relay.primal.net',
   'wss://premium.primal.net',
   'wss://relay.damus.io',
   'wss://nos.lol',
-  'wss://relay.snort.social',
-  'wss://purplepag.es',
-  'wss://relay.nostr.band',
-  'wss://relay.nsecbunker.com',
 ];
+
+/** Often unreachable in Firefox/WSL — drop from stored bunker pointers. */
+const BLOCKED_RELAY_HOSTS = new Set([
+  'relay.nostr.band',
+  'relay.nsecbunker.com',
+  'relay.snort.social',
+  'purplepag.es',
+]);
+
+function normalizeRelayUrl(url: string): string {
+  return url.trim().replace(/\/+$/, '');
+}
+
+/** Prefer Primal relays; strip hosts that spam connection errors in the browser. */
+export function sanitizeNip46Relays(relays: string[]): string[] {
+  const filtered = relays.map(normalizeRelayUrl).filter((url) => {
+    try {
+      return !BLOCKED_RELAY_HOSTS.has(new URL(url).hostname);
+    } catch {
+      return false;
+    }
+  });
+  const merged = [...new Set([...filtered, ...DEFAULT_NOSTR_CONNECT_RELAYS])];
+  return merged.slice(0, 6);
+}
+
+function withTimeout<T>(label: string, p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms);
+    }),
+  ]);
+}
 
 const NOSTR_CONNECT_PAIR_WAIT_MS = 8 * 60 * 1000;
 const DBG = '[NIP-46]';
@@ -83,7 +113,8 @@ async function rawNip46Rpc(
   const { clientSk, signerPubkey, relays, timeoutMs = 60_000 } = opts;
   const skHex = bytesToHex(clientSk);
   const clientPubkey = getPublicKey(clientSk);
-  const relayList = [...new Set([...relays, ...DEFAULT_NOSTR_CONNECT_RELAYS])];
+  const relayList = sanitizeNip46Relays(relays);
+  const signerPubkeyNorm = signerPubkey.toLowerCase();
 
   const reqId = crypto.randomUUID();
   const requestPayload = JSON.stringify({ id: reqId, method, params });
@@ -139,8 +170,9 @@ async function rawNip46Rpc(
           // No `authors` filter — Primal may respond from user's key, not signerPubkey
           ws.send(JSON.stringify(['REQ', subId, {
             kinds: [24133],
+            authors: [signerPubkeyNorm],
             '#p': [clientPubkey],
-            since: Math.floor(Date.now() / 1000) - 5,
+            since: Math.floor(Date.now() / 1000) - 30,
           }]));
           ws.send(JSON.stringify(['EVENT', requestEvent]));
         } catch { /* ignore */ }
@@ -191,8 +223,11 @@ async function rawNip46Rpc(
 
 let nip46Session: { clientSk: Uint8Array; bp: BunkerPointer } | null = null;
 
-/** SimplePool only used transiently by BunkerSigner.fromURI for the QR handshake. */
-let handshakePool: SimplePool | null = null;
+/** Live NIP-46 signer (same transport that completed the QR handshake). */
+let activeBunkerSigner: BunkerSigner | null = null;
+
+/** Shared pool for BunkerSigner — destroyed on disposeNip46. */
+let nip46Pool: SimplePool | null = null;
 
 // ---------------------------------------------------------------------------
 // Session management
@@ -209,6 +244,9 @@ function ensureSession(): { clientSk: Uint8Array; bp: BunkerPointer } | null {
   try { bp = JSON.parse(bpRaw) as BunkerPointer; } catch { return null; }
   if (!bp.pubkey || !Array.isArray(bp.relays) || bp.relays.length === 0) return null;
 
+  bp = { ...bp, relays: sanitizeNip46Relays(bp.relays) };
+  localStorage.setItem(NIP46_BP_KEY, JSON.stringify(bp));
+
   nip46Session = { clientSk: hexToBytes(skHex), bp };
   return nip46Session;
 }
@@ -217,13 +255,68 @@ function ensureSession(): { clientSk: Uint8Array; bp: BunkerPointer } | null {
 // Cleanup
 // ---------------------------------------------------------------------------
 
-function disposeHandshakePool(): void {
-  if (handshakePool) { handshakePool.destroy(); handshakePool = null; }
+function getNip46Pool(): SimplePool {
+  if (!nip46Pool) {
+    nip46Pool = createHandshakePool();
+  }
+  return nip46Pool;
+}
+
+function disposeNip46Pool(): void {
+  if (nip46Pool) {
+    nip46Pool.destroy();
+    nip46Pool = null;
+  }
 }
 
 function disposeNip46(): void {
   nip46Session = null;
-  disposeHandshakePool();
+  if (activeBunkerSigner) {
+    void activeBunkerSigner.close().catch(() => {});
+    activeBunkerSigner = null;
+  }
+  disposeNip46Pool();
+}
+
+/** Open or restore the live BunkerSigner (SimplePool subscription — same path as QR pairing). */
+async function ensureBunkerSigner(): Promise<BunkerSigner | null> {
+  if (activeBunkerSigner) {
+    console.log(DBG, 'ensureBunkerSigner: reuse active connection');
+    return activeBunkerSigner;
+  }
+
+  const sess = ensureSession();
+  if (!sess) {
+    console.warn(DBG, 'ensureBunkerSigner: no stored session');
+    return null;
+  }
+
+  console.log(DBG, 'ensureBunkerSigner: opening bunker', sess.bp.pubkey.slice(0, 12) + '…', sess.bp.relays);
+
+  const signer = BunkerSigner.fromBunker(sess.clientSk, sess.bp, {
+    pool: getNip46Pool(),
+    onauth: (url) => {
+      authUrlHandler?.(url);
+    },
+  });
+
+  // Nostr Connect QR already completed the handshake — do not call connect() again
+  // (Primal often ignores it on restore and it blocks sign_event for ~12s+).
+  activeBunkerSigner = signer;
+  sess.bp = signer.bp;
+  nip46Session = sess;
+  localStorage.setItem(NIP46_BP_KEY, JSON.stringify(signer.bp));
+  console.log(DBG, 'ensureBunkerSigner: ready on', signer.bp.relays.join(', '));
+  return signer;
+}
+
+function persistPubkeyFromSigned(signed: Record<string, unknown>): void {
+  const signedPk = typeof signed.pubkey === 'string' ? (signed.pubkey as string).toLowerCase() : null;
+  const currentPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY)?.toLowerCase();
+  if (signedPk && /^[0-9a-f]{64}$/.test(signedPk) && signedPk !== currentPk) {
+    console.log(DBG, '[sign] ✓ correcting pubkey:', currentPk?.slice(0, 12), '→', signedPk.slice(0, 12));
+    localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, signedPk);
+  }
 }
 
 export function disposeNostrConnectPairingAttempt(): void {
@@ -278,7 +371,50 @@ function resolveNostrConnectAppUrl(explicit?: string): string | undefined {
 }
 
 function createHandshakePool(): SimplePool {
-  return new SimplePool({ maxWaitForConnection: 20_000 } as ConstructorParameters<typeof SimplePool>[0]);
+  return new SimplePool({ maxWaitForConnection: 8_000 } as ConstructorParameters<typeof SimplePool>[0]);
+}
+
+async function signEventViaNip46(
+  ev: import('@/types/nostr-nip07').NostrUnsignedEvent | import('nostr-tools').EventTemplate,
+  timeoutMs: number,
+): Promise<import('@/types/nostr-nip07').NostrSignedEvent> {
+  const bunker = await ensureBunkerSigner();
+  if (bunker) {
+    const kind = (ev as { kind?: number }).kind;
+    console.log(DBG, '[sign] BunkerSigner.signEvent kind:', kind, '(open Primal if nothing happens)');
+    const signed = await Promise.race([
+      bunker.signEvent(ev as import('nostr-tools').EventTemplate),
+      new Promise<never>((_, reject) => {
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                `sign_event timed out after ${timeoutMs / 1000}s. Open Primal and approve the sign request.`,
+              ),
+            ),
+          timeoutMs,
+        );
+      }),
+    ]);
+    console.log(DBG, '[sign] ✓ BunkerSigner signed kind:', kind);
+    persistPubkeyFromSigned(signed as unknown as Record<string, unknown>);
+    return signed as unknown as import('@/types/nostr-nip07').NostrSignedEvent;
+  }
+
+  const sess = ensureSession();
+  if (!sess) {
+    throw new Error('no_nostr_signer');
+  }
+  console.log(DBG, '[sign] rawNip46Rpc fallback kind:', (ev as { kind?: number }).kind);
+  const resp = await rawNip46Rpc('sign_event', [JSON.stringify(ev)], {
+    clientSk: sess.clientSk,
+    signerPubkey: sess.bp.pubkey,
+    relays: sess.bp.relays,
+    timeoutMs,
+  });
+  const parsed = JSON.parse(resp.result) as Record<string, unknown>;
+  persistPubkeyFromSigned(parsed);
+  return parsed as unknown as import('@/types/nostr-nip07').NostrSignedEvent;
 }
 
 // ---------------------------------------------------------------------------
@@ -294,7 +430,7 @@ export function beginNostrConnectPairing(opts: {
 }): NostrConnectPairing {
   sessionStorage.removeItem(NSEC_SESSION_SK_KEY);
   disposeNip46();
-  handshakePool = createHandshakePool();
+  const pool = getNip46Pool();
 
   const clientSk = generateSecretKey();
   const clientPubkey = getPublicKey(clientSk);
@@ -302,7 +438,9 @@ export function beginNostrConnectPairing(opts: {
   crypto.getRandomValues(secretBytes);
   const secret = bytesToHex(secretBytes);
 
-  const relays = opts.relays?.length ? opts.relays : [...DEFAULT_NOSTR_CONNECT_RELAYS];
+  const relays = sanitizeNip46Relays(
+    opts.relays?.length ? opts.relays : [...DEFAULT_NOSTR_CONNECT_RELAYS],
+  );
 
   const connectionURI = createNostrConnectURI({
     clientPubkey,
@@ -312,7 +450,7 @@ export function beginNostrConnectPairing(opts: {
     url: resolveNostrConnectAppUrl(opts.appUrl),
   });
 
-  console.log(DBG, 'pairing started — client:', clientPubkey.slice(0, 12) + '…');
+  console.log(DBG, 'pairing started — client:', clientPubkey.slice(0, 12) + '…', 'relays:', relays);
 
   const finished = (async (): Promise<string> => {
     const signal = opts.signal;
@@ -325,43 +463,42 @@ export function beginNostrConnectPairing(opts: {
       console.log(DBG, 'waiting for signer handshake…');
       const signer = await BunkerSigner.fromURI(
         clientSk, connectionURI,
-        { pool: handshakePool!, onauth: (url) => { authUrlHandler?.(url); } },
+        { pool, onauth: (url) => { authUrlHandler?.(url); } },
         NOSTR_CONNECT_PAIR_WAIT_MS,
       );
       console.log(DBG, '✓ handshake — signer:', signer.bp.pubkey.slice(0, 12) + '…');
       opts.onHandshake?.();
 
-      disposeHandshakePool();
-      void signer.close();
-
-      // Store session for raw WS RPC
-      const bp = signer.bp;
-      nip46Session = { clientSk, bp };
-
-      // Try getPublicKey via raw WS (10s, best-effort)
-      let remotePubkey = bp.pubkey;
-      console.log(DBG, 'resolving pubkey (approve on signer if prompted)…');
       try {
-        const resp = await rawNip46Rpc('get_public_key', [], {
-          clientSk, signerPubkey: bp.pubkey,
-          relays: bp.relays, timeoutMs: 60_000,
-        });
-        if (resp.result && /^[0-9a-f]{64}$/i.test(resp.result)) {
-          remotePubkey = resp.result.toLowerCase();
-          console.log(DBG, '✓ get_public_key:', remotePubkey);
+        const switched = await withTimeout('switch_relays', signer.switchRelays(), 12_000);
+        if (switched) {
+          console.log(DBG, 'switch_relays →', signer.bp.relays.join(', '));
         }
-      } catch (err) {
-        console.log(DBG, 'get_public_key timeout — using signer key as placeholder');
+      } catch (e) {
+        console.warn(DBG, 'switch_relays skipped —', (e as Error).message);
+      }
+
+      signer.bp = { ...signer.bp, relays: sanitizeNip46Relays(signer.bp.relays) };
+      activeBunkerSigner = signer;
+      nip46Session = { clientSk, bp: signer.bp };
+
+      console.log(DBG, 'resolving user pubkey via BunkerSigner…');
+      let remotePubkey = signer.bp.pubkey;
+      try {
+        remotePubkey = await signer.getPublicKey();
+        console.log(DBG, '✓ get_public_key:', remotePubkey.slice(0, 12) + '…');
+      } catch {
+        console.log(DBG, 'get_public_key failed — using bunker pubkey as placeholder');
       }
 
       const pubkey = normalizeNostrPubkeyHex(remotePubkey);
-      const isPlaceholder = pubkey === bp.pubkey.toLowerCase();
+      const isPlaceholder = pubkey === signer.bp.pubkey.toLowerCase();
       if (!isPlaceholder) console.log(DBG, '✓ user:', npubEncode(pubkey));
 
       localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pubkey);
       localStorage.setItem(SIGNER_MODE_KEY, 'nip46');
       localStorage.setItem(NIP46_CLIENT_SK_KEY, bytesToHex(clientSk));
-      localStorage.setItem(NIP46_BP_KEY, JSON.stringify(bp));
+      localStorage.setItem(NIP46_BP_KEY, JSON.stringify(signer.bp));
 
       return pubkey;
     } catch (err) {
@@ -408,22 +545,30 @@ export async function connectNostrConnect(bunkerInput: string): Promise<string> 
 
   try {
     nip46Session = { clientSk, bp };
-
-    if (bp.secret) {
-      await rawNip46Rpc('connect', [getPublicKey(clientSk), bp.secret], {
-        clientSk, signerPubkey: bp.pubkey, relays: bp.relays, timeoutMs: 15_000,
-      });
-    }
-
-    const resp = await rawNip46Rpc('get_public_key', [], {
-      clientSk, signerPubkey: bp.pubkey, relays: bp.relays, timeoutMs: 15_000,
+    const signer = BunkerSigner.fromBunker(clientSk, bp, {
+      pool: getNip46Pool(),
+      onauth: (url) => {
+        authUrlHandler?.(url);
+      },
     });
-    const pubkey = normalizeNostrPubkeyHex(resp.result);
+    if (bp.secret) {
+      await signer.connect();
+    }
+    try {
+      await withTimeout('switch_relays', signer.switchRelays(), 12_000);
+    } catch {
+      /* optional */
+    }
+    signer.bp = { ...signer.bp, relays: sanitizeNip46Relays(signer.bp.relays) };
+    activeBunkerSigner = signer;
+    nip46Session = { clientSk, bp: signer.bp };
+
+    const pubkey = normalizeNostrPubkeyHex(await signer.getPublicKey());
 
     localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pubkey);
     localStorage.setItem(SIGNER_MODE_KEY, 'nip46');
     localStorage.setItem(NIP46_CLIENT_SK_KEY, bytesToHex(clientSk));
-    localStorage.setItem(NIP46_BP_KEY, JSON.stringify(bp));
+    localStorage.setItem(NIP46_BP_KEY, JSON.stringify(signer.bp));
 
     return pubkey;
   } catch (err) {
@@ -472,33 +617,26 @@ export async function getActiveNostrSigner(): Promise<NostrNip07Provider | null>
   const storedPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
 
   if (mode === 'nip46') {
-    const sess = ensureSession();
-    if (!sess) return null;
+    if (!ensureSession()) return null;
 
     return {
-      getPublicKey: async () => localStorage.getItem(STORED_NOSTR_PUBKEY_KEY) ?? '',
+      getPublicKey: async () => {
+        const bunker = await ensureBunkerSigner();
+        if (bunker) {
+          try {
+            const pk = await bunker.getPublicKey();
+            localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, normalizeNostrPubkeyHex(pk));
+            return pk;
+          } catch {
+            /* fall through */
+          }
+        }
+        return localStorage.getItem(STORED_NOSTR_PUBKEY_KEY) ?? '';
+      },
       signEvent: async (ev) => {
         const kind = (ev as { kind?: number }).kind;
-        console.log(DBG, '[sign] signEvent kind:', kind);
-        const resp = await rawNip46Rpc(
-          'sign_event',
-          [JSON.stringify(ev)],
-          {
-            clientSk: sess.clientSk,
-            signerPubkey: sess.bp.pubkey,
-            relays: sess.bp.relays,
-            timeoutMs: kind === 9734 ? 90_000 : 60_000,
-          },
-        );
-        const signed = JSON.parse(resp.result) as Record<string, unknown>;
-        // Auto-correct pubkey
-        const signedPk = typeof signed.pubkey === 'string' ? (signed.pubkey as string).toLowerCase() : null;
-        const currentPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY)?.toLowerCase();
-        if (signedPk && /^[0-9a-f]{64}$/.test(signedPk) && signedPk !== currentPk) {
-          console.log(DBG, '[sign] ✓ correcting pubkey:', currentPk?.slice(0, 12), '→', signedPk.slice(0, 12));
-          localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, signedPk);
-        }
-        return signed as unknown as import('@/types/nostr-nip07').NostrSignedEvent;
+        const timeoutMs = kind === 9734 ? 90_000 : 60_000;
+        return signEventViaNip46(ev, timeoutMs);
       },
     };
   }
@@ -546,21 +684,19 @@ export type Nip46PingResult = {
 
 export async function pingNip46Signer(): Promise<Nip46PingResult> {
   console.log(DBG, '[ping] verifying session…');
-  const sess = ensureSession();
-  if (!sess) return { status: 'unavailable' };
+  if (!ensureSession()) return { status: 'unavailable' };
 
   try {
-    const resp = await rawNip46Rpc(
-      'sign_event',
-      [JSON.stringify({
-        kind: 27235, content: '',
+    const signed = await signEventViaNip46(
+      {
+        kind: 27235,
+        content: '',
         tags: [['u', 'https://chainduel.app'], ['method', 'GET']],
         created_at: Math.floor(Date.now() / 1000),
-      })],
-      { clientSk: sess.clientSk, signerPubkey: sess.bp.pubkey, relays: sess.bp.relays, timeoutMs: 30_000 },
+      },
+      30_000,
     );
-    const signed = JSON.parse(resp.result) as Record<string, unknown>;
-    const userPk = typeof signed.pubkey === 'string' ? (signed.pubkey as string).toLowerCase() : null;
+    const userPk = typeof signed.pubkey === 'string' ? signed.pubkey.toLowerCase() : null;
     if (userPk && /^[0-9a-f]{64}$/.test(userPk)) {
       const storedPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY)?.toLowerCase();
       if (userPk !== storedPk) {
@@ -587,21 +723,19 @@ export async function recoverNip46UserPubkey(): Promise<string | null> {
   const storedPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
   if (!storedPk) return null;
 
-  const sess = ensureSession();
-  if (!sess) return null;
+  if (!ensureSession()) return null;
 
   try {
-    const resp = await rawNip46Rpc(
-      'sign_event',
-      [JSON.stringify({
-        kind: 27235, content: '',
+    const signed = await signEventViaNip46(
+      {
+        kind: 27235,
+        content: '',
         tags: [['u', 'https://chainduel.app'], ['method', 'GET']],
         created_at: Math.floor(Date.now() / 1000),
-      })],
-      { clientSk: sess.clientSk, signerPubkey: sess.bp.pubkey, relays: sess.bp.relays, timeoutMs: 20_000 },
+      },
+      20_000,
     );
-    const signed = JSON.parse(resp.result) as Record<string, unknown>;
-    const recovered = typeof signed.pubkey === 'string' ? (signed.pubkey as string).toLowerCase() : null;
+    const recovered = typeof signed.pubkey === 'string' ? signed.pubkey.toLowerCase() : null;
     if (!recovered || !/^[0-9a-f]{64}$/.test(recovered)) return null;
     if (recovered === storedPk.toLowerCase()) return null;
     console.log(DBG, '[recover] ✓ corrected:', storedPk.slice(0, 12), '→', recovered.slice(0, 12));
