@@ -1,4 +1,5 @@
 import { getActiveNostrSigner, resolveSignerMode } from '@/lib/nostr/signerSession';
+import { createFlowTrace, withNip46SignFlow } from '@/lib/nostr/nip46Trace';
 
 const SIGN_TIMEOUT_MS = 45_000;
 const NIP46_SIGN_TIMEOUT_MS = 90_000;
@@ -32,9 +33,25 @@ export async function signChallengeBountyNote(unsigned: {
   tags: string[][];
   content: string;
 }) {
+  const trace = createFlowTrace('challenge', 'sign-bounty-note');
+  trace.step(
+    'start',
+    `tags=${unsigned.tags.length} content=${unsigned.content.length} chars — relay RPC follows as [relay]`,
+  );
+
   const signer = await getActiveNostrSigner();
   if (!signer) throw new Error('No Nostr signer found. Connect one on the Config page.');
   const timeout =
     resolveSignerMode() === 'nip46' ? NIP46_SIGN_TIMEOUT_MS : SIGN_TIMEOUT_MS;
-  return withSignTimeout('Victory note sign', signer.signEvent(unsigned), timeout);
+
+  try {
+    const signed = await withNip46SignFlow('bounty-note/kind-1', () =>
+      withSignTimeout('Victory note sign', signer.signEvent(unsigned), timeout),
+    );
+    trace.done(`event id=${(signed as { id?: string }).id?.slice(0, 12)}…`);
+    return signed;
+  } catch (err) {
+    trace.fail('sign', err);
+    throw err;
+  }
 }

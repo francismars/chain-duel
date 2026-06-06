@@ -15,6 +15,7 @@ import {
   STORED_NOSTR_PUBKEY_KEY,
   clearSignerSession,
   getStoredSignerMode,
+  setNip46AuthUrlHandler,
 } from '@/lib/nostr/signerSession';
 import { linkAppNostrSession } from '@/lib/nostr/linkAppNostrSession';
 import { useSocket } from '@/hooks/useSocket';
@@ -40,6 +41,8 @@ type NostrSessionContextValue = NostrSessionState & {
   signOut: () => void;
   linkToServer: (signerMode: StoredSignerMode) => Promise<void>;
   applyLocalSigner: (pubkey: string, mode: StoredSignerMode) => void;
+  pendingNip46AuthUrl: string | null;
+  clearPendingNip46AuthUrl: () => void;
 };
 
 const NostrSessionContext = createContext<NostrSessionContextValue | null>(null);
@@ -64,6 +67,7 @@ function profileFromPayload(profile: AppNostrProfile | undefined, pubkey: string
 
 export function NostrSessionProvider({ children }: { children: ReactNode }) {
   const { socket } = useSocket({ autoConnect: true });
+  const [pendingNip46AuthUrl, setPendingNip46AuthUrl] = useState<string | null>(null);
   const [state, setState] = useState<NostrSessionState>(() => ({
     signedIn: false,
     pubkey: null,
@@ -122,6 +126,15 @@ export function NostrSessionProvider({ children }: { children: ReactNode }) {
       linking: false,
       linkError: null,
     });
+  }, []);
+
+  useEffect(() => {
+    setNip46AuthUrlHandler((url) => setPendingNip46AuthUrl(url));
+    return () => setNip46AuthUrlHandler(null);
+  }, []);
+
+  const clearPendingNip46AuthUrl = useCallback(() => {
+    setPendingNip46AuthUrl(null);
   }, []);
 
   useEffect(() => {
@@ -196,8 +209,10 @@ export function NostrSessionProvider({ children }: { children: ReactNode }) {
       signOut,
       linkToServer,
       applyLocalSigner,
+      pendingNip46AuthUrl,
+      clearPendingNip46AuthUrl,
     }),
-    [state, refresh, signOut, linkToServer, applyLocalSigner]
+    [state, refresh, signOut, linkToServer, applyLocalSigner, pendingNip46AuthUrl, clearPendingNip46AuthUrl]
   );
 
   return (

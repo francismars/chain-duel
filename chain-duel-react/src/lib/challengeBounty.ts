@@ -1,6 +1,7 @@
 import type { Event } from 'nostr-tools';
 import type { Socket } from 'socket.io-client';
 import type { ClientToServerEvents, ServerToClientEvents } from '@/types/socket';
+import { createFlowTrace } from '@/lib/nostr/nip46Trace';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 
 type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -104,13 +105,41 @@ export function claimChallengeBounty(
   socket: GameSocket,
   payload: { claimToken: string; event: Event }
 ): Promise<ClaimChallengeBountyResponse> {
+  const trace = createFlowTrace('marspay', 'claim-bounty');
+  trace.step(
+    'start',
+    `token=${payload.claimToken.slice(0, 8)}… event=${payload.event.id?.slice(0, 12)}…`,
+  );
+
   return waitFor(
     socket,
     'resChallengeClaim',
-    () => socket.emit('claimChallengeBounty', { claimToken: payload.claimToken, event: payload.event as unknown as Record<string, unknown> }),
-    (p) => SocketBoundaryParsers.resChallengeClaim(p),
+    () => {
+      trace.step('emit claimChallengeBounty', `socket connected=${socket.connected}`);
+      socket.emit('claimChallengeBounty', {
+        claimToken: payload.claimToken,
+        event: payload.event as unknown as Record<string, unknown>,
+      });
+    },
+    (p) => {
+      const parsed = SocketBoundaryParsers.resChallengeClaim(p);
+      if (parsed == null) return null;
+      if (parsed.ok) {
+        trace.step(
+          'resChallengeClaim ok',
+          `eventId=${parsed.eventId.slice(0, 12)}… zapPaid=${parsed.zapPaid} sats=${parsed.bountySats}`,
+        );
+        trace.done(parsed.zapPaid ? 'zap paid' : `zap skipped: ${parsed.zapReason ?? 'unknown'}`);
+      } else {
+        trace.fail('resChallengeClaim', parsed.reason);
+      }
+      return parsed;
+    },
     60_000,
-  );
+  ).catch((err) => {
+    trace.fail('claim', err);
+    throw err;
+  });
 }
 
 export function retryChallengeZap(

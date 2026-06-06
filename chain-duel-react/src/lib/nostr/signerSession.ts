@@ -1,11 +1,10 @@
 /**
  * Unified Nostr signing: NIP-07 extension, Nostr Connect (NIP-46 / "bunker"), or nsec (session-only).
- * @see https://nostrconnect.org/
  *
- * Architecture:
- * - BunkerSigner + SimplePool for pairing and all post-handshake RPC (sign_event, etc.)
- * - Raw WebSockets kept only as a last-resort fallback if BunkerSigner cannot be opened
- * - Dual NIP-44/NIP-04 decrypt on the raw path (some signers may use NIP-04)
+ * Architecture (Primal / NIP-46):
+ * - BunkerSigner.fromURI for QR handshake only, then close
+ * - All RPC (get_public_key, sign_event, ping) via raw WebSocket to relays
+ * - Pubkey placeholder until first sign_event corrects it
  */
 
 import {
@@ -17,7 +16,7 @@ import {
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import { PlainKeySigner } from 'nostr-tools/signer';
 import { bytesToHex, hexToBytes } from 'nostr-tools/utils';
-import { decode as nip19Decode, npubEncode } from 'nostr-tools/nip19';
+import { decode as nip19Decode } from 'nostr-tools/nip19';
 import { SimplePool } from 'nostr-tools/pool';
 import { decrypt as nip04Decrypt } from 'nostr-tools/nip04';
 import {
@@ -27,6 +26,7 @@ import {
 } from 'nostr-tools/nip44';
 
 import type { NostrNip07Provider } from '@/types/nostr-nip07';
+import { consumePendingSignFlow, createFlowTrace, relayHost } from '@/lib/nostr/nip46Trace';
 
 export const STORED_NOSTR_PUBKEY_KEY = 'arcadeNostrPubkey';
 
@@ -96,10 +96,23 @@ const NOSTR_CONNECT_PAIR_WAIT_MS = 8 * 60 * 1000;
 const DBG = '[NIP-46]';
 
 // ---------------------------------------------------------------------------
-// Raw WebSocket NIP-46 RPC — proven to work with Primal
+// Raw WebSocket NIP-46 RPC (primary for Primal sign/ping after handshake)
 // ---------------------------------------------------------------------------
 
-/** Send a NIP-46 RPC over raw WebSockets with NIP-44 encryption (per spec). */
+/** Prefer Primal relays for RPC — fewer connections, faster responses. */
+function relaysForNip46Rpc(relays: string[]): string[] {
+  const all = sanitizeNip46Relays(relays);
+  const primal = all.filter((u) => {
+    try {
+      return new URL(u).hostname.includes('primal.net');
+    } catch {
+      return false;
+    }
+  });
+  if (primal.length >= 1) return primal;
+  return all.slice(0, 3);
+}
+
 async function rawNip46Rpc(
   method: string,
   params: string[],
@@ -108,17 +121,16 @@ async function rawNip46Rpc(
     signerPubkey: string;
     relays: string[];
     timeoutMs?: number;
+    traceFlow?: string;
   },
 ): Promise<{ id: string; result: string; error?: string }> {
-  const { clientSk, signerPubkey, relays, timeoutMs = 60_000 } = opts;
+  const { clientSk, signerPubkey, relays, timeoutMs = 60_000, traceFlow } = opts;
   const skHex = bytesToHex(clientSk);
   const clientPubkey = getPublicKey(clientSk);
-  const relayList = sanitizeNip46Relays(relays);
-  const signerPubkeyNorm = signerPubkey.toLowerCase();
+  const relayList = relaysForNip46Rpc(relays);
 
   const reqId = crypto.randomUUID();
   const requestPayload = JSON.stringify({ id: reqId, method, params });
-  // NIP-46 spec mandates NIP-44 encryption for all RPC traffic
   const convKey = getConversationKey(clientSk, signerPubkey);
   const encryptedContent = nip44Encrypt(requestPayload, convKey);
 
@@ -132,26 +144,83 @@ async function rawNip46Rpc(
     clientSk,
   );
 
-  console.log(DBG, `[rpc] ${method} id=${reqId.slice(0, 8)}… → ${relayList.length} relays`);
+  const filter = {
+    kinds: [24133],
+    '#p': [clientPubkey],
+    since: Math.floor(Date.now() / 1000) - 300,
+  };
+
+  const flow = traceFlow ?? method;
+  const trace = createFlowTrace('relay', flow);
+  trace.step(
+    'rpc start',
+    `id=${reqId.slice(0, 8)}… bunker=${signerPubkey.slice(0, 12)}… → ${relayList.map(relayHost).join(', ')}`,
+  );
 
   return new Promise((resolve, reject) => {
     let settled = false;
+    let requestPublished = false;
+    let publishReason = '';
     const sockets: WebSocket[] = [];
+    const wsHost = new WeakMap<WebSocket, string>();
     const subId = `rpc${reqId.slice(0, 8)}`;
+
+    const publishRequest = (reason: string) => {
+      if (requestPublished || settled) return;
+      requestPublished = true;
+      publishReason = reason;
+      let count = 0;
+      for (const ws of sockets) {
+        if (ws.readyState === WebSocket.OPEN) {
+          try {
+            ws.send(JSON.stringify(['EVENT', requestEvent]));
+            count += 1;
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      trace.step('EVENT published', `${reason} → ${count} open relay(s)`);
+    };
 
     const finish = (result: { id: string; result: string; error?: string } | null, err?: Error) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
+      clearTimeout(publishFallback);
       for (const ws of sockets) {
         try { ws.send(JSON.stringify(['CLOSE', subId])); ws.close(); } catch { /* ignore */ }
       }
       if (err) {
-        console.warn(DBG, `[rpc] ${method} failed:`, err.message);
+        trace.fail('rpc', err);
         reject(err);
       } else {
-        console.log(DBG, `[rpc] ${method} ✓ response received`);
+        trace.done(publishReason ? `via ${publishReason}` : undefined);
         resolve(result!);
+      }
+    };
+
+    const handlePlain = (plain: string, fromHost: string) => {
+      let parsed: { id?: string; result?: string; error?: string };
+      try {
+        parsed = JSON.parse(plain) as { id?: string; result?: string; error?: string };
+      } catch {
+        return;
+      }
+      if (parsed.id !== reqId) return;
+
+      if (parsed.result === 'auth_url' && parsed.error) {
+        trace.step('auth_url', `${fromHost} — open Primal to approve`);
+        authUrlHandler?.(parsed.error);
+        return;
+      }
+      if (parsed.error) {
+        finish(null, new Error(String(parsed.error)));
+        return;
+      }
+      if (parsed.result !== undefined) {
+        trace.step('RPC response', fromHost);
+        finish(parsed as { id: string; result: string; error?: string });
       }
     };
 
@@ -160,22 +229,22 @@ async function rawNip46Rpc(
       timeoutMs,
     );
 
+    const publishFallback = setTimeout(() => publishRequest('3s fallback (no EOSE)'), 3_000);
+
     for (const relayUrl of relayList) {
+      const host = relayHost(relayUrl);
       let ws: WebSocket;
       try { ws = new WebSocket(relayUrl); } catch { continue; }
       sockets.push(ws);
+      wsHost.set(ws, host);
 
       ws.onopen = () => {
+        trace.step(`${host} connected`, 'subscription REQ sent');
         try {
-          // No `authors` filter — Primal may respond from user's key, not signerPubkey
-          ws.send(JSON.stringify(['REQ', subId, {
-            kinds: [24133],
-            authors: [signerPubkeyNorm],
-            '#p': [clientPubkey],
-            since: Math.floor(Date.now() / 1000) - 30,
-          }]));
-          ws.send(JSON.stringify(['EVENT', requestEvent]));
-        } catch { /* ignore */ }
+          ws.send(JSON.stringify(['REQ', subId, filter]));
+        } catch {
+          /* ignore */
+        }
       };
 
       ws.onmessage = (msgEv) => {
@@ -183,38 +252,70 @@ async function rawNip46Rpc(
         void (async () => {
           try {
             const msg = JSON.parse(msgEv.data as string) as unknown[];
+            const fromHost = wsHost.get(ws) ?? host;
+            if (msg[0] === 'EOSE' && msg[1] === subId) {
+              publishRequest(`${fromHost} EOSE`);
+              return;
+            }
             if (msg[0] !== 'EVENT' || msg[1] !== subId) return;
             const ev = msg[2] as { pubkey?: string; content?: string; kind?: number };
             if (!ev || ev.kind !== 24133 || !ev.content || !ev.pubkey) return;
 
-            // Try NIP-44 first, then NIP-04 fallback
             let plain: string | null = null;
-            try {
-              const convKey = getConversationKey(clientSk, ev.pubkey);
-              plain = nip44Decrypt(ev.content, convKey);
-            } catch {
+            const storedUserPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY)?.toLowerCase();
+            const authorCandidates = [ev.pubkey, signerPubkey.toLowerCase()];
+            if (storedUserPk && /^[0-9a-f]{64}$/.test(storedUserPk) && !authorCandidates.includes(storedUserPk)) {
+              authorCandidates.push(storedUserPk);
+            }
+            for (const author of authorCandidates) {
+              try {
+                plain = nip44Decrypt(ev.content, getConversationKey(clientSk, author));
+                if (plain) break;
+              } catch {
+                /* try next */
+              }
+            }
+            if (!plain) {
               try {
                 plain = await nip04Decrypt(skHex, ev.pubkey, ev.content);
               } catch {
-                return; // neither worked — skip
+                try {
+                  plain = await nip04Decrypt(skHex, signerPubkey, ev.content);
+                } catch {
+                  return;
+                }
               }
             }
             if (!plain) return;
-
-            const parsed = JSON.parse(plain) as { id?: string; result?: string; error?: string };
-            if (parsed.id !== reqId) return;
-            if (parsed.error) {
-              finish(null, new Error(String(parsed.error)));
-              return;
-            }
-            finish(parsed as { id: string; result: string; error?: string });
+            handlePlain(plain, fromHost);
           } catch { /* ignore malformed */ }
         })();
       };
 
-      ws.onerror = () => { /* ignore — other relays may work */ };
+      ws.onerror = () => {
+        trace.step(`${host} error`, 'WebSocket error (other relays may work)');
+      };
     }
   });
+}
+
+async function nip46GetPublicKey(timeoutMs: number): Promise<string> {
+  const sess = ensureSession();
+  if (!sess) throw new Error('no_nostr_signer');
+  return rawNip46GetPublicKey(sess, timeoutMs);
+}
+
+async function rawNip46GetPublicKey(
+  sess: { clientSk: Uint8Array; bp: BunkerPointer },
+  timeoutMs: number,
+): Promise<string> {
+  const resp = await rawNip46Rpc('get_public_key', [], {
+    clientSk: sess.clientSk,
+    signerPubkey: sess.bp.pubkey,
+    relays: sess.bp.relays,
+    timeoutMs,
+  });
+  return normalizeNostrPubkeyHex(resp.result);
 }
 
 // ---------------------------------------------------------------------------
@@ -223,10 +324,7 @@ async function rawNip46Rpc(
 
 let nip46Session: { clientSk: Uint8Array; bp: BunkerPointer } | null = null;
 
-/** Live NIP-46 signer (same transport that completed the QR handshake). */
-let activeBunkerSigner: BunkerSigner | null = null;
-
-/** Shared pool for BunkerSigner — destroyed on disposeNip46. */
+/** Shared pool for QR handshake only — destroyed before raw RPC. */
 let nip46Pool: SimplePool | null = null;
 
 // ---------------------------------------------------------------------------
@@ -271,43 +369,15 @@ function disposeNip46Pool(): void {
 
 function disposeNip46(): void {
   nip46Session = null;
-  if (activeBunkerSigner) {
-    void activeBunkerSigner.close().catch(() => {});
-    activeBunkerSigner = null;
-  }
   disposeNip46Pool();
 }
 
-/** Open or restore the live BunkerSigner (SimplePool subscription — same path as QR pairing). */
-async function ensureBunkerSigner(): Promise<BunkerSigner | null> {
-  if (activeBunkerSigner) {
-    console.log(DBG, 'ensureBunkerSigner: reuse active connection');
-    return activeBunkerSigner;
-  }
-
-  const sess = ensureSession();
-  if (!sess) {
-    console.warn(DBG, 'ensureBunkerSigner: no stored session');
-    return null;
-  }
-
-  console.log(DBG, 'ensureBunkerSigner: opening bunker', sess.bp.pubkey.slice(0, 12) + '…', sess.bp.relays);
-
-  const signer = BunkerSigner.fromBunker(sess.clientSk, sess.bp, {
-    pool: getNip46Pool(),
-    onauth: (url) => {
-      authUrlHandler?.(url);
-    },
-  });
-
-  // Nostr Connect QR already completed the handshake — do not call connect() again
-  // (Primal often ignores it on restore and it blocks sign_event for ~12s+).
-  activeBunkerSigner = signer;
-  sess.bp = signer.bp;
-  nip46Session = sess;
-  localStorage.setItem(NIP46_BP_KEY, JSON.stringify(signer.bp));
-  console.log(DBG, 'ensureBunkerSigner: ready on', signer.bp.relays.join(', '));
-  return signer;
+function finishNip46Handshake(signer: BunkerSigner, clientSk: Uint8Array): BunkerPointer {
+  const bp = { ...signer.bp, relays: sanitizeNip46Relays(signer.bp.relays) };
+  nip46Session = { clientSk, bp };
+  void signer.close();
+  disposeNip46Pool();
+  return bp;
 }
 
 function persistPubkeyFromSigned(signed: Record<string, unknown>): void {
@@ -378,39 +448,17 @@ async function signEventViaNip46(
   ev: import('@/types/nostr-nip07').NostrUnsignedEvent | import('nostr-tools').EventTemplate,
   timeoutMs: number,
 ): Promise<import('@/types/nostr-nip07').NostrSignedEvent> {
-  const bunker = await ensureBunkerSigner();
-  if (bunker) {
-    const kind = (ev as { kind?: number }).kind;
-    console.log(DBG, '[sign] BunkerSigner.signEvent kind:', kind, '(open Primal if nothing happens)');
-    const signed = await Promise.race([
-      bunker.signEvent(ev as import('nostr-tools').EventTemplate),
-      new Promise<never>((_, reject) => {
-        setTimeout(
-          () =>
-            reject(
-              new Error(
-                `sign_event timed out after ${timeoutMs / 1000}s. Open Primal and approve the sign request.`,
-              ),
-            ),
-          timeoutMs,
-        );
-      }),
-    ]);
-    console.log(DBG, '[sign] ✓ BunkerSigner signed kind:', kind);
-    persistPubkeyFromSigned(signed as unknown as Record<string, unknown>);
-    return signed as unknown as import('@/types/nostr-nip07').NostrSignedEvent;
-  }
-
+  const kind = (ev as { kind?: number }).kind;
   const sess = ensureSession();
-  if (!sess) {
-    throw new Error('no_nostr_signer');
-  }
-  console.log(DBG, '[sign] rawNip46Rpc fallback kind:', (ev as { kind?: number }).kind);
+  if (!sess) throw new Error('no_nostr_signer');
+
+  const traceFlow = consumePendingSignFlow(`sign_event/kind-${kind ?? '?'}`);
   const resp = await rawNip46Rpc('sign_event', [JSON.stringify(ev)], {
     clientSk: sess.clientSk,
     signerPubkey: sess.bp.pubkey,
     relays: sess.bp.relays,
     timeoutMs,
+    traceFlow,
   });
   const parsed = JSON.parse(resp.result) as Record<string, unknown>;
   persistPubkeyFromSigned(parsed);
@@ -450,7 +498,8 @@ export function beginNostrConnectPairing(opts: {
     url: resolveNostrConnectAppUrl(opts.appUrl),
   });
 
-  console.log(DBG, 'pairing started — client:', clientPubkey.slice(0, 12) + '…', 'relays:', relays);
+  const trace = createFlowTrace('pairing', 'qr-connect');
+  trace.step('start', `client=${clientPubkey.slice(0, 12)}… relays=${relays.map(relayHost).join(', ')}`);
 
   const finished = (async (): Promise<string> => {
     const signal = opts.signal;
@@ -460,49 +509,28 @@ export function beginNostrConnectPairing(opts: {
     signal?.addEventListener('abort', onAbort, { once: true });
 
     try {
-      console.log(DBG, 'waiting for signer handshake…');
+      trace.step('waiting for handshake', 'BunkerSigner.fromURI + pool');
       const signer = await BunkerSigner.fromURI(
         clientSk, connectionURI,
-        { pool, onauth: (url) => { authUrlHandler?.(url); } },
+        { pool, onauth: (url) => { authUrlHandler?.(url); trace.step('auth_url', url.slice(0, 60)); } },
         NOSTR_CONNECT_PAIR_WAIT_MS,
       );
-      console.log(DBG, '✓ handshake — signer:', signer.bp.pubkey.slice(0, 12) + '…');
+      trace.step('handshake ok', `bunker=${signer.bp.pubkey.slice(0, 12)}…`);
       opts.onHandshake?.();
 
-      try {
-        const switched = await withTimeout('switch_relays', signer.switchRelays(), 12_000);
-        if (switched) {
-          console.log(DBG, 'switch_relays →', signer.bp.relays.join(', '));
-        }
-      } catch (e) {
-        console.warn(DBG, 'switch_relays skipped —', (e as Error).message);
-      }
-
       signer.bp = { ...signer.bp, relays: sanitizeNip46Relays(signer.bp.relays) };
-      activeBunkerSigner = signer;
-      nip46Session = { clientSk, bp: signer.bp };
-
-      console.log(DBG, 'resolving user pubkey via BunkerSigner…');
-      let remotePubkey = signer.bp.pubkey;
-      try {
-        remotePubkey = await signer.getPublicKey();
-        console.log(DBG, '✓ get_public_key:', remotePubkey.slice(0, 12) + '…');
-      } catch {
-        console.log(DBG, 'get_public_key failed — using bunker pubkey as placeholder');
-      }
-
-      const pubkey = normalizeNostrPubkeyHex(remotePubkey);
-      const isPlaceholder = pubkey === signer.bp.pubkey.toLowerCase();
-      if (!isPlaceholder) console.log(DBG, '✓ user:', npubEncode(pubkey));
+      const bp = finishNip46Handshake(signer, clientSk);
+      const pubkey = normalizeNostrPubkeyHex(bp.pubkey);
 
       localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pubkey);
       localStorage.setItem(SIGNER_MODE_KEY, 'nip46');
       localStorage.setItem(NIP46_CLIENT_SK_KEY, bytesToHex(clientSk));
-      localStorage.setItem(NIP46_BP_KEY, JSON.stringify(signer.bp));
+      localStorage.setItem(NIP46_BP_KEY, JSON.stringify(bp));
 
+      trace.done('session saved — user pubkey resolves on server-link sign');
       return pubkey;
     } catch (err) {
-      console.error(DBG, 'pairing FAILED:', err);
+      trace.fail('pairing', err);
       disposeNip46();
       throw err;
     } finally {
@@ -544,31 +572,33 @@ export async function connectNostrConnect(bunkerInput: string): Promise<string> 
   const clientSk = generateSecretKey();
 
   try {
-    nip46Session = { clientSk, bp };
+    const pool = getNip46Pool();
     const signer = BunkerSigner.fromBunker(clientSk, bp, {
-      pool: getNip46Pool(),
+      pool,
       onauth: (url) => {
         authUrlHandler?.(url);
       },
     });
     if (bp.secret) {
-      await signer.connect();
+      try {
+        await withTimeout('connect', signer.connect(), 12_000);
+      } catch {
+        /* optional */
+      }
     }
-    try {
-      await withTimeout('switch_relays', signer.switchRelays(), 12_000);
-    } catch {
-      /* optional */
-    }
-    signer.bp = { ...signer.bp, relays: sanitizeNip46Relays(signer.bp.relays) };
-    activeBunkerSigner = signer;
-    nip46Session = { clientSk, bp: signer.bp };
 
-    const pubkey = normalizeNostrPubkeyHex(await signer.getPublicKey());
+    const finishedBp = finishNip46Handshake(signer, clientSk);
+    let pubkey: string;
+    try {
+      pubkey = await rawNip46GetPublicKey({ clientSk, bp: finishedBp }, 10_000);
+    } catch {
+      pubkey = normalizeNostrPubkeyHex(finishedBp.pubkey);
+    }
 
     localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pubkey);
     localStorage.setItem(SIGNER_MODE_KEY, 'nip46');
     localStorage.setItem(NIP46_CLIENT_SK_KEY, bytesToHex(clientSk));
-    localStorage.setItem(NIP46_BP_KEY, JSON.stringify(signer.bp));
+    localStorage.setItem(NIP46_BP_KEY, JSON.stringify(finishedBp));
 
     return pubkey;
   } catch (err) {
@@ -621,21 +651,17 @@ export async function getActiveNostrSigner(): Promise<NostrNip07Provider | null>
 
     return {
       getPublicKey: async () => {
-        const bunker = await ensureBunkerSigner();
-        if (bunker) {
-          try {
-            const pk = await bunker.getPublicKey();
-            localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, normalizeNostrPubkeyHex(pk));
-            return pk;
-          } catch {
-            /* fall through */
-          }
+        const stored = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
+        if (stored) return stored;
+        try {
+          return await nip46GetPublicKey(8_000);
+        } catch {
+          return '';
         }
-        return localStorage.getItem(STORED_NOSTR_PUBKEY_KEY) ?? '';
       },
       signEvent: async (ev) => {
         const kind = (ev as { kind?: number }).kind;
-        const timeoutMs = kind === 9734 ? 90_000 : 60_000;
+        const timeoutMs = kind === 9734 ? 90_000 : 90_000;
         return signEventViaNip46(ev, timeoutMs);
       },
     };
@@ -684,33 +710,41 @@ export type Nip46PingResult = {
 
 export async function pingNip46Signer(): Promise<Nip46PingResult> {
   console.log(DBG, '[ping] verifying session…');
-  if (!ensureSession()) return { status: 'unavailable' };
+  const sess = ensureSession();
+  if (!sess) return { status: 'unavailable' };
 
+  const PING_MS = 8_000;
   try {
-    const signed = await signEventViaNip46(
-      {
-        kind: 27235,
-        content: '',
-        tags: [['u', 'https://chainduel.app'], ['method', 'GET']],
-        created_at: Math.floor(Date.now() / 1000),
-      },
-      30_000,
-    );
-    const userPk = typeof signed.pubkey === 'string' ? signed.pubkey.toLowerCase() : null;
-    if (userPk && /^[0-9a-f]{64}$/.test(userPk)) {
-      const storedPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY)?.toLowerCase();
-      if (userPk !== storedPk) {
-        console.log(DBG, '[ping] ✓ correcting pubkey:', storedPk?.slice(0, 12), '→', userPk.slice(0, 12));
-        localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, userPk);
-        return { status: 'ok', recoveredPubkey: userPk };
-      }
-      console.log(DBG, '[ping] ✓ signer live');
-      return { status: 'ok' };
+    const resp = await rawNip46Rpc('ping', [], {
+      clientSk: sess.clientSk,
+      signerPubkey: sess.bp.pubkey,
+      relays: sess.bp.relays,
+      timeoutMs: PING_MS,
+    });
+    if (resp.result !== 'pong') {
+      throw new Error(`expected pong, got ${resp.result}`);
     }
+
+    const storedPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY)?.toLowerCase();
+    if (storedPk && storedPk === sess.bp.pubkey.toLowerCase()) {
+      try {
+        const recovered = await nip46GetPublicKey(PING_MS);
+        if (recovered !== storedPk) {
+          console.log(DBG, '[ping] ✓ correcting pubkey:', storedPk.slice(0, 12), '→', recovered.slice(0, 12));
+          localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, recovered);
+          return { status: 'ok', recoveredPubkey: recovered };
+        }
+      } catch {
+        /* keep stored */
+      }
+    }
+
+    console.log(DBG, '[ping] ✓ signer live');
+    return { status: 'ok' };
   } catch (err) {
     const msg = (err as Error).message ?? '';
     if (msg.includes('timed out')) {
-      console.log(DBG, '[ping] timeout — signer sleeping');
+      console.log(DBG, '[ping] optional check timed out (sign-in may still be valid)');
       return { status: 'timeout' };
     }
     console.warn(DBG, '[ping] error:', msg);
@@ -723,20 +757,14 @@ export async function recoverNip46UserPubkey(): Promise<string | null> {
   const storedPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY);
   if (!storedPk) return null;
 
-  if (!ensureSession()) return null;
+  const sess = ensureSession();
+  if (!sess) return null;
+
+  // Already resolved to the user key (not the bunker service key).
+  if (storedPk.toLowerCase() !== sess.bp.pubkey.toLowerCase()) return null;
 
   try {
-    const signed = await signEventViaNip46(
-      {
-        kind: 27235,
-        content: '',
-        tags: [['u', 'https://chainduel.app'], ['method', 'GET']],
-        created_at: Math.floor(Date.now() / 1000),
-      },
-      20_000,
-    );
-    const recovered = typeof signed.pubkey === 'string' ? signed.pubkey.toLowerCase() : null;
-    if (!recovered || !/^[0-9a-f]{64}$/.test(recovered)) return null;
+    const recovered = await nip46GetPublicKey(10_000);
     if (recovered === storedPk.toLowerCase()) return null;
     console.log(DBG, '[recover] ✓ corrected:', storedPk.slice(0, 12), '→', recovered.slice(0, 12));
     localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, recovered);

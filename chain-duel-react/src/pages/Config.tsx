@@ -21,9 +21,7 @@ import {
   getStoredSignerMode,
   hasStoredNip46Session,
   isNsecSessionMissing,
-  pingNip46Signer,
   recoverNip46UserPubkey,
-  type Nip46PingResult,
   recordExtensionSignIn,
   setNip46AuthUrlHandler,
   STORED_NOSTR_PUBKEY_KEY,
@@ -104,7 +102,6 @@ export default function Config() {
   const [pairingPhase, setPairingPhase] = useState<'scanning' | 'handshake' | 'resolving'>('scanning');
   const [pairingKey, setPairingKey] = useState(0);
   const [uriCopied, setUriCopied] = useState(false);
-  const [signerPingStatus, setSignerPingStatus] = useState<'pending' | 'ok' | 'timeout' | 'unavailable' | null>(null);
   const [profileAnimKey, setProfileAnimKey] = useState(0);
   const [nwcInput, setNwcInput] = useState(() => getNwcUri() ?? '');
   const [nwcSaved, setNwcSaved] = useState(() => Boolean(getNwcUri()));
@@ -229,10 +226,6 @@ export default function Config() {
           setNostrError(null);
           try {
             localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pk.toLowerCase());
-            const recovered = await recoverNip46UserPubkey();
-            if (recovered) {
-              localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, recovered);
-            }
             await linkToServer('nip46');
             playSfxRef.current(SFX.MENU_CONFIRM);
             if (returnTo) {
@@ -242,6 +235,7 @@ export default function Config() {
             setNostrError(
               e instanceof Error ? e.message : 'Could not link Nostr identity to game server.'
             );
+            setPairingPhase('scanning');
           } finally {
             setNostrBusy(false);
           }
@@ -250,6 +244,7 @@ export default function Config() {
           if (ac.signal.aborted) {
             return;
           }
+          setPairingPhase('scanning');
           const msg = e instanceof Error ? e.message : String(e);
           if (/subscription closed|aborted|AbortError/i.test(msg)) {
             setNostrError(
@@ -356,22 +351,6 @@ export default function Config() {
     socket,
   ]);
 
-  // Ping the NIP-46 signer — verifies remote is live AND fixes wrong stored pubkey.
-  useEffect(() => {
-    if (!nostrSignedIn || !nostrPubkeyHex || getStoredSignerMode() !== 'nip46') return;
-    let cancelled = false;
-    setSignerPingStatus('pending');
-    void pingNip46Signer().then((result: Nip46PingResult) => {
-      if (cancelled) return;
-      setSignerPingStatus(result.status);
-      // Ping recovered the real user pubkey — update state so kind-0 refetches automatically
-      if (result.recoveredPubkey) {
-        setNostrPubkeyHex(result.recoveredPubkey);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [nostrSignedIn, nostrPubkeyHex]);
-
   const finishSignIn = useCallback(
     async (pubkey: string, mode: StoredSignerMode) => {
       setNostrBusy(true);
@@ -444,6 +423,13 @@ export default function Config() {
     setPendingAuthUrl(null);
     playSfx(SFX.MENU_CONFIRM);
   }, [playSfx, signOutNostrSession]);
+
+  /** Clear local NIP-46 pairing when server link failed (Primal connected but not signed in). */
+  const handleDisconnectPrimal = useCallback(() => {
+    nip46PairingAbortRef.current?.abort();
+    handleNostrSignOut();
+    setPairingKey((k) => k + 1);
+  }, [handleNostrSignOut]);
 
   const openPendingAuth = useCallback(() => {
     if (!pendingAuthUrl) return;
@@ -547,22 +533,34 @@ export default function Config() {
                 {nostrBusy || serverLinking ? (
                   <>
                     Primal is connected. <strong>Linking to the game server…</strong>
+                    {signerMode === 'nip46' ? (
+                      <> Approve the sign request in Primal if prompted.</>
+                    ) : null}
                   </>
                 ) : (
                   <>
                     Primal is connected. We could not finish linking to the game server — check that marspay is running,
-                    then retry.
+                    then retry, or disconnect to scan a new QR.
                   </>
                 )}
               </p>
-              <Button
-                type="button"
-                className="config-nip46-auth-banner__btn"
-                onClick={retryNip46ServerLink}
-                disabled={nostrBusy || serverLinking}
-              >
-                {nostrBusy || serverLinking ? 'Linking to game server…' : 'Retry server link'}
-              </Button>
+              <div className="config-nip46-auth-banner__actions">
+                <Button
+                  type="button"
+                  onClick={retryNip46ServerLink}
+                  disabled={nostrBusy || serverLinking}
+                >
+                  {nostrBusy || serverLinking ? 'Linking…' : 'Retry link'}
+                </Button>
+                <Button
+                  type="button"
+                  className="config-nip46-auth-banner__btn--secondary"
+                  onClick={handleDisconnectPrimal}
+                  disabled={nostrBusy || serverLinking}
+                >
+                  Disconnect
+                </Button>
+              </div>
             </div>
           ) : null}
 
@@ -644,11 +642,7 @@ export default function Config() {
             {loginTab === 'nip46' && !pendingNip46ServerLink ? (
               <div className="config-login-panel__block" role="tabpanel">
                 <p className="config-login-panel__lede config-nc-lede">
-                  NIP-46: scan QR or open the link — Primal, Amber, etc. (
-                  <a href="https://nostrconnect.org/" target="_blank" rel="noopener noreferrer" className="config-nostr-link">
-                    nostrconnect.org
-                  </a>
-                  ).
+                  NIP-46: scan QR or open the link — Primal, Amber, etc.
                 </p>
 
                 <div className="config-nc-layout">
@@ -921,25 +915,8 @@ export default function Config() {
               ) : null}
 
               {signerMode === 'nip46' ? (
-                <div className={`config-signer-ping config-signer-ping--${signerPingStatus ?? 'pending'}`} role="status">
-                  {signerPingStatus === 'pending' ? (
-                    <span className="config-signer-ping__text">Checking signer connection…</span>
-                  ) : signerPingStatus === 'ok' ? (
-                    <span className="config-signer-ping__text">Signer connected</span>
-                  ) : (
-                    <>
-                      <svg className="config-signer-ping__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                        <line x1="12" y1="9" x2="12" y2="13" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                      </svg>
-                      <span className="config-signer-ping__text">
-                        {signerPingStatus === 'timeout'
-                          ? 'Waiting for approval. Open Primal on your phone and tap Allow when prompted.'
-                          : 'Could not reach signer. Check your connection or sign out and reconnect.'}
-                      </span>
-                    </>
-                  )}
+                <div className="config-signer-ping config-signer-ping--ok" role="status">
+                  <span className="config-signer-ping__text">Signer connected</span>
                 </div>
               ) : null}
 

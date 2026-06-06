@@ -1,4 +1,5 @@
 import { getActiveNostrSigner, resolveSignerMode } from './signerSession';
+import { withNip46SignFlow } from './nip46Trace';
 
 /**
  * Signs events via the active Nostr signer (extension, Nostr Connect, or nsec session).
@@ -66,10 +67,12 @@ export async function signOnlineSeatLinkChallenge(params: {
     tags: [] as string[][],
     content: params.challenge,
   };
-  const signed = await withSignTimeout(
-    'signOnlineSeatLinkChallenge',
-    n.signEvent(unsigned),
-    resolveSignerMode() === 'nip46' ? NIP46_ZAP_SIGN_TIMEOUT_MS : SIGN_TIMEOUT_MS,
+  const signed = await withNip46SignFlow('server-link/kind-1', () =>
+    withSignTimeout(
+      'signOnlineSeatLinkChallenge',
+      n.signEvent(unsigned),
+      resolveSignerMode() === 'nip46' ? NIP46_ZAP_SIGN_TIMEOUT_MS : SIGN_TIMEOUT_MS,
+    ),
   );
   return signed as SignedSeatLinkEvent;
 }

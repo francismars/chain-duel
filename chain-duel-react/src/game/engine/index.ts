@@ -1269,6 +1269,71 @@ function applyAiDirToSnake(snake: GameState['p1'], dir: Exclude<Direction, ''>):
   else if (dir === 'Left' && (cur === 'Up' || cur === 'Down' || cur === '')) snake.dirWanted = 'Left';
 }
 
+function blockedSetSelfOnlyForPlayer(state: GameState, playerIndex: PowerUpPlayerIndex): Set<string> {
+  const blocked = new Set<string>();
+  getSnakeByIndex(state, playerIndex).body.forEach((p) => blocked.add(posKey(p)));
+  return blocked;
+}
+
+function nearestCoinbaseForPlayer(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+): GridPos | null {
+  const head = getPlayerHead(state, playerIndex);
+  let best: GridPos | null = null;
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (const cb of state.coinbases) {
+    if (cb.isDecoy) continue;
+    const dist = Math.hypot(cb.pos[0] - head[0], cb.pos[1] - head[1]);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = cb.pos;
+    }
+  }
+  return best;
+}
+
+function findStackerPathForPlayer(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  start: GridPos,
+  target: GridPos,
+): GridPos[] {
+  const snake = getSnakeByIndex(state, playerIndex);
+  const facing = snake.dir || snake.dirWanted;
+  return findPathGeneric(
+    state,
+    start,
+    target,
+    blockedSetSelfOnlyForPlayer(state, playerIndex),
+    facing || undefined,
+  );
+}
+
+/** Stacker applies one step; avoids rival tails but does not pre-route around their head. */
+function applyStackerPathToPlayer(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  path: GridPos[],
+): void {
+  if (path.length < 2) return;
+  const next = path[1];
+  const count = activePlayerCount(state);
+  for (let i = 0; i < count; i += 1) {
+    if (i === playerIndex) continue;
+    const s = getSnakeByIndex(state, i as PowerUpPlayerIndex);
+    if (s.body.some((p) => samePos(p, next))) return;
+  }
+  const snake = getSnakeByIndex(state, playerIndex);
+  const [x, y] = snake.head;
+  let dir: Exclude<Direction, ''> | null = null;
+  if (next[0] === x && next[1] > y) dir = 'Down';
+  else if (next[0] === x && next[1] < y) dir = 'Up';
+  else if (next[1] === y && next[0] > x) dir = 'Right';
+  else if (next[1] === y && next[0] < x) dir = 'Left';
+  if (dir) applyAiDirToSnake(snake, dir);
+}
+
 function blockedSetForPlayer(state: GameState, playerIndex: PowerUpPlayerIndex): Set<string> {
   const blocked = new Set<string>();
   const add = (p: GridPos) => blocked.add(posKey(p));
@@ -1378,9 +1443,13 @@ function decideNormieForPlayer(state: GameState, playerIndex: PowerUpPlayerIndex
 
 function decideStackerForPlayer(state: GameState, playerIndex: PowerUpPlayerIndex): void {
   const head = getPlayerHead(state, playerIndex);
-  const target = state.coinbases.find((cb) => !cb.isDecoy)?.pos;
+  const target = nearestCoinbaseForPlayer(state, playerIndex);
   if (!target) return;
-  applyPathToPlayer(state, playerIndex, findPathForPlayer(state, playerIndex, head, target));
+  applyStackerPathToPlayer(
+    state,
+    playerIndex,
+    findStackerPathForPlayer(state, playerIndex, head, target),
+  );
 }
 
 function decideEconomyChaseForPlayer(

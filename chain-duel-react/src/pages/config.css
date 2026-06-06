@@ -457,12 +457,11 @@
   width: min(90vw, 40rem);
   max-width: 100%;
   margin: 0.2rem auto 0.35rem;
-  padding: 0.4rem 0.6rem;
+  padding: 0.55rem 0.65rem;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.45rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0;
@@ -478,16 +477,55 @@
 
 .config-nip46-auth-banner__text {
   margin: 0;
-  flex: 1 1 12rem;
+  width: 100%;
   font-size: clamp(0.7rem, 1.25vw, 0.8rem);
-  line-height: 1.3;
+  line-height: 1.35;
   color: rgba(255, 255, 255, 0.82);
   text-align: left;
 }
 
-.config-nip46-auth-banner__btn {
+.config-nip46-auth-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.config-nip46-auth-banner .button,
+.config-nip46-auth-banner__actions .button {
   margin: 0 !important;
-  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 8.5rem;
+  max-width: 100%;
+  height: auto;
+  min-height: 2.35rem;
+  padding: 0.4rem 0.75rem;
+  font-size: clamp(0.58rem, 1.05vw, 0.72rem);
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.config-nip46-auth-banner__btn--secondary {
+  opacity: 0.92;
+}
+
+@media (max-width: 28rem) {
+  .config-nip46-auth-banner__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .config-nip46-auth-banner .button,
+  .config-nip46-auth-banner__actions .button {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .config-row-text .label {

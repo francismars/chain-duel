@@ -4,6 +4,7 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { formatPubkeyHex } from '@/lib/nostr/fetchKind0Profile';
 import { useNoteContentDisplay } from '@/lib/nostr/formatNoteContentForDisplay';
 import { signChallengeBountyNote } from '@/lib/nostr/signChallengeBountyNote';
+import { createFlowTrace } from '@/lib/nostr/nip46Trace';
 import { resolveSignerMode } from '@/lib/nostr/signerSession';
 import { claimChallengeBounty, retryChallengeZap, submitChallengeWin } from '@/lib/challengeBounty';
 import {
@@ -139,18 +140,23 @@ export default function Game() {
 
   const postBountyNote = useCallback(async () => {
     if (!soloEndData?.claimToken || !soloEndData.noteContent || !soloEndData.noteTags) return;
+    const trace = createFlowTrace('challenge', 'post-and-claim');
     setNoteState('posting');
     setNoteError(null);
     try {
       if (!socket) throw new Error('Not connected to server.');
+      trace.step('begin', `bounty=${soloEndData.bounty} sats challenge=${soloEndData.challengeId}`);
       const unsigned = {
         kind: 1 as const,
         created_at: Math.floor(Date.now() / 1000),
         tags: soloEndData.noteTags,
         content: soloEndData.noteContent,
       };
+      trace.step('signing bounty note', 'see [challenge] sign-bounty-note + [relay] bounty-note/kind-1');
       const signed = await signChallengeBountyNote(unsigned);
+      trace.step('sign complete', `event id=${signed.id?.slice(0, 12)}…`);
       setNoteState('zapping');
+      trace.step('claiming on server', 'see [marspay] claim-bounty');
       const result = await claimChallengeBounty(socket, {
         claimToken: soloEndData.claimToken,
         event: signed,
@@ -161,7 +167,9 @@ export default function Game() {
       );
       clearPendingChallengeClaim();
       setNoteState('posted');
+      trace.done(result.zapPaid ? 'posted and zapped' : `posted (zap: ${result.zapReason ?? 'skipped'})`);
     } catch (err) {
+      trace.fail('post-and-claim', err);
       setNoteState('error');
       setNoteError(err instanceof Error ? err.message : 'Failed to claim bounty.');
     }
@@ -1075,6 +1083,18 @@ export default function Game() {
                   <p className="solo-zap-note-label">POST THIS NOTE TO CLAIM YOUR ZAP</p>
                   {resolveSignerMode() === 'nip46' && (noteState === 'posting' || noteState === 'zapping') ? (
                     <p className="solo-zap-note-label">Approve in your Nostr app (Primal / Amber)…</p>
+                  ) : null}
+                  {nostrSession.pendingNip46AuthUrl && (noteState === 'posting' || noteState === 'zapping') ? (
+                    <button
+                      type="button"
+                      className="solo-zap-post-btn"
+                      onClick={() => {
+                        window.open(nostrSession.pendingNip46AuthUrl!, '_blank', 'noopener,noreferrer');
+                        nostrSession.clearPendingNip46AuthUrl();
+                      }}
+                    >
+                      OPEN PRIMAL TO APPROVE
+                    </button>
                   ) : null}
                   <div className="solo-zap-note-preview">
                     {noteAuthorPubkey ? (
