@@ -23,6 +23,7 @@ import {
   type PracticeNavFocus,
 } from '@/pages/practiceHubNav';
 import type { PracticeFreePlayPanelHandle } from '@/features/practice/practicePanelHandles';
+import { GameModifiersSection } from '@/components/paidEntry/GameModifiersSection';
 import { savePracticeGameConfig } from '@/pages/practiceHubModes';
 import type { PracticeHubFocus } from '@/pages/practiceHubPlayStyleNav';
 
@@ -86,6 +87,15 @@ export const PracticeFreePlayPanel = forwardRef<
   const show1v1Opponent = format === 'solo';
   const showTeamControl = format === 'ffa';
   const allFourHuman    = showTeamControl && slotHuman.every(Boolean);
+  const panelKeyboardFocus = isActive && menuZone === 'panel';
+
+  const hasPanelNavFocus = (
+    kind: PracticeNavFocus['kind'],
+    idx?: number
+  ): boolean =>
+    panelKeyboardFocus &&
+    navFocus.kind === kind &&
+    (idx === undefined || ('idx' in navFocus && navFocus.idx === idx));
 
   const toggleSlot = useCallback(
     (idx: number) => {
@@ -240,7 +250,7 @@ export const PracticeFreePlayPanel = forwardRef<
         return;
       }
 
-      if (isUp && navFocus.kind === 'format') {
+      if (isUp && navFocus.kind === 'format' && navFocus.idx === 0) {
         e.preventDefault();
         onExitToPlayStyle?.();
         return;
@@ -249,7 +259,7 @@ export const PracticeFreePlayPanel = forwardRef<
       e.preventDefault();
       setNavFocus((prev) => {
         if (isDown && prev.kind === 'rulePowerup') {
-          onEnterFooter?.('back');
+          onEnterFooter?.('start');
           return prev;
         }
         const next = movePracticeHubNav(
@@ -281,20 +291,23 @@ export const PracticeFreePlayPanel = forwardRef<
   ]);
 
   useEffect(() => {
+    if (!panelKeyboardFocus) return;
     if      (navFocus.kind === 'format')    { formatRefs.current[navFocus.idx]?.focus(); }
     else if (navFocus.kind === 'slot')      { slotRefs.current[navFocus.idx]?.focus(); }
     else if (navFocus.kind === 'opponent')  { opponentRefs.current[navFocus.idx]?.focus(); }
     else if (navFocus.kind === 'tier')      { tierRefs.current[navFocus.idx]?.focus(); }
     else if (navFocus.kind === 'rulePowerup') { powerupRef.current?.focus(); }
-  }, [navFocus]);
+  }, [navFocus, panelKeyboardFocus]);
 
   return (
     <div className="practice-free-play-panel" role="group" aria-label="Free play setup">
       <div className="practice-free-play-panel__body">
-        {/* ── FORMAT ──────────────────────────────────────────────────── */}
-        <section className="practice-section" aria-labelledby="lh-format">
-          <h3 id="lh-format" className="p2p-picker-group-label">FORMAT</h3>
-          <div className="p2p-picker-row" role="radiogroup" aria-label="Match format">
+        <div className="local-setup-top-row">
+          {/* ── FORMAT ──────────────────────────────────────────────────── */}
+          <section className="practice-section local-format-section" aria-labelledby="lh-format">
+            <div className="ph-picker-block">
+              <h3 id="lh-format" className="p2p-picker-group-label">FORMAT</h3>
+              <div className="p2p-picker-row" role="radiogroup" aria-label="Match format">
 
             {/* 1V1 — reuse duel card style + sword animation */}
             <button
@@ -302,12 +315,13 @@ export const PracticeFreePlayPanel = forwardRef<
               type="button"
               role="radio"
               aria-checked={format === 'solo'}
-              tabIndex={navFocus.kind === 'format' && navFocus.idx === 0 ? 0 : -1}
+              tabIndex={hasPanelNavFocus('format', 0) ? 0 : -1}
               className={[
                 'p2p-picker-card',
+                'p2p-picker-card--compact-inline',
                 'p2p-picker-card--duel',
                 format === 'solo' ? 'p2p-picker-card--selected' : '',
-                navFocus.kind === 'format' && navFocus.idx === 0 ? 'practice-focus-target' : '',
+                hasPanelNavFocus('format', 0) ? 'practice-focus-target' : '',
               ].filter(Boolean).join(' ')}
               onClick={() => {
                 setNavFocus({ kind: 'format', idx: 0 });
@@ -325,7 +339,7 @@ export const PracticeFreePlayPanel = forwardRef<
                   <path d="M7 10L11 7" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                 </g>
               </svg>
-              <span className="p2p-picker-label">1V1</span>
+              <span className="p2p-picker-label">One vs One</span>
               <span className="p2p-picker-sub">Head to head</span>
             </button>
 
@@ -335,12 +349,13 @@ export const PracticeFreePlayPanel = forwardRef<
               type="button"
               role="radio"
               aria-checked={format === 'ffa'}
-              tabIndex={navFocus.kind === 'format' && navFocus.idx === 1 ? 0 : -1}
+              tabIndex={hasPanelNavFocus('format', 1) ? 0 : -1}
               className={[
                 'p2p-picker-card',
+                'p2p-picker-card--compact-inline',
                 'p2p-picker-card--ffa',
                 format === 'ffa' ? 'p2p-picker-card--selected' : '',
-                navFocus.kind === 'format' && navFocus.idx === 1 ? 'practice-focus-target' : '',
+                hasPanelNavFocus('format', 1) ? 'practice-focus-target' : '',
               ].filter(Boolean).join(' ')}
               onClick={() => {
                 setNavFocus({ kind: 'format', idx: 1 });
@@ -357,11 +372,12 @@ export const PracticeFreePlayPanel = forwardRef<
                   <path d="M9 5.5h6M18.5 9v6M15 18.5H9M5.5 15V9" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                 </g>
               </svg>
-              <span className="p2p-picker-label">FFA</span>
+              <span className="p2p-picker-label">Free for All</span>
               <span className="p2p-picker-sub">Four chains</span>
             </button>
 
           </div>
+            </div>
         </section>
 
         {/* ── Mode config overlay (same grid cell — no height shift) ──── */}
@@ -372,8 +388,9 @@ export const PracticeFreePlayPanel = forwardRef<
             className={`practice-section${format !== 'solo' ? ' local-mode-inactive' : ''}`}
             aria-hidden={format !== 'solo'}
           >
-            <h3 className="p2p-picker-group-label">OPPONENT</h3>
-            <div className="p2p-picker-row" role="radiogroup" aria-label="Opponent type">
+            <div className="ph-picker-block local-mode-config-block">
+              <h3 className="p2p-picker-group-label">OPPONENT</h3>
+              <div className="p2p-picker-row" role="radiogroup" aria-label="Opponent type">
 
               {/* HUMANS */}
               <button
@@ -381,12 +398,13 @@ export const PracticeFreePlayPanel = forwardRef<
                 type="button"
                 role="radio"
                 aria-checked={opponent === 'humans'}
-                tabIndex={navFocus.kind === 'opponent' && navFocus.idx === 0 ? 0 : -1}
+                tabIndex={hasPanelNavFocus('opponent', 0) ? 0 : -1}
                 className={[
                   'p2p-picker-card',
+                  'p2p-picker-card--compact-inline',
                   'p2p-picker-card--humans',
                   opponent === 'humans' ? 'p2p-picker-card--selected' : '',
-                  navFocus.kind === 'opponent' && navFocus.idx === 0 ? 'practice-focus-target' : '',
+                  hasPanelNavFocus('opponent', 0) ? 'practice-focus-target' : '',
                 ].filter(Boolean).join(' ')}
                 onClick={() => {
                   setNavFocus({ kind: 'opponent', idx: 0 });
@@ -394,13 +412,13 @@ export const PracticeFreePlayPanel = forwardRef<
                   setOpponent('humans');
                 }}
               >
-                <svg className="p2p-picker-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <svg className="p2p-picker-icon p2p-picker-icon--people" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <circle cx="8" cy="7" r="2.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15"/>
                   <path d="M3 18a5 4 0 0 1 10 0" stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none"/>
                   <circle cx="16" cy="7" r="2.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15"/>
                   <path d="M11 18a5 4 0 0 1 10 0" stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none"/>
                 </svg>
-                <span className="p2p-picker-label">HUMANS</span>
+                <span className="p2p-picker-label">HUMAN</span>
                 <span className="p2p-picker-sub">Local play</span>
               </button>
 
@@ -410,12 +428,13 @@ export const PracticeFreePlayPanel = forwardRef<
                 type="button"
                 role="radio"
                 aria-checked={opponent === 'ai'}
-                tabIndex={navFocus.kind === 'opponent' && navFocus.idx === 1 ? 0 : -1}
+                tabIndex={hasPanelNavFocus('opponent', 1) ? 0 : -1}
                 className={[
                   'p2p-picker-card',
+                  'p2p-picker-card--compact-inline',
                   'p2p-picker-card--ai',
                   opponent === 'ai' ? 'p2p-picker-card--selected' : '',
-                  navFocus.kind === 'opponent' && navFocus.idx === 1 ? 'practice-focus-target' : '',
+                  hasPanelNavFocus('opponent', 1) ? 'practice-focus-target' : '',
                 ].filter(Boolean).join(' ')}
                 onClick={() => {
                   setNavFocus({ kind: 'opponent', idx: 1 });
@@ -423,7 +442,7 @@ export const PracticeFreePlayPanel = forwardRef<
                   setOpponent('ai');
                 }}
               >
-                <svg className="p2p-picker-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <svg className="p2p-picker-icon p2p-picker-icon--ai" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <rect x="6" y="8" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.12"/>
                   <circle cx="9.5" cy="12" r="1.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.3"/>
                   <circle cx="14.5" cy="12" r="1.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.3"/>
@@ -438,23 +457,24 @@ export const PracticeFreePlayPanel = forwardRef<
 
             </div>
 
-            {/* Difficulty — only shown when opponent is AI */}
             {opponent === 'ai' && (
-              <div className="local-tier-area">
+              <>
                 <h3 className="p2p-picker-group-label">DIFFICULTY</h3>
-                <div className="local-tier-grid">
+                <div className="local-tier-grid" role="radiogroup" aria-label="AI difficulty">
                   {AI_TIER_PRESETS.map((p, i) => (
                     <button
                       key={p.id}
                       ref={(el) => { tierRefs.current[i] = el; }}
                       type="button"
+                      role="radio"
+                      aria-checked={aiTier === p.id}
                       data-tier={p.id}
-                      tabIndex={navFocus.kind === 'tier' && navFocus.idx === i ? 0 : -1}
+                      tabIndex={hasPanelNavFocus('tier', i) ? 0 : -1}
                       className={[
                         'p2p-duel-format__card',
                         'local-tier-card',
                         aiTier === p.id ? 'p2p-duel-format__card--active' : '',
-                        navFocus.kind === 'tier' && navFocus.idx === i ? 'practice-focus-target' : '',
+                        hasPanelNavFocus('tier', i) ? 'practice-focus-target' : '',
                       ].filter(Boolean).join(' ')}
                       onClick={() => {
                         setNavFocus({ kind: 'tier', idx: i as 0 | 1 | 2 | 3 });
@@ -471,8 +491,9 @@ export const PracticeFreePlayPanel = forwardRef<
                     </button>
                   ))}
                 </div>
-              </div>
+              </>
             )}
+            </div>
           </section>
 
           {/* FFA section */}
@@ -480,15 +501,16 @@ export const PracticeFreePlayPanel = forwardRef<
             className={`practice-section${format !== 'ffa' ? ' local-mode-inactive' : ''}`}
             aria-hidden={format !== 'ffa'}
           >
-            <h3 className="p2p-picker-group-label">PLAYERS</h3>
-            <div className="practice-four-slot" role="group" aria-label="P1 through P4">
+            <div className="ph-picker-block local-mode-config-block">
+              <h3 className="p2p-picker-group-label">PLAYERS</h3>
+              <div className="practice-four-slot" role="group" aria-label="P1 through P4">
               {(['P1', 'P2', 'P3', 'P4'] as const).map((label, idx) => (
                 <button
                   key={label}
                   ref={(el) => { slotRefs.current[idx] = el; }}
                   type="button"
-                  tabIndex={navFocus.kind === 'slot' && navFocus.idx === idx ? 0 : -1}
-                  className={`practice-slot-btn ${slotHuman[idx] ? 'human' : 'ai'}${navFocus.kind === 'slot' && navFocus.idx === idx ? ' practice-focus-target' : ''}`}
+                  tabIndex={hasPanelNavFocus('slot', idx) ? 0 : -1}
+                  className={`practice-slot-btn ${slotHuman[idx] ? 'human' : 'ai'}${hasPanelNavFocus('slot', idx) ? ' practice-focus-target' : ''}`}
                   onClick={() => {
                     setNavFocus({ kind: 'slot', idx: idx as 0 | 1 | 2 | 3 });
                     toggleSlot(idx);
@@ -500,23 +522,24 @@ export const PracticeFreePlayPanel = forwardRef<
               ))}
             </div>
 
-            {/* Difficulty for FFA — only shown when any AI */}
             {!allFourHuman && (
-              <div className="local-tier-area">
+              <>
                 <h3 className="p2p-picker-group-label">DIFFICULTY</h3>
-                <div className="local-tier-grid">
+                <div className="local-tier-grid" role="radiogroup" aria-label="AI difficulty">
                   {AI_TIER_PRESETS.map((p, i) => (
                     <button
                       key={p.id}
                       ref={(el) => { tierRefs.current[i] = el; }}
                       type="button"
+                      role="radio"
+                      aria-checked={aiTier === p.id}
                       data-tier={p.id}
-                      tabIndex={navFocus.kind === 'tier' && navFocus.idx === i ? 0 : -1}
+                      tabIndex={hasPanelNavFocus('tier', i) ? 0 : -1}
                       className={[
                         'p2p-duel-format__card',
                         'local-tier-card',
                         aiTier === p.id ? 'p2p-duel-format__card--active' : '',
-                        navFocus.kind === 'tier' && navFocus.idx === i ? 'practice-focus-target' : '',
+                        hasPanelNavFocus('tier', i) ? 'practice-focus-target' : '',
                       ].filter(Boolean).join(' ')}
                       onClick={() => {
                         setNavFocus({ kind: 'tier', idx: i as 0 | 1 | 2 | 3 });
@@ -533,40 +556,26 @@ export const PracticeFreePlayPanel = forwardRef<
                     </button>
                   ))}
                 </div>
-              </div>
+              </>
             )}
+            </div>
           </section>
 
         </div>
+        </div>
 
-        {/* ── MODIFIERS ────────────────────────────────────────────────── */}
-        <section className="practice-section local-modifiers-section" aria-label="Game modifiers">
-          <h3 className="p2p-picker-group-label">MODIFIERS</h3>
-          <div className="local-modifier-row" role="group" aria-label="Game modifiers">
-            <button
-              ref={powerupRef}
-              type="button"
-              aria-pressed={powerup}
-              tabIndex={navFocus.kind === 'rulePowerup' ? 0 : -1}
-              className={[
-                'p2p-duel-format__card',
-                powerup ? 'p2p-duel-format__card--active' : '',
-                navFocus.kind === 'rulePowerup' ? 'practice-focus-target' : '',
-              ].filter(Boolean).join(' ')}
-              onClick={() => {
-                setNavFocus({ kind: 'rulePowerup' });
-                playSfx(SFX.MENU_SELECT);
-                setPowerup((v) => !v);
-              }}
-            >
-              <svg className="p2p-duel-format__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="10.5" y="3" width="3" height="18" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15"/>
-                <rect x="3" y="10.5" width="18" height="3" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15"/>
-              </svg>
-              <span className="p2p-duel-format__label">POWER-UPS</span>
-            </button>
-          </div>
-        </section>
+        <GameModifiersSection
+          powerups={{
+            enabled: powerup,
+            focused: hasPanelNavFocus('rulePowerup'),
+            buttonRef: powerupRef,
+            onToggle: () => {
+              setNavFocus({ kind: 'rulePowerup' });
+              playSfx(SFX.MENU_SELECT);
+              setPowerup((v) => !v);
+            },
+          }}
+        />
       </div>
     </div>
   );

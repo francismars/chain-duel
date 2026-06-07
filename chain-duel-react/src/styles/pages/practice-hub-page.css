@@ -4,58 +4,264 @@
 .practice-hub-page.practice-hub,
 .practice-hub-page.practice-hub--practice,
 .practice-hub-page.practice-hub-page--challenges.practice-hub--practice {
-  max-width: clamp(480px, 52vw, 1040px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  /* Title row auto; panel auto height (capped); spacers absorb remainder */
+  grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: var(--ph-page-max-width, 88vw);
   margin: 0 auto;
-  justify-content: center;
-  gap: clamp(10px, 1.2vw, 24px);
-  padding: clamp(16px, 2vw, 40px) 3vw;
+  gap: 1.2vw;
+  padding: 2vw 3vw;
   min-height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
   box-sizing: border-box;
 }
 
+/* ── Fluid typography — scales proportionally with viewport width ── */
+.practice-hub-page.practice-hub--practice {
+  --ph-fs-soon: calc(0.2rem + 0.58vw);
+  --ph-fs-gate-check: calc(0.18rem + 0.52vw);
+  --ph-fs-gate-meta: calc(0.16rem + 0.48vw);
+  --ph-fs-play-style-sub: calc(0.2rem + 0.65vw);
+  --ph-fs-caption: calc(0.24rem + 0.78vw);
+  --ph-fs-body-sm: calc(0.28rem + 0.86vw);
+  --ph-fs-tier: calc(0.3rem + 0.82vw);
+  --ph-fs-body: calc(0.36rem + 0.98vw);
+  --ph-fs-ui: calc(0.4rem + 1.08vw);
+  --ph-fs-heading-sm: calc(0.46rem + 1.2vw);
+  --ph-fs-heading: calc(0.5rem + 1.38vw);
+  --ph-fs-display-sm: calc(0.58rem + 1.9vw);
+  --ph-fs-display: calc(0.72rem + 2.85vw);
+  /* Panel caps — chrome reserve scales with viewport width */
+  --ph-page-max-width: 88vw;
+  --ph-chrome-vw: 22vw;
+  --ph-panel-max-height: calc(100dvh - var(--ph-chrome-vw));
+  --ph-play-area-max-height: calc(var(--ph-panel-max-height) - 14vw);
+  /* Room for card glow + focus ring; kept in sync with --ph-card-glow-blur */
+  --ph-card-glow-blur: 22px;
+  --ph-glow-gutter: max(1.5rem, 2.5vw, calc(var(--ph-card-glow-blur) * 0.85));
+  --ph-content-inset: max(0.45rem, calc(var(--ph-glow-gutter) * 0.35));
+  --ph-section-gap: 1.1vw;
+  --ph-compact-card-min: calc(4.6vw);
+  --ph-compact-card-pad-y: 0.65vw;
+  --ph-compact-card-pad-x: calc(0.85vw + var(--ph-glow-gutter) * 0.12);
+  --ph-compact-icon: 2.4vw;
+}
+
+.practice-hub-page .practice-hub-header {
+  grid-row: 2;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.practice-hub-page #brand {
+  flex-shrink: 0;
+}
+
 .practice-hub-page .practice-hub-title {
   letter-spacing: 0;
   font-weight: 400;
+  font-size: var(--ph-fs-display);
 }
 
 /* Strip panel chrome so content floats on the page background */
 .practice-hub-page .practice-panel {
+  grid-row: 3;
+  align-self: center;
   border: none;
   background: none;
   box-shadow: none;
   padding: 0;
-  gap: clamp(12px, 1.6vw, 18px);
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
+  gap: var(--ph-glow-gutter);
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  max-height: var(--ph-panel-max-height);
+  overflow: visible;
   display: flex;
   flex-direction: column;
 }
 
+/* Selected/focused picker glow extends past the card — don't clip on the card itself */
+.practice-hub-page .p2p-picker-card,
+.practice-hub-page .p2p-duel-format__card,
+.practice-hub-page .practice-slot-btn {
+  overflow: visible;
+}
+
+/* Base picker card sets overflow:hidden — re-assert on every hub surface */
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card,
+.practice-hub-page .practice-play-style-section .p2p-picker-card {
+  overflow: visible;
+}
+
+.practice-hub-page .practice-section,
+.practice-hub-page .practice-play-style-section,
+.practice-hub-page .p2p-picker-row,
+.practice-hub-page .p2p-modifiers-section,
+.practice-hub-page .local-setup-top-row,
+.practice-hub-page .local-tier-grid,
+.practice-hub-page .practice-four-slot {
+  overflow: visible;
+}
+
 .practice-hub-page .practice-section {
-  gap: clamp(6px, 0.65vw, 10px);
+  gap: 0.65vw;
   flex-shrink: 0;
   min-height: auto;
+}
+
+.practice-hub-page .practice-section:has(.ph-picker-block),
+.practice-hub-page .practice-play-style-section {
+  gap: 0;
 }
 
 /* HOW TO PLAY uses same compact tiles as P2P PAY WITH (lightning / nostr) */
 .practice-hub-page .practice-play-style-section {
   flex-shrink: 0;
+  min-width: 0;
+  width: 100%;
 }
 
-/* Equal-height play-style tiles (selected glow must not change box size) */
-.practice-hub-page .practice-play-style-section .p2p-picker-row {
+.practice-hub-page .practice-play-style-section .ph-picker-block {
+  padding: var(--ph-content-inset);
+  gap: max(0.2rem, 0.3vw);
+}
+
+.practice-hub-page .practice-play-style-section .ph-picker-block .p2p-picker-row {
+  gap: max(0.35rem, 0.45vw);
+  padding-block: calc(var(--ph-card-glow-blur) * 0.12);
+  margin-block: calc(var(--ph-card-glow-blur) * -0.12);
+}
+
+/* Label + picker row share one padded container (aligned edges across hub) */
+.practice-hub-page .ph-picker-block {
+  display: flex;
+  flex-direction: column;
+  gap: max(0.55vw, calc(var(--ph-card-glow-blur) * 0.35));
+  width: 100%;
+  min-width: 0;
+  padding: var(--ph-glow-gutter);
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.practice-hub-page .ph-picker-block .p2p-picker-group-label {
+  margin: 0;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.practice-hub-page .ph-picker-block .p2p-picker-row,
+.practice-hub-page .ph-picker-block .p2p-duel-format,
+.practice-hub-page .ph-picker-block .practice-four-slot,
+.practice-hub-page .ph-picker-block .local-tier-grid {
+  min-width: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.practice-hub-page .ph-picker-block .p2p-picker-row,
+.practice-hub-page .ph-picker-block .p2p-duel-format,
+.practice-hub-page .ph-picker-block .practice-four-slot,
+.practice-hub-page .ph-picker-block .local-tier-grid {
+  gap: var(--ph-glow-gutter);
+}
+
+/* Side bleed for box-shadow without narrowing the outer card edges */
+.practice-hub-page .ph-picker-block .p2p-picker-row,
+.practice-hub-page .ph-picker-block .practice-four-slot,
+.practice-hub-page .ph-picker-block .local-tier-grid,
+.practice-hub-page .ph-picker-block .p2p-duel-format {
+  padding-inline: calc(var(--ph-card-glow-blur) * 0.2);
+  margin-inline: calc(var(--ph-card-glow-blur) * -0.2);
+}
+
+.practice-hub-page .ph-picker-block .p2p-picker-row {
   align-items: stretch;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Glow bleed room without shifting card edges */
+  padding-block: calc(var(--ph-card-glow-blur) * 0.25);
+  margin-block: calc(var(--ph-card-glow-blur) * -0.25);
+}
+
+/* Format: stack 1V1 / FFA vertically */
+.practice-hub-page .local-format-section .ph-picker-block .p2p-picker-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.practice-hub-page .local-format-section .ph-picker-block {
+  padding: var(--ph-content-inset);
+  gap: max(0.2rem, 0.3vw);
+}
+
+.practice-hub-page .local-format-section .ph-picker-block .p2p-picker-row {
+  gap: max(0.35rem, 0.45vw);
+  padding-block: calc(var(--ph-card-glow-blur) * 0.12);
+  margin-block: calc(var(--ph-card-glow-blur) * -0.12);
+}
+
+/* Opponent (human / AI) — tighter gutter to match format column */
+.practice-hub-page .local-mode-config-block {
+  padding: var(--ph-content-inset);
+  gap: max(0.2rem, 0.3vw);
+}
+
+.practice-hub-page .local-mode-config-block .p2p-picker-row {
+  gap: max(0.35rem, 0.45vw);
+  padding-block: calc(var(--ph-card-glow-blur) * 0.12);
+  margin-block: calc(var(--ph-card-glow-blur) * -0.12);
+}
+
+.practice-hub-page .local-mode-config-block .practice-four-slot,
+.practice-hub-page .local-mode-config-block .local-tier-grid {
+  gap: max(0.35rem, 0.45vw);
+  padding-block: calc(var(--ph-card-glow-blur) * 0.12);
+  margin-block: calc(var(--ph-card-glow-blur) * -0.12);
+}
+
+/* Modifiers (power-ups, zone, time) — tighter gutter */
+.practice-hub-page .p2p-modifiers-section .ph-picker-block {
+  padding: var(--ph-content-inset);
+  gap: max(0.2rem, 0.3vw);
+}
+
+.practice-hub-page .p2p-modifiers-section .ph-picker-block .p2p-duel-format {
+  gap: max(0.35rem, 0.45vw);
+  padding: calc(var(--ph-card-glow-blur) * 0.12) calc(var(--ph-card-glow-blur) * 0.12);
+  margin: calc(var(--ph-card-glow-blur) * -0.12);
+}
+
+.practice-hub-page .ph-picker-block .p2p-duel-format {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr,
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline,
+.practice-hub-page .ph-picker-block .p2p-duel-format__card,
+.practice-hub-page .ph-picker-block .practice-slot-btn {
+  box-sizing: border-box;
+  min-height: var(--ph-compact-card-min);
+  padding: var(--ph-compact-card-pad-y) var(--ph-compact-card-pad-x);
 }
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--lightning,
 .practice-hub-page .practice-play-style-section .p2p-picker-card--nostr {
-  box-sizing: border-box;
-  min-height: clamp(52px, 5.2vw, 68px);
   height: 100%;
-  overflow: hidden;
+  overflow: visible;
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning .p2p-picker-icon,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr .p2p-picker-icon,
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-icon {
+  width: var(--ph-compact-icon);
+  height: var(--ph-compact-icon);
 }
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--lightning .p2p-picker-sub,
@@ -73,27 +279,158 @@
   transform: none;
 }
 
-/* Free play vs Challenges: stacked in the same box (no height jump on toggle) */
-.practice-play-style-area {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-  width: 100%;
+/* HOW TO PLAY — rest = colored selected; focus = solid fill + white type */
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target) {
+  border-color: rgba(247, 147, 26, 0.48);
+  background: rgba(247, 147, 26, 0.05);
+  color: #f7931a;
 }
 
-.practice-play-style-area > .practice-play-style-panel {
-  position: absolute;
-  inset: 0;
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target)::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(247, 147, 26, 0.28);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target) .p2p-picker-sub {
+  color: rgba(247, 147, 26, 0.58);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target) {
+  border-color: rgba(155, 89, 182, 0.48);
+  background: rgba(155, 89, 182, 0.05);
+  color: #c17ee6;
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target)::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(155, 89, 182, 0.28);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target) .p2p-picker-sub {
+  color: rgba(193, 126, 230, 0.58);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target) {
+  border-color: #f7931a;
+  background: rgba(247, 147, 26, 0.09);
+  color: #f7931a;
+  box-shadow:
+    0 0 28px rgba(247, 147, 26, 0.35),
+    0 0 8px rgba(247, 147, 26, 0.2),
+    inset 0 0 40px rgba(247, 147, 26, 0.06);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target)::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(247, 147, 26, 0.45);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
+  color: rgba(247, 147, 26, 0.65);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target) {
+  border-color: #9b59b6;
+  background: rgba(155, 89, 182, 0.1);
+  color: #c17ee6;
+  box-shadow:
+    0 0 28px rgba(155, 89, 182, 0.35),
+    0 0 8px rgba(155, 89, 182, 0.2),
+    inset 0 0 40px rgba(155, 89, 182, 0.06);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target)::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(155, 89, 182, 0.5);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
+  color: rgba(193, 126, 230, 0.65);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.practice-focus-target {
+  border-color: #f7931a;
+  background: #f7931a;
+  color: #fff;
+  box-shadow: 0 0 calc(var(--ph-card-glow-blur) * 1.1) rgba(247, 147, 26, 0.45);
+  outline: none;
+  animation: none;
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target::before,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.practice-focus-target::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.practice-focus-target .p2p-picker-sub {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.practice-focus-target {
+  border-color: #9b59b6;
+  background: #9b59b6;
+  color: #fff;
+  box-shadow: 0 0 calc(var(--ph-card-glow-blur) * 1.1) rgba(155, 89, 182, 0.45);
+  outline: none;
+  animation: none;
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target::before,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.practice-focus-target::before {
+  left: 10%;
+  right: 10%;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.practice-focus-target .p2p-picker-sub {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* Free play vs Challenges — content-sized; scroll inside body when capped */
+.practice-hub-page .practice-play-style-area {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 0;
+  max-height: var(--ph-play-area-max-height);
+  overflow: visible;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.practice-hub-page .practice-play-style-area > .practice-play-style-panel {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  width: 100%;
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0s;
 }
 
-.practice-play-style-area > .practice-play-style-panel.practice-play-style-inactive {
+.practice-hub-page .practice-play-style-area > .practice-play-style-panel:not(.practice-play-style-inactive) {
+  position: relative;
+  z-index: 1;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: var(--ph-play-area-max-height);
+  height: auto;
+}
+
+.practice-hub-page .practice-play-style-area > .practice-play-style-panel.practice-play-style-inactive {
+  position: absolute;
+  inset: 0;
   opacity: 0;
   transform: translateY(6px);
   visibility: hidden;
@@ -107,20 +444,26 @@
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
 }
 
 /* Shared footer below play-style area (same slot for Free play and Challenges) */
 .practice-hub-page .practice-hub-panel-footer {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: 6px;
-  flex-shrink: 0;
+  gap: var(--ph-glow-gutter);
   width: 100%;
+  min-width: 0;
   margin-top: 0;
+  padding-inline: var(--ph-content-inset);
+  padding-block: var(--ph-glow-gutter);
+  box-sizing: border-box;
 }
 
 /* One shared box model — overrides practiceHub .practice-start padding/typography */
@@ -129,18 +472,18 @@
   box-sizing: border-box;
   flex: 1 1 0;
   width: auto;
-  height: clamp(30px, 3vw, 44px);
-  min-height: clamp(30px, 3vw, 44px);
-  max-height: clamp(30px, 3vw, 44px);
+  height: 3vw;
+  min-height: 3vw;
+  max-height: 3vw;
   margin: 0;
-  padding: 0 clamp(8px, 1vw, 16px);
+  padding: 0 1vw;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: clamp(10px, 0.8vw, 13px);
+  font-size: var(--ph-fs-caption);
   font-weight: 400;
   letter-spacing: 0.1rem;
   text-transform: none;
@@ -156,130 +499,280 @@
   animation: glowing 2000ms ease-in-out infinite;
 }
 
-.practice-hub-page .p2p-picker-card.practice-focus-target {
-  outline: 2px solid rgba(255, 255, 255, 0.55);
-  outline-offset: 2px;
-}
-
-.practice-hub-page #brand,
-.practice-hub-page .practice-hub-header {
-  flex-shrink: 0;
-}
-
 .practice-free-play-panel {
   gap: 0;
+  height: auto;
+  min-height: 0;
 }
 
-/* Scrollable setup when viewport is tight; hide scrollbar chrome (no stray line) */
+/* Scrollable setup when viewport is tight; ph-picker-blocks supply shared inset */
 .practice-free-play-panel__body {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  max-height: var(--ph-play-area-max-height);
+  overflow: visible;
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 1.1vw, 16px);
-  padding-bottom: 4px;
+  gap: max(0.2rem, 0.3vw);
+  padding: 0;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-.practice-free-play-panel__body::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+.practice-free-play-panel__body .ph-picker-block {
+  padding: var(--ph-content-inset);
+}
+
+.practice-free-play-panel__body .local-setup-top-row > .local-mode-config-area {
+  align-self: start;
 }
 
 /* Sections must not compress — prevents labels sitting on button borders */
 .practice-free-play-panel__body .practice-section {
   flex-shrink: 0;
   min-height: auto;
-  gap: clamp(6px, 0.65vw, 10px);
+  gap: 0;
 }
 
-.practice-free-play-panel__body .p2p-picker-group-label {
+
+/* Compact inline tiles (icon + text side-by-side) — format + opponent pickers */
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card {
+  min-height: 0;
+  height: auto;
+}
+
+/* Format tabs — chevron on the right points at the options column */
+.practice-hub-page .local-format-section .p2p-picker-card--compact-inline {
+  grid-template-columns: auto 1fr auto;
+}
+
+.practice-hub-page .local-format-section .p2p-picker-card--compact-inline::after {
+  content: '';
+  grid-row: 1 / 3;
+  grid-column: 3;
+  align-self: center;
+  justify-self: end;
+  width: 0.42em;
+  height: 0.42em;
+  margin-right: 0.05em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  opacity: 0.28;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  pointer-events: none;
+}
+
+.practice-hub-page .local-format-section .p2p-picker-card--compact-inline:hover::after {
+  opacity: 0.42;
+}
+
+.practice-hub-page .local-format-section .p2p-picker-card--compact-inline.p2p-picker-card--selected::after {
+  opacity: 0.78;
+  transform: rotate(-45deg) translateX(1px);
+}
+
+.practice-hub-page .local-format-section .p2p-picker-card--compact-inline.practice-focus-target::after {
+  opacity: 0.88;
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.75vw;
+  row-gap: 0.08rem;
+  justify-content: start;
+  align-items: center;
+  width: 100%;
+  height: auto;
+  text-align: left;
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-icon {
+  grid-row: 1 / 3;
+  grid-column: 1;
+  align-self: center;
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--duel .p2p-picker-icon {
+  transform: rotate(180deg);
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-label {
+  grid-row: 1;
+  grid-column: 2;
+  align-self: end;
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-sub {
+  grid-row: 2;
+  grid-column: 2;
+  align-self: start;
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected .p2p-picker-icon,
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline:hover .p2p-picker-icon {
+  transform: none;
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--duel.p2p-picker-card--selected .p2p-picker-icon,
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--duel:hover .p2p-picker-icon {
+  transform: rotate(180deg);
+}
+
+/* Modifiers cards — match compact tile height */
+.practice-hub-page .ph-picker-block .p2p-duel-format__card {
+  align-items: center;
+}
+
+/* FORMAT | OPPONENT (or PLAYERS) — two columns aligned to HOW TO PLAY card edges */
+.practice-free-play-panel__body .local-setup-top-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--ph-glow-gutter);
+  align-items: start;
   flex-shrink: 0;
-  margin: 0 0 clamp(4px, 0.45vw, 6px);
-  line-height: 1.2;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Compact format / opponent tiles so the panel fits without crowding */
-.practice-free-play-panel__body .p2p-picker-card--duel,
-.practice-free-play-panel__body .p2p-picker-card--ffa,
-.practice-free-play-panel__body .p2p-picker-card--humans,
-.practice-free-play-panel__body .p2p-picker-card--ai {
-  min-height: clamp(64px, 6.5vw, 84px);
-  padding: clamp(8px, 1vw, 14px) 0.75rem clamp(6px, 0.85vw, 12px);
-  gap: 0.25rem;
+.practice-free-play-panel__body .local-setup-top-row > .local-format-section,
+.practice-free-play-panel__body .local-setup-top-row > .local-mode-config-area {
+  width: 100%;
+  min-width: 0;
+  min-height: min-content;
+  overflow: visible;
 }
 
-/* Mode config: only the active block (1v1 vs FFA) sets height — inactive is out of flow */
+/* Right column paints later in grid order and was covering left-column glow in the center gap */
+.practice-free-play-panel__body .local-setup-top-row > .local-format-section {
+  position: relative;
+  z-index: 1;
+}
+
+.practice-free-play-panel__body .local-setup-top-row > .local-mode-config-area {
+  position: relative;
+  z-index: 0;
+}
+
+.practice-free-play-panel__body .local-setup-top-row .ph-picker-block,
+.practice-free-play-panel__body .local-setup-top-row .p2p-picker-row {
+  overflow: visible;
+}
+
+/* Mode config: only the active block (1v1 vs FFA) is shown — inactive out of flow */
 .practice-free-play-panel .local-mode-config-area {
   position: relative;
   flex-shrink: 0;
   width: 100%;
+  min-height: min-content;
 }
 
 .practice-free-play-panel .local-mode-config-area > .practice-section {
   display: flex;
   flex-direction: column;
-  gap: clamp(6px, 0.65vw, 10px);
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0s;
-}
-
-.practice-free-play-panel .local-mode-config-area > .practice-section:not(.local-mode-inactive) {
-  position: relative;
-  z-index: 1;
+  gap: 0;
 }
 
 .practice-free-play-panel .local-mode-config-area > .practice-section.local-mode-inactive {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  opacity: 0;
-  transform: translateY(6px);
-  visibility: hidden;
-  pointer-events: none;
-  user-select: none;
-  z-index: 0;
-  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0.22s;
+  display: none;
 }
 
-/* ── FFA, HUMANS, AI picker cards — white glow (same as 1V1/duel) ── */
-.p2p-picker-card--ffa.p2p-picker-card--selected,
-.p2p-picker-card--humans.p2p-picker-card--selected,
-.p2p-picker-card--ai.p2p-picker-card--selected {
-  --button-glow-bg-low: rgb(255 255 255 / 5%);
-  --button-glow-bg-peak: rgb(255 255 255 / 12%);
-  --button-glow-shadow-low: 0 0 8px rgb(255 255 255 / 20%), inset 0 0 6px rgb(255 255 255 / 6%);
-  --button-glow-shadow-peak: 0 0 22px rgb(255 255 255 / 45%), inset 0 0 12px rgb(255 255 255 / 10%);
-  --button-glow-border: rgba(255, 255, 255, 0.55);
-  animation: glowing 2000ms ease-in-out infinite;
+/* ── Free-play picker cards (duel, ffa, humans, ai) — selected rest + focus ── */
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline:not(.p2p-picker-card--selected) {
+  animation: none;
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected:not(.practice-focus-target) {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 calc(var(--ph-card-glow-blur) * 0.45) rgb(255 255 255 / 20%),
+    inset 0 0 6px rgb(255 255 255 / 6%);
+  animation: none;
 }
 
-.p2p-picker-card--ffa.p2p-picker-card--selected::before,
-.p2p-picker-card--humans.p2p-picker-card--selected::before,
-.p2p-picker-card--ai.p2p-picker-card--selected::before {
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected:not(.practice-focus-target)::before {
   background: rgba(255, 255, 255, 0.28);
   left: 0;
   right: 0;
 }
 
-.p2p-picker-card--ffa.p2p-picker-card--selected.practice-focus-target,
-.p2p-picker-card--humans.p2p-picker-card--selected.practice-focus-target,
-.p2p-picker-card--ai.p2p-picker-card--selected.practice-focus-target {
-  --button-glow-shadow-low: 0 0 12px rgb(255 255 255 / 40%), inset 0 0 10px rgb(255 255 255 / 10%);
-  --button-glow-shadow-peak: 0 0 28px rgb(255 255 255 / 70%), inset 0 0 14px rgb(255 255 255 / 14%);
-  outline: none;
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
+  color: rgba(255, 255, 255, 0.55);
 }
 
-/* ── FFA icon: 4-square pop animation on selection ── */
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.practice-focus-target,
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected.practice-focus-target {
+  border-color: #fff;
+  color: #fff;
+  box-shadow:
+    0 0 calc(var(--ph-card-glow-blur) * 1.3) rgba(255, 255, 255, 0.7),
+    0 0 calc(var(--ph-card-glow-blur) * 0.55) rgba(255, 255, 255, 0.4),
+    inset 0 0 18px rgba(255, 255, 255, 0.14);
+  outline: none;
+  animation: none;
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.practice-focus-target .p2p-picker-label,
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.practice-focus-target .p2p-picker-sub {
+  color: #fff;
+  opacity: 1;
+}
+
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.practice-focus-target::before {
+  left: 5%;
+  right: 5%;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* ── Modifiers + tier cards — selected rest + focus (match format pickers) ── */
+.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.p2p-duel-format__card--active:not(.practice-focus-target),
+.practice-hub-page .ph-picker-block .local-tier-card.p2p-duel-format__card--active:not(.practice-focus-target) {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 0 calc(var(--ph-card-glow-blur) * 0.45) rgb(255 255 255 / 20%),
+    inset 0 0 6px rgb(255 255 255 / 6%);
+}
+
+.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.practice-focus-target,
+.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.p2p-duel-format__card--active.practice-focus-target,
+.practice-hub-page .ph-picker-block .local-tier-card.practice-focus-target,
+.practice-hub-page .ph-picker-block .local-tier-card.p2p-duel-format__card--active.practice-focus-target {
+  border-color: #fff;
+  color: #fff;
+  box-shadow:
+    0 0 calc(var(--ph-card-glow-blur) * 1.3) rgba(255, 255, 255, 0.7),
+    0 0 calc(var(--ph-card-glow-blur) * 0.55) rgba(255, 255, 255, 0.4),
+    inset 0 0 18px rgba(255, 255, 255, 0.14);
+  outline: none;
+  animation: none;
+}
+
+.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.practice-focus-target .p2p-duel-format__label,
+.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.practice-focus-target .p2p-duel-format__desc,
+.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.practice-focus-target .p2p-duel-format__icon,
+.practice-hub-page .ph-picker-block .local-tier-card.practice-focus-target .p2p-duel-format__label {
+  color: #fff;
+  opacity: 1;
+}
+
+.practice-hub-page .ph-picker-block .local-tier-card.practice-focus-target .local-tier-pip {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.practice-hub-page .ph-picker-block .local-tier-card.practice-focus-target .local-tier-pip--filled {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(255, 255, 255, 0.88);
+}
+
+/* ── FFA icon: 4-square pop animation on keyboard focus ── */
 .p2p-picker-card--ffa .lh-ffa-icon > * {
   transform-box: fill-box;
   transform-origin: center;
@@ -290,34 +783,31 @@
   to   { transform: scale(1);   opacity: 1; }
 }
 
-.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(1) {
+.p2p-picker-card--ffa.practice-focus-target .lh-ffa-icon > *:nth-child(1) {
   animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
 }
-.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(2) {
+.p2p-picker-card--ffa.practice-focus-target .lh-ffa-icon > *:nth-child(2) {
   animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s both;
 }
-.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(3) {
+.p2p-picker-card--ffa.practice-focus-target .lh-ffa-icon > *:nth-child(3) {
   animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s both;
 }
-.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(4) {
+.p2p-picker-card--ffa.practice-focus-target .lh-ffa-icon > *:nth-child(4) {
   animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s both;
 }
-.p2p-picker-card--ffa.p2p-picker-card--selected .lh-ffa-icon > *:nth-child(5) {
+.p2p-picker-card--ffa.practice-focus-target .lh-ffa-icon > *:nth-child(5) {
   animation: lh-ffa-node-in 0.28s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
 }
 
-/* ── Tier area ── */
-.local-tier-area {
-  margin-top: clamp(8px, 0.8vw, 14px);
-  display: flex;
-  flex-direction: column;
-  gap: clamp(4px, 0.4vw, 8px);
+/* Players/Opponent + Difficulty — one block so labels and 4-col grids share edges */
+.practice-hub-page .local-mode-config-block > .practice-four-slot + .p2p-picker-group-label,
+.practice-hub-page .local-mode-config-block > .p2p-picker-row + .p2p-picker-group-label {
+  margin-top: max(0px, calc(var(--ph-glow-gutter) * 0.2));
 }
 
 .local-tier-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
 }
 
 
@@ -351,8 +841,8 @@
 }
 
 .local-tier-pip {
-  width: clamp(6px, 0.55vw, 8px);
-  height: clamp(3px, 0.25vw, 4px);
+  width: 0.55vw;
+  height: 0.25vw;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: transparent;
   flex-shrink: 0;
@@ -364,142 +854,661 @@
   border-color: rgba(255, 255, 255, var(--tier-brightness, 0.6));
 }
 
-/* ── P1-P4 slot buttons restyled to match duel-format cards ── */
+/* ── Tier difficulty pips: stagger reveal on keyboard focus ── */
+@keyframes ph-tier-pip-reveal {
+  from { transform: scaleX(0.15); opacity: 0.2; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+.local-tier-card.practice-focus-target .local-tier-pip {
+  transform-origin: center;
+  animation: ph-tier-pip-reveal 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+}
+
+.local-tier-card.practice-focus-target .local-tier-pip:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.local-tier-card.practice-focus-target .local-tier-pip:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.local-tier-card.practice-focus-target .local-tier-pip:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+/* ── P1-P4 slot buttons — match compact-inline picker cards ── */
 .practice-hub-page .practice-four-slot {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
+  align-items: stretch;
 }
 
 .practice-hub-page .practice-slot-btn {
+  box-sizing: border-box;
   border-radius: 0;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 8px 6px;
+  gap: 0.08rem;
+  height: 100%;
+  min-height: var(--ph-compact-card-min);
+  padding: var(--ph-compact-card-pad-y) var(--ph-compact-card-pad-x);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.35);
   cursor: pointer;
   font: inherit;
-  color: rgba(255, 255, 255, 0.55);
-  transition: border-color 0.12s, background 0.12s;
+  color: rgba(255, 255, 255, 0.35);
+  line-height: 1;
+  overflow: visible;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
+}
+
+.practice-hub-page .practice-slot-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.2s, left 0.2s, right 0.2s;
 }
 
 .practice-hub-page .practice-slot-btn:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.78);
 }
 
-.practice-hub-page .practice-slot-btn.human {
-  border-color: rgba(255, 255, 255, 0.28);
-  color: rgba(255, 255, 255, 0.82);
+.practice-hub-page .practice-slot-btn:hover::before {
+  left: 5%;
+  right: 5%;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.practice-hub-page .practice-slot-btn.ai {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.42);
+/* Human slot = selected picker rest state */
+.practice-hub-page .practice-slot-btn.human:not(.practice-focus-target) {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 calc(var(--ph-card-glow-blur) * 0.45) rgb(255 255 255 / 20%),
+    inset 0 0 6px rgb(255 255 255 / 6%);
+}
+
+.practice-hub-page .practice-slot-btn.human:not(.practice-focus-target)::before {
+  background: rgba(255, 255, 255, 0.28);
+  left: 0;
+  right: 0;
+}
+
+.practice-hub-page .practice-slot-btn.human:not(.practice-focus-target) .practice-slot-role {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* AI slot = unselected picker rest state */
+.practice-hub-page .practice-slot-btn.ai:not(.practice-focus-target) {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.practice-hub-page .practice-slot-btn.ai:not(.practice-focus-target) .practice-slot-role {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.practice-hub-page .practice-slot-btn.practice-focus-target {
+  border-color: #fff;
+  color: #fff;
+  box-shadow:
+    0 0 calc(var(--ph-card-glow-blur) * 1.3) rgba(255, 255, 255, 0.7),
+    0 0 calc(var(--ph-card-glow-blur) * 0.55) rgba(255, 255, 255, 0.4),
+    inset 0 0 18px rgba(255, 255, 255, 0.14);
+}
+
+.practice-hub-page .practice-slot-btn.practice-focus-target::before {
+  left: 5%;
+  right: 5%;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.practice-hub-page .practice-slot-btn.practice-focus-target .practice-slot-role {
+  color: #fff;
 }
 
 .practice-hub-page .practice-slot-id {
   font-family: 'BureauGrotesque', sans-serif;
-  font-size: clamp(20px, 2.2vw, 30px);
+  font-size: var(--ph-fs-ui);
   font-weight: 700;
-  letter-spacing: 0;
+  letter-spacing: 0.04vw;
   line-height: 1;
 }
 
 .practice-hub-page .practice-slot-role {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.75vw, 11px);
+  font-size: var(--ph-fs-play-style-sub);
   font-weight: 500;
+  line-height: 1.3;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  opacity: 0.65;
+  color: rgba(255, 255, 255, 0.22);
+  transition: color 0.2s;
 }
 
-/* ── Modifiers row ── */
-.local-modifiers-section .p2p-picker-group-label {
-  font-size: clamp(8px, 0.65vw, 10px);
-  font-weight: 400;
-  letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.32);
-  margin-bottom: 0.2rem;
-}
-
-.local-modifier-row {
-  display: flex;
-  gap: 5px;
-}
-
-.local-modifier-row .p2p-duel-format__card {
-  flex: 0 0 auto;
-  min-width: clamp(100px, 11vw, 160px);
-}
-
-/* ── Keyboard / gamepad focus ── */
+/* ── Keyboard / gamepad focus — glow/border only; no outer outline ring ── */
+.practice-hub-page .p2p-picker-card.practice-focus-target,
 .practice-hub-page .practice-seg-btn.practice-focus-target,
 .practice-hub-page .practice-start.practice-focus-target,
 .practice-hub-page .practice-back.practice-focus-target,
 .practice-hub-page .practice-slot-btn.practice-focus-target,
-.practice-hub-page .p2p-duel-format__card.practice-focus-target {
-  outline: 2px solid rgba(255, 255, 255, 0.55);
-  outline-offset: 2px;
+.practice-hub-page .p2p-duel-format__card.practice-focus-target,
+.practice-hub-page .button.practice-start--focused,
+.practice-hub-page .button.practice-back.practice-start--focused,
+.practice-hub-page button:focus,
+.practice-hub-page button:focus-visible {
+  outline: none;
+  outline-offset: 0;
 }
 
-/* Suppress double outline when card is already glowing */
-.practice-hub-page .p2p-duel-format__card--active.practice-focus-target {
-  outline: none;
+/* ── Shared P2P + challenges typography (practice hub) ── */
+.practice-hub-page .p2p-picker-group-label,
+.practice-hub-page .p2p-modifiers-section .p2p-picker-group-label {
+  font-size: var(--ph-fs-caption);
+}
+
+/* Compact picker tiles — HOW TO PLAY tabs + free-play format/opponent cards */
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning .p2p-picker-label,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr .p2p-picker-label,
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-label {
+  font-size: var(--ph-fs-ui);
+  letter-spacing: 0.04vw;
+}
+
+.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning .p2p-picker-sub,
+.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr .p2p-picker-sub,
+.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-sub {
+  font-size: var(--ph-fs-play-style-sub);
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+}
+
+.practice-hub-page .local-tier-card .p2p-duel-format__label {
+  font-size: var(--ph-fs-tier);
+  letter-spacing: 0.04em;
+}
+
+.practice-hub-page .p2p-modifiers-section .p2p-duel-format__label {
+  font-size: var(--ph-fs-ui);
+  text-transform: uppercase;
+}
+
+.practice-hub-page .p2p-duel-format__soon {
+  font-size: var(--ph-fs-soon);
+}
+
+.practice-hub-page--challenges .sc-row__rank {
+  font-size: var(--ph-fs-body-sm);
+}
+
+.practice-hub-page--challenges .sc-row__name {
+  font-size: var(--ph-fs-ui);
+  letter-spacing: 0.04vw;
+}
+
+/* Challenge rows — rank 1 (purple) → rank 6 (white) border + accent progression */
+.solo-challenges-panel .sc-row[data-rank="1"],
+.practice-hub-page--challenges .sc-row[data-rank="1"] {
+  border-color: rgba(155, 89, 182, 0.38);
+  --sc-accent: 155, 89, 182;
+  --sc-accent-strong: 193, 126, 230;
+  --sc-sats-fs: calc(0.36rem + 0.92vw);
+  --sc-sats-fs-locked: clamp(18px, 1.65vw, 26px);
+}
+.solo-challenges-panel .sc-row[data-rank="2"],
+.practice-hub-page--challenges .sc-row[data-rank="2"] {
+  border-color: rgba(175, 122, 197, 0.34);
+  --sc-accent: 175, 122, 197;
+  --sc-accent-strong: 200, 145, 215;
+  --sc-sats-fs: calc(0.4rem + 1.05vw);
+  --sc-sats-fs-locked: clamp(20px, 1.9vw, 30px);
+}
+.solo-challenges-panel .sc-row[data-rank="3"],
+.practice-hub-page--challenges .sc-row[data-rank="3"] {
+  border-color: rgba(195, 155, 212, 0.3);
+  --sc-accent: 195, 155, 212;
+  --sc-accent-strong: 215, 175, 225;
+  --sc-sats-fs: calc(0.44rem + 1.18vw);
+  --sc-sats-fs-locked: clamp(22px, 2.15vw, 34px);
+}
+.solo-challenges-panel .sc-row[data-rank="4"],
+.practice-hub-page--challenges .sc-row[data-rank="4"] {
+  border-color: rgba(215, 188, 227, 0.26);
+  --sc-accent: 215, 188, 227;
+  --sc-accent-strong: 228, 205, 235;
+  --sc-sats-fs: calc(0.48rem + 1.32vw);
+  --sc-sats-fs-locked: clamp(24px, 2.4vw, 38px);
+}
+.solo-challenges-panel .sc-row[data-rank="5"],
+.practice-hub-page--challenges .sc-row[data-rank="5"] {
+  border-color: rgba(235, 221, 242, 0.22);
+  --sc-accent: 235, 221, 242;
+  --sc-accent-strong: 245, 238, 248;
+  --sc-sats-fs: calc(0.52rem + 1.48vw);
+  --sc-sats-fs-locked: clamp(26px, 2.65vw, 42px);
+}
+.solo-challenges-panel .sc-row[data-rank="6"],
+.practice-hub-page--challenges .sc-row[data-rank="6"] {
+  border-color: rgba(255, 255, 255, 0.2);
+  --sc-accent: 255, 255, 255;
+  --sc-accent-strong: 255, 255, 255;
+  --sc-sats-fs: calc(0.58rem + 1.68vw);
+  --sc-sats-fs-locked: clamp(28px, 3vw, 48px);
+}
+
+.practice-hub-page--challenges .sc-row[data-rank]:hover {
+  border-color: rgba(var(--sc-accent-strong), 0.48);
+  background: rgba(var(--sc-accent), 0.06);
+}
+
+.practice-hub-page--challenges .sc-row--selected[data-rank="1"] {
+  --button-glow-bg-low: rgb(155 89 182 / 12%);
+  --button-glow-bg-peak: rgb(155 89 182 / 26%);
+  --button-glow-shadow-low: 0 0 15px rgb(155 89 182 / 45%);
+  --button-glow-shadow-peak: 0 0 35px rgb(155 89 182 / 60%);
+  --button-glow-border: rgba(193, 126, 230, 0.9);
+  border-color: rgba(193, 126, 230, 0.72);
+  box-shadow: 0 0 15px rgb(155 89 182 / 45%);
+}
+.practice-hub-page--challenges .sc-row--selected[data-rank="2"] {
+  --button-glow-bg-low: rgb(175 122 197 / 12%);
+  --button-glow-bg-peak: rgb(175 122 197 / 24%);
+  --button-glow-shadow-low: 0 0 15px rgb(175 122 197 / 40%);
+  --button-glow-shadow-peak: 0 0 35px rgb(175 122 197 / 55%);
+  --button-glow-border: rgba(200, 145, 215, 0.88);
+  border-color: rgba(200, 145, 215, 0.68);
+  box-shadow: 0 0 15px rgb(175 122 197 / 38%);
+}
+.practice-hub-page--challenges .sc-row--selected[data-rank="3"] {
+  --button-glow-bg-low: rgb(195 155 212 / 12%);
+  --button-glow-bg-peak: rgb(195 155 212 / 22%);
+  --button-glow-shadow-low: 0 0 15px rgb(195 155 212 / 35%);
+  --button-glow-shadow-peak: 0 0 35px rgb(195 155 212 / 48%);
+  --button-glow-border: rgba(215, 175, 225, 0.85);
+  border-color: rgba(215, 175, 225, 0.62);
+  box-shadow: 0 0 15px rgb(195 155 212 / 32%);
+}
+.practice-hub-page--challenges .sc-row--selected[data-rank="4"] {
+  --button-glow-bg-low: rgb(215 188 227 / 12%);
+  --button-glow-bg-peak: rgb(215 188 227 / 20%);
+  --button-glow-shadow-low: 0 0 15px rgb(255 255 255 / 28%);
+  --button-glow-shadow-peak: 0 0 35px rgb(255 255 255 / 42%);
+  --button-glow-border: rgba(228, 205, 235, 0.82);
+  border-color: rgba(228, 205, 235, 0.58);
+  box-shadow: 0 0 15px rgb(255 255 255 / 24%);
+}
+.practice-hub-page--challenges .sc-row--selected[data-rank="5"] {
+  --button-glow-bg-low: rgb(235 221 242 / 10%);
+  --button-glow-bg-peak: rgb(255 255 255 / 22%);
+  --button-glow-shadow-low: 0 0 15px rgb(255 255 255 / 32%);
+  --button-glow-shadow-peak: 0 0 35px rgb(255 255 255 / 48%);
+  --button-glow-border: rgba(245, 238, 248, 0.9);
+  border-color: rgba(245, 238, 248, 0.72);
+  box-shadow: 0 0 15px rgb(255 255 255 / 30%);
+}
+.practice-hub-page--challenges .sc-row--selected[data-rank="6"] {
+  --button-glow-bg-low: rgb(255 255 255 / 15%);
+  --button-glow-bg-peak: rgb(255 255 255 / 30%);
+  --button-glow-shadow-low: 0 0 15px rgb(255 255 255);
+  --button-glow-shadow-peak: 0 0 35px rgb(255 255 255);
+  --button-glow-border: #fff;
+  border-color: rgba(255, 255, 255, 0.83);
+  box-shadow: 0 0 15px rgb(255 255 255);
+}
+
+.practice-hub-page--challenges .sc-row[data-rank] .sc-row__rank {
+  color: rgba(var(--sc-accent), 0.34);
+}
+.practice-hub-page--challenges .sc-row--selected[data-rank] .sc-row__rank {
+  color: rgba(var(--sc-accent-strong), 0.72);
+}
+
+.practice-hub-page--challenges .sc-row[data-rank] .sc-tag {
+  border-color: rgba(var(--sc-accent), 0.18);
+  color: rgba(var(--sc-accent), 0.42);
+}
+.practice-hub-page--challenges .sc-row--selected[data-rank] .sc-tag {
+  border-color: rgba(var(--sc-accent-strong), 0.28);
+  color: rgba(var(--sc-accent-strong), 0.62);
+}
+
+.practice-hub-page--challenges .sc-row[data-rank] .sc-row__name-line {
+  color: rgba(var(--sc-accent-strong), 0.62);
+  transition: color 0.18s;
+}
+
+.practice-hub-page--challenges .sc-row[data-rank]:hover .sc-row__name-line {
+  color: rgba(var(--sc-accent-strong), 0.8);
+}
+
+.practice-hub-page--challenges .sc-row--selected[data-rank] .sc-row__name-line {
+  color: rgba(var(--sc-accent-strong), 0.94);
+}
+
+@keyframes sc-sats-shimmer-nostr {
+  0%, 100% {
+    color: rgba(var(--sc-accent-strong), 0.75);
+    text-shadow: none;
+  }
+  50% {
+    color: rgba(var(--sc-accent-strong), 0.98);
+    text-shadow:
+      0 0 14px rgba(var(--sc-accent), 0.35),
+      0 0 32px rgba(var(--sc-accent), 0.1);
+  }
+}
+
+@keyframes sc-sats-shimmer-white {
+  0%, 100% {
+    color: rgba(255, 255, 255, 0.75);
+    text-shadow: none;
+  }
+  50% {
+    color: rgba(255, 255, 255, 0.98);
+    text-shadow:
+      0 0 14px rgba(255, 255, 255, 0.35),
+      0 0 32px rgba(255, 255, 255, 0.1);
+  }
+}
+
+.practice-hub-page--challenges .sc-row__sats {
+  font-size: var(--sc-sats-fs, var(--ph-fs-heading));
+  color: rgba(var(--sc-accent-strong), 0.52);
+}
+
+.practice-hub-page--challenges .sc-row--selected[data-rank="1"] .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="2"] .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="3"] .sc-row__sats {
+  color: rgba(var(--sc-accent-strong), 0.9);
+  animation: sc-sats-shimmer-nostr 3s ease-in-out infinite;
+}
+
+.practice-hub-page--challenges .sc-row--selected[data-rank="4"] .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="5"] .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="6"] .sc-row__sats {
+  color: rgba(255, 255, 255, 0.9);
+  animation: sc-sats-shimmer-white 3s ease-in-out infinite;
+}
+
+.solo-challenges-panel .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row__bounty--locked .sc-row__sats {
+  font-size: var(--sc-sats-fs-locked, clamp(26px, 2.85vw, 42px));
+  letter-spacing: 0.01em;
+  line-height: 1;
+  animation: none;
+  text-shadow: none;
+}
+
+.solo-challenges-panel .sc-row__bounty--locked .sc-row__lock,
+.practice-hub-page--challenges .sc-row__bounty--locked .sc-row__lock {
+  width: clamp(14px, 1.35vw, 20px);
+  height: clamp(14px, 1.35vw, 20px);
+  flex-shrink: 0;
+}
+
+.practice-hub-page--challenges .sc-row[data-rank="1"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row[data-rank="2"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row[data-rank="3"] .sc-row__bounty--locked .sc-row__sats {
+  color: rgba(var(--sc-accent-strong), 0.52);
+}
+
+.practice-hub-page--challenges .sc-row[data-rank="4"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row[data-rank="5"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row[data-rank="6"] .sc-row__bounty--locked .sc-row__sats {
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.practice-hub-page--challenges .sc-row:hover[data-rank="1"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row:hover[data-rank="2"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row:hover[data-rank="3"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="1"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="2"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="3"] .sc-row__bounty--locked .sc-row__sats {
+  color: rgba(var(--sc-accent-strong), 0.9);
+}
+
+.practice-hub-page--challenges .sc-row:hover[data-rank="4"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row:hover[data-rank="5"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row:hover[data-rank="6"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="4"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="5"] .sc-row__bounty--locked .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank="6"] .sc-row__bounty--locked .sc-row__sats {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.solo-challenges-panel .sc-row__bounty--locked .sc-row__unit,
+.practice-hub-page--challenges .sc-row__bounty--locked .sc-row__unit {
+  position: absolute;
+  top: calc(28% - var(--sc-unit-jitter-top, 2vw));
+  right: max(-0.35rem, -0.55vw);
+  left: auto;
+  bottom: auto;
+  z-index: 12;
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05em;
+  width: max(3rem, 3.6vw);
+  height: max(3rem, 3.6vw);
+  min-width: max(3rem, 3.6vw);
+  padding: max(0.2rem, 0.3vw);
+  margin: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  border: none;
+  background: rgb(var(--sc-accent-strong));
+  box-shadow: none;
+  transform:
+    translateY(-50%)
+    translateX(calc(max(0.2rem, 0.35vw) + var(--sc-unit-jitter-left, 2vw)))
+    rotate(var(--sc-unit-rotate, 21deg))
+    scale(0.88);
+  font-size: clamp(6.5px, 0.56vw, 9px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: normal;
+  color: rgba(0, 0, 0, 0.92);
+  text-shadow: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s cubic-bezier(0.22, 1.2, 0.36, 1),
+    box-shadow 0.2s ease;
+}
+
+.practice-hub-page--challenges .sc-row__bounty--locked .sc-row__unit-line {
+  display: block;
+  line-height: 1.22;
+}
+
+.solo-challenges-panel .sc-row:hover .sc-row__bounty--locked .sc-row__unit,
+.solo-challenges-panel .sc-row:focus .sc-row__bounty--locked .sc-row__unit,
+.solo-challenges-panel .sc-row:focus-visible .sc-row__bounty--locked .sc-row__unit,
+.practice-hub-page--challenges .sc-row:hover .sc-row__bounty--locked .sc-row__unit,
+.practice-hub-page--challenges .sc-row:focus .sc-row__bounty--locked .sc-row__unit,
+.practice-hub-page--challenges .sc-row:focus-visible .sc-row__bounty--locked .sc-row__unit {
+  opacity: 1;
+  pointer-events: auto;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22);
+  transform:
+    translateY(-50%)
+    translateX(calc(max(0.2rem, 0.35vw) + var(--sc-unit-jitter-left, 2vw)))
+    rotate(var(--sc-unit-rotate, 21deg))
+    scale(1);
+  animation: sc-sign-in-claim-pop 0.34s cubic-bezier(0.22, 1.3, 0.36, 1) both;
+}
+
+.solo-challenges-panel .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
+.practice-hub-page--challenges .sc-row--selected .sc-row__bounty--locked .sc-row__unit {
+  opacity: 1;
+  pointer-events: auto;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22);
+  transform:
+    translateY(-50%)
+    translateX(calc(max(0.2rem, 0.35vw) + var(--sc-unit-jitter-left, 2vw)))
+    rotate(var(--sc-unit-rotate, 21deg))
+    scale(1);
+  animation:
+    sc-sign-in-claim-pop 0.34s cubic-bezier(0.22, 1.3, 0.36, 1) both,
+    sc-sign-in-claim-violator 1.2s ease-in-out 0.34s infinite;
+}
+
+.solo-challenges-panel .sc-row__bounty--locked .sc-row__unit,
+.solo-challenges-panel .sc-row__bounty--locked .sc-row__unit-line,
+.solo-challenges-panel .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
+.solo-challenges-panel .sc-row--selected .sc-row__bounty--locked .sc-row__unit-line,
+.practice-hub-page--challenges .sc-row__bounty--locked .sc-row__unit,
+.practice-hub-page--challenges .sc-row__bounty--locked .sc-row__unit-line,
+.practice-hub-page--challenges .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
+.practice-hub-page--challenges .sc-row--selected .sc-row__bounty--locked .sc-row__unit-line {
+  color: rgba(0, 0, 0, 0.92);
+}
+
+@keyframes sc-sign-in-claim-pop {
+  0% {
+    opacity: 0;
+    transform:
+      translateY(-50%)
+      translateX(calc(max(0.2rem, 0.35vw) + var(--sc-unit-jitter-left, 2vw)))
+      rotate(var(--sc-unit-rotate, 21deg))
+      scale(0.35);
+  }
+  68% {
+    opacity: 1;
+    transform:
+      translateY(-50%)
+      translateX(calc(max(0.2rem, 0.35vw) + var(--sc-unit-jitter-left, 2vw)))
+      rotate(var(--sc-unit-rotate, 21deg))
+      scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform:
+      translateY(-50%)
+      translateX(calc(max(0.2rem, 0.35vw) + var(--sc-unit-jitter-left, 2vw)))
+      rotate(var(--sc-unit-rotate, 21deg))
+      scale(1);
+  }
+}
+
+@keyframes sc-sign-in-claim-violator {
+  0%,
+  100% {
+    box-shadow:
+      0 2px 5px rgba(0, 0, 0, 0.2),
+      0 0 5px rgba(var(--sc-accent), 0.22);
+  }
+  50% {
+    box-shadow:
+      0 3px 7px rgba(0, 0, 0, 0.24),
+      0 0 10px rgba(var(--sc-accent-strong), 0.45);
+  }
+}
+
+.solo-challenges-panel .sc-row:hover,
+.solo-challenges-panel .sc-row--selected,
+.practice-hub-page--challenges .sc-row:hover,
+.practice-hub-page--challenges .sc-row--selected {
+  position: relative;
+  z-index: 4;
+}
+
+.practice-hub-page--challenges .sc-row[data-rank] .sc-row__lock {
+  color: rgba(var(--sc-accent), 0.3);
+}
+
+.practice-hub-page--challenges .sc-gate__title {
+  font-size: var(--ph-fs-body-sm);
+  letter-spacing: 0.04vw;
+}
+
+.practice-hub-page--challenges .sc-gate__nostr-name {
+  font-size: var(--ph-fs-ui);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.practice-hub-page--challenges .sc-gate__progress,
+.practice-hub-page--challenges .sc-gate__check-detail {
+  font-size: var(--ph-fs-body-sm);
+}
+
+.practice-hub-page--challenges .sc-gate__nostr-pubkey,
+.practice-hub-page--challenges .sc-gate__nostr-ln {
+  font-size: var(--ph-fs-gate-meta);
+  letter-spacing: 0.02vw;
+  max-width: 100%;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.practice-hub-page--challenges .sc-gate__config-link {
+  margin-left: 0;
+  padding: 0.35vw 0.55vw;
+  font-size: var(--ph-fs-gate-meta);
+  letter-spacing: 0.06vw;
+  white-space: nowrap;
+}
+
+.practice-hub-page--challenges .sc-gate__check-label {
+  font-size: var(--ph-fs-gate-check);
+  letter-spacing: 0.08em;
+}
+
+.practice-hub-page--challenges .sc-gate__check-mark {
+  width: calc(0.55rem + 1.1vw);
+  height: calc(0.55rem + 1.1vw);
+  font-size: var(--ph-fs-gate-check);
+}
+
+.practice-hub-page--challenges .sc-gate__nostr-btn,
+.practice-hub-page--challenges .sc-gate__hint {
+  font-size: var(--ph-fs-body-sm);
 }
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .local-mode-config-area > .practice-section,
-  .local-mode-config-area > .practice-section.local-mode-inactive,
   .practice-play-style-area > .practice-play-style-panel,
   .practice-play-style-area > .practice-play-style-panel.practice-play-style-inactive {
     transition: none;
   }
-  .lh-ffa-icon > * {
+  .lh-ffa-icon > *,
+  .local-tier-card.practice-focus-target .local-tier-pip,
+  .practice-hub-page--challenges .sc-row--selected .sc-row__sats,
+  .solo-challenges-panel .sc-row:hover .sc-row__bounty--locked .sc-row__unit,
+  .solo-challenges-panel .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
+  .practice-hub-page--challenges .sc-row:hover .sc-row__bounty--locked .sc-row__unit,
+  .practice-hub-page--challenges .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
+  .practice-hub-page--challenges .sc-row--selected .sc-row__icon-part {
     animation: none !important;
   }
 }
 
-/* ── Large screen / TV (≥1400px) ── */
+/* ── Large screen / TV (≥1400px) — structural overrides only (sizes scale via vw above) ── */
 @media (min-width: 1400px) {
-  .practice-hub-page.practice-hub--practice {
-    gap: clamp(16px, 1.6vw, 28px);
-    padding-top: clamp(24px, 3vw, 52px);
-    padding-bottom: clamp(24px, 3vw, 52px);
-  }
-
-  .practice-hub-page .practice-panel {
-    gap: clamp(16px, 2vw, 30px);
-  }
-
-  .practice-hub-page .practice-hub-title {
-    font-size: clamp(32px, 4vw, 68px);
-  }
-
-  .practice-hub-page .practice-actions {
-    gap: clamp(6px, 0.6vw, 12px);
-  }
-
-  .local-tier-grid {
-    gap: clamp(5px, 0.5vw, 10px);
-  }
-
-  .local-tier-rank {
-    font-size: clamp(10px, 0.8vw, 14px);
-  }
-
-  .practice-hub-page .practice-slot-id {
-    font-size: clamp(22px, 2.4vw, 36px);
-  }
-
-  .practice-hub-page .practice-slot-role {
-    font-size: clamp(9px, 0.75vw, 13px);
+  .practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline {
+    display: grid;
+    min-height: var(--ph-compact-card-min);
+    height: auto;
   }
 }

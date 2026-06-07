@@ -39,17 +39,35 @@ function hasTierRow(ctx: NavContext): boolean {
   );
 }
 
-function rowAboveRulePowerup(ctx: NavContext): PracticeNavFocus {
-  if (hasTierRow(ctx)) {
-    return { kind: 'tier', idx: 0 };
+/** Right column entry from the format column at the same visual row. */
+function formatRightTarget(idx: 0 | 1, ctx: NavContext): PracticeNavFocus | null {
+  if (idx === 0) {
+    if (ctx.show1v1Opponent) return { kind: 'opponent', idx: 0 };
+    if (ctx.showTeamControl) return { kind: 'slot', idx: 0 };
+    return null;
   }
-  if (ctx.show1v1Opponent) {
-    return { kind: 'opponent', idx: 0 };
-  }
-  if (ctx.showTeamControl) {
-    return { kind: 'slot', idx: 0 };
-  }
+  if (hasTierRow(ctx)) return { kind: 'tier', idx: 0 };
+  if (ctx.show1v1Opponent) return { kind: 'opponent', idx: 1 };
+  if (ctx.showTeamControl) return { kind: 'slot', idx: 2 };
+  return null;
+}
+
+/** Opponent row sits on the top visual row with ONE VS ONE. */
+function opponentUpTarget(): PracticeNavFocus {
   return { kind: 'format', idx: 0 };
+}
+
+/** Tier row sits on the bottom visual row with FREE FOR ALL. */
+function tierUpTarget(idx: 0 | 1 | 2 | 3, ctx: NavContext): PracticeNavFocus {
+  if (ctx.show1v1Opponent) {
+    return { kind: 'opponent', idx: (idx === 0 ? 0 : 1) as 0 | 1 };
+  }
+  return { kind: 'slot', idx: clampCol(idx, 4) as 0 | 1 | 2 | 3 };
+}
+
+/** Modifiers sit below the setup grid; FREE FOR ALL anchors the row above them. */
+function rowAboveRulePowerup(): PracticeNavFocus {
+  return { kind: 'format', idx: 1 };
 }
 
 function verticalStep(
@@ -62,24 +80,20 @@ function verticalStep(
   switch (f.kind) {
     case 'format': {
       if (down) {
-        if (ctx.show1v1Opponent) {
-          return { kind: 'opponent', idx: clampCol(f.idx, 2) as 0 | 1 };
-        }
-        if (ctx.showTeamControl) {
-          return { kind: 'slot', idx: clampCol(f.idx, 4) as 0 | 1 | 2 | 3 };
-        }
+        if (f.idx === 0) return { kind: 'format', idx: 1 };
         return { kind: 'rulePowerup' };
       }
+      if (f.idx === 1) return { kind: 'format', idx: 0 };
       return null;
     }
     case 'opponent': {
       if (down) {
         if (ctx.opponent === 'ai') {
-          return { kind: 'tier', idx: clampCol(f.idx, 4) as 0 | 1 | 2 | 3 };
+          return { kind: 'tier', idx: (f.idx === 1 ? 3 : 0) as 0 | 1 | 2 | 3 };
         }
         return { kind: 'rulePowerup' };
       }
-      return { kind: 'format', idx: clampCol(f.idx, 2) as 0 | 1 };
+      return opponentUpTarget();
     }
     case 'slot': {
       if (down) {
@@ -88,18 +102,18 @@ function verticalStep(
         }
         return { kind: 'rulePowerup' };
       }
-      return { kind: 'format', idx: clampCol(f.idx, 2) as 0 | 1 };
+      return { kind: 'format', idx: 0 };
     }
     case 'tier': {
       if (down) return { kind: 'rulePowerup' };
       if (ctx.show1v1Opponent) {
-        return { kind: 'opponent', idx: clampCol(f.idx, 2) as 0 | 1 };
+        return tierUpTarget(f.idx, ctx);
       }
-      return { kind: 'slot', idx: clampCol(f.idx, 4) as 0 | 1 | 2 | 3 };
+      return { kind: 'format', idx: 1 };
     }
     case 'rulePowerup': {
       if (down) return null;
-      return rowAboveRulePowerup(ctx);
+      return rowAboveRulePowerup();
     }
     case 'start':
     case 'back':
@@ -115,27 +129,28 @@ export function buildPracticeHubFlatNav(
   opponent: OpponentChoice,
   allFourHuman: boolean
 ): PracticeNavFocus[] {
-  const list: PracticeNavFocus[] = [
-    { kind: 'format', idx: 0 },
-    { kind: 'format', idx: 1 },
-  ];
-  if (showTeamControl) {
+  const list: PracticeNavFocus[] = [{ kind: 'format', idx: 0 }];
+
+  if (show1v1Opponent) {
+    list.push({ kind: 'opponent', idx: 0 }, { kind: 'opponent', idx: 1 });
+  } else if (showTeamControl) {
     for (let i = 0; i < 4; i++) {
       list.push({ kind: 'slot', idx: i as 0 | 1 | 2 | 3 });
     }
   }
-  if (show1v1Opponent) {
-    list.push({ kind: 'opponent', idx: 0 }, { kind: 'opponent', idx: 1 });
-    if (opponent === 'ai') {
-      for (let i = 0; i < 4; i++) {
-        list.push({ kind: 'tier', idx: i as 0 | 1 | 2 | 3 });
-      }
+
+  list.push({ kind: 'format', idx: 1 });
+
+  if (show1v1Opponent && opponent === 'ai') {
+    for (let i = 0; i < 4; i++) {
+      list.push({ kind: 'tier', idx: i as 0 | 1 | 2 | 3 });
     }
   } else if (showTeamControl && !allFourHuman) {
     for (let i = 0; i < 4; i++) {
       list.push({ kind: 'tier', idx: i as 0 | 1 | 2 | 3 });
     }
   }
+
   list.push({ kind: 'rulePowerup' }, { kind: 'start' }, { kind: 'back' });
   return list;
 }
@@ -162,20 +177,35 @@ export function advancePracticeHubFlatNav(
 
 function horizontalStep(
   f: PracticeNavFocus,
-  dir: 'left' | 'right'
+  dir: 'left' | 'right',
+  ctx: NavContext
 ): PracticeNavFocus | null {
   const left = dir === 'left';
   const horiz = (n: number, mod: number) =>
     (((n + (left ? -1 : 1)) % mod) + mod) % mod;
+
   switch (f.kind) {
-    case 'format':
-      return { kind: 'format', idx: horiz(f.idx, 2) as 0 | 1 };
-    case 'slot':
+    case 'format': {
+      if (left) return null;
+      return formatRightTarget(f.idx, ctx);
+    }
+    case 'slot': {
+      if (left && f.idx === 0) return { kind: 'format', idx: 0 };
       return { kind: 'slot', idx: horiz(f.idx, 4) as 0 | 1 | 2 | 3 };
-    case 'opponent':
-      return { kind: 'opponent', idx: horiz(f.idx, 2) as 0 | 1 };
-    case 'tier':
+    }
+    case 'opponent': {
+      if (left && f.idx === 0) return { kind: 'format', idx: 0 };
+      if (left) return { kind: 'opponent', idx: 0 };
+      if (f.idx === 1) return null;
+      return { kind: 'opponent', idx: 1 };
+    }
+    case 'tier': {
+      if (left && f.idx === 0) {
+        if (ctx.show1v1Opponent) return { kind: 'format', idx: 1 };
+        return { kind: 'slot', idx: 0 };
+      }
       return { kind: 'tier', idx: horiz(f.idx, 4) as 0 | 1 | 2 | 3 };
+    }
     case 'start':
     case 'back':
       return null;
@@ -204,7 +234,7 @@ export function movePracticeHubNav(
     return next ?? f;
   }
 
-  const h = horizontalStep(f, direction);
+  const h = horizontalStep(f, direction, ctx);
   if (h) return h;
   return f;
 }

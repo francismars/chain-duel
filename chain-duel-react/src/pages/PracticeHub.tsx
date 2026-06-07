@@ -267,12 +267,10 @@ export default function PracticeHub() {
       <div className="practice-panel" role="main" aria-label="Practice play">
         <section
           className="practice-section practice-play-style-section"
-          aria-labelledby="lh-play-style"
+          aria-label="Play style"
         >
-          <h3 id="lh-play-style" className="p2p-picker-group-label">
-            HOW TO PLAY
-          </h3>
-          <div className="p2p-picker-row" role="radiogroup" aria-label="Play style">
+          <div className="ph-picker-block">
+            <div className="p2p-picker-row" role="radiogroup" aria-label="Play style">
             <button
               ref={(el) => {
                 playStyleRefs.current[0] = el;
@@ -294,7 +292,7 @@ export default function PracticeHub() {
                 activatePlayStyle(0);
               }}
             >
-              <svg className="p2p-picker-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg className="p2p-picker-icon p2p-picker-icon--people" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <circle cx="8" cy="7" r="2.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15" />
                 <path d="M3 18a5 4 0 0 1 10 0" stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none" />
                 <circle cx="16" cy="7" r="2.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15" />
@@ -325,17 +323,29 @@ export default function PracticeHub() {
                 activatePlayStyle(1);
               }}
             >
-              <svg className="p2p-picker-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="6" y="8" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.12" />
-                <circle cx="9.5" cy="12" r="1.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.3" />
-                <circle cx="14.5" cy="12" r="1.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.3" />
-                <path d="M9 18v2M15 18v2" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-                <path d="M12 4v4" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-                <circle cx="12" cy="3.5" r="1" stroke="currentColor" strokeWidth="1" />
+              <svg className="p2p-picker-icon p2p-picker-icon--challenges" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M13.5 4 V17.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+                <path
+                  d="M13.5 4.5 H21 V10 H13.5 Z"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeLinejoin="round"
+                  fill="currentColor"
+                  fillOpacity="0.15"
+                />
+                <path
+                  d="M7 16.5 C4 13.8 2.5 10.2 2.5 6.8 V4.8 L7 3.2 L11.5 4.8 V6.8 C11.5 10.2 10 13.8 7 16.5 Z"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeLinejoin="round"
+                  fill="currentColor"
+                  fillOpacity="0.12"
+                />
               </svg>
               <span className="p2p-picker-label">CHALLENGES</span>
               <span className="p2p-picker-sub">Beat the bots: win sats on Nostr</span>
             </button>
+          </div>
           </div>
         </section>
 
