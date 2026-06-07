@@ -159,11 +159,17 @@
   font-size: 2.5cqw;
 }
 
+/* Shared board strip width — canvas + power-up legend stay aligned */
+#gameContainer {
+  --game-board-width: 70vw;
+  --game-board-margin-x: 15%;
+}
+
 #gameCanvas {
   position: relative;
   z-index: 0;
-  margin: 0 15%;
-  width: 70vw;
+  margin: 0 var(--game-board-margin-x);
+  width: var(--game-board-width);
   height: 35vw;
   background-color: #6969698f;
   background-image: url('/images/game_bg.png');
@@ -176,6 +182,11 @@
 #gameCanvas canvas {
   width: 100%;
   height: 100%;
+}
+
+/* Tighten gap between board and power-up legend */
+#gameCanvas:has(+ #powerUpKey) {
+  margin-bottom: clamp(2px, 0.3vw, 6px);
 }
 
 #gameCanvas.highlight {
@@ -833,6 +844,11 @@
    with the longer edge) plus tighter horizontal margins so labels stay readable.
    ─────────────────────────────────────────────────────────────────────────── */
 @media (max-aspect-ratio: 1/1) {
+  #gameContainer {
+    --game-board-width: 94vw;
+    --game-board-margin-x: 3%;
+  }
+
   #brand {
     margin-top: 0.35rem;
   }
@@ -961,11 +977,15 @@
   }
 
   #gameCanvas {
-    margin: 0.35rem 3% 0.75rem;
-    width: 94vw;
+    margin: 0.35rem var(--game-board-margin-x) 0.75rem;
+    width: var(--game-board-width);
     height: auto;
     aspect-ratio: 2 / 1;
     max-height: min(46vw, 44dvh);
+  }
+
+  #gameCanvas:has(+ #powerUpKey) {
+    margin-bottom: clamp(2px, 0.5vw, 8px);
   }
 
   /* Match mempool type scale to power-up legend (name + desc) */

@@ -66,15 +66,15 @@ export function PowerUpLegend() {
             title={tooltip}
           >
             <span className="powerUpLegend__swatch" aria-hidden="true" />
-            <div className="powerUpLegend__icon" style={{ color }}>
-              {icon}
-            </div>
-            <div className="powerUpLegend__body">
+            <div className="powerUpLegend__header">
+              <div className="powerUpLegend__icon" style={{ color }}>
+                {icon}
+              </div>
               <span className="powerUpLegend__name" style={{ color }}>
                 {title}
               </span>
-              <span className="powerUpLegend__desc">{subtitle}</span>
             </div>
+            <span className="powerUpLegend__desc">{subtitle}</span>
           </li>
           );
         })}
