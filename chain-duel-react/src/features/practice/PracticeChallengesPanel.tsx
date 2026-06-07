@@ -31,6 +31,7 @@ import {
   countPassedChecks,
   formatEligibilityChecks,
 } from '@/lib/challengeEligibilityDisplay';
+import { ChallengeRowIcon } from '@/features/practice/ChallengeRowIcon';
 
 const CONVERGENCE_PRESET = {
   shrinkIntervalTicks: PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
@@ -49,6 +50,8 @@ interface Challenge {
   powerup: boolean;
   bounty: number;
 }
+
+const CHALLENGE_GRID_COLS = 6;
 
 const CHALLENGES: Challenge[] = [
   {
@@ -147,6 +150,59 @@ function formatBounty(sats: number): string {
   return sats.toLocaleString();
 }
 
+function splitChallengeTitle(name: string): [string, string] {
+  const spaceIdx = name.indexOf(' ');
+  if (spaceIdx === -1) return [name, ''];
+  return [name.slice(0, spaceIdx), name.slice(spaceIdx + 1)];
+}
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function violatorJitter(seed: string) {
+  const h = hashString(seed);
+  const r1 = (h % 1000) / 1000;
+  const r2 = ((h >>> 10) % 1000) / 1000;
+  const r3 = ((h >>> 20) % 1000) / 1000;
+  return {
+    topVw: 1 + r1 * 2,
+    leftVw: 1 + r2 * 2,
+    rotateDeg: 21 + (r3 * 24 - 12),
+  };
+}
+
+const VIOLATOR_JITTER_BY_ID = Object.fromEntries(
+  CHALLENGES.map((c) => [c.id, violatorJitter(c.id)])
+);
+
+function getGateCopy(opts: {
+  signedIn: boolean;
+  payoutReady: boolean;
+}): { eyebrow: string | null; title: string | null; lede: string } {
+  if (opts.payoutReady) {
+    return {
+      eyebrow: null,
+      title: 'Ready to claim sats',
+      lede: 'Win, sign your note, get zapped to your Lightning address.',
+    };
+  }
+  if (opts.signedIn) {
+    return {
+      eyebrow: null,
+      title: 'Finish payout setup',
+      lede: 'Complete the checklist to unlock bounty payouts.',
+    };
+  }
+  return {
+    eyebrow: 'Get zapped to win.',
+    title: null,
+    lede: 'Sign in to unlock sat bounties paid to your Lightning address.',
+  };
+}
+
 const LN_ADDRESS_KEY = 'arcadeLnAddress';
 
 interface PracticeChallengesPanelProps {
@@ -175,18 +231,27 @@ export const PracticeChallengesPanel = forwardRef<
   const [launchError, setLaunchError] = useState<string | null>(null);
 
   const [selected, setSelected] = useState(0);
-  const [lockedPreviewRow, setLockedPreviewRow] = useState<number | null>(null);
-  const [lockedPreviewValue, setLockedPreviewValue] = useState<number | null>(null);
   const [nostrProfilePicBroken, setNostrProfilePicBroken] = useState(false);
 
   const [displayBounty, setDisplayBounty] = useState(CHALLENGES[0].bounty);
+  const [lockedBountyDisplays, setLockedBountyDisplays] = useState<number[]>(
+    () => CHALLENGES.map(() => 0)
+  );
+  const [gateActionFocused, setGateActionFocused] = useState(false);
+
+  const panelKeyboardFocus = isActive && menuZone === 'panel';
+  const gateBtnFocused = panelKeyboardFocus && gateActionFocused;
 
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const innerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const gateActionRef = useRef<HTMLButtonElement | null>(null);
   const didMountRef = useRef(false);
+  const prevMenuZoneRef = useRef(menuZone);
+  const prevSelectedRef = useRef(selected);
   const bountyRafRef = useRef<number | null>(null);
-  const lockedPreviewRafRef = useRef<number | null>(null);
+  const lockedBountyRafRefs = useRef<(number | null)[]>(CHALLENGES.map(() => null));
+  const prevChallengesActiveRef = useRef(false);
+  const hasPickedChallengeRef = useRef(false);
 
   const npub = nostrSession.pubkey;
   const npubDisplay = nostrSession.npub;
@@ -196,6 +261,13 @@ export const PracticeChallengesPanel = forwardRef<
   const payoutReady = eligibility?.eligible === true;
   const eligibilityChecks = eligibility ? formatEligibilityChecks(eligibility.checks) : [];
   const eligibilityProgress = eligibility ? countPassedChecks(eligibility.checks) : null;
+  const gateCopy = getGateCopy({ signedIn: nostrSession.signedIn, payoutReady });
+  const showSignInGate = !nostrSession.signedIn && !payoutReady;
+
+  useEffect(() => {
+    if (panelKeyboardFocus) return;
+    setGateActionFocused(false);
+  }, [panelKeyboardFocus]);
 
   useEffect(() => {
     if (!socket || !connected || !nostrSession.signedIn) {
@@ -236,8 +308,54 @@ export const PracticeChallengesPanel = forwardRef<
     }
   }, [nostrLightning]);
 
+  const animateLockedRowBounty = useCallback((rowIndex: number) => {
+    const target = CHALLENGES[rowIndex]?.bounty;
+    if (target == null) return;
+
+    const existing = lockedBountyRafRefs.current[rowIndex];
+    if (existing !== null) cancelAnimationFrame(existing);
+
+    const duration = 520;
+    const startAt = performance.now();
+
+    setLockedBountyDisplays((prev) => {
+      const next = [...prev];
+      next[rowIndex] = 0;
+      return next;
+    });
+
+    const tick = (now: number) => {
+      const t = Math.min((now - startAt) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      const value = Math.round(eased * target);
+      setLockedBountyDisplays((prev) => {
+        const next = [...prev];
+        next[rowIndex] = value;
+        return next;
+      });
+      if (t < 1) {
+        lockedBountyRafRefs.current[rowIndex] = requestAnimationFrame(tick);
+      } else {
+        lockedBountyRafRefs.current[rowIndex] = null;
+      }
+    };
+
+    lockedBountyRafRefs.current[rowIndex] = requestAnimationFrame(tick);
+  }, []);
+
+  const cancelLockedBountyAnimations = useCallback(() => {
+    lockedBountyRafRefs.current.forEach((id, i) => {
+      if (id !== null) {
+        cancelAnimationFrame(id);
+        lockedBountyRafRefs.current[i] = null;
+      }
+    });
+  }, []);
+
   useEffect(() => {
     if (bountyRafRef.current !== null) cancelAnimationFrame(bountyRafRef.current);
+    if (!nostrSession.signedIn) return;
+
     const target = CHALLENGES[selected].bounty;
     const duration = 520;
     const start = performance.now();
@@ -255,58 +373,29 @@ export const PracticeChallengesPanel = forwardRef<
     };
     bountyRafRef.current = requestAnimationFrame(tick);
     return () => { if (bountyRafRef.current !== null) cancelAnimationFrame(bountyRafRef.current); };
-  }, [selected]);
-
-  const clearLockedPreview = useCallback((rowIndex?: number) => {
-    if (lockedPreviewRafRef.current !== null) {
-      cancelAnimationFrame(lockedPreviewRafRef.current);
-      lockedPreviewRafRef.current = null;
-    }
-    setLockedPreviewRow((curr) => {
-      if (rowIndex == null) return null;
-      return curr === rowIndex ? null : curr;
-    });
-    setLockedPreviewValue((curr) => {
-      if (rowIndex == null) return null;
-      return lockedPreviewRow === rowIndex ? null : curr;
-    });
-  }, [lockedPreviewRow]);
-
-  const startLockedPreviewToZero = useCallback((rowIndex: number) => {
-    if (nostrSession.signedIn) return;
-    if (lockedPreviewRafRef.current !== null) {
-      cancelAnimationFrame(lockedPreviewRafRef.current);
-      lockedPreviewRafRef.current = null;
-    }
-
-    const from = rowIndex === selected ? displayBounty : CHALLENGES[rowIndex].bounty;
-    const durationMs = 280;
-    const startAt = performance.now();
-    setLockedPreviewRow(rowIndex);
-    setLockedPreviewValue(from);
-
-    const tick = (now: number) => {
-      const t = Math.min((now - startAt) / durationMs, 1);
-      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-      const value = Math.max(0, Math.round(from * (1 - eased)));
-      setLockedPreviewValue(value);
-      if (t < 1) {
-        lockedPreviewRafRef.current = requestAnimationFrame(tick);
-      } else {
-        lockedPreviewRafRef.current = null;
-      }
-    };
-
-    lockedPreviewRafRef.current = requestAnimationFrame(tick);
-  }, [nostrSession.signedIn, selected, displayBounty]);
+  }, [selected, nostrSession.signedIn]);
 
   useEffect(() => {
-    return () => {
-      if (lockedPreviewRafRef.current !== null) {
-        cancelAnimationFrame(lockedPreviewRafRef.current);
-      }
-    };
-  }, []);
+    const challengesActive = isActive && !nostrSession.signedIn;
+    const panelJustEntered = challengesActive && !prevChallengesActiveRef.current;
+    prevChallengesActiveRef.current = challengesActive;
+
+    if (!challengesActive) {
+      cancelLockedBountyAnimations();
+      return;
+    }
+
+    if (panelJustEntered) {
+      CHALLENGES.forEach((_, i) => animateLockedRowBounty(i));
+    }
+
+    return cancelLockedBountyAnimations;
+  }, [isActive, nostrSession.signedIn, animateLockedRowBounty, cancelLockedBountyAnimations]);
+
+  useEffect(() => {
+    if (!isActive || nostrSession.signedIn) return;
+    animateLockedRowBounty(selected);
+  }, [selected, isActive, nostrSession.signedIn, animateLockedRowBounty]);
 
   const launchChallenge = useCallback(async (idx?: number) => {
     const challenge = CHALLENGES[idx ?? selected];
@@ -367,11 +456,18 @@ export const PracticeChallengesPanel = forwardRef<
     gateActionRef.current?.focus({ preventScroll: true });
   }, []);
 
+  const focusChallengeFromGate = useCallback(() => {
+    const idx = hasPickedChallengeRef.current ? selected : 0;
+    setSelected(idx);
+    rowRefs.current[idx]?.focus({ preventScroll: true });
+  }, [selected]);
+
   const focusBeforeFooter = useCallback(() => {
     const lastIdx = CHALLENGES.length - 1;
-    setSelected(lastIdx);
-    rowRefs.current[lastIdx]?.focus({ preventScroll: true });
-  }, []);
+    const idx = hasPickedChallengeRef.current ? selected : lastIdx;
+    setSelected(idx);
+    rowRefs.current[idx]?.focus({ preventScroll: true });
+  }, [selected]);
 
   useImperativeHandle(
     ref,
@@ -420,8 +516,7 @@ export const PracticeChallengesPanel = forwardRef<
         e.preventDefault();
         if (onGateAction) {
           playSfx(SFX.MENU_SELECT);
-          setSelected(0);
-          rowRefs.current[0]?.focus({ preventScroll: true });
+          focusChallengeFromGate();
           return;
         }
         if (onStart) {
@@ -439,9 +534,11 @@ export const PracticeChallengesPanel = forwardRef<
         if (rowNavIndex < 0) return;
         setSelected((prev) => {
           const from = onRow ? focusedRowIndex : prev;
-          if (from < CHALLENGES.length - 1) {
+          const next = from + CHALLENGE_GRID_COLS;
+          if (next < CHALLENGES.length) {
             playSfx(SFX.MENU_SELECT);
-            return from + 1;
+            hasPickedChallengeRef.current = true;
+            return next;
           }
           playSfx(SFX.MENU_SELECT);
           onEnterFooter?.('start');
@@ -470,15 +567,20 @@ export const PracticeChallengesPanel = forwardRef<
           return;
         }
         if (rowNavIndex < 0) return;
-        if ((onRow ? focusedRowIndex : selected) === 0) {
+        const from = onRow ? focusedRowIndex : selected;
+        if (from < CHALLENGE_GRID_COLS) {
           playSfx(SFX.MENU_SELECT);
           gateActionRef.current?.focus({ preventScroll: true });
           return;
         }
         setSelected((prev) => {
-          const from = onRow ? focusedRowIndex : prev;
-          if (from > 0) playSfx(SFX.MENU_SELECT);
-          return Math.max(from - 1, 0);
+          const idx = onRow ? focusedRowIndex : prev;
+          const next = idx - CHALLENGE_GRID_COLS;
+          if (next >= 0) {
+            playSfx(SFX.MENU_SELECT);
+            hasPickedChallengeRef.current = true;
+          }
+          return Math.max(next, 0);
         });
         return;
       }
@@ -486,17 +588,30 @@ export const PracticeChallengesPanel = forwardRef<
       if (isLeft) {
         if (rowNavIndex < 0) return;
         e.preventDefault();
+        const from = onRow ? focusedRowIndex : selected;
         playSfx(SFX.MENU_SELECT);
-        gateActionRef.current?.focus({ preventScroll: true });
+        hasPickedChallengeRef.current = true;
+        if (from % CHALLENGE_GRID_COLS === 0) {
+          setSelected(CHALLENGES.length - 1);
+        } else {
+          setSelected(from - 1);
+        }
         return;
       }
 
       if (isRight) {
         if (rowNavIndex < 0) return;
         e.preventDefault();
+        const from = onRow ? focusedRowIndex : selected;
+        const onRightCol = from % CHALLENGE_GRID_COLS === CHALLENGE_GRID_COLS - 1;
         playSfx(SFX.MENU_SELECT);
-        onEnterFooter?.('start');
-        footerStartRef.current?.focus({ preventScroll: true });
+        hasPickedChallengeRef.current = true;
+        if (onRightCol) {
+          const next = from + 1;
+          setSelected(next < CHALLENGES.length ? next : 0);
+        } else {
+          setSelected(from + 1);
+        }
         return;
       }
 
@@ -522,6 +637,7 @@ export const PracticeChallengesPanel = forwardRef<
     return () => window.removeEventListener('keydown', handleKey, true);
   }, [
     focusBeforeFooter,
+    focusChallengeFromGate,
     isActive,
     menuZone,
     onEnterFooter,
@@ -534,7 +650,18 @@ export const PracticeChallengesPanel = forwardRef<
   ]);
 
   useEffect(() => {
-    if (!isActive || menuZone !== 'panel') return;
+    if (!isActive || menuZone !== 'panel') {
+      prevMenuZoneRef.current = menuZone;
+      return;
+    }
+
+    const panelJustEntered = prevMenuZoneRef.current !== 'panel';
+    const selectedChanged = prevSelectedRef.current !== selected;
+    prevMenuZoneRef.current = menuZone;
+    prevSelectedRef.current = selected;
+
+    // Entering from HOW TO PLAY — focusDefault targets the sign-in gate.
+    if (panelJustEntered || !selectedChanged) return;
 
     const el = rowRefs.current[selected];
     if (!el) return;
@@ -571,94 +698,138 @@ export const PracticeChallengesPanel = forwardRef<
           <div className="solo-challenges-col solo-challenges-col--left">
             {/* ── Nostr / LN payout gate ── */}
             <div className={`sc-gate${payoutReady ? ' sc-gate--ready' : ''}`}>
-              <div className="sc-gate__card">
-                <div className="sc-gate__header">
-                  <h3 className="sc-gate__title">Bounty eligibility</h3>
-                  {eligibilityProgress && !payoutReady ? (
+              <div
+                className={[
+                  'sc-gate__card',
+                  showSignInGate ? 'sc-gate__card--sign-in' : '',
+                  gateBtnFocused ? 'sc-gate__card--action-focused' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {eligibilityProgress && !payoutReady ? (
+                  <div className="sc-gate__header">
                     <span className="sc-gate__progress">
                       {eligibilityProgress.passed}/{eligibilityProgress.total}
                     </span>
-                  ) : null}
-                </div>
-
-                <div className="sc-gate__top">
-                  {nostrSession.signedIn ? (
-                    <div className="sc-gate__nostr-profile" aria-label="Signed in Nostr profile">
-                      <img
-                        className="sc-gate__nostr-avatar"
-                        src={!nostrProfilePicBroken && nostrProfilePic ? nostrProfilePic : '/images/social/Nostr.png'}
-                        alt=""
-                        width={20}
-                        height={20}
-                        onError={() => setNostrProfilePicBroken(true)}
-                      />
-                      <span className="sc-gate__nostr-meta">
-                        <span className="sc-gate__nostr-name">{nostrProfileName}</span>
-                        <span className="sc-gate__nostr-pubkey" title={npubDisplay ?? npub ?? undefined}>
-                          {npubDisplay
-                            ? `${npubDisplay.slice(0, 12)}…${npubDisplay.slice(-8)}`
-                            : npub}
-                        </span>
-                        <span className={`sc-gate__nostr-ln${nostrLightning.trim() ? '' : ' sc-gate__nostr-ln--missing'}`}>
-                          {nostrLightning.trim() ? (
-                            <>
-                              <span className="sc-gate__ln-bolt" aria-hidden="true">⚡</span>
-                              {nostrLightning.trim()}
-                            </>
-                          ) : (
-                            'No Lightning address on profile'
-                          )}
-                        </span>
-                      </span>
-                      <button
-                        type="button"
-                        className="sc-gate__config-link"
-                        ref={gateActionRef}
-                        onClick={() => {
-                          playSfx(SFX.MENU_CONFIRM);
-                          openConfigForNostr();
-                        }}
-                      >
-                        Config
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className="sc-gate__nostr-btn"
-                      ref={gateActionRef}
-                      onClick={() => {
-                        playSfx(SFX.MENU_CONFIRM);
-                        openConfigForNostr();
-                      }}
-                      type="button"
-                    >
-                      <svg className="sc-gate__icon" viewBox="0 0 1343 1567" fill="none" aria-hidden="true">
-                        <path
-                          d="M1341.73 359.738C1338.13 324.538 1326.53 292.738 1304.13 264.938C1284.33 240.338 1258.93 222.738 1234.93 202.938C1222.93 193.138 1191.13 166.538 1187.13 151.538C1182.33 133.338 1189.73 114.738 1206.33 108.738C1231.33 100.338 1273.13 100.538 1297.33 102.138C1317.93 103.738 1339.13 96.5377 1339.93 88.1377C1340.73 79.7377 1328.53 67.3377 1312.33 63.5377C1299.53 60.5377 1279.93 55.9377 1268.13 48.1377C1247.13 33.9377 1225.73 7.93768 1196.53 2.13768C1154.93 -6.06232 1125.93 9.53768 1112.33 45.3377C1090.73 96.5377 1104.73 162.138 1150.13 210.138C1170.53 231.738 1194.33 250.338 1217.13 269.738C1233.93 284.138 1248.73 299.938 1262.93 317.538C1300.93 364.938 1260.73 451.938 1251.13 461.938C1217.53 496.738 1188.33 503.138 1130.33 500.738C1073.33 498.338 925.525 421.938 847.325 419.538C653.725 413.538 519.325 502.938 473.925 526.138C405.925 560.938 309.125 563.138 306.125 564.138C262.325 567.538 171.525 570.938 126.525 586.538C63.1252 604.138 28.9252 633.138 5.7252 697.938C-1.4748 725.938 -2.87477 751.338 7.32523 766.738C29.5252 800.338 89.3252 828.338 116.525 843.738C130.525 851.738 158.125 841.738 163.525 837.938C193.925 817.338 220.725 801.138 256.725 795.938C264.325 794.738 315.125 785.738 340.725 804.538C359.325 818.138 375.325 826.338 396.325 835.938C434.725 853.338 519.325 875.338 520.925 875.738C532.325 878.738 546.925 884.538 546.925 894.738C546.925 909.138 412.525 1021.54 405.125 1024.34C371.325 1038.14 351.725 1060.34 345.525 1092.34C343.525 1102.74 338.925 1113.54 333.125 1122.14C311.325 1153.74 214.725 1290.94 189.125 1328.54C176.925 1346.14 164.325 1354.94 146.925 1357.74C121.925 1361.74 103.125 1362.34 92.5252 1380.14C85.9252 1391.54 90.1252 1413.74 94.5252 1428.14C99.5252 1444.54 85.9252 1464.94 84.9252 1467.34C72.9252 1490.74 67.9252 1513.14 69.7252 1535.74C70.3252 1544.94 70.9252 1566.34 86.1252 1566.94C101.325 1567.74 105.325 1557.94 107.125 1554.34C109.325 1549.94 117.725 1531.74 120.125 1527.34C129.925 1509.14 167.325 1469.94 171.525 1465.34C184.925 1450.54 384.925 1175.14 384.925 1175.14C395.925 1160.74 407.325 1145.94 425.925 1138.74C451.725 1128.74 468.925 1108.14 473.925 1080.94C475.125 1074.94 554.925 1013.74 588.925 987.938C601.325 978.538 676.525 948.338 677.725 948.738C677.725 949.338 608.925 1052.94 587.525 1107.94C584.125 1116.74 578.525 1146.74 584.725 1161.94C594.325 1185.34 614.925 1195.54 638.325 1188.54C645.525 1186.34 651.925 1182.74 658.125 1179.34C660.925 1177.74 663.725 1176.34 666.525 1174.94C669.325 1173.54 671.925 1172.14 674.725 1170.74C681.125 1167.34 687.325 1164.14 693.525 1162.14C716.525 1154.54 739.725 1147.34 762.925 1140.14L809.925 1125.54C842.725 1115.34 875.525 1105.14 908.325 1095.14C915.525 1092.94 922.525 1090.34 931.525 1090.54C936.525 1090.54 941.925 1092.54 943.725 1099.94C943.725 1100.34 947.525 1122.74 961.325 1131.74C968.325 1136.34 983.325 1139.94 994.525 1139.54C1004.33 1139.14 1016.73 1141.94 1023.13 1147.54L1031.33 1154.54C1037.33 1159.54 1044.73 1162.34 1049.73 1163.74C1054.93 1165.14 1064.53 1165.14 1070.13 1159.34C1076.13 1152.94 1073.93 1142.54 1073.13 1139.34C1071.93 1134.94 1069.53 1131.54 1067.73 1128.54L1062.73 1120.74C1057.93 1113.14 1053.33 1105.54 1048.33 1097.94C1034.53 1076.94 1020.93 1056.14 1006.93 1035.34C992.325 1013.74 969.725 1005.14 940.125 1009.74C928.725 1011.54 678.525 1089.14 676.725 1089.54C690.125 1064.94 770.325 954.138 792.725 940.138C809.325 930.338 816.325 920.938 846.525 915.738C905.525 905.738 1033.53 876.138 1065.33 853.138C1127.13 808.338 1132.13 706.538 1131.13 686.138C1129.93 665.738 1136.53 651.738 1154.33 642.338C1163.13 637.738 1258.33 585.138 1304.93 507.538C1332.93 462.138 1347.33 413.538 1341.73 359.738Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                      <span className="sc-gate__label">Sign in with Nostr</span>
-                    </button>
-                  )}
-                </div>
-
-                <p className={`sc-gate__status${payoutReady ? ' sc-gate__status--ready' : ''}`}>
-                  {eligibilityLoading
-                    ? 'Checking eligibility…'
-                    : payoutReady
-                      ? 'Eligible — win, sign your note, get zapped'
-                      : nostrSession.signedIn
-                        ? 'Finish setup in Config to unlock sats'
-                        : 'Anyone can play — sign in to claim prizes'}
-                </p>
-
-                {launchError ? (
-                  <p className="sc-gate__error" role="alert">{launchError}</p>
+                  </div>
                 ) : null}
 
+                <div className="sc-gate__split">
+                  <div className="sc-gate__copy">
+                    <div className="sc-gate__headline">
+                      {gateCopy.eyebrow ? (
+                        <span className="sc-gate__eyebrow">{gateCopy.eyebrow}</span>
+                      ) : null}
+                      {gateCopy.title ? (
+                        <h3 className="sc-gate__title">{gateCopy.title}</h3>
+                      ) : null}
+                    </div>
+                    <p className="sc-gate__lede">{gateCopy.lede}</p>
+                  </div>
+
+                  <div className="sc-gate__action">
+                    <div className="sc-gate__top">
+                      {nostrSession.signedIn ? (
+                        <div className="sc-gate__nostr-profile" aria-label="Signed in Nostr profile">
+                          <img
+                            className="sc-gate__nostr-avatar"
+                            src={!nostrProfilePicBroken && nostrProfilePic ? nostrProfilePic : '/images/social/Nostr.png'}
+                            alt=""
+                            width={20}
+                            height={20}
+                            onError={() => setNostrProfilePicBroken(true)}
+                          />
+                          <span className="sc-gate__nostr-meta">
+                            <span className="sc-gate__nostr-name">{nostrProfileName}</span>
+                            <span className="sc-gate__nostr-pubkey" title={npubDisplay ?? npub ?? undefined}>
+                              {npubDisplay
+                                ? `${npubDisplay.slice(0, 12)}…${npubDisplay.slice(-8)}`
+                                : npub}
+                            </span>
+                            <span className={`sc-gate__nostr-ln${nostrLightning.trim() ? '' : ' sc-gate__nostr-ln--missing'}`}>
+                              {nostrLightning.trim() ? (
+                                <>
+                                  <span className="sc-gate__ln-bolt" aria-hidden="true">⚡</span>
+                                  {nostrLightning.trim()}
+                                </>
+                              ) : (
+                                'No Lightning address on profile'
+                              )}
+                            </span>
+                          </span>
+                          <button
+                            type="button"
+                            className={[
+                              'sc-gate__config-link',
+                              gateBtnFocused ? 'practice-focus-target' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                            ref={gateActionRef}
+                            tabIndex={panelKeyboardFocus ? 0 : -1}
+                            onFocus={() => setGateActionFocused(true)}
+                            onBlur={() => setGateActionFocused(false)}
+                            onClick={() => {
+                              playSfx(SFX.MENU_CONFIRM);
+                              openConfigForNostr();
+                            }}
+                          >
+                            Config
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className={[
+                            'sc-gate__nostr-btn',
+                            gateBtnFocused ? 'practice-focus-target' : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                          ref={gateActionRef}
+                          tabIndex={panelKeyboardFocus ? 0 : -1}
+                          onFocus={() => setGateActionFocused(true)}
+                          onBlur={() => setGateActionFocused(false)}
+                          onClick={() => {
+                            playSfx(SFX.MENU_CONFIRM);
+                            openConfigForNostr();
+                          }}
+                          type="button"
+                          title="Opens Config to connect your Nostr extension"
+                        >
+                          <svg className="sc-gate__icon" viewBox="0 0 1343 1567" fill="none" aria-hidden="true">
+                            <path
+                              d="M1341.73 359.738C1338.13 324.538 1326.53 292.738 1304.13 264.938C1284.33 240.338 1258.93 222.738 1234.93 202.938C1222.93 193.138 1191.13 166.538 1187.13 151.538C1182.33 133.338 1189.73 114.738 1206.33 108.738C1231.33 100.338 1273.13 100.538 1297.33 102.138C1317.93 103.738 1339.13 96.5377 1339.93 88.1377C1340.73 79.7377 1328.53 67.3377 1312.33 63.5377C1299.53 60.5377 1279.93 55.9377 1268.13 48.1377C1247.13 33.9377 1225.73 7.93768 1196.53 2.13768C1154.93 -6.06232 1125.93 9.53768 1112.33 45.3377C1090.73 96.5377 1104.73 162.138 1150.13 210.138C1170.53 231.738 1194.33 250.338 1217.13 269.738C1233.93 284.138 1248.73 299.938 1262.93 317.538C1300.93 364.938 1260.73 451.938 1251.13 461.938C1217.53 496.738 1188.33 503.138 1130.33 500.738C1073.33 498.338 925.525 421.938 847.325 419.538C653.725 413.538 519.325 502.938 473.925 526.138C405.925 560.938 309.125 563.138 306.125 564.138C262.325 567.538 171.525 570.938 126.525 586.538C63.1252 604.138 28.9252 633.138 5.7252 697.938C-1.4748 725.938 -2.87477 751.338 7.32523 766.738C29.5252 800.338 89.3252 828.338 116.525 843.738C130.525 851.738 158.125 841.738 163.525 837.938C193.925 817.338 220.725 801.138 256.725 795.938C264.325 794.738 315.125 785.738 340.725 804.538C359.325 818.138 375.325 826.338 396.325 835.938C434.725 853.338 519.325 875.338 520.925 875.738C532.325 878.738 546.925 884.538 546.925 894.738C546.925 909.138 412.525 1021.54 405.125 1024.34C371.325 1038.14 351.725 1060.34 345.525 1092.34C343.525 1102.74 338.925 1113.54 333.125 1122.14C311.325 1153.74 214.725 1290.94 189.125 1328.54C176.925 1346.14 164.325 1354.94 146.925 1357.74C121.925 1361.74 103.125 1362.34 92.5252 1380.14C85.9252 1391.54 90.1252 1413.74 94.5252 1428.14C99.5252 1444.54 85.9252 1464.94 84.9252 1467.34C72.9252 1490.74 67.9252 1513.14 69.7252 1535.74C70.3252 1544.94 70.9252 1566.34 86.1252 1566.94C101.325 1567.74 105.325 1557.94 107.125 1554.34C109.325 1549.94 117.725 1531.74 120.125 1527.34C129.925 1509.14 167.325 1469.94 171.525 1465.34C184.925 1450.54 384.925 1175.14 384.925 1175.14C395.925 1160.74 407.325 1145.94 425.925 1138.74C451.725 1128.74 468.925 1108.14 473.925 1080.94C475.125 1074.94 554.925 1013.74 588.925 987.938C601.325 978.538 676.525 948.338 677.725 948.738C677.725 949.338 608.925 1052.94 587.525 1107.94C584.125 1116.74 578.525 1146.74 584.725 1161.94C594.325 1185.34 614.925 1195.54 638.325 1188.54C645.525 1186.34 651.925 1182.74 658.125 1179.34C660.925 1177.74 663.725 1176.34 666.525 1174.94C669.325 1173.54 671.925 1172.14 674.725 1170.74C681.125 1167.34 687.325 1164.14 693.525 1162.14C716.525 1154.54 739.725 1147.34 762.925 1140.14L809.925 1125.54C842.725 1115.34 875.525 1105.14 908.325 1095.14C915.525 1092.94 922.525 1090.34 931.525 1090.54C936.525 1090.54 941.925 1092.54 943.725 1099.94C943.725 1100.34 947.525 1122.74 961.325 1131.74C968.325 1136.34 983.325 1139.94 994.525 1139.54C1004.33 1139.14 1016.73 1141.94 1023.13 1147.54L1031.33 1154.54C1037.33 1159.54 1044.73 1162.34 1049.73 1163.74C1054.93 1165.14 1064.53 1165.14 1070.13 1159.34C1076.13 1152.94 1073.93 1142.54 1073.13 1139.34C1071.93 1134.94 1069.53 1131.54 1067.73 1128.54L1062.73 1120.74C1057.93 1113.14 1053.33 1105.54 1048.33 1097.94C1034.53 1076.94 1020.93 1056.14 1006.93 1035.34C992.325 1013.74 969.725 1005.14 940.125 1009.74C928.725 1011.54 678.525 1089.14 676.725 1089.54C690.125 1064.94 770.325 954.138 792.725 940.138C809.325 930.338 816.325 920.938 846.525 915.738C905.525 905.738 1033.53 876.138 1065.33 853.138C1127.13 808.338 1132.13 706.538 1131.13 686.138C1129.93 665.738 1136.53 651.738 1154.33 642.338C1163.13 637.738 1258.33 585.138 1304.93 507.538C1332.93 462.138 1347.33 413.538 1341.73 359.738Z"
+                              fill="currentColor"
+                            />
+                          </svg>
+                          <span className="sc-gate__label">Sign in with Nostr</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {nostrSession.signedIn || eligibilityLoading || payoutReady ? (
+                      <p className={`sc-gate__status${payoutReady ? ' sc-gate__status--ready' : ''}`}>
+                        {eligibilityLoading
+                          ? 'Checking eligibility…'
+                          : payoutReady
+                            ? 'Eligible — win, sign, get zapped'
+                            : 'Finish setup in Config to unlock sats'}
+                      </p>
+                    ) : null}
+
+                    {launchError ? (
+                      <p className="sc-gate__error" role="alert">{launchError}</p>
+                    ) : null}
+                  </div>
+                </div>
+
                 {eligibility && nostrSession.signedIn && eligibilityChecks.length > 0 ? (
-                  <ul className="sc-gate__checks" aria-label="Eligibility requirements">
+                  <ul
+                    key={eligibilityChecks.map((item) => `${item.key}:${item.pass ? 1 : 0}`).join(',')}
+                    className="sc-gate__checks"
+                    aria-label="Eligibility requirements"
+                  >
                     {eligibilityChecks.map((item) => (
                       <li
                         key={item.key}
@@ -689,6 +860,7 @@ export const PracticeChallengesPanel = forwardRef<
             <div className="sc-list" role="listbox" aria-label="Solo challenges">
               {CHALLENGES.map((c, i) => {
                 const isSelected = selected === i;
+                const [titleLine1, titleLine2] = splitChallengeTitle(c.name);
                 return (
                   <button
                     key={c.id}
@@ -696,40 +868,39 @@ export const PracticeChallengesPanel = forwardRef<
                     className={`sc-row${isSelected ? ' sc-row--selected' : ''}`}
                     role="option"
                     aria-selected={isSelected}
-                    tabIndex={isSelected ? 0 : -1}
+                    tabIndex={panelKeyboardFocus && isSelected ? 0 : -1}
                     onClick={() => {
+                      hasPickedChallengeRef.current = true;
                       setSelected(i);
                       launchChallenge(i);
                     }}
-                    onMouseEnter={() => {
-                      startLockedPreviewToZero(i);
-                    }}
-                    onMouseLeave={() => {
-                      if (!nostrSession.signedIn) clearLockedPreview(i);
-                    }}
-                    onFocus={() => {
-                      startLockedPreviewToZero(i);
-                    }}
-                    onBlur={() => {
-                      if (!nostrSession.signedIn) clearLockedPreview(i);
-                    }}
                     type="button"
                     data-tier={c.aiTier}
+                    data-rank={c.rank}
+                    data-challenge={c.id}
                   >
                     <div
                       ref={(el) => { innerRefs.current[i] = el; }}
                       className="sc-row__inner"
                     >
-                      <span className="sc-row__rank">{c.rank}</span>
-
                       <div className="sc-row__info">
-                        <span className="sc-row__name">{c.name}</span>
+                        <div className="sc-row__title">
+                          <div className="sc-row__title-icon" aria-hidden="true">
+                            <ChallengeRowIcon id={c.id} />
+                          </div>
+                          <div className="sc-row__title-text">
+                            <span className="sc-row__name">
+                              <span className="sc-row__name-line">{titleLine1}</span>
+                              <span className="sc-row__name-line">{titleLine2 || '\u00a0'}</span>
+                            </span>
+                          </div>
+                        </div>
                         <div className="sc-row__tags">
-                          <span className="sc-tag">{c.format}</span>
                           <span className="sc-tag sc-tag--tier" data-tier={c.aiTier}>
                             {TIER_LABELS[c.aiTier]}
                             <TierPips tier={c.aiTier} />
                           </span>
+                          <span className="sc-tag">{c.format}</span>
                           <span className="sc-tag sc-tag--cvg">CVG</span>
                           {c.powerup && <span className="sc-tag sc-tag--mod">+POWER-UPS</span>}
                         </div>
@@ -746,15 +917,35 @@ export const PracticeChallengesPanel = forwardRef<
                           ) : null}
                           <span className="sc-row__sats">
                             {formatBounty(
-                              !nostrSession.signedIn && lockedPreviewRow === i && lockedPreviewValue !== null
-                                ? lockedPreviewValue
-                                : i === selected
+                              nostrSession.signedIn
+                                ? i === selected
                                   ? displayBounty
                                   : c.bounty
+                                : lockedBountyDisplays[i]
                             )}
                           </span>
                         </span>
-                        <span className="sc-row__unit">{nostrSession.signedIn ? 'SATS' : 'SIGN IN TO CLAIM'}</span>
+                        <span
+                          className="sc-row__unit"
+                          style={
+                            nostrSession.signedIn
+                              ? undefined
+                              : ({
+                                  '--sc-unit-jitter-top': `${VIOLATOR_JITTER_BY_ID[c.id].topVw}vw`,
+                                  '--sc-unit-jitter-left': `${VIOLATOR_JITTER_BY_ID[c.id].leftVw}vw`,
+                                  '--sc-unit-rotate': `${VIOLATOR_JITTER_BY_ID[c.id].rotateDeg}deg`,
+                                } as React.CSSProperties)
+                          }
+                        >
+                          {nostrSession.signedIn ? (
+                            'SATS'
+                          ) : (
+                            <>
+                              <span className="sc-row__unit-line">Sign in</span>
+                              <span className="sc-row__unit-line">to claim</span>
+                            </>
+                          )}
+                        </span>
                       </div>
                     </div>
                   </button>
