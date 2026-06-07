@@ -1030,6 +1030,17 @@ export function canContinueAfterGame(state: GameState, key: string): boolean {
   return normalized === ' ' || normalized === 'ENTER';
 }
 
+/** Online remote play: either player may continue with Space or Enter on their client. */
+export function canContinueOnlineAfterGame(state: GameState, key: string): boolean {
+  if (!state.gameEnded) return false;
+  const hasWinner =
+    state.winnerPlayer !== null ||
+    (isFfaMode(state) && state.winnerName.length > 0);
+  if (!hasWinner) return false;
+  const normalized = key.toUpperCase();
+  return normalized === ' ' || normalized === 'ENTER';
+}
+
 // ============================================================================
 // Extra-snake helpers (teams / ffa)
 // ============================================================================

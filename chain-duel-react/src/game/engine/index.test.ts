@@ -3,6 +3,7 @@ import {
   advanceShrinkBorder,
   applyTerminalGameOutcome,
   canContinueAfterGame,
+  canContinueOnlineAfterGame,
   createGameState,
   getHudState,
   setControllerTestHeld,
@@ -376,6 +377,33 @@ describe('game engine parity behavior', () => {
 
     expect(canContinueAfterGame(state, ' ')).toBe(true);
     expect(canContinueAfterGame(state, 'Enter')).toBe(true);
+  });
+
+  it('allows either continue key for online after P1 or P2 wins', () => {
+    const p1Win = createGameState({
+      p1Name: 'A',
+      p2Name: 'B',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'ONLINE',
+    });
+    p1Win.gameEnded = true;
+    p1Win.winnerPlayer = 'P1';
+    expect(canContinueOnlineAfterGame(p1Win, ' ')).toBe(true);
+    expect(canContinueOnlineAfterGame(p1Win, 'Enter')).toBe(true);
+    expect(canContinueOnlineAfterGame(p1Win, 'a')).toBe(false);
+
+    const p2Win = createGameState({
+      p1Name: 'A',
+      p2Name: 'B',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'ONLINE',
+    });
+    p2Win.gameEnded = true;
+    p2Win.winnerPlayer = 'P2';
+    expect(canContinueOnlineAfterGame(p2Win, ' ')).toBe(true);
+    expect(canContinueOnlineAfterGame(p2Win, 'Enter')).toBe(true);
   });
 
   it('prevents direct reverse direction', () => {

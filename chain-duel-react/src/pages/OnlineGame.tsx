@@ -5,8 +5,10 @@ import { useAudio } from '@/contexts/AudioContext';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { ONLINE_HOME, onlinePostGameUrl } from '@/shared/constants/onlineRoutes';
+import { NAVIGATE_AFTER_FINISH_DELAY_MS } from '@/shared/constants/timeouts';
 import type { OnlineReplayBlockEvent, OnlineRoomSnapshot } from '@/types/socket';
 import { useGamepad } from '@/hooks/useGamepad';
+import { canContinueOnlineAfterGame } from '@/game/engine';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
@@ -88,6 +90,7 @@ export default function OnlineGame() {
   }
   const prevGameStateRef = useRef<GameState | null>(null);
   const gameMusicStartedRef = useRef(false);
+  const continueNavigatedRef = useRef(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [footerHighlight, setFooterHighlight] = useState(false);
   const keysHeldRef = useRef({
@@ -173,6 +176,12 @@ export default function OnlineGame() {
     }
     prevGameStateRef.current = state;
   }, [snapshot]);
+
+  useEffect(() => {
+    if (!snapshot?.state?.gameEnded) {
+      continueNavigatedRef.current = false;
+    }
+  }, [snapshot?.state?.gameEnded]);
 
   useEffect(() => {
     if (!hostEl) return;
@@ -527,11 +536,20 @@ export default function OnlineGame() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!replayMode && snapshotRef.current?.state?.gameEnded) {
-        navigate(onlinePostGameUrl(roomId));
+      if (replayMode) {
         return;
       }
-      if (replayMode) {
+      const state = snapshotRef.current?.state as GameState | undefined;
+      if (state && canContinueOnlineAfterGame(state, event.key)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (continueNavigatedRef.current) {
+          return;
+        }
+        continueNavigatedRef.current = true;
+        window.setTimeout(() => {
+          navigate(onlinePostGameUrl(roomId));
+        }, NAVIGATE_AFTER_FINISH_DELAY_MS);
         return;
       }
       const axis = axisForKey(event.key);
@@ -666,7 +684,6 @@ export default function OnlineGame() {
     return () => window.removeEventListener('keydown', onKey);
   }, [replayMode, replayFrames, replayIndex, navigate, roomId, setSnapshot]);
 
-  const canAttemptContinue = Boolean(snapshot?.state?.gameEnded);
   const effectiveSessionID = currentSessionID || sessionStorage.getItem('sessionID') || '';
   const isP1 =
     (roomInfo?.p1SessionID && roomInfo.p1SessionID === effectiveSessionID) ||
@@ -801,15 +818,7 @@ export default function OnlineGame() {
           </div>
 
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
-            <div
-              id="gameCanvasHost"
-              ref={setHostEl}
-              onClick={() => {
-                if (!replayMode && canAttemptContinue) {
-                  navigate(onlinePostGameUrl(roomId));
-                }
-              }}
-            />
+            <div id="gameCanvasHost" ref={setHostEl} />
           </div>
           {replayMode ? (
             <div className="online-replay-controls">

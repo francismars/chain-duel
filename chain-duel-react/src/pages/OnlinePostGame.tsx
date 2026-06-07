@@ -99,8 +99,11 @@ export default function OnlinePostGame() {
   const [creatingNostrPayout, setCreatingNostrPayout] = useState(false);
   const [lnurlw, setLnurlw] = useState('');
   const [myVoted, setMyVoted] = useState(false);
-  const [navFocus, setNavFocus] = useState<PostGameNav>({ type: 'exit' });
+  const [navFocus, setNavFocus] = useState<PostGameNav>({ type: 'don' });
   const keyRepeatRef = useRef<Record<string, number>>({});
+  const mountedAtRef = useRef(Date.now());
+  const exitConfirmPendingRef = useRef(false);
+  const navFocusPrimedRef = useRef(false);
 
   useGamepad(true);
 
@@ -126,6 +129,28 @@ export default function OnlinePostGame() {
   const sessionFinished = info?.phase === 'finished';
   const showPayoutUi = Boolean(info && !sessionFinished);
 
+  useEffect(() => {
+    mountedAtRef.current = Date.now();
+    exitConfirmPendingRef.current = false;
+    navFocusPrimedRef.current = false;
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!info || navFocusPrimedRef.current) {
+      return;
+    }
+    navFocusPrimedRef.current = true;
+    exitConfirmPendingRef.current = false;
+    const roundCount = info.matchRounds?.length ?? 0;
+    if (showPayoutUi) {
+      setNavFocus(isWinner ? { type: 'payout', slot: 'withdraw' } : { type: 'don' });
+    } else if (roundCount > 0) {
+      setNavFocus({ type: 'replay', index: roundCount - 1 });
+    } else {
+      setNavFocus({ type: 'don' });
+    }
+  }, [info, showPayoutUi, isWinner]);
+
   const openSessionRoundReplay = (matchRound: number) => {
     navigate(
       onlineReplayUrl(roomId, matchRound)
@@ -147,7 +172,12 @@ export default function OnlinePostGame() {
       if (!isEnter && !isUp && !isDown && !isLeft && !isRight) return;
       event.preventDefault();
 
+      if (isEnter && Date.now() - mountedAtRef.current < 500) {
+        return;
+      }
+
       if (isLeft || isRight) {
+        exitConfirmPendingRef.current = false;
         setNavFocus(prev =>
           prev.type === 'payout'
             ? { type: 'payout', slot: prev.slot === 'withdraw' ? 'nostr' : 'withdraw' }
@@ -157,6 +187,7 @@ export default function OnlinePostGame() {
       }
 
       if (isUp) {
+        exitConfirmPendingRef.current = false;
         setNavFocus(prev => {
           if (prev.type === 'exit') {
             if (showPayoutUi) return { type: 'payout', slot: 'withdraw' };
@@ -182,6 +213,7 @@ export default function OnlinePostGame() {
       }
 
       if (isDown) {
+        exitConfirmPendingRef.current = false;
         setNavFocus(prev => {
           if (prev.type === 'replay') {
             if (prev.index < roundCount - 1) return { type: 'replay', index: prev.index + 1 };
@@ -226,6 +258,13 @@ export default function OnlinePostGame() {
           return;
         }
         if (navFocus.type === 'exit') {
+          if (!exitConfirmPendingRef.current) {
+            exitConfirmPendingRef.current = true;
+            setError('Press Space or Enter again to leave the room.');
+            return;
+          }
+          exitConfirmPendingRef.current = false;
+          setError('');
           if (socket && roomId) socket.emit('leaveOnlineRoom', { roomId });
           navigate(ONLINE_HOME);
         }
@@ -233,10 +272,10 @@ export default function OnlinePostGame() {
     };
 
     const onKeyUp = (event: KeyboardEvent) => { keyRepeatRef.current[event.key] = 0; };
-    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('keyup', onKeyUp);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keydown', onKeyDown, true);
       window.removeEventListener('keyup', onKeyUp);
     };
   }, [donLocked, info, isWinner, myVoted, navFocus, navigate,
