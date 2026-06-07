@@ -432,6 +432,7 @@
 
 .p2p-modifiers-section .p2p-duel-format {
   flex: 0 0 auto; /* don't stretch to fill height */
+  padding: clamp(4px, 0.45vw, 8px) clamp(2px, 0.25vw, 4px);
 }
 
 .p2p-modifiers-section .p2p-duel-format__card {
@@ -456,7 +457,7 @@
   display: none;
 }
 
-/* ── Duel icon: sword clash on selection ── */
+/* ── Duel icon: sword clash on keyboard focus ── */
 .p2p-picker-card--duel .p2p-sword {
   /* SVG-space transforms need fill-box + center origin */
   transform-box: fill-box;
@@ -475,15 +476,15 @@
   to   { transform: translate(0, 0); opacity: 1; }
 }
 
-.p2p-picker-card--duel.p2p-picker-card--selected .p2p-sword--1 {
+.p2p-picker-card--duel.practice-focus-target .p2p-sword--1 {
   animation: p2p-sword-1-clash 0.38s cubic-bezier(0.18, 1.4, 0.4, 1) both;
 }
 
-.p2p-picker-card--duel.p2p-picker-card--selected .p2p-sword--2 {
+.p2p-picker-card--duel.practice-focus-target .p2p-sword--2 {
   animation: p2p-sword-2-clash 0.38s cubic-bezier(0.18, 1.4, 0.4, 1) 0.04s both;
 }
 
-/* ── Tournament icon: bracket nodes appear in sequence on selection ── */
+/* ── Tournament icon: bracket nodes appear in sequence on keyboard focus ── */
 .p2p-picker-card--tournament .p2p-bracket > * {
   transform-box: fill-box;
   transform-origin: center;
@@ -494,18 +495,100 @@
   to   { transform: scale(1); opacity: 1; }
 }
 
-.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(1) {
+.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(1) {
   animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
 }
-.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(2),
-.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(3) {
+.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(2),
+.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(3) {
   animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.07s both;
 }
-.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(4) {
+.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(4) {
   animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
 }
-.p2p-picker-card--tournament.p2p-picker-card--selected .p2p-bracket > *:nth-child(5) {
+.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(5) {
   animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.25s both;
+}
+
+/* ── Shared icon reveal on keyboard focus ── */
+.p2p-picker-icon--people > *,
+.p2p-picker-icon--challenges > *,
+.p2p-picker-icon--ai > * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.p2p-duel-format__icon--pop {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes p2p-icon-reveal-in {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@keyframes p2p-icon-pop-in {
+  from { transform: scale(0.72); opacity: 0.45; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* Two-person icon (free play, human opponent) */
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--people > *:nth-child(1) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--people > *:nth-child(2) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.06s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--people > *:nth-child(3) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--people > *:nth-child(4) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
+}
+
+/* Challenges flag + shield */
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--challenges > *:nth-child(1) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--challenges > *:nth-child(2) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.07s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--challenges > *:nth-child(3) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.14s both;
+}
+
+/* AI bot — parts assemble in sequence */
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(1) {
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(2) {
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.04s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(3) {
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.08s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(4) {
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.12s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(5) {
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(6) {
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.2s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(7) {
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.24s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(8) {
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.28s both;
+}
+.p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(9) {
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.32s both;
+}
+
+/* Modifier power-ups plus */
+.p2p-modifiers-section .p2p-duel-format__card.practice-focus-target .p2p-duel-format__icon--pop {
+  animation: p2p-icon-pop-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) both;
 }
 
 /* ── Reduced motion ── */
@@ -518,7 +601,11 @@
   }
   .p2p-sword--1,
   .p2p-sword--2,
-  .p2p-bracket > * {
+  .p2p-bracket > *,
+  .p2p-picker-icon--people > *,
+  .p2p-picker-icon--challenges > *,
+  .p2p-picker-icon--ai > *,
+  .p2p-duel-format__icon--pop {
     animation: none !important;
   }
 }

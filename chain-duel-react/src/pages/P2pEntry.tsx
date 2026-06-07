@@ -6,6 +6,7 @@ import {
   BracketSizingHub,
   type BracketSizingHubHandle,
 } from '@/components/paidEntry/BracketSizingHub';
+import { GameModifiersSection } from '@/components/paidEntry/GameModifiersSection';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useAudio, SFX } from '@/contexts/AudioContext';
 import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
@@ -415,39 +416,7 @@ export default function P2pEntry() {
           </section>
         </div>
 
-        <section className="practice-section p2p-modifiers-section" aria-label="Game modifiers">
-          <h3 className="p2p-picker-group-label">MODIFIERS</h3>
-          <div className="p2p-duel-format" role="group" aria-label="Game modifiers">
-            <button type="button" className="p2p-duel-format__card p2p-duel-format__card--disabled" disabled aria-disabled="true">
-              <svg className="p2p-duel-format__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1" fill="none"/>
-                <circle cx="12" cy="12" r="5.5" stroke="currentColor" strokeWidth="1" fill="none"/>
-                <circle cx="12" cy="12" r="1.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.3"/>
-              </svg>
-              <span className="p2p-duel-format__label">Zone</span>
-              <span className="p2p-duel-format__desc">Convergence</span>
-              <span className="p2p-duel-format__soon">SOON</span>
-            </button>
-            <button type="button" className="p2p-duel-format__card p2p-duel-format__card--disabled" disabled aria-disabled="true">
-              <svg className="p2p-duel-format__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1" fill="none"/>
-                <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span className="p2p-duel-format__label">3 min</span>
-              <span className="p2p-duel-format__desc">Time limit</span>
-              <span className="p2p-duel-format__soon">SOON</span>
-            </button>
-            <button type="button" className="p2p-duel-format__card p2p-duel-format__card--disabled" disabled aria-disabled="true">
-              <svg className="p2p-duel-format__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="10.5" y="3" width="3" height="18" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15"/>
-                <rect x="3" y="10.5" width="18" height="3" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15"/>
-              </svg>
-              <span className="p2p-duel-format__label">+Items</span>
-              <span className="p2p-duel-format__desc">Power-ups</span>
-              <span className="p2p-duel-format__soon">SOON</span>
-            </button>
-          </div>
-        </section>
+        <GameModifiersSection />
 
         <div className="practice-actions">
           <Button
