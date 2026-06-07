@@ -14,7 +14,7 @@ import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 
 
-/** Vertical menu focus — 5 rows: PRACTICE, P2P, ONLINE, LEDGER, ABOUT+CONFIG */
+/** Vertical menu focus — 5 rows: FREE PLAY, P2P, ONLINE, LEDGER, ABOUT+CONFIG */
 type MenuState = 1 | 2 | 3 | 4 | 5;
 type Row6Focus = 'about' | 'config';
 
@@ -250,7 +250,7 @@ export default function Index() {
                   navigate('/practice');
                 }}
               >
-                PRACTICE
+                FREE PLAY
               </Button>
             </div>
           </div>

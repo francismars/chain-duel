@@ -99,7 +99,7 @@ export function GameModifiersSection({ powerups }: GameModifiersSectionProps) {
         ) : (
           <DisabledModifierCard label="Power-ups" desc="Items" icon={<PowerupsIcon />} />
         )}
-        <DisabledModifierCard label="Zone" desc="Convergence" icon={<ZoneIcon />} />
+        <DisabledModifierCard label="Convergence" desc="Board shrink" icon={<ZoneIcon />} />
         <DisabledModifierCard label="3 min" desc="Time limit" icon={<TimeLimitIcon />} />
       </div>
       </div>

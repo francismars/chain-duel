@@ -519,7 +519,7 @@ export default function Config() {
       {!nostrSignedIn ? (
         <>
           <p className="config-nostr-hint">
-            Sign in with an extension, <strong>Nostr Connect</strong>, or nsec. After you pair in Primal, we link your
+            Sign in with an extension, <strong>Nostr Connect</strong>, or nsec. After you pair your signer app, we link your
             pubkey to this game session on our server and load your profile.
           </p>
           {nostrError ? <p className="config-nostr-error">{nostrError}</p> : null}
@@ -532,14 +532,14 @@ export default function Config() {
               <p className="config-nip46-auth-banner__text">
                 {nostrBusy || serverLinking ? (
                   <>
-                    Primal is connected. <strong>Linking to the game server…</strong>
+                    Signer connected. <strong>Linking to the game server…</strong>
                     {signerMode === 'nip46' ? (
-                      <> Approve the sign request in Primal if prompted.</>
+                      <> Approve the sign request in your signer app if prompted.</>
                     ) : null}
                   </>
                 ) : (
                   <>
-                    Primal is connected. We could not finish linking to the game server — check that marspay is running,
+                    Signer connected. We could not finish linking to the game server — check that marspay is running,
                     then retry, or disconnect to scan a new QR.
                   </>
                 )}
@@ -642,7 +642,7 @@ export default function Config() {
             {loginTab === 'nip46' && !pendingNip46ServerLink ? (
               <div className="config-login-panel__block" role="tabpanel">
                 <p className="config-login-panel__lede config-nc-lede">
-                  NIP-46: scan QR or open the link — Primal, Amber, etc.
+                  NIP-46: scan QR or open the link in your signer app — Amber, Amethyst, etc.
                 </p>
 
                 <div className="config-nc-layout">
@@ -689,7 +689,7 @@ export default function Config() {
                           ) : (
                             <>
                               Approve in your wallet when prompted.
-                              <span className="config-nc-hint-muted"> Primal · Amber · NIP-46</span>
+                              <span className="config-nc-hint-muted"> Amber · Amethyst · NIP-46</span>
                             </>
                           )}
                         </p>
@@ -777,7 +777,7 @@ export default function Config() {
               <span className="config-profile-skeleton__ring config-profile-skeleton__ring--2" />
             </div>
             <p className="config-profile-loading-text">
-              {profileRecovering ? 'VERIFYING IDENTITY… OPEN PRIMAL' : 'LOADING PROFILE'}
+              {profileRecovering ? 'VERIFYING IDENTITY… APPROVE IN SIGNER' : 'LOADING PROFILE'}
             </p>
           </div>
         </div>
@@ -909,7 +909,7 @@ export default function Config() {
               {!profile ? (
                 <p className="config-profile-card__empty">
                   {signerMode === 'nip46'
-                    ? 'Profile not loaded yet. If Primal shows a signing prompt, tap Allow — then refresh this page.'
+                    ? 'Profile not loaded yet. If your signer shows a signing prompt, tap Allow — then refresh this page.'
                     : 'No profile metadata on file yet. You can still use this pubkey; publish a profile from any Nostr client.'}
                 </p>
               ) : null}

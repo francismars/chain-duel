@@ -24,7 +24,7 @@ function withSignTimeout<T>(label: string, p: Promise<T>, timeoutMs = SIGN_TIMEO
     const t = setTimeout(() => {
       const mode = resolveSignerMode();
       const hint = mode === 'nip46'
-        ? 'Open your Primal / Amber app and approve the signing request.'
+        ? 'Open your signer app and approve the signing request.'
         : 'Signing request timed out.';
       reject(new Error(`${label} timed out. ${hint}`));
     }, timeoutMs);
