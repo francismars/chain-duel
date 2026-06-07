@@ -8,6 +8,7 @@ export type PracticeNavFocus =
   | { kind: 'slot'; idx: 0 | 1 | 2 | 3 }
   | { kind: 'opponent'; idx: 0 | 1 }
   | { kind: 'tier'; idx: 0 | 1 | 2 | 3 }
+  | { kind: 'p2pLink' }
   | { kind: 'rulePowerup' }
   | { kind: 'start' }
   | { kind: 'back' };
@@ -37,6 +38,10 @@ function hasTierRow(ctx: NavContext): boolean {
     (ctx.show1v1Opponent && ctx.opponent === 'ai') ||
     (ctx.showTeamControl && !ctx.allFourHuman)
   );
+}
+
+function showP2pWagerLink(ctx: NavContext): boolean {
+  return ctx.show1v1Opponent && ctx.opponent === 'humans';
 }
 
 /** Right column entry from the format column at the same visual row. */
@@ -91,6 +96,7 @@ function verticalStep(
         if (ctx.opponent === 'ai') {
           return { kind: 'tier', idx: (f.idx === 1 ? 3 : 0) as 0 | 1 | 2 | 3 };
         }
+        if (showP2pWagerLink(ctx)) return { kind: 'p2pLink' };
         return { kind: 'rulePowerup' };
       }
       return opponentUpTarget();
@@ -111,8 +117,13 @@ function verticalStep(
       }
       return { kind: 'format', idx: 1 };
     }
+    case 'p2pLink': {
+      if (down) return { kind: 'rulePowerup' };
+      return { kind: 'opponent', idx: 1 };
+    }
     case 'rulePowerup': {
       if (down) return null;
+      if (showP2pWagerLink(ctx)) return { kind: 'p2pLink' };
       return rowAboveRulePowerup();
     }
     case 'start':
@@ -133,6 +144,9 @@ export function buildPracticeHubFlatNav(
 
   if (show1v1Opponent) {
     list.push({ kind: 'opponent', idx: 0 }, { kind: 'opponent', idx: 1 });
+    if (opponent === 'humans') {
+      list.push({ kind: 'p2pLink' });
+    }
   } else if (showTeamControl) {
     for (let i = 0; i < 4; i++) {
       list.push({ kind: 'slot', idx: i as 0 | 1 | 2 | 3 });
@@ -198,6 +212,10 @@ function horizontalStep(
       if (left) return { kind: 'opponent', idx: 0 };
       if (f.idx === 1) return null;
       return { kind: 'opponent', idx: 1 };
+    }
+    case 'p2pLink': {
+      if (left) return { kind: 'opponent', idx: 1 };
+      return null;
     }
     case 'tier': {
       if (left && f.idx === 0) {
