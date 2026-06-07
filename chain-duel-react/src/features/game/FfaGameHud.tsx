@@ -1,11 +1,13 @@
 import type { CSSProperties } from 'react';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import type { FfaHudPlayer } from '@/game/engine/types';
+import { GameInfoLabel, type ChallengeHudInfo } from '@/features/game/GameInfoLabel';
 import './ffa-game-hud.css';
 
 interface FfaHudProps {
   players: FfaHudPlayer[];
   gameInfo: string;
+  challengeHud?: ChallengeHudInfo | null;
   captureHighlights?: readonly boolean[];
 }
 
@@ -136,7 +138,7 @@ function SatsSlot({ player, index }: { player: FfaHudPlayer; index: number }) {
 }
 
 /** Unified FFA HUD — stacked rows, shared 4-column grid for players and sats. */
-export function FfaHud({ players, gameInfo, captureHighlights = [] }: FfaHudProps) {
+export function FfaHud({ players, gameInfo, challengeHud, captureHighlights = [] }: FfaHudProps) {
   return (
     <div className="ffa-hud">
       <div className="ffa-hud-players">
@@ -144,7 +146,12 @@ export function FfaHud({ players, gameInfo, captureHighlights = [] }: FfaHudProp
           {players.map((player, i) => (
             <PlayerName key={player.index} player={player} index={i} />
           ))}
-          <div id="gameInfo" className="ffa-hud-mode outline condensed">{gameInfo}</div>
+          <GameInfoLabel
+            id="gameInfo"
+            className="ffa-hud-mode"
+            gameInfo={gameInfo}
+            challenge={challengeHud}
+          />
         </div>
         <div className="ffa-hud-captures">
           {players.map((player, i) => (

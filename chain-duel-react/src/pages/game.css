@@ -100,6 +100,94 @@
   text-align: center;
 }
 
+#gameInfo.gameInfo--challenge {
+  --sc-accent: 155, 89, 182;
+  --sc-accent-strong: 193, 126, 230;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55vw;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.28vw 0.75vw;
+  border: 1px solid rgba(155, 89, 182, 0.24);
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(0, 0, 0, 0.42) 55%);
+  box-shadow:
+    0 0 0 1px rgba(155, 89, 182, 0.08),
+    0 8px 18px rgba(0, 0, 0, 0.28);
+  -webkit-text-stroke-width: 0;
+  -webkit-text-fill-color: currentColor;
+}
+
+#gameInfo.gameInfo--challenge[data-rank="1"] {
+  border-color: rgba(155, 89, 182, 0.38);
+  --sc-accent: 155, 89, 182;
+  --sc-accent-strong: 193, 126, 230;
+}
+
+#gameInfo.gameInfo--challenge[data-rank="2"] {
+  border-color: rgba(175, 122, 197, 0.34);
+  --sc-accent: 175, 122, 197;
+  --sc-accent-strong: 200, 145, 215;
+}
+
+#gameInfo.gameInfo--challenge[data-rank="3"] {
+  border-color: rgba(195, 155, 212, 0.3);
+  --sc-accent: 195, 155, 212;
+  --sc-accent-strong: 215, 175, 225;
+}
+
+#gameInfo.gameInfo--challenge[data-rank="4"] {
+  border-color: rgba(215, 188, 227, 0.26);
+  --sc-accent: 215, 188, 227;
+  --sc-accent-strong: 228, 205, 235;
+}
+
+#gameInfo.gameInfo--challenge[data-rank="5"] {
+  border-color: rgba(235, 221, 242, 0.22);
+  --sc-accent: 235, 221, 242;
+  --sc-accent-strong: 245, 238, 248;
+}
+
+#gameInfo.gameInfo--challenge[data-rank="6"] {
+  border-color: rgba(255, 255, 255, 0.2);
+  --sc-accent: 255, 255, 255;
+  --sc-accent-strong: 255, 255, 255;
+}
+
+.gameInfo__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(22px, 2.85vw, 38px);
+  height: clamp(22px, 2.85vw, 38px);
+  color: rgba(var(--sc-accent-strong), 0.92);
+  filter: drop-shadow(0 0 6px rgba(var(--sc-accent), 0.35));
+}
+
+.gameInfo__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gameInfo__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-text-stroke-width: 0;
+  -webkit-text-fill-color: transparent;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--sc-accent-strong), 0.98) 0%,
+    rgba(var(--sc-accent), 0.72) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: rgb(var(--sc-accent-strong));
+}
+
 #player1info {
   color: white;
   padding-top: 0;

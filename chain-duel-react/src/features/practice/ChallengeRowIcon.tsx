@@ -1,10 +1,17 @@
-type ChallengeIconId =
-  | 'normie'
-  | 'stacker'
-  | 'noderunner'
-  | 'gauntlet'
-  | 'ffa'
-  | 'sovereign-stack';
+export const CHALLENGE_ICON_IDS = [
+  'normie',
+  'stacker',
+  'noderunner',
+  'gauntlet',
+  'ffa',
+  'sovereign-stack',
+] as const;
+
+export type ChallengeIconId = (typeof CHALLENGE_ICON_IDS)[number];
+
+export function isChallengeIconId(id: string): id is ChallengeIconId {
+  return (CHALLENGE_ICON_IDS as readonly string[]).includes(id);
+}
 
 interface ChallengeRowIconProps {
   id: ChallengeIconId;

@@ -35,6 +35,7 @@ import { useGameRenderBridge } from '@/features/game/hooks/useGameRenderBridge';
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
 import { PowerUpLegend } from '@/features/game/PowerUpLegend';
 import { FfaHud } from '@/features/game/FfaGameHud';
+import { GameInfoLabel, readChallengeHudFromConfig } from '@/features/game/GameInfoLabel';
 import type { FfaHudPlayer } from '@/game/engine/types';
 import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import {
@@ -294,6 +295,11 @@ export default function Game() {
 
   const isChallengeSession = useMemo(
     () => isPracticeChallengeConfig(readSessionGameConfig()),
+    [],
+  );
+
+  const challengeHud = useMemo(
+    () => readChallengeHudFromConfig(readSessionGameConfig()),
     [],
   );
 
@@ -874,6 +880,7 @@ export default function Game() {
               <FfaHud
                 players={ffaPlayers}
                 gameInfo={gameInfo}
+                challengeHud={challengeHud}
                 captureHighlights={ffaCaptureHighlights}
               />
               <div id="zapMessages">
@@ -905,9 +912,7 @@ export default function Game() {
                     {player1Name}
                   </div>
                 </div>
-                <div id="gameInfo" className="outline condensed">
-                  {gameInfo}
-                </div>
+                <GameInfoLabel id="gameInfo" gameInfo={gameInfo} challenge={challengeHud} />
                 <div id="player2info" className="condensed">
                   <div className="inline" id="player2name">
                     {player2Name}
