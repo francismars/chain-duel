@@ -179,22 +179,26 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+    audio.muted = next || isMutedRef.current;
     if (next) {
       audio.pause();
     } else if (!isMutedRef.current) {
-      // Unmuting: ensure we have a source (play() may have been skipped when muted)
-      const src = lastRequestedSrcRef.current;
-      if (src) {
-        audio.loop = true;
-        setCurrentSrc(src);
-        audio.addEventListener('canplay', () => audio.play().catch(() => {}), { once: true });
-        audio.src = src;
-        if (audio.readyState >= 3) {
-          audio.play().catch(() => {});
-        }
-      } else {
+      resumeMenuMusic(audio);
+    }
+  };
+
+  const resumeMenuMusic = (audio: HTMLAudioElement) => {
+    const src = lastRequestedSrcRef.current;
+    if (src) {
+      audio.loop = true;
+      setCurrentSrc(src);
+      audio.addEventListener('canplay', () => audio.play().catch(() => {}), { once: true });
+      audio.src = src;
+      if (audio.readyState >= 3) {
         audio.play().catch(() => {});
       }
+    } else {
+      audio.play().catch(() => {});
     }
   };
 
@@ -203,29 +207,18 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (!audio) return;
     const next = !isMutedRef.current;
     isMutedRef.current = next;
-    isMusicMutedRef.current = next;
     setIsMuted(next);
-    setIsMusicMuted(next);
     try {
       localStorage.setItem(STORAGE_KEY_MUTED, next ? '1' : '0');
     } catch {
       /* ignore */
     }
-    audio.muted = next;
-    if (!next) {
-      // Unmuting: ensure we have a source (play() may have been skipped when muted)
-      const src = lastRequestedSrcRef.current;
-      if (src) {
-        audio.loop = true;
-        setCurrentSrc(src);
-        audio.addEventListener('canplay', () => audio.play().catch(() => {}), { once: true });
-        audio.src = src;
-        if (audio.readyState >= 3) {
-          audio.play().catch(() => {});
-        }
-      } else {
-        audio.play().catch(() => {});
-      }
+    // Full mute silences menu audio; music-only mute is independent (note button).
+    audio.muted = next || isMusicMutedRef.current;
+    if (next) {
+      audio.pause();
+    } else if (!isMusicMutedRef.current) {
+      resumeMenuMusic(audio);
     }
   };
 

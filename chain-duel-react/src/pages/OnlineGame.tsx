@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Sponsorship } from '@/components/ui/Sponsorship';
-import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
+import { useAudio } from '@/contexts/AudioContext';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { ONLINE_HOME, onlinePostGameUrl } from '@/shared/constants/onlineRoutes';
@@ -23,6 +23,7 @@ const REPLAY_SPEEDS = [0.25, 0.5, 1, 1.5, 2, 4, 8, 16, 32, 64] as const;
 export default function OnlineGame() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { stop, isMuted, isMusicMuted } = useAudio();
   const { socket } = useSocket({ autoConnect: true });
   const roomId = searchParams.get('roomId') ?? '';
   const replayMode = searchParams.get('replay') === '1';
@@ -85,6 +86,8 @@ export default function OnlineGame() {
   if (!audioRef.current) {
     audioRef.current = new GameAudioSystem();
   }
+  const prevGameStateRef = useRef<GameState | null>(null);
+  const gameMusicStartedRef = useRef(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [footerHighlight, setFooterHighlight] = useState(false);
   const keysHeldRef = useRef({
@@ -101,12 +104,74 @@ export default function OnlineGame() {
   useGamepad(true);
 
   useEffect(() => {
+    stop();
+  }, [stop]);
+
+  useEffect(() => {
+    audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
+  }, [isMuted, isMusicMuted]);
+
+  useEffect(() => {
+    return () => {
+      audioRef.current?.stopAll();
+    };
+  }, []);
+
+  useEffect(() => {
     if (roomId) return;
     navigate(ONLINE_HOME);
   }, [navigate, roomId]);
 
   useEffect(() => {
     snapshotRef.current = snapshot;
+  }, [snapshot]);
+
+  useEffect(() => {
+    if (!snapshot?.state) {
+      return;
+    }
+    if (!gameMusicStartedRef.current) {
+      gameMusicStartedRef.current = true;
+      audioRef.current?.startMusic();
+    }
+
+    const state = snapshot.state as GameState;
+    const prev = prevGameStateRef.current;
+    if (prev) {
+      if (state.countdownStart && !state.gameStarted && state.countdownTicks !== prev.countdownTicks) {
+        audioRef.current?.playCountdownTick(state.countdownTicks);
+      }
+      if (state.gameStarted && !state.gameEnded) {
+        if (state.p1.body.length > prev.p1.body.length) {
+          audioRef.current?.playCapture(state.p1.body.length);
+        }
+        if (state.p2.body.length > prev.p2.body.length) {
+          audioRef.current?.playCapture(state.p2.body.length);
+        }
+        const prevP1Head = prev.p1.head;
+        const prevP2Head = prev.p2.head;
+        if (
+          (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
+          state.p1.head[0] === 6 &&
+          state.p1.head[1] === 12
+        ) {
+          audioRef.current?.playReset('P1');
+        }
+        if (
+          (prevP2Head[0] !== 44 || prevP2Head[1] !== 12) &&
+          state.p2.head[0] === 44 &&
+          state.p2.head[1] === 12
+        ) {
+          audioRef.current?.playReset('P2');
+        }
+        const prevStepMs = prev.meta?.currentStepMs;
+        const newStepMs = state.meta?.currentStepMs;
+        if (prevStepMs != null && newStepMs != null && newStepMs !== prevStepMs) {
+          audioRef.current?.playBlockFound();
+        }
+      }
+    }
+    prevGameStateRef.current = state;
   }, [snapshot]);
 
   useEffect(() => {
@@ -876,7 +941,6 @@ export default function OnlineGame() {
         <img src="/images/loading.gif" alt="Loading" />
       </div>
 
-      <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
     </>
   );
 }

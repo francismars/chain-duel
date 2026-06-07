@@ -19,6 +19,13 @@ export class GameAudioSystem {
   private capture32 = createAudio('/sound/P-FC_32.aac');
   private blockFound = createAudio('/sound/MAINNET_BLOCK.aac');
 
+  /** Set by startMusic(); gates resume after unmute and avoids BGM before match load. */
+  private musicShouldPlay = false;
+  /** Full mute (speaker button) — blocks in-game SFX. */
+  private appSfxMuted = false;
+  /** Music mute (note button) or full mute — blocks looping BGM only. */
+  private appMusicMuted = false;
+
   /** In-game SFX only (not the looping game music). */
   private readonly sfx: HTMLAudioElement[] = [
     this.beep1,
@@ -38,26 +45,35 @@ export class GameAudioSystem {
    * full mute silences everything; music-only mute pauses game BGM like the menu player.
    */
   applyAppMuteState(isMuted: boolean, isMusicMuted: boolean): void {
-    if (isMuted) {
-      this.music.muted = true;
-      for (const a of this.sfx) a.muted = true;
-      return;
+    this.appSfxMuted = isMuted;
+    this.appMusicMuted = isMuted || isMusicMuted;
+
+    for (const a of this.sfx) {
+      a.muted = this.appSfxMuted;
     }
-    for (const a of this.sfx) a.muted = false;
-    if (isMusicMuted) {
+
+    if (this.appMusicMuted) {
       this.music.muted = true;
       this.music.pause();
     } else {
       this.music.muted = false;
-      void this.music.play().catch(() => undefined);
+      if (this.musicShouldPlay) {
+        void this.music.play().catch(() => undefined);
+      }
     }
   }
 
   startMusic(): void {
+    this.musicShouldPlay = true;
+    if (this.appMusicMuted) {
+      return;
+    }
+    this.music.muted = false;
     void this.music.play().catch(() => undefined);
   }
 
   stopAll(): void {
+    this.musicShouldPlay = false;
     this.music.pause();
   }
 
@@ -87,6 +103,9 @@ export class GameAudioSystem {
   }
 
   private play(audio: HTMLAudioElement): void {
+    if (this.appSfxMuted) {
+      return;
+    }
     audio.pause();
     audio.currentTime = 0;
     void audio.play().catch(() => undefined);
