@@ -666,36 +666,46 @@ export default function TournamentBracket() {
                       href={`https://next.nostrudel.ninja/#/n/${nostrNote1}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ display: 'inline-block' }}
+                      className="qr-code-link"
                     >
-                      <QRCodeCanvas
-                        id="qrTournament"
-                        value={`nostr:${nostrNote1}`}
-                        size={800}
-                        level="M"
-                        className="qrcode"
-                      />
-                      {nostrCode ? <div className="label mt-10">{nostrCode}</div> : null}
-                      {highlightDeposit && (
-                        <img
-                          id="qrcodeDecoration"
-                          className="qrcodeDecoration"
-                          src="/images/qr_lightning.gif"
-                          alt=""
+                      <span className="qr-code-stack">
+                        <QRCodeCanvas
+                          id="qrTournament"
+                          value={`nostr:${nostrNote1}`}
+                          size={800}
+                          level="M"
+                          className="qrcode"
                         />
-                      )}
+                        {highlightDeposit && (
+                          <img
+                            id="qrcodeDecoration"
+                            className="qrcodeDecoration"
+                            src="/images/qr_lightning.gif"
+                            alt=""
+                          />
+                        )}
+                      </span>
+                      {nostrCode ? <div className="label mt-10">{nostrCode}</div> : null}
                     </a>
                   ) : payLink ? (
-                    <a id="qrTournamentLink" href={`lightning:${payLink}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block' }}>
-                      <QRCodeCanvas id="qrTournament" value={payLink} size={800} level="M" className="qrcode" />
-                      {highlightDeposit && (
-                        <img
-                          id="qrcodeDecoration"
-                          className="qrcodeDecoration"
-                          src="/images/qr_lightning.gif"
-                          alt=""
-                        />
-                      )}
+                    <a
+                      id="qrTournamentLink"
+                      href={`lightning:${payLink}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="qr-code-link"
+                    >
+                      <span className="qr-code-stack">
+                        <QRCodeCanvas id="qrTournament" value={payLink} size={800} level="M" className="qrcode" />
+                        {highlightDeposit && (
+                          <img
+                            id="qrcodeDecoration"
+                            className="qrcodeDecoration"
+                            src="/images/qr_lightning.gif"
+                            alt=""
+                          />
+                        )}
+                      </span>
                     </a>
                   ) : (
                     <div id="qrTournament" className="qr-placeholder" />

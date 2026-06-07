@@ -231,14 +231,27 @@
   margin: 0 auto;
 }
 
-/* Lightning gif overlay on QR when payment received (matches legacy qrcodeDecoration) */
+/* Lightning gif overlay on QR when payment received (same pattern as GameMenu) */
+.tournbracket-page .bracketPayment .qr-code-link {
+  display: inline-block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tournbracket-page .bracketPayment .qr-code-stack {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
 .tournbracket-page .bracketPayment .qrcodeDecoration {
   position: absolute;
-  top: 11.5vw;
-  left: 6vw;
-  width: 18vw;
-  height: 17vw;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
   pointer-events: none;
+  z-index: 2;
 }
 
 /* scalePop animation on sats deposited (matches legacy) */
