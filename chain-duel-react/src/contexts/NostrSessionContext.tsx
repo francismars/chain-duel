@@ -66,7 +66,7 @@ function profileFromPayload(profile: AppNostrProfile | undefined, pubkey: string
 }
 
 export function NostrSessionProvider({ children }: { children: ReactNode }) {
-  const { socket } = useSocket({ autoConnect: true });
+  const { socket } = useSocket();
   const [pendingNip46AuthUrl, setPendingNip46AuthUrl] = useState<string | null>(null);
   const [state, setState] = useState<NostrSessionState>(() => ({
     signedIn: false,

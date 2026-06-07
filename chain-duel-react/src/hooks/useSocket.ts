@@ -1,171 +1,46 @@
 /**
- * React hook for Socket.io connection
- * Manages socket lifecycle and provides typed event handlers
+ * React hook for the app-wide Socket.io connection.
+ * Connection is owned by SocketProvider — this hook only reads shared state.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Socket } from 'socket.io-client';
-import {
-  ClientToServerEvents,
-  ServerToClientEvents,
-} from '@/types/socket';
-import { getSocket, disconnectSocket, SocketConfig } from '@/lib/socket';
-import { loadConfig } from '@/lib/config';
+import { useEffect } from 'react';
+import { useSocketContext, type SocketContextValue } from '@/contexts/SocketContext';
 
 export interface UseSocketOptions {
+  /** @deprecated Connection is always managed by SocketProvider at the app root. */
   autoConnect?: boolean;
   onConnect?: () => void;
   onDisconnect?: () => void;
   onError?: (error: Error) => void;
 }
 
-export interface UseSocketReturn {
-  socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
-  connected: boolean;
-  error: Error | null;
-  connect: () => void;
-  disconnect: () => void;
-}
+export type UseSocketReturn = SocketContextValue;
 
 /**
- * React hook for Socket.io connection
- * 
- * @example
- * ```tsx
- * const { socket, connected } = useSocket({
- *   onConnect: () => console.log('Connected!'),
- * });
- * 
- * useEffect(() => {
- *   if (!socket) return;
- *   
- *   socket.on('resGetDuelInfos', (data) => {
- *     console.log('Game info:', data);
- *   });
- *   
- *   return () => {
- *     socket.off('resGetDuelInfos');
- *   };
- * }, [socket]);
- * ```
+ * Access the shared Socket.io client. Mount SocketProvider once at the app root.
  */
 export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
-  const {
-    autoConnect = true,
-    onConnect,
-    onDisconnect,
-    onError,
-  } = options;
-
-  const [connected, setConnected] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [socket, setSocket] = useState<Socket<
-    ServerToClientEvents,
-    ClientToServerEvents
-  > | null>(null);
-  const socketRef = useRef<Socket<
-    ServerToClientEvents,
-    ClientToServerEvents
-  > | null>(null);
-  const lifecycleHandlersRef = useRef<{
-    connect?: () => void;
-    disconnect?: () => void;
-    connectError?: (err: Error) => void;
-  }>({});
-  const configRef = useRef<SocketConfig | null>(null);
-
-  const connect = useCallback(async () => {
-    try {
-      // Load config if not already loaded
-      if (!configRef.current) {
-        const config = await loadConfig();
-        configRef.current = { serverIP: config.IP, serverPORT: config.PORT };
-      }
-
-      // Get socket connection (may be existing and already connected when navigating)
-      const nextSocket = getSocket(configRef.current!);
-      socketRef.current = nextSocket;
-      setSocket(nextSocket);
-      setConnected(nextSocket.connected);
-
-      // Remove only handlers attached by this hook instance.
-      const lifecycleHandlers = lifecycleHandlersRef.current;
-      if (lifecycleHandlers.connect) {
-        nextSocket.off('connect', lifecycleHandlers.connect);
-      }
-      if (lifecycleHandlers.disconnect) {
-        nextSocket.off('disconnect', lifecycleHandlers.disconnect);
-      }
-      if (lifecycleHandlers.connectError) {
-        nextSocket.off('connect_error', lifecycleHandlers.connectError);
-      }
-
-      const onSocketConnect = () => {
-        setConnected(true);
-        setError(null);
-        onConnect?.();
-      };
-
-      const onSocketDisconnect = () => {
-        setConnected(false);
-        onDisconnect?.();
-      };
-
-      const onSocketConnectError = (err: Error) => {
-        const error = new Error(`Socket connection error: ${err.message}`);
-        setError(error);
-        onError?.(error);
-      };
-
-      lifecycleHandlersRef.current.connect = onSocketConnect;
-      lifecycleHandlersRef.current.disconnect = onSocketDisconnect;
-      lifecycleHandlersRef.current.connectError = onSocketConnectError;
-
-      nextSocket.on('connect', onSocketConnect);
-      nextSocket.on('disconnect', onSocketDisconnect);
-      nextSocket.on('connect_error', onSocketConnectError);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
-      setError(error);
-      onError?.(error);
-    }
-  }, [onConnect, onDisconnect, onError]);
-
-  const disconnect = useCallback(() => {
-    disconnectSocket();
-    socketRef.current = null;
-    setSocket(null);
-    setConnected(false);
-  }, []);
+  const ctx = useSocketContext();
+  const { onConnect, onDisconnect, onError } = options;
 
   useEffect(() => {
-    if (autoConnect) {
-      connect();
-    }
-    const handlers = lifecycleHandlersRef.current;
+    const s = ctx.socket;
+    if (!s) return;
+
+    const handleConnect = () => onConnect?.();
+    const handleDisconnect = () => onDisconnect?.();
+    const handleError = (err: Error) => onError?.(new Error(`Socket connection error: ${err.message}`));
+
+    if (onConnect) s.on('connect', handleConnect);
+    if (onDisconnect) s.on('disconnect', handleDisconnect);
+    if (onError) s.on('connect_error', handleError);
 
     return () => {
-      // Cleanup only lifecycle listeners owned by this hook.
-      const socketCurrent = socketRef.current;
-      if (socketCurrent) {
-        if (handlers.connect) {
-          socketCurrent.off('connect', handlers.connect);
-        }
-        if (handlers.disconnect) {
-          socketCurrent.off('disconnect', handlers.disconnect);
-        }
-        if (handlers.connectError) {
-          socketCurrent.off('connect_error', handlers.connectError);
-        }
-      }
+      if (onConnect) s.off('connect', handleConnect);
+      if (onDisconnect) s.off('disconnect', handleDisconnect);
+      if (onError) s.off('connect_error', handleError);
     };
-  }, [autoConnect, connect]);
+  }, [ctx.socket, onConnect, onDisconnect, onError]);
 
-  return {
-    socket,
-    connected,
-    error,
-    connect,
-    disconnect,
-  };
+  return ctx;
 }

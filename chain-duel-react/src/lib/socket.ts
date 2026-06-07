@@ -24,13 +24,19 @@ export function getSocket(config: SocketConfig): Socket<
   ServerToClientEvents,
   ClientToServerEvents
 > {
-  // Return existing connected socket
-  if (socket?.connected) {
+  const sessionID = sessionStorage.getItem('sessionID');
+
+  // Reuse the singleton even while connecting — creating a second io() per hook mount
+  // caused duplicate handshakes (many "reconnect" lines on marspay).
+  if (socket) {
+    if (sessionID) {
+      socket.auth = { sessionID };
+    }
+    if (!socket.connected) {
+      socket.connect();
+    }
     return socket;
   }
-
-  // Get existing session ID
-  const sessionID = sessionStorage.getItem('sessionID');
 
   // Build socket URL: backend may return full URL (e.g. wss://marspay.chainduel.net) in IP with empty PORT
   const socketUrl =
@@ -40,7 +46,6 @@ export function getSocket(config: SocketConfig): Socket<
         ? `${config.serverIP}:${config.serverPORT}`
         : config.serverIP;
 
-  // Create new socket connection
   socket = io(socketUrl, {
     transports: ['websocket'],
     autoConnect: false,
@@ -53,7 +58,6 @@ export function getSocket(config: SocketConfig): Socket<
     socket!.auth = { sessionID: newSessionID };
   });
 
-  // Connect
   socket.connect();
 
   return socket;
