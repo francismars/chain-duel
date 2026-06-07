@@ -30,10 +30,7 @@ export default function P2pEntry() {
   const { playSfx } = useAudio();
   useGamepad(true);
 
-  const [navFocus, setNavFocus] = useState<P2pNavFocus>({
-    kind: 'payment',
-    idx: 0,
-  });
+  const [navFocus, setNavFocus] = useState<P2pNavFocus>({ kind: 'start' });
   const paymentRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const sessionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const startRef = useRef<HTMLButtonElement | null>(null);
