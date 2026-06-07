@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -15,6 +15,7 @@ import './practiceHub.css';
 import '@/styles/pages/p2p-entry.css';
 import '@/styles/pages/practice-hub-page.css';
 import '@/styles/pages/solo-challenges.css';
+import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import {
   movePlayStyleNav,
   movePracticeHubFooter,
@@ -39,12 +40,16 @@ export default function PracticeHub() {
     zone: 'playStyle',
     idx: playStyleIdx,
   });
+  const [pickerRowRevealed, setPickerRowRevealed] = useState(false);
 
   const playStyleRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const footerBackRef = useRef<HTMLButtonElement | null>(null);
   const footerStartRef = useRef<HTMLButtonElement | null>(null);
   const freePlayPanelRef = useRef<PracticeFreePlayPanelHandle | null>(null);
   const challengesPanelRef = useRef<PracticeChallengesPanelHandle | null>(null);
+  const playStyleAreaRef = useRef<HTMLDivElement | null>(null);
+  const freePlayPanelShellRef = useRef<HTMLDivElement | null>(null);
+  const challengesPanelShellRef = useRef<HTMLDivElement | null>(null);
 
   const setPlayStyle = useCallback(
     (next: PracticePlayStyle) => {
@@ -243,6 +248,44 @@ export default function PracticeHub() {
   const footerStartFocused =
     hubFocus.zone === 'footer' && hubFocus.which === 'start';
 
+  useEffect(() => {
+    setButtonGlow(footerBackRef.current, footerBackFocused);
+    setButtonGlow(footerStartRef.current, footerStartFocused);
+  }, [footerBackFocused, footerStartFocused]);
+
+  const syncPlayStyleAreaHeight = useCallback(() => {
+    const area = playStyleAreaRef.current;
+    const freeShell = freePlayPanelShellRef.current;
+    const challShell = challengesPanelShellRef.current;
+    if (!area || !freeShell || !challShell) return;
+
+    const height = Math.max(freeShell.offsetHeight, challShell.offsetHeight);
+    if (height > 0) {
+      area.style.minHeight = `${height}px`;
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    syncPlayStyleAreaHeight();
+
+    const freeShell = freePlayPanelShellRef.current;
+    const challShell = challengesPanelShellRef.current;
+    if (!freeShell || !challShell) return;
+
+    const observer = new ResizeObserver(() => {
+      syncPlayStyleAreaHeight();
+    });
+    observer.observe(freeShell);
+    observer.observe(challShell);
+    return () => observer.disconnect();
+  }, [playStyle, syncPlayStyleAreaHeight]);
+
+  useEffect(() => {
+    setPickerRowRevealed(false);
+    const timer = window.setTimeout(() => setPickerRowRevealed(true), 480);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <div
       className={[
@@ -250,7 +293,7 @@ export default function PracticeHub() {
         'practice-hub--practice',
         'practice-hub-page',
         'p2p-entry-page',
-        playStyle === 'challenges' ? 'practice-hub-page--challenges' : '',
+        'practice-hub-page--challenges',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -261,7 +304,7 @@ export default function PracticeHub() {
       </header>
 
       <header className="practice-hub-header">
-        <h2 className="practice-hub-title">PRACTICE</h2>
+        <h2 className="practice-hub-title">FREE TO PLAY</h2>
       </header>
 
       <div className="practice-panel" role="main" aria-label="Practice play">
@@ -270,7 +313,16 @@ export default function PracticeHub() {
           aria-label="Play style"
         >
           <div className="ph-picker-block">
-            <div className="p2p-picker-row" role="radiogroup" aria-label="Play style">
+            <div
+              className={[
+                'p2p-picker-row',
+                pickerRowRevealed ? 'ph-picker-row--revealed' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              role="radiogroup"
+              aria-label="Play style"
+            >
             <button
               ref={(el) => {
                 playStyleRefs.current[0] = el;
@@ -298,7 +350,7 @@ export default function PracticeHub() {
                 <circle cx="16" cy="7" r="2.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15" />
                 <path d="M11 18a5 4 0 0 1 10 0" stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none" />
               </svg>
-              <span className="p2p-picker-label">FREE PLAY</span>
+              <span className="p2p-picker-label">QUICK MATCH</span>
               <span className="p2p-picker-sub">1v1 or 4-player: humans, bots, or both</span>
             </button>
 
@@ -324,9 +376,9 @@ export default function PracticeHub() {
               }}
             >
               <svg className="p2p-picker-icon p2p-picker-icon--challenges" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M13.5 4 V17.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+                <path d="M13.5 8.5 V20.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
                 <path
-                  d="M13.5 4.5 H21 V10 H13.5 Z"
+                  d="M13.5 8.5 H21 V13.5 H13.5 Z"
                   stroke="currentColor"
                   strokeWidth="1"
                   strokeLinejoin="round"
@@ -334,7 +386,7 @@ export default function PracticeHub() {
                   fillOpacity="0.15"
                 />
                 <path
-                  d="M7 16.5 C4 13.8 2.5 10.2 2.5 6.8 V4.8 L7 3.2 L11.5 4.8 V6.8 C11.5 10.2 10 13.8 7 16.5 Z"
+                  d="M7 14.5 C4 11.8 2.5 8.2 2.5 4.8 V2.8 L7 1.2 L11.5 2.8 V4.8 C11.5 8.2 10 11.8 7 14.5 Z"
                   stroke="currentColor"
                   strokeWidth="1"
                   strokeLinejoin="round"
@@ -349,8 +401,9 @@ export default function PracticeHub() {
           </div>
         </section>
 
-        <div className="practice-play-style-area">
+        <div className="practice-play-style-area" ref={playStyleAreaRef}>
           <div
+            ref={freePlayPanelShellRef}
             className={[
               'practice-play-style-panel',
               playStyle !== 'free' ? 'practice-play-style-inactive' : '',
@@ -370,6 +423,7 @@ export default function PracticeHub() {
             />
           </div>
           <div
+            ref={challengesPanelShellRef}
             className={[
               'practice-play-style-panel',
               playStyle !== 'challenges' ? 'practice-play-style-inactive' : '',
@@ -427,7 +481,7 @@ export default function PracticeHub() {
               }
             }}
           >
-            {playStyle === 'free' ? 'START FREE PLAY' : 'START CHALLENGE'}
+            {playStyle === 'free' ? 'START QUICK MATCH' : 'START CHALLENGE'}
           </Button>
         </div>
       </div>

@@ -96,3 +96,22 @@ export function countPassedChecks(checks: ChallengeEligibilityResponse['checks']
     total: items.length,
   };
 }
+
+/** Gate checklist when already signed in — omits redundant "Signed in" row. */
+export function formatGateEligibilityChecks(
+  checks: ChallengeEligibilityResponse['checks']
+): EligibilityCheckDisplay[] {
+  return formatEligibilityChecks(checks).filter((item) => item.key !== 'appSession');
+}
+
+export function countGateEligibilityChecks(checks: ChallengeEligibilityResponse['checks']): {
+  passed: number;
+  total: number;
+} {
+  const items = formatGateEligibilityChecks(checks);
+  return {
+    passed: items.filter((item) => item.pass).length,
+    total: items.length,
+  };
+}
+
