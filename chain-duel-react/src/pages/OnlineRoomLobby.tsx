@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
+import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import {
@@ -30,6 +31,62 @@ import {
 } from '@/lib/online/buildOnlineRoomInvite';
 import { publishSignedNostrEvent } from '@/lib/nostr/publishSignedNostrEvent';
 import '@/styles/pages/onlineRoomLobby.css';
+
+const PAYMENT_MODES = ['anon', 'nostr', 'pin-zap'] as const;
+const FINISHED_ACTION_COUNT = 3;
+
+type LobbyNavFocus =
+  | { type: 'payment'; index: number }
+  | { type: 'ready' }
+  | { type: 'leave' }
+  | { type: 'finished'; index: number };
+
+function stepLobbyNavVertical(
+  prev: LobbyNavFocus,
+  dir: 1 | -1,
+  opts: {
+    showReadyNav: boolean;
+    showSeatPaymentPaths: boolean;
+    showLeaveButton: boolean;
+    lastPaymentIndex: number;
+  },
+): LobbyNavFocus | null {
+  const stack: LobbyNavFocus[] = [];
+  if (opts.showReadyNav) {
+    stack.push({ type: 'ready' });
+  }
+  if (opts.showSeatPaymentPaths) {
+    stack.push({
+      type: 'payment',
+      index: prev.type === 'payment' ? prev.index : opts.lastPaymentIndex,
+    });
+  }
+  if (opts.showLeaveButton) {
+    stack.push({ type: 'leave' });
+  }
+  if (stack.length === 0) {
+    return null;
+  }
+
+  const curIdx = stack.findIndex((item) => {
+    if (prev.type === 'payment') {
+      return item.type === 'payment';
+    }
+    return item.type === prev.type;
+  });
+  const fromIdx = curIdx === -1 ? 0 : curIdx;
+  const nextIdx = fromIdx + dir;
+  if (nextIdx < 0 || nextIdx >= stack.length) {
+    return null;
+  }
+
+  const next = stack[nextIdx];
+  if (next.type === 'payment') {
+    const index = prev.type === 'payment' ? prev.index : opts.lastPaymentIndex;
+    return { type: 'payment', index };
+  }
+  return next;
+}
 
 type Kind1PostLoaded = {
   eventId: string;
@@ -141,7 +198,13 @@ export default function OnlineRoomLobby() {
   const [invitePostBusy, setInvitePostBusy] = useState(false);
   const [invitePostError, setInvitePostError] = useState<string | null>(null);
   const [invitePostOk, setInvitePostOk] = useState(false);
-  const [cardNavIndex, setCardNavIndex] = useState(0);
+  const [lobbyNavFocus, setLobbyNavFocus] = useState<LobbyNavFocus>({ type: 'leave' });
+  const lobbyNavFocusRef = useRef<LobbyNavFocus>(lobbyNavFocus);
+  lobbyNavFocusRef.current = lobbyNavFocus;
+  const leaveBtnRef = useRef<HTMLButtonElement>(null);
+  const lastPaymentNavIndexRef = useRef(0);
+  const lobbyNavPrimedKeyRef = useRef('');
+  const prevLobbyNavTypeRef = useRef<LobbyNavFocus['type']>('leave');
   /** Pubkey from last successful kind-1 sign, until server confirms with `resOnlineNostrLinkOk`. */
   const pendingNostrLinkPubkeyRef = useRef<string | null>(null);
   const paymentModeRef = useRef(paymentMode);
@@ -151,6 +214,8 @@ export default function OnlineRoomLobby() {
   const zapPayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const roomIdRef = useRef(roomId);
   roomIdRef.current = roomId;
+
+  useGamepad(true);
 
   const clearZapPayTimeout = useCallback(() => {
     if (zapPayTimeoutRef.current) {
@@ -861,6 +926,93 @@ export default function OnlineRoomLobby() {
   const lobbyPayAmount = isRematchLoserPay ? rematchAmount : (room?.buyin ?? 0);
   const showSeatPaymentPaths =
     !hasPaidMySeat && !isMatchEnded && !rematchPending && !seatsFull;
+  const showLeaveButton = !mySeat && !isMatchEnded && !rematchPending;
+  const showReadyNav = Boolean(mySeat && !isMatchEnded && !rematchPending);
+  const showFinishedNav = room?.phase === 'finished';
+
+  const leaveRoom = useCallback(() => {
+    if (!roomId) {
+      return;
+    }
+    socket?.emit('leaveOnlineRoom', { roomId });
+    navigate(ONLINE_HOME);
+  }, [socket, roomId, navigate]);
+
+  const focusPaymentPanelControl = useCallback(() => {
+    const panel = paymentPanelRef.current;
+    if (!panel) {
+      return;
+    }
+    const col =
+      panel.querySelector<HTMLElement>('.online-lobby-kind1-qr-col--panel') ??
+      panel.querySelector<HTMLElement>('.online-lobby-pin-steps')?.closest('.online-lobby-kind1-qr-col');
+    const first = col?.querySelector<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    first?.focus({ preventScroll: true });
+  }, []);
+
+  const paymentPanelHasPrimaryControl = useCallback(() => {
+    const panel = paymentPanelRef.current;
+    if (!panel) {
+      return false;
+    }
+    if (paymentModeRef.current === 'pin-zap') {
+      return Boolean(
+        panel.querySelector('.online-lobby-pin-steps button:not([disabled])')
+      );
+    }
+    const col = panel.querySelector('.online-lobby-kind1-qr-col--panel');
+    return Boolean(
+      col?.querySelector('button:not([disabled]), [href], input:not([disabled])')
+    );
+  }, []);
+
+  const activatePaymentPanelPrimary = useCallback(() => {
+    const panel = paymentPanelRef.current;
+    if (!panel) {
+      return false;
+    }
+    const mode = paymentModeRef.current;
+    if (mode === 'anon' || mode === 'nostr') {
+      const primary = panel.querySelector<HTMLButtonElement>(
+        '.online-lobby-kind1-qr-col--panel button.online-lobby-nostr-zap-btn:not([disabled])'
+      );
+      if (primary) {
+        primary.click();
+        return true;
+      }
+    }
+    if (mode === 'pin-zap') {
+      focusPaymentPanelControl();
+      return true;
+    }
+    return false;
+  }, [focusPaymentPanelControl]);
+
+  const selectPaymentNav = useCallback((index: number) => {
+    const clamped = ((index % PAYMENT_MODES.length) + PAYMENT_MODES.length) % PAYMENT_MODES.length;
+    lastPaymentNavIndexRef.current = clamped;
+    setLobbyNavFocus({ type: 'payment', index: clamped });
+    setPaymentMode(PAYMENT_MODES[clamped]);
+  }, []);
+
+  const triggerFinishedAction = useCallback(
+    (index: number) => {
+      if (!roomId) {
+        return;
+      }
+      if (index === 0) {
+        navigate(onlinePostGameUrl(roomId));
+      } else if (index === 1) {
+        navigate(onlineReplayUrl(roomId, room?.matchRound ?? 1));
+      } else {
+        leaveRoom();
+      }
+    },
+    [leaveRoom, navigate, room?.matchRound, roomId],
+  );
+
   const showInviteFinder =
     hasPaidMySeat && !paymentMode && !rematchPending && !isMatchEnded;
   const lobbyInviteUrl = roomId ? buildOnlineRoomLobbyShareUrl(roomId) : '';
@@ -872,6 +1024,34 @@ export default function OnlineRoomLobby() {
       lobbyUrl: lobbyInviteUrl,
     });
   }, [room?.roomCode, room?.buyin, roomId, lobbyInviteUrl]);
+
+  // Default keyboard focus: Leave room; pre-highlight Sign in when Nostr session exists
+  useEffect(() => {
+    if (!roomId || !showLeaveButton || !showSeatPaymentPaths) {
+      return;
+    }
+
+    const primeKey = `${roomId}:${nostrSession.signedIn ? 'in' : 'out'}`;
+    if (lobbyNavPrimedKeyRef.current === primeKey) {
+      return;
+    }
+
+    const isFirstForRoom = !lobbyNavPrimedKeyRef.current.startsWith(`${roomId}:`);
+    lobbyNavPrimedKeyRef.current = primeKey;
+
+    if (isFirstForRoom && !nostrSession.signedIn) {
+      setLobbyNavFocus({ type: 'leave' });
+      lastPaymentNavIndexRef.current = 0;
+      setPaymentMode(null);
+    }
+
+    if (nostrSession.signedIn) {
+      const nostrIndex = PAYMENT_MODES.indexOf('nostr');
+      lastPaymentNavIndexRef.current = nostrIndex;
+      setLobbyNavFocus({ type: 'payment', index: nostrIndex });
+      setPaymentMode('nostr');
+    }
+  }, [roomId, showLeaveButton, showSeatPaymentPaths, nostrSession.signedIn]);
 
   const rematchPayPrimedRef = useRef<string | null>(null);
 
@@ -943,72 +1123,290 @@ export default function OnlineRoomLobby() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && paymentMode !== null && !isRematchLoserPay) {
         setPaymentMode(null);
-        // Return focus to the card that was active
-        const active = paymentCardsRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]');
-        active?.focus();
+        const idx = paymentMode ? PAYMENT_MODES.indexOf(paymentMode) : 0;
+        setLobbyNavFocus({ type: 'payment', index: idx >= 0 ? idx : 0 });
+        const cards = paymentCardsRef.current?.querySelectorAll<HTMLButtonElement>('.online-lobby-path-card');
+        cards?.[idx >= 0 ? idx : 0]?.focus({ preventScroll: true });
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, [paymentMode, isRematchLoserPay]);
+
+  // Keep focus target valid when lobby sections appear/disappear
+  useEffect(() => {
+    setLobbyNavFocus((prev) => {
+      if (prev.type === 'payment' && showSeatPaymentPaths) {
+        return prev;
+      }
+      if (prev.type === 'leave' && showLeaveButton) {
+        return prev;
+      }
+      if (prev.type === 'ready' && showReadyNav) {
+        return prev;
+      }
+      if (prev.type === 'finished' && showFinishedNav) {
+        if (prev.index < FINISHED_ACTION_COUNT) {
+          return prev;
+        }
+        return { type: 'finished', index: FINISHED_ACTION_COUNT - 1 };
+      }
+      if (showLeaveButton) {
+        return { type: 'leave' };
+      }
+      if (showSeatPaymentPaths) {
+        return { type: 'payment', index: prev.type === 'payment' ? prev.index : lastPaymentNavIndexRef.current };
+      }
+      if (showReadyNav) {
+        return { type: 'ready' };
+      }
+      if (showFinishedNav) {
+        return { type: 'finished', index: 0 };
+      }
+      return prev;
+    });
+  }, [showFinishedNav, showLeaveButton, showReadyNav, showSeatPaymentPaths]);
+
+  // Sync lobbyNavFocus when paymentMode changes via mouse click
+  useEffect(() => {
+    if (paymentMode === null) {
+      return;
+    }
+    const idx = PAYMENT_MODES.indexOf(paymentMode);
+    if (idx === -1) {
+      return;
+    }
+    lastPaymentNavIndexRef.current = idx;
+    setLobbyNavFocus({ type: 'payment', index: idx });
   }, [paymentMode]);
 
-  // Sync cardNavIndex when paymentMode changes via mouse click
+  // Keyboard / gamepad nav for payment cards, ready, leave, and finished actions
   useEffect(() => {
-    if (paymentMode === null) return;
-    const idx = ['anon', 'nostr', 'pin-zap'].indexOf(paymentMode);
-    if (idx !== -1) setCardNavIndex(idx);
-  }, [paymentMode]);
-
-  // Global arrow-key / gamepad nav for the three payment cards.
-  // Does NOT require a card to already have native browser focus.
-  useEffect(() => {
-    // Only active when the payment section is in the DOM
-    const container = paymentCardsRef.current;
-    if (!container) return;
+    if (isRematchLoserPay) {
+      return;
+    }
 
     const onKey = (e: KeyboardEvent) => {
-      // Don't hijack keys while typing in inputs
       const tag = (document.activeElement as HTMLElement | null)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') {
+        return;
+      }
 
-      const modes = ['anon', 'nostr', 'pin-zap'] as const;
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        e.preventDefault();
-        const dir = e.key === 'ArrowRight' ? 1 : -1;
-        const next = (cardNavIndex + dir + modes.length) % modes.length;
-        setCardNavIndex(next);
-        setPaymentMode(modes[next]);
-        const cards = container.querySelectorAll<HTMLButtonElement>('.online-lobby-path-card');
-        cards[next]?.focus({ preventScroll: true });
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        const cards = container.querySelectorAll<HTMLButtonElement>('.online-lobby-path-card');
-        const card = cards[cardNavIndex];
-        if (card && document.activeElement !== card) {
+      const key = e.key;
+      const isEnter = key === 'Enter' || key === ' ';
+      const isUp = key === 'ArrowUp' || key === 'w' || key === 'W';
+      const isDown = key === 'ArrowDown' || key === 's' || key === 'S';
+      const isLeft = key === 'ArrowLeft' || key === 'a' || key === 'A';
+      const isRight = key === 'ArrowRight' || key === 'd' || key === 'D';
+      if (!isEnter && !isUp && !isDown && !isLeft && !isRight) {
+        return;
+      }
+
+      if (isLeft || isRight) {
+        if (showFinishedNav && (lobbyNavFocus.type === 'finished' || !showSeatPaymentPaths)) {
           e.preventDefault();
-          card.click();
+          setLobbyNavFocus((prev) => {
+            const cur = prev.type === 'finished' ? prev.index : 0;
+            const dir = isRight ? 1 : -1;
+            const next = (cur + dir + FINISHED_ACTION_COUNT) % FINISHED_ACTION_COUNT;
+            return { type: 'finished', index: next };
+          });
+          return;
         }
+        if (!showSeatPaymentPaths || lobbyNavFocus.type !== 'payment') {
+          return;
+        }
+        e.preventDefault();
+        const dir = isRight ? 1 : -1;
+        const next = (lobbyNavFocus.index + dir + PAYMENT_MODES.length) % PAYMENT_MODES.length;
+        selectPaymentNav(next);
+        return;
+      }
+
+      if (isUp || isDown) {
+        if (showFinishedNav) {
+          e.preventDefault();
+          const dir = isDown ? 1 : -1;
+          setLobbyNavFocus((prev) => {
+            const cur = prev.type === 'finished' ? prev.index : 0;
+            const next = cur + dir;
+            if (next < 0 || next >= FINISHED_ACTION_COUNT) {
+              return prev.type === 'finished' ? prev : { type: 'finished', index: 0 };
+            }
+            return { type: 'finished', index: next };
+          });
+          return;
+        }
+
+        e.preventDefault();
+        const dir = isDown ? 1 : -1;
+        const prev = lobbyNavFocusRef.current;
+        const active = document.activeElement as HTMLElement | null;
+        const focusInPaymentPanel =
+          Boolean(paymentPanelRef.current?.contains(active)) &&
+          !Boolean(paymentCardsRef.current?.contains(active));
+
+        if (isUp && focusInPaymentPanel && paymentMode !== null) {
+          setLobbyNavFocus({ type: 'payment', index: lastPaymentNavIndexRef.current });
+          const cards = paymentCardsRef.current?.querySelectorAll<HTMLButtonElement>('.online-lobby-path-card');
+          cards?.[lastPaymentNavIndexRef.current]?.focus({ preventScroll: true });
+          return;
+        }
+
+        if (isDown && focusInPaymentPanel && prev.type === 'payment' && paymentMode !== null) {
+          lastPaymentNavIndexRef.current = prev.index;
+          setLobbyNavFocus({ type: 'leave' });
+          return;
+        }
+
+        if (
+          isDown &&
+          prev.type === 'payment' &&
+          paymentMode !== null &&
+          !focusInPaymentPanel
+        ) {
+          if (paymentMode === 'pin-zap') {
+            lastPaymentNavIndexRef.current = prev.index;
+            setLobbyNavFocus({ type: 'leave' });
+            return;
+          }
+          if (paymentPanelHasPrimaryControl()) {
+            focusPaymentPanelControl();
+            return;
+          }
+        }
+
+        const next = stepLobbyNavVertical(prev, dir, {
+          showReadyNav,
+          showSeatPaymentPaths,
+          showLeaveButton,
+          lastPaymentIndex: lastPaymentNavIndexRef.current,
+        });
+        if (!next) {
+          return;
+        }
+
+        if (prev.type === 'payment' && next.type !== 'payment') {
+          lastPaymentNavIndexRef.current = prev.index;
+        }
+
+        if (next.type === 'payment' && prev.type !== 'payment') {
+          selectPaymentNav(lastPaymentNavIndexRef.current);
+          return;
+        }
+
+        setLobbyNavFocus(next);
+        return;
+      }
+
+      if (!isEnter) {
+        return;
+      }
+
+      e.preventDefault();
+
+      if (lobbyNavFocus.type === 'leave') {
+        leaveRoom();
+        return;
+      }
+      if (lobbyNavFocus.type === 'ready') {
+        socket?.emit('onlineSetReady', { roomId, ready: !myReady });
+        return;
+      }
+      if (lobbyNavFocus.type === 'finished') {
+        triggerFinishedAction(lobbyNavFocus.index);
+        return;
+      }
+      if (lobbyNavFocus.type === 'payment' && showSeatPaymentPaths) {
+        const active = document.activeElement as HTMLElement | null;
+        const focusInPaymentPanel =
+          Boolean(paymentPanelRef.current?.contains(active)) &&
+          !Boolean(paymentCardsRef.current?.contains(active));
+        const mode = PAYMENT_MODES[lobbyNavFocus.index];
+
+        if (focusInPaymentPanel) {
+          if (active instanceof HTMLButtonElement && !active.disabled) {
+            active.click();
+          } else if (active instanceof HTMLAnchorElement) {
+            active.click();
+          }
+          return;
+        }
+
+        if (paymentMode !== mode) {
+          selectPaymentNav(lobbyNavFocus.index);
+          return;
+        }
+
+        if (!activatePaymentPanelPrimary()) {
+          focusPaymentPanelControl();
+        }
+        return;
       }
     };
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cardNavIndex]);
+  }, [
+    isRematchLoserPay,
+    leaveRoom,
+    lobbyNavFocus,
+    myReady,
+    roomId,
+    showFinishedNav,
+    showLeaveButton,
+    showReadyNav,
+    showSeatPaymentPaths,
+    socket,
+    selectPaymentNav,
+    activatePaymentPanelPrimary,
+    focusPaymentPanelControl,
+    paymentPanelHasPrimaryControl,
+    paymentMode,
+    triggerFinishedAction,
+  ]);
 
-  // Move focus into the panel when a payment card is activated
+  // Focus the control that matches keyboard nav selection
   useEffect(() => {
-    if (!paymentMode) return;
-    const panel = paymentPanelRef.current;
-    if (!panel) return;
-    // Small delay so the panel has rendered before we query it
+    if (lobbyNavFocus.type === 'leave') {
+      leaveBtnRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    if (lobbyNavFocus.type === 'ready') {
+      document
+        .querySelector<HTMLButtonElement>('.online-lobby-seat-ready-btn')
+        ?.focus({ preventScroll: true });
+      return;
+    }
+    if (lobbyNavFocus.type === 'payment') {
+      lastPaymentNavIndexRef.current = lobbyNavFocus.index;
+      if (paymentMode !== null) {
+        return;
+      }
+      const cards = paymentCardsRef.current?.querySelectorAll<HTMLButtonElement>('.online-lobby-path-card');
+      cards?.[lobbyNavFocus.index]?.focus({ preventScroll: true });
+    }
+  }, [lobbyNavFocus, paymentMode]);
+
+  // Close payment panel when keyboard nav leaves the payment row
+  useEffect(() => {
+    const prev = prevLobbyNavTypeRef.current;
+    prevLobbyNavTypeRef.current = lobbyNavFocus.type;
+    if (prev === 'payment' && (lobbyNavFocus.type === 'leave' || lobbyNavFocus.type === 'ready')) {
+      setPaymentMode(null);
+    }
+  }, [lobbyNavFocus.type]);
+
+  // When a payment tab is open, focus the first in-panel control (GET INVOICE, LINK & PAY, etc.)
+  useEffect(() => {
+    if (!paymentMode || lobbyNavFocus.type !== 'payment') {
+      return;
+    }
     const id = setTimeout(() => {
-      const first = panel.querySelector<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      first?.focus();
+      focusPaymentPanelControl();
     }, 50);
     return () => clearTimeout(id);
-  }, [paymentMode]);
+  }, [paymentMode, lobbyNavFocus.type, focusPaymentPanelControl, lightningPay, seatZapInvoice, nostrLinkActive, zapPayBusy, kind1PostStatus, kind1PostEvent, lightningBusy, nostrLinkBusy]);
 
   const payAnonymouslyFromPost = () => {
     if (!socket || !roomId) {
@@ -1207,7 +1605,7 @@ export default function OnlineRoomLobby() {
             {isMyP1Seat && !isMatchEnded && !rematchPending ? (
               <button
                 type="button"
-                className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
+                className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}${lobbyNavFocus.type === 'ready' ? ' online-lobby-nav-selected' : ''}`}
                 onClick={() => socket?.emit('onlineSetReady', { roomId, ready: !myReady })}
               >
                 {myReady ? 'UNREADY' : 'MARK AS READY'}
@@ -1279,7 +1677,7 @@ export default function OnlineRoomLobby() {
             {isMyP2Seat && !isMatchEnded && !rematchPending ? (
               <button
                 type="button"
-                className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
+                className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}${lobbyNavFocus.type === 'ready' ? ' online-lobby-nav-selected' : ''}`}
                 onClick={() => socket?.emit('onlineSetReady', { roomId, ready: !myReady })}
               >
                 {myReady ? 'UNREADY' : 'MARK AS READY'}
@@ -1348,12 +1746,16 @@ export default function OnlineRoomLobby() {
               {/* Anonymous — lightning bolt */}
               <button
                 type="button"
-                className={['online-lobby-path-card', paymentMode === 'anon' ? 'online-lobby-path-card--active' : ''].filter(Boolean).join(' ')}
+                className={[
+                  'online-lobby-path-card',
+                  paymentMode === 'anon' ? 'online-lobby-path-card--active' : '',
+                  lobbyNavFocus.type === 'payment' && lobbyNavFocus.index === 0 ? 'online-lobby-nav-selected' : '',
+                ].filter(Boolean).join(' ')}
                 onClick={() => setPaymentMode(paymentMode === 'anon' ? null : 'anon')}
                 role="radio"
                 aria-checked={paymentMode === 'anon'}
                 data-mode="anon"
-                tabIndex={cardNavIndex === 0 ? 0 : -1}
+                tabIndex={lobbyNavFocus.type === 'payment' && lobbyNavFocus.index === 0 ? 0 : -1}
               >
                 <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M13 2 4.5 13.5H12L11 22l8.5-11.5H12L13 2Z" />
@@ -1365,7 +1767,11 @@ export default function OnlineRoomLobby() {
               {/* Pay with Nostr — extension, Nostr Connect, or nsec via Settings */}
               <button
                 type="button"
-                className={['online-lobby-path-card', paymentMode === 'nostr' ? 'online-lobby-path-card--active' : ''].filter(Boolean).join(' ')}
+                className={[
+                  'online-lobby-path-card',
+                  paymentMode === 'nostr' ? 'online-lobby-path-card--active' : '',
+                  lobbyNavFocus.type === 'payment' && lobbyNavFocus.index === 1 ? 'online-lobby-nav-selected' : '',
+                ].filter(Boolean).join(' ')}
                 onClick={() => {
                   if (paymentMode === 'nostr') {
                     setPaymentMode(null);
@@ -1379,7 +1785,7 @@ export default function OnlineRoomLobby() {
                 role="radio"
                 aria-checked={paymentMode === 'nostr'}
                 data-mode="nostr"
-                tabIndex={cardNavIndex === 1 ? 0 : -1}
+                tabIndex={lobbyNavFocus.type === 'payment' && lobbyNavFocus.index === 1 ? 0 : -1}
               >
                 <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="8" cy="7" r="3.5" />
@@ -1393,12 +1799,16 @@ export default function OnlineRoomLobby() {
               {/* Zap with PIN — mobile device */}
               <button
                 type="button"
-                className={['online-lobby-path-card', paymentMode === 'pin-zap' ? 'online-lobby-path-card--active' : ''].filter(Boolean).join(' ')}
+                className={[
+                  'online-lobby-path-card',
+                  paymentMode === 'pin-zap' ? 'online-lobby-path-card--active' : '',
+                  lobbyNavFocus.type === 'payment' && lobbyNavFocus.index === 2 ? 'online-lobby-nav-selected' : '',
+                ].filter(Boolean).join(' ')}
                 onClick={() => setPaymentMode(paymentMode === 'pin-zap' ? null : 'pin-zap')}
                 role="radio"
                 aria-checked={paymentMode === 'pin-zap'}
                 data-mode="pin-zap"
-                tabIndex={cardNavIndex === 2 ? 0 : -1}
+                tabIndex={lobbyNavFocus.type === 'payment' && lobbyNavFocus.index === 2 ? 0 : -1}
               >
                 <svg className="online-lobby-path-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect x="5" y="2" width="14" height="20" rx="2" />
@@ -1451,14 +1861,20 @@ export default function OnlineRoomLobby() {
             <>
               <Button
                 type="button"
-                className="online-lobby-action"
+                className={[
+                  'online-lobby-action',
+                  lobbyNavFocus.type === 'finished' && lobbyNavFocus.index === 0 ? 'online-lobby-nav-selected' : '',
+                ].filter(Boolean).join(' ')}
                 onClick={() => navigate(onlinePostGameUrl(roomId))}
               >
                 VIEW POSTGAME DETAILS
               </Button>
               <Button
                 type="button"
-                className="online-lobby-action"
+                className={[
+                  'online-lobby-action',
+                  lobbyNavFocus.type === 'finished' && lobbyNavFocus.index === 1 ? 'online-lobby-nav-selected' : '',
+                ].filter(Boolean).join(' ')}
                 onClick={() =>
                   navigate(onlineReplayUrl(roomId, room?.matchRound ?? 1))
                 }
@@ -1467,11 +1883,11 @@ export default function OnlineRoomLobby() {
               </Button>
               <Button
                 type="button"
-                className="online-lobby-action"
-                onClick={() => {
-                  socket?.emit('leaveOnlineRoom', { roomId });
-                  navigate(ONLINE_HOME);
-                }}
+                className={[
+                  'online-lobby-action',
+                  lobbyNavFocus.type === 'finished' && lobbyNavFocus.index === 2 ? 'online-lobby-nav-selected' : '',
+                ].filter(Boolean).join(' ')}
+                onClick={leaveRoom}
               >
                 EXIT ROOM
               </Button>
@@ -2017,12 +2433,14 @@ export default function OnlineRoomLobby() {
       {!mySeat && !isMatchEnded && !rematchPending ? (
         <div className="online-lobby-leave-row">
           <Button
+            ref={leaveBtnRef}
             type="button"
-            className="online-lobby-action online-lobby-leave-btn"
-            onClick={() => {
-              socket?.emit('leaveOnlineRoom', { roomId });
-              navigate(ONLINE_HOME);
-            }}
+            className={[
+              'online-lobby-action',
+              'online-lobby-leave-btn',
+              lobbyNavFocus.type === 'leave' ? 'online-lobby-nav-selected' : '',
+            ].filter(Boolean).join(' ')}
+            onClick={leaveRoom}
           >
             LEAVE ROOM
           </Button>

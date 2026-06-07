@@ -844,6 +844,25 @@
   opacity: 1;
 }
 
+@keyframes online-lobby-nav-pulse {
+  0%, 100% { outline-color: rgb(255 255 255 / 0.55); outline-offset: 2px; }
+  50%       { outline-color: rgb(255 255 255 / 0.08); outline-offset: 6px; }
+}
+
+.online-lobby-path-card.online-lobby-nav-selected {
+  border-color: rgb(255 255 255 / 0.85);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35), 0 0 18px rgb(255 255 255 / 0.12);
+}
+
+.online-lobby-leave-btn.online-lobby-nav-selected,
+.online-lobby-action.online-lobby-nav-selected,
+.online-lobby-seat-ready-btn.online-lobby-nav-selected {
+  opacity: 1;
+  outline: 2px solid rgb(255 255 255 / 0.55);
+  outline-offset: 2px;
+  animation: online-lobby-nav-pulse 1.4s ease-in-out infinite;
+}
+
 .online-lobby-ready-btn {
   min-width: 240px;
 }

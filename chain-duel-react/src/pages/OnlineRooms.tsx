@@ -419,14 +419,20 @@ export default function OnlineRooms() {
             } else {
               setNavFocus({ type: 'createBtn' });
             }
+          } else if (navFocus.index === 0) {
+            setNavFocus({ type: 'create' });
           } else {
-            setNavFocus({ type: 'preset', index: Math.max(navFocus.index - 1, 0) });
+            setNavFocus({ type: 'preset', index: navFocus.index - 1 });
           }
         } else if (navFocus.type === 'switch' || navFocus.type === 'back') {
           if (isRight) setNavFocus({ type: 'createBtn' });
         } else if (navFocus.type === 'createBtn') {
           if (isLeft) {
-            setNavFocus(onlineMode === 'join' ? { type: 'join' } : { type: 'preset', index: PRESET_AMOUNTS.length - 1 });
+            setNavFocus(
+              onlineMode === 'join'
+                ? { type: 'join' }
+                : { type: 'preset', index: PRESET_AMOUNTS.length - 1 },
+            );
           }
         }
         return;
@@ -445,7 +451,6 @@ export default function OnlineRooms() {
         }
         setNavFocus((prev) => {
           if (prev.type === 'back') {
-            if (displayedRooms.length > 0) return { type: 'room', index: displayedRooms.length - 1 };
             return { type: 'switch' };
           }
           if (prev.type === 'room') {
@@ -453,12 +458,14 @@ export default function OnlineRooms() {
             return { type: 'switch' };
           }
           if (prev.type === 'switch') {
-            return onlineMode === 'join' ? { type: 'join' } : { type: 'preset', index: PRESET_AMOUNTS.length - 1 };
+            return onlineMode === 'join' ? { type: 'join' } : { type: 'createBtn' };
           }
           if (prev.type === 'createBtn') {
-            return onlineMode === 'join' ? { type: 'join' } : { type: 'preset', index: PRESET_AMOUNTS.length - 1 };
+            return { type: 'tab', index: TAB_ORDER.indexOf(onlineTab) };
           }
-          if (prev.type === 'preset') return { type: 'create' };
+          if (prev.type === 'preset') {
+            return { type: 'tab', index: TAB_ORDER.indexOf(onlineTab) };
+          }
           if (prev.type === 'join') {
             return { type: 'tab', index: TAB_ORDER.indexOf(onlineTab) };
           }
@@ -483,15 +490,10 @@ export default function OnlineRooms() {
           if (prev.type === 'tab') {
             return onlineMode === 'join' ? { type: 'join' } : { type: 'create' };
           }
-          if (prev.type === 'preset' || prev.type === 'join') {
+          if (prev.type === 'preset' || prev.type === 'join' || prev.type === 'createBtn') {
             return { type: 'switch' };
           }
-          if (prev.type === 'createBtn') {
-            if (displayedRooms.length > 0) return { type: 'room', index: 0 };
-            return { type: 'back' };
-          }
           if (prev.type === 'switch') {
-            if (displayedRooms.length > 0) return { type: 'room', index: 0 };
             return { type: 'back' };
           }
           if (prev.type === 'room') {
