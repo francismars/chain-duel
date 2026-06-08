@@ -162,6 +162,7 @@
   justify-content: center;
   width: clamp(22px, 2.85vw, 38px);
   height: clamp(22px, 2.85vw, 38px);
+  margin-left: max(-0.22rem, -0.38vw);
   color: rgba(var(--sc-accent-strong), 0.92);
   filter: drop-shadow(0 0 6px rgba(var(--sc-accent), 0.35));
 }
