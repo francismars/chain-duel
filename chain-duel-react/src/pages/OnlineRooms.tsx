@@ -59,6 +59,8 @@ function HistoryMatchupBlock({ result }: { result: NonNullable<OnlineRoomListIte
   const winP2 =
     result.winnerRole === PlayerRole.Player2 ||
     (result.winnerRole == null && result.winnerName === result.p2Name);
+  const showP1Score = winP1 || result.p1Score !== 0;
+  const showP2Score = winP2 || result.p2Score !== 0;
   return (
     <div className="online-postgame-round-main">
       <div className="online-postgame-round-matchup" role="group" aria-label="Score">
@@ -78,15 +80,38 @@ function HistoryMatchupBlock({ result }: { result: NonNullable<OnlineRoomListIte
             />
             <span className="online-postgame-player-name">{result.p1Name}</span>
           </div>
-          <span className="online-postgame-player-pts">
-            {result.p1Score.toLocaleString()}
-            <span className="online-postgame-player-denom">sats</span>
-          </span>
         </div>
 
-        {/* VS */}
-        <div className="online-postgame-round-vs-pillar" aria-hidden="true">
-          <span className="online-postgame-round-vs-label">vs</span>
+        <div className="online-history-matchup-center">
+          <div className="online-history-matchup-scores">
+            {showP1Score ? (
+              <div
+                className={[
+                  'online-history-matchup-score',
+                  'online-history-matchup-score--p1',
+                  winP1 ? 'online-postgame-player--round-winner' : 'online-postgame-player--round-loser',
+                ].join(' ')}
+              >
+                <span className="online-history-matchup-amount">{result.p1Score.toLocaleString()}</span>
+                <span className="online-postgame-player-denom">sats</span>
+              </div>
+            ) : null}
+            {showP2Score ? (
+              <div
+                className={[
+                  'online-history-matchup-score',
+                  'online-history-matchup-score--p2',
+                  winP2 ? 'online-postgame-player--round-winner' : 'online-postgame-player--round-loser',
+                ].join(' ')}
+              >
+                <span className="online-history-matchup-amount">{result.p2Score.toLocaleString()}</span>
+                <span className="online-postgame-player-denom">sats</span>
+              </div>
+            ) : null}
+          </div>
+          <div className="online-postgame-round-vs-pillar" aria-hidden="true">
+            <span className="online-postgame-round-vs-label">vs</span>
+          </div>
         </div>
 
         {/* P2 */}
@@ -105,10 +130,6 @@ function HistoryMatchupBlock({ result }: { result: NonNullable<OnlineRoomListIte
             />
             <span className="online-postgame-player-name">{result.p2Name}</span>
           </div>
-          <span className="online-postgame-player-pts">
-            {result.p2Score.toLocaleString()}
-            <span className="online-postgame-player-denom">sats</span>
-          </span>
         </div>
       </div>
 
@@ -619,7 +640,6 @@ export default function OnlineRooms() {
 
   return (
     <div className="online-rooms-page">
-      <Sponsorship id="sponsorship-online-rooms" />
       <header id="brand">
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
@@ -627,9 +647,9 @@ export default function OnlineRooms() {
 
       <div className="online-rooms-body">
       <div className="online-rooms-left">
+      <Sponsorship id="sponsorship-online-rooms" />
       <div className="online-header">
         <h1 id="online-title">ONLINE</h1>
-        <p id="online-subtitle">Create a room, share the code, and claim your seat.</p>
       </div>
 
       <section className="online-room-list-panel">

@@ -63,20 +63,20 @@
   gap: var(--online-gap);
 }
 
-.online-rooms-page > .sponsorship {
+.online-rooms-page .sponsorship {
   grid-row: 2;
   align-self: center;
   justify-self: center;
   width: 100%;
 }
 
-.online-rooms-page > .online-header {
+.online-rooms-page .online-header {
   grid-row: 3;
   align-self: center;
   justify-self: center;
 }
 
-.online-rooms-page > .online-room-list-panel {
+.online-rooms-page .online-room-list-panel {
   grid-row: 4;
   align-self: stretch;
   min-height: 0;
@@ -84,12 +84,12 @@
   flex-direction: column;
 }
 
-.online-rooms-page > .online-action-card {
+.online-rooms-page .online-action-card {
   grid-row: 5;
   align-self: stretch;
 }
 
-.online-rooms-page > .online-footer-controls {
+.online-rooms-page .online-footer-controls {
   grid-row: 6;
   align-self: start;
   justify-self: center;
@@ -106,10 +106,6 @@
 }
 
 /* Staggered element reveals */
-#online-subtitle {
-  animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
-}
-
 .online-room-list-panel {
   animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
 }
@@ -136,7 +132,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   #online-title,
-  #online-subtitle,
   .online-room-list-panel,
   .online-room-list,
   .online-room-card,
@@ -151,7 +146,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   gap: 0;
+  min-height: 0;
 }
 
 #online-title {
@@ -163,15 +160,6 @@
   color: #fff;
   text-shadow: 0 0 16px rgb(255 255 255 / 35%);
   animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-#online-subtitle {
-  text-align: center;
-  color: #d8d8d8;
-  letter-spacing: 0.06rem;
-  font-size: var(--ph-fs-body-sm);
-  margin: 0.4vw 0 0;
-  animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
 }
 
 /* ── Mode-switch entrance animation ── */
@@ -626,7 +614,7 @@
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
-  font-size: var(--ph-fs-gate-meta);
+  font-size: var(--ph-fs-play-style-sub);
   color: rgb(255 255 255 / 0.38);
   letter-spacing: 0.04em;
   animation: rooms-fade 0.2s ease both;
@@ -817,7 +805,7 @@
 }
 
 .online-room-card--history .online-postgame-round-index {
-  font-size: var(--ph-fs-ui);
+  font-size: var(--ph-fs-body-sm);
   letter-spacing: 0.05em;
   line-height: 1.1;
   width: 100%;
@@ -845,7 +833,59 @@
 }
 
 .online-room-card--history .online-postgame-round-matchup {
-  gap: 0.14vw 0.35vw;
+  gap: 0.14vw 1vw;
+  align-items: center;
+}
+
+.online-history-matchup-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08vw;
+  min-width: 0;
+}
+
+.online-history-matchup-scores {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.55vw;
+}
+
+.online-history-matchup-score {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.25em;
+  line-height: 1.05;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.online-history-matchup-amount {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: var(--ph-fs-ui);
+  letter-spacing: 0.02em;
+  color: rgb(255 255 255 / 0.96);
+  /* Offset faint trailing "sats" so the figure reads centered above vs */
+  padding-left: 1vw;
+}
+
+.online-room-card--history .online-history-matchup-score.online-postgame-player--round-winner .online-history-matchup-amount {
+  color: #fff;
+}
+
+.online-room-card--history .online-history-matchup-score.online-postgame-player--round-loser .online-history-matchup-amount,
+.online-room-card--history .online-history-matchup-score.online-postgame-player--round-loser .online-postgame-player-denom {
+  opacity: 0.48;
+}
+
+.online-room-card--history .online-postgame-round-vs-pillar {
+  align-self: center;
+  padding: 0;
+  min-width: 0;
 }
 
 /* Small avatars in compact rows */
@@ -857,32 +897,44 @@
 
 /* Player identity: single horizontal line */
 .online-room-card--history .online-postgame-player-identity {
-  gap: 0.22vw;
+  gap: 0.45vw;
 }
 
 .online-room-card--history .online-postgame-player-name {
   font-size: var(--ph-fs-body-sm);
+  letter-spacing: 0.02em;
 }
 
-/* Score inline with name (row direction) */
+.online-room-card--history .online-postgame-player--round-winner .online-postgame-player-name {
+  font-size: var(--ph-fs-heading-sm);
+  letter-spacing: 0.02em;
+}
+
+.online-room-card--history .online-postgame-player--round-winner,
+.online-room-card--history .online-history-matchup-score.online-postgame-player--round-winner {
+  padding: 0;
+  margin: 0;
+}
+
+/* Player columns: identity only — scores live in center column */
 .online-room-card--history .online-postgame-player {
-  flex-direction: row;
-  align-items: center;
-  gap: 0.35vw;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
 }
 
 .online-room-card--history .online-postgame-player--p1 {
-  flex-direction: row-reverse;
   text-align: right;
 }
 
-.online-room-card--history .online-postgame-player-pts {
-  font-size: var(--ph-fs-ui);
-  flex-shrink: 0;
+.online-room-card--history .online-postgame-player--p2 {
+  align-items: flex-start;
+  text-align: left;
 }
 
-.online-room-card--history .online-postgame-player-denom {
+.online-room-card--history .online-history-matchup-score .online-postgame-player-denom {
   font-size: var(--ph-fs-gate-meta);
+  margin-top: 0;
 }
 
 /* Action buttons: side-by-side, small, flush right */
@@ -903,6 +955,21 @@
   letter-spacing: 0.1rem;
   white-space: nowrap;
   margin: 0;
+}
+
+.online-history-action-col .online-postgame-round-replay-btn.button:focus-visible:not(:disabled),
+.online-history-action-col .online-postgame-round-replay-btn.button.online-selected {
+  animation: none;
+  box-shadow: none;
+  background-color: rgb(255 255 255 / 12%);
+  border-color: rgb(255 255 255 / 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-history-action-col .online-postgame-round-replay-btn.button.online-selected {
+    outline: none;
+    outline-offset: 0;
+  }
 }
 
 .online-archived {
@@ -995,6 +1062,18 @@
 .online-room-main {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.online-room-card:not(.online-room-card--history) .online-room-main {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.65vw;
+  flex-wrap: wrap;
+}
+
+.online-room-card:not(.online-room-card--history) .online-room-meta {
+  margin-top: 0;
 }
 
 .online-room-code {
@@ -1133,7 +1212,7 @@
 .online-empty-hint {
   margin: 0;
   font-family: 'Inter', sans-serif;
-  font-size: var(--ph-fs-gate-meta);
+  font-size: var(--ph-fs-play-style-sub);
   color: rgb(255 255 255 / 0.28);
   letter-spacing: 0.04em;
 }
@@ -1230,10 +1309,6 @@
     --online-hit-md: 4vw;
     --online-hit-sm: 3.2vw;
     --online-empty-icon: 6.5vw;
-  }
-
-  #online-subtitle {
-    margin-top: -0.3vw;
   }
 
   /* Left column: keep stacked */
