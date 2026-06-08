@@ -218,40 +218,33 @@
 
 .gamemenu-page .qrcodeContainer {
   position: relative;
-  width: 9vw;
-  height: 10vw;
+  width: fit-content;
+  height: fit-content;
   flex-shrink: 0;
   overflow: visible; /* keep visible so scale-down isn’t clipped when .expanded is removed */
   display: flex;
-  align-items: center;
-  justify-content: center;
   align-self: flex-end;
 }
 
 .gamemenu-page .qrcodeContainer a {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
+  display: block;
+  line-height: 0;
+  width: fit-content;
+  height: fit-content;
   position: relative;
 }
 
 .gamemenu-page .qrcodeContainer .qrcode {
   display: block;
   box-sizing: border-box;
-  max-width: 100%;
-  max-height: 100%;
+  width: 10vw;
+  height: 10vw;
+  aspect-ratio: 1;
   min-width: 0;
   min-height: 0;
-  width: auto;
-  height: auto;
-  object-fit: contain;
   filter: invert(1);
   mix-blend-mode: screen;
-  position: absolute;
-  bottom: 0;
-  left: 0;
+  position: relative;
 }
 
 /* While held (Alt / LB / RB): standard black-on-white QR + quiet zone for picky scanners */
@@ -450,8 +443,8 @@
 }
 
 .gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer {
-  width: 9vw;
-  height: 10vw;
+  width: fit-content;
+  height: fit-content;
 }
 
 .gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer.expanded {
