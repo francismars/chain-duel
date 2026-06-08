@@ -35,7 +35,7 @@ import {
   type EligibilityCheckDisplay,
   type EligibilityCheckKey,
 } from '@/lib/challengeEligibilityDisplay';
-import { ChallengeRowIcon } from '@/features/practice/ChallengeRowIcon';
+import { ChallengeRowIcon, type ChallengeIconId } from '@/features/practice/ChallengeRowIcon';
 
 const CONVERGENCE_PRESET = {
   shrinkIntervalTicks: PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
@@ -45,7 +45,7 @@ const CONVERGENCE_PRESET = {
 } as const;
 
 interface Challenge {
-  id: string;
+  id: ChallengeIconId;
   rank: number;
   name: string;
   tagline: string;
