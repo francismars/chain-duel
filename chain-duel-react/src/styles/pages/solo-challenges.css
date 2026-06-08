@@ -2054,6 +2054,7 @@ button.sc-gate__check--fail:hover {
   --ph-fs-gate-meta: calc(0.16rem + 0.48vw);
   --ph-fs-caption: calc(0.24rem + 0.78vw);
   --ph-fs-body-sm: calc(0.28rem + 0.86vw);
+  --ph-fs-heading-sm: calc(0.46rem + 1.2vw);
   --ph-card-glow-blur: 22px;
   --ph-glow-gutter: max(1.5rem, 2.5vw, calc(var(--ph-card-glow-blur) * 0.85));
   --ph-compact-card-pad-x: calc(0.85vw + var(--ph-glow-gutter) * 0.12);
@@ -2083,8 +2084,8 @@ button.sc-gate__check--fail:hover {
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: max(0.35rem, 0.45vw);
-  padding: max(1.15rem, 1.45vw) max(calc(var(--ph-compact-card-pad-x) + 0.35rem), 1.35vw);
+  gap: max(1rem, 1.25vw);
+  padding: max(2rem, 2.5vw) max(calc(var(--ph-compact-card-pad-x) + 0.85rem), 2vw);
   border: none;
   background: linear-gradient(165deg, rgba(22, 14, 28, 0.98) 0%, rgba(8, 8, 10, 0.98) 100%);
   box-shadow: 0 10px 28px rgb(0 0 0 / 0.45);
@@ -2093,12 +2094,12 @@ button.sc-gate__check--fail:hover {
 .sc-gate-check-overlay__title {
   margin: 0;
   font-family: 'BureauGrotesque', sans-serif;
-  font-size: var(--ph-fs-body-sm);
+  font-size: var(--ph-fs-heading-sm);
   font-weight: 400;
   letter-spacing: 0.04vw;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.92);
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
 .sc-gate-check-overlay__desc {
@@ -2108,7 +2109,7 @@ button.sc-gate__check--fail:hover {
   font-family: 'Inter', sans-serif;
   font-size: var(--ph-fs-caption);
   font-weight: 400;
-  line-height: 1.35;
+  line-height: 1.5;
   color: rgba(255, 255, 255, 0.48);
 }
 
@@ -2125,8 +2126,8 @@ button.sc-gate__check--fail:hover {
 .sc-gate-check-overlay__ln-form {
   display: flex;
   flex-direction: column;
-  gap: max(0.15rem, 0.2vw);
-  margin-top: max(0.1rem, 0.15vw);
+  gap: max(0.55rem, 0.7vw);
+  margin-top: max(0.35rem, 0.45vw);
 }
 
 .sc-gate-check-overlay__ln-label {
@@ -2141,7 +2142,7 @@ button.sc-gate__check--fail:hover {
 .sc-gate-check-overlay__ln-input {
   width: 100%;
   box-sizing: border-box;
-  padding: max(0.35rem, 0.45vw) max(0.5rem, 0.65vw);
+  padding: max(0.6rem, 0.75vw) max(0.75rem, 0.95vw);
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(0, 0, 0, 0.35);
   color: rgba(255, 255, 255, 0.92);
@@ -2166,15 +2167,15 @@ button.sc-gate__check--fail:hover {
 .sc-gate-check-overlay__actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: max(0.25rem, 0.35vw);
-  margin-top: max(0.28rem, 0.4vw);
+  gap: max(0.55rem, 0.75vw);
+  margin-top: max(0.75rem, 0.95vw);
   padding-top: 0;
   border-top: none;
 }
 
 .sc-gate-check-overlay__btn {
   margin: 0;
-  padding: max(0.35rem, 0.45vw) max(0.55rem, 0.7vw);
+  padding: max(0.6rem, 0.75vw) max(0.8rem, 1vw);
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.03);
   color: rgba(255, 255, 255, 0.72);
