@@ -303,25 +303,30 @@
 
 .online-buyin-center {
   display: flex;
-  align-items: center;
+  align-items: last baseline;
   gap: 0.35em;
   justify-content: flex-start;
 }
 
 .online-buyin-value {
-  font-family: BureauGrotesque, sans-serif;
-  font-size: var(--ph-fs-heading);
-  letter-spacing: 0.03em;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--online-fs-button);
+  font-weight: 400;
+  letter-spacing: 0.1rem;
+  line-height: 1;
   color: #fff;
   background: transparent;
   border: none;
   outline: none;
+  appearance: none;
+  -webkit-appearance: none;
   width: auto;
   min-width: 2ch;
   max-width: 8ch;
+  height: auto;
+  min-height: 0;
   padding: 0;
-  margin-left: 0;
-  margin-right: 0.4em;
+  margin: 0;
   text-align: right;
 }
 
@@ -330,6 +335,7 @@
   font-size: var(--ph-fs-play-style-sub);
   font-weight: 500;
   letter-spacing: 0.06em;
+  line-height: 1;
   color: rgb(255 255 255 / 0.38);
   text-transform: uppercase;
   flex-shrink: 0;
@@ -386,17 +392,20 @@
   box-shadow: none !important;
 }
 
-/* Room code input */
+/* Room code input — match ROOM CODE label scale */
 .online-code-input {
-  font-size: var(--ph-fs-heading-sm);
-  letter-spacing: 0.22em;
+  font-size: var(--ph-fs-caption);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   background: transparent;
   border: none;
   border-bottom: 1px solid rgb(255 255 255 / 0.2);
   color: #fff;
   width: 100%;
-  min-height: var(--online-hit-md);
-  padding: 0;
+  min-height: unset;
+  height: auto;
+  line-height: 1.2;
+  padding: 0 0 0.12em;
   outline: none;
   transition: border-color 0.14s;
 }
@@ -535,15 +544,20 @@
   width: auto;
 }
 
-.online-room-actions .button.online-action {
+.online-room-actions .button.online-action,
+.online-history-action-col .online-postgame-round-replay-btn.button {
   width: auto;
   min-width: 0;
+  height: var(--online-rooms-btn-height);
+  min-height: unset;
   padding: 0 1.4vw;
+  font-size: var(--online-rooms-btn-font);
   animation: none !important;
 }
 
-/* Room-list CTA — keyboard focus without homepage glow / drop shadow */
-.online-room-actions .button.online-action.online-selected {
+/* Room-list + history row CTAs — keyboard focus without homepage glow / drop shadow */
+.online-room-actions .button.online-action.online-selected,
+.online-history-action-col .online-postgame-round-replay-btn.button.online-selected {
   border-color: #fff !important;
   background-color: rgb(255 255 255 / 12%);
   box-shadow: none !important;
@@ -551,7 +565,9 @@
 }
 
 .online-room-actions .button.online-action:hover:not(:disabled):not(.disabled),
-.online-room-actions .button.online-action:focus-visible:not(:disabled):not(.disabled) {
+.online-room-actions .button.online-action:focus-visible:not(:disabled):not(.disabled),
+.online-history-action-col .online-postgame-round-replay-btn.button:hover:not(:disabled):not(.disabled),
+.online-history-action-col .online-postgame-round-replay-btn.button:focus-visible:not(:disabled):not(.disabled) {
   background-color: rgb(255 255 255 / 18%);
   border-color: rgb(255 255 255 / 0.72);
   box-shadow: none !important;
@@ -559,7 +575,9 @@
 }
 
 .online-room-actions .button.online-action:active:not(:disabled):not(.disabled),
-.online-room-actions .button.online-action:hover:active:not(:disabled):not(.disabled) {
+.online-room-actions .button.online-action:hover:active:not(:disabled):not(.disabled),
+.online-history-action-col .online-postgame-round-replay-btn.button:active:not(:disabled):not(.disabled),
+.online-history-action-col .online-postgame-round-replay-btn.button:hover:active:not(:disabled):not(.disabled) {
   background-color: rgb(255 255 255 / 10%);
   border-color: rgb(255 255 255 / 0.55);
   box-shadow: none !important;
@@ -646,10 +664,11 @@
 
 .online-tab {
   font-family: 'Inter', sans-serif;
-  font-size: var(--online-fs-button);
-  letter-spacing: 0.1rem;
+  font-size: var(--ph-fs-caption);
+  font-weight: 400;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  padding: 0.35em 1em 0.65em;
+  padding: 0.22em 0.75em 0.42em;
   border: none;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;   /* sink active underline flush with list top border */
@@ -910,6 +929,14 @@
   letter-spacing: 0.02em;
 }
 
+.online-room-card--history .online-postgame-player--round-loser .online-postgame-player-name {
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: var(--ph-fs-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .online-room-card--history .online-postgame-player--round-winner,
 .online-room-card--history .online-history-matchup-score.online-postgame-player--round-winner {
   padding: 0;
@@ -937,7 +964,7 @@
   margin-top: 0;
 }
 
-/* Action buttons: side-by-side, small, flush right */
+/* Action buttons: side-by-side, flush right — sizing/focus matches .online-room-actions .online-action */
 .online-history-action-col {
   flex-direction: row !important;
   gap: 0.28vw !important;
@@ -946,30 +973,8 @@
 }
 
 .online-history-action-col .online-postgame-round-replay-btn.button {
-  width: auto;
-  height: var(--online-hit-sm);
-  min-height: unset;
-  min-width: unset;
-  font-size: var(--ph-fs-gate-check);
-  padding: 0 1vw;
-  letter-spacing: 0.1rem;
   white-space: nowrap;
   margin: 0;
-}
-
-.online-history-action-col .online-postgame-round-replay-btn.button:focus-visible:not(:disabled),
-.online-history-action-col .online-postgame-round-replay-btn.button.online-selected {
-  animation: none;
-  box-shadow: none;
-  background-color: rgb(255 255 255 / 12%);
-  border-color: rgb(255 255 255 / 0.55);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .online-history-action-col .online-postgame-round-replay-btn.button.online-selected {
-    outline: none;
-    outline-offset: 0;
-  }
 }
 
 .online-archived {
@@ -1068,7 +1073,7 @@
   display: flex;
   flex-direction: row;
   align-items: baseline;
-  gap: 0.65vw;
+  gap: 1.35vw;
   flex-wrap: wrap;
 }
 
@@ -1322,7 +1327,7 @@
   }
 
   .online-tab {
-    padding: 0.35em 1em;
+    padding: 0.22em 0.75em;
   }
 
   .online-room-meta {
@@ -1339,8 +1344,8 @@
   }
 
   .online-history-action-col .online-postgame-round-replay-btn.button {
-    height: var(--online-hit-sm);
-    padding: 0 1.1vw;
+    height: var(--online-rooms-btn-height);
+    padding: 0 1.4vw;
   }
 
   /* ── Action card — larger hit-targets only ── */
@@ -1359,10 +1364,6 @@
   .online-buyin-btn {
     width: var(--online-hit-sm);
     height: var(--online-hit-sm);
-  }
-
-  .online-code-input {
-    min-height: var(--online-hit-md);
   }
 
   /* ── Footer ── */

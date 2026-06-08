@@ -557,7 +557,7 @@ export default function OnlineRooms() {
         }
         if (navFocus.type === 'preset') {
           setBuyin(String(PRESET_AMOUNTS[navFocus.index]));
-          setNavFocus({ type: 'create' }); // return to stepper so next Enter = create
+          setNavFocus({ type: 'createBtn' });
           return;
         }
         if (navFocus.type === 'join') {
@@ -809,7 +809,16 @@ export default function OnlineRooms() {
                   {/* Actions */}
                   <div className="online-postgame-round-action-col online-history-action-col">
                     <Button
-                      className="online-postgame-round-replay-btn"
+                      className={[
+                        'online-postgame-round-replay-btn',
+                        navFocus.type === 'room' &&
+                        navFocus.index === index &&
+                        (onlineTab === 'history' || onlineTab === 'hof')
+                          ? 'online-selected'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
                       onClick={() => openHistoryPostGame(room.roomId)}
                     >
                       <span className="online-postgame-round-replay-label">RESULTS</span>
@@ -919,7 +928,7 @@ export default function OnlineRooms() {
                       parseBuyin() === amount ? 'online-buyin-preset--active' : '',
                       navFocus.type === 'preset' && navFocus.index === presetIdx ? 'online-selected' : '',
                     ].filter(Boolean).join(' ')}
-                    onClick={() => { setBuyin(String(amount)); setNavFocus({ type: 'create' }); }}
+                    onClick={() => { setBuyin(String(amount)); setNavFocus({ type: 'createBtn' }); }}
                     aria-label={`Set buy-in to ${amount.toLocaleString()} sats`}
                   >
                     {amount / 1000}K
