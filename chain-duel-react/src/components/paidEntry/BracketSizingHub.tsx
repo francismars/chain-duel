@@ -6,9 +6,9 @@ import {
 import type { P2pNavFocus } from '@/pages/p2pEntryNav';
 
 const PLAYER_OPTIONS = [
-  { n: 4 as const, label: '4P' },
-  { n: 8 as const, label: '8P' },
-  { n: 16 as const, label: '16P' },
+  { n: 4 as const },
+  { n: 8 as const },
+  { n: 16 as const },
 ];
 
 export const BUYIN_STEPS = Array.from({ length: 10 }, (_, i) => (i + 1) * 10000);
@@ -86,7 +86,7 @@ export const BracketSizingHub = forwardRef<BracketSizingHubHandle, BracketSizing
           <div className="bracket-sizing-hub__col bracket-sizing-hub__col--players">
             <div className="bracket-sizing-hub__row-label">Players</div>
             <div className="bracket-sizing-hub__players-col" role="group" aria-label="Player count">
-              {PLAYER_OPTIONS.map(({ n, label }, i) => (
+              {PLAYER_OPTIONS.map(({ n }, i) => (
                 <button
                   key={n}
                   ref={(el) => {
@@ -101,7 +101,10 @@ export const BracketSizingHub = forwardRef<BracketSizingHubHandle, BracketSizing
                     onPlayersChange(n);
                   }}
                 >
-                  <span className="bracket-sizing-hub__player-num">{label}</span>
+                  <span className="bracket-sizing-hub__player-num">
+                    {n}
+                    <span className="bracket-sizing-hub__player-suffix">P</span>
+                  </span>
                 </button>
               ))}
               <button
@@ -111,7 +114,10 @@ export const BracketSizingHub = forwardRef<BracketSizingHubHandle, BracketSizing
                 aria-disabled="true"
                 className="bracket-sizing-hub__player-card bracket-sizing-hub__player-card--soon"
               >
-                <span className="bracket-sizing-hub__player-num">32P</span>
+                <span className="bracket-sizing-hub__player-num">
+                  32
+                  <span className="bracket-sizing-hub__player-suffix">P</span>
+                </span>
               </button>
             </div>
           </div>
@@ -136,7 +142,8 @@ export const BracketSizingHub = forwardRef<BracketSizingHubHandle, BracketSizing
                         onDepositChange(sats);
                       }}
                     >
-                      {sats / 1000}K
+                      {sats / 1000}
+                      <span className="bracket-sizing-hub__pill-suffix">K</span>
                     </button>
                 );
               })}
