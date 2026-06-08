@@ -5,17 +5,7 @@ const SPONSORSHIP_SWITCH = true;
 const HIDE_SPONSOR_INFO = false;
 
 const sponsorText = 'Sponsored by';
-const imageList = [
-  'bitcoin_magazine.svg',
-  'piratehash.png',
-  'bitbox.png',
-  'relai_bg.png',
-  'build_the_builders.png',
-  'bitcoin_amsterdam.png',
-  'amityage_color.png',
-  'piratehash_animated.png',
-];
-const sponsorImage = `/images/sponsors/${imageList[2]}`;
+const sponsorImage = '/images/sponsors/piratehash_animated.png';
 
 export interface SponsorshipProps {
   id: string;
