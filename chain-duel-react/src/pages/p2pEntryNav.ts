@@ -3,6 +3,8 @@
 export const BUYIN_STEP_COUNT = 10;
 /** Buy-in grid: 5 columns × 2 rows */
 const BUYIN_COLS = 5;
+/** Players grid: 2 columns × 2 rows (32P slot is display-only). */
+const PLAYER_COLS = 2;
 
 function buyinRow(idx: number) {
   return Math.floor(idx / BUYIN_COLS);
@@ -68,12 +70,26 @@ export function buildFlatNavOrder(tournament: boolean): P2pNavFocus[] {
   return list;
 }
 
-function playerIdxDownFromSession(sessionIdx: 0 | 1): 0 | 1 | 2 {
-  return sessionIdx === 0 ? 0 : 2;
+/** Nav index → 2×2 player grid (32P cell is not reachable). */
+function playerGridPos(idx: 0 | 1 | 2): { row: 0 | 1; col: 0 | 1 } {
+  if (idx === 2) return { row: 1, col: 0 };
+  return { row: 0, col: idx };
+}
+
+function playerIdxAt(row: number, col: number): 0 | 1 | 2 | null {
+  if (row === 0 && col === 0) return 0;
+  if (row === 0 && col === 1) return 1;
+  if (row === 1 && col === 0) return 2;
+  return null;
 }
 
 function sessionIdxUpFromPlayers(playerIdx: 0 | 1 | 2): 0 | 1 {
-  return playerIdx === 0 ? 0 : 1;
+  const { col } = playerGridPos(playerIdx);
+  return col === 0 ? 0 : 1;
+}
+
+function playerIdxDownFromSession(sessionIdx: 0 | 1): 0 | 1 | 2 | 'buyin' {
+  return sessionIdx === 0 ? 0 : 'buyin';
 }
 
 /** Footer: left = main menu, right = start; up leaves footer; down = no-op. */
@@ -127,50 +143,79 @@ function moveNavFocusInner(
         if (!tournament) {
           return f.idx === 0 ? { kind: 'back' } : { kind: 'start' };
         }
-        return {
-          kind: 'players',
-          idx: playerIdxDownFromSession(f.idx),
-        };
+        const target = playerIdxDownFromSession(f.idx);
+        if (target === 'buyin') {
+          return { kind: 'buyinPill', idx: 0 };
+        }
+        return { kind: 'players', idx: target };
       }
       if (direction === 'left') return { kind: 'session', idx: 0 };
       return { kind: 'session', idx: 1 };
     }
     case 'players': {
-      if (direction === 'left') return null;
+      const { row, col } = playerGridPos(f.idx);
+
+      if (direction === 'left') {
+        if (col === 0) return null;
+        const prev = playerIdxAt(row, col - 1);
+        return prev === null ? null : { kind: 'players', idx: prev };
+      }
       if (direction === 'right') {
-        return { kind: 'buyinPill', idx: f.idx < 2 ? 0 : BUYIN_COLS };
+        if (col < PLAYER_COLS - 1) {
+          const next = playerIdxAt(row, col + 1);
+          if (next !== null) {
+            return { kind: 'players', idx: next };
+          }
+        }
+        return { kind: 'buyinPill', idx: row * BUYIN_COLS };
       }
       if (direction === 'up') {
-        if (f.idx > 0) {
-          return { kind: 'players', idx: (f.idx - 1) as 0 | 1 | 2 };
+        if (row > 0) {
+          const above = playerIdxAt(row - 1, col);
+          if (above !== null) {
+            return { kind: 'players', idx: above };
+          }
         }
         return { kind: 'session', idx: sessionIdxUpFromPlayers(f.idx) };
       }
-      if (f.idx < 2) {
-        return { kind: 'players', idx: (f.idx + 1) as 1 | 2 };
+      if (row === 0) {
+        const below = playerIdxAt(1, col);
+        if (below !== null) {
+          return { kind: 'players', idx: below };
+        }
       }
-      return { kind: 'buyinPill', idx: 0 };
+      if (col > 0) {
+        return { kind: 'buyinPill', idx: BUYIN_COLS + col };
+      }
+      return { kind: 'start' };
     }
     case 'buyinPill': {
+      const row = buyinRow(f.idx);
+      const col = buyinCol(f.idx);
+
       if (direction === 'left') {
-        if (buyinCol(f.idx) === 0) {
-          return { kind: 'players', idx: buyinRow(f.idx) === 0 ? 0 : 2 };
+        if (col === 0) {
+          const playerIdx = playerIdxAt(row, 0);
+          if (playerIdx !== null) {
+            return { kind: 'players', idx: playerIdx };
+          }
         }
         return { kind: 'buyinPill', idx: f.idx - 1 };
       }
       if (direction === 'right') {
-        if (buyinCol(f.idx) >= BUYIN_COLS - 1) {
+        if (col >= BUYIN_COLS - 1) {
           return { kind: 'start' };
         }
         return { kind: 'buyinPill', idx: f.idx + 1 };
       }
       if (direction === 'up') {
-        if (buyinRow(f.idx) === 1) {
+        if (row === 1) {
           return { kind: 'buyinPill', idx: f.idx - BUYIN_COLS };
         }
-        return { kind: 'players', idx: 2 };
+        // Buy-in column sits under Tournament mode, not under Players.
+        return { kind: 'session', idx: 1 };
       }
-      if (buyinRow(f.idx) === 0) {
+      if (row === 0) {
         return { kind: 'buyinPill', idx: f.idx + BUYIN_COLS };
       }
       return { kind: 'start' };
