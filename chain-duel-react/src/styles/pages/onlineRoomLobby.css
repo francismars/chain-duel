@@ -15,28 +15,57 @@
   z-index: 10;
 }
 
-#chain {
+.online-lobby-page #chain,
+.online-lobby-page #duel {
   color: white;
   margin: 0;
-  padding-left: 1%;
-  text-align: left;
-  font-size: clamp(12px, 2vw, 28px);
+  font-size: var(--ph-fs-heading-sm);
 }
 
-#duel {
-  color: white;
-  margin: 0;
+.online-lobby-page #chain {
+  padding-left: 1%;
+  text-align: left;
+}
+
+.online-lobby-page #duel {
   padding-right: 1%;
   text-align: right;
-  font-size: clamp(12px, 2vw, 28px);
 }
 
 .online-lobby-page {
-  width: 100vw;
-  min-height: 100vh;
+  /* Fluid typography — same scale as /practice and /online */
+  --ph-fs-soon: calc(0.2rem + 0.58vw);
+  --ph-fs-gate-check: calc(0.18rem + 0.52vw);
+  --ph-fs-gate-meta: calc(0.16rem + 0.48vw);
+  --ph-fs-play-style-sub: calc(0.2rem + 0.65vw);
+  --ph-fs-caption: calc(0.24rem + 0.78vw);
+  --ph-fs-body-sm: calc(0.28rem + 0.86vw);
+  --ph-fs-tier: calc(0.3rem + 0.82vw);
+  --ph-fs-body: calc(0.36rem + 0.98vw);
+  --ph-fs-ui: calc(0.4rem + 1.08vw);
+  --ph-fs-heading-sm: calc(0.46rem + 1.2vw);
+  --ph-fs-heading: calc(0.5rem + 1.38vw);
+  --ph-fs-display-sm: calc(0.58rem + 1.9vw);
+  --ph-fs-display: calc(0.72rem + 2.85vw);
+
+  --ph-page-max-width: 88vw;
+  --online-page-width: 100%;
+  --online-fs-button: calc(0.32rem + 0.64vw);
+  --online-hit-lg: 3vw;
+  --online-hit-md: 2.8vw;
+  --online-hit-sm: 2.2vw;
+  --online-gap: 1.2vw;
+  --online-gap-sm: 0.6vw;
+
+  width: 100%;
+  min-width: 0;
+  max-width: var(--ph-page-max-width);
+  margin: 0 auto;
+  min-height: 100dvh;
   color: #fff;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .online-lobby-main {
@@ -44,8 +73,10 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.6vw;
-  padding: 1.5vw 3vw 2vw;
+  gap: var(--online-gap-sm);
+  padding: 2vw 3vw;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .online-lobby-page-missing {
@@ -53,9 +84,21 @@
   justify-content: center;
 }
 
+/* Shared button typography — matches /online rooms */
+.online-lobby-page .button,
+.online-lobby-action,
+.online-lobby-leave-btn,
+.online-lobby-seat-ready-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--online-fs-button);
+  font-weight: 400;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+}
+
 /* ── Zone 1: Page Header ── */
 .online-lobby-header {
-  width: min(92vw, 1260px);
+  width: var(--online-page-width);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -72,7 +115,7 @@
 }
 
 .online-lobby-title {
-  font-size: clamp(24px, 3.8vw, 48px);
+  font-size: var(--ph-fs-display);
   letter-spacing: -0.03em;
   margin: 0 auto;
   text-align: center;
@@ -87,8 +130,10 @@
   flex-wrap: wrap;
   gap: 0.35rem 0.55rem;
   color: #c0c0c0;
-  font-size: clamp(11px, 0.82cqw, 14px);
-  letter-spacing: 0.04em;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--online-fs-button);
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
 }
 
 .online-lobby-header-code-label {
@@ -109,7 +154,7 @@
   padding: 0 0.1rem;
   border: none;
   background: transparent;
-  font-size: clamp(12px, 0.9cqw, 15px);
+  font-size: var(--ph-fs-body-sm);
   line-height: 1;
   cursor: pointer;
   opacity: 0.88;
@@ -128,13 +173,13 @@
 
 .online-lobby-header-copy-emoji--ok {
   color: #4dff7a;
-  font-size: clamp(11px, 0.78cqw, 14px);
+  font-size: var(--online-fs-button);
   font-weight: 700;
 }
 
 .online-lobby-header-code {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(13px, 1.1cqw, 18px);
+  font-size: var(--ph-fs-ui);
   letter-spacing: 0.08em;
   color: #fff;
 }
@@ -150,14 +195,14 @@
 
 .online-lobby-header-loading {
   color: #888;
-  font-size: clamp(11px, 0.78cqw, 13px);
+  font-size: var(--online-fs-button);
 }
 
 /* Phase badge (reused from old layout) */
 .online-lobby-phase {
   padding: 0.22vw 0.65vw;
   border: 1px solid #8a8a8a;
-  font-size: clamp(10px, 0.72cqw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   letter-spacing: 0.04rem;
   flex-shrink: 0;
   position: absolute;
@@ -187,7 +232,7 @@
   border-radius: 999px;
   border: 1px solid rgb(255 255 255 / 0.35);
   font-variant-numeric: tabular-nums;
-  font-size: clamp(10px, 0.52cqw, 12px);
+  font-size: var(--ph-fs-gate-check);
   letter-spacing: 0.02em;
   line-height: 1.15;
   vertical-align: middle;
@@ -204,7 +249,7 @@
 
 /* ── Double-or-nothing payment banner ── */
 .online-lobby-don-banner {
-  width: min(92vw, 1260px);
+  width: var(--online-page-width);
   margin: 0 auto;
   border: 1px solid rgb(255 255 255 / 0.18);
   border-left: 3px solid rgb(255 255 255 / 0.22);
@@ -236,7 +281,7 @@
 .online-lobby-don-banner-label {
   margin: 0;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(10px, 0.78cqw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.72);
@@ -249,7 +294,7 @@
 .online-lobby-don-banner-amount {
   margin: 0.2vw 0 0.15vw;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(22px, 2.2vw, 36px);
+  font-size: var(--ph-fs-heading);
   letter-spacing: 0.03em;
   color: rgb(255 255 255 / 0.95);
   line-height: 1;
@@ -261,7 +306,7 @@
 }
 
 .online-lobby-don-banner-unit {
-  font-size: clamp(11px, 0.95cqw, 16px);
+  font-size: var(--ph-fs-body-sm);
   color: rgb(255 255 255 / 0.55);
   letter-spacing: 0.08em;
 }
@@ -272,7 +317,7 @@
 
 .online-lobby-don-banner-desc {
   margin: 0;
-  font-size: clamp(11px, 0.72cqw, 13px);
+  font-size: var(--online-fs-button);
   color: rgb(255 255 255 / 0.5);
   line-height: 1.48;
 }
@@ -281,7 +326,7 @@
   flex-shrink: 0;
   margin: 0;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(10px, 0.72cqw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgb(255 175 85 / 0.75);
@@ -304,7 +349,7 @@
 
 /* ── Zone 2: Arena ── */
 .online-lobby-arena-zone {
-  width: min(92vw, 1260px);
+  width: var(--online-page-width);
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -442,7 +487,7 @@
 
 .online-lobby-arena-seat-name {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.45vw, 24px);
+  font-size: var(--ph-fs-heading-sm);
   margin: 0;
   line-height: 1.1;
   text-transform: uppercase;
@@ -451,7 +496,7 @@
 
 .online-lobby-arena-seat-meta {
   color: #b6b6b6;
-  font-size: clamp(10px, 0.72cqw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   margin: 0;
 }
 
@@ -475,14 +520,14 @@
 
 .online-lobby-arena-vs {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.8vw, 30px);
+  font-size: var(--ph-fs-heading-sm);
   letter-spacing: 0.14em;
   color: #fff;
 }
 
 .online-lobby-arena-state {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.65vw, 12px);
+  font-size: var(--ph-fs-soon);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #fff;
@@ -491,14 +536,14 @@
 }
 
 .online-lobby-arena-spectators {
-  font-size: clamp(9px, 0.6cqw, 11px);
+  font-size: var(--ph-fs-soon);
   color: #fff;
   letter-spacing: 0.06em;
 }
 
 /* ── Zone 3: Action Zone ── */
 .online-lobby-action-zone {
-  width: min(92vw, 1260px);
+  width: var(--online-page-width);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -516,7 +561,7 @@
   margin-top: 0.2vw;
   margin-bottom: 0;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.35vw, 22px);
+  font-size: var(--ph-fs-heading-sm);
   letter-spacing: 0.03em;
 }
 
@@ -570,14 +615,14 @@
 }
 
 .online-lobby-pin-card--ready .online-lobby-pin {
-  font-size: clamp(14px, 1.3vw, 20px);
+  font-size: var(--ph-fs-ui);
   letter-spacing: 0.06em;
   margin: 0;
   flex-shrink: 0;
 }
 
 .online-lobby-pin-card--ready .online-lobby-copy {
-  font-size: clamp(10px, 0.65vw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   color: rgb(255 255 255 / 0.5);
   margin: 0;
 }
@@ -596,7 +641,7 @@
 .online-lobby-pin {
   font-family: BureauGrotesque, sans-serif;
   letter-spacing: 0.08em;
-  font-size: clamp(22px, 2.2vw, 38px);
+  font-size: var(--ph-fs-heading);
   margin-top: 0.25vw;
   margin-bottom: 0;
 }
@@ -610,7 +655,7 @@
 
 .online-lobby-claim-title {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(16px, 1.6vw, 26px);
+  font-size: var(--ph-fs-heading-sm);
   letter-spacing: 0;
   color: #fff;
   text-transform: uppercase;
@@ -685,7 +730,7 @@
   position: absolute;
   top: 0.6vw;
   right: 0.7vw;
-  font-size: clamp(14px, 1.1cqw, 18px);
+  font-size: var(--ph-fs-ui);
   color: rgb(255 255 255 / 0.28);
   line-height: 1;
   transition: color 0.14s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -726,7 +771,7 @@
 
 .online-lobby-path-card--active::after {
   content: '✕';
-  font-size: clamp(10px, 0.72cqw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   color: rgb(255 255 255 / 0.4);
   top: 0.65vw;
   transform: none;
@@ -755,7 +800,7 @@
 
 .online-lobby-path-card-title {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(12px, 0.88cqw, 15px);
+  font-size: var(--ph-fs-body-sm);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #fff;
@@ -764,7 +809,7 @@
 }
 
 .online-lobby-path-card-desc {
-  font-size: clamp(10px, 0.68cqw, 12px);
+  font-size: var(--ph-fs-gate-check);
   color: rgb(255 255 255 / 0.48);
   line-height: 1.4;
 }
@@ -789,7 +834,7 @@
 
 .online-lobby-nip46-auth-banner__text {
   margin: 0;
-  font-size: clamp(11px, 0.75cqw, 13px);
+  font-size: var(--online-fs-button);
   color: rgb(255 220 170 / 0.95);
   line-height: 1.35;
 }
@@ -834,7 +879,7 @@
 
 .online-lobby-leave-btn {
   opacity: 0.45;
-  font-size: clamp(10px, 0.75cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   min-width: 0;
   transition: opacity 0.18s;
 }
@@ -873,13 +918,8 @@
   background: rgb(255 255 255 / 0.08);
   border: 1px solid rgb(255 255 255 / 0.55);
   color: #fff;
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(10px, 0.72vw, 12px);
-  font-weight: 600;
-  letter-spacing: 0.08em;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s;
-  text-transform: uppercase;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -937,7 +977,7 @@
 
 /* ── Zone 4: Kind1 Post ── */
 .online-lobby-kind1-section {
-  width: min(92vw, 1260px);
+  width: var(--online-page-width);
   margin: 0 auto;
   border: 1px solid rgb(255 255 255 / 0.15);
   background: rgb(0 0 0 / 25%);
@@ -956,7 +996,7 @@
   border-style: dashed;
   border-color: rgb(255 255 255 / 0.14);
   color: #909090;
-  font-size: clamp(11px, 0.82cqw, 14px);
+  font-size: var(--online-fs-button);
 }
 
 .online-lobby-kind1-section--room-error {
@@ -979,7 +1019,7 @@
 
 .online-lobby-room-error-title {
   margin: 0;
-  font-size: clamp(14px, 1.1cqw, 18px);
+  font-size: var(--ph-fs-ui);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -988,7 +1028,7 @@
 
 .online-lobby-room-error-detail {
   margin: 0;
-  font-size: clamp(10px, 0.75cqw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   color: #ff9a9a;
   letter-spacing: 0.04em;
 }
@@ -996,7 +1036,7 @@
 /* Inline payment error (inside loaded kind1 section) */
 .online-lobby-inline-pay-error {
   margin: 0.3rem 0 0;
-  font-size: clamp(10px, 0.75cqw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   color: #ff7b7b;
   letter-spacing: 0.04em;
 }
@@ -1032,7 +1072,7 @@
 /* ── Shared utility classes ── */
 .online-lobby-label {
   color: #bcbcbc;
-  font-size: clamp(10px, 0.72cqw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   letter-spacing: 0.05rem;
   text-transform: uppercase;
   display: flex;
@@ -1043,7 +1083,7 @@
 }
 
 .online-lobby-sublabel {
-  font-size: clamp(10px, 0.72cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   letter-spacing: 0.14em;
   color: #a5a5a5;
   margin: 0.2rem 0 0.15rem;
@@ -1051,7 +1091,7 @@
 
 .online-lobby-copy {
   color: #c7c7c7;
-  font-size: clamp(11px, 0.78cqw, 13px);
+  font-size: var(--online-fs-button);
   margin: 0;
 }
 
@@ -1062,30 +1102,29 @@
   padding: 0.05vw 0.35vw;
   border: 1px solid rgb(255 255 255 / 0.82);
   color: #fff;
-  font-size: clamp(9px, 0.6cqw, 11px);
+  font-size: var(--ph-fs-soon);
   letter-spacing: 0.03rem;
 }
 
 .online-lobby-action {
   margin: 0;
   width: auto;
-  min-width: 130px;
-  height: 44px;
+  min-width: 9vw;
+  height: var(--online-hit-lg);
   padding: 0 1.4em;
-  font-size: clamp(11px, 0.78cqw, 13px);
 }
 
 .online-lobby-error {
-  width: min(92vw, 1260px);
+  width: var(--online-page-width);
   margin: 0 auto;
   text-align: center;
   color: #ff7b7b;
-  font-size: clamp(11px, 0.82cqw, 14px);
+  font-size: var(--online-fs-button);
 }
 
 /* Lightning / invoice display */
 .online-lobby-lightning-uri {
-  font-size: clamp(9px, 0.65cqw, 12px);
+  font-size: var(--ph-fs-soon);
   letter-spacing: 0.04em;
   word-break: break-all;
   color: #c8c8c8;
@@ -1145,7 +1184,7 @@
 
 .online-lobby-invite-lede {
   margin: 0;
-  font-size: clamp(11px, 0.72cqw, 13px);
+  font-size: var(--online-fs-button);
   line-height: 1.5;
   color: rgb(255 255 255 / 0.55);
   max-width: 52rem;
@@ -1169,7 +1208,7 @@
 
 .online-lobby-invite-preview-label {
   margin: 0.35rem 0 0;
-  font-size: clamp(9px, 0.55cqw, 10px);
+  font-size: var(--ph-fs-soon);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.35);
@@ -1181,7 +1220,7 @@
   max-height: 7.5rem;
   overflow: auto;
   font-family: ui-monospace, monospace;
-  font-size: clamp(9px, 0.58cqw, 11px);
+  font-size: var(--ph-fs-soon);
   line-height: 1.45;
   color: rgb(255 255 255 / 0.5);
   background: rgb(0 0 0 / 0.35);
@@ -1192,13 +1231,13 @@
 
 .online-lobby-invite-error {
   margin: 0;
-  font-size: clamp(10px, 0.65cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   color: #e88;
 }
 
 .online-lobby-invite-ok {
   margin: 0;
-  font-size: clamp(10px, 0.65cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   color: rgb(140 220 160 / 0.9);
 }
 
@@ -1339,7 +1378,7 @@
 }
 
 .online-lobby-pin-step:last-child .online-lobby-pin-step-hint {
-  font-size: clamp(11px, 0.72cqw, 13px);
+  font-size: var(--online-fs-button);
   color: rgb(255 255 255 / 0.72);
   line-height: 1.5;
 }
@@ -1357,7 +1396,7 @@
   border-radius: 50%;
   border: 1.5px solid rgb(255 255 255 / 0.55);
   background: rgb(255 255 255 / 0.06);
-  font-size: clamp(10px, 0.72vw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   font-weight: 700;
   font-family: BureauGrotesque, sans-serif;
   color: rgb(255 255 255 / 0.85);
@@ -1368,7 +1407,7 @@
 
 .online-lobby-pin-step-hint {
   margin: 0;
-  font-size: clamp(10px, 0.58cqw, 11px);
+  font-size: var(--ph-fs-gate-check);
   color: rgb(255 255 255 / 0.38);
   line-height: 1.45;
 }
@@ -1376,7 +1415,7 @@
 .online-lobby-pin-step-amount {
   margin: 0;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(24px, 2.4vw, 36px);
+  font-size: var(--ph-fs-heading);
   color: #fff;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -1402,7 +1441,7 @@
 .online-lobby-anon-amount {
   margin: 0;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(24px, 2.4vw, 36px);
+  font-size: var(--ph-fs-heading);
   color: #fff;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -1418,7 +1457,7 @@
 
 .online-lobby-anon-new-invoice {
   opacity: 0.55;
-  font-size: clamp(10px, 0.72cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   min-width: 0;
   width: auto !important;
   padding: 0.35rem 0.8rem;
@@ -1480,14 +1519,14 @@
 
 .online-lobby-nwc-error {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.62vw, 11px);
+  font-size: var(--ph-fs-gate-check);
   color: rgb(255 140 120 / 0.9);
   margin: 0.3rem 0 0;
 }
 
 .online-lobby-nostr-sign-error {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.62vw, 11px);
+  font-size: var(--ph-fs-gate-check);
   color: rgb(255 140 120 / 0.9);
   margin: 0.35rem 0 0;
   line-height: 1.4;
@@ -1495,7 +1534,7 @@
 
 .online-lobby-qr-split-block-hint {
   margin: 0;
-  font-size: clamp(10px, 0.62cqw, 11px);
+  font-size: var(--ph-fs-gate-check);
   color: rgb(255 255 255 / 0.4);
   line-height: 1.4;
 }
@@ -1512,7 +1551,7 @@
 }
 
 .online-lobby-kind1-pin {
-  font-size: clamp(28px, 3vw, 46px);
+  font-size: var(--ph-fs-display-sm);
   letter-spacing: 0.22em;
   margin: 0.2rem 0 0;
   color: #fff;
@@ -1526,7 +1565,7 @@
 
 .online-lobby-kind1-qr-hint {
   margin: 0;
-  font-size: clamp(10px, 0.65cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   color: rgb(255 255 255 / 0.45);
   text-align: center;
   letter-spacing: 0.02em;
@@ -1548,7 +1587,7 @@
 
 .online-lobby-kind1-idle-cta {
   margin: 0;
-  font-size: clamp(11px, 0.7cqw, 13px);
+  font-size: var(--online-fs-button);
   color: rgb(255 255 255 / 0.5);
   text-align: center;
   letter-spacing: 0.02em;
@@ -1619,7 +1658,7 @@
 }
 
 .online-lobby-kind1-author-name {
-  font-size: clamp(10px, 0.65cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   font-weight: 600;
   color: #d0d0d0;
   line-height: 1.2;
@@ -1627,7 +1666,7 @@
 }
 
 .online-lobby-kind1-author-npub {
-  font-size: clamp(9px, 0.52cqw, 10px);
+  font-size: var(--ph-fs-soon);
   letter-spacing: 0.02em;
   color: rgb(255 255 255 / 0.3);
   cursor: default;
@@ -1636,7 +1675,7 @@
 
 .online-lobby-kind1-timestamp {
   display: block;
-  font-size: clamp(8px, 0.5cqw, 10px);
+  font-size: var(--ph-fs-soon);
   letter-spacing: 0.03em;
   color: #505050;
   white-space: nowrap;
@@ -1648,14 +1687,14 @@
 
 .online-lobby-kind1-embedded-meta {
   margin: 0;
-  font-size: clamp(9px, 0.55cqw, 10px);
+  font-size: var(--ph-fs-soon);
   letter-spacing: 0.04em;
   color: #787878;
 }
 
 .online-lobby-kind1-embedded-body {
   margin: 0;
-  font-size: clamp(10px, 0.65cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   line-height: 1.5;
   color: #b0b0b0;
   word-break: break-word;
@@ -1669,7 +1708,7 @@
 }
 
 .online-lobby-pubpay-zap-meta .online-lobby-copy {
-  font-size: clamp(8px, 0.55cqw, 10px);
+  font-size: var(--ph-fs-soon);
   color: rgb(255 255 255 / 0.45);
   line-height: 1.5;
 }
@@ -1685,7 +1724,7 @@
 
 .online-lobby-kind1-loading-label {
   font-family: Inter, sans-serif;
-  font-size: clamp(10px, 0.65cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   letter-spacing: 0.12em;
   color: rgb(255 255 255 / 0.28);
   animation: kind1-label-pulse 2.4s ease-in-out infinite;
@@ -1756,7 +1795,7 @@
 .online-lobby-kind1-post-error-msg {
   margin: 0;
   font-family: Inter, sans-serif;
-  font-size: clamp(13px, 0.9cqw, 15px);
+  font-size: var(--ph-fs-body-sm);
   font-weight: 500;
   color: rgb(255 255 255 / 0.75);
   letter-spacing: 0;
@@ -1764,7 +1803,7 @@
 
 .online-lobby-kind1-post-error-hint {
   margin: 0;
-  font-size: clamp(10px, 0.62cqw, 12px);
+  font-size: var(--ph-fs-gate-check);
   color: rgb(255 255 255 / 0.35);
   margin-bottom: 0.25rem;
 }
@@ -1786,7 +1825,7 @@
   flex: 1;
   min-width: 0;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  font-size: clamp(8px, 0.52cqw, 9.5px);
+  font-size: var(--ph-fs-soon);
   color: rgb(255 255 255 / 0.35);
   text-align: left;
   line-height: 1.35;
@@ -1798,7 +1837,7 @@
 
 .online-lobby-kind1-uri-hint {
   margin: 0;
-  font-size: clamp(10px, 0.68cqw, 12px);
+  font-size: var(--ph-fs-gate-check);
   color: rgb(255 255 255 / 0.6);
 }
 
@@ -1904,7 +1943,7 @@
 .online-lobby-nostr-signin-title {
   margin: 0.2rem 0 0.15rem;
   font-family: Inter, sans-serif;
-  font-size: clamp(10px, 0.72cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: #a5a5a5;
@@ -1913,7 +1952,7 @@
 .online-lobby-nostr-signin-sub {
   margin: 0;
   font-family: Inter, sans-serif;
-  font-size: clamp(9px, 0.6cqw, 11px);
+  font-size: var(--ph-fs-soon);
   line-height: 1.4;
   color: rgb(255 255 255 / 0.35);
 }
@@ -1961,7 +2000,7 @@
 }
 
 .online-lobby-nostr-connected-label {
-  font-size: clamp(8px, 0.55cqw, 9px);
+  font-size: var(--ph-fs-soon);
   font-weight: 700;
   letter-spacing: 0.12em;
   color: rgb(255 255 255 / 0.35);
@@ -1970,7 +2009,7 @@
 }
 
 .online-lobby-nostr-connected-name {
-  font-size: clamp(10px, 0.68cqw, 12px);
+  font-size: var(--ph-fs-gate-check);
   font-weight: 600;
   color: rgb(255 255 255 / 0.75);
   overflow: hidden;
@@ -2029,7 +2068,7 @@
 }
 
 .online-lobby-nc-profile-name {
-  font-size: clamp(11px, 0.76cqw, 13px);
+  font-size: var(--online-fs-button);
   font-weight: 600;
   color: rgb(255 255 255 / 0.88);
   line-height: 1.2;
@@ -2042,7 +2081,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: clamp(9px, 0.6cqw, 10px);
+  font-size: var(--ph-fs-soon);
   color: rgb(255 255 255 / 0.5);
   white-space: nowrap;
   overflow: hidden;
@@ -2055,7 +2094,7 @@
 }
 
 .online-lobby-nc-profile-npub {
-  font-size: clamp(9px, 0.58cqw, 10px);
+  font-size: var(--ph-fs-soon);
   font-family: monospace;
   color: rgb(255 255 255 / 0.28);
   letter-spacing: 0.02em;
@@ -2068,7 +2107,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: clamp(9px, 0.58cqw, 10px);
+  font-size: var(--ph-fs-soon);
   color: rgb(255 255 255 / 0.45);
   white-space: nowrap;
   overflow: hidden;
@@ -2092,12 +2131,12 @@
   flex-shrink: 0;
   white-space: nowrap;
   letter-spacing: 0.06em;
-  font-size: clamp(10px, 0.72cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
 }
 
 .online-lobby-text-btn.online-lobby-nostr-switch-btn,
 .online-lobby-text-btn.online-lobby-nostr-switch-btn:hover {
-  font-size: clamp(9px, 0.6cqw, 10px);
+  font-size: var(--ph-fs-soon);
   color: rgb(255 255 255 / 0.22);
   text-decoration: none;
   letter-spacing: 0.04em;
@@ -2142,7 +2181,7 @@
 
 .online-lobby-nostr-linked-name {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(14px, 1.05cqw, 18px);
+  font-size: var(--ph-fs-body);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2152,7 +2191,7 @@
 
 .online-lobby-nostr-linked-npub {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: clamp(8px, 0.55cqw, 10px);
+  font-size: var(--ph-fs-soon);
   color: rgb(255 255 255 / 0.3);
   letter-spacing: 0.04em;
   line-height: 1;
@@ -2160,7 +2199,7 @@
 
 .online-lobby-nostr-linked-rest {
   font-family: Inter, sans-serif;
-  font-size: clamp(9px, 0.58cqw, 11px);
+  font-size: var(--ph-fs-soon);
   font-weight: 400;
   letter-spacing: 0;
   color: rgb(255 255 255 / 0.35);
@@ -2216,7 +2255,7 @@
 
 .online-lobby-modal-title {
   margin: 0;
-  font-size: clamp(14px, 1.05cqw, 18px);
+  font-size: var(--ph-fs-body);
   letter-spacing: 0.06em;
   font-weight: 600;
 }
@@ -2240,21 +2279,21 @@
 
 .online-lobby-modal-lead {
   margin: 0 0 0.75rem;
-  font-size: clamp(11px, 0.78cqw, 14px);
+  font-size: var(--online-fs-button);
   line-height: 1.45;
   color: #c6c6c6;
 }
 
 .online-lobby-modal-nip07-hint {
   margin: 0 0 0.65rem;
-  font-size: clamp(10px, 0.7cqw, 12px);
+  font-size: var(--ph-fs-gate-meta);
   line-height: 1.4;
   color: #9a9a9a;
 }
 
 .online-lobby-modal-status {
   margin: 0 0 0.75rem;
-  font-size: clamp(11px, 0.74cqw, 13px);
+  font-size: var(--ph-fs-body-sm);
   color: #b0b0b0;
 }
 
@@ -2295,7 +2334,7 @@
 
 .online-lobby-modal-error {
   margin: 0.65rem 0 0;
-  font-size: clamp(11px, 0.74cqw, 13px);
+  font-size: var(--ph-fs-body-sm);
   color: #ff9b9b;
 }
 
@@ -2323,7 +2362,7 @@
   .online-lobby-action-zone,
   .online-lobby-kind1-section,
   .online-lobby-error {
-    width: 92vw;
+    width: 100%;
   }
 
   .online-lobby-arena-zone {
@@ -2342,11 +2381,11 @@
   }
 
   .online-lobby-arena-vs {
-    font-size: 16px;
+    font-size: var(--ph-fs-heading-sm);
   }
 
   .online-lobby-arena-state {
-    font-size: 11px;
+    font-size: var(--ph-fs-gate-meta);
   }
 
   .online-lobby-arena-seat--p1 .online-lobby-arena-seat-identity,
@@ -2370,7 +2409,7 @@
   }
 
   .online-lobby-don-banner {
-    width: 92vw;
+    width: 100%;
     padding: 10px 14px 12px 12px;
     gap: 12px;
   }
@@ -2390,8 +2429,8 @@
 
   .online-lobby-action {
     width: 100%;
-    height: 48px;
-    font-size: 12px;
+    min-height: var(--online-hit-lg);
+    font-size: var(--online-fs-button);
   }
 
 }
@@ -2415,70 +2454,25 @@
    ══════════════════════════════════════════════════════════════ */
 @media (min-width: 1600px) and (min-aspect-ratio: 16/9) {
   /* 5 % horizontal safe-zone */
+  .online-lobby-page {
+    --online-hit-lg: 3.5vw;
+    --online-hit-md: 4vw;
+    --online-hit-sm: 3.2vw;
+  }
+
   .online-lobby-main {
     padding: 0.6vw 5vw 1vw;
   }
 
-  /* Title */
-  .online-lobby-title {
-    font-size: clamp(32px, 3.6vw, 58px);
-  }
-
-  /* Meta row */
-  .online-lobby-header-meta {
-    font-size: 1vw;
-  }
-
-  /* Arena seat name */
-  .online-lobby-arena-seat-name {
-    font-size: clamp(20px, 1.7vw, 32px);
-  }
-
-  /* Arena seat meta */
-  .online-lobby-arena-seat-meta {
-    font-size: clamp(13px, 0.88vw, 17px);
-  }
-
-  /* VS label */
-  .online-lobby-arena-vs {
-    font-size: clamp(20px, 2.2vw, 38px);
-  }
-
-  /* DoN amount */
-  .online-lobby-don-banner-amount {
-    font-size: clamp(26px, 2.5vw, 44px);
-  }
-
-  /* Pin / seat paid amount */
-  .online-lobby-pin {
-    font-size: clamp(28px, 2.6vw, 46px);
-  }
-
-  /* Action buttons */
   .online-lobby-action {
-    height: 52px;
-    font-size: 1vw;
+    height: var(--online-hit-lg);
     padding: 0 2em;
-  }
-
-  /* Label / utility text */
-  .online-lobby-label {
-    font-size: clamp(11px, 0.78vw, 15px);
-  }
-
-  .online-lobby-copy {
-    font-size: clamp(12px, 0.82vw, 16px);
   }
 }
 
 @media (min-width: 1400px) and (min-aspect-ratio: 16/10) {
   .online-lobby-main {
     padding: 0.4vw 2vw 0.8vw;
-  }
-
-  /* Shrink title slightly — 72px is very tall at TV scale */
-  .online-lobby-title {
-    font-size: clamp(28px, 3.5vw, 52px);
   }
 
   /* Arena seats: reduce vertical padding */

@@ -10,15 +10,96 @@
 }
 
 .online-rooms-page {
-  width: 100vw;
-  min-height: 100vh;
-  padding: 0;
+  /* Fluid typography — same scale as /practice (practice-hub-page.css) */
+  --ph-fs-soon: calc(0.2rem + 0.58vw);
+  --ph-fs-gate-check: calc(0.18rem + 0.52vw);
+  --ph-fs-gate-meta: calc(0.16rem + 0.48vw);
+  --ph-fs-play-style-sub: calc(0.2rem + 0.65vw);
+  --ph-fs-caption: calc(0.24rem + 0.78vw);
+  --ph-fs-body-sm: calc(0.28rem + 0.86vw);
+  --ph-fs-tier: calc(0.3rem + 0.82vw);
+  --ph-fs-body: calc(0.36rem + 0.98vw);
+  --ph-fs-ui: calc(0.4rem + 1.08vw);
+  --ph-fs-heading-sm: calc(0.46rem + 1.2vw);
+  --ph-fs-heading: calc(0.5rem + 1.38vw);
+  --ph-fs-display-sm: calc(0.58rem + 1.9vw);
+  --ph-fs-display: calc(0.72rem + 2.85vw);
+
+  /* Layout + hit targets — proportional to viewport width */
+  --ph-page-max-width: 88vw;
+  --online-page-width: 100%;
+  --online-fs-button: calc(0.32rem + 0.64vw);
+  --online-hit-lg: 3vw;
+  --online-hit-md: 2.8vw;
+  --online-hit-sm: 2.2vw;
+  --online-avatar: 1.85vw;
+  --online-dot: 0.38vw;
+  --online-gap: 1.2vw;
+  --online-gap-sm: 0.6vw;
+  --online-gap-xs: 0.4vw;
+  --online-col-action: minmax(9vw, 26%);
+  --online-col-presets: minmax(7.5vw, 38%);
+  --online-back-min-width: 14vw;
+  --online-list-height: clamp(16vw, 32dvh, 34vw);
+  --online-empty-icon: 6vw;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto auto auto auto minmax(0, 1fr);
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: var(--ph-page-max-width);
+  margin: 0 auto;
+  padding: 2vw 3vw;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  box-sizing: border-box;
   color: #fff;
+  gap: var(--online-gap);
+}
+
+.online-rooms-page > .sponsorship {
+  grid-row: 2;
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+}
+
+.online-rooms-page > .online-header {
+  grid-row: 3;
+  align-self: center;
+  justify-self: center;
+}
+
+.online-rooms-page > .online-room-list-panel {
+  grid-row: 4;
+  align-self: stretch;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.2vw;
+}
+
+.online-rooms-page > .online-action-card {
+  grid-row: 5;
+  align-self: stretch;
+}
+
+.online-rooms-page > .online-footer-controls {
+  grid-row: 6;
+  align-self: start;
+  justify-self: center;
+}
+
+.online-rooms-page .sponsored-by-label {
+  font-size: calc(0.24rem + 0.72vw);
+}
+
+.online-rooms-page .sponsored-img {
+  max-width: 16vw;
+  max-height: 2vw;
+  margin-bottom: 1vw;
 }
 
 /* Staggered element reveals */
@@ -63,7 +144,7 @@
 }
 
 .online-header {
-  width: min(70vw, 1200px);
+  width: var(--online-page-width);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -71,8 +152,9 @@
 }
 
 #online-title {
-  font-size: 5.5vw;
+  font-size: var(--ph-fs-display);
   letter-spacing: 0;
+  font-weight: 400;
   margin: 0;
   text-align: center;
   color: #fff;
@@ -84,7 +166,7 @@
   text-align: center;
   color: #d8d8d8;
   letter-spacing: 0.06rem;
-  font-size: 1.1vw;
+  font-size: var(--ph-fs-body-sm);
   margin: 0.4vw 0 0;
   animation: rooms-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
 }
@@ -133,26 +215,26 @@
 /* ── Simple action card (below room list) ── */
 /* ── Action card ── */
 .online-action-card {
-  width: min(70vw, 1200px);
+  width: var(--online-page-width);
   margin: 0;
-  padding-top: 1rem;
+  padding-top: 1.2vw;
 }
 
 .online-action-card-body {
   display: grid;
-  grid-template-columns: 1fr minmax(120px, 26%);
+  grid-template-columns: 1fr var(--online-col-action);
   grid-template-rows: auto auto;
-  column-gap: 1rem;
-  row-gap: 0.3rem;
+  column-gap: 1vw;
+  row-gap: 0.3vw;
   align-items: stretch;
-  padding-bottom: 0.7rem;
+  padding-bottom: 0.7vw;
 }
 
 .online-action-label {
   grid-column: 1;
   grid-row: 1;
   margin: 0;
-  font-size: clamp(10px, 0.68vw, 12px);
+  font-size: var(--ph-fs-caption);
   letter-spacing: 0.18em;
   color: rgb(255 255 255 / 0.38);
   text-transform: uppercase;
@@ -168,7 +250,7 @@
 
 .online-buyin-field {
   display: grid;
-  grid-template-columns: 1fr minmax(100px, 38%);
+  grid-template-columns: 1fr var(--online-col-presets);
   align-items: stretch;
 }
 
@@ -180,6 +262,7 @@
   gap: 0;
   padding: 0 0.2vw;
   margin-left: 0;
+  min-height: var(--online-hit-md);
   border: 1px solid rgb(255 255 255 / 0.07);
   
   overflow: hidden;
@@ -192,9 +275,9 @@
 }
 
 .online-buyin-btn {
-  width: clamp(30px, 2.2vw, 38px);
-  height: clamp(30px, 2.2vw, 38px);
-  font-size: clamp(16px, 1.35vw, 22px);
+  width: var(--online-hit-sm);
+  height: var(--online-hit-sm);
+  font-size: var(--ph-fs-heading-sm);
   line-height: 1;
   font-family: inherit;
 }
@@ -235,7 +318,7 @@
 
 .online-buyin-value {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(22px, 2.2vw, 34px);
+  font-size: var(--ph-fs-heading);
   letter-spacing: 0.03em;
   color: #fff;
   background: transparent;
@@ -252,7 +335,7 @@
 
 .online-buyin-unit {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(11px, 0.75vw, 13px);
+  font-size: var(--ph-fs-play-style-sub);
   font-weight: 500;
   letter-spacing: 0.06em;
   color: rgb(255 255 255 / 0.38);
@@ -275,12 +358,12 @@
   border-right: 1px solid rgb(255 255 255 / 0.07);
   color: rgb(255 255 255 / 0.3);
   font-family: 'Inter', sans-serif;
-  font-size: clamp(11px, 0.8vw, 13px);
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-size: var(--online-fs-button);
+  font-weight: 400;
+  letter-spacing: 0.1rem;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 0.3rem 0;
+  padding: 0.35vw 0;
   transition: color 0.12s, background 0.12s;
   line-height: 1;
   text-align: center;
@@ -313,14 +396,14 @@
 
 /* Room code input */
 .online-code-input {
-  font-size: clamp(19px, 1.95vw, 32px);
+  font-size: var(--ph-fs-heading-sm);
   letter-spacing: 0.22em;
   background: transparent;
   border: none;
   border-bottom: 1px solid rgb(255 255 255 / 0.2);
   color: #fff;
   width: 100%;
-  min-height: clamp(36px, 2.8vw, 46px);
+  min-height: var(--online-hit-md);
   padding: 0;
   outline: none;
   transition: border-color 0.14s;
@@ -329,18 +412,27 @@
 .online-code-input:focus { border-bottom-color: rgb(255 255 255 / 0.55); }
 .online-code-input::placeholder { color: rgb(255 255 255 / 0.18); letter-spacing: 0.18em; }
 
-/* CTA button — right column, spans label + field rows */
+/* CTA button — right column; match home page .button (LEDGER, etc.) */
 .online-create-btn {
   grid-column: 2 !important;
   grid-row: 2;
   width: 100% !important;
   min-width: unset !important;
   margin: 0 !important;
-  align-self: stretch !important;
-  height: auto !important;
-  min-height: clamp(38px, 3vw, 46px) !important;
-  font-size: clamp(11px, 0.82vw, 14px);
+  align-self: center !important;
+  height: var(--online-hit-lg);
+  min-height: unset;
+  padding: 1%;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--online-fs-button);
+  font-weight: 400;
   letter-spacing: 0.1rem;
+  text-transform: uppercase;
+  color: #fff;
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: none;
+  animation: none;
 }
 
 /* Footer: mode toggle centered */
@@ -348,8 +440,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 0.4rem 0 0.7rem;
+  gap: 1vw;
+  padding: 0.4vw 0 0.7vw;
   border-bottom: 1px solid rgb(255 255 255 / 0.1);
 }
 
@@ -357,7 +449,7 @@
   background: none;
   border: none;
   color: rgb(255 255 255 / 0.3);
-  font-size: clamp(11px, 0.75vw, 13px);
+  font-size: var(--ph-fs-play-style-sub);
   letter-spacing: 0.06em;
   cursor: pointer;
   padding: 0;
@@ -375,14 +467,14 @@
 /* Inline error inside card */
 .online-inline-error {
   color: #ff7b7b;
-  font-size: clamp(13px, 0.9vw, 16px);
+  font-size: var(--ph-fs-body-sm);
   margin: 0;
   text-align: center;
 }
 
 .online-panel-copy {
   color: #b7b7b7;
-  font-size: clamp(13px, 0.96vw, 16px);
+  font-size: var(--ph-fs-body-sm);
   margin: 0;
 }
 
@@ -391,7 +483,7 @@
   border: none;
   border-radius: 0;
   color: #fff;
-  font-size: clamp(14px, 1.0vw, 18px);
+  font-size: var(--ph-fs-body);
   letter-spacing: 0.04rem;
   padding: 0 0.8vw;
   text-transform: uppercase;
@@ -405,16 +497,16 @@
 
 .online-action {
   margin: 0;
-  min-width: 7rem;
+  min-width: 7vw;
   height: auto;
-  min-height: clamp(38px, 3vw, 46px);
+  min-height: var(--online-hit-md);
   white-space: nowrap;
-  font-size: clamp(11px, 0.82vw, 14px);
+  font-size: var(--ph-fs-body-sm);
   letter-spacing: 0.1rem;
 }
 
 .online-room-list-panel {
-  width: min(70vw, 1200px);
+  width: var(--online-page-width);
   margin: 0;
   border: none;
   background: none;
@@ -425,10 +517,10 @@
 .online-room-list-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 0.6vw;
-  margin-bottom: 0;   /* removed — tab border bleeds into list top border */
+  margin-bottom: 0;   /* tab underline sits on list top border */
 }
 
 /* Tab strip + optional Enter hint immediately to the left of the first tab */
@@ -436,16 +528,16 @@
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.85rem;
+  align-items: flex-end;
+  gap: var(--online-gap-xs) 0.85vw;
   min-width: 0;
 }
 
 /* Right-anchored group: tabs always flush right, hint grows leftward */
 .online-tab-line-right {
   display: flex;
-  align-items: center;
-  gap: 0.8rem;
+  align-items: flex-end;
+  gap: 0.8vw;
   margin-left: auto;
 }
 
@@ -459,7 +551,7 @@
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
-  font-size: clamp(11px, 0.72vw, 13px);
+  font-size: var(--ph-fs-gate-meta);
   color: rgb(255 255 255 / 0.38);
   letter-spacing: 0.04em;
   animation: rooms-fade 0.2s ease both;
@@ -477,8 +569,8 @@
 }
 
 .online-room-list-head h3 {
-  margin: 0 0 0.4rem;
-  font-size: clamp(22px, 2.7vw, 36px);
+  margin: 0 0 0.4vw;
+  font-size: var(--ph-fs-heading-sm);
   letter-spacing: 0;
 }
 
@@ -491,13 +583,13 @@
 
 .online-tab {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(13px, 1.08vw, 18px);
-  letter-spacing: 0;
+  font-size: var(--online-fs-button);
+  letter-spacing: 0.1rem;
   text-transform: uppercase;
-  padding: 0.35em 1.2em;
+  padding: 0.35em 1em 0.65em;
   border: none;
   border-bottom: 2px solid transparent;
-  margin-bottom: -1px;   /* sink bottom border flush with list top border */
+  margin-bottom: -2px;   /* sink active underline flush with list top border */
   background: transparent;
   color: rgb(255 255 255 / 0.35);
   cursor: pointer;
@@ -513,6 +605,7 @@
   color: #fff !important;
   background: none !important;
   border-bottom-color: #fff !important;
+  box-shadow: none !important;
 }
 
 /* Controller / keyboard nav focus — white underline matching active style */
@@ -520,8 +613,8 @@
   color: #fff !important;
   background: none !important;
   border-bottom-color: rgb(255 255 255 / 0.55) !important;
+  box-shadow: none !important;
   outline: none;
-  box-shadow: none;
 }
 
 /* Active tab status dot */
@@ -532,8 +625,8 @@
 }
 
 .online-tab-dot {
-  width: 6px;
-  height: 6px;
+  width: var(--online-dot);
+  height: var(--online-dot);
   border-radius: 50%;
   flex-shrink: 0;
   background: rgb(255 255 255 / 0.2);
@@ -623,15 +716,15 @@
 /* 3-col grid: narrow badge | flex matchup | actions flush right */
 .online-room-card--history .online-postgame-round-row-inner {
   width: 100%;
-  padding: 0.28rem 0;
-  gap: 0.25rem 0.6rem;
-  grid-template-columns: minmax(8rem, 9.5rem) minmax(0, 1fr) auto;
+  padding: 0.35vw 0;
+  gap: 0.25vw 0.6vw;
+  grid-template-columns: minmax(12vw, 14vw) minmax(0, 1fr) auto;
   align-items: center;
 }
 
 /* Badge col: code + buyin on one line, date below */
 .online-room-card--history .online-postgame-round-badge-col {
-  gap: 0.14rem;
+  gap: 0.14vw;
   padding-top: 0;
   flex-wrap: wrap;
   flex-direction: row;
@@ -639,21 +732,21 @@
 }
 
 .online-room-card--history .online-postgame-round-index {
-  font-size: clamp(14px, 1.1vw, 20px);
+  font-size: var(--ph-fs-ui);
   letter-spacing: 0.05em;
   line-height: 1.1;
   width: 100%;
 }
 
 .online-room-card--history .online-postgame-round-chip {
-  font-size: clamp(7px, 0.52vw, 9px);
-  padding: 0.12rem 0.28rem;
+  font-size: var(--ph-fs-soon);
+  padding: 0.12vw 0.28vw;
   letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
 .online-room-card--history .online-postgame-round-time {
-  font-size: clamp(9px, 0.64vw, 11px);
+  font-size: var(--ph-fs-gate-meta);
 }
 
 /* Matchup: single row, no gap below */
@@ -667,30 +760,30 @@
 }
 
 .online-room-card--history .online-postgame-round-matchup {
-  gap: 0.14rem 0.35rem;
+  gap: 0.14vw 0.35vw;
 }
 
 /* Small avatars in compact rows */
 .online-room-card--history .online-postgame-round-avatar {
-  width: 22px;
-  height: 22px;
+  width: var(--online-avatar);
+  height: var(--online-avatar);
   border-radius: 50%;
 }
 
 /* Player identity: single horizontal line */
 .online-room-card--history .online-postgame-player-identity {
-  gap: 0.22rem;
+  gap: 0.22vw;
 }
 
 .online-room-card--history .online-postgame-player-name {
-  font-size: clamp(13px, 1.0vw, 18px);
+  font-size: var(--ph-fs-body-sm);
 }
 
 /* Score inline with name (row direction) */
 .online-room-card--history .online-postgame-player {
   flex-direction: row;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.35vw;
 }
 
 .online-room-card--history .online-postgame-player--p1 {
@@ -699,29 +792,29 @@
 }
 
 .online-room-card--history .online-postgame-player-pts {
-  font-size: clamp(14px, 1.1vw, 19px);
+  font-size: var(--ph-fs-ui);
   flex-shrink: 0;
 }
 
 .online-room-card--history .online-postgame-player-denom {
-  font-size: clamp(9px, 0.62vw, 11px);
+  font-size: var(--ph-fs-gate-meta);
 }
 
 /* Action buttons: side-by-side, small, flush right */
 .online-history-action-col {
   flex-direction: row !important;
-  gap: 0.28rem !important;
+  gap: 0.28vw !important;
   align-items: center !important;
   justify-content: flex-end !important;
 }
 
 .online-history-action-col .online-postgame-round-replay-btn.button {
   width: auto;
-  height: clamp(26px, 2vw, 34px);
+  height: var(--online-hit-sm);
   min-height: unset;
   min-width: unset;
-  font-size: clamp(9px, 0.75vw, 12px);
-  padding: 0 clamp(0.6rem, 1vw, 1.1rem);
+  font-size: var(--ph-fs-gate-check);
+  padding: 0 1vw;
   letter-spacing: 0.1rem;
   white-space: nowrap;
   margin: 0;
@@ -730,13 +823,13 @@
 .online-archived {
   border: 1px solid #888;
   padding: 0.05vw 0.35vw;
-  font-size: 1.0vw;
+  font-size: var(--ph-fs-body-sm);
   color: #e0e0e0;
 }
 
 .online-refresh {
   width: 8.5vw;
-  min-width: 120px;
+  min-width: 9vw;
   margin: 0;
 }
 
@@ -747,8 +840,11 @@
 }
 
 .online-room-list {
-  /* Fixed height keeps the layout stable on every tab */
-  height: clamp(200px, 30vh, 440px);
+  /* Fixed height keeps the layout stable on every tab; flexes within grid row */
+  flex: 1 1 auto;
+  min-height: 0;
+  height: var(--online-list-height);
+  max-height: 100%;
   overflow-y: auto;
   overflow-x: visible;
   border-top: 1px solid rgb(255 255 255 / 0.1);
@@ -783,11 +879,11 @@
 .online-room-card.online-room-card--history .online-room-meta {
   margin-top: 0.12vw;
   gap: 0.55vw;
-  font-size: 1.05vw;
+  font-size: var(--ph-fs-body-sm);
 }
 
 .online-room-card.online-room-card--history .online-room-code {
-  font-size: 1.72vw;
+  font-size: var(--ph-fs-heading-sm);
 }
 
 /* Generic: tabs / inputs use bottom-border underline */
@@ -813,9 +909,8 @@
 /* CREATE ROOM / JOIN ROOM button: use the homepage glowing animation */
 .online-create-btn.online-selected {
   outline: none !important;
-  animation: glowing 2000ms ease-in-out infinite !important;
-  border-color: var(--button-glow-border, #fff) !important;
-  box-shadow: var(--button-glow-shadow-low, 0 0 15px #fff) !important;
+  animation: glowing 2s ease-in-out infinite !important;
+  border-bottom-color: initial !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -837,7 +932,7 @@
   border-left: 2px solid rgb(255 255 255 / 0.6);
   box-shadow: inset 0 0 0 999px rgb(255 255 255 / 5%), 0 0 10px rgb(255 255 255 / 0.08);
   transform: scaleX(1.004) translateX(2px);
-  padding-left: 0.6rem;
+  padding-left: 0.6vw;
   outline: none;
 }
 
@@ -847,7 +942,7 @@
 
 .online-room-code {
   font-family: 'BureauGrotesque';
-  font-size: 2.2vw;
+  font-size: var(--ph-fs-heading);
   letter-spacing: 0.04em;
   display: flex;
   align-items: baseline;
@@ -858,7 +953,7 @@
   display: flex;
   gap: 0.9vw;
   margin-top: 0.2vw;
-  font-size: 0.96vw;
+  font-size: var(--ph-fs-body-sm);
   flex-wrap: wrap;
   align-items: baseline;
 }
@@ -935,46 +1030,49 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: 0.45vw;
   padding: 0;
   margin: 0;
-  color: #686868;
+  color: rgb(255 255 255 / 0.35);
   text-align: center;
 }
 
 .online-empty-icon {
-  width: clamp(64px, 6vw, 96px);
+  width: var(--online-empty-icon);
   height: auto;
   opacity: 0.5;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.3vw;
 }
 
 .online-empty-title {
   margin: 0;
-  font-size: clamp(13px, 1.1vw, 18px);
-  letter-spacing: 0.12em;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--online-fs-button);
+  font-weight: 400;
+  letter-spacing: 0.1rem;
   text-transform: uppercase;
-  color: #808080;
+  color: rgb(255 255 255 / 0.38);
 }
 
 .online-empty-hint {
   margin: 0;
-  font-size: clamp(12px, 0.88vw, 15px);
-  color: #505050;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--ph-fs-gate-meta);
+  color: rgb(255 255 255 / 0.28);
   letter-spacing: 0.04em;
 }
 
 .online-error {
-  width: min(70vw, 1200px);
+  width: var(--online-page-width);
   margin: 0;
   color: #ff7b7b;
   text-align: center;
-  font-size: 1.05vw;
+  font-size: var(--ph-fs-body-sm);
 }
 
 .online-footer-controls {
   margin-top: 0;
-  width: min(70vw, 1200px);
+  width: var(--online-page-width);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -982,15 +1080,16 @@
 }
 
 .online-back {
-  min-width: 220px;
-  font-size: clamp(11px, 0.82vw, 14px);
+  min-width: var(--online-back-min-width);
+  height: var(--online-hit-lg);
+  font-size: var(--online-fs-button);
   letter-spacing: 0.1rem;
 }
 
 .online-controls-hint {
   color: #9f9f9f;
   letter-spacing: 0.03rem;
-  font-size: 0.92vw;
+  font-size: var(--ph-fs-gate-meta);
 }
 
 .online-loading-overlay {
@@ -1004,10 +1103,10 @@
 }
 
 .online-loading-card {
-  width: min(560px, 88vw);
+  width: min(88vw, 36rem);
   border: 1px solid #fff;
   border-radius: 0;
-  padding: 1.3rem 1.2rem;
+  padding: 1.3vw 1.2vw;
   background: rgb(0 0 0 / 82%);
   text-align: center;
   box-shadow: 0 0 32px rgb(255 255 255 / 20%);
@@ -1016,14 +1115,14 @@
 .online-loading-title {
   font-family: 'BureauGrotesque';
   text-transform: uppercase;
-  font-size: clamp(19px, 1.85vw, 32px);
+  font-size: var(--ph-fs-heading-sm);
   letter-spacing: 0.06rem;
 }
 
 .online-loading-copy {
   color: #d5d5d5;
-  margin-top: 0.45rem;
-  font-size: clamp(14px, 1.1vw, 18px);
+  margin-top: 0.45vw;
+  font-size: var(--ph-fs-body);
 }
 
 /* ── Default: wrappers are transparent (flex children of page) ── */
@@ -1040,25 +1139,9 @@
 }
 
 @media (max-width: 1024px) {
-  .online-header,
-  .online-rooms-left,
-  .online-action-card,
-  .online-room-list-panel,
-  .online-footer-controls,
-  .online-error {
-    width: 90vw;
-  }
-
   .online-room-meta {
     flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .online-controls-hint,
-  .online-panel-copy,
-  .online-room-meta,
-  #online-subtitle {
-    font-size: clamp(12px, 1.5vw, 15px);
+    gap: 0.65vw;
   }
 }
 
@@ -1066,23 +1149,22 @@
    16:9 TV layout — 1920×1080 optimised
    • 5 % side safe-zones (overscan)
    • 2-column: room list left, action + back right
-   • Larger fonts and hit-targets for 10-foot / controller use
+   • Typography scales via --ph-fs-* (same as /practice)
    ══════════════════════════════════════════════════════════════ */
 @media (min-width: 1400px) and (min-aspect-ratio: 16/9) {
   .online-rooms-page {
-    padding: 2.8vw 0 2vw;
+    padding: 2.8vw 3vw 2vw;
     gap: 1.8vw;
-    min-height: 100vh;
     box-sizing: border-box;
-  }
-
-  /* Title/subtitle wrapper and TV typography */
-  #online-title {
-    font-size: 5.8vw;
+    --online-list-height: clamp(22vw, 48dvh, 36vw);
+    --online-hit-lg: 3.5vw;
+    --online-hit-md: 4vw;
+    --online-hit-sm: 3.2vw;
+    --online-back-min-width: 18vw;
+    --online-empty-icon: 6.5vw;
   }
 
   #online-subtitle {
-    font-size: 1.4vw;
     margin-top: -0.3vw;
   }
 
@@ -1093,25 +1175,14 @@
 
   /* Room list: taller on TV */
   .online-room-list {
-    height: clamp(320px, 55vh, 680px);
-  }
-
-  /* ── Larger typography for 10-foot viewing ── */
-  .online-room-list-head h3 {
-    font-size: 2.9vw;
+    height: var(--online-list-height);
   }
 
   .online-tab {
-    font-size: 1.28vw;
-    padding: 0.5em 1.6em;
-  }
-
-  .online-room-code {
-    font-size: 2.6vw;
+    padding: 0.35em 1em;
   }
 
   .online-room-meta {
-    font-size: 1.35vw;
     gap: 1.1vw;
   }
 
@@ -1124,56 +1195,34 @@
   }
 
   .online-history-action-col .online-postgame-round-replay-btn.button {
-    height: clamp(30px, 2.2vw, 38px);
-    font-size: clamp(10px, 0.82vw, 13px);
-    padding: 0 clamp(0.7rem, 1.1vw, 1.2rem);
+    height: var(--online-hit-sm);
+    padding: 0 1.1vw;
   }
 
-  /* ── Action card — larger inputs and buttons ── */
-  .online-action-label {
-    font-size: 0.92vw;
-  }
-
+  /* ── Action card — larger hit-targets only ── */
   .online-action-card-body {
     grid-template-rows: auto auto;
   }
 
   .online-buyin-stepper {
-    min-height: clamp(52px, 4vw, 68px);
+    min-height: var(--online-hit-md);
   }
 
   .online-buyin-preset {
-    font-size: clamp(13px, 0.86vw, 16px);
-    padding: 0.45rem 0;
+    padding: 0.45vw 0;
   }
 
   .online-buyin-btn {
-    width: clamp(44px, 3.2vw, 56px);
-    height: clamp(44px, 3.2vw, 56px);
-    font-size: clamp(22px, 1.85vw, 32px);
-  }
-
-  .online-buyin-value {
-    font-size: clamp(34px, 2.95vw, 52px);
-  }
-
-  .online-buyin-unit {
-    font-size: clamp(16px, 1.04vw, 20px);
+    width: var(--online-hit-sm);
+    height: var(--online-hit-sm);
   }
 
   .online-code-input {
-    font-size: clamp(27px, 2.45vw, 44px);
-    min-height: clamp(52px, 4vw, 68px);
+    min-height: var(--online-hit-md);
   }
 
-  .online-create-btn,
   .online-action {
-    min-height: clamp(52px, 4vw, 68px) !important;
-    font-size: 1.25vw !important;
-  }
-
-  .online-action-switch {
-    font-size: 0.88vw;
+    min-height: var(--online-hit-md) !important;
   }
 
   /* ── Footer ── */
@@ -1182,26 +1231,13 @@
   }
 
   .online-back {
-    min-width: 280px;
-    height: clamp(48px, 3.5vw, 60px);
-    font-size: 1.25vw !important;
-  }
-
-  .online-controls-hint {
-    font-size: 1.04vw;
+    min-width: var(--online-back-min-width);
+    height: var(--online-hit-lg);
   }
 
   /* ── Empty state — stays centred via flex: 1 from base rule ── */
 
   .online-empty-icon {
-    width: clamp(72px, 6.5vw, 110px);
-  }
-
-  .online-empty-title {
-    font-size: clamp(16px, 1.29vw, 22px);
-  }
-
-  .online-empty-hint {
-    font-size: clamp(13px, 1.0vw, 18px);
+    width: var(--online-empty-icon);
   }
 }
