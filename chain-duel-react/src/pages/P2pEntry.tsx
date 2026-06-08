@@ -31,9 +31,10 @@ export default function P2pEntry() {
   const { playSfx } = useAudio();
   useGamepad(true);
 
-  const [navFocus, setNavFocus] = useState<P2pNavFocus>({ kind: 'start' });
+  const [navFocus, setNavFocus] = useState<P2pNavFocus>({ kind: 'none' });
   const paymentRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const sessionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const duelFormatRef = useRef<HTMLButtonElement | null>(null);
   const startRef = useRef<HTMLButtonElement | null>(null);
   const backRef = useRef<HTMLButtonElement | null>(null);
   const bracketHubRef = useRef<BracketSizingHubHandle | null>(null);
@@ -162,7 +163,12 @@ export default function P2pEntry() {
 
       if (isActivate) {
         e.preventDefault();
+        if (navFocus.kind === 'none') return;
         activateNavFocus(navFocus);
+        return;
+      }
+
+      if (navFocus.kind === 'none' && (isUp || isDown)) {
         return;
       }
 
@@ -182,10 +188,18 @@ export default function P2pEntry() {
   }, [activateNavFocus, navFocus, navigate, playSelect, playSfx, sessionNavIdx, tournament]);
 
   useEffect(() => {
+    if (navFocus.kind === 'none') {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      return;
+    }
     if (navFocus.kind === 'payment') {
       paymentRefs.current[navFocus.idx]?.focus();
     } else if (navFocus.kind === 'session') {
       sessionRefs.current[navFocus.idx]?.focus();
+    } else if (navFocus.kind === 'duelFormat') {
+      duelFormatRef.current?.focus();
     } else if (navFocus.kind === 'start') {
       startRef.current?.focus();
     } else if (navFocus.kind === 'back') {
@@ -354,7 +368,23 @@ export default function P2pEntry() {
               FORMAT
             </h3>
             <div className="p2p-duel-format" role="group" aria-label="Duel format">
-              <button type="button" className="p2p-duel-format__card p2p-duel-format__card--active" aria-pressed="true">
+              <button
+                ref={duelFormatRef}
+                type="button"
+                tabIndex={navFocus.kind === 'duelFormat' ? 0 : -1}
+                className={[
+                  'p2p-duel-format__card',
+                  'p2p-duel-format__card--active',
+                  navFocus.kind === 'duelFormat' ? 'practice-focus-target' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-pressed="true"
+                onClick={() => {
+                  setNavFocus({ kind: 'duelFormat' });
+                  playSfx(SFX.MENU_SELECT);
+                }}
+              >
                 <svg className="p2p-duel-format__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15"/>
                   <path d="M3 17a4 3.5 0 0 1 8 0" stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none"/>
