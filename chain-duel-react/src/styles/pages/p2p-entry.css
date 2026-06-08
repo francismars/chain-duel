@@ -46,17 +46,7 @@
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
 }
 
-/* Subtle top-edge highlight line */
-.p2p-picker-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 15%;
-  right: 15%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.06);
-  transition: background 0.2s, left 0.2s, right 0.2s;
-}
+
 
 .p2p-picker-card:hover {
   border-color: rgba(255, 255, 255, 0.26);
@@ -64,11 +54,6 @@
   color: rgba(255, 255, 255, 0.78);
 }
 
-.p2p-picker-card:hover::before {
-  left: 5%;
-  right: 5%;
-  background: rgba(255, 255, 255, 0.1);
-}
 
 /* ── Icon ── */
 .p2p-picker-icon {
@@ -164,82 +149,61 @@
   background: rgba(247, 147, 26, 0.09);
   color: #f7931a;
   box-shadow:
-    0 0 28px rgba(247, 147, 26, 0.35),
-    0 0 8px  rgba(247, 147, 26, 0.2),
-    inset 0 0 40px rgba(247, 147, 26, 0.06);
-}
-
-.p2p-picker-card--lightning.p2p-picker-card--selected::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(247, 147, 26, 0.45);
+    0 0 36px rgba(247, 147, 26, 0.55),
+    0 0 14px rgba(247, 147, 26, 0.35),
+    inset 0 0 40px rgba(247, 147, 26, 0.08);
 }
 
 .p2p-picker-card--lightning.p2p-picker-card--selected .p2p-picker-sub {
-  color: rgba(247, 147, 26, 0.65);
+  color: rgba(247, 147, 26, 0.78);
 }
 
 /* ── Nostr selected: purple ── */
 .p2p-picker-card--nostr.p2p-picker-card--selected {
-  border-color: #9b59b6;
+  border-color: #b06fd0;
   background: rgba(155, 89, 182, 0.1);
-  color: #c17ee6;
+  color: #d899f0;
   box-shadow:
-    0 0 28px rgba(155, 89, 182, 0.35),
-    0 0 8px  rgba(155, 89, 182, 0.2),
-    inset 0 0 40px rgba(155, 89, 182, 0.06);
+    0 0 36px rgba(155, 89, 182, 0.55),
+    0 0 14px rgba(155, 89, 182, 0.35),
+    inset 0 0 40px rgba(155, 89, 182, 0.08);
 }
 
-.p2p-picker-card--nostr.p2p-picker-card--selected::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(155, 89, 182, 0.5);
-}
 
 .p2p-picker-card--nostr.p2p-picker-card--selected .p2p-picker-sub {
-  color: rgba(193, 126, 230, 0.65);
+  color: rgba(216, 153, 240, 0.78);
 }
 
 /* ── Duel selected: white glow ── */
 .p2p-picker-card--duel.p2p-picker-card--selected {
-  border-color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
   box-shadow:
-    0 0 28px rgba(255, 255, 255, 0.18),
-    0 0 8px  rgba(255, 255, 255, 0.1),
-    inset 0 0 40px rgba(255, 255, 255, 0.04);
-}
-
-.p2p-picker-card--duel.p2p-picker-card--selected::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(255, 255, 255, 0.35);
+    0 0 36px rgba(255, 255, 255, 0.32),
+    0 0 14px rgba(255, 255, 255, 0.2),
+    inset 0 0 40px rgba(255, 255, 255, 0.06);
 }
 
 .p2p-picker-card--duel.p2p-picker-card--selected .p2p-picker-sub {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.58);
 }
 
 /* ── Tournament selected: white glow (match duel) ── */
 .p2p-picker-card--tournament.p2p-picker-card--selected {
-  border-color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
   box-shadow:
-    0 0 28px rgba(255, 255, 255, 0.18),
-    0 0 8px  rgba(255, 255, 255, 0.1),
-    inset 0 0 40px rgba(255, 255, 255, 0.04);
+    0 0 36px rgba(255, 255, 255, 0.32),
+    0 0 14px rgba(255, 255, 255, 0.2),
+    inset 0 0 40px rgba(255, 255, 255, 0.06);
 }
 
-.p2p-picker-card--tournament.p2p-picker-card--selected::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(255, 255, 255, 0.35);
-}
+
 
 .p2p-picker-card--tournament.p2p-picker-card--selected .p2p-picker-sub {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.58);
 }
 
 /* ── Keyboard / gamepad focus ──
@@ -251,36 +215,64 @@
   outline-offset: 2px;
 }
 
-.p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target {
+.p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target,
+.p2p-picker-card--lightning.practice-focus-target {
   outline: none;
+  border-color: #f7931a;
+  background: #f7931a;
+  color: #fff;
   box-shadow:
-    0 0 36px rgba(247, 147, 26, 0.5),
-    0 0 10px rgba(247, 147, 26, 0.3),
-    inset 0 0 40px rgba(247, 147, 26, 0.08);
+    0 0 44px rgba(247, 147, 26, 0.65),
+    0 0 16px rgba(247, 147, 26, 0.45),
+    inset 0 0 16px rgba(255, 255, 255, 0.14);
 }
 
-.p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target {
-  outline: none;
-  box-shadow:
-    0 0 36px rgba(155, 89, 182, 0.5),
-    0 0 10px rgba(155, 89, 182, 0.3),
-    inset 0 0 40px rgba(155, 89, 182, 0.08);
+
+.p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
+.p2p-picker-card--lightning.practice-focus-target .p2p-picker-sub {
+  color: rgba(255, 255, 255, 0.88);
 }
 
-.p2p-picker-card--duel.p2p-picker-card--selected.practice-focus-target {
+.p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target,
+.p2p-picker-card--nostr.practice-focus-target {
   outline: none;
+  border-color: #9b59b6;
+  background: #9b59b6;
+  color: #fff;
   box-shadow:
-    0 0 36px rgba(255, 255, 255, 0.28),
-    0 0 10px rgba(255, 255, 255, 0.15),
-    inset 0 0 40px rgba(255, 255, 255, 0.06);
+    0 0 44px rgba(155, 89, 182, 0.65),
+    0 0 16px rgba(155, 89, 182, 0.45),
+    inset 0 0 16px rgba(255, 255, 255, 0.14);
 }
 
-.p2p-picker-card--tournament.p2p-picker-card--selected.practice-focus-target {
+
+.p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
+.p2p-picker-card--nostr.practice-focus-target .p2p-picker-sub {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.p2p-picker-card--duel.p2p-picker-card--selected.practice-focus-target,
+.p2p-picker-card--duel.practice-focus-target {
   outline: none;
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
   box-shadow:
-    0 0 36px rgba(255, 255, 255, 0.28),
-    0 0 10px rgba(255, 255, 255, 0.15),
-    inset 0 0 40px rgba(255, 255, 255, 0.06);
+    0 0 44px rgba(255, 255, 255, 0.38),
+    0 0 16px rgba(255, 255, 255, 0.22),
+    inset 0 0 18px rgba(255, 255, 255, 0.1);
+}
+
+.p2p-picker-card--tournament.p2p-picker-card--selected.practice-focus-target,
+.p2p-picker-card--tournament.practice-focus-target {
+  outline: none;
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow:
+    0 0 44px rgba(255, 255, 255, 0.38),
+    0 0 16px rgba(255, 255, 255, 0.22),
+    inset 0 0 18px rgba(255, 255, 255, 0.14);
 }
 
 /* ── Detail callout (replaces "Selected rail" section) ── */
@@ -463,6 +455,21 @@
 }
 
 /* ── Duel icon: sword clash on keyboard focus ── */
+.p2p-picker-card--duel .p2p-picker-icon path,
+.p2p-picker-card--tournament .p2p-picker-icon path,
+.p2p-picker-card--tournament .p2p-picker-icon rect {
+  stroke-width: 0.75;
+}
+
+.p2p-picker-card--duel .p2p-picker-icon {
+  transform: scaleY(-1);
+}
+
+.p2p-picker-card--duel:hover .p2p-picker-icon,
+.p2p-picker-card--duel.p2p-picker-card--selected .p2p-picker-icon {
+  transform: scale(1.08, -1.08);
+}
+
 .p2p-picker-card--duel .p2p-sword {
   /* SVG-space transforms need fill-box + center origin */
   transform-box: fill-box;
@@ -500,18 +507,15 @@
   to   { transform: scale(1); opacity: 1; }
 }
 
-.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(1) {
-  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
-}
 .p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(2),
 .p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(3) {
-  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.07s both;
+  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
 }
 .p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(4) {
-  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
+  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.09s both;
 }
-.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(5) {
-  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.25s both;
+.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(1) {
+  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.18s both;
 }
 
 /* ── Shared icon reveal on keyboard focus ── */
@@ -698,6 +702,12 @@
   transform: none;
 }
 
+.p2p-entry-page .p2p-picker-card--duel .p2p-picker-icon,
+.p2p-entry-page .p2p-picker-card--duel:hover .p2p-picker-icon,
+.p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected .p2p-picker-icon {
+  transform: scaleY(-1);
+}
+
 .p2p-entry-page .p2p-picker-card--lightning .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--nostr .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--duel .p2p-picker-sub,
@@ -709,8 +719,12 @@
 
 /* Payment — themed rest; hover does not wash to generic white */
 .p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target),
+.p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target) {
+  opacity: 0.55;
+}
+
+.p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target),
 .p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target):hover {
-  opacity: 0.7;
   border-color: rgba(247, 147, 26, 0.48);
   background: rgba(247, 147, 26, 0.05);
   color: #f7931a;
@@ -721,15 +735,15 @@
   color: rgba(247, 147, 26, 0.58);
 }
 
-.p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target):hover::before {
-  left: 15%;
-  right: 15%;
-  background: rgba(247, 147, 26, 0.18);
+
+
+.p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target):hover,
+.p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target):hover {
+  opacity: 1;
 }
 
 .p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target),
 .p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target):hover {
-  opacity: 0.7;
   border-color: rgba(155, 89, 182, 0.48);
   background: rgba(155, 89, 182, 0.05);
   color: #c17ee6;
@@ -740,11 +754,7 @@
   color: rgba(193, 126, 230, 0.58);
 }
 
-.p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target):hover::before {
-  left: 15%;
-  right: 15%;
-  background: rgba(155, 89, 182, 0.2);
-}
+
 
 .p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target),
 .p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target):hover {
@@ -753,10 +763,11 @@
   background: rgba(247, 147, 26, 0.09);
   color: #f7931a;
   box-shadow:
-    0 0 28px rgba(247, 147, 26, 0.35),
-    0 0 8px rgba(247, 147, 26, 0.2),
-    inset 0 0 40px rgba(247, 147, 26, 0.06);
+    0 0 calc(var(--ph-card-glow-blur) * 1.2) rgba(247, 147, 26, 0.55),
+    0 0 14px rgba(247, 147, 26, 0.35),
+    inset 0 0 40px rgba(247, 147, 26, 0.08);
 }
+
 
 .p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target):hover .p2p-picker-sub {
@@ -766,18 +777,19 @@
 .p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target),
 .p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target):hover {
   opacity: 1;
-  border-color: #9b59b6;
+  border-color: #b06fd0;
   background: rgba(155, 89, 182, 0.1);
-  color: #c17ee6;
+  color: #d899f0;
   box-shadow:
-    0 0 28px rgba(155, 89, 182, 0.35),
-    0 0 8px rgba(155, 89, 182, 0.2),
-    inset 0 0 40px rgba(155, 89, 182, 0.06);
+    0 0 calc(var(--ph-card-glow-blur) * 1.2) rgba(155, 89, 182, 0.55),
+    0 0 14px rgba(155, 89, 182, 0.35),
+    inset 0 0 40px rgba(155, 89, 182, 0.08);
 }
+
 
 .p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target):hover .p2p-picker-sub {
-  color: rgba(193, 126, 230, 0.82);
+  color: rgba(216, 153, 240, 0.82);
 }
 
 .p2p-entry-page .p2p-picker-card--lightning.practice-focus-target,
@@ -786,9 +798,14 @@
   border-color: #f7931a;
   background: #f7931a;
   color: #fff;
-  box-shadow: 0 0 calc(var(--ph-card-glow-blur) * 1.1) rgba(247, 147, 26, 0.45);
+  box-shadow:
+    0 0 calc(var(--ph-card-glow-blur) * 1.45) rgba(247, 147, 26, 0.65),
+    0 0 calc(var(--ph-card-glow-blur) * 0.5) rgba(247, 147, 26, 0.4),
+    inset 0 0 16px rgba(255, 255, 255, 0.14);
   outline: none;
 }
+
+
 
 .p2p-entry-page .p2p-picker-card--lightning.practice-focus-target .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub {
@@ -801,9 +818,13 @@
   border-color: #9b59b6;
   background: #9b59b6;
   color: #fff;
-  box-shadow: 0 0 calc(var(--ph-card-glow-blur) * 1.1) rgba(155, 89, 182, 0.45);
+  box-shadow:
+    0 0 calc(var(--ph-card-glow-blur) * 1.45) rgba(155, 89, 182, 0.65),
+    0 0 calc(var(--ph-card-glow-blur) * 0.5) rgba(155, 89, 182, 0.4),
+    inset 0 0 16px rgba(255, 255, 255, 0.14);
   outline: none;
 }
+
 
 .p2p-entry-page .p2p-picker-card--nostr.practice-focus-target .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub {
@@ -813,22 +834,26 @@
 /* Session — duel selected rest matches compact-inline picker */
 .p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target),
 .p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target):hover {
-  border-color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
   box-shadow:
-    0 0 calc(var(--ph-card-glow-blur) * 0.45) rgb(255 255 255 / 20%),
-    inset 0 0 6px rgb(255 255 255 / 6%);
+    0 0 calc(var(--ph-card-glow-blur) * 1.2) rgb(255 255 255 / 32%),
+    0 0 14px rgb(255 255 255 / 20%),
+    inset 0 0 40px rgb(255 255 255 / 6%);
 }
+
 
 .p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target):hover .p2p-picker-sub {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .p2p-entry-page .p2p-picker-card--duel.practice-focus-target,
 .p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected.practice-focus-target {
+  opacity: 1;
   border-color: #fff;
+  background: rgba(255, 255, 255, 0.16);
   color: #fff;
   box-shadow:
     0 0 calc(var(--ph-card-glow-blur) * 1.3) rgba(255, 255, 255, 0.7),
@@ -845,22 +870,26 @@
 /* Session — tournament selected matches duel white glow */
 .p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected:not(.practice-focus-target),
 .p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected:not(.practice-focus-target):hover {
-  border-color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
   box-shadow:
-    0 0 calc(var(--ph-card-glow-blur) * 0.45) rgb(255 255 255 / 20%),
-    inset 0 0 6px rgb(255 255 255 / 6%);
+    0 0 calc(var(--ph-card-glow-blur) * 1.2) rgb(255 255 255 / 32%),
+    0 0 14px rgb(255 255 255 / 20%),
+    inset 0 0 40px rgb(255 255 255 / 6%);
 }
+
 
 .p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected:not(.practice-focus-target):hover .p2p-picker-sub {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .p2p-entry-page .p2p-picker-card--tournament.practice-focus-target,
 .p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected.practice-focus-target {
+  opacity: 1;
   border-color: #fff;
+  background: rgba(255, 255, 255, 0.16);
   color: #fff;
   box-shadow:
     0 0 calc(var(--ph-card-glow-blur) * 1.3) rgba(255, 255, 255, 0.7),
@@ -874,9 +903,16 @@
   color: #fff;
 }
 
+/* Session — unselected rest; dim slightly so selected cards read clearly */
+.p2p-entry-page .p2p-picker-card--duel:not(.p2p-picker-card--selected):not(.practice-focus-target),
+.p2p-entry-page .p2p-picker-card--tournament:not(.p2p-picker-card--selected):not(.practice-focus-target) {
+  opacity: 0.55;
+}
+
 /* Session — unselected subtle lift on hover (practice-slot-btn pattern) */
 .p2p-entry-page .p2p-picker-card--duel:not(.p2p-picker-card--selected):not(.practice-focus-target):hover,
 .p2p-entry-page .p2p-picker-card--tournament:not(.p2p-picker-card--selected):not(.practice-focus-target):hover {
+  opacity: 1;
   border-color: rgba(255, 255, 255, 0.26);
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.78);
@@ -985,13 +1021,13 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-.bracket-sizing-hub__player-card.active {
-  --button-glow-bg-low: rgb(255 255 255 / 5%);
-  --button-glow-bg-peak: rgb(255 255 255 / 13%);
-  --button-glow-shadow-low: 0 0 6px rgb(255 255 255 / 22%), inset 0 0 6px rgb(255 255 255 / 5%);
-  --button-glow-shadow-peak: 0 0 16px rgb(255 255 255 / 48%), inset 0 0 10px rgb(255 255 255 / 10%);
-  --button-glow-border: rgba(255, 255, 255, 0.55);
-  animation: glowing 2000ms ease-in-out infinite;
+.bracket-sizing-hub__player-card.active:not(.bracket-sizing-hub__focus-target) {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgb(255 255 255 / 5%);
+  box-shadow:
+    0 0 6px rgb(255 255 255 / 22%),
+    inset 0 0 6px rgb(255 255 255 / 5%);
+  animation: none;
 }
 
 .bracket-sizing-hub__player-num {
@@ -1004,8 +1040,17 @@
   color: rgba(255, 255, 255, 0.88);
 }
 
+.bracket-sizing-hub__player-suffix {
+  color: rgba(255, 255, 255, 0.32);
+  letter-spacing: 0.06em;
+}
+
 .bracket-sizing-hub__player-card.active .bracket-sizing-hub__player-num {
   color: rgba(255, 255, 255, 0.96);
+}
+
+.bracket-sizing-hub__player-card.active .bracket-sizing-hub__player-suffix {
+  color: rgba(255, 255, 255, 0.42);
 }
 
 .bracket-sizing-hub__player-card--soon {
@@ -1062,32 +1107,57 @@
   color: rgba(255, 255, 255, 0.88);
 }
 
-.bracket-sizing-hub__pill.active {
+.bracket-sizing-hub__pill-suffix {
+  color: rgba(255, 255, 255, 0.32);
+  letter-spacing: 0.06em;
+}
+
+.bracket-sizing-hub__pill.active:not(.bracket-sizing-hub__focus-target) {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgb(255 255 255 / 5%);
+  box-shadow:
+    0 0 6px rgb(255 255 255 / 22%),
+    inset 0 0 6px rgb(255 255 255 / 5%);
+  color: rgba(255, 255, 255, 0.96);
+  animation: none;
+}
+
+.bracket-sizing-hub__pill.active:not(.bracket-sizing-hub__focus-target) .bracket-sizing-hub__pill-suffix {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.bracket-sizing-hub__pill.active.bracket-sizing-hub__focus-target,
+.bracket-sizing-hub__player-card.active.bracket-sizing-hub__focus-target,
+.bracket-sizing-hub__pill.bracket-sizing-hub__focus-target,
+.bracket-sizing-hub__player-card.bracket-sizing-hub__focus-target {
+  outline: none;
+}
+
+.bracket-sizing-hub__player-card.bracket-sizing-hub__focus-target,
+.bracket-sizing-hub__pill.bracket-sizing-hub__focus-target {
   --button-glow-bg-low: rgb(255 255 255 / 5%);
   --button-glow-bg-peak: rgb(255 255 255 / 13%);
   --button-glow-shadow-low: 0 0 6px rgb(255 255 255 / 22%), inset 0 0 6px rgb(255 255 255 / 5%);
   --button-glow-shadow-peak: 0 0 16px rgb(255 255 255 / 48%), inset 0 0 10px rgb(255 255 255 / 10%);
   --button-glow-border: rgba(255, 255, 255, 0.55);
-  color: rgba(255, 255, 255, 0.96);
   animation: glowing 2000ms ease-in-out infinite;
 }
 
-.bracket-sizing-hub__pill.bracket-sizing-hub__focus-target:not(.active) {
-  outline: 2px solid rgba(255, 255, 255, 0.55);
-  outline-offset: 2px;
-}
-
-.bracket-sizing-hub__pill.active.bracket-sizing-hub__focus-target {
+.bracket-sizing-hub__player-card.bracket-sizing-hub__focus-target:focus,
+.bracket-sizing-hub__player-card.bracket-sizing-hub__focus-target:focus-visible,
+.bracket-sizing-hub__pill.bracket-sizing-hub__focus-target:focus,
+.bracket-sizing-hub__pill.bracket-sizing-hub__focus-target:focus-visible {
   outline: none;
 }
 
-.bracket-sizing-hub__player-card.bracket-sizing-hub__focus-target:not(.active) {
-  outline: 2px solid rgba(255, 255, 255, 0.55);
-  outline-offset: 2px;
-}
-
-.bracket-sizing-hub__player-card.active.bracket-sizing-hub__focus-target {
-  outline: none; /* glow already indicates focus */
+@media (prefers-reduced-motion: reduce) {
+  .bracket-sizing-hub__player-card.bracket-sizing-hub__focus-target,
+  .bracket-sizing-hub__pill.bracket-sizing-hub__focus-target {
+    animation: none;
+    background-color: var(--button-glow-bg-peak);
+    box-shadow: var(--button-glow-shadow-peak);
+    border-color: var(--button-glow-border);
+  }
 }
 
 /* ── TV / large-screen optimisation (≥ 1400 px, 16:9) ─────────────────────

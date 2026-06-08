@@ -328,10 +328,9 @@ export default function P2pEntry() {
               <svg className="p2p-picker-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <g className="p2p-bracket">
                   <rect x="9" y="2" width="6" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.12"/>
-                  <rect x="2" y="10" width="6" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.12"/>
-                  <rect x="16" y="10" width="6" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.12"/>
-                  <rect x="9" y="18" width="6" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.12"/>
-                  <path d="M12 6v4M5 14v4h7M19 14v4h-7" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+                  <rect x="2" y="14" width="6" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.12"/>
+                  <rect x="16" y="14" width="6" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.12"/>
+                  <path d="M12 6v4M5 14v-4h7M19 14v-4h-7" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                 </g>
               </svg>
               <span className="p2p-picker-label">TOURNAMENT</span>
