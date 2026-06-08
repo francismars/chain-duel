@@ -1800,9 +1800,7 @@
 }
 
 .online-lobby-qr-split--3col .online-lobby-nostr-linked-name {
-  font-size: var(--online-lobby-fs-display-sm);
-  font-weight: 400;
-  letter-spacing: 0.02em;
+  font-size: var(--online-lobby-fs-display);
 }
 
 .online-lobby-qr-split--3col .online-lobby-qr-split-block-col--uri .online-lobby-qr-split-expiry {
@@ -2621,10 +2619,15 @@
 .online-lobby-nostr-connected-top {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   width: 100%;
+}
+
+.online-lobby-nostr-connected-top .online-lobby-nostr-linked-pill {
+  flex: 1;
+  min-width: 0;
 }
 
 .online-lobby-nostr-connected-account {
@@ -2653,126 +2656,34 @@
   flex: 1;
 }
 
-/* ── NIP-46 profile card ── */
-.online-lobby-nc-profile-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  width: 100%;
-}
-
-.online-lobby-nc-profile-avatar {
-  width: 3.5rem;
-  height: 3.5rem;
-  flex-shrink: 0;
-  object-fit: cover;
-  border: 1px solid rgb(255 255 255 / 0.2);
-  border-radius: 50%;
-  display: block;
-}
-
-.online-lobby-nc-profile-avatar--placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgb(255 255 255 / 0.06);
-  border-radius: 50%;
-}
-
-.online-lobby-nc-profile-avatar--placeholder svg {
-  width: 55%;
-  height: 55%;
-  color: rgb(255 255 255 / 0.3);
-}
-
-.online-lobby-nc-profile-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.online-lobby-nc-profile-name-row {
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  gap: 0.4rem;
-  min-width: 0;
-}
-
-.online-lobby-nc-profile-name {
-  font-size: var(--online-lobby-fs-body-sm);
-  font-weight: 600;
-  color: rgb(255 255 255 / 0.88);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.online-lobby-nc-profile-nip05 {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: var(--online-lobby-fs-hint);
-  color: rgb(255 255 255 / 0.5);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.online-lobby-nc-profile-nip05 svg {
-  flex-shrink: 0;
-  color: rgb(180 255 200 / 0.7);
-}
-
-.online-lobby-nc-profile-npub {
-  font-size: var(--online-lobby-fs-body-sm);
-  font-family: monospace;
-  color: rgb(255 255 255 / 0.28);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.online-lobby-nc-profile-ln {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: var(--online-lobby-fs-body-sm);
-  color: rgb(255 255 255 / 0.45);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.online-lobby-nc-profile-ln svg {
-  flex-shrink: 0;
-  color: rgb(255 220 100 / 0.7);
-}
-
-.online-lobby-nc-profile-ln--missing {
-  color: rgb(255 255 255 / 0.2);
-}
-
-.online-lobby-nc-profile-ln--missing svg {
-  color: rgb(255 255 255 / 0.18);
-}
-
 .online-lobby-nostr-zap-btn {
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-.online-lobby-text-btn.online-lobby-nostr-switch-btn,
-.online-lobby-text-btn.online-lobby-nostr-switch-btn:hover {
+.online-lobby-nostr-switch-hint {
+  margin: 0;
   font-size: var(--online-lobby-fs-body-sm);
   color: rgb(255 255 255 / 0.35);
-  text-decoration: none;
   letter-spacing: 0.04em;
   align-self: flex-start;
+}
+
+.online-lobby-nostr-linking-status {
+  margin: 0;
+  flex-shrink: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--online-lobby-fs-body-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.55);
+  white-space: nowrap;
+}
+
+.online-lobby-text-btn.online-lobby-nostr-switch-btn {
+  font-size: inherit;
+  letter-spacing: inherit;
 }
 
 /* ── Nostr linked pill ── */
@@ -2809,6 +2720,18 @@
   letter-spacing: 0.02em;
   font-weight: 500;
   color: rgb(255 255 255 / 0.45);
+}
+
+.online-lobby-nostr-linked-identity .online-lobby-nostr-linked-status-label {
+  font-size: var(--online-lobby-fs-body-sm);
+  line-height: 1.3;
+}
+
+.online-lobby-nostr-linked-status-label--missing {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  color: #ff8181;
 }
 
 .online-lobby-nostr-linked-pill {
@@ -2855,6 +2778,19 @@
   height: 1rem;
 }
 
+.online-lobby-nostr-linked-avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.3);
+}
+
+.online-lobby-nostr-linked-avatar--placeholder svg {
+  width: 55%;
+  height: 55%;
+}
+
 .online-lobby-nostr-linked-identity {
   display: flex;
   flex-direction: column;
@@ -2864,12 +2800,11 @@
 
 .online-lobby-nostr-linked-name {
   font-family: BureauGrotesque, sans-serif;
-  font-size: var(--online-lobby-fs-body);
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: var(--online-lobby-fs-display-sm);
+  font-weight: 400;
   text-transform: uppercase;
   color: #fff;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .online-lobby-nostr-linked-npub {

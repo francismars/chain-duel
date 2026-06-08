@@ -504,6 +504,7 @@ export default function OnlineRoomLobby() {
       }
       setNostrLinkBusy(true);
       setNostrPayError(null);
+      setPendingNostrAuthUrl(null);
       try {
         const signed = await signOnlineSeatLinkChallenge({
           challenge: parsed.challenge,
@@ -517,6 +518,7 @@ export default function OnlineRoomLobby() {
         pendingNostrLinkPubkeyRef.current = null;
         setNostrPayError(e instanceof Error ? e.message : 'Signing failed');
         setNostrLinkBusy(false);
+        setPendingNostrAuthUrl(null);
       }
     };
     const onSession = (payload: { sessionID: string }) => {
@@ -742,17 +744,71 @@ export default function OnlineRoomLobby() {
   }, [paymentMode, nostrLinkActive, seatZapInvoice, zapPayBusy, nostrSession.signedIn]);
 
   const isNip46Signer = resolveSignerMode() === 'nip46';
+  const needsNostrSignerApproval = Boolean(pendingNostrAuthUrl);
+  const nostrSignerAvailable = Boolean(nostrSession.signerMode ?? resolveSignerMode());
+  const showNostrLinkManualPrompt = Boolean(nostrPayError) || !nostrSignerAvailable;
+  const nostrLinkStatusLabel = !nostrLinkBusy
+    ? 'Linking account…'
+    : needsNostrSignerApproval
+      ? 'Approve in your Nostr app…'
+      : isNip46Signer
+        ? 'Checking…'
+        : 'Signing…';
+  const nostrZapStatusLabel = zapPayBusy
+    ? needsNostrSignerApproval
+      ? 'Approve zap in your Nostr app…'
+      : isNip46Signer
+        ? 'Checking…'
+        : 'Signing zap request…'
+    : 'Preparing invoice…';
 
   paymentModeRef.current = paymentMode;
 
-  const startNostrLinkFlow = () => {
+  const startNostrLinkFlow = useCallback(() => {
     if (!socket || !roomId) {
       return;
     }
     setNostrPayError(null);
+    setPendingNostrAuthUrl(null);
     setNostrLinkBusy(true);
     socket.emit('requestOnlineNostrLinkChallenge', { roomId });
-  };
+  }, [socket, roomId]);
+
+  const nostrLinkAutoStartedRef = useRef(false);
+  useEffect(() => {
+    if (
+      paymentMode !== 'nostr' ||
+      !nostrSession.signedIn ||
+      nostrLinkActive ||
+      seatZapInvoice ||
+      nostrLinkBusy ||
+      !socket ||
+      !roomId ||
+      nostrPayError ||
+      !nostrSignerAvailable
+    ) {
+      if (paymentMode !== 'nostr' || !nostrSession.signedIn) {
+        nostrLinkAutoStartedRef.current = false;
+      }
+      return;
+    }
+    if (nostrLinkAutoStartedRef.current) {
+      return;
+    }
+    nostrLinkAutoStartedRef.current = true;
+    startNostrLinkFlow();
+  }, [
+    paymentMode,
+    nostrSession.signedIn,
+    nostrLinkActive,
+    seatZapInvoice,
+    nostrLinkBusy,
+    socket,
+    roomId,
+    nostrPayError,
+    nostrSignerAvailable,
+    startNostrLinkFlow,
+  ]);
 
   const openConfigForNostr = () => {
     navigate('/config', { state: { returnTo: configReturnTo } });
@@ -2215,9 +2271,6 @@ export default function OnlineRoomLobby() {
                             return;
                           }
                           setPaymentMode('nostr');
-                          if (nostrSession.signedIn && !nostrLinkActive && socket && roomId) {
-                            startNostrLinkFlow();
-                          }
                         }}
                         role="radio"
                         aria-checked={paymentMode === 'nostr'}
@@ -2397,71 +2450,82 @@ export default function OnlineRoomLobby() {
                   ) : !(nostrLinkActive || seatZapInvoice) ? (
                     <div className="online-lobby-nostr-connected-prompt">
                       <div className="online-lobby-nostr-connected-top">
-                        <div className="online-lobby-nc-profile-card">
-                          {nostrSession.picture ? (
-                            <img
-                              className="online-lobby-nc-profile-avatar"
-                              src={nostrSession.picture}
-                              alt=""
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="online-lobby-nc-profile-avatar online-lobby-nc-profile-avatar--placeholder" aria-hidden>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="8" r="4" />
-                                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                              </svg>
-                            </div>
-                          )}
-                          <div className="online-lobby-nc-profile-info">
-                            <span className="online-lobby-nc-profile-name-row">
-                              <span className="online-lobby-nc-profile-name">
+                        <div className="online-lobby-nostr-linked-pill">
+                          <div className="online-lobby-nostr-linked-row">
+                            {nostrSession.picture ? (
+                              <img
+                                className="online-lobby-nostr-linked-avatar"
+                                src={nostrSession.picture}
+                                alt=""
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                            ) : (
+                              <div className="online-lobby-nostr-linked-avatar online-lobby-nostr-linked-avatar--placeholder" aria-hidden>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="12" cy="8" r="4" />
+                                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                                </svg>
+                              </div>
+                            )}
+                            <div className="online-lobby-nostr-linked-identity">
+                              <span className="online-lobby-nostr-linked-name">
                                 {nostrSession.displayName ?? midTruncate(nostrSession.npub ?? '', 14, 6)}
                               </span>
                               {nostrSession.npub ? (
-                                <span className="online-lobby-nc-profile-npub" title={nostrSession.npub}>
+                                <span className="online-lobby-nostr-linked-npub" title={nostrSession.npub}>
                                   {midTruncate(nostrSession.npub, 12, 6)}
                                 </span>
                               ) : null}
-                            </span>
-                            {nostrSession.nip05 ? (
-                              <span className="online-lobby-nc-profile-nip05">
-                                {nostrSession.nip05.replace(/^_@/, '@')}
-                              </span>
-                            ) : null}
-                            {nostrSession.lud16 ? (
-                              <span className="online-lobby-nc-profile-ln" title={`Lightning address: ${nostrSession.lud16}`}>
-                                {nostrSession.lud16}
-                              </span>
-                            ) : (
-                              <span className="online-lobby-nc-profile-ln online-lobby-nc-profile-ln--missing">
-                                no LN address
-                              </span>
-                            )}
+                              {nostrSession.lud16 ? (
+                                <span
+                                  className="online-lobby-nostr-linked-status-label online-lobby-nostr-linked-status-label--pending"
+                                  title={`Lightning address: ${nostrSession.lud16}`}
+                                >
+                                  {nostrSession.lud16}
+                                </span>
+                              ) : (
+                                <span className="online-lobby-nostr-linked-status-label online-lobby-nostr-linked-status-label--missing">
+                                  no LN address
+                                </span>
+                              )}
+                            </div>
                           </div>
+                          {nostrSession.nip05 ? (
+                            <span className="online-lobby-nostr-linked-rest">{nostrSession.nip05.replace(/^_@/, '@')}</span>
+                          ) : null}
                         </div>
-                        <div className="online-lobby-btn-pop-wrap">
-                          <Button
-                            type="button"
-                            className="online-lobby-action online-lobby-nostr-zap-btn"
-                            disabled={nostrLinkBusy || !socket}
-                            onClick={startNostrLinkFlow}
-                          >
-                            {nostrLinkBusy
-                              ? isNip46Signer
-                                ? 'APPROVE IN APP…'
-                                : 'SIGNING…'
-                              : 'LINK & PAY'}
-                          </Button>
-                        </div>
+                        {showNostrLinkManualPrompt ? (
+                          nostrSignerAvailable ? (
+                            <div className="online-lobby-btn-pop-wrap">
+                              <Button
+                                type="button"
+                                className="online-lobby-action online-lobby-nostr-zap-btn"
+                                disabled={nostrLinkBusy || !socket}
+                                onClick={() => {
+                                  nostrLinkAutoStartedRef.current = false;
+                                  startNostrLinkFlow();
+                                }}
+                              >
+                                LINK & PAY
+                              </Button>
+                            </div>
+                          ) : null
+                        ) : (
+                          <p className="online-lobby-nostr-linking-status" role="status">
+                            {nostrLinkStatusLabel}
+                          </p>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        className="online-lobby-text-btn online-lobby-nostr-switch-btn"
-                        onClick={openConfigForNostr}
-                      >
-                        manage connection in settings
-                      </button>
+                      <p className="online-lobby-nostr-switch-hint">
+                        Manage connection in{' '}
+                        <button
+                          type="button"
+                          className="online-lobby-text-btn online-lobby-pin-step-hint-link online-lobby-nostr-switch-btn"
+                          onClick={openConfigForNostr}
+                        >
+                          Settings
+                        </button>
+                      </p>
                       {nostrPayError ? (
                         <p className="online-lobby-nostr-sign-error" role="alert">{nostrPayError}</p>
                       ) : null}
@@ -2493,11 +2557,7 @@ export default function OnlineRoomLobby() {
                                 </>
                               ) : (
                                 <span className="online-lobby-nostr-linked-status-label online-lobby-nostr-linked-status-label--pending">
-                                  {zapPayBusy && isNip46Signer
-                                    ? 'Approve zap in your Nostr app…'
-                                    : zapPayBusy
-                                      ? 'Signing zap request…'
-                                      : 'Preparing invoice…'}
+                                  {nostrZapStatusLabel}
                                 </span>
                               )}
                             </div>
@@ -2505,11 +2565,7 @@ export default function OnlineRoomLobby() {
                         ) : null}
                         {!seatZapInvoice && !nostrLinkedProfile ? (
                           <p className="online-lobby-pin-step-hint online-lobby-qr-split-zap-status">
-                            {zapPayBusy && isNip46Signer
-                              ? 'Approve zap in your Nostr app…'
-                              : zapPayBusy
-                                ? 'Signing zap request…'
-                                : 'Preparing invoice…'}
+                            {nostrZapStatusLabel}
                           </p>
                         ) : null}
                         {pendingNostrAuthUrl && zapPayBusy ? (
