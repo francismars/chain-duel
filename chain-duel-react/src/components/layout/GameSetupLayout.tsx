@@ -19,16 +19,24 @@ export interface GameSetupLayoutProps {
   pageClass: string;
   /** Disable MAIN MENU when deposits are in */
   mainMenuDisabled: boolean;
+  /** Label for the back / leave button (defaults to MAIN MENU) */
+  mainMenuLabel?: string;
   /** Enable READY TO START */
   canStart: boolean;
   onMainMenu: () => void;
   onStart: () => void;
   loading: boolean;
   showCancelOverlay: boolean;
+  /** Overlay copy when leaving the setup screen */
+  cancelOverlayTitle?: string;
+  cancelOverlayText?: string;
   onCancelAbort: () => void;
   onCancelConfirm: () => void;
   statusMessage?: string;
-  selectedButton?: 'mainMenuButton' | 'startgame' | 'cancelGameAbort' | 'cancelGameConfirm';
+  /** Shown below READY TO START when the player tries to start before everyone has paid */
+  startBlockedHint?: string | null;
+  startShaking?: boolean;
+  selectedButton?: 'mainMenuButton' | 'startgame' | 'cancelGameAbort' | 'cancelGameConfirm' | null;
   mainMenuButtonRef?: RefObject<HTMLButtonElement>;
   startGameButtonRef?: RefObject<HTMLButtonElement>;
   cancelGameAbortRef?: RefObject<HTMLButtonElement>;
@@ -41,14 +49,19 @@ export function GameSetupLayout({
   title,
   pageClass,
   mainMenuDisabled,
+  mainMenuLabel = 'MAIN MENU',
   canStart,
   onMainMenu,
   onStart,
   loading,
   showCancelOverlay,
+  cancelOverlayTitle = 'Cancel Game?',
+  cancelOverlayText = 'Are you sure you want to leave?',
   onCancelAbort,
   onCancelConfirm,
   statusMessage,
+  startBlockedHint,
+  startShaking = false,
   selectedButton,
   mainMenuButtonRef,
   startGameButtonRef,
@@ -72,10 +85,18 @@ export function GameSetupLayout({
   );
 
   useEffect(() => {
-    if (!selectedButton) return;
     (Object.keys(refs) as Array<keyof typeof refs>).forEach((key) => {
       setButtonGlow(refs[key].current, selectedButton === key);
     });
+    if (!selectedButton) {
+      const active = document.activeElement;
+      const isGameButton = (Object.values(refs) as Array<RefObject<HTMLButtonElement | null>>).some(
+        (ref) => ref.current === active
+      );
+      if (isGameButton && active instanceof HTMLElement) {
+        active.blur();
+      }
+    }
   }, [refs, selectedButton]);
 
   const overlays =
@@ -91,10 +112,8 @@ export function GameSetupLayout({
             >
               <div className="warning">
                 <div className="warning-inner">
-                  <h2 className="warning-title condensed">Cancel Game?</h2>
-                  <div className="warning-text">
-                    Are you sure you want to leave?
-                  </div>
+                  <h2 className="warning-title condensed">{cancelOverlayTitle}</h2>
+                  <div className="warning-text">{cancelOverlayText}</div>
                 </div>
                 <div className="warning-actions">
                   <Button
@@ -156,17 +175,31 @@ export function GameSetupLayout({
                 className={mainMenuDisabled ? 'disabled' : ''}
                 onClick={onMainMenu}
               >
-                MAIN MENU
+                {mainMenuLabel}
               </Button>
-              <Button
-                ref={refs.startgame}
-                id="startgame"
-                type="button"
-                className={canStart ? '' : 'disabled'}
-                onClick={() => canStart && onStart()}
+              <div
+                className={[
+                  'game-setup-start-wrap',
+                  startShaking ? 'game-setup-start-wrap--shake' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
               >
-                READY TO START
-              </Button>
+                <Button
+                  ref={refs.startgame}
+                  id="startgame"
+                  type="button"
+                  className={canStart ? '' : 'not-ready'}
+                  onClick={onStart}
+                >
+                  READY TO START
+                </Button>
+                {startBlockedHint ? (
+                  <p className="game-setup-start-hint" role="status">
+                    {startBlockedHint}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
