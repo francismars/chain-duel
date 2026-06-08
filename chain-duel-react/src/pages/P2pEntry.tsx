@@ -240,7 +240,7 @@ export default function P2pEntry() {
                 <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" fill="currentColor" fillOpacity="0.12"/>
               </svg>
               <span className="p2p-picker-label">LIGHTNING</span>
-              <span className="p2p-picker-sub">Anonymous</span>
+              <span className="p2p-picker-sub">Private game</span>
             </button>
             <button
               ref={(el) => { paymentRefs.current[1] = el; }}
@@ -265,8 +265,8 @@ export default function P2pEntry() {
                 <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                 <path d="M17.5 3.5l2 2M20.5 2.5l-1.5 1.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
               </svg>
-              <span className="p2p-picker-label">NOSTR</span>
-              <span className="p2p-picker-sub">Via zap</span>
+              <span className="p2p-picker-label">NOSTR ZAP</span>
+              <span className="p2p-picker-sub">Public game</span>
             </button>
           </div>
         </section>
