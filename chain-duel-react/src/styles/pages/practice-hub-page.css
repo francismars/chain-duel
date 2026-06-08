@@ -482,8 +482,7 @@
   flex: 0 1 auto;
   min-height: 0;
   max-height: var(--ph-play-area-max-height);
-  overflow-x: visible;
-  overflow-y: auto;
+  overflow: visible !important;
   display: flex;
   flex-direction: column;
   gap: max(0.2rem, 0.3vw);
@@ -609,7 +608,7 @@
 .practice-free-play-panel__body .local-setup-top-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--ph-section-gap);
+  gap: max(0.35rem, 0.55vw);
   align-items: start;
   flex-shrink: 0;
   width: 100%;
@@ -637,9 +636,25 @@
   z-index: 0;
 }
 
-.practice-free-play-panel__body .local-setup-top-row .ph-picker-block,
-.practice-free-play-panel__body .local-setup-top-row .p2p-picker-row {
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .ph-picker-block,
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .local-mode-config-block {
+  padding: max(0.25rem, calc(var(--ph-glow-gutter) * 0.22));
+  gap: max(0.12rem, 0.18vw);
+}
+
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .ph-picker-block,
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .p2p-picker-row,
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-four-slot,
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .local-tier-grid {
   overflow: visible;
+}
+
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .p2p-picker-row,
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-four-slot,
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .local-tier-grid {
+  gap: max(0.25rem, 0.32vw);
+  padding-block: calc(var(--ph-card-glow-blur) * 0.06);
+  margin-block: calc(var(--ph-card-glow-blur) * -0.06);
 }
 
 /* Mode config: only the active block (1v1 vs FFA) is shown — inactive out of flow */
@@ -914,11 +929,6 @@
   color: rgba(255, 255, 255, 0.78);
 }
 
-.practice-hub-page .practice-slot-btn:hover::before {
-  left: 5%;
-  right: 5%;
-  background: rgba(255, 255, 255, 0.1);
-}
 
 /* Human slot = selected picker rest state */
 .practice-hub-page .practice-slot-btn.human:not(.practice-focus-target) {
@@ -930,11 +940,6 @@
     inset 0 0 6px rgb(255 255 255 / 6%);
 }
 
-.practice-hub-page .practice-slot-btn.human:not(.practice-focus-target)::before {
-  background: rgba(255, 255, 255, 0.28);
-  left: 0;
-  right: 0;
-}
 
 .practice-hub-page .practice-slot-btn.human:not(.practice-focus-target) .practice-slot-role {
   color: rgba(255, 255, 255, 0.55);
