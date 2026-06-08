@@ -604,16 +604,16 @@
   align-items: center;
 }
 
-/* FORMAT | OPPONENT (or PLAYERS) — two columns aligned to HOW TO PLAY card edges */
+/* FORMAT | OPPONENT (or PLAYERS) — two columns; outer inset matches play-style + modifiers rows */
 .practice-free-play-panel__body .local-setup-top-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: max(0.35rem, 0.55vw);
+  gap: max(0.35rem, 0.45vw);
   align-items: start;
   flex-shrink: 0;
   width: 100%;
   min-width: 0;
-  padding: 0;
+  padding-inline: var(--ph-content-inset);
   box-sizing: border-box;
 }
 
@@ -636,10 +636,11 @@
   z-index: 0;
 }
 
+/* Column blocks share one outer inset — avoid double horizontal padding in the center gap */
 .practice-hub-page .practice-free-play-panel__body .local-setup-top-row .ph-picker-block,
 .practice-hub-page .practice-free-play-panel__body .local-setup-top-row .local-mode-config-block {
-  padding: max(0.25rem, calc(var(--ph-glow-gutter) * 0.22));
-  gap: max(0.12rem, 0.18vw);
+  padding: 0;
+  gap: max(0.2rem, 0.3vw);
 }
 
 .practice-hub-page .practice-free-play-panel__body .local-setup-top-row .ph-picker-block,
@@ -649,12 +650,28 @@
   overflow: visible;
 }
 
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .p2p-picker-row,
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-four-slot,
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .local-tier-grid {
-  gap: max(0.25rem, 0.32vw);
-  padding-block: calc(var(--ph-card-glow-blur) * 0.06);
-  margin-block: calc(var(--ph-card-glow-blur) * -0.06);
+/* P1–P4 slots — match compact-inline format/opponent tile height */
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-four-slot {
+  align-items: stretch;
+}
+
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-slot-btn {
+  height: auto;
+  min-height: calc(var(--ph-compact-card-pad-y) * 2 + var(--ph-compact-icon));
+  gap: 0.08rem;
+  padding: var(--ph-compact-card-pad-y) max(0.35vw, 0.3rem);
+}
+
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-slot-id {
+  line-height: 1;
+}
+
+.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-slot-role {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8cqw;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.1rem;
 }
 
 /* Mode config: only the active block (1v1 vs FFA) is shown — inactive out of flow */
