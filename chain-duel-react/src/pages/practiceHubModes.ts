@@ -30,9 +30,23 @@ export function isPracticeChallengeConfig(cfg: Record<string, unknown>): boolean
   return m === 'PRACTICE' && cfg.practiceChallenge === true;
 }
 
+/** Practice hub free play (not bounty challenges). */
+export function isPracticeFreePlayConfig(cfg: Record<string, unknown>): boolean {
+  return isExplicitPracticeSession(cfg) && !isPracticeChallengeConfig(cfg);
+}
+
 export function practiceHubExitPath(cfg: Record<string, unknown>): string {
   if (isPracticeChallengeConfig(cfg)) return '/practice?play=challenges';
   return '/practice';
+}
+
+/** Starting sats per player in a challenge (bounty split evenly across players). */
+export function challengeStartSatsPerPlayer(cfg: Record<string, unknown>): number | undefined {
+  if (!isPracticeChallengeConfig(cfg)) return undefined;
+  const bounty = Math.floor(Number(cfg.soloBounty ?? 0));
+  if (bounty <= 0) return undefined;
+  const playerCount = String(cfg.teamMode ?? '') === 'ffa' ? 4 : 2;
+  return Math.max(1, Math.floor(bounty / playerCount));
 }
 
 /** Parsed `sessionStorage.gameConfig` (empty object if missing or invalid). */

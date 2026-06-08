@@ -26,8 +26,11 @@ export function setFfaScores(state: GameState, scores: [number, number, number, 
   if (state.extraSnakes[1]) state.extraSnakes[1].score = scores[3];
 }
 
-export function initFfaEconomy(state: GameState, _p1Stake?: number, _p2Stake?: number): void {
-  const perPlayer = FFA_START_SATS_PER_PLAYER;
+export function initFfaEconomy(state: GameState, p1Stake?: number, p2Stake?: number): void {
+  const perPlayer =
+    p1Stake != null && p1Stake > 0 && p1Stake === p2Stake
+      ? p1Stake
+      : FFA_START_SATS_PER_PLAYER;
   state.totalPoints = perPlayer * 4;
   const initial: [number, number, number, number] = [perPlayer, perPlayer, perPlayer, perPlayer];
   state.initialScore = [initial[0], initial[1]];

@@ -39,6 +39,7 @@ import { GameInfoLabel, readChallengeHudFromConfig } from '@/features/game/GameI
 import type { FfaHudPlayer } from '@/game/engine/types';
 import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import {
+  challengeStartSatsPerPlayer,
   isExplicitPracticeSession,
   isPracticeChallengeConfig,
   isPracticeHubGameMode,
@@ -377,13 +378,15 @@ export default function Game() {
       ? Number(gameConfig.convergenceStepMs)
       : undefined;
 
+    const challengeStake = challengeStartSatsPerPlayer(gameConfig);
+    const defaultStake = challengeStake ?? 1000;
     const p1Points = Math.max(
       1,
-      Math.floor(Number(gameConfig.p1Points ?? gameConfig.p1Sats ?? 1000)),
+      Math.floor(Number(gameConfig.p1Points ?? gameConfig.p1Sats ?? defaultStake)),
     );
     const p2Points = Math.max(
       1,
-      Math.floor(Number(gameConfig.p2Points ?? gameConfig.p2Sats ?? 1000)),
+      Math.floor(Number(gameConfig.p2Points ?? gameConfig.p2Sats ?? defaultStake)),
     );
 
     if (!localBootRef.current) {
