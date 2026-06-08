@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import type { RefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAudio, SFX } from '@/contexts/AudioContext';
@@ -31,6 +32,8 @@ import { clearPendingChallengeClaim } from '@/lib/pendingChallengeClaim';
 import {
   countGateEligibilityChecks,
   formatGateEligibilityChecks,
+  type EligibilityCheckDisplay,
+  type EligibilityCheckKey,
 } from '@/lib/challengeEligibilityDisplay';
 import { ChallengeRowIcon } from '@/features/practice/ChallengeRowIcon';
 
@@ -93,7 +96,7 @@ const CHALLENGES: Challenge[] = [
     format: '1v1',
     aiTier: 'sovereign',
     powerup: false,
-    bounty: 1337,
+    bounty: 1000,
   },
   {
     id: 'ffa',
@@ -226,6 +229,82 @@ function getGateCopy(opts: {
 
 const LN_ADDRESS_KEY = 'arcadeLnAddress';
 
+const CHECK_DESCRIPTIONS: Record<Exclude<EligibilityCheckKey, 'appSession'>, string> = {
+  nip05:
+    'A verified NIP-05 proves you own your Nostr handle. Bounty payouts require an identity tied to your pubkey.',
+  followingCount:
+    'Follow at least 100 accounts in the Chain Duel circle to show you are an active Nostr participant.',
+  followsChainduel:
+    'Follow @chainduel on Nostr so we can verify you are part of the community.',
+  accountAge:
+    'Your Nostr account must be at least 30 days old to reduce spam and sybil bounty claims.',
+  lud16:
+    'Add a Lightning address (LUD16) to your Nostr profile so bounty sats can zap you when you win.',
+};
+
+type GateCheckOverlayAction =
+  | { type: 'button'; label: string; disabled?: boolean }
+  | { type: 'ln-form' };
+
+function getGateCheckOverlayAction(
+  key: Exclude<EligibilityCheckKey, 'appSession'>,
+  item: EligibilityCheckDisplay,
+  checks: ChallengeEligibilityResponse['checks']
+): GateCheckOverlayAction {
+  if (item.pass) {
+    return { type: 'button', label: 'Done' };
+  }
+  switch (key) {
+    case 'nip05':
+      return { type: 'button', label: 'Buy NIP-05' };
+    case 'followingCount':
+      return { type: 'button', label: 'Follow 100 Chain Duel friends' };
+    case 'followsChainduel':
+      return { type: 'button', label: 'Follow Chain Duel' };
+    case 'accountAge': {
+      const ageDays = checks.accountAge?.ageDays ?? 0;
+      if (ageDays < 30) return { type: 'button', label: 'Buy NIP-05' };
+      return { type: 'button', label: 'Check account age', disabled: true };
+    }
+    case 'lud16':
+      return { type: 'ln-form' };
+    default:
+      return { type: 'button', label: 'Continue' };
+  }
+}
+
+function GateCheckIcon({ pass }: { pass: boolean }) {
+  if (pass) {
+    return (
+      <svg
+        className="sc-gate__check-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      className="sc-gate__check-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
 interface PracticeChallengesPanelProps {
   isActive: boolean;
   menuZone: PracticeHubFocus['zone'];
@@ -252,6 +331,7 @@ export const PracticeChallengesPanel = forwardRef<
   const [launchError, setLaunchError] = useState<string | null>(null);
 
   const [selected, setSelected] = useState(0);
+  const [hoveredChallenge, setHoveredChallenge] = useState<number | null>(null);
   const [nostrProfilePicBroken, setNostrProfilePicBroken] = useState(false);
 
   const [displayBounty, setDisplayBounty] = useState(CHALLENGES[0].bounty);
@@ -261,13 +341,26 @@ export const PracticeChallengesPanel = forwardRef<
   const [gateActionFocused, setGateActionFocused] = useState(false);
   const [listRevealed, setListRevealed] = useState(false);
   const [listRevealKey, setListRevealKey] = useState(0);
+  const [activeCheckOverlay, setActiveCheckOverlay] = useState<
+    Exclude<EligibilityCheckKey, 'appSession'> | null
+  >(null);
+  const [lnAddressDraft, setLnAddressDraft] = useState('');
+  const [checkFocusIdx, setCheckFocusIdx] = useState(0);
+  const [overlayFocus, setOverlayFocus] = useState<'back' | 'input' | 'action'>('back');
 
-  const panelKeyboardFocus = isActive && menuZone === 'panel';
+  const panelKeyboardFocus = isActive && menuZone === 'panel' && !activeCheckOverlay;
+  const overlayKeyboardFocus = isActive && Boolean(activeCheckOverlay);
   const gateBtnFocused = panelKeyboardFocus && gateActionFocused;
 
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const innerRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const checkRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const gateActionRef = useRef<HTMLButtonElement | null>(null);
+  const overlayBackRef = useRef<HTMLButtonElement | null>(null);
+  const overlayActionRef = useRef<HTMLButtonElement | null>(null);
+  const overlayInputRef = useRef<HTMLInputElement | null>(null);
+  const lastCheckFocusIdxRef = useRef(0);
+  const [checksRowFocused, setChecksRowFocused] = useState(false);
   const prevMenuZoneRef = useRef(menuZone);
   const prevSelectedRef = useRef(selected);
   const bountyRafRef = useRef<number | null>(null);
@@ -295,8 +388,19 @@ export const PracticeChallengesPanel = forwardRef<
   }, [eligibilityLoading]);
 
   useEffect(() => {
+    if (eligibilityChecks.length === 0) return;
+    setCheckFocusIdx((prev) => Math.min(prev, eligibilityChecks.length - 1));
+  }, [eligibilityChecks.length]);
+
+  useEffect(() => {
+    if (!panelKeyboardFocus || !checksRowFocused) return;
+    checkRefs.current[checkFocusIdx]?.focus({ preventScroll: true });
+  }, [checkFocusIdx, panelKeyboardFocus, checksRowFocused]);
+
+  useEffect(() => {
     if (panelKeyboardFocus) return;
     setGateActionFocused(false);
+    setChecksRowFocused(false);
   }, [panelKeyboardFocus]);
 
   useEffect(() => {
@@ -348,6 +452,167 @@ export const PracticeChallengesPanel = forwardRef<
       localStorage.removeItem(LN_ADDRESS_KEY);
     }
   }, [nostrLightning]);
+
+  useEffect(() => {
+    setLnAddressDraft(nostrLightning);
+  }, [nostrLightning, activeCheckOverlay]);
+
+  const openCheckOverlay = useCallback(
+    (key: Exclude<EligibilityCheckKey, 'appSession'>, fromIdx?: number) => {
+      if (fromIdx != null) {
+        lastCheckFocusIdxRef.current = fromIdx;
+        setCheckFocusIdx(fromIdx);
+      }
+      playSfx(SFX.MENU_SELECT);
+      setActiveCheckOverlay(key);
+    },
+    [playSfx]
+  );
+
+  const clearChecksFocus = useCallback(() => {
+    setChecksRowFocused(false);
+    checkRefs.current.forEach((el) => el?.blur());
+  }, []);
+
+  const focusCheckAt = useCallback((idx: number) => {
+    setChecksRowFocused(true);
+    setCheckFocusIdx(idx);
+    lastCheckFocusIdxRef.current = idx;
+    setGateActionFocused(false);
+    checkRefs.current[idx]?.focus({ preventScroll: true });
+  }, []);
+
+  const handleCheckPointerDown = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    clearChecksFocus();
+    setGateActionFocused(false);
+  }, [clearChecksFocus]);
+
+  const closeCheckOverlay = useCallback(() => {
+    playSfx(SFX.MENU_SELECT);
+    setActiveCheckOverlay(null);
+    window.requestAnimationFrame(() => {
+      focusCheckAt(lastCheckFocusIdxRef.current);
+    });
+  }, [focusCheckAt, playSfx]);
+
+  useEffect(() => {
+    if (!isActive) setActiveCheckOverlay(null);
+  }, [isActive]);
+
+  const activeCheckItem = useMemo(() => {
+    if (!activeCheckOverlay) return null;
+    return eligibilityChecks.find((item) => item.key === activeCheckOverlay) ?? null;
+  }, [activeCheckOverlay, eligibilityChecks]);
+
+  const activeCheckAction = useMemo(() => {
+    if (!activeCheckOverlay || !activeCheckItem || !eligibility) return null;
+    return getGateCheckOverlayAction(activeCheckOverlay, activeCheckItem, eligibility.checks);
+  }, [activeCheckOverlay, activeCheckItem, eligibility]);
+
+  const overlayFocusRef = useRef(overlayFocus);
+  overlayFocusRef.current = overlayFocus;
+
+  useEffect(() => {
+    if (!activeCheckOverlay || !activeCheckAction) return;
+    setOverlayFocus(activeCheckAction.type === 'ln-form' ? 'input' : 'action');
+  }, [activeCheckOverlay, activeCheckAction]);
+
+  useEffect(() => {
+    if (!overlayKeyboardFocus) return;
+    const frame = window.requestAnimationFrame(() => {
+      switch (overlayFocus) {
+        case 'back':
+          overlayBackRef.current?.focus({ preventScroll: true });
+          break;
+        case 'action':
+          overlayActionRef.current?.focus({ preventScroll: true });
+          break;
+        case 'input':
+          overlayInputRef.current?.focus({ preventScroll: true });
+          break;
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [overlayFocus, overlayKeyboardFocus]);
+
+  useEffect(() => {
+    if (!overlayKeyboardFocus) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement as HTMLElement | null;
+      const onInput = activeEl === overlayInputRef.current;
+      const hasLnForm = activeCheckAction?.type === 'ln-form';
+
+      if (onInput) {
+        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          setOverlayFocus('action');
+        } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          setOverlayFocus('back');
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          closeCheckOverlay();
+        }
+        return;
+      }
+
+      const isDown = e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
+      const isUp = e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W';
+      const isLeft = e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A';
+      const isRight = e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
+      const isActivate = e.key === 'Enter' || e.key === ' ';
+
+      if (!(isDown || isUp || isLeft || isRight || isActivate || e.key === 'Escape')) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      if (e.key === 'Escape') {
+        closeCheckOverlay();
+        return;
+      }
+
+      if (isActivate) {
+        if (e.repeat) return;
+        playSfx(SFX.MENU_CONFIRM);
+        if (overlayFocusRef.current === 'back') {
+          closeCheckOverlay();
+        } else if (overlayFocusRef.current === 'action') {
+          overlayActionRef.current?.click();
+        }
+        return;
+      }
+
+      if (isLeft || isUp) {
+        playSfx(SFX.MENU_SELECT);
+        if (hasLnForm && isUp && overlayFocusRef.current !== 'input') {
+          setOverlayFocus('input');
+          return;
+        }
+        setOverlayFocus('back');
+        return;
+      }
+
+      if (isRight || isDown) {
+        playSfx(SFX.MENU_SELECT);
+        if (hasLnForm && isDown && overlayFocusRef.current === 'back') {
+          setOverlayFocus('input');
+          return;
+        }
+        setOverlayFocus('action');
+      }
+    };
+
+    window.addEventListener('keydown', handleKey, true);
+    return () => window.removeEventListener('keydown', handleKey, true);
+  }, [activeCheckAction, closeCheckOverlay, overlayKeyboardFocus, playSfx]);
 
   const animateLockedRowBounty = useCallback((rowIndex: number) => {
     const target = CHALLENGES[rowIndex]?.bounty;
@@ -524,7 +789,9 @@ export const PracticeChallengesPanel = forwardRef<
   );
 
   useEffect(() => {
-    if (!isActive || menuZone !== 'panel') return;
+    if (!isActive || menuZone !== 'panel' || activeCheckOverlay) return;
+
+    const hasSetupChecks = showSetupGate && eligibilityChecks.length > 0;
 
     const handleKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
@@ -534,11 +801,14 @@ export const PracticeChallengesPanel = forwardRef<
       const onBack = activeEl === footerBackRef.current;
       const onStart = activeEl === footerStartRef.current;
       const onGateAction = activeEl === gateActionRef.current;
+      const focusedCheckIndex = checkRefs.current.findIndex((r) => r === activeEl);
+      const onCheck = focusedCheckIndex >= 0;
       const focusedRowIndex = rowRefs.current.findIndex((r) => r === activeEl);
       const onRow = focusedRowIndex >= 0;
       // Clicks on non-focusables leave focus on <body>; keep navigating from last selection.
       const orphanListNav =
         !onRow &&
+        !onCheck &&
         !onGateAction &&
         !onBack &&
         !onStart &&
@@ -558,6 +828,17 @@ export const PracticeChallengesPanel = forwardRef<
         e.preventDefault();
         if (onGateAction) {
           playSfx(SFX.MENU_SELECT);
+          if (hasSetupChecks) {
+            focusCheckAt(Math.min(checkFocusIdx, eligibilityChecks.length - 1));
+          } else {
+            focusChallengeFromGate();
+          }
+          return;
+        }
+        if (onCheck) {
+          e.preventDefault();
+          playSfx(SFX.MENU_SELECT);
+          clearChecksFocus();
           focusChallengeFromGate();
           return;
         }
@@ -597,6 +878,11 @@ export const PracticeChallengesPanel = forwardRef<
           onExitToPlayStyle?.();
           return;
         }
+        if (onCheck) {
+          playSfx(SFX.MENU_SELECT);
+          gateActionRef.current?.focus({ preventScroll: true });
+          return;
+        }
         if (onStart) {
           playSfx(SFX.MENU_SELECT);
           focusBeforeFooter();
@@ -612,7 +898,11 @@ export const PracticeChallengesPanel = forwardRef<
         const from = onRow ? focusedRowIndex : selected;
         if (from < CHALLENGE_GRID_COLS) {
           playSfx(SFX.MENU_SELECT);
-          gateActionRef.current?.focus({ preventScroll: true });
+          if (hasSetupChecks) {
+            focusCheckAt(Math.min(lastCheckFocusIdxRef.current, eligibilityChecks.length - 1));
+          } else {
+            gateActionRef.current?.focus({ preventScroll: true });
+          }
           return;
         }
         setSelected((prev) => {
@@ -628,6 +918,30 @@ export const PracticeChallengesPanel = forwardRef<
       }
 
       if (isLeft) {
+        if (onGateAction && hasSetupChecks) {
+          e.preventDefault();
+          playSfx(SFX.MENU_SELECT);
+          setChecksRowFocused(true);
+          setCheckFocusIdx(0);
+          lastCheckFocusIdxRef.current = 0;
+          checkRefs.current[0]?.focus({ preventScroll: true });
+          return;
+        }
+        if (onCheck) {
+          e.preventDefault();
+          playSfx(SFX.MENU_SELECT);
+          setChecksRowFocused(true);
+          if (focusedCheckIndex === 0) {
+            setChecksRowFocused(false);
+            gateActionRef.current?.focus({ preventScroll: true });
+            return;
+          }
+          const next = focusedCheckIndex - 1;
+          setCheckFocusIdx(next);
+          lastCheckFocusIdxRef.current = next;
+          checkRefs.current[next]?.focus({ preventScroll: true });
+          return;
+        }
         if (rowNavIndex < 0) return;
         e.preventDefault();
         const from = onRow ? focusedRowIndex : selected;
@@ -642,6 +956,32 @@ export const PracticeChallengesPanel = forwardRef<
       }
 
       if (isRight) {
+        if (onGateAction && hasSetupChecks) {
+          e.preventDefault();
+          playSfx(SFX.MENU_SELECT);
+          setChecksRowFocused(true);
+          const lastIdx = eligibilityChecks.length - 1;
+          setCheckFocusIdx(lastIdx);
+          lastCheckFocusIdxRef.current = lastIdx;
+          checkRefs.current[lastIdx]?.focus({ preventScroll: true });
+          return;
+        }
+        if (onCheck) {
+          e.preventDefault();
+          playSfx(SFX.MENU_SELECT);
+          const lastIdx = eligibilityChecks.length - 1;
+          if (focusedCheckIndex >= lastIdx) {
+            setChecksRowFocused(false);
+            gateActionRef.current?.focus({ preventScroll: true });
+            return;
+          }
+          setChecksRowFocused(true);
+          const next = focusedCheckIndex + 1;
+          setCheckFocusIdx(next);
+          lastCheckFocusIdxRef.current = next;
+          checkRefs.current[next]?.focus({ preventScroll: true });
+          return;
+        }
         if (rowNavIndex < 0) return;
         e.preventDefault();
         const from = onRow ? focusedRowIndex : selected;
@@ -663,6 +1003,12 @@ export const PracticeChallengesPanel = forwardRef<
           gateActionRef.current?.click();
           return;
         }
+        if (onCheck) {
+          if (e.repeat) return;
+          playSfx(SFX.MENU_CONFIRM);
+          checkRefs.current[focusedCheckIndex]?.click();
+          return;
+        }
         if (onBack) {
           playSfx(SFX.MENU_CONFIRM);
           navigate('/');
@@ -678,8 +1024,13 @@ export const PracticeChallengesPanel = forwardRef<
     window.addEventListener('keydown', handleKey, true);
     return () => window.removeEventListener('keydown', handleKey, true);
   }, [
+    activeCheckOverlay,
+    checkFocusIdx,
+    clearChecksFocus,
+    eligibilityChecks.length,
     focusBeforeFooter,
     focusChallengeFromGate,
+    focusCheckAt,
     isActive,
     menuZone,
     onEnterFooter,
@@ -689,6 +1040,7 @@ export const PracticeChallengesPanel = forwardRef<
     launchChallenge,
     footerBackRef,
     footerStartRef,
+    showSetupGate,
   ]);
 
   useEffect(() => {
@@ -727,8 +1079,121 @@ export const PracticeChallengesPanel = forwardRef<
     };
   }, [isActive, menuZone, selected]);
 
+  const checkOverlayPortal =
+    typeof document !== 'undefined' &&
+    activeCheckOverlay &&
+    activeCheckItem &&
+    activeCheckAction
+      ? createPortal(
+          <div
+            className="sc-gate-check-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sc-gate-check-overlay-title"
+          >
+            <div className="sc-gate-check-overlay__backdrop" aria-hidden="true" />
+            <div className="sc-gate-check-overlay__panel">
+              <h4 id="sc-gate-check-overlay-title" className="sc-gate-check-overlay__title">
+                {activeCheckItem.label}
+              </h4>
+              <p className="sc-gate-check-overlay__desc">
+                {CHECK_DESCRIPTIONS[activeCheckOverlay]}
+              </p>
+              {activeCheckItem.meta ? (
+                <p className="sc-gate-check-overlay__meta">{activeCheckItem.meta}</p>
+              ) : null}
+              {activeCheckAction.type === 'ln-form' ? (
+                <div className="sc-gate-check-overlay__ln-form">
+                  <label className="sc-gate-check-overlay__ln-label" htmlFor="sc-gate-ln-address">
+                    Lightning address (LUD16)
+                  </label>
+                  <input
+                    ref={overlayInputRef}
+                    id="sc-gate-ln-address"
+                    className={[
+                      'sc-gate-check-overlay__ln-input',
+                      overlayFocus === 'input' ? 'practice-focus-target' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    type="email"
+                    inputMode="email"
+                    autoComplete="off"
+                    placeholder="you@wallet.com"
+                    value={lnAddressDraft}
+                    onChange={(e) => setLnAddressDraft(e.target.value)}
+                    onFocus={() => setOverlayFocus('input')}
+                  />
+                </div>
+              ) : null}
+              <div className="sc-gate-check-overlay__actions">
+                <button
+                  ref={overlayBackRef}
+                  type="button"
+                  className={[
+                    'sc-gate-check-overlay__btn',
+                    'sc-gate-check-overlay__btn--back',
+                    overlayFocus === 'back' ? 'practice-focus-target' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  tabIndex={overlayFocus === 'back' ? 0 : -1}
+                  onFocus={() => setOverlayFocus('back')}
+                  onClick={closeCheckOverlay}
+                >
+                  Back
+                </button>
+                {activeCheckAction.type === 'ln-form' ? (
+                  <button
+                    ref={overlayActionRef}
+                    type="button"
+                    className={[
+                      'sc-gate-check-overlay__btn',
+                      'sc-gate-check-overlay__btn--action',
+                      overlayFocus === 'action' ? 'practice-focus-target' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    tabIndex={overlayFocus === 'action' ? 0 : -1}
+                    onFocus={() => setOverlayFocus('action')}
+                    onClick={() => {
+                      playSfx(SFX.MENU_CONFIRM);
+                    }}
+                  >
+                    Save kind 0
+                  </button>
+                ) : (
+                  <button
+                    ref={overlayActionRef}
+                    type="button"
+                    className={[
+                      'sc-gate-check-overlay__btn',
+                      'sc-gate-check-overlay__btn--action',
+                      overlayFocus === 'action' ? 'practice-focus-target' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    tabIndex={overlayFocus === 'action' ? 0 : -1}
+                    onFocus={() => setOverlayFocus('action')}
+                    disabled={activeCheckAction.disabled}
+                    onClick={() => {
+                      playSfx(SFX.MENU_CONFIRM);
+                      if (activeCheckAction.label === 'Done') closeCheckOverlay();
+                    }}
+                  >
+                    {activeCheckAction.label}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
     <div className="practice-challenges-panel solo-challenges-panel" role="group" aria-label="Challenges">
+        {checkOverlayPortal}
         <div className="solo-challenges-layout">
           <div className="solo-challenges-col solo-challenges-col--left">
             {/* ── Nostr / LN payout gate ── */}
@@ -739,6 +1204,7 @@ export const PracticeChallengesPanel = forwardRef<
                   showSignInGate ? 'sc-gate__card--sign-in' : '',
                   showSetupGate ? 'sc-gate__card--setup' : '',
                   gateBtnFocused ? 'sc-gate__card--action-focused' : '',
+                  checksRowFocused && !gateBtnFocused ? 'sc-gate__card--check-focused' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -789,7 +1255,10 @@ export const PracticeChallengesPanel = forwardRef<
                           .join(' ')}
                         ref={gateActionRef}
                         tabIndex={panelKeyboardFocus ? 0 : -1}
-                        onFocus={() => setGateActionFocused(true)}
+                        onFocus={() => {
+                          setChecksRowFocused(false);
+                          setGateActionFocused(true);
+                        }}
                         onBlur={() => setGateActionFocused(false)}
                         onClick={() => {
                           playSfx(SFX.MENU_CONFIRM);
@@ -806,52 +1275,71 @@ export const PracticeChallengesPanel = forwardRef<
 
                     {eligibility && eligibilityChecks.length > 0 ? (
                       <ul
-                        key={eligibilityChecks.map((item) => `${item.key}:${item.pass ? 1 : 0}`).join(',')}
-                        className="sc-gate__checks"
+                        className={[
+                          'sc-gate__checks',
+                          listRevealed ? 'sc-gate__checks--revealed' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
                         aria-label="Eligibility requirements"
                       >
-                        {eligibilityChecks.map((item) => (
+                        {eligibilityChecks.map((item, i) => (
                           <li
                             key={item.key}
-                            className={`sc-gate__check${item.pass ? ' sc-gate__check--pass' : ' sc-gate__check--fail'}`}
+                            className={[
+                              'sc-gate__check-item',
+                              panelKeyboardFocus && checksRowFocused && checkFocusIdx === i
+                                ? 'sc-gate__check-item--focused'
+                                : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
                           >
-                            <span className="sc-gate__check-mark" aria-hidden="true">
-                              {item.pass ? (
-                                <svg
-                                  className="sc-gate__check-icon"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                              ) : (
-                                <svg
-                                  className="sc-gate__check-icon"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <line x1="18" y1="6" x2="6" y2="18" />
-                                  <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                              )}
-                            </span>
-                            <span className="sc-gate__check-body">
-                              <span className="sc-gate__check-label">{item.label}</span>
-                              {item.meta ? (
-                                <span className="sc-gate__check-meta">{item.meta}</span>
-                              ) : null}
-                              {!item.pass && item.hint ? (
-                                <span className="sc-gate__check-hint">{item.hint}</span>
-                              ) : null}
-                            </span>
+                            <button
+                              ref={(el) => {
+                                checkRefs.current[i] = el;
+                              }}
+                              type="button"
+                              className={[
+                                'sc-gate__check',
+                                item.pass ? 'sc-gate__check--pass' : 'sc-gate__check--fail',
+                                panelKeyboardFocus && checksRowFocused && checkFocusIdx === i
+                                  ? 'practice-focus-target sc-gate__check--focused'
+                                  : '',
+                              ]
+                                .filter(Boolean)
+                                .join(' ')}
+                              tabIndex={
+                                panelKeyboardFocus && checksRowFocused && checkFocusIdx === i ? 0 : -1
+                              }
+                              onFocus={() => {
+                                setChecksRowFocused(true);
+                                setCheckFocusIdx(i);
+                                lastCheckFocusIdxRef.current = i;
+                                setGateActionFocused(false);
+                              }}
+                              onMouseDown={handleCheckPointerDown}
+                              onClick={() =>
+                                openCheckOverlay(
+                                  item.key as Exclude<EligibilityCheckKey, 'appSession'>,
+                                  i
+                                )
+                              }
+                              aria-label={`${item.label}${item.meta ? `, ${item.meta}` : ''}${item.pass ? ', passed' : ', not passed'}`}
+                            >
+                              <span className="sc-gate__check-mark" aria-hidden="true">
+                                <GateCheckIcon pass={item.pass} />
+                              </span>
+                              <span className="sc-gate__check-body">
+                                <span className="sc-gate__check-label">{item.label}</span>
+                                {item.meta ? (
+                                  <span className="sc-gate__check-meta">{item.meta}</span>
+                                ) : null}
+                                {!item.pass && item.hint ? (
+                                  <span className="sc-gate__check-hint">{item.hint}</span>
+                                ) : null}
+                              </span>
+                            </button>
                           </li>
                         ))}
                       </ul>
@@ -900,7 +1388,10 @@ export const PracticeChallengesPanel = forwardRef<
                                 .join(' ')}
                               ref={gateActionRef}
                               tabIndex={panelKeyboardFocus ? 0 : -1}
-                              onFocus={() => setGateActionFocused(true)}
+                              onFocus={() => {
+                                setChecksRowFocused(false);
+                                setGateActionFocused(true);
+                              }}
                               onBlur={() => setGateActionFocused(false)}
                               onClick={() => {
                                 playSfx(SFX.MENU_CONFIRM);
@@ -938,18 +1429,22 @@ export const PracticeChallengesPanel = forwardRef<
               className={`sc-list${listRevealed ? ' sc-list--revealed' : ''}`}
               role="listbox"
               aria-label="Solo challenges"
+              onMouseLeave={() => setHoveredChallenge(null)}
             >
               {CHALLENGES.map((c, i) => {
                 const isSelected = selected === i;
+                const showSelectedStyle =
+                  isSelected && (hoveredChallenge === null || hoveredChallenge === i);
                 const [titleLine1, titleLine2] = splitChallengeTitle(c.name);
                 return (
                   <button
                     key={c.id}
                     ref={(el) => { rowRefs.current[i] = el; }}
-                    className={`sc-row${isSelected ? ' sc-row--selected' : ''}`}
+                    className={`sc-row${showSelectedStyle ? ' sc-row--selected' : ''}`}
                     role="option"
                     aria-selected={isSelected}
                     tabIndex={panelKeyboardFocus && isSelected ? 0 : -1}
+                    onMouseEnter={() => setHoveredChallenge(i)}
                     onClick={() => {
                       hasPickedChallengeRef.current = true;
                       setSelected(i);

@@ -113,6 +113,10 @@ export default function PracticeHub() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (document.querySelector('.sc-gate-check-overlay')) {
+        return;
+      }
+
       if (e.key === 'Escape') {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);

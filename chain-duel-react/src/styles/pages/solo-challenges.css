@@ -41,12 +41,10 @@
   42% {
     border-color: rgba(155, 89, 182, 0.42);
     background: rgba(155, 89, 182, 0.1);
-    box-shadow: 0 0 14px rgba(155, 89, 182, 0.14);
   }
   100% {
     border-color: rgba(155, 89, 182, 0.24);
     background: rgba(155, 89, 182, 0.06);
-    box-shadow: none;
   }
 }
 
@@ -520,16 +518,28 @@
 .practice-hub-page--challenges .sc-gate__card--setup .sc-gate__progress,
 .practice-hub-page--challenges .sc-gate__card--setup .sc-gate__title {
   flex-shrink: 0;
-  white-space: nowrap;
 }
 
 .practice-hub-page--challenges .sc-gate__card--setup .sc-gate__progress {
-  color: rgba(155, 89, 182, 0.88);
-  text-shadow: 0 0 10px rgba(155, 89, 182, 0.28);
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: var(--ph-fs-heading-sm);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: rgba(193, 126, 230, 0.96);
+  text-shadow: 0 0 12px rgba(155, 89, 182, 0.32);
 }
 
 .practice-hub-page--challenges .sc-gate__card--setup .sc-gate__title {
   margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--ph-fs-soon);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .practice-hub-page--challenges .sc-gate__setup-identity-cluster {
@@ -543,12 +553,14 @@
 
 .practice-hub-page--challenges .sc-gate__setup-heading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: max(0.35rem, 0.45vw);
+  gap: max(0.12rem, 0.18vw);
   justify-self: center;
   grid-column: 2;
-  white-space: nowrap;
+  text-align: center;
+  min-width: 0;
 }
 
 .practice-hub-page--challenges .sc-gate__setup-avatar {
@@ -633,16 +645,20 @@
 .practice-hub-page--challenges .sc-gate__card--setup .sc-gate__checks {
   width: 100%;
   margin-top: 0;
-  padding-top: max(0.28rem, 0.4vw);
+  padding: max(0.28rem, 0.4vw) 3px 2px;
   gap: max(0.28rem, 0.4vw);
   border-top: none;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: stretch;
+  overflow: visible;
 }
 
 .practice-hub-page--challenges .sc-gate__card--setup .sc-gate__check {
   min-width: 0;
-  padding: max(0.18rem, 0.22vw) max(0.28rem, 0.34vw);
+  box-sizing: border-box;
   align-items: center;
+  height: 100%;
+  padding: max(0.18rem, 0.22vw) max(0.28rem, 0.34vw);
 }
 
 .practice-hub-page--challenges .sc-gate__card--setup .sc-gate__check-hint {
@@ -693,6 +709,7 @@
   padding: var(--ph-compact-card-pad-x);
   padding-bottom: calc(var(--ph-compact-card-pad-x) + max(0.35rem, 0.5vw));
   gap: max(0.15rem, 0.2vw);
+  overflow: visible;
 }
 
 .practice-hub-page--challenges .sc-gate__split {
@@ -763,6 +780,8 @@
 }
 
 .practice-hub-page--challenges .sc-gate__check {
+  box-sizing: border-box;
+  align-items: center;
   padding: 0.3rem 0.4rem;
 }
 
@@ -930,6 +949,29 @@
     0 0 calc(var(--ph-card-glow-blur) * 0.95) rgba(155, 89, 182, 0.58),
     0 0 calc(var(--ph-card-glow-blur) * 0.35) rgba(193, 126, 230, 0.38);
   outline: none;
+}
+
+/* Setup gate — check row focus (matches Config glow; survives pass-flash animation) */
+.practice-hub-page--challenges .sc-gate__card--setup .sc-gate__checks {
+  overflow: visible;
+}
+
+.practice-hub-page--challenges .sc-gate__check-item {
+  overflow: visible;
+}
+
+.practice-hub-page--challenges .sc-gate__check-item--focused {
+  position: relative;
+  z-index: 5;
+  overflow: visible;
+}
+
+.practice-hub-page--challenges .sc-gate__card--check-focused:not(.sc-gate__card--sign-in) {
+  border-color: rgba(155, 89, 182, 0.42);
+  box-shadow:
+    0 0 0 1px rgba(155, 89, 182, 0.16),
+    0 0 calc(var(--ph-card-glow-blur) * 0.45) rgba(155, 89, 182, 0.22),
+    0 12px 28px rgba(0, 0, 0, 0.35);
 }
 
 .practice-hub-page--challenges .sc-gate__nostr-btn.practice-focus-target .sc-gate__icon {
@@ -1340,7 +1382,7 @@
   padding: clamp(5px, 0.55vw, 7px) clamp(6px, 0.65vw, 8px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.22);
-  transition: border-color 0.18s, background 0.18s;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
 }
 
 .sc-gate__check--pass {
@@ -1359,8 +1401,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: clamp(16px, 1.4vw, 22px);
-  height: clamp(16px, 1.4vw, 22px);
+  width: clamp(13px, 1.1vw, 17px);
+  height: clamp(13px, 1.1vw, 17px);
   line-height: 1;
   transform-origin: center;
 }
@@ -1895,69 +1937,6 @@
   .sc-list .sc-row:nth-child(5) { animation-delay: 0.46s; }
   .sc-list .sc-row:nth-child(6) { animation-delay: 0.52s; }
 
-  /* Eligibility checks — staggered satisfaction reveal */
-  .sc-gate__checks .sc-gate__check {
-    opacity: 0;
-    animation: sc-check-row-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
-
-  .sc-gate__checks .sc-gate__check--pass {
-    animation-name: sc-check-row-in, sc-check-pass-flash;
-    animation-duration: 0.38s, 0.62s;
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1), ease-out;
-    animation-fill-mode: forwards, forwards;
-  }
-
-  .sc-gate__checks .sc-gate__check:nth-child(1) { animation-delay: 0.04s; }
-  .sc-gate__checks .sc-gate__check:nth-child(2) { animation-delay: 0.11s; }
-  .sc-gate__checks .sc-gate__check:nth-child(3) { animation-delay: 0.18s; }
-  .sc-gate__checks .sc-gate__check:nth-child(4) { animation-delay: 0.25s; }
-  .sc-gate__checks .sc-gate__check:nth-child(5) { animation-delay: 0.32s; }
-  .sc-gate__checks .sc-gate__check:nth-child(6) { animation-delay: 0.39s; }
-
-  .sc-gate__checks .sc-gate__check--pass:nth-child(1) { animation-delay: 0.04s, 0.04s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(2) { animation-delay: 0.11s, 0.11s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(3) { animation-delay: 0.18s, 0.18s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(4) { animation-delay: 0.25s, 0.25s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(5) { animation-delay: 0.32s, 0.32s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(6) { animation-delay: 0.39s, 0.39s; }
-
-  .sc-gate__checks .sc-gate__check--pass .sc-gate__check-mark {
-    opacity: 0;
-    animation: sc-check-mark-pop 0.5s cubic-bezier(0.28, 0.82, 0.36, 1.08) forwards;
-  }
-
-  .sc-gate__checks .sc-gate__check--fail .sc-gate__check-mark {
-    opacity: 0;
-    animation: sc-check-mark-fail-in 0.32s ease-out forwards;
-  }
-
-  .sc-gate__checks .sc-gate__check--pass:nth-child(1) .sc-gate__check-mark { animation-delay: 0.12s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(2) .sc-gate__check-mark { animation-delay: 0.19s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(3) .sc-gate__check-mark { animation-delay: 0.26s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(4) .sc-gate__check-mark { animation-delay: 0.33s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(5) .sc-gate__check-mark { animation-delay: 0.40s; }
-  .sc-gate__checks .sc-gate__check--pass:nth-child(6) .sc-gate__check-mark { animation-delay: 0.47s; }
-
-  .sc-gate__checks .sc-gate__check--fail:nth-child(1) .sc-gate__check-mark { animation-delay: 0.12s; }
-  .sc-gate__checks .sc-gate__check--fail:nth-child(2) .sc-gate__check-mark { animation-delay: 0.19s; }
-  .sc-gate__checks .sc-gate__check--fail:nth-child(3) .sc-gate__check-mark { animation-delay: 0.26s; }
-  .sc-gate__checks .sc-gate__check--fail:nth-child(4) .sc-gate__check-mark { animation-delay: 0.33s; }
-  .sc-gate__checks .sc-gate__check--fail:nth-child(5) .sc-gate__check-mark { animation-delay: 0.40s; }
-  .sc-gate__checks .sc-gate__check--fail:nth-child(6) .sc-gate__check-mark { animation-delay: 0.47s; }
-
-  .sc-gate__checks .sc-gate__check-body {
-    opacity: 0;
-    animation: sc-check-body-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
-
-  .sc-gate__checks .sc-gate__check:nth-child(1) .sc-gate__check-body { animation-delay: 0.16s; }
-  .sc-gate__checks .sc-gate__check:nth-child(2) .sc-gate__check-body { animation-delay: 0.23s; }
-  .sc-gate__checks .sc-gate__check:nth-child(3) .sc-gate__check-body { animation-delay: 0.30s; }
-  .sc-gate__checks .sc-gate__check:nth-child(4) .sc-gate__check-body { animation-delay: 0.37s; }
-  .sc-gate__checks .sc-gate__check:nth-child(5) .sc-gate__check-body { animation-delay: 0.44s; }
-  .sc-gate__checks .sc-gate__check:nth-child(6) .sc-gate__check-body { animation-delay: 0.51s; }
-
   /* Actions slide in last */
   .solo-challenges-page .practice-actions,
   .practice-hub-page--challenges .practice-challenges-panel .practice-actions {
@@ -2001,4 +1980,261 @@
     transition: none;
     animation: none !important;
   }
+}
+
+/* ── Gate check buttons + detail overlay ── */
+.sc-gate__check-item {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+button.sc-gate__check {
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  z-index: 1;
+}
+
+button.sc-gate__check:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+button.sc-gate__check:focus-visible {
+  outline: none;
+}
+
+button.sc-gate__check--pass:hover {
+  border-color: rgba(155, 89, 182, 0.38);
+  background: rgba(155, 89, 182, 0.1);
+}
+
+button.sc-gate__check--fail:hover {
+  border-color: rgba(255, 120, 100, 0.52);
+  background: rgba(255, 80, 80, 0.12);
+}
+
+/* Lock check tiles after list reveal — focus/blur must not restart stagger */
+.sc-gate__checks--revealed .sc-gate__check {
+  opacity: 1;
+  transform: none;
+  animation: none !important;
+}
+
+/* Focus ring on button — backup layer; li ::after is primary visible ring */
+.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--pass.sc-gate__check--focused::after,
+.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--pass.practice-focus-target::after,
+.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--pass:focus::after {
+  content: none;
+}
+
+.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--fail.sc-gate__check--focused::after,
+.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--fail.practice-focus-target::after,
+.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--fail:focus::after {
+  content: none;
+}
+
+.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--focused),
+.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check:focus) {
+  position: relative;
+  z-index: 3;
+}
+
+.sc-gate-check-overlay {
+  /* Portaled to body — mirror practice-hub fluid scale locally */
+  --ph-fs-soon: calc(0.2rem + 0.58vw);
+  --ph-fs-gate-check: calc(0.18rem + 0.52vw);
+  --ph-fs-gate-meta: calc(0.16rem + 0.48vw);
+  --ph-fs-caption: calc(0.24rem + 0.78vw);
+  --ph-fs-body-sm: calc(0.28rem + 0.86vw);
+  --ph-card-glow-blur: 22px;
+  --ph-glow-gutter: max(1.5rem, 2.5vw, calc(var(--ph-card-glow-blur) * 0.85));
+  --ph-compact-card-pad-x: calc(0.85vw + var(--ph-glow-gutter) * 0.12);
+
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: min(4vw, 24px);
+  box-sizing: border-box;
+}
+
+.sc-gate-check-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.sc-gate-check-overlay__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 26rem);
+  max-height: min(90vh, 640px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: max(0.35rem, 0.45vw);
+  padding: max(1.15rem, 1.45vw) max(calc(var(--ph-compact-card-pad-x) + 0.35rem), 1.35vw);
+  border: none;
+  background: linear-gradient(165deg, rgba(22, 14, 28, 0.98) 0%, rgba(8, 8, 10, 0.98) 100%);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.45);
+}
+
+.sc-gate-check-overlay__title {
+  margin: 0;
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: var(--ph-fs-body-sm);
+  font-weight: 400;
+  letter-spacing: 0.04vw;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.15;
+}
+
+.sc-gate-check-overlay__desc {
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--ph-fs-caption);
+  font-weight: 400;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.sc-gate-check-overlay__meta {
+  margin: 0;
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+  font-size: var(--ph-fs-gate-meta);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.sc-gate-check-overlay__ln-form {
+  display: flex;
+  flex-direction: column;
+  gap: max(0.15rem, 0.2vw);
+  margin-top: max(0.1rem, 0.15vw);
+}
+
+.sc-gate-check-overlay__ln-label {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--ph-fs-gate-meta);
+  font-weight: 600;
+  letter-spacing: 0.06vw;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.sc-gate-check-overlay__ln-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: max(0.35rem, 0.45vw) max(0.5rem, 0.65vw);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+  font-size: var(--ph-fs-caption);
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  outline: none;
+}
+
+.sc-gate-check-overlay__ln-input:focus {
+  border-color: rgba(193, 126, 230, 0.55);
+  box-shadow: 0 0 0 1px rgba(193, 126, 230, 0.25);
+}
+
+.sc-gate-check-overlay__ln-input::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.sc-gate-check-overlay__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: max(0.25rem, 0.35vw);
+  margin-top: max(0.28rem, 0.4vw);
+  padding-top: 0;
+  border-top: none;
+}
+
+.sc-gate-check-overlay__btn {
+  margin: 0;
+  padding: max(0.35rem, 0.45vw) max(0.55rem, 0.7vw);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.72);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--ph-fs-gate-meta);
+  font-weight: 400;
+  letter-spacing: 0.06vw;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+}
+
+.sc-gate-check-overlay__btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.sc-gate-check-overlay__btn:focus-visible {
+  outline: none;
+  border-color: #fff;
+  color: #fff;
+  background: rgb(255 255 255 / 18%);
+  box-shadow: 0 0 15px rgb(255 255 255);
+}
+
+.sc-gate-check-overlay__btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.sc-gate-check-overlay__btn--action {
+  border-color: rgba(155, 89, 182, 0.45);
+  background: rgba(155, 89, 182, 0.14);
+  color: rgba(230, 200, 255, 0.95);
+}
+
+.sc-gate-check-overlay__btn--action:hover:not(:disabled) {
+  border-color: rgba(193, 126, 230, 0.65);
+  background: rgba(155, 89, 182, 0.24);
+  color: #fff;
+}
+
+.sc-gate-check-overlay__btn.practice-focus-target,
+.sc-gate-check-overlay__ln-input.practice-focus-target {
+  outline: none;
+  border-color: #fff;
+  color: #fff;
+  background: rgb(255 255 255 / 18%);
+  box-shadow: 0 0 15px rgb(255 255 255);
+}
+
+.sc-gate-check-overlay__btn--action.practice-focus-target {
+  border-color: rgba(193, 126, 230, 0.85);
+  background: rgba(155, 89, 182, 0.28);
+  color: #fff;
+}
+
+.sc-gate-check-overlay__ln-input.practice-focus-target {
+  border-color: rgba(193, 126, 230, 0.72);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 1px rgba(193, 126, 230, 0.38);
 }

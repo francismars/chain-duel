@@ -333,7 +333,7 @@
 }
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
-  color: rgba(247, 147, 26, 0.65);
+  color: rgba(247, 147, 26, 0.82);
 }
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target) {
@@ -353,7 +353,7 @@
 }
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
-  color: rgba(193, 126, 230, 0.65);
+  color: rgba(193, 126, 230, 0.82);
 }
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target,
@@ -364,13 +364,6 @@
   box-shadow: 0 0 calc(var(--ph-card-glow-blur) * 1.1) rgba(247, 147, 26, 0.45);
   outline: none;
   animation: none;
-}
-
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target::before,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.practice-focus-target::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(255, 255, 255, 0.28);
 }
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
@@ -388,17 +381,11 @@
   animation: none;
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target::before,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.practice-focus-target::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(255, 255, 255, 0.28);
-}
-
 .practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
 .practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.practice-focus-target .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.88);
 }
+
 
 /* Free play vs Challenges — stack panels in one grid cell so height = max(both) */
 .practice-hub-page .practice-play-style-area {
@@ -738,11 +725,6 @@
   color: #fff;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.practice-focus-target::before {
-  left: 5%;
-  right: 5%;
-  background: rgba(255, 255, 255, 0.55);
-}
 
 /* ── Modifiers + tier cards — selected rest + focus (match format pickers) ── */
 .practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.p2p-duel-format__card--active:not(.practice-focus-target),
@@ -1016,11 +998,7 @@
     inset 0 0 18px rgba(255, 255, 255, 0.14);
 }
 
-.practice-hub-page .practice-slot-btn.practice-focus-target::before {
-  left: 5%;
-  right: 5%;
-  background: rgba(255, 255, 255, 0.55);
-}
+
 
 .practice-hub-page .practice-slot-btn.practice-focus-target .practice-slot-role {
   color: #fff;
@@ -1302,9 +1280,27 @@
   .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row:nth-child(4) { animation-delay: 0.40s; }
   .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row:nth-child(5) { animation-delay: 0.46s; }
   .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row:nth-child(6) { animation-delay: 0.52s; }
+
+  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check {
+    opacity: 0;
+    animation: sc-fade-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(1) .sc-gate__check { animation-delay: 0.22s; }
+  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(2) .sc-gate__check { animation-delay: 0.28s; }
+  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(3) .sc-gate__check { animation-delay: 0.34s; }
+  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(4) .sc-gate__check { animation-delay: 0.40s; }
+  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(5) .sc-gate__check { animation-delay: 0.46s; }
+  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(6) .sc-gate__check { animation-delay: 0.52s; }
 }
 
 .practice-hub-page--challenges .sc-list--revealed .sc-row {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+.practice-hub-page--challenges .sc-gate__checks--revealed .sc-gate__check {
   opacity: 1;
   transform: none;
   animation: none;
@@ -1661,6 +1657,16 @@
   z-index: 4;
 }
 
+/* While hovering one row, suppress keyboard-selection chrome on the other */
+.practice-hub-page--challenges .sc-list:has(.sc-row:hover) .sc-row:focus:not(:hover),
+.practice-hub-page--challenges .sc-list:has(.sc-row:hover) .sc-row:focus-visible:not(:hover),
+.solo-challenges-panel .sc-list:has(.sc-row:hover) .sc-row:focus:not(:hover),
+.solo-challenges-panel .sc-list:has(.sc-row:hover) .sc-row:focus-visible:not(:hover) {
+  outline: none;
+  box-shadow: none;
+  z-index: 1;
+}
+
 .practice-hub-page--challenges .sc-row[data-rank] .sc-row__lock {
   color: rgba(var(--sc-accent), 0.3);
 }
@@ -1707,8 +1713,126 @@
 }
 
 .practice-hub-page--challenges .sc-gate__check-mark {
-  width: calc(0.6rem + 1.15vw);
-  height: calc(0.6rem + 1.15vw);
+  width: calc(0.45rem + 0.85vw);
+  height: calc(0.45rem + 0.85vw);
+}
+
+.practice-hub-page--challenges .sc-gate__card--setup .sc-gate__check-item {
+  display: flex;
+}
+
+.practice-hub-page--challenges .sc-gate__card--setup button.sc-gate__check {
+  flex: 1 1 auto;
+  height: 100%;
+}
+
+.practice-hub-page--challenges .sc-gate__card--setup .sc-gate__check-body {
+  flex: 1 1 auto;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(
+    var(--ph-fs-gate-check) * 1.2 +
+    1px +
+    clamp(8px, 0.62vw, 10px) * 1.1
+  );
+  gap: 1px;
+}
+
+.practice-hub-page--challenges .sc-gate__card--setup .sc-gate__check-meta {
+  font-size: clamp(8px, 0.62vw, 10px);
+  line-height: 1.1;
+}
+
+/* Eligibility check tiles — keyboard / gamepad focus */
+.practice-hub-page--challenges button.sc-gate__check.practice-focus-target,
+.practice-hub-page--challenges button.sc-gate__check.sc-gate__check--focused,
+.practice-hub-page--challenges button.sc-gate__check:focus,
+.practice-hub-page--challenges button.sc-gate__check:focus-visible {
+  outline: none;
+}
+
+.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--pass.practice-focus-target),
+.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--pass.sc-gate__check--focused),
+.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--pass:focus) {
+  position: relative;
+  z-index: 2;
+}
+
+.practice-hub-page--challenges button.sc-gate__check--pass.practice-focus-target,
+.practice-hub-page--challenges button.sc-gate__check--pass.sc-gate__check--focused,
+.practice-hub-page--challenges button.sc-gate__check--pass:focus,
+.practice-hub-page--challenges button.sc-gate__check--pass:focus-visible {
+  position: relative;
+  z-index: 2;
+  border-color: rgba(193, 126, 230, 0.72) !important;
+  background: rgba(155, 89, 182, 0.22) !important;
+  box-shadow:
+    0 0 0 1px rgba(193, 126, 230, 0.42),
+    0 0 calc(var(--ph-card-glow-blur) * 0.45) rgba(155, 89, 182, 0.32) !important;
+}
+
+.practice-hub-page--challenges button.sc-gate__check--pass.practice-focus-target .sc-gate__check-mark,
+.practice-hub-page--challenges button.sc-gate__check--pass.sc-gate__check--focused .sc-gate__check-mark,
+.practice-hub-page--challenges button.sc-gate__check--pass:focus .sc-gate__check-mark,
+.practice-hub-page--challenges button.sc-gate__check--pass:focus-visible .sc-gate__check-mark {
+  color: rgba(193, 126, 230, 1);
+}
+
+.practice-hub-page--challenges button.sc-gate__check--pass.practice-focus-target .sc-gate__check-label,
+.practice-hub-page--challenges button.sc-gate__check--pass.sc-gate__check--focused .sc-gate__check-label,
+.practice-hub-page--challenges button.sc-gate__check--pass:focus .sc-gate__check-label,
+.practice-hub-page--challenges button.sc-gate__check--pass:focus-visible .sc-gate__check-label {
+  color: rgba(193, 126, 230, 0.95);
+}
+
+.practice-hub-page--challenges button.sc-gate__check--pass.practice-focus-target .sc-gate__check-meta,
+.practice-hub-page--challenges button.sc-gate__check--pass.sc-gate__check--focused .sc-gate__check-meta,
+.practice-hub-page--challenges button.sc-gate__check--pass:focus .sc-gate__check-meta,
+.practice-hub-page--challenges button.sc-gate__check--pass:focus-visible .sc-gate__check-meta {
+  color: rgba(155, 89, 182, 0.82);
+}
+
+.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--fail.practice-focus-target),
+.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--fail.sc-gate__check--focused),
+.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--fail:focus) {
+  position: relative;
+  z-index: 2;
+}
+
+.practice-hub-page--challenges button.sc-gate__check--fail.practice-focus-target,
+.practice-hub-page--challenges button.sc-gate__check--fail.sc-gate__check--focused,
+.practice-hub-page--challenges button.sc-gate__check--fail:focus,
+.practice-hub-page--challenges button.sc-gate__check--fail:focus-visible {
+  position: relative;
+  z-index: 2;
+  border-color: rgba(255, 160, 140, 0.72) !important;
+  background: rgba(255, 80, 80, 0.16) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 140, 120, 0.4),
+    0 0 calc(var(--ph-card-glow-blur) * 0.4) rgba(255, 100, 80, 0.28) !important;
+}
+
+.practice-hub-page--challenges button.sc-gate__check--fail.practice-focus-target .sc-gate__check-mark,
+.practice-hub-page--challenges button.sc-gate__check--fail.sc-gate__check--focused .sc-gate__check-mark,
+.practice-hub-page--challenges button.sc-gate__check--fail:focus .sc-gate__check-mark,
+.practice-hub-page--challenges button.sc-gate__check--fail:focus-visible .sc-gate__check-mark {
+  color: rgba(255, 140, 120, 1);
+}
+
+.practice-hub-page--challenges button.sc-gate__check--fail.practice-focus-target .sc-gate__check-label,
+.practice-hub-page--challenges button.sc-gate__check--fail.sc-gate__check--focused .sc-gate__check-label,
+.practice-hub-page--challenges button.sc-gate__check--fail:focus .sc-gate__check-label,
+.practice-hub-page--challenges button.sc-gate__check--fail:focus-visible .sc-gate__check-label {
+  color: rgba(255, 140, 120, 0.98);
+}
+
+.practice-hub-page--challenges button.sc-gate__check--fail.practice-focus-target .sc-gate__check-meta,
+.practice-hub-page--challenges button.sc-gate__check--fail.sc-gate__check--focused .sc-gate__check-meta,
+.practice-hub-page--challenges button.sc-gate__check--fail:focus .sc-gate__check-meta,
+.practice-hub-page--challenges button.sc-gate__check--fail:focus-visible .sc-gate__check-meta {
+  color: rgba(255, 120, 100, 0.82);
 }
 
 .practice-hub-page--challenges .sc-gate__nostr-btn,
@@ -1724,7 +1848,8 @@
   }
   .practice-hub-page .practice-play-style-section .p2p-picker-row:not(.ph-picker-row--revealed) .p2p-picker-card,
   .practice-hub-page--challenges .sc-gate:not(.sc-gate--revealed),
-  .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row {
+  .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row,
+  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check {
     opacity: 1;
     transform: none;
     animation: none !important;
