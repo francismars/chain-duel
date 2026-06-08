@@ -174,12 +174,21 @@
   margin: 0;
 }
 
-.button {
-  margin-top: 0.5%;
-  width: 15%;
-  padding: 0.5%;
+.highscores-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 25%;
+  gap: 0.4vw;
 }
 
-.double-button {
-  width: 15%;
+.highscores-footer .double-button {
+  width: 100%;
+  margin: 0;
+}
+
+.highscores-footer > .button {
+  width: 100%;
+  margin-top: 0;
+  padding: 0.5%;
 }

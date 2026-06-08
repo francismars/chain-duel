@@ -239,17 +239,19 @@ export default function Highscores() {
             })}
           </div>
 
-          <div className="double-button">
-            <Button ref={prevButtonRef} id="prevButton" onClick={handlePrev}>
-              Prev
-            </Button>
-            <Button ref={nextButtonRef} id="nextButton" onClick={handleNext}>
-              Next
+          <div className="highscores-footer">
+            <div className="double-button">
+              <Button ref={prevButtonRef} id="prevButton" onClick={handlePrev}>
+                Prev
+              </Button>
+              <Button ref={nextButtonRef} id="nextButton" onClick={handleNext}>
+                Next
+              </Button>
+            </div>
+            <Button ref={mainMenuButtonRef} id="mainmenubutton" onClick={() => navigate('/')}>
+              MAIN MENU
             </Button>
           </div>
-          <Button ref={mainMenuButtonRef} id="mainmenubutton" onClick={() => navigate('/')}>
-            MAIN MENU
-          </Button>
         </div>
       </div>
 
