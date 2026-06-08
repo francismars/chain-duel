@@ -620,6 +620,41 @@
   pointer-events: none;
 }
 
+.warning {
+  width: min(30rem, 90vw);
+  background: #000;
+  text-align: center;
+  box-shadow: 0 0 5vw rgba(255, 255, 255, 0.42);
+}
+
+.warning-inner {
+  padding: clamp(2rem, 8vw, 4rem) clamp(1.5rem, 6vw, 3rem) clamp(1.5rem, 6vw, 2.5rem);
+}
+
+.warning-title {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  margin: 0 0 0.75rem;
+}
+
+.warning-text {
+  font-size: clamp(0.875rem, 1.2vw, 1.125rem);
+  opacity: 0.85;
+}
+
+.warning-actions {
+  display: flex;
+}
+
+.warning .button {
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.warning .button.half {
+  width: 50%;
+}
+
 /* ─── Solo win / zap-proof overlay ──────────────────────────────────────────── */
 
 @keyframes solo-zap-in {

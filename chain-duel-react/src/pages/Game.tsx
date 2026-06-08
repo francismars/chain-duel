@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sponsorship } from '@/components/ui/Sponsorship';
+import { Button } from '@/components/ui/Button';
 import { formatPubkeyHex } from '@/lib/nostr/fetchKind0Profile';
 import { useNoteContentDisplay } from '@/lib/nostr/formatNoteContentForDisplay';
 import { signChallengeBountyNote } from '@/lib/nostr/signChallengeBountyNote';
@@ -132,6 +133,15 @@ export default function Game() {
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
   const [soloPendingEndData, setSoloPendingEndData] = useState<SoloEndData | null>(null);
+  const [showExitOverlay, setShowExitOverlay] = useState(false);
+  const [exitOverlayFocus, setExitOverlayFocus] = useState<'abort' | 'confirm'>('abort');
+  const practiceSession = useMemo(() => {
+    const cfg = readSessionGameConfig();
+    return {
+      active: sessionUsesPracticeHubConfig(),
+      isChallenge: isPracticeChallengeConfig(cfg),
+    };
+  }, []);
   const [noteState, setNoteState] = useState<'idle' | 'posting' | 'posted' | 'error' | 'zapping'>('idle');
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteAuthorPubkey, setNoteAuthorPubkey] = useState<string | null>(null);
@@ -759,6 +769,59 @@ export default function Game() {
     navigate('/postgame');
   }, [navigate, soloEndData, soloPendingEndData]);
 
+  const confirmExitToMenu = useCallback(() => {
+    navigate(practiceHubExitPath(readSessionGameConfig()));
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!practiceSession.active || loading || soloEndData) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setShowExitOverlay((open) => {
+          if (!open) setExitOverlayFocus('abort');
+          return !open;
+        });
+        return;
+      }
+
+      if (!showExitOverlay) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      if (event.key === 'Enter' || event.key === ' ') {
+        if (exitOverlayFocus === 'confirm') {
+          confirmExitToMenu();
+        } else {
+          setShowExitOverlay(false);
+        }
+        return;
+      }
+
+      if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
+        setExitOverlayFocus('abort');
+        return;
+      }
+
+      if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+        setExitOverlayFocus('confirm');
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [
+    confirmExitToMenu,
+    exitOverlayFocus,
+    practiceSession.active,
+    loading,
+    showExitOverlay,
+    soloEndData,
+  ]);
+
   useGameSocketEvents({
     socket,
     loading,
@@ -1066,6 +1129,39 @@ export default function Game() {
       <div className={`overlay ${loading ? '' : 'hide'}`} id="loading">
         <img src="/images/loading.gif" alt="Loading" />
       </div>
+
+      {practiceSession.active && showExitOverlay ? (
+        <div className="overlay" id="practiceExit" role="dialog" aria-modal="true" aria-label="Leave practice game">
+          <div className="warning">
+            <div className="warning-inner">
+              <h2 className="warning-title condensed">Leave game?</h2>
+              <div className="warning-text">
+                {practiceSession.isChallenge
+                  ? 'Return to the challenges list?'
+                  : 'Return to the practice menu?'}
+              </div>
+            </div>
+            <div className="warning-actions">
+              <Button
+                className="button half"
+                type="button"
+                glowing={exitOverlayFocus === 'abort'}
+                onClick={() => setShowExitOverlay(false)}
+              >
+                No
+              </Button>
+              <Button
+                className="button half"
+                type="button"
+                glowing={exitOverlayFocus === 'confirm'}
+                onClick={confirmExitToMenu}
+              >
+                Yes
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {soloEndData && (
         <div className={`solo-zap-overlay${soloEndData.won ? '' : ' solo-zap-overlay--lose'}`} role="dialog" aria-modal="true" aria-label={soloEndData.won ? 'Challenge complete' : 'Game over'}>
