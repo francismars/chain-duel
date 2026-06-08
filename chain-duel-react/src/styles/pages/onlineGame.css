@@ -92,11 +92,9 @@
   margin: 0.55vw 15% 0;
   box-sizing: border-box;
   border-radius: 0;
-  background: rgb(0 0 0 / 55%);
-  backdrop-filter: blur(8px);
-  box-shadow:
-    0 0 28px rgb(0 0 0 / 50%),
-    inset 0 1px 0 rgb(255 255 255 / 7%);
+  background: none;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 .online-replay-toprow {
@@ -155,7 +153,8 @@
 }
 
 .online-replay-btn:hover:not(:disabled),
-.online-replay-btn:focus-visible:not(:disabled) {
+.online-replay-btn:focus-visible:not(:disabled),
+.online-replay-btn--focused:not(:disabled) {
   animation: none !important;
   background-color: var(--button-glow-bg-peak, rgb(255 255 255 / 30%));
   box-shadow: var(--button-glow-shadow-peak, 0 0 35px rgb(255 255 255));
@@ -193,7 +192,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .online-replay-btn:hover:not(:disabled),
-  .online-replay-btn:focus-visible:not(:disabled) {
+  .online-replay-btn:focus-visible:not(:disabled),
+  .online-replay-btn--focused:not(:disabled) {
     animation: none !important;
     background-color: transparent;
     box-shadow: none;
@@ -254,12 +254,14 @@
 
 .online-replay-speed-picker:hover,
 .online-replay-speed-picker:focus-visible,
-.online-replay-speed-picker--open {
+.online-replay-speed-picker--open,
+.online-replay-speed-picker--nav-focused {
   border-color: #fff;
   background-color: rgb(255 255 255 / 8%);
 }
 
-.online-replay-speed-picker:focus-visible {
+.online-replay-speed-picker:focus-visible,
+.online-replay-speed-picker--nav-focused {
   box-shadow: var(--button-glow-shadow-low, 0 0 15px rgb(255 255 255 / 45%));
 }
 
@@ -360,13 +362,15 @@
   outline: none;
 }
 
-.online-replay-slider:focus-visible::-webkit-slider-thumb {
+.online-replay-slider:focus-visible::-webkit-slider-thumb,
+.online-replay-slider--focused::-webkit-slider-thumb {
   box-shadow:
     0 0 0 2px rgb(0 0 0 / 60%),
     var(--button-glow-shadow-peak, 0 0 22px rgb(255 255 255));
 }
 
-.online-replay-slider:focus-visible::-moz-range-thumb {
+.online-replay-slider:focus-visible::-moz-range-thumb,
+.online-replay-slider--focused::-moz-range-thumb {
   box-shadow:
     0 0 0 2px rgb(0 0 0 / 60%),
     var(--button-glow-shadow-peak, 0 0 22px rgb(255 255 255));
