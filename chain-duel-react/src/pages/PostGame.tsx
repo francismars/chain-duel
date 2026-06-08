@@ -353,7 +353,7 @@ export default function PostGame() {
             <QRCodeCanvas className={`qrcode ${menu === 1 ? 'blur' : ''}`} id="qrCode1" value={qrValue} size={800} />
           ) : (
             <img
-              className={`qrcode ${menu === 1 ? 'blur' : ''}`}
+              className={menu === 1 ? 'blur' : ''}
               id="qrCode1"
               src="/images/loading.gif"
               alt=""
@@ -395,7 +395,7 @@ export default function PostGame() {
               >
                 {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
               </Button>
-              {!practiceMode && canDoubleOrNothing ? (
+              {!practiceMode ? (
                 <p className="don-subtitle">Play again for double the prize</p>
               ) : null}
             </div>

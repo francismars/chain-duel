@@ -162,11 +162,21 @@ body {
   height: 13cqw !important;
   max-width: 13cqw;
   max-height: 13cqw;
-}
-
-.qrcode {
   filter: invert(1);
   mix-blend-mode: screen;
+}
+
+#qrcodeLink canvas#qrCode1.blur {
+  filter: invert(1) blur(10px);
+}
+
+#qrcodeLink img#qrCode1 {
+  filter: none;
+  mix-blend-mode: normal;
+}
+
+#qrcodeLink img#qrCode1.blur {
+  filter: blur(10px);
 }
 
 .blur {
