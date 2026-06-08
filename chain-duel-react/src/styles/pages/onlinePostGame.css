@@ -28,6 +28,10 @@
 
 /* —— Page —— */
 .online-postgame-page {
+  --online-rooms-btn-width: 28vw;
+  --online-rooms-btn-height: 3vw;
+  --online-rooms-btn-font: 0.8vw;
+
   min-height: 100vh;
   padding: 3.4rem 1.25rem 2rem;
   display: flex;
@@ -37,7 +41,8 @@
 }
 
 .online-postgame-card {
-  width: min(980px, 100%);
+  width: 100%;
+  max-width: min(88vw, 760px);
   border: none;
   background: none;
   box-shadow: none;
@@ -386,21 +391,28 @@
 }
 
 .online-postgame-round-replay-btn.button {
-  min-height: 44px;
-  min-width: 7.4rem;
-  padding: 0 0.85rem 0 0.7rem;
+  width: auto;
+  min-width: unset;
+  height: var(--online-rooms-btn-height);
+  min-height: unset;
+  padding: 1% 1.4vw;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.48rem;
-  font-size: 0.7rem;
-  letter-spacing: 0.16em;
+  font-family: Inter, sans-serif;
+  font-size: var(--online-rooms-btn-font);
+  font-weight: 400;
+  letter-spacing: 0.1rem;
   text-transform: uppercase;
   border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.34);
   background: transparent;
-  color: rgb(252 252 255 / 0.98);
+  color: #fff;
   box-shadow: none;
+  animation: none;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .online-postgame-round-replay-icon {
@@ -415,20 +427,7 @@
 
 .online-postgame-round-replay-label {
   position: relative;
-  top: 0.5px;
-}
-
-.online-postgame-round-replay-btn.button:hover:not(:disabled),
-.online-postgame-round-replay-btn.button:focus-visible:not(:disabled) {
-  background-color: rgb(255 255 255 / 30%);
-  box-shadow: 0 0 35px rgb(255 255 255);
-  border-color: #fff;
-}
-
-.online-postgame-round-replay-btn.button:active:not(:disabled) {
-  background-color: rgb(255 255 255 / 15%);
-  box-shadow: 0 0 15px rgb(255 255 255);
-  border-color: #fff;
+  top: 0;
 }
 
 @media (max-width: 720px) {
@@ -490,11 +489,12 @@
 
 .online-postgame-winner-label {
   margin: 0;
+  font-family: Inter, sans-serif;
   font-size: 0.6rem;
-  letter-spacing: 0.2em;
+  font-weight: 400;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.45);
-  font-family: BureauGrotesque, sans-serif;
 }
 
 .online-postgame-winner-name {
@@ -552,7 +552,7 @@
 
 .online-postgame-grid--finished {
   grid-template-columns: 1fr;
-  max-width: 420px;
+  max-width: min(100%, var(--online-rooms-btn-width));
   margin-left: auto;
   margin-right: auto;
 }
@@ -628,30 +628,37 @@
 }
 
 .online-postgame-btn-back {
-  border-color: rgba(255, 255, 255, 0.34);
+  width: min(100%, var(--online-rooms-btn-width));
+  min-width: min(100%, var(--online-rooms-btn-width));
+  height: var(--online-rooms-btn-height);
+  min-height: unset;
+  padding: 1%;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.34);
   color: #fff;
   background: transparent;
   box-shadow: none;
-  font-family: 'Inter', sans-serif;
+  font-family: Inter, sans-serif;
+  font-size: var(--online-rooms-btn-font);
   font-weight: 400;
   letter-spacing: 0.1rem;
   text-transform: uppercase;
+  animation: none;
+  box-sizing: border-box;
 }
 
-/* EXIT ROOM: same glow hover as homepage buttons */
-.online-postgame-btn-back:hover:not(:disabled):not(.disabled),
-.online-postgame-btn-back:focus-visible:not(:disabled):not(.disabled) {
-  background-color: rgb(255 255 255 / 30%);
-  box-shadow: 0 0 35px rgb(255 255 255);
-  border-color: #fff;
-  transform: none;
-  filter: none;
+.online-postgame-page .button.online-postgame-btn-back:hover:not(:disabled):not(.disabled),
+.online-postgame-page .button.online-postgame-btn-back:focus-visible:not(:disabled):not(.disabled) {
+  background-color: var(--button-glow-bg-peak, rgb(255 255 255 / 30%));
+  box-shadow: var(--button-glow-shadow-peak, 0 0 35px rgb(255 255 255));
+  border-color: var(--button-glow-border, #fff);
 }
 
-.online-postgame-btn-back:active:not(:disabled):not(.disabled) {
-  background-color: rgb(255 255 255 / 15%);
-  box-shadow: 0 0 15px rgb(255 255 255);
-  border-color: #fff;
+.online-postgame-page .button.online-postgame-btn-back:active:not(:disabled):not(.disabled),
+.online-postgame-page .button.online-postgame-btn-back:hover:active:not(:disabled):not(.disabled) {
+  background-color: var(--button-glow-bg-low, rgb(255 255 255 / 15%));
+  box-shadow: var(--button-glow-shadow-low, 0 0 15px rgb(255 255 255));
+  border-color: var(--button-glow-border, #fff);
 }
 
 .online-postgame-actions .button:hover:not(.disabled):not(:disabled):not(.online-postgame-btn-back) {
@@ -904,15 +911,19 @@
   100% { background-color: rgb(255 255 255 / 15%); box-shadow: 0 0 15px #fff; }
 }
 
-.online-postgame-btn.online-selected,
-.online-postgame-round-replay-btn.button.online-selected {
+.online-postgame-btn.online-selected:not(.online-postgame-btn-back),
+.online-postgame-btn-don.online-selected,
+.online-postgame-btn-withdraw.online-selected,
+.online-postgame-btn-nostr.online-selected {
   animation: postgame-btn-glowing 2000ms ease-in-out infinite;
   outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .online-postgame-btn.online-selected,
-  .online-postgame-round-replay-btn.button.online-selected {
+  .online-postgame-btn.online-selected:not(.online-postgame-btn-back),
+  .online-postgame-btn-don.online-selected,
+  .online-postgame-btn-withdraw.online-selected,
+  .online-postgame-btn-nostr.online-selected {
     animation: none;
     outline: 2px solid rgb(255 255 255 / 0.8);
     outline-offset: 3px;

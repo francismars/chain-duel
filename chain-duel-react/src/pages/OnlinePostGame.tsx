@@ -12,6 +12,7 @@ import {
   onlineLobbyUrl,
   onlineReplayUrl,
 } from '@/shared/constants/onlineRoutes';
+import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
 
 type PostGameNav =
@@ -104,6 +105,8 @@ export default function OnlinePostGame() {
   const mountedAtRef = useRef(Date.now());
   const exitConfirmPendingRef = useRef(false);
   const navFocusPrimedRef = useRef(false);
+  const exitBtnRef = useRef<HTMLButtonElement>(null);
+  const replayBtnRefs = useRef(new Map<number, HTMLButtonElement>());
 
   useGamepad(true);
 
@@ -280,6 +283,13 @@ export default function OnlinePostGame() {
     };
   }, [donLocked, info, isWinner, myVoted, navFocus, navigate,
       openSessionRoundReplay, roomId, showPayoutUi, socket, winnerHasNostrLn]);
+
+  useEffect(() => {
+    setButtonGlow(exitBtnRef.current, navFocus.type === 'exit');
+    replayBtnRefs.current.forEach((el, index) => {
+      setButtonGlow(el, navFocus.type === 'replay' && navFocus.index === index);
+    });
+  }, [navFocus]);
 
   useEffect(() => {
     if (!roomId) {
@@ -566,6 +576,10 @@ export default function OnlinePostGame() {
                       <div className="online-postgame-round-action-col">
                         <Button
                           type="button"
+                          ref={(el) => {
+                            if (el) replayBtnRefs.current.set(index, el);
+                            else replayBtnRefs.current.delete(index);
+                          }}
                           className={`online-postgame-round-replay-btn${navFocus.type === 'replay' && navFocus.index === index ? ' online-selected' : ''}`}
                           onClick={() => openSessionRoundReplay(round.matchRound)}
                           aria-label={`Replay game ${round.matchRound}`}
@@ -747,6 +761,7 @@ export default function OnlinePostGame() {
               </>
             ) : null}
             <Button
+              ref={exitBtnRef}
               type="button"
               className={`online-postgame-btn online-postgame-btn-back${navFocus.type === 'exit' ? ' online-selected' : ''}`}
               onClick={() => {
