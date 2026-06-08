@@ -290,12 +290,6 @@
   color: #f7931a;
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target)::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(247, 147, 26, 0.28);
-}
-
 .practice-hub-page .practice-play-style-section .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target) .p2p-picker-sub {
   color: rgba(247, 147, 26, 0.58);
 }
@@ -304,12 +298,6 @@
   border-color: rgba(155, 89, 182, 0.48);
   background: rgba(155, 89, 182, 0.05);
   color: #c17ee6;
-}
-
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target)::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(155, 89, 182, 0.28);
 }
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target) .p2p-picker-sub {
@@ -326,11 +314,6 @@
     inset 0 0 40px rgba(247, 147, 26, 0.06);
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target)::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(247, 147, 26, 0.45);
-}
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
   color: rgba(247, 147, 26, 0.82);
@@ -344,12 +327,6 @@
     0 0 28px rgba(155, 89, 182, 0.35),
     0 0 8px rgba(155, 89, 182, 0.2),
     inset 0 0 40px rgba(155, 89, 182, 0.06);
-}
-
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target)::before {
-  left: 10%;
-  right: 10%;
-  background: rgba(155, 89, 182, 0.5);
 }
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
@@ -698,11 +675,6 @@
   animation: none;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected:not(.practice-focus-target)::before {
-  background: rgba(255, 255, 255, 0.28);
-  left: 0;
-  right: 0;
-}
 
 .practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.55);
@@ -935,16 +907,6 @@
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
 }
 
-.practice-hub-page .practice-slot-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 15%;
-  right: 15%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.06);
-  transition: background 0.2s, left 0.2s, right 0.2s;
-}
 
 .practice-hub-page .practice-slot-btn:hover {
   border-color: rgba(255, 255, 255, 0.26);
