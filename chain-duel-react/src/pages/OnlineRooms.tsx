@@ -13,6 +13,7 @@ import {
   onlineReplayUrl,
 } from '@/shared/constants/onlineRoutes';
 import { OnlineRoomListItem, PlayerRole } from '@/types/socket';
+import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlineRooms.css';
 import '@/styles/pages/onlinePostGame.css'; // shared card structure for history rows
 
@@ -170,6 +171,9 @@ export default function OnlineRooms() {
   const pendingRoomIdRef = useRef<string | null>(null);
   const keyRepeatRef = useRef<Record<string, number>>({});
   const roomListRef = useRef<HTMLDivElement>(null);
+  const createBtnRef = useRef<HTMLButtonElement>(null);
+  const backBtnRef = useRef<HTMLButtonElement>(null);
+  const enterRoomBtnRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
   useGamepad(true);
 
@@ -573,6 +577,46 @@ export default function OnlineRooms() {
     if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [navFocus]);
 
+  // Homepage-style glowing focus on primary menu buttons (not room-list ENTER)
+  useEffect(() => {
+    setButtonGlow(createBtnRef.current, navFocus.type === 'createBtn');
+    setButtonGlow(backBtnRef.current, navFocus.type === 'back');
+  }, [navFocus]);
+
+  // Pop animation when keyboard focus moves between primary buttons (index menu pattern)
+  useEffect(() => {
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+
+    let wrap: HTMLElement | null = null;
+    if (navFocus.type === 'createBtn') {
+      wrap = createBtnRef.current?.closest('.online-rooms-btn-pop-wrap') ?? null;
+    } else if (navFocus.type === 'back') {
+      wrap = backBtnRef.current?.closest('.online-rooms-btn-pop-wrap') ?? null;
+    } else if (navFocus.type === 'room' && onlineTab === 'live') {
+      wrap =
+        enterRoomBtnRefs.current
+          .get(navFocus.index)
+          ?.closest('.online-rooms-btn-pop-wrap') ?? null;
+    }
+    if (!wrap) return;
+
+    wrap.classList.remove('online-rooms-btn-pop-wrap--pop');
+    void wrap.offsetWidth;
+    wrap.classList.add('online-rooms-btn-pop-wrap--pop');
+    const onEnd = () => {
+      wrap?.classList.remove('online-rooms-btn-pop-wrap--pop');
+      wrap.removeEventListener('animationend', onEnd);
+    };
+    wrap.addEventListener('animationend', onEnd);
+    return () => {
+      wrap?.removeEventListener('animationend', onEnd);
+      wrap?.classList.remove('online-rooms-btn-pop-wrap--pop');
+    };
+  }, [navFocus, onlineTab]);
+
   return (
     <div className="online-rooms-page">
       <Sponsorship id="sponsorship-online-rooms" />
@@ -786,12 +830,25 @@ export default function OnlineRooms() {
                     </p>
                   </div>
                   <div className="online-room-actions">
-                    <Button
-                      className="online-action"
-                      onClick={() => activateRoom(room)}
-                    >
-                      {room.phase === 'playing' ? 'WATCH LIVE' : 'ENTER ROOM'}
-                    </Button>
+                    <div className="online-rooms-btn-pop-wrap">
+                      <Button
+                        ref={(el) => {
+                          if (el) enterRoomBtnRefs.current.set(index, el);
+                          else enterRoomBtnRefs.current.delete(index);
+                        }}
+                        className={[
+                          'online-action',
+                          navFocus.type === 'room' && navFocus.index === index && onlineTab === 'live'
+                            ? 'online-selected'
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        onClick={() => activateRoom(room)}
+                      >
+                        {room.phase === 'playing' ? 'WATCH LIVE' : 'ENTER ROOM'}
+                      </Button>
+                    </div>
                   </div>
                 </>
               )}
@@ -866,16 +923,19 @@ export default function OnlineRooms() {
             />
           )}
 
-          <Button
-            type="button"
-            className={`online-create-btn${navFocus.type === 'createBtn' ? ' online-selected' : ''}`}
-            onClick={onlineMode === 'create' ? createRoom : () => socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() })}
-            disabled={onlineMode === 'create' && creatingRoom}
-          >
-            <span key={`btn-${onlineMode}`} className="online-create-btn-label">
-              {onlineMode === 'create' ? (creatingRoom ? 'CREATING…' : 'CREATE ROOM') : 'JOIN ROOM'}
-            </span>
-          </Button>
+          <div className="online-rooms-btn-pop-wrap online-create-btn-wrap">
+            <Button
+              ref={createBtnRef}
+              type="button"
+              className="online-create-btn"
+              onClick={onlineMode === 'create' ? createRoom : () => socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() })}
+              disabled={onlineMode === 'create' && creatingRoom}
+            >
+              <span key={`btn-${onlineMode}`} className="online-create-btn-label">
+                {onlineMode === 'create' ? (creatingRoom ? 'CREATING…' : 'CREATE ROOM') : 'JOIN ROOM'}
+              </span>
+            </Button>
+          </div>
         </div>
 
         <div className="online-action-card-footer">
@@ -898,12 +958,15 @@ export default function OnlineRooms() {
       </div>
 
       <div className="online-footer-controls">
-        <Button
-          className={`online-back ${navFocus.type === 'back' ? 'online-selected' : ''}`}
-          onClick={() => { sessionStorage.removeItem('onlineRoomsTab'); navigate('/'); }}
-        >
-          BACK
-        </Button>
+        <div className="online-rooms-btn-pop-wrap">
+          <Button
+            ref={backBtnRef}
+            className="online-back"
+            onClick={() => { sessionStorage.removeItem('onlineRoomsTab'); navigate('/'); }}
+          >
+            MAIN MENU
+          </Button>
+        </div>
       </div>
 
       </div>{/* .online-rooms-side */}

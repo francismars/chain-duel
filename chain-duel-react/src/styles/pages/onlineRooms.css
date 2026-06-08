@@ -32,14 +32,17 @@
   --online-hit-lg: 3vw;
   --online-hit-md: 2.8vw;
   --online-hit-sm: 2.2vw;
+  /* Match home .button (P2P / FREE PLAY — index menu-buttons @ 28vw) */
+  --online-rooms-btn-width: 28vw;
+  --online-rooms-btn-height: 3vw;
+  --online-rooms-btn-font: 0.8vw;
   --online-avatar: 1.85vw;
   --online-dot: 0.38vw;
   --online-gap: 1.2vw;
   --online-gap-sm: 0.6vw;
   --online-gap-xs: 0.4vw;
-  --online-col-action: minmax(9vw, 26%);
+  --online-col-action: var(--online-rooms-btn-width);
   --online-col-presets: minmax(7.5vw, 38%);
-  --online-back-min-width: 14vw;
   --online-list-height: clamp(16vw, 32dvh, 34vw);
   --online-empty-icon: 6vw;
 
@@ -270,7 +273,7 @@
 
 /* Override generic .online-selected bottom-border for the stepper box */
 .online-buyin-stepper.online-selected {
-  border-color: rgb(255 255 255 / 0.45) !important;
+  border-color: rgb(255 255 255 / 0.25) !important;
   box-shadow: none !important;
 }
 
@@ -287,6 +290,7 @@
   height: 0.9em;
   display: block;
   flex-shrink: 0;
+  stroke-width: 1.5;
 }
 
 .online-buyin-btn {
@@ -412,25 +416,16 @@
 .online-code-input:focus { border-bottom-color: rgb(255 255 255 / 0.55); }
 .online-code-input::placeholder { color: rgb(255 255 255 / 0.18); letter-spacing: 0.18em; }
 
-/* CTA button — right column; match home page .button (LEDGER, etc.) */
-.online-create-btn {
+/* CTA button — right column; grid on wrapper so pop animation does not fight glow */
+.online-create-btn-wrap {
   grid-column: 2 !important;
   grid-row: 2;
-  width: 100% !important;
-  min-width: unset !important;
-  margin: 0 !important;
   align-self: center !important;
-  height: var(--online-hit-lg);
-  min-height: unset;
-  padding: 1%;
-  font-family: 'Inter', sans-serif;
-  font-size: var(--online-fs-button);
-  font-weight: 400;
-  letter-spacing: 0.1rem;
-  text-transform: uppercase;
-  color: #fff;
-  background-color: transparent;
-  border-color: rgba(255, 255, 255, 0.34);
+  width: min(100%, var(--online-rooms-btn-width));
+}
+
+.online-create-btn {
+  width: 100%;
   box-shadow: none;
   animation: none;
 }
@@ -495,14 +490,91 @@
   background: rgb(255 255 255 / 0.04);
 }
 
-.online-action {
+/* Primary buttons — same footprint as index menu .button (#startp2p, etc.) */
+.online-rooms-page .button.online-action,
+.online-rooms-page .button.online-create-btn,
+.online-rooms-page .button.online-back {
+  width: min(100%, var(--online-rooms-btn-width));
+  min-width: min(100%, var(--online-rooms-btn-width));
+  height: var(--online-rooms-btn-height);
+  min-height: unset;
+  padding: 1%;
   margin: 0;
-  min-width: 7vw;
-  height: auto;
-  min-height: var(--online-hit-md);
-  white-space: nowrap;
-  font-size: var(--ph-fs-body-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--online-rooms-btn-font);
+  font-weight: 400;
   letter-spacing: 0.1rem;
+  text-transform: uppercase;
+  color: #fff;
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.34);
+  box-sizing: border-box;
+  white-space: nowrap;
+  /* Glow via setButtonGlow (homepage pattern); inactive must be none — not 0s */
+  animation: none;
+}
+
+.online-create-btn-wrap .online-create-btn {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Pop wrapper — scale bounce on focus change (index menu-buttons__row-inner--pop) */
+.online-rooms-btn-pop-wrap {
+  display: inline-block;
+  width: min(100%, var(--online-rooms-btn-width));
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes online-rooms-btn-pop {
+    0% { transform: scale(1); }
+    42% { transform: scale(1.048); }
+    100% { transform: scale(1); }
+  }
+
+  .online-rooms-btn-pop-wrap--pop {
+    animation: online-rooms-btn-pop 0.44s cubic-bezier(0.28, 0.82, 0.36, 1.08) both;
+  }
+}
+
+.online-action {
+  flex-shrink: 0;
+}
+
+/* Room list ENTER — auto width with side padding (not full 28vw menu width) */
+.online-room-actions .online-rooms-btn-pop-wrap {
+  width: auto;
+}
+
+.online-room-actions .button.online-action {
+  width: auto;
+  min-width: 0;
+  padding: 0 1.4vw;
+  animation: none !important;
+}
+
+/* Room-list CTA — keyboard focus without homepage glow / drop shadow */
+.online-room-actions .button.online-action.online-selected {
+  border-color: #fff !important;
+  background-color: rgb(255 255 255 / 12%);
+  box-shadow: none !important;
+  outline: none;
+}
+
+.online-room-actions .button.online-action:hover:not(:disabled):not(.disabled),
+.online-room-actions .button.online-action:focus-visible:not(:disabled):not(.disabled) {
+  background-color: rgb(255 255 255 / 18%);
+  border-color: rgb(255 255 255 / 0.72);
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.online-room-actions .button.online-action:active:not(:disabled):not(.disabled),
+.online-room-actions .button.online-action:hover:active:not(:disabled):not(.disabled) {
+  background-color: rgb(255 255 255 / 10%);
+  border-color: rgb(255 255 255 / 0.55);
+  box-shadow: none !important;
 }
 
 .online-room-list-panel {
@@ -512,6 +584,8 @@
   background: none;
   box-shadow: none;
   padding: 0;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .online-room-list-head {
@@ -548,6 +622,7 @@
 .online-tab-enter-hint {
   flex: 0 1 auto;
   min-width: 0;
+  align-self: center;
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
@@ -601,18 +676,27 @@
   background: none;
 }
 
-.online-tab-active {
-  color: #fff !important;
+.online-tab-active:not(.online-selected) {
+  color: rgb(255 255 255 / 0.55) !important;
   background: none !important;
-  border-bottom-color: #fff !important;
+  border-bottom-color: rgb(255 255 255 / 0.55) !important;
   box-shadow: none !important;
 }
 
-/* Controller / keyboard nav focus — white underline matching active style */
-.online-tab.online-selected {
+/* Controller / keyboard nav focus — dim underline for inactive tabs */
+.online-tab.online-selected:not(.online-tab-active) {
   color: #fff !important;
   background: none !important;
   border-bottom-color: rgb(255 255 255 / 0.55) !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+/* Active tab stays fully opaque when keyboard-focused */
+.online-tab.online-tab-active.online-selected {
+  color: #fff !important;
+  background: none !important;
+  border-bottom-color: #fff !important;
   box-shadow: none !important;
   outline: none;
 }
@@ -716,8 +800,9 @@
 /* 3-col grid: narrow badge | flex matchup | actions flush right */
 .online-room-card--history .online-postgame-round-row-inner {
   width: 100%;
-  padding: 0.35vw 0;
-  gap: 0.25vw 0.6vw;
+  min-height: var(--online-hit-md);
+  padding: 0.55vw 0;
+  gap: 0.35vw 0.6vw;
   grid-template-columns: minmax(12vw, 14vw) minmax(0, 1fr) auto;
   align-items: center;
 }
@@ -843,10 +928,12 @@
   /* Fixed height keeps the layout stable on every tab; flexes within grid row */
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
   height: var(--online-list-height);
   max-height: 100%;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
   border-top: 1px solid rgb(255 255 255 / 0.1);
   border-bottom: 1px solid rgb(255 255 255 / 0.1);
   animation: list-tab-fade 0.28s ease both;
@@ -859,20 +946,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.6vw;
   border: none;
   border-bottom: 1px solid #ffffff1f;
   background: none;
   border-radius: 0;
   padding: 0.8vw 0;
   margin-bottom: 0;
-  overflow: visible;
-  transition: box-shadow 0.15s ease, border-left-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+  min-width: 0;
+  max-width: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: box-shadow 0.15s ease;
 }
 
 /* Compact finished-match rows (must follow .online-room-card so padding wins). */
 .online-room-card.online-room-card--history {
-  align-items: flex-start;
-  padding: 0.42vw 0;
+  align-items: stretch;
+  padding: 0;
   margin-bottom: 0;
 }
 
@@ -892,52 +983,18 @@
   box-shadow: 0 1px 0 rgb(255 255 255 / 24%);
 }
 
-/* Buttons use a pulsing outline instead of the underline */
-@keyframes btn-nav-pulse {
-  0%, 100% { outline-color: rgb(255 255 255 / 0.55); outline-offset: 2px; }
-  50%       { outline-color: rgb(255 255 255 / 0.08); outline-offset: 6px; }
-}
-
-.button.online-selected {
-  outline: 2px solid rgb(255 255 255 / 0.55);
-  outline-offset: 2px;
-  animation: btn-nav-pulse 1.4s ease-in-out infinite;
-  border-bottom-color: initial !important;
-  box-shadow: none !important;
-}
-
-/* CREATE ROOM / JOIN ROOM button: use the homepage glowing animation */
-.online-create-btn.online-selected {
-  outline: none !important;
-  animation: glowing 2s ease-in-out infinite !important;
-  border-bottom-color: initial !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .button.online-selected {
-    animation: none;
-  }
-  .online-create-btn.online-selected {
-    animation: none !important;
-    background-color: rgb(255 255 255 / 15%);
-    box-shadow: 0 0 15px #fff !important;
-    border-color: #fff !important;
-    outline: none !important;
-  }
-}
+/* Primary menu buttons use setButtonGlow — not .online-selected outline */
 
 /* Selection uses transition (not animation) so the nth-child rooms-rise entrance is never disrupted */
 .online-room-card.online-selected {
   border-bottom-color: #4f4f4f !important;
-  border-left: 2px solid rgb(255 255 255 / 0.6);
-  box-shadow: inset 0 0 0 999px rgb(255 255 255 / 5%), 0 0 10px rgb(255 255 255 / 0.08);
-  transform: scaleX(1.004) translateX(2px);
-  padding-left: 0.6vw;
+  box-shadow: 0 0 10px rgb(255 255 255 / 0.08);
   outline: none;
 }
 
 .online-room-main {
-  min-width: 40%;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .online-room-code {
@@ -992,36 +1049,55 @@
 }
 
 .online-phase {
-  padding: 0.1vw 0.45vw;
-  border-radius: 0;
-  border: 1px solid #7e7e7e;
-  color: #fff;
-  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  padding: 0.18em 0.62em;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.62);
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.15;
+  flex-shrink: 0;
+}
+
+.online-phase-lobby {
+  border-color: rgb(255 255 255 / 0.16);
+  background: rgb(255 255 255 / 0.05);
+  color: rgb(255 255 255 / 0.5);
 }
 
 .online-phase-playing {
-  border-color: #47ff76;
+  border-color: rgb(71 255 118 / 0.45);
+  background: rgb(71 255 118 / 0.12);
   color: #47ff76;
 }
 
 .online-phase-cancelled {
-  border-color: #ff7575;
+  border-color: rgb(255 117 117 / 0.45);
+  background: rgb(255 117 117 / 0.12);
   color: #ff7575;
 }
 
 .online-phase-postgame {
-  border-color: #8ec5ff;
+  border-color: rgb(142 197 255 / 0.45);
+  background: rgb(142 197 255 / 0.12);
   color: #8ec5ff;
 }
 
 .online-phase-finished {
-  border-color: #ffca5a;
+  border-color: rgb(255 202 90 / 0.45);
+  background: rgb(255 202 90 / 0.12);
   color: #ffca5a;
 }
 
 .online-room-actions {
   display: flex;
   gap: 0.5vw;
+  flex-shrink: 0;
 }
 
 .online-empty {
@@ -1077,13 +1153,6 @@
   flex-direction: column;
   align-items: center;
   gap: 0.4vw;
-}
-
-.online-back {
-  min-width: var(--online-back-min-width);
-  height: var(--online-hit-lg);
-  font-size: var(--online-fs-button);
-  letter-spacing: 0.1rem;
 }
 
 .online-controls-hint {
@@ -1160,7 +1229,6 @@
     --online-hit-lg: 3.5vw;
     --online-hit-md: 4vw;
     --online-hit-sm: 3.2vw;
-    --online-back-min-width: 18vw;
     --online-empty-icon: 6.5vw;
   }
 
@@ -1190,8 +1258,9 @@
     padding: 0.9vw 0;
   }
 
-  .online-room-card.online-room-card--history {
-    padding: 0.55vw 0;
+  .online-room-card--history .online-postgame-round-row-inner {
+    min-height: var(--online-hit-md);
+    padding: 0.65vw 0;
   }
 
   .online-history-action-col .online-postgame-round-replay-btn.button {
@@ -1221,18 +1290,9 @@
     min-height: var(--online-hit-md);
   }
 
-  .online-action {
-    min-height: var(--online-hit-md) !important;
-  }
-
   /* ── Footer ── */
   .online-footer-controls {
     margin-top: 0;
-  }
-
-  .online-back {
-    min-width: var(--online-back-min-width);
-    height: var(--online-hit-lg);
   }
 
   /* ── Empty state — stays centred via flex: 1 from base rule ── */
