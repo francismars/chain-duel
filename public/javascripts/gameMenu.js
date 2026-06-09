@@ -283,7 +283,7 @@ socket.on("resGetGameMenuInfos", (body) => {
         value: "nostr:" + nostrinfo.note1,
       });
       document.getElementById("qrcodeLinkNostr").href =
-        "https://next.nostrudel.ninja/#/n/" + nostrinfo.note1;
+        "https://njump.me/" + nostrinfo.note1;
       let gameCodeNostr = document.getElementById("gameCodeNostr");
       gameCodeNostr.innerText = nostrinfo.emojis;
       document.getElementById("lnurlPanel").classList.add("hide");

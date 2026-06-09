@@ -663,7 +663,7 @@ export default function TournamentBracket() {
                   ) : isNostrTournament && nostrNote1 ? (
                     <a
                       id="qrTournamentLink"
-                      href={`https://next.nostrudel.ninja/#/n/${nostrNote1}`}
+                      href={`https://njump.me/${nostrNote1}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="qr-code-link"
