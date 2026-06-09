@@ -1,5 +1,12 @@
 /* P2P game menu – LNURL panel (layout shared in game-setup.css) */
 
+.gamemenu-page #sponsorshipGameMenu .sponsored-img {
+  height: 3.5vw;
+  max-height: none;
+  max-width: 24vw;
+  width: auto;
+}
+
 .qr-expand-backdrop {
   position: fixed;
   inset: 0;
