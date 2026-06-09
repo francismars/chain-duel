@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
+import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
@@ -333,6 +334,7 @@ export default function PostGame() {
       </header>
 
       <div id="postGame" className={`flex full flex-center animateIn ${loading ? 'empty' : ''}`}>
+        {practiceMode ? null : <Sponsorship id="sponsorship-postgame" />}
         <div className="flex">
           <h2 id="gameOver">GAME OVER</h2>
           <div className="playerInfoGroup">

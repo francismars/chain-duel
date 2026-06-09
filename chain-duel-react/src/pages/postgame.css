@@ -2,12 +2,30 @@ body {
   background-color: black;
 }
 
+#postGame #sponsorship-postgame .sponsored-img {
+  height: 3.5vw;
+  max-height: none;
+  max-width: 24vw;
+  width: auto;
+}
+
 #brand {
   position: fixed;
-  margin-top: 1rem;
+  top: 0;
+  margin-top: 0.25rem;
   width: 100%;
   display: flex;
   justify-content: space-between;
+  pointer-events: none;
+  z-index: 10;
+}
+
+html.tv-safe-inset header#brand:has(+ #postGame) {
+  top: var(--tv-safe-padding);
+  left: var(--tv-safe-padding);
+  right: var(--tv-safe-padding);
+  width: auto;
+  margin-top: 0;
 }
 
 #chain {
