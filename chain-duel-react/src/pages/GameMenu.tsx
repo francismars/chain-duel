@@ -34,6 +34,13 @@ import {
   clearMenuNavigationState,
   type MenuNavigationState,
 } from '@/shared/constants/menuNavigation';
+import { neventFromNote1, trimNip19Identifier } from '@/lib/nostr/nip19Display';
+import {
+  NOSTR_NOTE_PROBE_RELAYS,
+  probeRelaysForEvent,
+  relayHintsFromNevent,
+  relayUrlToDisplayHost,
+} from '@/lib/nostr/probeRelaysForEvent';
 import { clearClientGameConfig } from '@/pages/practiceHubModes';
 import './gamemenu.css';
 
@@ -85,6 +92,8 @@ export default function GameMenu() {
   const [nostrNote1, setNostrNote1] = useState<string>('');
   const [nostrMinP1, setNostrMinP1] = useState<number>(1);
   const [nostrMinP2, setNostrMinP2] = useState<number>(1);
+  const [nostrServingRelays, setNostrServingRelays] = useState<string[]>([]);
+  const [nostrRelayProbe, setNostrRelayProbe] = useState<'idle' | 'loading' | 'done'>('idle');
   const [player1Image, setPlayer1Image] = useState<string>('');
   const [player2Image, setPlayer2Image] = useState<string>('');
   const [leaderboardThreshold, setLeaderboardThreshold] = useState<number>(1);
@@ -109,6 +118,52 @@ export default function GameMenu() {
     () => ({ [CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM]: true }),
     []
   );
+
+  const nostrNevent = useMemo(
+    () => (nostrNote1 ? neventFromNote1(nostrNote1) : null),
+    [nostrNote1]
+  );
+  const nostrNote1Display = useMemo(
+    () => trimNip19Identifier(nostrNote1),
+    [nostrNote1]
+  );
+  const nostrNeventDisplay = useMemo(
+    () => (nostrNevent ? trimNip19Identifier(nostrNevent, 10, 6) : ''),
+    [nostrNevent]
+  );
+  const nostrProbeRelays = useMemo(() => {
+    const relays = new Set<string>(NOSTR_NOTE_PROBE_RELAYS);
+    for (const relay of relayHintsFromNevent(nostrNevent ?? '')) {
+      relays.add(relay);
+    }
+    return [...relays];
+  }, [nostrNevent]);
+  const nostrServingRelayLabels = useMemo(
+    () => nostrServingRelays.map(relayUrlToDisplayHost),
+    [nostrServingRelays]
+  );
+
+  useEffect(() => {
+    if (!nostrNote1) {
+      setNostrServingRelays([]);
+      setNostrRelayProbe('idle');
+      return;
+    }
+
+    let cancelled = false;
+    setNostrRelayProbe('loading');
+    setNostrServingRelays([]);
+
+    void probeRelaysForEvent(nostrNote1, nostrProbeRelays).then((relays) => {
+      if (cancelled) return;
+      setNostrServingRelays(relays);
+      setNostrRelayProbe('done');
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nostrNote1, nostrProbeRelays]);
 
   useEffect(() => {
     setupMenuKeyGraceUntilRef.current = performance.now() + SETUP_MENU_KEY_GRACE_MS;
@@ -359,12 +414,14 @@ export default function GameMenu() {
         p1Name,
         p2Name,
         winnerSats,
-        loserSats
+        loserSats,
+        isNostrMode
       )
     );
   }, [
     canStart,
     goToPaidGame,
+    isNostrMode,
     loserSats,
     p1Name,
     p2Name,
@@ -397,6 +454,9 @@ export default function GameMenu() {
         }
         e.preventDefault();
         if (buttonSelected === null) {
+          if (document.activeElement?.id === 'startgame') {
+            handleStartAttempt();
+          }
           return;
         }
         if (
@@ -545,13 +605,35 @@ export default function GameMenu() {
 
             <div className="nostrLine">
               <div>
-                <div className="label">Seen on</div>
-                <div className="label">nostr.wine</div>
+                <div className="label grey">Seen on</div>
+                {nostrRelayProbe === 'loading' ? (
+                  <div className="label nostr-relay-name">…</div>
+                ) : nostrServingRelayLabels.length > 0 ? (
+                  nostrServingRelayLabels.map((relayHost) => (
+                    <div key={relayHost} className="label nostr-relay-name">
+                      {relayHost}
+                    </div>
+                  ))
+                ) : (
+                  <div className="label nostr-relay-name">—</div>
+                )}
               </div>
             </div>
 
             <div className="prizeinfocard nostr-center-card">
-              <div className="label">Zap this note</div>
+              <h2 className="hero-outline condensed nostr-zap-title" aria-label="Zap this note">
+                <span aria-hidden="true">
+                  {'Zap this note'.split('').map((char, i) => (
+                    <span
+                      key={i}
+                      className="nostr-zap-title-char"
+                      style={{ '--char-index': i } as React.CSSProperties}
+                    >
+                      {char === ' ' ? '\u00a0' : char}
+                    </span>
+                  ))}
+                </span>
+              </h2>
               <div id="gameCodeNostr">{nostrCode}</div>
               <div
                 id="qrcodeContainerNostr"
@@ -599,8 +681,21 @@ export default function GameMenu() {
 
             <div className="nostrLine right">
               <div>
-                <div className="label">Event</div>
-                <div className="label">note1XXX</div>
+                <div className="label grey">note ID</div>
+                {nostrNote1 ? (
+                  <>
+                    <div className="label nostr-event-id" title={nostrNote1}>
+                      {nostrNote1Display}
+                    </div>
+                    {nostrNeventDisplay ? (
+                      <div className="label nostr-event-id" title={nostrNevent ?? undefined}>
+                        {nostrNeventDisplay}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="label nostr-event-id">—</div>
+                )}
               </div>
             </div>
 
@@ -790,29 +885,37 @@ function getStartBlockedMessage(
   p1Name: string,
   p2Name: string,
   winnerSats: number,
-  loserSats: number
+  loserSats: number,
+  isNostr: boolean
 ): string {
   if (prevWinner) {
     const loserName = prevWinner === 'Player 1' ? p2Name : p1Name;
     if (winnerSats <= 0) {
-      return 'Waiting for winner deposit';
+      return isNostr ? 'Waiting for winner to zap' : 'Waiting for winner deposit';
     }
     if (loserSats < winnerSats) {
-      return `${loserName} must deposit at least ${winnerSats.toLocaleString()} sats`;
+      const amount = winnerSats.toLocaleString();
+      return isNostr
+        ? `${loserName} must zap at least ${amount} sats`
+        : `${loserName} must deposit at least ${amount} sats`;
     }
-    return 'Waiting for both players to pay';
+    return isNostr ? 'Waiting for both players to zap' : 'Waiting for both players to pay';
   }
 
   const missing: string[] = [];
   if (player1Sats === 0) missing.push(p1Name);
   if (player2Sats === 0) missing.push(p2Name);
   if (missing.length === 2) {
-    return 'Both players must deposit to start';
+    return isNostr
+      ? 'Zap this note to join — need 2 players'
+      : 'Both players must deposit to start';
   }
   if (missing.length === 1) {
-    return `${missing[0]} must deposit to start`;
+    return isNostr
+      ? `Waiting for ${missing[0]} to zap`
+      : `${missing[0]} must deposit to start`;
   }
-  return 'Waiting for both players to pay';
+  return isNostr ? 'Waiting for both players to zap' : 'Waiting for both players to pay';
 }
 
 function resolvePlayerName(
