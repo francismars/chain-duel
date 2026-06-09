@@ -54,7 +54,7 @@ export async function probeRelaysForEvent(
   const uniqueRelays = [...new Set(relayUrls.map((u) => u.trim()).filter(Boolean))];
   if (uniqueRelays.length === 0) return [];
 
-  const pool = new SimplePool({ maxWaitForConnection: timeoutMs });
+  const pool = new SimplePool();
   try {
     const hits = await Promise.all(
       uniqueRelays.map(async (relayUrl) => {
