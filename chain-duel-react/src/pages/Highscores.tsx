@@ -165,7 +165,7 @@ export default function Highscores() {
         <h2 id="duel">DUEL</h2>
       </header>
 
-      <div className="flex full flex-center">
+      <div className="flex full highscores-page">
         <div>
           <h1 id="page-title" className="outline">
             The Ledger
