@@ -13,6 +13,7 @@ import {
 } from '@/shared/constants/payment';
 import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
 import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
+import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';
 import { createLogger } from '@/shared/utils/logger';
 import '@/components/ui/Button.css';
 import './postgame.css';
@@ -56,6 +57,7 @@ export default function PostGame() {
   const [gameMode, setGameMode] = useState<string>('');
   const [prizeClaimed, setPrizeClaimed] = useState(false);
   const [creatingWithdrawal, setCreatingWithdrawal] = useState(false);
+  const [qrRevealed, setQrRevealed] = useState(false);
 
   useGamepad(true);
 
@@ -121,17 +123,19 @@ export default function PostGame() {
     if (!lnurlw) {
       setCreatingWithdrawal(true);
       setQrValue('');
+      setQrRevealed(true);
       setMenu(2);
       socket.emit('createWithdrawalPostGame');
     } else {
       setQrValue(lnurlw);
+      setQrRevealed(true);
       setMenu(2);
     }
   }, [socket, menu, navigate, lnurlw]);
 
   const onDoubleOrNothing = useCallback(() => {
     if (!socket) return;
-    if (menu !== 1 || tournamentMode || prizeClaimed || loading) return;
+    if (qrRevealed || menu !== 1 || tournamentMode || prizeClaimed || loading) return;
     logger.debug('emitting doubleornothing', {
       connected: socket.connected,
       id: socket.id,
@@ -146,7 +150,7 @@ export default function PostGame() {
       }
       window.location.href = gameMode === 'P2PNOSTR' ? '/gamemenu?nostr=true' : '/gamemenu';
     }, 120);
-  }, [socket, menu, tournamentMode, prizeClaimed, loading, gameMode, logger]);
+  }, [socket, qrRevealed, menu, tournamentMode, prizeClaimed, loading, gameMode, logger]);
 
   useEffect(() => {
     if (!socket) return;
@@ -210,6 +214,7 @@ export default function PostGame() {
         setLnurlw(info.lnurlw);
         setQrValue(info.lnurlw);
         setCreatingWithdrawal(false);
+        setQrRevealed(true);
         setMenu(2);
       }
 
@@ -230,6 +235,7 @@ export default function PostGame() {
         setLnurlw(data);
         setQrValue(data);
         setCreatingWithdrawal(false);
+        setQrRevealed(true);
         setMenu(2);
       }
     };
@@ -253,8 +259,16 @@ export default function PostGame() {
   const designerFee = Math.floor(feeBase * DESIGNER_FEE_RATIO);
   const hostFee = developerFee;
   const practiceMode = gameMode === 'PRACTICE';
-  const canDoubleOrNothing = menu === 1 && !tournamentMode && !prizeClaimed && !loading;
-  const qrCompatPulse = useLnurlQrCompatiblePulse(menu !== 3 && Boolean(qrValue) && !practiceMode);
+  const canDoubleOrNothing = !qrRevealed && !tournamentMode && !prizeClaimed && !loading;
+  const qrCompatPulse = useLnurlQrCompatiblePulse(
+    qrRevealed && menu === 2 && Boolean(qrValue) && !practiceMode
+  );
+  const qrcodeLinkClassName = [
+    qrRevealed && menu === 2 ? 'qrcodeLink--revealed' : '',
+    qrCompatPulse ? 'qrcodeLink--compatible' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const claimButtonText = useMemo(() => {
     if (menu === 3) return 'LEDGER';
@@ -285,7 +299,7 @@ export default function PostGame() {
         if (menu === 1) setActiveButtonMenu1(0);
       }
       if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
-        if (menu === 1 && !tournamentMode) setActiveButtonMenu1(1);
+        if (menu === 1 && !tournamentMode && !qrRevealed) setActiveButtonMenu1(1);
       }
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -303,7 +317,13 @@ export default function PostGame() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [menu, activeButtonMenu1, activeButtonMenu3, tournamentMode, navigate, onClaim, onDoubleOrNothing]);
+  }, [menu, activeButtonMenu1, activeButtonMenu3, tournamentMode, qrRevealed, navigate, onClaim, onDoubleOrNothing]);
+
+  useEffect(() => {
+    if (!canDoubleOrNothing) {
+      setActiveButtonMenu1(0);
+    }
+  }, [canDoubleOrNothing]);
 
   return (
     <>
@@ -353,7 +373,7 @@ export default function PostGame() {
         <a
           id="qrcodeLink"
           href={qrHref}
-          className={qrCompatPulse ? 'qrcodeLink--compatible' : undefined}
+          className={qrcodeLinkClassName || undefined}
         >
           {menu === 3 ? null : qrValue ? (
             <QRCodeCanvas className={`qrcode ${menu === 1 ? 'blur' : ''}`} id="qrCode1" value={qrValue} size={800} />
@@ -396,7 +416,10 @@ export default function PostGame() {
                 id="doubleornotthingbutton"
                 className={canDoubleOrNothing ? '' : 'disabled'}
                 disabled={!canDoubleOrNothing}
-                style={{ animationDuration: activeButtonMenu1 === 1 ? '2s' : '0s' }}
+                style={{
+                  animationDuration:
+                    canDoubleOrNothing && activeButtonMenu1 === 1 ? '2s' : '0s',
+                }}
                 onClick={onDoubleOrNothing}
               >
                 {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
@@ -426,8 +449,30 @@ export default function PostGame() {
           )}
         </div>
         <div id="socialFollow">
-          Follow <img className="social-icon" src="/images/social/Nostr.png" /> chainduel@nostrplebs.com{' '}
-          <img className="social-icon" src="/images/social/Twitter.png" /> @chainduel
+          Follow{' '}
+          <img className="social-icon" src="/images/social/Nostr.png" alt="" />{' '}
+          <a
+            className="social-follow-link"
+            href={`https://njump.me/${CHAINDUEL_NPUB}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            _@chainduel.net
+          </a>{' '}
+          <svg className="social-icon social-icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+            />
+          </svg>{' '}
+          <a
+            className="social-follow-link"
+            href="https://x.com/chainduel"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            @chainduel
+          </a>
         </div>
       </div>
 
