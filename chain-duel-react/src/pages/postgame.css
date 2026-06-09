@@ -50,7 +50,8 @@ body {
   width: 100%;
   text-align: center;
   font-size: 0.8cqw;
-  margin-top: 0.2%;
+  margin-top: 0.75cqw;
+  margin-bottom: 0;
 }
 
 #hostFee,
@@ -66,18 +67,17 @@ body {
 }
 
 #claimReq1 {
-  margin-top: -1%;
+  margin-top: 0.75cqw;
   font-size: 1cqw;
 }
 
 #prize {
   position: static;
-  margin: 2rem 0;
+  margin: 0.75rem 0;
   text-align: center;
   font-size: 8cqw;
   color: white;
   padding-top: 0%;
-  margin-bottom: 0%;
   text-shadow: 0 0 25px white;
 }
 
@@ -86,7 +86,7 @@ body {
   text-align: center;
   font-size: 1.5cqw;
   color: white;
-  margin: 20px 0 0 0;
+  margin: 20px 0 0.75cqw 0;
 }
 
 #postGame {
@@ -146,31 +146,57 @@ body {
 
 #qrcodeLink {
   display: flex;
+  width: fit-content;
+  align-self: center;
+  justify-content: center;
+  --qr-compat-duration: 0.3s;
+  --qr-compat-ease: ease-in-out;
+  --qr-compat-transition: var(--qr-compat-duration) var(--qr-compat-ease);
+  padding: 0.12cqw;
+  box-sizing: border-box;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0%);
+  transition: background var(--qr-compat-transition);
 }
 
 #qrCode1 {
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 1%;
-  margin-bottom: 3%;
+  margin: 0;
   height: 13cqw;
   width: 13cqw;
 }
 
 #qrcodeLink canvas#qrCode1 {
+  margin: 0;
   width: 13cqw !important;
   height: 13cqw !important;
   max-width: 13cqw;
   max-height: 13cqw;
   filter: invert(1);
   mix-blend-mode: screen;
+  transition:
+    filter var(--qr-compat-transition),
+    mix-blend-mode var(--qr-compat-transition);
+}
+
+#qrcodeLink.qrcodeLink--compatible {
+  background: rgb(255 255 255 / 100%);
+}
+
+#qrcodeLink.qrcodeLink--compatible canvas#qrCode1 {
+  filter: invert(0);
+  mix-blend-mode: normal;
 }
 
 #qrcodeLink canvas#qrCode1.blur {
   filter: invert(1) blur(10px);
 }
 
+#qrcodeLink.qrcodeLink--compatible canvas#qrCode1.blur {
+  filter: invert(0) blur(10px);
+}
+
 #qrcodeLink img#qrCode1 {
+  margin: 0;
   filter: none;
   mix-blend-mode: normal;
 }

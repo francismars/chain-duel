@@ -11,6 +11,7 @@ import {
   DESIGNER_FEE_RATIO,
   PAYOUT_POOL_RATIO,
 } from '@/shared/constants/payment';
+import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
 import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { createLogger } from '@/shared/utils/logger';
 import '@/components/ui/Button.css';
@@ -253,6 +254,7 @@ export default function PostGame() {
   const hostFee = developerFee;
   const practiceMode = gameMode === 'PRACTICE';
   const canDoubleOrNothing = menu === 1 && !tournamentMode && !prizeClaimed && !loading;
+  const qrCompatPulse = useLnurlQrCompatiblePulse(menu !== 3 && Boolean(qrValue) && !practiceMode);
 
   const claimButtonText = useMemo(() => {
     if (menu === 3) return 'LEDGER';
@@ -348,7 +350,11 @@ export default function PostGame() {
         <p id="claimText" style={{ display: menu === 3 || practiceMode ? 'none' : undefined }}>
           CLAIM YOUR WINNINGS
         </p>
-        <a id="qrcodeLink" href={qrHref}>
+        <a
+          id="qrcodeLink"
+          href={qrHref}
+          className={qrCompatPulse ? 'qrcodeLink--compatible' : undefined}
+        >
           {menu === 3 ? null : qrValue ? (
             <QRCodeCanvas className={`qrcode ${menu === 1 ? 'blur' : ''}`} id="qrCode1" value={qrValue} size={800} />
           ) : (
