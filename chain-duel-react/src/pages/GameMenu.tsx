@@ -379,6 +379,13 @@ export default function GameMenu() {
     : player1Sats !== 0 && player2Sats !== 0;
   const hasDeposits = player1Sats !== 0 || player2Sats !== 0;
 
+  useEffect(() => {
+    if (!canStart || showCancelOverlay) return;
+    setButtonSelected((current) =>
+      current === 'cancelGameAbort' || current === 'cancelGameConfirm' ? current : 'startgame'
+    );
+  }, [canStart, showCancelOverlay, player1Sats, player2Sats, winnerSats, loserSats, prevWinner]);
+
   const openExitOverlay = useCallback(() => {
     playSfx(SFX.MENU_CONFIRM);
     setShowCancelOverlay(true);
@@ -387,9 +394,13 @@ export default function GameMenu() {
 
   const confirmExit = useCallback(() => {
     playSfx(SFX.MENU_CONFIRM);
+    if (prevWinner) {
+      navigate('/postgame', { replace: true });
+      return;
+    }
     socket?.emit('cancelp2p');
     navigate('/p2p', { replace: true, state: keyboardNavState });
-  }, [keyboardNavState, navigate, playSfx, socket]);
+  }, [keyboardNavState, navigate, playSfx, prevWinner, socket]);
 
   const triggerStartBlockedFeedback = useCallback((message: string) => {
     setStartShaking(true);
@@ -553,12 +564,20 @@ export default function GameMenu() {
         pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}`}
         mainMenuDisabled={false}
         canStart={canStart}
-        mainMenuLabel="BACK TO P2P SETTINGS"
-        cancelOverlayTitle={hasDeposits ? 'Leave game menu?' : 'Cancel game?'}
+        mainMenuLabel={prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'}
+        cancelOverlayTitle={
+          prevWinner
+            ? 'Return to claim screen?'
+            : hasDeposits
+              ? 'Leave game menu?'
+              : 'Cancel game?'
+        }
         cancelOverlayText={
-          hasDeposits
-            ? 'Are you sure you want to go back to P2P settings? Deposited funds may be lost.'
-            : 'Are you sure you want to leave?'
+          prevWinner
+            ? 'Leave the rematch setup and return to the victory screen to claim your winnings.'
+            : hasDeposits
+              ? 'Are you sure you want to go back to P2P settings? Deposited funds may be lost.'
+              : 'Are you sure you want to leave?'
         }
         onMainMenu={openExitOverlay}
         onStart={handleStartAttempt}
