@@ -103,14 +103,14 @@
   font-family: BureauGrotesque-OneFive, BureauGrotesque;
   text-anchor: middle;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 /* Condensed "WINNER" label in bracket */
 .tournbracket-page .tournbracketSVG-inline #Winner_name {
   font-stretch: condensed;
   text-anchor: middle !important;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .tournbracket-page .tournbracketSVG-inline #Winner_name tspan {
@@ -124,9 +124,9 @@
   font-weight: 500;
 }
 
-/* Player slot and winner labels should look bolder like legacy render. */
+/* Player slot labels */
 .tournbracket-page .tournbracketSVG-inline text[id$="_name"] {
-  font-weight: 700;
+  font-weight: 400;
 }
 
 /* Nostr bracket avatars: circle crop on <image>; 1px ring is <circle data-avatar-ring> (see TournamentBracket.tsx) */
@@ -137,13 +137,14 @@
 
 /* Payment panel (legacy bracketPayment): centered on screen, QR + Cancel/Start */
 .tournbracket-page .bracketPayment {
-  position: absolute;
-  bottom: 7.2vw;
+  position: fixed;
+  top: 50%;
   left: 50%;
-  transform: none;
+  bottom: auto;
+  transform: translate(-50%, -50%);
   width: 30%;
   height: 38vw;
-  margin-left: -15%;
+  margin-left: 0;
   background: #000;
   box-sizing: border-box;
   box-shadow: #fff 0 0 100px;
@@ -160,23 +161,28 @@
 .tournbracket-page .bracketPayment .bracketPayment-sponsor {
   display: block;
   flex-shrink: 0;
-  margin-bottom: 0;
+  margin-bottom: -0.85vw;
   border-bottom: none;
   padding-bottom: 0;
-  line-height: 0;
+  padding-top: 1.75vw;
+  line-height: 1.2;
 }
 
 .tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-by-label {
-  display: none;
+  margin-bottom: 0.35vw;
+  font-size: 0.72cqw;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.48);
+  text-transform: uppercase;
 }
 
 .tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-img {
   display: block;
   margin-left: auto;
   margin-right: auto;
-  margin-top: 1.05vw;
+  margin-top: 0;
+  margin-bottom: 0;
   height: 2.25vw;
-  margin-bottom: 1.55vw;
   max-width: none;
   max-height: none;
   width: auto;
@@ -545,6 +551,11 @@
   animation: glowing 2000ms infinite;
   height: 3vw;
   width: 25%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1%;
+  line-height: 1;
 }
 
 /* ── Tournament finished panel ── */
@@ -561,15 +572,20 @@
 
 .tournbracket-page .tournFinishedDiv h2.tourn-finished-headline {
   margin: 0;
-  font-size: clamp(1rem, 3.1vw, 1.6rem);
   line-height: 1.1;
-  font-weight: 800;
+  font-weight: 400;
   text-align: center;
 }
 
 .tournbracket-page .tourn-finished-title {
-  display: inline-block;
-  text-indent: 0.28em;
+  display: block;
+  width: 100%;
+  text-indent: 0;
+  font-family: 'Inter', sans-serif;
+  /* Match bracket SVG game labels (e.g. G3): font-size 20 in 330-tall viewBox at max-height 35vh */
+  font-size: calc(20 / 330 * 35vh);
+  font-weight: 500;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   background: linear-gradient(
     95deg,
@@ -614,4 +630,10 @@
 .tournbracket-page .claimSatsButton {
   animation: glowing 2000ms infinite;
   width: 26%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  line-height: 1;
 }

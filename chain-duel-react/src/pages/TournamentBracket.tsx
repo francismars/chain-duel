@@ -287,9 +287,7 @@ export default function TournamentBracket() {
       const nameEl = svgEl.querySelector<SVGElement>(`#${posId}_name`);
       if (nameEl) {
         const name = resolveIdentityLabel(paid[key], key);
-        const tspan = nameEl.querySelector('tspan');
-        if (tspan) tspan.textContent = name;
-        else nameEl.textContent = name;
+        applyBracketNameText(nameEl, name, isNostrTournament);
         nameEl.style.opacity = '1';
       }
       if (isNostrTournament && nameEl) {
@@ -302,37 +300,31 @@ export default function TournamentBracket() {
         } else {
           nameEl.setAttribute('transform', originalTransform);
         }
-        const baseBBox = textNode.getBBox();
-        /** Larger than name cap-height; may extend past slot (overflow OK per design) */
-        const avatarSize = Math.max(26, Math.round(baseBBox.height * 1.85));
-        const gap = 5;
-        const shift = (avatarSize + gap) / 2;
+        const { size: avatarSize, refBBox } = getBracketAvatarLayout(nameEl);
+        const gap = 10;
+        const avatarLeftExtra = 5;
+        const avatarLeftNudge = 4;
+        const nameLift = 2;
+        const shift = (avatarSize + gap + avatarLeftExtra) / 2;
 
         const transformAttr = nameEl.getAttribute('transform') ?? '';
         const match = transformAttr.match(
           /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
         );
-        if (match) {
-          const x = Number.parseFloat(match[1]);
-          const y = Number.parseFloat(match[2]);
-          nameEl.setAttribute('transform', `translate(${x + shift} ${y})`);
-        }
+        if (!match) continue;
+        const tx = Number.parseFloat(match[1]) + shift;
+        const ty = Number.parseFloat(match[2]) - nameLift;
+        nameEl.removeAttribute('dominant-baseline');
+        nameEl.setAttribute('transform', `translate(${tx} ${ty})`);
 
         const alignedBBox = textNode.getBBox();
-        const alignedTransform = nameEl.getAttribute('transform') ?? '';
-        const alignedMatch = alignedTransform.match(
-          /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
-        );
-        if (!alignedMatch) continue;
-        const tx = Number.parseFloat(alignedMatch[1]);
-        const ty = Number.parseFloat(alignedMatch[2]);
         const picture = paid[key]?.picture;
         const imageHref =
           picture && picture.trim() !== '' ? picture : '/images/social/Nostr.png';
         const wrap = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         wrap.setAttribute('class', 'bracket-avatar-wrap');
-        const ix = tx + alignedBBox.x - avatarSize - gap;
-        const iy = ty + alignedBBox.y + (alignedBBox.height - avatarSize) / 2;
+        const ix = tx + alignedBBox.x - avatarSize - gap - avatarLeftExtra - avatarLeftNudge;
+        const iy = ty + refBBox.y + (refBBox.height - avatarSize) / 2;
         const avatar = document.createElementNS('http://www.w3.org/2000/svg', 'image');
         avatar.setAttribute('data-avatar', 'true');
         avatar.setAttribute('x', `${ix}`);
@@ -386,9 +378,7 @@ export default function TournamentBracket() {
         ? svgEl.querySelector<SVGElement>('#Winner_name')
         : svgEl.querySelector<SVGElement>(`#${posId}_name`);
       if (!el) return;
-      const tspan = el.querySelector('tspan');
-      if (tspan) tspan.textContent = name;
-      else el.textContent = name;
+      applyBracketNameText(el, name, false);
       el.style.opacity = '1';
     };
 
@@ -626,7 +616,7 @@ export default function TournamentBracket() {
       {/* ── Payment collection panel ── */}
       {showPaymentPanel && tournamentPhase === 'payment' && !preStartReady && (
         <div className={`bracketPayment${canStart ? ' paymentComplete' : ''}`} id="bracketPayment">
-          <Sponsorship id="sponsorshipBracketPayment" className="bracketPayment-sponsor" showLabel={false} />
+          <Sponsorship id="sponsorshipBracketPayment" className="bracketPayment-sponsor" />
           <div className="bracketPaymentInner">
 
             {/* View 1: normal payment / QR check-in */}
@@ -934,4 +924,87 @@ function resolveIdentityLabel(player: TournamentPlayerIdentity | undefined, fall
 
   if (fb !== '') return fb;
   return fallbackRole;
+}
+
+/** Horizontal space from the name anchor to the slot rect edge (SVG user units). */
+function getBracketSlotMaxTextWidth(nameEl: SVGElement): number {
+  const posId = nameEl.id.replace(/_name$/, '');
+  const slotGroup = nameEl.parentElement;
+  if (!slotGroup) return 95;
+
+  const rectG =
+    slotGroup.querySelector(`#${posId}_rect`) ?? slotGroup.querySelector('[id$="_rect"]');
+  const rect = rectG?.querySelector('rect');
+  if (!rect) return 95;
+
+  const rectBBox = (rect as SVGGraphicsElement).getBBox();
+  const rectLeft = rectBBox.x;
+  const rectRight = rectBBox.x + rectBBox.width;
+  const padding = 3;
+
+  const transformAttr =
+    nameEl.getAttribute('data-original-transform') ?? nameEl.getAttribute('transform') ?? '';
+  const match = transformAttr.match(/translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/);
+  const nameX = match ? Number.parseFloat(match[1]) : 0;
+
+  if (nameEl.id === 'Winner_name') {
+    const half = Math.min(nameX - rectLeft, rectRight - nameX) - padding;
+    return Math.max(40, half * 2);
+  }
+
+  return Math.max(36, rectRight - nameX - padding);
+}
+
+function fitBracketNameText(nameEl: SVGElement, name: string, reserveRightShift = 0): void {
+  const tspan = nameEl.querySelector('tspan');
+  if (tspan) tspan.textContent = name;
+  else nameEl.textContent = name;
+
+  const storedBase = nameEl.getAttribute('data-base-font-size');
+  const attrBase = nameEl.getAttribute('font-size');
+  const baseFontSize = Number.parseFloat(storedBase ?? attrBase ?? '26');
+  if (!storedBase && attrBase) {
+    nameEl.setAttribute('data-base-font-size', attrBase);
+  }
+
+  const maxWidth = Math.max(28, getBracketSlotMaxTextWidth(nameEl) - reserveRightShift);
+  const textGfx = nameEl as unknown as SVGGraphicsElement;
+  const minFontSize = Math.max(20, Math.round(baseFontSize * 0.82));
+
+  nameEl.setAttribute('font-size', `${baseFontSize}`);
+  const textWidth = textGfx.getBBox().width;
+
+  if (textWidth > maxWidth) {
+    const scaled = Math.floor(baseFontSize * (maxWidth / textWidth));
+    const fontSize = Math.max(minFontSize, scaled);
+    nameEl.setAttribute('font-size', `${fontSize}`);
+  }
+}
+
+/** Fixed avatar size from base slot font — independent of shrunk long-name text. */
+function getBracketAvatarLayout(nameEl: SVGElement): { size: number; refBBox: DOMRect } {
+  const textGfx = nameEl as unknown as SVGGraphicsElement;
+  const baseFontSize = Number.parseFloat(
+    nameEl.getAttribute('data-base-font-size') ?? nameEl.getAttribute('font-size') ?? '26'
+  );
+  const currentFontSize = nameEl.getAttribute('font-size');
+  nameEl.setAttribute('font-size', `${baseFontSize}`);
+  const refBBox = textGfx.getBBox();
+  if (currentFontSize) {
+    nameEl.setAttribute('font-size', currentFontSize);
+  }
+  const size = Math.max(22, Math.round(refBBox.height * 1.55));
+  return { size, refBBox };
+}
+
+/** Shrink long names to fit bracket slots; reserve space when a Nostr avatar shifts the label right. */
+function applyBracketNameText(nameEl: SVGElement, name: string, withNostrAvatar: boolean): void {
+  const tspan = nameEl.querySelector('tspan');
+  if (tspan) tspan.textContent = name;
+  else nameEl.textContent = name;
+
+  const reserve = withNostrAvatar
+    ? (getBracketAvatarLayout(nameEl).size + 10 + 5) / 2
+    : 0;
+  fitBracketNameText(nameEl, name, reserve);
 }
