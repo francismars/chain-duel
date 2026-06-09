@@ -2282,7 +2282,7 @@ export default function OnlineRoomLobby() {
                           <path d="M2 21c0-4 2.7-6 6-6h.5" />
                           <path d="M17 11l-3 5h4l-3 5" />
                         </svg>
-                        <span className="online-lobby-path-card-title">SIGN IN</span>
+                        <span className="online-lobby-path-card-title">Nostr sign in</span>
                         <span className="online-lobby-path-card-desc">Zap here, no PIN</span>
                       </button>
                       <button
@@ -2784,11 +2784,21 @@ export default function OnlineRoomLobby() {
                 )
               ) : !hasPaidMySeat && !isRematchLoserPay ? (
                 <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--idle">
-                  <p className="online-lobby-kind1-idle-cta">
-                    {seatsFull
-                      ? 'Both seats are taken — you’re watching as a spectator. The match starts when both players mark ready.'
-                      : 'Pick how you want to pay above (Lightning, web sign-in, or via your Nostr client), or wait for the game to start to watch as a spectator.'}
-                  </p>
+                  <div className="online-lobby-kind1-idle-copy">
+                    <p className="online-lobby-kind1-idle-cta-title">
+                      {seatsFull ? 'Spectating' : 'Pick how you want to pay'}
+                    </p>
+                    <p className="online-lobby-kind1-idle-cta">
+                      {seatsFull
+                        ? 'Both seats are taken. The match starts when both players mark ready.'
+                        : 'Choose Lightning, Nostr sign-in, or your Nostr app above.'}
+                    </p>
+                    {!seatsFull ? (
+                      <p className="online-lobby-kind1-idle-cta online-lobby-kind1-idle-cta--muted">
+                        Wait for the game to start to watch as a spectator.
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
               ) : isRematchLoserPay && !rematchPayMode ? (
                 <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--idle">
@@ -2857,10 +2867,7 @@ export default function OnlineRoomLobby() {
                 </div>
               </div>
               <div className="online-lobby-pay-zone-note">
-              <div className="online-lobby-kind1-content-col" aria-labelledby="online-lobby-kind1-embed-title">
-                <p className="online-lobby-kind1-embed-title" id="online-lobby-kind1-embed-title">
-                  Zap this note to get in.
-                </p>
+              <div className="online-lobby-kind1-content-col">
                 {kind1PostStatus === 'loading' && !kind1PostEvent ? (
                   <div className="online-lobby-kind1-loading online-lobby-kind1-loading--inline" aria-label="Loading note from relays" role="status">
                     <span className="online-lobby-kind1-loading-chain" aria-hidden="true">

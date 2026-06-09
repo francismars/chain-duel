@@ -1141,7 +1141,7 @@
   border: 1px solid rgb(255 255 255 / 0.18);
   background: rgb(255 255 255 / 0.06);
   color: rgb(255 255 255 / 0.62);
-  font-size: 0.78em;
+  font-size: var(--online-rooms-btn-font);
   font-weight: 600;
   letter-spacing: 0.1em;
   line-height: 1.15;
