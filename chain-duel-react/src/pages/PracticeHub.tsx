@@ -119,6 +119,7 @@ export default function PracticeHub() {
 
       if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopImmediatePropagation();
         playSfx(SFX.MENU_SELECT);
         navigate('/');
         return;
@@ -132,19 +133,30 @@ export default function PracticeHub() {
       const isTab = e.key === 'Tab' && !e.shiftKey;
       const isTabBack = e.key === 'Tab' && e.shiftKey;
 
-      if (hubFocus.zone === 'footer') {
-        if (!isLeft && !isRight && !isUp && !isDown && !isActivate) return;
+      const active = document.activeElement;
+      const footerWhich: 'back' | 'start' | null =
+        active === footerBackRef.current
+          ? 'back'
+          : active === footerStartRef.current
+            ? 'start'
+            : null;
+      const inFooterZone =
+        hubFocus.zone === 'footer' || footerWhich !== null;
+
+      const handleFooterKeys = (which: 'back' | 'start') => {
+        if (!isLeft && !isRight && !isUp && !isDown && !isActivate) return false;
         e.preventDefault();
-        if (e.repeat && isActivate) return;
+        e.stopImmediatePropagation();
+        if (e.repeat && isActivate) return true;
 
         if (isActivate) {
-          if (hubFocus.which === 'back') footerBackRef.current?.click();
+          if (which === 'back') footerBackRef.current?.click();
           else footerStartRef.current?.click();
-          return;
+          return true;
         }
 
         if (isDown) {
-          return;
+          return true;
         }
 
         const moved = movePracticeHubFooter(
@@ -153,31 +165,31 @@ export default function PracticeHub() {
         if (moved === 'panel') {
           playSfx(SFX.MENU_SELECT);
           resumePanelFromFooter();
-          return;
+          return true;
         }
         if (moved === 'back' || moved === 'start') {
-          if (moved !== hubFocus.which) {
+          if (moved !== which) {
             playSfx(SFX.MENU_SELECT);
             enterFooter(moved);
           }
         }
-        return;
+        return true;
+      };
+
+      if (inFooterZone) {
+        const which =
+          hubFocus.zone === 'footer' ? hubFocus.which : footerWhich ?? 'start';
+        if (handleFooterKeys(which)) {
+          return;
+        }
       }
 
       if (hubFocus.zone === 'panel') {
         if (isTabBack) {
           e.preventDefault();
+          e.stopImmediatePropagation();
           enterPlayStyle();
           return;
-        }
-        if (isActivate) {
-          const active = document.activeElement;
-          if (active === footerBackRef.current || active === footerStartRef.current) {
-            e.preventDefault();
-            if (e.repeat) return;
-            (active as HTMLButtonElement).click();
-            return;
-          }
         }
         return;
       }

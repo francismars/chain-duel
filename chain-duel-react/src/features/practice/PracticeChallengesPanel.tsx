@@ -815,6 +815,7 @@ export const PracticeChallengesPanel = forwardRef<
         document.body.contains(activeEl);
       const rowNavIndex = onRow ? focusedRowIndex : orphanListNav ? selected : -1;
 
+      // Footer keys are owned by PracticeHub (gamepad lands here before hub zone updates).
       if (onBack || onStart) {
         return;
       }

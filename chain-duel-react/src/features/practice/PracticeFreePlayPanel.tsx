@@ -222,6 +222,14 @@ export const PracticeFreePlayPanel = forwardRef<
     if (!isActive || menuZone !== 'panel') return;
 
     const onKeyDown = (e: KeyboardEvent) => {
+      const active = document.activeElement;
+      if (
+        active === footerBackRef.current ||
+        active === footerStartRef.current
+      ) {
+        return;
+      }
+
       if (e.key === 'Escape') {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
