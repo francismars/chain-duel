@@ -18,8 +18,10 @@ function clampCol(idx: number, cols: number): number {
 }
 
 export type P2pNavFocus =
+  | { kind: 'none' }
   | { kind: 'payment'; idx: 0 | 1 }
   | { kind: 'session'; idx: 0 | 1 }
+  | { kind: 'duelFormat' }
   | { kind: 'players'; idx: 0 | 1 | 2 }
   | { kind: 'buyinPill'; idx: number }
   | { kind: 'start' }
@@ -31,6 +33,7 @@ export function isBracketNavFocus(f: P2pNavFocus): boolean {
 
 export function navFocusEqual(a: P2pNavFocus, b: P2pNavFocus): boolean {
   if (a.kind !== b.kind) return false;
+  if (a.kind === 'none' && b.kind === 'none') return true;
   if (a.kind === 'payment' && b.kind === 'payment') return a.idx === b.idx;
   if (a.kind === 'session' && b.kind === 'session') return a.idx === b.idx;
   if (a.kind === 'players' && b.kind === 'players') return a.idx === b.idx;
@@ -42,7 +45,12 @@ export function normalizeNavFocusForSession(
   f: P2pNavFocus,
   tournament: boolean
 ): P2pNavFocus {
-  if (tournament || !isBracketNavFocus(f)) return f;
+  if (f.kind === 'none') return f;
+  if (tournament) {
+    if (f.kind === 'duelFormat') return { kind: 'session', idx: 1 };
+    return f;
+  }
+  if (!isBracketNavFocus(f)) return f;
   if (f.kind === 'start' || f.kind === 'back') {
     return { kind: 'session', idx: 0 };
   }
@@ -65,6 +73,8 @@ export function buildFlatNavOrder(tournament: boolean): P2pNavFocus[] {
     for (let i = 0; i < BUYIN_STEP_COUNT; i++) {
       list.push({ kind: 'buyinPill', idx: i });
     }
+  } else {
+    list.push({ kind: 'duelFormat' });
   }
   list.push({ kind: 'start' }, { kind: 'back' });
   return list;
@@ -105,7 +115,7 @@ function moveFooterFocus(
   if (direction === 'right') return { kind: 'start' };
 
   if (!tournament) {
-    return { kind: 'session', idx: sessionNavIdx };
+    return { kind: 'duelFormat' };
   }
   return { kind: 'buyinPill', idx: lastPill };
 }
@@ -127,8 +137,13 @@ function moveNavFocusInner(
   sessionNavIdx: 0 | 1
 ): P2pNavFocus | null {
   switch (f.kind) {
+    case 'none': {
+      if (direction === 'left') return { kind: 'payment', idx: 0 };
+      if (direction === 'right') return { kind: 'payment', idx: 1 };
+      return null;
+    }
     case 'payment': {
-      if (direction === 'up') return null;
+      if (direction === 'up') return { kind: 'none' };
       if (direction === 'down') {
         return { kind: 'session', idx: clampCol(f.idx, 2) as 0 | 1 };
       }
@@ -141,7 +156,7 @@ function moveNavFocusInner(
       }
       if (direction === 'down') {
         if (!tournament) {
-          return f.idx === 0 ? { kind: 'back' } : { kind: 'start' };
+          return { kind: 'duelFormat' };
         }
         const target = playerIdxDownFromSession(f.idx);
         if (target === 'buyin') {
@@ -151,6 +166,15 @@ function moveNavFocusInner(
       }
       if (direction === 'left') return { kind: 'session', idx: 0 };
       return { kind: 'session', idx: 1 };
+    }
+    case 'duelFormat': {
+      if (direction === 'up') {
+        return { kind: 'session', idx: 0 };
+      }
+      if (direction === 'down') {
+        return { kind: 'start' };
+      }
+      return null;
     }
     case 'players': {
       const { row, col } = playerGridPos(f.idx);
@@ -234,6 +258,9 @@ export function advanceFlatNav(
   tournament: boolean
 ): P2pNavFocus {
   const flat = buildFlatNavOrder(tournament);
+  if (f.kind === 'none') {
+    return delta === 1 ? (flat[0] ?? f) : (flat[flat.length - 1] ?? f);
+  }
   const i = flat.findIndex((x) => navFocusEqual(x, f));
   if (i < 0) return flat[0] ?? f;
   const next = (i + delta + flat.length) % flat.length;

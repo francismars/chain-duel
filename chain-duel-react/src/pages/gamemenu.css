@@ -1,5 +1,12 @@
 /* P2P game menu – LNURL panel (layout shared in game-setup.css) */
 
+.gamemenu-page #sponsorshipGameMenu .sponsored-img {
+  height: 3.5vw;
+  max-height: none;
+  max-width: 24vw;
+  width: auto;
+}
+
 .qr-expand-backdrop {
   position: fixed;
   inset: 0;
@@ -75,6 +82,22 @@
   font-size: 3cqw;
   text-align: center;
   margin-bottom: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+#prizevaluesatsAmount {
+  color: white;
+}
+
+#prizevaluesats .sats-label {
+  font-family: 'Inter', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
 }
 
 #prizeinfosats {
@@ -224,6 +247,9 @@
   overflow: visible; /* keep visible so scale-down isn’t clipped when .expanded is removed */
   display: flex;
   align-self: flex-end;
+  --qr-compat-duration: 0.3s;
+  --qr-compat-ease: ease-in-out;
+  --qr-compat-transition: var(--qr-compat-duration) var(--qr-compat-ease);
 }
 
 .gamemenu-page .qrcodeContainer a {
@@ -232,6 +258,11 @@
   width: fit-content;
   height: fit-content;
   position: relative;
+  padding: 0.12vw;
+  box-sizing: border-box;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0%);
+  transition: background var(--qr-compat-transition);
 }
 
 .gamemenu-page .qrcodeContainer .qrcode {
@@ -245,18 +276,18 @@
   filter: invert(1);
   mix-blend-mode: screen;
   position: relative;
+  transition:
+    filter var(--qr-compat-transition),
+    mix-blend-mode var(--qr-compat-transition);
 }
 
-/* While held (Alt / LB / RB): standard black-on-white QR + quiet zone for picky scanners */
+/* While held (Alt / LB / RB) or pulse: standard black-on-white QR for picky scanners */
 .gamemenu-page .qrcodeContainer.qrcodeContainer--compatible > a {
-  background: #fff;
-  padding: 0.25vw;
-  box-sizing: border-box;
-  border-radius: 1px;
+  background: rgb(255 255 255 / 100%);
 }
 
 .gamemenu-page .qrcodeContainer.qrcodeContainer--compatible .qrcode {
-  filter: none;
+  filter: invert(0);
   mix-blend-mode: normal;
 }
 
@@ -264,9 +295,13 @@
   opacity: 0.12;
 }
 
+.gamemenu-page .qrcodeContainer .qrcodeDecoration {
+  transition: opacity var(--qr-compat-transition);
+}
+
 .gamemenu-page #player1card.expanded .qrcodeContainer.qrcodeContainer--compatible .qrcode,
 .gamemenu-page #player2card.expanded .qrcodeContainer.qrcodeContainer--compatible .qrcode {
-  filter: none;
+  filter: invert(0);
   mix-blend-mode: normal;
 }
 
@@ -275,14 +310,24 @@
   transform: scale(1);
   transform-origin: bottom left;
   border: 0 solid transparent;
-  transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out, border 0.25s ease-in-out;
+  transition:
+    filter var(--qr-compat-transition),
+    mix-blend-mode var(--qr-compat-transition),
+    transform 0.25s ease-in-out,
+    box-shadow 0.25s ease-in-out,
+    border 0.25s ease-in-out;
 }
 
 .gamemenu-page #player2card .qrcodeContainer .qrcode {
   transform: scale(1);
   transform-origin: bottom right;
   border: 0 solid transparent;
-  transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out, border 0.25s ease-in-out;
+  transition:
+    filter var(--qr-compat-transition),
+    mix-blend-mode var(--qr-compat-transition),
+    transform 0.25s ease-in-out,
+    box-shadow 0.25s ease-in-out,
+    border 0.25s ease-in-out;
 }
 
 /* Hold Control (or L1/L2): scale QR in place – layout unchanged, player info stays visible */
@@ -397,16 +442,44 @@
 }
 
 /* Legacy Nostr panel parity */
+.gamemenu-page.is-nostr .game-setup-middle {
+  padding-top: 3.5rem;
+  justify-content: flex-start;
+  position: relative;
+  z-index: 4;
+  overflow: visible;
+}
+
+.gamemenu-page.is-nostr .game-setup-start-hint {
+  top: auto;
+  bottom: calc(100% + 0.45vw);
+  z-index: 20;
+  animation: game-setup-hint-in-above 0.2s ease-out;
+}
+
+@keyframes game-setup-hint-in-above {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 .gamemenu-page.is-nostr #bottomInfo {
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: 0;
 }
 
 .gamemenu-page.is-nostr #player1card,
 .gamemenu-page.is-nostr #player2card {
-  width: 30%;
+  width: 27%;
   min-width: 0;
+  align-self: flex-end;
 }
 
 .gamemenu-page.is-nostr #player1cardinfo,
@@ -420,7 +493,9 @@
 }
 
 .gamemenu-page.is-nostr .nostrLine {
-  width: 7%;
+  flex: 0 0 12%;
+  width: 12%;
+  min-width: 6.5cqw;
   text-align: center;
   align-self: center;
   opacity: 0.95;
@@ -430,21 +505,86 @@
   text-align: center;
 }
 
+.gamemenu-page.is-nostr .nostr-relay-name {
+  font-size: 0.8cqw;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  word-break: break-all;
+}
+
+.gamemenu-page.is-nostr .nostr-event-id {
+  font-size: 0.8cqw;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  word-break: break-all;
+}
+
 .gamemenu-page.is-nostr .nostr-center-card {
-  width: 16%;
+  width: auto;
+  flex: 0 0 auto;
   justify-content: center;
   align-items: center;
+  align-self: center;
+  text-align: center;
   gap: 0.5cqw;
+}
+
+.gamemenu-page.is-nostr .nostr-zap-title.hero-outline {
+  position: static;
+  margin: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 3.5cqw;
+}
+
+.gamemenu-page.is-nostr .nostr-zap-title-char {
+  display: inline-block;
+  transform-origin: center bottom;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: white;
+  animation: nostr-zap-title-pulse 4.8s ease-in-out infinite;
+  animation-delay: calc(var(--char-index) * 0.12s);
+}
+
+@keyframes nostr-zap-title-pulse {
+  0% {
+    transform: scale(1);
+    -webkit-text-stroke-color: rgb(255 255 255 / 55%);
+    filter: drop-shadow(0 0 2px rgb(255 255 255 / 15%));
+  }
+
+  29.2% {
+    transform: scale(1.1);
+    -webkit-text-stroke-color: rgb(255 255 255);
+    filter: drop-shadow(0 0 10px rgb(255 255 255 / 45%));
+  }
+
+  58.3%,
+  100% {
+    transform: scale(1);
+    -webkit-text-stroke-color: rgb(255 255 255 / 55%);
+    filter: drop-shadow(0 0 2px rgb(255 255 255 / 15%));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gamemenu-page.is-nostr .nostr-zap-title-char {
+    animation: none;
+  }
 }
 
 .gamemenu-page.is-nostr #gameCodeNostr {
   font-size: 2.1cqw;
   line-height: 1;
+  text-align: center;
+  width: 100%;
 }
 
 .gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer {
   width: fit-content;
   height: fit-content;
+  align-self: center;
 }
 
 .gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer.expanded {

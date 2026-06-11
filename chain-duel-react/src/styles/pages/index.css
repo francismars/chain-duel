@@ -7,6 +7,13 @@
   padding-bottom: clamp(4.25rem, 11vh, 7rem);
 }
 
+.index-page #sponsorship-index .sponsored-img {
+  height: 3.5vw;
+  max-height: none;
+  max-width: 24vw;
+  width: auto;
+}
+
 .index-page__hero {
   flex-shrink: 0;
   width: 100%;

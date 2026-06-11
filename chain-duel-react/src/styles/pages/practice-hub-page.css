@@ -1055,14 +1055,20 @@
 }
 
 .practice-hub-page .local-tier-card .p2p-duel-format__label {
-  font-family: 'BureauGrotesque', sans-serif;
-  font-size: var(--ph-fs-tier);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8cqw;
   font-weight: 400;
-  letter-spacing: 0.04em;
+  line-height: 1;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
 }
 
 .practice-hub-page .p2p-modifiers-section .p2p-duel-format__label {
-  font-size: var(--ph-fs-ui);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8cqw;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.1rem;
   text-transform: uppercase;
 }
 

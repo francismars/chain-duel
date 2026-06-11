@@ -2,7 +2,6 @@
 #brand {
   position: fixed;
   top: 0;
-  margin-top: 1rem;
   width: 100%;
   display: flex;
   justify-content: space-between;
@@ -24,6 +23,13 @@
   margin-right: 1%;
   text-align: right;
   font-size: 2.5cqw;
+}
+
+.online-postgame-page #sponsorship-online-postgame .sponsored-img {
+  height: 3.5vw;
+  max-height: none;
+  max-width: 24vw;
+  width: auto;
 }
 
 /* —— Page —— */

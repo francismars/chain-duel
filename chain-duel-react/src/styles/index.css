@@ -117,7 +117,7 @@ h3 {
 
 .full {
   width: 100vw;
-  min-height: calc(100vh - 5vw);
+  min-height: calc(100vh - 2vw);
 }
 
 .flex.inline {

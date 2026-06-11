@@ -2,7 +2,6 @@
 
 #brand {
   position: fixed;
-  margin-top: 1rem;
   width: 100%;
   display: flex;
   justify-content: space-between;
@@ -31,9 +30,6 @@
 
 #mainmenubutton {
   animation: glowing 2000ms infinite;
-  width: 25%;
-  display: block;
-  margin: 0 auto;
 }
 
 .pages {
@@ -114,19 +110,30 @@ img.inline-logo {
   margin-right: 15px;
 }
 
-.double-button {
-  width: 25%;
+#about .highscores-footer {
   display: flex;
-  margin: auto;
-  justify-content: center;
-  text-transform: uppercase;
-  column-gap: 3%;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(100%, 25vw);
+  margin-left: auto;
+  margin-right: auto;
+  gap: 0.4vw;
 }
 
-.double-button .button {
-  display: inline-block;
-  width: 50%;
-  padding: 4%;
+.highscores-footer .double-button {
+  width: 100%;
+  margin: 0;
+}
+
+.highscores-footer #mainmenubutton.button {
+  width: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  line-height: 1;
 }
 
 #prevButton {

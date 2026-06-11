@@ -6,7 +6,6 @@
 /* ── Brand corners (CHAIN … DUEL) ── */
 #brand {
   position: fixed;
-  top: 1rem;
   left: 0;
   right: 0;
   display: flex;
@@ -2080,14 +2079,37 @@
   padding: 1rem 1.25rem;
 }
 
+.online-lobby-kind1-idle-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-width: 320px;
+  text-align: center;
+}
+
+.online-lobby-kind1-idle-cta-title {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: var(--online-lobby-fs-ui);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.85);
+  line-height: 1.25;
+}
+
 .online-lobby-kind1-idle-cta {
   margin: 0;
-  font-size: var(--online-lobby-fs-meta);
+  font-size: var(--online-lobby-fs-body-sm);
   color: rgb(255 255 255 / 0.5);
   text-align: center;
   letter-spacing: 0.02em;
   line-height: 1.55;
-  max-width: 280px;
+}
+
+.online-lobby-kind1-idle-cta--muted {
+  margin-top: 0.15rem;
+  color: rgb(255 255 255 / 0.32);
 }
 
 /* URI truncation line — full width of hero column */
@@ -2114,24 +2136,9 @@
   border-color: rgb(255 255 255 / 0.22);
 }
 
-.online-lobby-kind1-embed-title {
-  margin: 0.4rem 0 0;
-  padding: 0.42rem 0.7rem 0;
-  font-family: Inter, sans-serif;
-  font-size: var(--online-lobby-fs-body-sm);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.online-lobby-kind1-content-col > *:not(.online-lobby-kind1-embed-title):not(.online-lobby-kind1-embed-card) {
+.online-lobby-kind1-content-col > *:not(.online-lobby-kind1-embed-card) {
   padding-left: 0.7rem;
   padding-right: 0.7rem;
-}
-
-.online-lobby-kind1-content-col > .online-lobby-kind1-embed-title + *:not(.online-lobby-kind1-embed-card) {
-  padding-top: 0.62rem;
 }
 
 .online-lobby-kind1-embed-card {
@@ -2169,10 +2176,6 @@
   justify-content: center;
   padding: 0.7rem;
   gap: 0.55rem;
-}
-
-.online-lobby-kind1-content-col > .online-lobby-kind1-embed-title + .online-lobby-kind1-loading--inline {
-  padding-top: 0;
 }
 
 .online-lobby-kind1-author {
@@ -2495,6 +2498,7 @@
     justify-content: center;
   }
 
+  .online-lobby-kind1-idle-copy,
   .online-lobby-kind1-idle-cta {
     text-align: center;
     max-width: none;

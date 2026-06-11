@@ -23,7 +23,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G15_P2_name" transform="translate(186.755 82.637)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G15_P2</tspan></text>
-      <path id="G15_P2_path" d="M128.325,49.385V23.246H0V0" transform="translate(186.755 49.385) rotate(180)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G15_P2_path" d="M128.325,49.385V23.246H0V0" transform="translate(186.76 49.13) rotate(180)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G15_P1" transform="translate(858.521 206.21)">
       <g id="G15_P1_rect" transform="translate(0 49.396)" fill="none" stroke="#fff" stroke-width="1">
@@ -31,7 +31,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G15_P1_name" transform="translate(96.337 83.396)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G15_P1</tspan></text>
-      <path id="G15_P1_path" d="M50,49.385V23.246H192.367V0" transform="translate(288.867 49.385) rotate(180)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G15_P1_path" d="M50,49.385V23.246H192.367V0" transform="translate(288.867 46.5) rotate(180)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G14_P1" transform="translate(1281.381 75.451)">
       <g id="G14_P1_rect" transform="translate(90.26 48.63)" fill="none" stroke="#fff" stroke-width="1">
@@ -55,7 +55,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G13_P2_name" transform="translate(96.337 83.396)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G13_P2</tspan></text>
-      <path id="G13_P2_path" d="M0,0V26.139H132.67V49.385" transform="translate(242.385 -58.775) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G13_P2_path" d="M0,0V26.139H132.67V49.385" transform="translate(241.885 -59.774) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G13_P1" transform="translate(616.137 75.441)">
       <g id="G13_P1_rect" transform="translate(0 49.396)" fill="none" stroke="#fff" stroke-width="1">
@@ -63,7 +63,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G13_P1_name" transform="translate(96.337 83.396)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G13_P1</tspan></text>
-      <path id="G13_P1_path" d="M0,49.385V23.246H132.67V0" transform="translate(193 205.567) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G13_P1_path" d="M0,49.385V23.246H132.67V0" transform="translate(192.5 205.566) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G12_P2" transform="translate(1564.637 407.934)">
       <g id="G12_P2_rect" transform="translate(50.6 41.91)" fill="none" stroke="#fff" stroke-width="1">
@@ -71,7 +71,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G12_P2_name" transform="translate(147.103 75.914)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G12_P2</tspan></text>
-      <path id="G12_P2_path" d="M7,49.385V23.246H63.955V0" transform="translate(49.385) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G12_P2_path" d="M7,49.385V23.246H63.955V0" transform="translate(51.1 1.455) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G12_P1" transform="translate(1564.646 278.974)">
       <g id="G12_P1_rect" transform="translate(49.479 50)" fill="none" stroke="#fff" stroke-width="1">
@@ -79,7 +79,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G12_P1_name" transform="translate(145.816 84)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G12_P1</tspan></text>
-      <path id="G12_P1_path" d="M114,49.385V23.246H50V0" transform="translate(49.385 22.417) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G12_P1_path" d="M114,49.385V23.246H50V0" transform="translate(49.979 23.5) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G11_P1" transform="translate(1564.646 12.625)">
       <g id="G11_P1_rect" transform="translate(49.479 50)" fill="none" stroke="#fff" stroke-width="1">
@@ -87,7 +87,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G11_P1_name" transform="translate(145.816 84)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G11_P1</tspan></text>
-      <path id="G11_P1_path" d="M114,49.385V23.246H50V0" transform="translate(49.385 22.417) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G11_P1_path" d="M114,49.385V23.246H50V0" transform="translate(49.979 23.5) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G11_P2" transform="translate(1564.637 141.585)">
       <g id="G11_P2_rect" transform="translate(50.6 41.91)" fill="none" stroke="#fff" stroke-width="1">
@@ -95,7 +95,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G11_P2_name" transform="translate(147.103 75.914)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G11_P2</tspan></text>
-      <path id="G11_P2_path" d="M7,49.385V23.246H63.955V0" transform="translate(49.385) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G11_P2_path" d="M7,49.385V23.246H63.955V0" transform="translate(51.1 1.455) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G10_P2" transform="translate(373.875 365.061)">
       <g id="G10_P2_rect" transform="translate(0 83.045)" fill="none" stroke="#fff" stroke-width="1">
@@ -103,7 +103,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G10_P2_name" transform="translate(96.337 117.045)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G10_P2</tspan></text>
-      <path id="G10_P2_path" d="M56.544,49.385V23.246H0V0" transform="translate(192.867 106.544) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G10_P2_path" d="M56.544,49.385V23.246H0V0" transform="translate(192.5 106.545) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G10_P1" transform="translate(373.875 327.231)">
       <g id="G10_P1_rect" fill="none" stroke="#fff" stroke-width="1">
@@ -119,7 +119,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G9_P2_name" transform="translate(96.337 117.045)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G9_P2</tspan></text>
-      <path id="G9_P2_path" d="M56.544,49.385V23.246H0V0" transform="translate(192.867 106.544) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G9_P2_path" d="M56.544,49.385V23.246H0V0" transform="translate(192.5 106.545) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G9_P1" transform="translate(373.875 62.625)">
       <g id="G9_P1_rect" fill="none" stroke="#fff" stroke-width="1">
@@ -135,7 +135,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G8_P2_name" transform="translate(145.713 42.133)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G8_P2</tspan></text>
-      <path id="G8_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.384) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G8_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.875 1.459) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G8_P1" transform="translate(1808.24 399.848)">
       <g id="G8_P1_rect" transform="translate(49.86 20)" fill="none" stroke="#fff" stroke-width="1">
@@ -143,7 +143,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G8_P1_name" transform="translate(146.194 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G8_P1</tspan></text>
-      <path id="G8_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(49.384 24.957) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G8_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(50.36 23.5) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G7_P1" transform="translate(1807.125 281.601)">
       <g id="G7_P1_rect" transform="translate(49.385 20)" fill="none" stroke="#fff" stroke-width="1">
@@ -151,7 +151,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G7_P1_name" transform="translate(145.723 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G7_P1</tspan></text>
-      <path id="G7_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(49.384 23.5) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G7_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(49.885 23.5) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G7_P2" transform="translate(1807.134 352.012)">
       <g id="G7_P2_rect" transform="translate(49.85 5.08)" fill="none" stroke="#fff" stroke-width="1">
@@ -159,7 +159,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G7_P2_name" transform="translate(146.185 39.086)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G7_P2</tspan></text>
-      <path id="G7_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.384) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G7_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(50.35 -1.594) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G6_P2" transform="translate(1808.25 207.366)">
       <g id="G6_P2_rect" transform="translate(49.375 8.133)" fill="none" stroke="#fff" stroke-width="1">
@@ -167,7 +167,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G6_P2_name" transform="translate(145.713 42.133)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G6_P2</tspan></text>
-      <path id="G6_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.384) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G6_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.875 1.459) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G6_P1" transform="translate(1808.24 135.499)">
       <g id="G6_P1_rect" transform="translate(49.86 20)" fill="none" stroke="#fff" stroke-width="1">
@@ -175,7 +175,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G6_P1_name" transform="translate(146.194 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G6_P1</tspan></text>
-      <path id="G6_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(49.384 24.957) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G6_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(50.36 23.5) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G5_P2" transform="translate(1807.134 85.663)">
       <g id="G5_P2_rect" transform="translate(49.85 5.08)" fill="none" stroke="#fff" stroke-width="1">
@@ -183,7 +183,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G5_P2_name" transform="translate(146.185 39.086)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G5_P2</tspan></text>
-      <path id="G5_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(49.384) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G5_P2_path" d="M0,49.384V23.245H30.174V0" transform="translate(50.35 -1.594) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G5_P1" transform="translate(1807.125 15.252)">
       <g id="G5_P1_rect" transform="translate(49.385 20)" fill="none" stroke="#fff" stroke-width="1">
@@ -191,7 +191,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G5_P1_name" transform="translate(145.723 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G5_P1</tspan></text>
-      <path id="G5_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(49.384 23.5) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G5_P1_path" d="M46.911,49.384V23.245H20V0" transform="translate(49.885 23.5) rotate(90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G4_P2" transform="translate(131.5 473.235)">
       <g id="G4_P2_rect" transform="translate(0 3.412)" fill="none" stroke="#fff" stroke-width="1">
@@ -199,7 +199,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G4_P2_name" transform="translate(96.337 37.412)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G4_P2</tspan></text>
-      <path id="G4_P2_path" d="M46.911,49.384V23.245H20V0" transform="translate(193.001 46.911) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G4_P2_path" d="M46.911,49.384V23.245H20V0" transform="translate(192.5 46.912) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G4_P1" transform="translate(131.5 399.563)">
       <g id="G4_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
@@ -207,7 +207,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G4_P1_name" transform="translate(96.337 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G4_P1</tspan></text>
-      <path id="G4_P1_path" d="M0,49.384V23.245H30.174V0" transform="translate(192.991 73.673) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G4_P1_path" d="M0,49.384V23.245H30.174V0" transform="translate(192.5 73.674) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G3_P2" transform="translate(131.5 331.279)">
       <g id="G3_P2_rect" transform="translate(0 21.996)" fill="none" stroke="#fff" stroke-width="1">
@@ -215,7 +215,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G3_P2_name" transform="translate(96.337 55.996)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G3_P2</tspan></text>
-      <path id="G3_P2_path" d="M26.911,49.384V23.245H0V0" transform="translate(193.001 46.911) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G3_P2_path" d="M26.911,49.384V23.245H0V0" transform="translate(192.5 45.496) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G3_P1" transform="translate(131.5 277.606)">
       <g id="G3_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
@@ -223,7 +223,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G3_P1_name" transform="translate(96.337 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G3_P1</tspan></text>
-      <path id="G3_P1_path" d="M0,49.384V23.245H30.174V0" transform="translate(192.991 73.674) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G3_P1_path" d="M0,49.384V23.245H30.174V0" transform="translate(192.5 73.674) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G2_P2" transform="translate(131.5 208.629)">
       <g id="G2_P2_rect" transform="translate(0 3.412)" fill="none" stroke="#fff" stroke-width="1">
@@ -231,7 +231,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G2_P2_name" transform="translate(96.337 37.412)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G2_P2</tspan></text>
-      <path id="G2_P2_path" d="M46.911,49.384V23.245H20V0" transform="translate(193.001 46.911) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G2_P2_path" d="M46.911,49.384V23.245H20V0" transform="translate(192.5 46.912) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G2_P1" transform="translate(131.5 134.957)">
       <g id="G2_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
@@ -239,7 +239,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G2_P1_name" transform="translate(96.337 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G2_P1</tspan></text>
-      <path id="G2_P1_path" d="M0,49.384V23.245H30.174V0" transform="translate(192.991 73.673) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G2_P1_path" d="M0,49.384V23.245H30.174V0" transform="translate(192.5 73.674) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G1_P2" transform="translate(131.5 66.673)">
       <g id="G1_P2_rect" transform="translate(0 21.996)" fill="none" stroke="#fff" stroke-width="1">
@@ -247,7 +247,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G1_P2_name" transform="translate(96.337 55.996)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G1_P2</tspan></text>
-      <path id="G1_P2_path" d="M26.911,49.384V23.245H0V0" transform="translate(193.001 46.911) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G1_P2_path" d="M26.911,49.384V23.245H0V0" transform="translate(192.5 45.496) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="G1_P1" transform="translate(131.5 13)">
       <g id="G1_P1_rect" transform="translate(0 20)" fill="none" stroke="#fff" stroke-width="1">
@@ -255,7 +255,7 @@
         <rect x="0.5" y="0.5" width="192" height="46" fill="none"/>
       </g>
       <text id="G1_P1_name" transform="translate(96.337 54)" fill="#fff" font-size="26" font-family="HelveticaNeue, Helvetica Neue" opacity="0"><tspan x="0" y="0">G1_P1</tspan></text>
-      <path id="G1_P1_path" d="M0,49.384V23.245H30.174V0" transform="translate(192.991 73.674) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+      <path id="G1_P1_path" d="M0,49.384V23.245H30.174V0" transform="translate(192.5 73.674) rotate(-90)" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
     </g>
     <g id="Games" transform="translate(609 150.773)">
       <text id="G15" transform="translate(448 194)" fill="#fff" font-size="19" font-family="Inter-Regular, Inter" letter-spacing="0.02em" opacity="0.2"><tspan x="0" y="0">GAME 15</tspan></text>

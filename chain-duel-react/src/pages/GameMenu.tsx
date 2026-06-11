@@ -13,6 +13,7 @@ import type { MenuParseResult } from '@/lib/menuAdapters';
 import { useSessionPersistence } from '@/shared/hooks/useSessionPersistence';
 import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
 import { useLnurlCompatibleQrHold } from '@/features/setup-menu/hooks/useLnurlCompatibleQrHold';
+import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
 import { createLogger } from '@/shared/utils/logger';
 import {
   HIGHLIGHT_FLASH_TIMEOUT_MS,
@@ -33,6 +34,13 @@ import {
   clearMenuNavigationState,
   type MenuNavigationState,
 } from '@/shared/constants/menuNavigation';
+import { neventFromNote1, trimNip19Identifier } from '@/lib/nostr/nip19Display';
+import {
+  NOSTR_NOTE_PROBE_RELAYS,
+  probeRelaysForEvent,
+  relayHintsFromNevent,
+  relayUrlToDisplayHost,
+} from '@/lib/nostr/probeRelaysForEvent';
 import { clearClientGameConfig } from '@/pages/practiceHubModes';
 import './gamemenu.css';
 
@@ -40,7 +48,8 @@ type ButtonSelected =
   | 'mainMenuButton'
   | 'startgame'
   | 'cancelGameAbort'
-  | 'cancelGameConfirm';
+  | 'cancelGameConfirm'
+  | null;
 
 export default function GameMenu() {
   const logger = useMemo(() => createLogger('GameMenu'), []);
@@ -65,8 +74,10 @@ export default function GameMenu() {
   const [player2Sats, setPlayer2Sats] = useState(0);
   const [p1Name, setP1Name] = useState('Player 1');
   const [p2Name, setP2Name] = useState('Player 2');
-  const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('mainMenuButton');
+  const [buttonSelected, setButtonSelected] = useState<ButtonSelected>(null);
   const [showCancelOverlay, setShowCancelOverlay] = useState(false);
+  const [startShaking, setStartShaking] = useState(false);
+  const [startBlockedHint, setStartBlockedHint] = useState<string | null>(null);
   const [player1CardExpanded, setPlayer1CardExpanded] = useState(false);
   const [player2CardExpanded, setPlayer2CardExpanded] = useState(false);
   const [qrBackdropVisible, setQrBackdropVisible] = useState(false);
@@ -81,6 +92,8 @@ export default function GameMenu() {
   const [nostrNote1, setNostrNote1] = useState<string>('');
   const [nostrMinP1, setNostrMinP1] = useState<number>(1);
   const [nostrMinP2, setNostrMinP2] = useState<number>(1);
+  const [nostrServingRelays, setNostrServingRelays] = useState<string[]>([]);
+  const [nostrRelayProbe, setNostrRelayProbe] = useState<'idle' | 'loading' | 'done'>('idle');
   const [player1Image, setPlayer1Image] = useState<string>('');
   const [player2Image, setPlayer2Image] = useState<string>('');
   const [leaderboardThreshold, setLeaderboardThreshold] = useState<number>(1);
@@ -92,9 +105,65 @@ export default function GameMenu() {
   const highlightTimeoutP1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimeoutP2Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   const setupMenuKeyGraceUntilRef = useRef(0);
+  const startShakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startHintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useGamepad(true, { lnurlCompatScan: !isNostrMode });
   const { compatibleP1, compatibleP2 } = useLnurlCompatibleQrHold(!isNostrMode);
+  const qrCompatPulse = useLnurlQrCompatiblePulse(!isNostrMode);
+  const lnurlCompatP1 = compatibleP1 || qrCompatPulse;
+  const lnurlCompatP2 = compatibleP2 || qrCompatPulse;
+
+  const keyboardNavState = useMemo(
+    () => ({ [CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM]: true }),
+    []
+  );
+
+  const nostrNevent = useMemo(
+    () => (nostrNote1 ? neventFromNote1(nostrNote1) : null),
+    [nostrNote1]
+  );
+  const nostrNote1Display = useMemo(
+    () => trimNip19Identifier(nostrNote1),
+    [nostrNote1]
+  );
+  const nostrNeventDisplay = useMemo(
+    () => (nostrNevent ? trimNip19Identifier(nostrNevent, 10, 6) : ''),
+    [nostrNevent]
+  );
+  const nostrProbeRelays = useMemo(() => {
+    const relays = new Set<string>(NOSTR_NOTE_PROBE_RELAYS);
+    for (const relay of relayHintsFromNevent(nostrNevent ?? '')) {
+      relays.add(relay);
+    }
+    return [...relays];
+  }, [nostrNevent]);
+  const nostrServingRelayLabels = useMemo(
+    () => nostrServingRelays.map(relayUrlToDisplayHost),
+    [nostrServingRelays]
+  );
+
+  useEffect(() => {
+    if (!nostrNote1) {
+      setNostrServingRelays([]);
+      setNostrRelayProbe('idle');
+      return;
+    }
+
+    let cancelled = false;
+    setNostrRelayProbe('loading');
+    setNostrServingRelays([]);
+
+    void probeRelaysForEvent(nostrNote1, nostrProbeRelays).then((relays) => {
+      if (cancelled) return;
+      setNostrServingRelays(relays);
+      setNostrRelayProbe('done');
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nostrNote1, nostrProbeRelays]);
 
   useEffect(() => {
     setupMenuKeyGraceUntilRef.current = performance.now() + SETUP_MENU_KEY_GRACE_MS;
@@ -305,18 +374,85 @@ export default function GameMenu() {
     };
   }, []);
 
+  const canStart = prevWinner
+    ? winnerSats > 0 && loserSats >= winnerSats
+    : player1Sats !== 0 && player2Sats !== 0;
+  const hasDeposits = player1Sats !== 0 || player2Sats !== 0;
+
   useEffect(() => {
-    const canStartNow = prevWinner
-      ? winnerSats > 0 && loserSats >= winnerSats
-      : player1Sats !== 0 && player2Sats !== 0;
-    if (canStartNow) {
-      setButtonSelected('startgame');
+    if (!canStart || showCancelOverlay) return;
+    setButtonSelected((current) =>
+      current === 'cancelGameAbort' || current === 'cancelGameConfirm' ? current : 'startgame'
+    );
+  }, [canStart, showCancelOverlay, player1Sats, player2Sats, winnerSats, loserSats, prevWinner]);
+
+  const openExitOverlay = useCallback(() => {
+    playSfx(SFX.MENU_CONFIRM);
+    setShowCancelOverlay(true);
+    setButtonSelected('cancelGameAbort');
+  }, [playSfx]);
+
+  const confirmExit = useCallback(() => {
+    playSfx(SFX.MENU_CONFIRM);
+    if (prevWinner) {
+      navigate('/postgame', { replace: true });
+      return;
     }
-  }, [player1Sats, player2Sats, prevWinner, loserSats, winnerSats]);
+    socket?.emit('cancelp2p');
+    navigate('/p2p', { replace: true, state: keyboardNavState });
+  }, [keyboardNavState, navigate, playSfx, prevWinner, socket]);
+
+  const triggerStartBlockedFeedback = useCallback((message: string) => {
+    setStartShaking(true);
+    setStartBlockedHint(message);
+    if (startShakeTimeoutRef.current) clearTimeout(startShakeTimeoutRef.current);
+    if (startHintTimeoutRef.current) clearTimeout(startHintTimeoutRef.current);
+    startShakeTimeoutRef.current = setTimeout(() => setStartShaking(false), 450);
+    startHintTimeoutRef.current = setTimeout(() => setStartBlockedHint(null), 4000);
+  }, []);
+
+  const handleStartAttempt = useCallback(() => {
+    if (canStart) {
+      playSfx(SFX.MENU_CONFIRM);
+      goToPaidGame();
+      return;
+    }
+    triggerStartBlockedFeedback(
+      getStartBlockedMessage(
+        prevWinner,
+        player1Sats,
+        player2Sats,
+        p1Name,
+        p2Name,
+        winnerSats,
+        loserSats,
+        isNostrMode
+      )
+    );
+  }, [
+    canStart,
+    goToPaidGame,
+    isNostrMode,
+    loserSats,
+    p1Name,
+    p2Name,
+    player1Sats,
+    player2Sats,
+    playSfx,
+    prevWinner,
+    triggerStartBlockedFeedback,
+    winnerSats,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (startShakeTimeoutRef.current) clearTimeout(startShakeTimeoutRef.current);
+      if (startHintTimeoutRef.current) clearTimeout(startHintTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const canStartNow = prevWinner ? loserSats >= winnerSats : player1Sats !== 0 && player2Sats !== 0;
       if (e.key === 'Enter' || e.key === ' ') {
         if (e.repeat) {
           return;
@@ -328,42 +464,55 @@ export default function GameMenu() {
           return;
         }
         e.preventDefault();
+        if (buttonSelected === null) {
+          if (document.activeElement?.id === 'startgame') {
+            handleStartAttempt();
+          }
+          return;
+        }
         if (
           buttonSelected === 'mainMenuButton' &&
           performance.now() < setupMenuKeyGraceUntilRef.current
         ) {
           return;
         }
-        playSfx(SFX.MENU_CONFIRM);
         if (buttonSelected === 'startgame') {
-          if (canStartNow) {
-            goToPaidGame();
-          }
+          handleStartAttempt();
         } else if (buttonSelected === 'mainMenuButton') {
-          if (player1Sats === 0 && player2Sats === 0) {
-            setShowCancelOverlay(true);
-            setButtonSelected('cancelGameAbort');
-          } else {
-            navigate('/');
-          }
+          openExitOverlay();
         } else if (buttonSelected === 'cancelGameAbort') {
+          playSfx(SFX.MENU_CONFIRM);
           setShowCancelOverlay(false);
           setButtonSelected('mainMenuButton');
-        } else if (buttonSelected === 'cancelGameConfirm' && player1Sats === 0 && player2Sats === 0) {
-          socket?.emit('cancelp2p');
-          navigate('/', { replace: true });
+        } else if (buttonSelected === 'cancelGameConfirm') {
+          confirmExit();
         }
       }
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         if (buttonSelected === 'cancelGameConfirm') {
           playSfx(SFX.MENU_SELECT);
           setButtonSelected('cancelGameAbort');
+        } else if (!showCancelOverlay && buttonSelected === null) {
+          playSfx(SFX.MENU_SELECT);
+          setButtonSelected('mainMenuButton');
+        } else if (!showCancelOverlay && buttonSelected === 'startgame') {
+          playSfx(SFX.MENU_SELECT);
+          setStartBlockedHint(null);
+          setButtonSelected('mainMenuButton');
         }
       }
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
         if (buttonSelected === 'cancelGameAbort') {
           playSfx(SFX.MENU_SELECT);
           setButtonSelected('cancelGameConfirm');
+        } else if (!showCancelOverlay && buttonSelected === null) {
+          playSfx(SFX.MENU_SELECT);
+          setStartBlockedHint(null);
+          setButtonSelected('startgame');
+        } else if (!showCancelOverlay && buttonSelected === 'mainMenuButton') {
+          playSfx(SFX.MENU_SELECT);
+          setStartBlockedHint(null);
+          setButtonSelected('startgame');
         }
       }
     };
@@ -379,10 +528,10 @@ export default function GameMenu() {
     navigate,
     location,
     playSfx,
-    prevWinner,
-    loserSats,
-    winnerSats,
-    goToPaidGame,
+    showCancelOverlay,
+    handleStartAttempt,
+    openExitOverlay,
+    confirmExit,
   ]);
 
   useQrExpandState({
@@ -407,44 +556,42 @@ export default function GameMenu() {
   const hostCut = Math.floor(totalPrize * HOST_FEE_RATIO);
   const devCut = Math.floor(totalPrize * DEVELOPER_FEE_RATIO);
   const designCut = Math.floor(totalPrize * DESIGNER_FEE_RATIO);
-  const canStart = prevWinner
-    ? winnerSats > 0 && loserSats >= winnerSats
-    : player1Sats !== 0 && player2Sats !== 0;
-  const mainMenuDisabled = player1Sats !== 0 || player2Sats !== 0;
 
   return (
     <>
       <GameSetupLayout
         title={gameMenuTitle}
         pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}`}
-        mainMenuDisabled={mainMenuDisabled}
+        mainMenuDisabled={false}
         canStart={canStart}
-        onMainMenu={() => {
-          playSfx(SFX.MENU_CONFIRM);
-          if (player1Sats === 0 && player2Sats === 0) {
-            setShowCancelOverlay(true);
-            setButtonSelected('cancelGameAbort');
-          } else {
-            navigate('/');
-          }
-        }}
-        onStart={() => {
-          playSfx(SFX.MENU_CONFIRM);
-          goToPaidGame();
-        }}
+        mainMenuLabel={prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'}
+        cancelOverlayTitle={
+          prevWinner
+            ? 'Return to claim screen?'
+            : hasDeposits
+              ? 'Leave game menu?'
+              : 'Cancel game?'
+        }
+        cancelOverlayText={
+          prevWinner
+            ? 'Leave the rematch setup and return to the victory screen to claim your winnings.'
+            : hasDeposits
+              ? 'Are you sure you want to go back to P2P settings? Deposited funds may be lost.'
+              : 'Are you sure you want to leave?'
+        }
+        onMainMenu={openExitOverlay}
+        onStart={handleStartAttempt}
         loading={loading}
         showCancelOverlay={showCancelOverlay}
         statusMessage={statusMessage}
+        startBlockedHint={startBlockedHint}
+        startShaking={startShaking}
         onCancelAbort={() => {
           playSfx(SFX.MENU_CONFIRM);
           setShowCancelOverlay(false);
           setButtonSelected('mainMenuButton');
         }}
-        onCancelConfirm={() => {
-          playSfx(SFX.MENU_CONFIRM);
-          socket?.emit('cancelp2p');
-          navigate('/', { replace: true });
-        }}
+        onCancelConfirm={confirmExit}
         selectedButton={buttonSelected}
       >
         {qrBackdropVisible && (
@@ -477,13 +624,35 @@ export default function GameMenu() {
 
             <div className="nostrLine">
               <div>
-                <div className="condensed">Zap</div>
-                <div className="label">Seen on</div>
-                <div className="label">nostr.wine</div>
+                <div className="label grey">Seen on</div>
+                {nostrRelayProbe === 'loading' ? (
+                  <div className="label nostr-relay-name">…</div>
+                ) : nostrServingRelayLabels.length > 0 ? (
+                  nostrServingRelayLabels.map((relayHost) => (
+                    <div key={relayHost} className="label nostr-relay-name">
+                      {relayHost}
+                    </div>
+                  ))
+                ) : (
+                  <div className="label nostr-relay-name">—</div>
+                )}
               </div>
             </div>
 
             <div className="prizeinfocard nostr-center-card">
+              <h2 className="hero-outline condensed nostr-zap-title" aria-label="Zap this note">
+                <span aria-hidden="true">
+                  {'Zap this note'.split('').map((char, i) => (
+                    <span
+                      key={i}
+                      className="nostr-zap-title-char"
+                      style={{ '--char-index': i } as React.CSSProperties}
+                    >
+                      {char === ' ' ? '\u00a0' : char}
+                    </span>
+                  ))}
+                </span>
+              </h2>
               <div id="gameCodeNostr">{nostrCode}</div>
               <div
                 id="qrcodeContainerNostr"
@@ -493,7 +662,7 @@ export default function GameMenu() {
                   id="qrcodeLinkNostr"
                   href={
                     nostrNote1
-                      ? `https://next.nostrudel.ninja/#/n/${nostrNote1}`
+                      ? `https://njump.me/${nostrNote1}`
                       : `nostr:${DECOY_NOSTR_QR_VALUE}`
                   }
                   target="_blank"
@@ -531,9 +700,21 @@ export default function GameMenu() {
 
             <div className="nostrLine right">
               <div>
-                <div className="condensed">Me!</div>
-                <div className="label">Event</div>
-                <div className="label">note1XXX</div>
+                <div className="label grey">note ID</div>
+                {nostrNote1 ? (
+                  <>
+                    <div className="label nostr-event-id" title={nostrNote1}>
+                      {nostrNote1Display}
+                    </div>
+                    {nostrNeventDisplay ? (
+                      <div className="label nostr-event-id" title={nostrNevent ?? undefined}>
+                        {nostrNeventDisplay}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="label nostr-event-id">—</div>
+                )}
               </div>
             </div>
 
@@ -565,7 +746,7 @@ export default function GameMenu() {
             <div id="player1card" className={player1CardExpanded ? 'expanded' : ''}>
               <div
                 id="qrcodeContainer1"
-                className={['qrcodeContainer', compatibleP1 ? 'qrcodeContainer--compatible' : '']
+                className={['qrcodeContainer', lnurlCompatP1 ? 'qrcodeContainer--compatible' : '']
                   .filter(Boolean)
                   .join(' ')}
               >
@@ -578,7 +759,7 @@ export default function GameMenu() {
                   {p1PayLink?.lnurlp ? (
                     <QRCodeSVG
                       id="qrcode1"
-                      className={`qrcode ${compatibleP1 ? 'qrcode--compatible' : ''}`}
+                      className={`qrcode ${lnurlCompatP1 ? 'qrcode--compatible' : ''}`}
                       value={p1PayLink.lnurlp}
                       size={QR_CODE_CARD_SIZE}
                       level={compatibleP1 ? 'H' : 'M'}
@@ -628,9 +809,10 @@ export default function GameMenu() {
 
             <div className="prizeinfocard">
               <div id="prizevaluesats" className="condensed">
-                {fmt(totalPrize)}
+                <span id="prizevaluesatsAmount">{fmt(totalPrize)}</span>{' '}
+                <span className="grey sats-label">sats</span>
               </div>
-              <div id="prizeinfosats">Total Prize (sats)</div>
+              <div id="prizeinfosats">Total Prize</div>
               <div id="splits">
                 <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
                 <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
@@ -667,7 +849,7 @@ export default function GameMenu() {
               </div>
               <div
                 id="qrcodeContainer2"
-                className={['qrcodeContainer', compatibleP2 ? 'qrcodeContainer--compatible' : '']
+                className={['qrcodeContainer', lnurlCompatP2 ? 'qrcodeContainer--compatible' : '']
                   .filter(Boolean)
                   .join(' ')}
               >
@@ -680,7 +862,7 @@ export default function GameMenu() {
                   {p2PayLink?.lnurlp ? (
                     <QRCodeSVG
                       id="qrcode2"
-                      className={`qrcode ${compatibleP2 ? 'qrcode--compatible' : ''}`}
+                      className={`qrcode ${lnurlCompatP2 ? 'qrcode--compatible' : ''}`}
                       value={p2PayLink.lnurlp}
                       size={180}
                       level={compatibleP2 ? 'H' : 'M'}
@@ -713,6 +895,46 @@ export default function GameMenu() {
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </>
   );
+}
+
+function getStartBlockedMessage(
+  prevWinner: string | null,
+  player1Sats: number,
+  player2Sats: number,
+  p1Name: string,
+  p2Name: string,
+  winnerSats: number,
+  loserSats: number,
+  isNostr: boolean
+): string {
+  if (prevWinner) {
+    const loserName = prevWinner === 'Player 1' ? p2Name : p1Name;
+    if (winnerSats <= 0) {
+      return isNostr ? 'Waiting for winner to zap' : 'Waiting for winner deposit';
+    }
+    if (loserSats < winnerSats) {
+      const amount = winnerSats.toLocaleString();
+      return isNostr
+        ? `${loserName} must zap at least ${amount} sats`
+        : `${loserName} must deposit at least ${amount} sats`;
+    }
+    return isNostr ? 'Waiting for both players to zap' : 'Waiting for both players to pay';
+  }
+
+  const missing: string[] = [];
+  if (player1Sats === 0) missing.push(p1Name);
+  if (player2Sats === 0) missing.push(p2Name);
+  if (missing.length === 2) {
+    return isNostr
+      ? 'Zap this note to join — need 2 players'
+      : 'Both players must deposit to start';
+  }
+  if (missing.length === 1) {
+    return isNostr
+      ? `Waiting for ${missing[0]} to zap`
+      : `${missing[0]} must deposit to start`;
+  }
+  return isNostr ? 'Waiting for both players to zap' : 'Waiting for both players to pay';
 }
 
 function resolvePlayerName(

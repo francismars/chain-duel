@@ -124,6 +124,12 @@
   width: 25vw;
   height: 3vw;
   font-size: 0.8cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  line-height: 1;
 }
 
 .game-setup-status {
@@ -151,6 +157,79 @@
   border-color: rgba(255, 255, 255, 0.34);
   box-shadow: none;
   animation: none !important;
+}
+
+#startgame.not-ready {
+  opacity: 0.45;
+  cursor: default;
+}
+
+#startgame.not-ready:hover,
+#startgame.not-ready:focus-visible {
+  background-color: transparent;
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.game-setup-start-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-setup-start-wrap--shake {
+  animation: game-setup-shake 0.45s ease-in-out;
+}
+
+@keyframes game-setup-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-10px);
+  }
+  40% {
+    transform: translateX(10px);
+  }
+  60% {
+    transform: translateX(-6px);
+  }
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+.game-setup-start-hint {
+  position: absolute;
+  top: calc(100% + 0.45vw);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  width: max-content;
+  max-width: 28vw;
+  text-align: center;
+  font-size: 0.75cqw;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(0, 0, 0, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.45vw 0.7vw;
+  pointer-events: none;
+  z-index: 3;
+  animation: game-setup-hint-in 0.2s ease-out;
+}
+
+@keyframes game-setup-hint-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 #bottomInfo {
