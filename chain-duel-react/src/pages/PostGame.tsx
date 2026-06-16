@@ -12,6 +12,7 @@ import {
   DESIGNER_FEE_RATIO,
   PAYOUT_POOL_RATIO,
 } from '@/shared/constants/payment';
+import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';

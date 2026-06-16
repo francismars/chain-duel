@@ -1541,37 +1541,6 @@ export function decideAiForPlayer(state: GameState, playerIndex: PowerUpPlayerIn
   }
 }
 
-/** Normie: mostly random with light wall avoidance */
-function decideNormie(state: GameState): void {
-  const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
-  const safe = dirs.filter((d) => !wouldHitWall(state, state.p2, d));
-  if (safe.length === 0) return;
-
-  // 60% chance to just pick a random safe direction
-  if (gameRandom() < 0.6) {
-    const random = safe[Math.floor(gameRandom() * safe.length)];
-    applyAiDir(state, random);
-    return;
-  }
-
-  // Otherwise head vaguely toward nearest coinbase
-  const target = state.coinbases[0]?.pos;
-  if (target) {
-    const preferred = preferredDirToward(state.p2.head, target);
-    if (safe.includes(preferred)) {
-      applyAiDir(state, preferred);
-      return;
-    }
-  }
-  applyAiDir(state, safe[Math.floor(gameRandom() * safe.length)]);
-}
-
-/** Stacker: A* toward nearest coinbase */
-function decideStacker(state: GameState): void {
-  const path = findPathP2(state);
-  applyPathToAi(state, path);
-}
-
 const SOVEREIGN_INTERCEPT_RANGE = 10;
 const SOVEREIGN_INTERCEPT_COMMIT_RANGE = 20;
 const SOVEREIGN_INTERCEPT_PATH_SLACK = 2;
@@ -1882,11 +1851,6 @@ function decideEconomyChase(state: GameState): void {
   if (safe.length > 0) applyAiDir(state, safe[0]);
 }
 
-/** Noderunner: economy bot — best coin, power-ups, avoids P1. No intercept. */
-function decideNoderunner(state: GameState): void {
-  decideEconomyChase(state);
-}
-
 /** Sovereign: economy play + intercept when racing P1 for the best coin. */
 function decideSovereign(state: GameState): void {
   const coinTarget = chooseBestCoinbaseForAi(state) ?? nearestCoinbaseTarget(state);
@@ -2020,13 +1984,6 @@ function preferredDirToward(from: GridPos, to: GridPos): Exclude<Direction, ''> 
 // ============================================================================
 // Pathfinding
 // ============================================================================
-
-function findPathP2(state: GameState, avoidPlayer = false): GridPos[] {
-  const start: GridPos = [state.p2.head[0], state.p2.head[1]];
-  const target = state.coinbases.find((cb) => !cb.isDecoy)?.pos;
-  if (!target) return [start];
-  return findPath(state, start, target, avoidPlayer ? 'head-and-body' : 'none');
-}
 
 function findPath(
   state: GameState,

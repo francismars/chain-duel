@@ -54,11 +54,6 @@ export class PixiGameRenderer {
     { name: Text; letter: Text }
   >();
 
-  private static readonly BOARD_REVEAL_DELAY_MS = 800;
-  private static readonly BOARD_REVEAL_MAX_MS = 3500;
-  private static readonly START_WORDS_DELAY_MS = 1000;
-  private static readonly START_WORDS_ANIM_MS = 1800;
-
   constructor() {
     const startWordStyle = new TextStyle({
       fontFamily: 'BureauGrotesque',
@@ -198,7 +193,7 @@ export class PixiGameRenderer {
   }
 
   /** True when a paint is needed for time-based motion (bridge still paints on sim ticks). */
-  needsPaint(state: GameState, now: number = performance.now()): boolean {
+  needsPaint(state: GameState, _now: number = performance.now()): boolean {
     const preStart =
       !state.gameStarted && !state.countdownStart && !state.gameEnded;
     if (preStart) {
@@ -817,18 +812,6 @@ export class PixiGameRenderer {
   }
 
   // ── Power-up item drawing ──────────────────────────────────────────────────
-
-  private isBoardRevealActive(now: number): boolean {
-    if (this.boardRevealTime === -1) return false;
-    const elapsed = Math.max(0, now - this.boardRevealTime - PixiGameRenderer.BOARD_REVEAL_DELAY_MS);
-    return elapsed < PixiGameRenderer.BOARD_REVEAL_MAX_MS;
-  }
-
-  private isStartWordsRevealActive(now: number): boolean {
-    if (this.startRevealTime === -1) return false;
-    const elapsed = Math.max(0, now - this.startRevealTime - PixiGameRenderer.START_WORDS_DELAY_MS);
-    return elapsed < PixiGameRenderer.START_WORDS_ANIM_MS;
-  }
 
   private rebuildStaticGrid(
     state: GameState,

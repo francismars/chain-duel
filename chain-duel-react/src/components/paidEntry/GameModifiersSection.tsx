@@ -1,9 +1,9 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 export type GameModifiersPowerupsControl = {
   enabled: boolean;
   focused: boolean;
-  buttonRef: RefObject<HTMLButtonElement | null>;
+  buttonRef: Ref<HTMLButtonElement | null>;
   onToggle: () => void;
   onFocus?: () => void;
 };
@@ -78,7 +78,7 @@ export function GameModifiersSection({ powerups }: GameModifiersSectionProps) {
         <div className="p2p-duel-format" role="group" aria-label="Game modifiers">
         {powerups ? (
           <button
-            ref={powerups.buttonRef}
+            ref={powerups.buttonRef as Ref<HTMLButtonElement>}
             type="button"
             aria-pressed={powerups.enabled}
             tabIndex={powerups.focused ? 0 : -1}

@@ -106,7 +106,7 @@ function playerIdxDownFromSession(sessionIdx: 0 | 1): 0 | 1 | 2 | 'buyin' {
 function moveFooterFocus(
   direction: 'up' | 'down' | 'left' | 'right',
   tournament: boolean,
-  sessionNavIdx: 0 | 1
+  _sessionNavIdx: 0 | 1
 ): P2pNavFocus | null {
   const lastPill = BUYIN_STEP_COUNT - 1;
 

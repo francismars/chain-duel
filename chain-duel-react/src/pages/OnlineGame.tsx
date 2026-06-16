@@ -809,12 +809,14 @@ export default function OnlineGame() {
   ]);
 
   const effectiveSessionID = currentSessionID || sessionStorage.getItem('sessionID') || '';
-  const isP1 =
+  const isP1 = Boolean(
     (roomInfo?.p1SessionID && roomInfo.p1SessionID === effectiveSessionID) ||
-    (roomInfo?.p1SocketID && roomInfo.p1SocketID === currentSocketID);
-  const isP2 =
+      (roomInfo?.p1SocketID && roomInfo.p1SocketID === currentSocketID)
+  );
+  const isP2 = Boolean(
     (roomInfo?.p2SessionID && roomInfo.p2SessionID === effectiveSessionID) ||
-    (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID);
+      (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID)
+  );
   localRoleRef.current = { isP1, isP2 };
   const replayDurationSec = replayFrames.length > 0 ? (replayFrames.length * replayTickMs) / 1000 : 0;
   const replayPositionSec = replayFrames.length > 0 ? (replayIndex * replayTickMs) / 1000 : 0;

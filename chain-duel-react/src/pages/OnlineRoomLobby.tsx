@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, useCallback, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
@@ -1158,7 +1165,7 @@ export default function OnlineRoomLobby() {
     );
   }, []);
 
-  const onQrSplitCopyKeyDown = useCallback((e: KeyboardEvent<HTMLButtonElement>) => {
+  const onQrSplitCopyKeyDown = useCallback((e: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (e.key !== 'ArrowDown' && e.key !== 's' && e.key !== 'S') {
       return;
     }

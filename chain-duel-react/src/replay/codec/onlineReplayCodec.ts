@@ -5,7 +5,6 @@
  * copy that helper into marspayTS if the server builds replays without it.
  */
 import type {
-  AiTier,
   Coinbase,
   Direction,
   GameMeta,

@@ -215,6 +215,8 @@ export default function PracticeHub() {
         return;
       }
 
+      if (hubFocus.zone !== 'playStyle') return;
+
       if (isActivate) {
         e.preventDefault();
         if (e.repeat) return;
