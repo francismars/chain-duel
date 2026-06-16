@@ -1,3 +1,5 @@
+import type { WindowTimeout } from '@/shared/utils/timer';
+
 /**
  * Nostr Wallet Connect (NIP-47) — pay_invoice helper.
  *
@@ -130,7 +132,7 @@ export async function nwcPay(
     let settled = false;
     const subId = `nwc-${Date.now()}`;
     let ws: WebSocket | null = null;
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    let timer: WindowTimeout | null = null;
 
     const finish = (result: NwcPayResult | null, err?: Error) => {
       if (settled) return;
@@ -151,7 +153,7 @@ export async function nwcPay(
       }
     };
 
-    timer = setTimeout(() => {
+    timer = window.setTimeout(() => {
       finish(
         null,
         new Error('NWC payment timed out — wallet did not respond in time.')

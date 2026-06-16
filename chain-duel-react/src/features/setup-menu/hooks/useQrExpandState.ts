@@ -3,6 +3,7 @@ import {
   EXPAND_DEBOUNCE_MS,
   EXPAND_SCALE_DOWN_MS,
 } from '@/shared/constants/ui';
+import type { WindowTimeout } from '@/shared/utils/timer';
 
 type ExpandSide = 'left' | 'right';
 type ExpandStatus = Partial<Record<ExpandSide, boolean>>;
@@ -19,14 +20,15 @@ export function useQrExpandState({
   dualControls,
 }: UseQrExpandStateArgs) {
   const expandKeyUpTimeRef = useRef<Partial<Record<ExpandSide, number>>>({});
-  const backdropTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const backdropTimeoutRef = useRef<WindowTimeout | null>(null);
 
   const show = useCallback(
     (side: ExpandSide) => {
       const now = Date.now();
       if (now - (expandKeyUpTimeRef.current[side] ?? 0) < EXPAND_DEBOUNCE_MS)
         return;
-      if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
+      if (backdropTimeoutRef.current)
+        window.clearTimeout(backdropTimeoutRef.current);
       onExpandedChange({ [side]: true });
       onBackdropVisibleChange(true);
     },
@@ -37,8 +39,9 @@ export function useQrExpandState({
     (side: ExpandSide) => {
       expandKeyUpTimeRef.current[side] = Date.now();
       onExpandedChange({ [side]: false });
-      if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
-      backdropTimeoutRef.current = setTimeout(
+      if (backdropTimeoutRef.current)
+        window.clearTimeout(backdropTimeoutRef.current);
+      backdropTimeoutRef.current = window.setTimeout(
         () => onBackdropVisibleChange(false),
         EXPAND_SCALE_DOWN_MS
       );
@@ -49,7 +52,8 @@ export function useQrExpandState({
   useEffect(() => {
     const resetAll = () => {
       onExpandedChange({ left: false, right: false });
-      if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
+      if (backdropTimeoutRef.current)
+        window.clearTimeout(backdropTimeoutRef.current);
       onBackdropVisibleChange(false);
     };
 
@@ -83,7 +87,8 @@ export function useQrExpandState({
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onWindowBlur);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
+      if (backdropTimeoutRef.current)
+        window.clearTimeout(backdropTimeoutRef.current);
     };
   }, [dualControls, hide, onBackdropVisibleChange, onExpandedChange, show]);
 }

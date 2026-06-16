@@ -35,6 +35,7 @@ import {
 import { npubEncode } from 'nostr-tools/nip19';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
+import type { WindowTimeout } from '@/shared/utils/timer';
 import type { NostrLinkedProfile } from '@/types/schemas';
 import {
   resolveLobbyPaymentModeForSeat,
@@ -236,15 +237,15 @@ export default function OnlineRoomLobby() {
   const [currentSocketID, setCurrentSocketID] = useState('');
   const [nostrUriQrOpen, setNostrUriQrOpen] = useState(false);
   const [nostrUriCopied, setNostrUriCopied] = useState(false);
-  const nostrUriCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(
+  const nostrUriCopyResetRef = useRef<WindowTimeout | null>(
     null
   );
   const [lightningUriCopied, setLightningUriCopied] = useState(false);
-  const lightningUriCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(
+  const lightningUriCopyResetRef = useRef<WindowTimeout | null>(
     null
   );
   const [joinPinCopied, setJoinPinCopied] = useState(false);
-  const joinPinCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(
+  const joinPinCopyResetRef = useRef<WindowTimeout | null>(
     null
   );
   const paymentCardsRef = useRef<HTMLDivElement | null>(null);
@@ -301,7 +302,7 @@ export default function OnlineRoomLobby() {
   const [inviteCopyFeedback, setInviteCopyFeedback] = useState<
     'link' | 'text' | null
   >(null);
-  const inviteCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inviteCopyResetRef = useRef<WindowTimeout | null>(null);
   const [invitePostBusy, setInvitePostBusy] = useState(false);
   const [invitePostError, setInvitePostError] = useState<string | null>(null);
   const [invitePostOk, setInvitePostOk] = useState(false);
@@ -323,7 +324,7 @@ export default function OnlineRoomLobby() {
     key: string;
     event: Kind1PostLoaded;
   } | null>(null);
-  const zapPayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const zapPayTimeoutRef = useRef<WindowTimeout | null>(null);
   const roomIdRef = useRef(roomId);
   roomIdRef.current = roomId;
 
@@ -914,9 +915,9 @@ export default function OnlineRoomLobby() {
   );
 
   const flashInviteCopy = (which: 'link' | 'text') => {
-    if (inviteCopyResetRef.current) clearTimeout(inviteCopyResetRef.current);
+    if (inviteCopyResetRef.current) window.clearTimeout(inviteCopyResetRef.current);
     setInviteCopyFeedback(which);
-    inviteCopyResetRef.current = setTimeout(() => {
+    inviteCopyResetRef.current = window.setTimeout(() => {
       setInviteCopyFeedback(null);
       inviteCopyResetRef.current = null;
     }, 2200);
@@ -1941,9 +1942,9 @@ export default function OnlineRoomLobby() {
     };
 
     runPop();
-    let delayedPop: ReturnType<typeof setTimeout> | undefined;
+    let delayedPop: WindowTimeout | undefined;
     if (lobbyNavFocus.type === 'payment' && paymentMode) {
-      delayedPop = setTimeout(runPop, 60);
+      delayedPop = window.setTimeout(runPop, 60);
     }
     return () => {
       if (delayedPop) {
@@ -2819,7 +2820,7 @@ export default function OnlineRoomLobby() {
                                             );
                                           setLightningUriCopied(true);
                                           lightningUriCopyResetRef.current =
-                                            setTimeout(() => {
+                                            window.setTimeout(() => {
                                               setLightningUriCopied(false);
                                               lightningUriCopyResetRef.current =
                                                 null;
@@ -3154,7 +3155,7 @@ export default function OnlineRoomLobby() {
                                                 );
                                               setLightningUriCopied(true);
                                               lightningUriCopyResetRef.current =
-                                                setTimeout(() => {
+                                                window.setTimeout(() => {
                                                   setLightningUriCopied(false);
                                                   lightningUriCopyResetRef.current =
                                                     null;
@@ -3314,7 +3315,7 @@ export default function OnlineRoomLobby() {
                                               );
                                             setNostrUriCopied(true);
                                             nostrUriCopyResetRef.current =
-                                              setTimeout(() => {
+                                              window.setTimeout(() => {
                                                 setNostrUriCopied(false);
                                                 nostrUriCopyResetRef.current =
                                                   null;
@@ -3390,7 +3391,7 @@ export default function OnlineRoomLobby() {
                                             );
                                           setJoinPinCopied(true);
                                           joinPinCopyResetRef.current =
-                                            setTimeout(() => {
+                                            window.setTimeout(() => {
                                               setJoinPinCopied(false);
                                               joinPinCopyResetRef.current =
                                                 null;
@@ -3443,7 +3444,7 @@ export default function OnlineRoomLobby() {
                                               );
                                             setNostrUriCopied(true);
                                             nostrUriCopyResetRef.current =
-                                              setTimeout(() => {
+                                              window.setTimeout(() => {
                                                 setNostrUriCopied(false);
                                                 nostrUriCopyResetRef.current =
                                                   null;

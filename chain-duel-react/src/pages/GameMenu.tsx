@@ -10,6 +10,7 @@ import { useAudio, SFX } from '@/contexts/AudioContext';
 import type { LNURLP, SerializedGameInfo } from '@/types/socket';
 import { useMenuSocketInfo } from '@/features/setup-menu/hooks/useMenuSocketInfo';
 import type { MenuParseResult } from '@/lib/menuAdapters';
+import type { WindowTimeout } from '@/shared/utils/timer';
 import { useSessionPersistence } from '@/shared/hooks/useSessionPersistence';
 import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
 import { useLnurlCompatibleQrHold } from '@/features/setup-menu/hooks/useLnurlCompatibleQrHold';
@@ -104,17 +105,17 @@ export default function GameMenu() {
   const lastKnownP2SatsRef = useRef(0);
   const prevWinnerRef = useRef<string | null>(null);
   const nostrNote1Ref = useRef('');
-  const highlightTimeoutP1Ref = useRef<ReturnType<typeof setTimeout> | null>(
+  const highlightTimeoutP1Ref = useRef<WindowTimeout | null>(
     null
   );
-  const highlightTimeoutP2Ref = useRef<ReturnType<typeof setTimeout> | null>(
+  const highlightTimeoutP2Ref = useRef<WindowTimeout | null>(
     null
   );
   const setupMenuKeyGraceUntilRef = useRef(0);
-  const startShakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+  const startShakeTimeoutRef = useRef<WindowTimeout | null>(
     null
   );
-  const startHintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+  const startHintTimeoutRef = useRef<WindowTimeout | null>(
     null
   );
 
@@ -315,7 +316,7 @@ export default function GameMenu() {
             if (highlightTimeoutP1Ref.current)
               clearTimeout(highlightTimeoutP1Ref.current);
             setHighlightP1(true);
-            highlightTimeoutP1Ref.current = setTimeout(
+            highlightTimeoutP1Ref.current = window.setTimeout(
               () => setHighlightP1(false),
               HIGHLIGHT_FLASH_TIMEOUT_MS
             );
@@ -336,7 +337,7 @@ export default function GameMenu() {
             if (highlightTimeoutP2Ref.current)
               clearTimeout(highlightTimeoutP2Ref.current);
             setHighlightP2(true);
-            highlightTimeoutP2Ref.current = setTimeout(
+            highlightTimeoutP2Ref.current = window.setTimeout(
               () => setHighlightP2(false),
               HIGHLIGHT_FLASH_TIMEOUT_MS
             );
@@ -446,13 +447,14 @@ export default function GameMenu() {
     setStartShaking(true);
     setStartBlockedHint(message);
     if (startShakeTimeoutRef.current)
-      clearTimeout(startShakeTimeoutRef.current);
-    if (startHintTimeoutRef.current) clearTimeout(startHintTimeoutRef.current);
-    startShakeTimeoutRef.current = setTimeout(
+      window.clearTimeout(startShakeTimeoutRef.current);
+    if (startHintTimeoutRef.current)
+      window.clearTimeout(startHintTimeoutRef.current);
+    startShakeTimeoutRef.current = window.setTimeout(
       () => setStartShaking(false),
       450
     );
-    startHintTimeoutRef.current = setTimeout(
+    startHintTimeoutRef.current = window.setTimeout(
       () => setStartBlockedHint(null),
       4000
     );
