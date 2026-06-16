@@ -30,7 +30,7 @@ function buildMeta(partial: GameMeta): GameMeta {
     p1Human: (p.p1Human as boolean | undefined) ?? true,
     p2Human:
       (p.p2Human as boolean | undefined) ??
-      !Boolean((p.practiceMode as boolean | undefined) ?? false),
+      !((p.practiceMode as boolean | undefined) ?? false),
     aiTier: normalizeAiTier(p.aiTier as string | undefined),
     convergenceMode: (p.convergenceMode as boolean | undefined) ?? false,
     convergenceShrinkInterval:

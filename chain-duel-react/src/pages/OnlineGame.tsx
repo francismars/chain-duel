@@ -253,7 +253,7 @@ export default function OnlineGame() {
     });
     let raf = 0;
     let lastPaintedSnapshot: OnlineRoomSnapshot | null = null;
-    const frame = (now: number) => {
+    const frame = () => {
       const snap = snapshotRef.current;
       if (snap?.state && rendererRef.current) {
         let raw = snap.state as GameState;
@@ -269,7 +269,7 @@ export default function OnlineGame() {
             ? withOnlinePointAnimations(raw, pointAnimationsRef.current)
             : raw;
         const snapshotChanged = snap !== lastPaintedSnapshot;
-        const animActive = rendererRef.current.needsPaint(renderState, now);
+        const animActive = rendererRef.current.needsPaint(renderState);
         if (snapshotChanged || animActive) {
           rendererRef.current.render(renderState, {
             replayView: replayViewRef.current,

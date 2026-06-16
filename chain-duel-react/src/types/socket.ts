@@ -161,6 +161,8 @@ export interface OnlineReplayBlockEvent {
 export interface OnlineRoomSnapshot {
   tick: number;
   phase: 'lobby' | 'playing' | 'postgame' | 'finished' | 'cancelled';
+  // Decoded at runtime via normalizeOnlineRoomSnapshot / replay codec.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   state: any;
   hud: {
     p1Points: number;

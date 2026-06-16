@@ -352,6 +352,8 @@ export const PracticeFreePlayPanel = forwardRef<
     playSfx,
     show1v1Opponent,
     showTeamControl,
+    footerBackRef,
+    footerStartRef,
   ]);
 
   useEffect(() => {

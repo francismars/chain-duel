@@ -143,6 +143,7 @@ export default function Index() {
       clearMenuNavigationState(navigate, location);
     }
     // pathname/search/hash only — clearing `state` must not shorten gamepad suppress.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, location.search, location.hash, navigate]);
 
   // Keyboard navigation

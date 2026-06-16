@@ -199,7 +199,7 @@ export class PixiGameRenderer {
   }
 
   /** True when a paint is needed for time-based motion (bridge still paints on sim ticks). */
-  needsPaint(state: GameState, _now: number = performance.now()): boolean {
+  needsPaint(state: GameState): boolean {
     const preStart =
       !state.gameStarted && !state.countdownStart && !state.gameEnded;
     if (preStart) {

@@ -20,6 +20,7 @@ const CHALLENGE_RANK_BY_ID: Record<ChallengeIconId, number> = {
   'sovereign-stack': 6,
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function readChallengeHudFromConfig(
   cfg: Record<string, unknown>
 ): ChallengeHudInfo | null {

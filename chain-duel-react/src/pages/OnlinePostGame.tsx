@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
@@ -157,9 +157,12 @@ export default function OnlinePostGame() {
     }
   }, [info, showPayoutUi, isWinner]);
 
-  const openSessionRoundReplay = (matchRound: number) => {
-    navigate(onlineReplayUrl(roomId, matchRound));
-  };
+  const openSessionRoundReplay = useCallback(
+    (matchRound: number) => {
+      navigate(onlineReplayUrl(roomId, matchRound));
+    },
+    [navigate, roomId]
+  );
 
   // ── Keyboard / gamepad navigation ──────────────────────────────────
   useEffect(() => {

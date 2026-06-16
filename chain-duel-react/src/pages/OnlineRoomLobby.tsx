@@ -1473,6 +1473,7 @@ export default function OnlineRoomLobby() {
     roomId,
     rematchWaitingForSessionID,
     nostrSession.signedIn,
+    startNostrLinkFlow,
   ]);
 
   useEffect(() => {

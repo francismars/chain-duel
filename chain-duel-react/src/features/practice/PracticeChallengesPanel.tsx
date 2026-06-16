@@ -401,10 +401,13 @@ export const PracticeChallengesPanel = forwardRef<
   const nostrProfilePic = nostrSession.picture;
   const payoutReady = eligibility?.eligible === true;
   const showSetupGate = nostrSession.signedIn && !payoutReady;
-  const eligibilityChecks =
-    eligibility && showSetupGate
-      ? formatGateEligibilityChecks(eligibility.checks)
-      : [];
+  const eligibilityChecks = useMemo(
+    () =>
+      eligibility && showSetupGate
+        ? formatGateEligibilityChecks(eligibility.checks)
+        : [],
+    [eligibility, showSetupGate]
+  );
   const eligibilityProgress =
     eligibility && showSetupGate
       ? countGateEligibilityChecks(eligibility.checks)
@@ -1163,6 +1166,7 @@ export const PracticeChallengesPanel = forwardRef<
     footerStartRef,
     hasGateActionButton,
     showSetupGate,
+    selected,
   ]);
 
   useEffect(() => {

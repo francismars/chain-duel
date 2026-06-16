@@ -103,6 +103,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSocketContext(): SocketContextValue {
   const ctx = useContext(SocketContext);
   if (!ctx) {

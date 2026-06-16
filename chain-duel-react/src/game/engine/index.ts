@@ -187,7 +187,7 @@ export function createGameState(args: CreateStateArgs): GameState {
   const p1 = Math.max(minScore, Math.floor(args.p1Points));
   const p2 = Math.max(minScore, Math.floor(args.p2Points));
 
-  const defaultP2Human = !Boolean(args.practiceMode);
+  const defaultP2Human = !args.practiceMode;
   const p1HumanMeta = args.p1Human !== undefined ? Boolean(args.p1Human) : true;
   const p2HumanMeta =
     args.p2Human !== undefined ? Boolean(args.p2Human) : defaultP2Human;
@@ -321,8 +321,8 @@ export function getHudState(state: GameState): HudState {
   const hud: HudState = {
     p1Points: state.score[0],
     p2Points: state.score[1],
-    captureP1: getCaptureLabel(state.p1.body.length, state),
-    captureP2: getCaptureLabel(state.p2.body.length, state),
+    captureP1: getCaptureLabel(state.p1.body.length),
+    captureP2: getCaptureLabel(state.p2.body.length),
     initialWidthP1,
     initialWidthP2,
     currentWidthP1,
@@ -934,7 +934,7 @@ function captureCoinbase(state: GameState): void {
       increaseBody(state.p1);
       if (!cb.reward) createNewCoinbase(state);
       state.coinbases.splice(i, 1);
-      state.currentCaptureP1 = getCaptureLabel(state.p1.body.length, state);
+      state.currentCaptureP1 = getCaptureLabel(state.p1.body.length);
       return;
     }
     if (samePos(state.p2.head, cb.pos)) {
@@ -947,7 +947,7 @@ function captureCoinbase(state: GameState): void {
       increaseBody(state.p2);
       if (!cb.reward) createNewCoinbase(state);
       state.coinbases.splice(i, 1);
-      state.currentCaptureP2 = getCaptureLabel(state.p2.body.length, state);
+      state.currentCaptureP2 = getCaptureLabel(state.p2.body.length);
       return;
     }
   }
@@ -1019,7 +1019,7 @@ function capturePercentByLength(length: number): number {
   return 32;
 }
 
-export function getCaptureLabel(length: number, _state?: GameState): string {
+export function getCaptureLabel(length: number): string {
   return `${capturePercentByLength(length)}%`;
 }
 

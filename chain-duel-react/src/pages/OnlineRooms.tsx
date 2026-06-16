@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
@@ -276,19 +276,24 @@ export default function OnlineRooms() {
     }
   };
 
-  const parseBuyin = () => {
+  const parseBuyin = useCallback(() => {
     const parsed = Number.parseInt(buyin, 10);
     if (!Number.isFinite(parsed)) return 100;
     return Math.max(BUYIN_MIN, Math.min(BUYIN_MAX, parsed));
-  };
+  }, [buyin]);
 
-  const updateBuyinBy = (delta: number) => {
-    const current = parseBuyin();
-    const next = Math.max(BUYIN_MIN, Math.min(BUYIN_MAX, current + delta));
-    setBuyin(String(next));
-  };
+  const updateBuyinBy = useCallback((delta: number) => {
+    setBuyin((currentStr) => {
+      const parsed = Number.parseInt(currentStr, 10);
+      const current = !Number.isFinite(parsed)
+        ? 100
+        : Math.max(BUYIN_MIN, Math.min(BUYIN_MAX, parsed));
+      const next = Math.max(BUYIN_MIN, Math.min(BUYIN_MAX, current + delta));
+      return String(next);
+    });
+  }, []);
 
-  const createRoom = () => {
+  const createRoom = useCallback(() => {
     setError('');
     setCreatingRoom(true);
     creatingRoomRef.current = true;
@@ -296,21 +301,27 @@ export default function OnlineRooms() {
     socket?.emit('createOnlineRoom', {
       buyin: parseBuyin(),
     });
-  };
+  }, [socket, parseBuyin]);
 
-  const activateRoom = (room: OnlineRoomListItem) => {
-    if (room.phase === 'playing') {
-      socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
-      navigate(onlineGameUrl(room.roomId));
-      return;
-    }
-    socket?.emit('joinOnlineRoom', { roomId: room.roomId });
-    navigate(onlineLobbyUrl(room.roomId));
-  };
+  const activateRoom = useCallback(
+    (room: OnlineRoomListItem) => {
+      if (room.phase === 'playing') {
+        socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
+        navigate(onlineGameUrl(room.roomId));
+        return;
+      }
+      socket?.emit('joinOnlineRoom', { roomId: room.roomId });
+      navigate(onlineLobbyUrl(room.roomId));
+    },
+    [socket, navigate]
+  );
 
-  const openHistoryPostGame = (roomId: string) => {
-    navigate(onlinePostGameUrl(roomId));
-  };
+  const openHistoryPostGame = useCallback(
+    (roomId: string) => {
+      navigate(onlinePostGameUrl(roomId));
+    },
+    [navigate]
+  );
 
   const openHistoryReplay = (roomId: string, matchRound?: number) => {
     navigate(onlineReplayUrl(roomId, matchRound));
@@ -649,6 +660,10 @@ export default function OnlineRooms() {
     socket,
     buyin,
     roomCode,
+    activateRoom,
+    createRoom,
+    openHistoryPostGame,
+    updateBuyinBy,
   ]);
 
   // Scroll selected room card into view when navigating with keyboard

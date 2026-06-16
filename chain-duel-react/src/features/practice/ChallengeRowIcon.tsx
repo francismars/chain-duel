@@ -9,6 +9,7 @@ export const CHALLENGE_ICON_IDS = [
 
 export type ChallengeIconId = (typeof CHALLENGE_ICON_IDS)[number];
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function isChallengeIconId(id: string): id is ChallengeIconId {
   return (CHALLENGE_ICON_IDS as readonly string[]).includes(id);
 }

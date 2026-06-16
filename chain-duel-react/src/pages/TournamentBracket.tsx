@@ -525,19 +525,19 @@ export default function TournamentBracket() {
     onPrizeWithdrawn: handlePrizeWithdrawn,
   });
 
-  function handleCancel() {
+  const handleCancel = useCallback(() => {
     // Legacy behavior: Cancel always opens the refund confirmation view first.
     // If there are 0 deposits, backend responds and navigates back to P2P entry.
     setPanelView('confirm-cancel');
     setFocusedBtn('left');
-  }
+  }, []);
 
   function handleBackToPayment() {
     setPanelView('payment');
     setFocusedBtn('left');
   }
 
-  function handleConfirmCancel() {
+  const handleConfirmCancel = useCallback(() => {
     const s = asSocketBoundary(socket);
     if (!s) return;
     // Legacy shows loading while waiting for rescanceltourn.
@@ -556,15 +556,15 @@ export default function TournamentBracket() {
     logger.debug('socket not connected, waiting connect for canceltournament');
     s.once?.('connect', emitCancel);
     s.connect?.();
-  }
+  }, [socket, logger]);
 
-  function handleStartTournament() {
+  const handleStartTournament = useCallback(() => {
     if (!canStart) return;
     // Legacy behavior: first move from payment panel to "UP NEXT".
     setPreStartReady(true);
-  }
+  }, [canStart]);
 
-  function handleStartNextGame() {
+  const handleStartNextGame = useCallback(() => {
     const names = Object.fromEntries(
       Object.entries(playersPaid).map(([k, v]) => [
         k,
@@ -578,7 +578,7 @@ export default function TournamentBracket() {
     );
     clearClientGameConfig();
     navigate('/game');
-  }
+  }, [playersPaid, isNostrTournament, navigate]);
 
   // Sync glowing animation with focused button (matches legacy animationDuration trick)
   useEffect(() => {
@@ -641,16 +641,18 @@ export default function TournamentBracket() {
           else if (focusedBtn === 'right') handleConfirmCancel();
         }
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [
       panelView,
       focusedBtn,
       canStart,
-      paidCount,
       tournamentPhase,
       navigate,
       preStartReady,
+      handleCancel,
+      handleConfirmCancel,
+      handleStartNextGame,
+      handleStartTournament,
     ]
   );
 

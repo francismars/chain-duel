@@ -51,7 +51,6 @@ export default function P2pEntry() {
   const [deposit, setDeposit] = useState(10000);
 
   const tournament = sessionKind === 'tournament';
-  const sessionNavIdx: 0 | 1 = sessionKind === 'duel' ? 0 : 1;
 
   const keyboardNavState = useMemo(
     () => ({ [CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM]: true }),
@@ -180,7 +179,7 @@ export default function P2pEntry() {
       e.preventDefault();
       const dir = isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right';
       setNavFocus((prev) => {
-        const next = moveNavFocus(prev, dir, tournament, sessionNavIdx);
+        const next = moveNavFocus(prev, dir, tournament);
         if (!navFocusEqual(prev, next)) {
           playSelect();
         }
@@ -196,7 +195,6 @@ export default function P2pEntry() {
     navigate,
     playSelect,
     playSfx,
-    sessionNavIdx,
     tournament,
   ]);
 

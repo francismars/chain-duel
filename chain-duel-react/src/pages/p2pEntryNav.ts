@@ -105,8 +105,7 @@ function playerIdxDownFromSession(sessionIdx: 0 | 1): 0 | 1 | 2 | 'buyin' {
 /** Footer: left = main menu, right = start; up leaves footer; down = no-op. */
 function moveFooterFocus(
   direction: 'up' | 'down' | 'left' | 'right',
-  tournament: boolean,
-  _sessionNavIdx: 0 | 1
+  tournament: boolean
 ): P2pNavFocus | null {
   const lastPill = BUYIN_STEP_COUNT - 1;
 
@@ -123,18 +122,16 @@ function moveFooterFocus(
 export function moveNavFocus(
   f: P2pNavFocus,
   direction: 'up' | 'down' | 'left' | 'right',
-  tournament: boolean,
-  sessionNavIdx: 0 | 1
+  tournament: boolean
 ): P2pNavFocus {
-  const next = moveNavFocusInner(f, direction, tournament, sessionNavIdx);
+  const next = moveNavFocusInner(f, direction, tournament);
   return next ?? f;
 }
 
 function moveNavFocusInner(
   f: P2pNavFocus,
   direction: 'up' | 'down' | 'left' | 'right',
-  tournament: boolean,
-  sessionNavIdx: 0 | 1
+  tournament: boolean
 ): P2pNavFocus | null {
   switch (f.kind) {
     case 'none': {
@@ -247,7 +244,7 @@ function moveNavFocusInner(
     }
     case 'start':
     case 'back':
-      return moveFooterFocus(direction, tournament, sessionNavIdx);
+      return moveFooterFocus(direction, tournament);
     default:
       return null;
   }
