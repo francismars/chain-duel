@@ -10,6 +10,7 @@ import type {
   PracticeChallengesPanelHandle,
   PracticeFreePlayPanelHandle,
 } from '@/features/practice/practicePanelHandles';
+import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import '@/components/ui/Button.css';
 import './practiceHub.css';
 import '@/styles/pages/p2p-entry.css';
@@ -121,7 +122,7 @@ export default function PracticeHub() {
         e.preventDefault();
         e.stopImmediatePropagation();
         playSfx(SFX.MENU_SELECT);
-        navigate('/');
+        navigateToMainMenu(navigate);
         return;
       }
 
@@ -473,7 +474,7 @@ export default function PracticeHub() {
             onFocus={() => enterFooter('back')}
             onClick={() => {
               playSfx(SFX.MENU_SELECT);
-              navigate('/');
+              navigateToMainMenu(navigate);
             }}
           >
             MAIN MENU

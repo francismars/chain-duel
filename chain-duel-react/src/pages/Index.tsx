@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -8,7 +8,12 @@ import { useAudio, SFX } from '@/contexts/AudioContext';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import '@/styles/pages/index.css';
-import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
+import {
+  CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
+  clearMenuNavigationState,
+  indexConfirmSuppressMs,
+  type MenuNavigationState,
+} from '@/shared/constants/menuNavigation';
 import { ONLINE_HOME } from '@/shared/constants/onlineRoutes';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
@@ -36,8 +41,10 @@ function menuStepUp(prev: MenuState): MenuState {
 
 export default function Index() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const confirmSuppressUntilRef = useRef(0);
   const { playSfx } = useAudio();
-  const [menu, setMenu] = useState<MenuState>(1);
+  const [menu, setMenu] = useState<MenuState>(2);
   const [hostName, setHostName] = useState<string>('@chainduel');
   const startLocalRef = useRef<HTMLButtonElement>(null);
   const startP2pRef = useRef<HTMLButtonElement>(null);
@@ -125,6 +132,18 @@ export default function Index() {
     []
   );
 
+  useEffect(() => {
+    const fromMainMenu = Boolean(
+      (location.state as MenuNavigationState | null)?.[CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM]
+    );
+    confirmSuppressUntilRef.current =
+      performance.now() + indexConfirmSuppressMs(fromMainMenu);
+    if (fromMainMenu) {
+      clearMenuNavigationState(navigate, location);
+    }
+    // pathname/search/hash only — clearing `state` must not shorten gamepad suppress.
+  }, [location.pathname, location.search, location.hash, navigate]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -135,6 +154,10 @@ export default function Index() {
 
       if (isConfirmKey) {
         if (event.repeat) {
+          event.preventDefault();
+          return;
+        }
+        if (performance.now() < confirmSuppressUntilRef.current) {
           event.preventDefault();
           return;
         }
@@ -224,7 +247,7 @@ export default function Index() {
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [navigate, playSfx, keyboardNavState, row6Focus]);
+  }, [location.pathname, location.search, location.hash, navigate, playSfx, keyboardNavState, row6Focus]);
 
   return (
     <div className="flex full flex-center index-page">

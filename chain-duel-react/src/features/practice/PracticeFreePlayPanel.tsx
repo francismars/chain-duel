@@ -22,6 +22,7 @@ import {
   normalizePracticeNavFocus,
   type PracticeNavFocus,
 } from '@/pages/practiceHubNav';
+import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import type { PracticeFreePlayPanelHandle } from '@/features/practice/practicePanelHandles';
 import { GameModifiersSection } from '@/components/paidEntry/GameModifiersSection';
 import { savePracticeGameConfig } from '@/pages/practiceHubModes';
@@ -233,7 +234,7 @@ export const PracticeFreePlayPanel = forwardRef<
       if (e.key === 'Escape') {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
-        navigate('/');
+        navigateToMainMenu(navigate);
         return;
       }
       const isUp       = e.key === 'ArrowUp'    || e.key === 'w' || e.key === 'W';

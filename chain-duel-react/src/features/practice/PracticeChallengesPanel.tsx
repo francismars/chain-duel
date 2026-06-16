@@ -11,6 +11,7 @@ import { createPortal } from 'react-dom';
 import type { RefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAudio, SFX } from '@/contexts/AudioContext';
+import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import type { PracticeChallengesPanelHandle } from '@/features/practice/practicePanelHandles';
 import type { AiTier } from '@/game/engine/types';
 import {
@@ -381,6 +382,8 @@ export const PracticeChallengesPanel = forwardRef<
     eligibility && showSetupGate ? countGateEligibilityChecks(eligibility.checks) : null;
   const gateCopy = getGateCopy({ signedIn: nostrSession.signedIn, payoutReady });
   const showSignInGate = !nostrSession.signedIn && !payoutReady;
+  /** Gate has a focusable button (sign-in / config); absent when payout-ready (status text only). */
+  const hasGateActionButton = showSignInGate || showSetupGate;
   const showBountyViolator = !nostrSession.signedIn || showSetupGate;
   const setupViolatorPrompt = useMemo((): [string, string] => {
     if (eligibilityLoading) return ['Checking', 'validation'];
@@ -398,10 +401,17 @@ export const PracticeChallengesPanel = forwardRef<
   }, [checkFocusIdx, panelKeyboardFocus, checksRowFocused]);
 
   useEffect(() => {
-    if (panelKeyboardFocus) return;
-    setGateActionFocused(false);
-    setChecksRowFocused(false);
-  }, [panelKeyboardFocus]);
+    if (panelKeyboardFocus) {
+      if (document.activeElement === gateActionRef.current) {
+        setGateActionFocused(true);
+      }
+      return;
+    }
+    if (!isActive || menuZone !== 'panel') {
+      setGateActionFocused(false);
+      setChecksRowFocused(false);
+    }
+  }, [panelKeyboardFocus, isActive, menuZone]);
 
   useEffect(() => {
     if (!isActive) {
@@ -480,6 +490,12 @@ export const PracticeChallengesPanel = forwardRef<
     lastCheckFocusIdxRef.current = idx;
     setGateActionFocused(false);
     checkRefs.current[idx]?.focus({ preventScroll: true });
+  }, []);
+
+  const focusGateAction = useCallback(() => {
+    setChecksRowFocused(false);
+    setGateActionFocused(true);
+    gateActionRef.current?.focus({ preventScroll: true });
   }, []);
 
   const handleCheckPointerDown = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
@@ -759,15 +775,31 @@ export const PracticeChallengesPanel = forwardRef<
     navigate('/game');
   }, [selected, playSfx, navigate, socket, nostrProfilePic, nostrSession.pubkey, nostrSession.displayName]);
 
-  const focusDefault = useCallback(() => {
-    gateActionRef.current?.focus({ preventScroll: true });
-  }, []);
-
   const focusChallengeFromGate = useCallback(() => {
     const idx = hasPickedChallengeRef.current ? selected : 0;
     setSelected(idx);
     rowRefs.current[idx]?.focus({ preventScroll: true });
   }, [selected]);
+
+  const focusDefault = useCallback(() => {
+    if (hasGateActionButton) {
+      focusGateAction();
+    } else {
+      focusChallengeFromGate();
+    }
+  }, [focusChallengeFromGate, focusGateAction, hasGateActionButton]);
+
+  const lastMenuZoneRef = useRef(menuZone);
+  useEffect(() => {
+    const prev = lastMenuZoneRef.current;
+    lastMenuZoneRef.current = menuZone;
+    if (!isActive || activeCheckOverlay) return;
+    if (prev !== 'panel' && menuZone === 'panel') {
+      window.requestAnimationFrame(() => {
+        focusDefault();
+      });
+    }
+  }, [activeCheckOverlay, focusDefault, isActive, menuZone]);
 
   const focusBeforeFooter = useCallback(() => {
     const lastIdx = CHALLENGES.length - 1;
@@ -881,7 +913,7 @@ export const PracticeChallengesPanel = forwardRef<
         }
         if (onCheck) {
           playSfx(SFX.MENU_SELECT);
-          gateActionRef.current?.focus({ preventScroll: true });
+          focusGateAction();
           return;
         }
         if (onStart) {
@@ -901,8 +933,10 @@ export const PracticeChallengesPanel = forwardRef<
           playSfx(SFX.MENU_SELECT);
           if (hasSetupChecks) {
             focusCheckAt(Math.min(lastCheckFocusIdxRef.current, eligibilityChecks.length - 1));
+          } else if (hasGateActionButton) {
+            focusGateAction();
           } else {
-            gateActionRef.current?.focus({ preventScroll: true });
+            onExitToPlayStyle?.();
           }
           return;
         }
@@ -934,7 +968,7 @@ export const PracticeChallengesPanel = forwardRef<
           setChecksRowFocused(true);
           if (focusedCheckIndex === 0) {
             setChecksRowFocused(false);
-            gateActionRef.current?.focus({ preventScroll: true });
+            focusGateAction();
             return;
           }
           const next = focusedCheckIndex - 1;
@@ -973,7 +1007,7 @@ export const PracticeChallengesPanel = forwardRef<
           const lastIdx = eligibilityChecks.length - 1;
           if (focusedCheckIndex >= lastIdx) {
             setChecksRowFocused(false);
-            gateActionRef.current?.focus({ preventScroll: true });
+            focusGateAction();
             return;
           }
           setChecksRowFocused(true);
@@ -1012,7 +1046,7 @@ export const PracticeChallengesPanel = forwardRef<
         }
         if (onBack) {
           playSfx(SFX.MENU_CONFIRM);
-          navigate('/');
+          navigateToMainMenu(navigate);
           return;
         }
         if (onStart) {
@@ -1032,6 +1066,7 @@ export const PracticeChallengesPanel = forwardRef<
     focusBeforeFooter,
     focusChallengeFromGate,
     focusCheckAt,
+    focusGateAction,
     isActive,
     menuZone,
     onEnterFooter,
@@ -1041,6 +1076,7 @@ export const PracticeChallengesPanel = forwardRef<
     launchChallenge,
     footerBackRef,
     footerStartRef,
+    hasGateActionButton,
     showSetupGate,
   ]);
 

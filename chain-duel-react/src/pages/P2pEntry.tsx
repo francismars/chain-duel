@@ -9,7 +9,7 @@ import {
 import { GameModifiersSection } from '@/components/paidEntry/GameModifiersSection';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useAudio, SFX } from '@/contexts/AudioContext';
-import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM } from '@/shared/constants/menuNavigation';
+import { CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM, navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import {
   advanceFlatNav,
   isBracketNavFocus,
@@ -31,7 +31,7 @@ export default function P2pEntry() {
   const { playSfx } = useAudio();
   useGamepad(true);
 
-  const [navFocus, setNavFocus] = useState<P2pNavFocus>({ kind: 'none' });
+  const [navFocus, setNavFocus] = useState<P2pNavFocus>({ kind: 'payment', idx: 0 });
   const paymentRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const sessionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const duelFormatRef = useRef<HTMLButtonElement | null>(null);
@@ -110,7 +110,7 @@ export default function P2pEntry() {
           break;
         case 'back':
           playSfx(SFX.MENU_SELECT);
-          navigate('/');
+          navigateToMainMenu(navigate);
           break;
         default:
           break;
@@ -124,7 +124,7 @@ export default function P2pEntry() {
       if (e.key === 'Escape') {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
-        navigate('/');
+        navigateToMainMenu(navigate);
         return;
       }
 
@@ -168,7 +168,7 @@ export default function P2pEntry() {
         return;
       }
 
-      if (navFocus.kind === 'none' && (isUp || isDown)) {
+      if (navFocus.kind === 'none' && isUp) {
         return;
       }
 
@@ -455,7 +455,7 @@ export default function P2pEntry() {
             onClick={() => {
               setNavFocus({ kind: 'back' });
               playSfx(SFX.MENU_SELECT);
-              navigate('/');
+              navigateToMainMenu(navigate);
             }}
           >
             MAIN MENU

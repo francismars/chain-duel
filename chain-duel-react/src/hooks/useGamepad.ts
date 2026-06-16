@@ -1,51 +1,330 @@
 import { useEffect, useRef } from 'react';
 import { CHAIN_DUEL_LNURL_COMPAT_QR_EVENT } from '@/shared/constants/events';
 
+export type GamepadInputMode = 'menu' | 'game';
+
 export type UseGamepadOptions = {
   /**
+   * `game` — fire keydown every poll while held (snake turn buffering).
+   * `menu` — one step per press; hold repeats at legacy menu rate (~10 Hz).
+   */
+  inputMode?: GamepadInputMode;
+  /**
    * P2P game menu: while held, show scanner-friendly LNURL QR (see `useLnurlCompatibleQrHold`).
-   * One pad: LB = P1, RB = P2. Two pads: each pad’s LB = that player.
+   * One pad: LB = P1, RB = P2. Two pads: each pad's LB = that player.
    */
   lnurlCompatScan?: boolean;
 };
 
+const JOYSTICK_DEADZONE = 0.6;
+const ARCADE_CENTER_X = 0.003921627998352051;
+const ARCADE_CENTER_Y = -0.003921568393707275;
+/** Legacy menus polled gamepads at 10 Hz; delay before hold-repeat kicks in. */
+const MENU_REPEAT_DELAY_MS = 350;
+const MENU_REPEAT_INTERVAL_MS = 100;
+
+function dispatchKey(type: 'keydown' | 'keyup', init: { key?: string; code?: string }) {
+  window.dispatchEvent(new KeyboardEvent(type, { ...init, bubbles: true }));
+}
+
+/** Per-key press / hold-repeat (menu mode only). */
+class KeyRepeater {
+  private held = false;
+  private heldSince = 0;
+  private lastFire = 0;
+
+  tick(down: boolean, now: number, fire: () => void): void {
+    if (!down) {
+      this.held = false;
+      return;
+    }
+    if (!this.held) {
+      this.held = true;
+      this.heldSince = now;
+      this.lastFire = now;
+      fire();
+      return;
+    }
+    if (now - this.heldSince < MENU_REPEAT_DELAY_MS) return;
+    if (now - this.lastFire >= MENU_REPEAT_INTERVAL_MS) {
+      this.lastFire = now;
+      fire();
+    }
+  }
+}
+
+type PlayerKeys = { up: string; down: string; left: string; right: string };
+
+type PadPollState = {
+  up: KeyRepeater;
+  down: KeyRepeater;
+  left: KeyRepeater;
+  right: KeyRepeater;
+  face: KeyRepeater;
+  axis9: number | undefined;
+};
+
+function createPadPollState(): PadPollState {
+  return {
+    up: new KeyRepeater(),
+    down: new KeyRepeater(),
+    left: new KeyRepeater(),
+    right: new KeyRepeater(),
+    face: new KeyRepeater(),
+    axis9: undefined,
+  };
+}
+
+function fireDirection(
+  mode: GamepadInputMode,
+  state: PadPollState,
+  now: number,
+  which: 'up' | 'down' | 'left' | 'right',
+  down: boolean,
+  key: string
+) {
+  if (mode === 'game') {
+    if (down) dispatchKey('keydown', { key });
+    return;
+  }
+  state[which].tick(down, now, () => dispatchKey('keydown', { key }));
+}
+
+function fireFace(mode: GamepadInputMode, state: PadPollState, now: number, down: boolean, key: string) {
+  if (mode === 'game') {
+    if (down) dispatchKey('keydown', { key });
+    return;
+  }
+  state.face.tick(down, now, () => dispatchKey('keydown', { key }));
+}
+
+function pollArcadeAxis9(
+  mode: GamepadInputMode,
+  state: PadPollState,
+  now: number,
+  axis9: number | undefined,
+  keys: PlayerKeys
+) {
+  if (axis9 === undefined) {
+    state.axis9 = undefined;
+    return;
+  }
+
+  const fireKeys = (mapping: Array<keyof PlayerKeys>) => {
+    for (const dir of mapping) {
+      fireDirection(mode, state, now, dir, true, keys[dir]);
+    }
+  };
+
+  if (mode === 'game') {
+    switch (axis9) {
+      case -1:
+        dispatchKey('keydown', { key: keys.up });
+        break;
+      case 1:
+        dispatchKey('keydown', { key: keys.up });
+        dispatchKey('keydown', { key: keys.left });
+        break;
+      case 0.14285719394683838:
+        dispatchKey('keydown', { key: keys.down });
+        break;
+      case -0.1428571343421936:
+        dispatchKey('keydown', { key: keys.down });
+        dispatchKey('keydown', { key: keys.right });
+        break;
+      case 0.7142857313156128:
+        dispatchKey('keydown', { key: keys.left });
+        break;
+      case -0.7142857313156128:
+        dispatchKey('keydown', { key: keys.up });
+        dispatchKey('keydown', { key: keys.right });
+        break;
+      case -0.4285714030265808:
+        dispatchKey('keydown', { key: keys.right });
+        break;
+      case 0.4285714626312256:
+        dispatchKey('keydown', { key: keys.down });
+        dispatchKey('keydown', { key: keys.left });
+        break;
+      default:
+        break;
+    }
+    return;
+  }
+
+  if (state.axis9 !== axis9) {
+    state.axis9 = axis9;
+    switch (axis9) {
+      case -1:
+        fireKeys(['up']);
+        break;
+      case 1:
+        fireKeys(['up', 'left']);
+        break;
+      case 0.14285719394683838:
+        fireKeys(['down']);
+        break;
+      case -0.1428571343421936:
+        fireKeys(['down', 'right']);
+        break;
+      case 0.7142857313156128:
+        fireKeys(['left']);
+        break;
+      case -0.7142857313156128:
+        fireKeys(['up', 'right']);
+        break;
+      case -0.4285714030265808:
+        fireKeys(['right']);
+        break;
+      case 0.4285714626312256:
+        fireKeys(['down', 'left']);
+        break;
+      default:
+        break;
+    }
+    return;
+  }
+
+  switch (axis9) {
+    case -1:
+      fireDirection(mode, state, now, 'up', true, keys.up);
+      break;
+    case 1:
+      fireDirection(mode, state, now, 'up', true, keys.up);
+      fireDirection(mode, state, now, 'left', true, keys.left);
+      break;
+    case 0.14285719394683838:
+      fireDirection(mode, state, now, 'down', true, keys.down);
+      break;
+    case -0.1428571343421936:
+      fireDirection(mode, state, now, 'down', true, keys.down);
+      fireDirection(mode, state, now, 'right', true, keys.right);
+      break;
+    case 0.7142857313156128:
+      fireDirection(mode, state, now, 'left', true, keys.left);
+      break;
+    case -0.7142857313156128:
+      fireDirection(mode, state, now, 'up', true, keys.up);
+      fireDirection(mode, state, now, 'right', true, keys.right);
+      break;
+    case -0.4285714030265808:
+      fireDirection(mode, state, now, 'right', true, keys.right);
+      break;
+    case 0.4285714626312256:
+      fireDirection(mode, state, now, 'down', true, keys.down);
+      fireDirection(mode, state, now, 'left', true, keys.left);
+      break;
+    default:
+      break;
+  }
+}
+
+function pollPlayerPad(
+  pad: Gamepad,
+  mode: GamepadInputMode,
+  state: PadPollState,
+  now: number,
+  keys: PlayerKeys,
+  faceKey: string,
+  controlCode: 'ControlLeft' | 'ControlRight'
+) {
+  const faceDown =
+    !!pad.buttons[0]?.pressed ||
+    !!pad.buttons[1]?.pressed ||
+    !!pad.buttons[2]?.pressed ||
+    !!pad.buttons[3]?.pressed;
+  fireFace(mode, state, now, faceDown, faceKey);
+
+  const upDown = !!pad.buttons[12]?.pressed || pad.axes[1] < -JOYSTICK_DEADZONE;
+  const downDown = !!pad.buttons[13]?.pressed || pad.axes[1] > JOYSTICK_DEADZONE;
+  const leftDown = !!pad.buttons[14]?.pressed || pad.axes[0] < -JOYSTICK_DEADZONE;
+  const rightDown = !!pad.buttons[15]?.pressed || pad.axes[0] > JOYSTICK_DEADZONE;
+
+  fireDirection(mode, state, now, 'up', upDown, keys.up);
+  fireDirection(mode, state, now, 'down', downDown, keys.down);
+  fireDirection(mode, state, now, 'left', leftDown, keys.left);
+  fireDirection(mode, state, now, 'right', rightDown, keys.right);
+
+  if (mode === 'game') {
+    if (pad.buttons[12] && pad.buttons[13] && pad.buttons[14] && pad.buttons[15]) {
+      if (
+        !pad.buttons[12].pressed &&
+        !pad.buttons[13].pressed &&
+        !pad.buttons[14].pressed &&
+        !pad.buttons[15].pressed
+      ) {
+        dispatchKey('keyup', { key: keys.up });
+      }
+    }
+    if (pad.axes[0] === ARCADE_CENTER_X && pad.axes[1] === ARCADE_CENTER_Y) {
+      dispatchKey('keyup', { key: keys.up });
+    }
+  } else if (!upDown && !downDown && !leftDown && !rightDown) {
+    state.up.tick(false, now, () => {});
+    state.down.tick(false, now, () => {});
+    state.left.tick(false, now, () => {});
+    state.right.tick(false, now, () => {});
+    state.axis9 = undefined;
+  }
+
+  pollArcadeAxis9(mode, state, now, pad.axes[9], keys);
+
+  if (pad.buttons[6]?.pressed || pad.buttons[7]?.pressed) {
+    dispatchKey('keydown', { code: controlCode });
+  } else {
+    dispatchKey('keyup', { code: controlCode });
+  }
+}
+
+type PollSessionState = {
+  p1: PadPollState;
+  p2: PadPollState;
+};
+
+function createPollSessionState(): PollSessionState {
+  return { p1: createPadPollState(), p2: createPadPollState() };
+}
+
 /**
- * Hook for gamepad support
- * Polls gamepad state and dispatches keyboard events (matching legacy behavior)
+ * Poll gamepads and dispatch keyboard events.
+ * Use `inputMode: 'game'` during snake gameplay; default `menu` for navigation pages.
+ */
+export function pollGamepads(mode: GamepadInputMode = 'menu', session = createPollSessionState()) {
+  const now = performance.now();
+  const gamepads = navigator.getGamepads();
+  const pad1 = gamepads[0];
+  const pad2 = gamepads[1];
+
+  if (pad1) {
+    pollPlayerPad(pad1, mode, session.p1, now, { up: 'w', down: 's', left: 'a', right: 'd' }, ' ', 'ControlLeft');
+  }
+  if (pad2) {
+    pollPlayerPad(
+      pad2,
+      mode,
+      session.p2,
+      now,
+      { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' },
+      'Enter',
+      'ControlRight'
+    );
+  }
+}
+
+/**
+ * Hook for gamepad support.
+ * Polls on requestAnimationFrame (game) or the same loop with menu-friendly repeat rules.
  */
 export function useGamepad(enabled: boolean = true, options?: UseGamepadOptions) {
   const optsRef = useRef(options);
   optsRef.current = options;
+  const sessionRef = useRef<PollSessionState>(createPollSessionState());
 
   useEffect(() => {
     if (!enabled) return;
 
-    let gamepad1: Gamepad | null = null;
-    let gamepad2: Gamepad | null = null;
-    let l1l2Pressed = false; // L1/L2 (buttons 6, 7) for expand QR – gamepad 1
-    let l1l2PressedP2 = false; // gamepad 2
-    let p1FacePressed = false;
-    let p1UpPressed = false;
-    let p1DownPressed = false;
-    let p1LeftPressed = false;
-    let p1RightPressed = false;
-    let p2FacePressed = false;
-    let p2UpPressed = false;
-    let p2DownPressed = false;
-    let p2LeftPressed = false;
-    let p2RightPressed = false;
-
-    const dispatchKeyDown = (key: string) => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-    };
-
-    const dispatchKeyUp = (key: string) => {
-      window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
-    };
-
-    const dispatchKeyByCode = (type: 'keydown' | 'keyup', code: string) => {
-      window.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true }));
-    };
+    let compatP1Pad = false;
+    let compatP2Pad = false;
 
     const dispatchLnurlCompat = (player: 1 | 2, pressed: boolean) => {
       window.dispatchEvent(
@@ -55,162 +334,13 @@ export function useGamepad(enabled: boolean = true, options?: UseGamepadOptions)
       );
     };
 
-    let compatP1Pad = false;
-    let compatP2Pad = false;
-
-    const pollGamepads = () => {
-      const gamepads = navigator.getGamepads();
-      if (gamepad1 === null && gamepads[0]) {
-        gamepad1 = gamepads[0];
-      }
-      if (gamepad2 === null && gamepads[1]) {
-        gamepad2 = gamepads[1];
-      }
-
-      gamepad1 = gamepads[0] || null;
-      gamepad2 = gamepads[1] || null;
-
-      if (gamepad1) {
-        // L1/L2 (bumpers) – expand QR code for Player 1 (ControlLeft), matching legacy
-        const expandP1 = gamepad1.buttons[6]?.pressed || gamepad1.buttons[7]?.pressed;
-        if (expandP1 && !l1l2Pressed) {
-          dispatchKeyByCode('keydown', 'ControlLeft');
-          l1l2Pressed = true;
-        } else if (!expandP1 && l1l2Pressed) {
-          dispatchKeyByCode('keyup', 'ControlLeft');
-          l1l2Pressed = false;
-        }
-
-        // Face buttons (A, B, X, Y) - dispatch Space only on press edge.
-        const nextP1FacePressed =
-          gamepad1.buttons[0]?.pressed ||
-          gamepad1.buttons[1]?.pressed ||
-          gamepad1.buttons[2]?.pressed ||
-          gamepad1.buttons[3]?.pressed;
-        if (nextP1FacePressed && !p1FacePressed) {
-          dispatchKeyDown(' ');
-        }
-        p1FacePressed = nextP1FacePressed;
-
-        // D-pad + joystick directions, edge-triggered to avoid event spam.
-        const nextP1UpPressed = gamepad1.buttons[12]?.pressed || gamepad1.axes[1] < -0.6;
-        if (nextP1UpPressed && !p1UpPressed) {
-          dispatchKeyDown('w');
-        } else if (!nextP1UpPressed && p1UpPressed) {
-          dispatchKeyUp('w');
-        }
-        p1UpPressed = nextP1UpPressed;
-
-        const nextP1DownPressed = gamepad1.buttons[13]?.pressed || gamepad1.axes[1] > 0.6;
-        if (nextP1DownPressed && !p1DownPressed) {
-          dispatchKeyDown('s');
-        } else if (!nextP1DownPressed && p1DownPressed) {
-          dispatchKeyUp('s');
-        }
-        p1DownPressed = nextP1DownPressed;
-
-        const nextP1LeftPressed = gamepad1.buttons[14]?.pressed || gamepad1.axes[0] < -0.6;
-        if (nextP1LeftPressed && !p1LeftPressed) {
-          dispatchKeyDown('a');
-        } else if (!nextP1LeftPressed && p1LeftPressed) {
-          dispatchKeyUp('a');
-        }
-        p1LeftPressed = nextP1LeftPressed;
-
-        const nextP1RightPressed = gamepad1.buttons[15]?.pressed || gamepad1.axes[0] > 0.6;
-        if (nextP1RightPressed && !p1RightPressed) {
-          dispatchKeyDown('d');
-        } else if (!nextP1RightPressed && p1RightPressed) {
-          dispatchKeyUp('d');
-        }
-        p1RightPressed = nextP1RightPressed;
-      } else {
-        if (l1l2Pressed) {
-          dispatchKeyByCode('keyup', 'ControlLeft');
-          l1l2Pressed = false;
-        }
-        if (p1UpPressed) dispatchKeyUp('w');
-        if (p1DownPressed) dispatchKeyUp('s');
-        if (p1LeftPressed) dispatchKeyUp('a');
-        if (p1RightPressed) dispatchKeyUp('d');
-        p1FacePressed = false;
-        p1UpPressed = false;
-        p1DownPressed = false;
-        p1LeftPressed = false;
-        p1RightPressed = false;
-      }
-
-      if (gamepad2) {
-        const nextP2FacePressed =
-          gamepad2.buttons[0]?.pressed ||
-          gamepad2.buttons[1]?.pressed ||
-          gamepad2.buttons[2]?.pressed ||
-          gamepad2.buttons[3]?.pressed;
-        if (nextP2FacePressed && !p2FacePressed) {
-          dispatchKeyDown('Enter');
-        }
-        p2FacePressed = nextP2FacePressed;
-
-        const nextP2UpPressed = gamepad2.buttons[12]?.pressed || gamepad2.axes[1] < -0.6;
-        if (nextP2UpPressed && !p2UpPressed) {
-          dispatchKeyDown('ArrowUp');
-        } else if (!nextP2UpPressed && p2UpPressed) {
-          dispatchKeyUp('ArrowUp');
-        }
-        p2UpPressed = nextP2UpPressed;
-
-        const nextP2DownPressed = gamepad2.buttons[13]?.pressed || gamepad2.axes[1] > 0.6;
-        if (nextP2DownPressed && !p2DownPressed) {
-          dispatchKeyDown('ArrowDown');
-        } else if (!nextP2DownPressed && p2DownPressed) {
-          dispatchKeyUp('ArrowDown');
-        }
-        p2DownPressed = nextP2DownPressed;
-
-        const nextP2LeftPressed = gamepad2.buttons[14]?.pressed || gamepad2.axes[0] < -0.6;
-        if (nextP2LeftPressed && !p2LeftPressed) {
-          dispatchKeyDown('ArrowLeft');
-        } else if (!nextP2LeftPressed && p2LeftPressed) {
-          dispatchKeyUp('ArrowLeft');
-        }
-        p2LeftPressed = nextP2LeftPressed;
-
-        const nextP2RightPressed = gamepad2.buttons[15]?.pressed || gamepad2.axes[0] > 0.6;
-        if (nextP2RightPressed && !p2RightPressed) {
-          dispatchKeyDown('ArrowRight');
-        } else if (!nextP2RightPressed && p2RightPressed) {
-          dispatchKeyUp('ArrowRight');
-        }
-        p2RightPressed = nextP2RightPressed;
-      } else {
-        if (p2UpPressed) dispatchKeyUp('ArrowUp');
-        if (p2DownPressed) dispatchKeyUp('ArrowDown');
-        if (p2LeftPressed) dispatchKeyUp('ArrowLeft');
-        if (p2RightPressed) dispatchKeyUp('ArrowRight');
-        p2FacePressed = false;
-        p2UpPressed = false;
-        p2DownPressed = false;
-        p2LeftPressed = false;
-        p2RightPressed = false;
-      }
-
-      // Gamepad 2 – expand QR for Player 2 (ControlRight), matching legacy
-      if (gamepad2?.buttons[6] !== undefined && gamepad2?.buttons[7] !== undefined) {
-        const expandP2 = gamepad2.buttons[6].pressed || gamepad2.buttons[7].pressed;
-        if (expandP2 && !l1l2PressedP2) {
-          dispatchKeyByCode('keydown', 'ControlRight');
-          l1l2PressedP2 = true;
-        } else if (!expandP2 && l1l2PressedP2) {
-          dispatchKeyByCode('keyup', 'ControlRight');
-          l1l2PressedP2 = false;
-        }
-      } else if (l1l2PressedP2) {
-        dispatchKeyByCode('keyup', 'ControlRight');
-        l1l2PressedP2 = false;
-      }
+    const tick = () => {
+      const mode = optsRef.current?.inputMode ?? 'menu';
+      pollGamepads(mode, sessionRef.current);
 
       const compatEnabled = optsRef.current?.lnurlCompatScan === true;
       if (compatEnabled) {
+        const gamepads = navigator.getGamepads();
         const g1 = gamepads[0] || null;
         const g2 = gamepads[1] || null;
         let p1Want = false;
@@ -242,27 +372,15 @@ export function useGamepad(enabled: boolean = true, options?: UseGamepadOptions)
           compatP2Pad = false;
         }
       }
+
+      rafId = window.requestAnimationFrame(tick);
     };
 
-    const pollMs = () => {
-      const pads = navigator.getGamepads();
-      for (let i = 0; i < pads.length; i += 1) {
-        if (pads[i]) return 1000 / 60;
-      }
-      return 250;
-    };
-
-    let intervalId = window.setInterval(pollGamepads, pollMs());
-
-    const retunePoll = window.setInterval(() => {
-      const next = pollMs();
-      window.clearInterval(intervalId);
-      intervalId = window.setInterval(pollGamepads, next);
-    }, 2000);
+    let rafId = window.requestAnimationFrame(tick);
 
     return () => {
-      window.clearInterval(intervalId);
-      window.clearInterval(retunePoll);
+      window.cancelAnimationFrame(rafId);
+      sessionRef.current = createPollSessionState();
       dispatchLnurlCompat(1, false);
       dispatchLnurlCompat(2, false);
     };

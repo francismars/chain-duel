@@ -140,10 +140,11 @@ function moveNavFocusInner(
     case 'none': {
       if (direction === 'left') return { kind: 'payment', idx: 0 };
       if (direction === 'right') return { kind: 'payment', idx: 1 };
+      if (direction === 'down') return { kind: 'payment', idx: 0 };
       return null;
     }
     case 'payment': {
-      if (direction === 'up') return { kind: 'none' };
+      if (direction === 'up') return null;
       if (direction === 'down') {
         return { kind: 'session', idx: clampCol(f.idx, 2) as 0 | 1 };
       }

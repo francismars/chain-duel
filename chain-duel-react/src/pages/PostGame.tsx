@@ -12,7 +12,7 @@ import {
   DESIGNER_FEE_RATIO,
   PAYOUT_POOL_RATIO,
 } from '@/shared/constants/payment';
-import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
+import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';
 import { createLogger } from '@/shared/utils/logger';
@@ -231,7 +231,7 @@ export default function PostGame() {
 
     const onCreateWithdrawal = (data: string) => {
       if (data === 'pass') {
-        navigate('/');
+        navigateToMainMenu(navigate);
       } else {
         setLnurlw(data);
         setQrValue(data);
@@ -281,11 +281,7 @@ export default function PostGame() {
   const qrHref = lnurlw ? `lightning:${lnurlw}` : undefined;
 
   const onMainMenu = () => {
-    if (menu === 3) {
-      navigate('/');
-      return;
-    }
-    navigate('/');
+    navigateToMainMenu(navigate);
   };
 
   useEffect(() => {
@@ -311,7 +307,7 @@ export default function PostGame() {
           onClaim();
         } else if (menu === 3) {
           if (activeButtonMenu3 === 0) navigate('/highscores');
-          else navigate('/');
+          else navigateToMainMenu(navigate);
         }
       }
     };

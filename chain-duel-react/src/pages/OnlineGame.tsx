@@ -120,7 +120,7 @@ export default function OnlineGame() {
   const replayViewRef = useRef(replayMode);
   replayViewRef.current = replayMode;
 
-  useGamepad(true);
+  useGamepad(true, { inputMode: 'game' });
 
   useEffect(() => {
     stop();

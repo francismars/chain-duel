@@ -89,7 +89,7 @@ export default function Game() {
   const { socket, connected } = useSocket();
   const nostrSession = useNostrSession();
   const { stop, isMuted, isMusicMuted } = useAudio();
-  useGamepad(true);
+  useGamepad(true, { inputMode: 'game' });
 
   const stateRef = useRef<GameState | null>(null);
   const rendererRef = useRef<PixiGameRenderer | null>(null);

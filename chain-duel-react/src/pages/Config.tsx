@@ -12,6 +12,7 @@ import {
 import { fetchProfileFromServer } from '@/lib/nostr/fetchProfileFromServer';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { useSocket } from '@/hooks/useSocket';
+import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import type { AppNostrProfile } from '@/types/schemas';
 import {
   beginNostrConnectPairing,
@@ -993,7 +994,13 @@ export default function Config() {
         <Button
           id="backButton"
           ref={backButtonRef}
-          onClick={() => navigate(returnTo ?? '/')}
+          onClick={() => {
+            if (!returnTo || returnTo === '/') {
+              navigateToMainMenu(navigate);
+            } else {
+              navigate(returnTo);
+            }
+          }}
         >
           Main Menu
         </Button>

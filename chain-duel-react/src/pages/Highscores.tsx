@@ -7,6 +7,7 @@ import './highscores.css';
 import {
   CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
   clearMenuNavigationState,
+  navigateToMainMenu,
   type MenuNavigationState,
 } from '@/shared/constants/menuNavigation';
 
@@ -98,7 +99,7 @@ export default function Highscores() {
         }
         event.preventDefault();
         if (buttonSelected === 'mainMenuButton') {
-          navigate('/');
+          navigateToMainMenu(navigate);
         }
         if (buttonSelected === 'nextButton') {
           setPageHS((prev) => (prev + 1) % 3);
@@ -248,7 +249,7 @@ export default function Highscores() {
                 Next
               </Button>
             </div>
-            <Button ref={mainMenuButtonRef} id="mainmenubutton" onClick={() => navigate('/')}>
+            <Button ref={mainMenuButtonRef} id="mainmenubutton" onClick={() => navigateToMainMenu(navigate)}>
               MAIN MENU
             </Button>
           </div>

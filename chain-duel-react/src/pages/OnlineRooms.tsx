@@ -12,6 +12,7 @@ import {
   onlinePostGameUrl,
   onlineReplayUrl,
 } from '@/shared/constants/onlineRoutes';
+import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import { OnlineRoomListItem, PlayerRole } from '@/types/socket';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlineRooms.css';
@@ -572,7 +573,7 @@ export default function OnlineRooms() {
           }
           return;
         }
-        if (navFocus.type === 'back') { sessionStorage.removeItem('onlineRoomsTab'); navigate('/'); }
+        if (navFocus.type === 'back') { sessionStorage.removeItem('onlineRoomsTab'); navigateToMainMenu(navigate); }
       }
     };
 
@@ -991,7 +992,7 @@ export default function OnlineRooms() {
           <Button
             ref={backBtnRef}
             className="online-back"
-            onClick={() => { sessionStorage.removeItem('onlineRoomsTab'); navigate('/'); }}
+            onClick={() => { sessionStorage.removeItem('onlineRoomsTab'); navigateToMainMenu(navigate); }}
           >
             MAIN MENU
           </Button>

@@ -19,18 +19,23 @@ describe('moveNavFocus none state', () => {
     });
   });
 
-  it('ignores vertical press while unselected', () => {
-    expect(moveNavFocus({ kind: 'none' }, 'up', tournament, sessionNavIdx)).toEqual({
-      kind: 'none',
-    });
+  it('enters on down from unselected (gamepad joystick)', () => {
     expect(moveNavFocus({ kind: 'none' }, 'down', tournament, sessionNavIdx)).toEqual({
+      kind: 'payment',
+      idx: 0,
+    });
+  });
+
+  it('ignores up while unselected', () => {
+    expect(moveNavFocus({ kind: 'none' }, 'up', tournament, sessionNavIdx)).toEqual({
       kind: 'none',
     });
   });
 
-  it('clears selection when moving up from the top row', () => {
+  it('stays on payment when moving up from the top row', () => {
     expect(moveNavFocus({ kind: 'payment', idx: 0 }, 'up', tournament, sessionNavIdx)).toEqual({
-      kind: 'none',
+      kind: 'payment',
+      idx: 0,
     });
   });
 });

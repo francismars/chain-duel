@@ -7,6 +7,7 @@ import './about.css';
 import {
   CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
   clearMenuNavigationState,
+  navigateToMainMenu,
   type MenuNavigationState,
 } from '@/shared/constants/menuNavigation';
 
@@ -68,7 +69,7 @@ export default function About() {
         }
         event.preventDefault();
         if (buttonSelected === 'mainMenuButton') {
-          navigate('/');
+          navigateToMainMenu(navigate);
         }
         if (buttonSelected === 'nextButton') {
           setPageSelected((prev) => {
@@ -299,7 +300,7 @@ export default function About() {
               Next
             </Button>
           </div>
-          <Button ref={mainMenuButtonRef} id="mainmenubutton" onClick={() => navigate('/')}>
+          <Button ref={mainMenuButtonRef} id="mainmenubutton" onClick={() => navigateToMainMenu(navigate)}>
             MAIN MENU
           </Button>
         </div>
