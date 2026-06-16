@@ -50,7 +50,10 @@ function formatDetailHint(detail: string | undefined): string | null {
   return detail.replace(/_/g, ' ');
 }
 
-function formatCheckMeta(key: EligibilityCheckKey, check: CheckEntry): string | null {
+function formatCheckMeta(
+  key: EligibilityCheckKey,
+  check: CheckEntry
+): string | null {
   if (key === 'followingCount' && typeof check.count === 'number') {
     return `${check.count.toLocaleString()} / 100`;
   }
@@ -86,7 +89,9 @@ export function formatEligibilityChecks(
   });
 }
 
-export function countPassedChecks(checks: ChallengeEligibilityResponse['checks']): {
+export function countPassedChecks(
+  checks: ChallengeEligibilityResponse['checks']
+): {
   passed: number;
   total: number;
 } {
@@ -101,10 +106,14 @@ export function countPassedChecks(checks: ChallengeEligibilityResponse['checks']
 export function formatGateEligibilityChecks(
   checks: ChallengeEligibilityResponse['checks']
 ): EligibilityCheckDisplay[] {
-  return formatEligibilityChecks(checks).filter((item) => item.key !== 'appSession');
+  return formatEligibilityChecks(checks).filter(
+    (item) => item.key !== 'appSession'
+  );
 }
 
-export function countGateEligibilityChecks(checks: ChallengeEligibilityResponse['checks']): {
+export function countGateEligibilityChecks(
+  checks: ChallengeEligibilityResponse['checks']
+): {
   passed: number;
   total: number;
 } {
@@ -114,4 +123,3 @@ export function countGateEligibilityChecks(checks: ChallengeEligibilityResponse[
     total: items.length,
   };
 }
-

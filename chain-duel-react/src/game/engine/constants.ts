@@ -60,11 +60,11 @@ export const POWERUP_PHANTOM_DURATION_TICKS = 50;
 export const POWERUP_AMPLIFIER_CHARGES = 3;
 
 export const POWERUP_COLORS: Record<string, number> = {
-  SURGE: 0xC8881A,
-  FREEZE: 0x2878A8,
-  PHANTOM: 0x9898B8,
-  AMPLIFIER: 0x7AAA70,
-  DECOY: 0xFFFFFF,
+  SURGE: 0xc8881a,
+  FREEZE: 0x2878a8,
+  PHANTOM: 0x9898b8,
+  AMPLIFIER: 0x7aaa70,
+  DECOY: 0xffffff,
 };
 
 export const POWERUP_SPAWN_WEIGHTS: Record<string, number> = {

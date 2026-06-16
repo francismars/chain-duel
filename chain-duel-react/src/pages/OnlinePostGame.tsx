@@ -16,10 +16,10 @@ import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
 
 type PostGameNav =
-  | { type: 'replay'; index: number }   // round replay buttons
-  | { type: 'don' }                      // double-or-nothing vote
-  | { type: 'payout'; slot: 'withdraw' | 'nostr' }  // payout row
-  | { type: 'exit' };                    // EXIT ROOM
+  | { type: 'replay'; index: number } // round replay buttons
+  | { type: 'don' } // double-or-nothing vote
+  | { type: 'payout'; slot: 'withdraw' | 'nostr' } // payout row
+  | { type: 'exit' }; // EXIT ROOM
 
 interface OnlinePostGameInfo {
   roomId: string;
@@ -115,13 +115,14 @@ export default function OnlinePostGame() {
   );
   const donLocked = Boolean(
     lnurlw ||
-      info?.payoutMethod === 'withdraw_qr' ||
-      info?.payoutMethod === 'nostr_zap' ||
-      info?.rematchRequested
+    info?.payoutMethod === 'withdraw_qr' ||
+    info?.payoutMethod === 'nostr_zap' ||
+    info?.rematchRequested
   );
   const effectiveVotes = myVoted ? Math.max(votes, 1) : votes;
   const winnerHasNostrLn = Boolean(info?.winnerLnAddress);
-  const payoutChosen = info?.payoutMethod === 'withdraw_qr' || info?.payoutMethod === 'nostr_zap';
+  const payoutChosen =
+    info?.payoutMethod === 'withdraw_qr' || info?.payoutMethod === 'nostr_zap';
   const payoutStatusText =
     info?.payoutMethod === 'withdraw_qr'
       ? 'Winner chose Withdraw via QR. Round closed.'
@@ -146,7 +147,9 @@ export default function OnlinePostGame() {
     exitConfirmPendingRef.current = false;
     const roundCount = info.matchRounds?.length ?? 0;
     if (showPayoutUi) {
-      setNavFocus(isWinner ? { type: 'payout', slot: 'withdraw' } : { type: 'don' });
+      setNavFocus(
+        isWinner ? { type: 'payout', slot: 'withdraw' } : { type: 'don' }
+      );
     } else if (roundCount > 0) {
       setNavFocus({ type: 'replay', index: roundCount - 1 });
     } else {
@@ -155,9 +158,7 @@ export default function OnlinePostGame() {
   }, [info, showPayoutUi, isWinner]);
 
   const openSessionRoundReplay = (matchRound: number) => {
-    navigate(
-      onlineReplayUrl(roomId, matchRound)
-    );
+    navigate(onlineReplayUrl(roomId, matchRound));
   };
 
   // ── Keyboard / gamepad navigation ──────────────────────────────────
@@ -168,9 +169,9 @@ export default function OnlinePostGame() {
     const onKeyDown = (event: KeyboardEvent) => {
       const key = event.key;
       const isEnter = key === 'Enter' || key === ' ';
-      const isUp    = key === 'ArrowUp'    || key === 'w' || key === 'W';
-      const isDown  = key === 'ArrowDown'  || key === 's' || key === 'S';
-      const isLeft  = key === 'ArrowLeft'  || key === 'a' || key === 'A';
+      const isUp = key === 'ArrowUp' || key === 'w' || key === 'W';
+      const isDown = key === 'ArrowDown' || key === 's' || key === 'S';
+      const isLeft = key === 'ArrowLeft' || key === 'a' || key === 'A';
       const isRight = key === 'ArrowRight' || key === 'd' || key === 'D';
       if (!isEnter && !isUp && !isDown && !isLeft && !isRight) return;
       event.preventDefault();
@@ -181,9 +182,12 @@ export default function OnlinePostGame() {
 
       if (isLeft || isRight) {
         exitConfirmPendingRef.current = false;
-        setNavFocus(prev =>
+        setNavFocus((prev) =>
           prev.type === 'payout'
-            ? { type: 'payout', slot: prev.slot === 'withdraw' ? 'nostr' : 'withdraw' }
+            ? {
+                type: 'payout',
+                slot: prev.slot === 'withdraw' ? 'nostr' : 'withdraw',
+              }
             : prev
         );
         return;
@@ -191,23 +195,27 @@ export default function OnlinePostGame() {
 
       if (isUp) {
         exitConfirmPendingRef.current = false;
-        setNavFocus(prev => {
+        setNavFocus((prev) => {
           if (prev.type === 'exit') {
             if (showPayoutUi) return { type: 'payout', slot: 'withdraw' };
-            if (roundCount > 0) return { type: 'replay', index: roundCount - 1 };
+            if (roundCount > 0)
+              return { type: 'replay', index: roundCount - 1 };
             return prev;
           }
           if (prev.type === 'payout') {
             if (showPayoutUi) return { type: 'don' };
-            if (roundCount > 0) return { type: 'replay', index: roundCount - 1 };
+            if (roundCount > 0)
+              return { type: 'replay', index: roundCount - 1 };
             return { type: 'exit' };
           }
           if (prev.type === 'don') {
-            if (roundCount > 0) return { type: 'replay', index: roundCount - 1 };
+            if (roundCount > 0)
+              return { type: 'replay', index: roundCount - 1 };
             return { type: 'exit' };
           }
           if (prev.type === 'replay') {
-            if (prev.index > 0) return { type: 'replay', index: prev.index - 1 };
+            if (prev.index > 0)
+              return { type: 'replay', index: prev.index - 1 };
             return prev;
           }
           return prev;
@@ -217,9 +225,10 @@ export default function OnlinePostGame() {
 
       if (isDown) {
         exitConfirmPendingRef.current = false;
-        setNavFocus(prev => {
+        setNavFocus((prev) => {
           if (prev.type === 'replay') {
-            if (prev.index < roundCount - 1) return { type: 'replay', index: prev.index + 1 };
+            if (prev.index < roundCount - 1)
+              return { type: 'replay', index: prev.index + 1 };
             if (showPayoutUi) return { type: 'don' };
             return { type: 'exit' };
           }
@@ -253,7 +262,14 @@ export default function OnlinePostGame() {
             setCreatingWithdrawal(true);
             socket.emit('createOnlineWithdrawal', { roomId });
           } else {
-            if (!socket || !roomId || !isWinner || !winnerHasNostrLn || donLocked) return;
+            if (
+              !socket ||
+              !roomId ||
+              !isWinner ||
+              !winnerHasNostrLn ||
+              donLocked
+            )
+              return;
             setError('');
             setCreatingNostrPayout(true);
             socket.emit('createOnlineNostrPayout', { roomId });
@@ -274,15 +290,28 @@ export default function OnlinePostGame() {
       }
     };
 
-    const onKeyUp = (event: KeyboardEvent) => { keyRepeatRef.current[event.key] = 0; };
+    const onKeyUp = (event: KeyboardEvent) => {
+      keyRepeatRef.current[event.key] = 0;
+    };
     window.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('keyup', onKeyUp);
     return () => {
       window.removeEventListener('keydown', onKeyDown, true);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [donLocked, info, isWinner, myVoted, navFocus, navigate,
-      openSessionRoundReplay, roomId, showPayoutUi, socket, winnerHasNostrLn]);
+  }, [
+    donLocked,
+    info,
+    isWinner,
+    myVoted,
+    navFocus,
+    navigate,
+    openSessionRoundReplay,
+    roomId,
+    showPayoutUi,
+    socket,
+    winnerHasNostrLn,
+  ]);
 
   useEffect(() => {
     setButtonGlow(exitBtnRef.current, navFocus.type === 'exit');
@@ -450,7 +479,10 @@ export default function OnlinePostGame() {
         </div>
 
         {info && (info.matchRounds?.length ?? 0) > 0 ? (
-          <section className="online-postgame-round-history" aria-label="Session game history">
+          <section
+            className="online-postgame-round-history"
+            aria-label="Session game history"
+          >
             <ul className="online-postgame-round-list">
               {(info.matchRounds ?? []).map((round, index) => {
                 const isDon = round.matchRound > 1;
@@ -461,37 +493,57 @@ export default function OnlinePostGame() {
                     key={round.matchRound}
                     className={[
                       'online-postgame-round-row',
-                      isDon ? 'online-postgame-round-row--don' : 'online-postgame-round-row--first',
+                      isDon
+                        ? 'online-postgame-round-row--don'
+                        : 'online-postgame-round-row--first',
                     ].join(' ')}
                   >
                     <div className="online-postgame-round-row-inner">
                       <div className="online-postgame-round-badge-col">
-                        <span className="online-postgame-round-index">#{round.matchRound}</span>
+                        <span className="online-postgame-round-index">
+                          #{round.matchRound}
+                        </span>
                         {isDon ? (
-                          <span className="online-postgame-round-chip">Double or nothing</span>
+                          <span className="online-postgame-round-chip">
+                            Double or nothing
+                          </span>
                         ) : (
                           <span className="online-postgame-round-chip online-postgame-round-chip--open">
                             Opening game
                           </span>
                         )}
-                        <time className="online-postgame-round-time" dateTime={finishedIso}>
-                          {new Date(round.finishedAt).toLocaleString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                        <time
+                          className="online-postgame-round-time"
+                          dateTime={finishedIso}
+                        >
+                          {new Date(round.finishedAt).toLocaleString(
+                            undefined,
+                            {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            }
+                          )}
                         </time>
                       </div>
 
                       <div className="online-postgame-round-main">
-                        <div className="online-postgame-round-matchup" role="group" aria-label="Score">
+                        <div
+                          className="online-postgame-round-matchup"
+                          role="group"
+                          aria-label="Score"
+                        >
                           <div
                             className={[
                               'online-postgame-player',
                               'online-postgame-player--p1',
-                              won === 'p1' ? 'online-postgame-player--round-winner' : '',
-                              won === 'p2' ? 'online-postgame-player--round-loser' : '',
+                              won === 'p1'
+                                ? 'online-postgame-player--round-winner'
+                                : '',
+                              won === 'p2'
+                                ? 'online-postgame-player--round-loser'
+                                : '',
                             ]
                               .filter(Boolean)
                               .join(' ')}
@@ -504,22 +556,35 @@ export default function OnlinePostGame() {
                                   alt={round.p1Name}
                                 />
                               ) : null}
-                              <span className="online-postgame-player-name">{round.p1Name}</span>
+                              <span className="online-postgame-player-name">
+                                {round.p1Name}
+                              </span>
                             </div>
                             <span className="online-postgame-player-pts">
                               {round.p1Score}
-                              <span className="online-postgame-player-denom">sats</span>
+                              <span className="online-postgame-player-denom">
+                                sats
+                              </span>
                             </span>
                           </div>
-                          <div className="online-postgame-round-vs-pillar" aria-hidden="true">
-                            <span className="online-postgame-round-vs-label">vs</span>
+                          <div
+                            className="online-postgame-round-vs-pillar"
+                            aria-hidden="true"
+                          >
+                            <span className="online-postgame-round-vs-label">
+                              vs
+                            </span>
                           </div>
                           <div
                             className={[
                               'online-postgame-player',
                               'online-postgame-player--p2',
-                              won === 'p2' ? 'online-postgame-player--round-winner' : '',
-                              won === 'p1' ? 'online-postgame-player--round-loser' : '',
+                              won === 'p2'
+                                ? 'online-postgame-player--round-winner'
+                                : '',
+                              won === 'p1'
+                                ? 'online-postgame-player--round-loser'
+                                : '',
                             ]
                               .filter(Boolean)
                               .join(' ')}
@@ -532,16 +597,23 @@ export default function OnlinePostGame() {
                                   alt={round.p2Name}
                                 />
                               ) : null}
-                              <span className="online-postgame-player-name">{round.p2Name}</span>
+                              <span className="online-postgame-player-name">
+                                {round.p2Name}
+                              </span>
                             </div>
                             <span className="online-postgame-player-pts">
                               {round.p2Score}
-                              <span className="online-postgame-player-denom">sats</span>
+                              <span className="online-postgame-player-denom">
+                                sats
+                              </span>
                             </span>
                           </div>
                         </div>
                         <p className="online-postgame-round-winner">
-                          <span className="online-postgame-round-winner-crown" aria-hidden="true">
+                          <span
+                            className="online-postgame-round-winner-crown"
+                            aria-hidden="true"
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               viewBox="0 0 20 16"
@@ -555,16 +627,39 @@ export default function OnlinePostGame() {
                               {/* crown body — closed silhouette */}
                               <path d="M1 15h18V9L15 12L10 2L5 12L1 9Z" />
                               {/* orbs at each peak tip */}
-                              <circle cx="10" cy="2" r="1.1" fill="currentColor" stroke="none" />
-                              <circle cx="1" cy="9" r="0.9" fill="currentColor" stroke="none" />
-                              <circle cx="19" cy="9" r="0.9" fill="currentColor" stroke="none" />
+                              <circle
+                                cx="10"
+                                cy="2"
+                                r="1.1"
+                                fill="currentColor"
+                                stroke="none"
+                              />
+                              <circle
+                                cx="1"
+                                cy="9"
+                                r="0.9"
+                                fill="currentColor"
+                                stroke="none"
+                              />
+                              <circle
+                                cx="19"
+                                cy="9"
+                                r="0.9"
+                                fill="currentColor"
+                                stroke="none"
+                              />
                             </svg>
                           </span>
                           <span className="online-postgame-round-winner-body">
-                            <span className="online-postgame-round-winner-kicker">Winner</span>
+                            <span className="online-postgame-round-winner-kicker">
+                              Winner
+                            </span>
                             <span className="online-postgame-round-winner-text">
                               <strong>{round.winnerName}</strong>
-                              <span className="online-postgame-round-winner-sep"> · </span>
+                              <span className="online-postgame-round-winner-sep">
+                                {' '}
+                                ·{' '}
+                              </span>
                               <span className="online-postgame-round-winner-prize">
                                 {round.netPrize.toLocaleString()} sats net
                               </span>
@@ -581,11 +676,18 @@ export default function OnlinePostGame() {
                             else replayBtnRefs.current.delete(index);
                           }}
                           className={`online-postgame-round-replay-btn${navFocus.type === 'replay' && navFocus.index === index ? ' online-selected' : ''}`}
-                          onClick={() => openSessionRoundReplay(round.matchRound)}
+                          onClick={() =>
+                            openSessionRoundReplay(round.matchRound)
+                          }
                           aria-label={`Replay game ${round.matchRound}`}
                         >
-                          <span className="online-postgame-round-replay-icon" aria-hidden="true" />
-                          <span className="online-postgame-round-replay-label">Replay</span>
+                          <span
+                            className="online-postgame-round-replay-icon"
+                            aria-hidden="true"
+                          />
+                          <span className="online-postgame-round-replay-label">
+                            Replay
+                          </span>
                         </Button>
                       </div>
                     </div>
@@ -612,20 +714,24 @@ export default function OnlinePostGame() {
           </div>
 
           <div className="online-postgame-prize-block">
-            <p className="online-postgame-prize">{netPayoutAmount.toLocaleString()} SATS</p>
+            <p className="online-postgame-prize">
+              {netPayoutAmount.toLocaleString()} SATS
+            </p>
             <p className="online-postgame-sub">
-              Net · gross {grossWinnerAmount.toLocaleString()} · fee {feeAmount.toLocaleString()} sats
+              Net · gross {grossWinnerAmount.toLocaleString()} · fee{' '}
+              {feeAmount.toLocaleString()} sats
             </p>
           </div>
         </div>
-
 
         {showPayoutUi ? (
           <div
             className={[
               'online-postgame-don-panel',
               donLocked ? 'online-postgame-don-panel--locked' : '',
-              effectiveVotes > 0 && !donLocked ? 'online-postgame-don-panel--active' : '',
+              effectiveVotes > 0 && !donLocked
+                ? 'online-postgame-don-panel--active'
+                : '',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -650,7 +756,9 @@ export default function OnlinePostGame() {
                       key={i}
                       className={[
                         'online-postgame-don-pip',
-                        i < effectiveVotes ? 'online-postgame-don-pip--active' : '',
+                        i < effectiveVotes
+                          ? 'online-postgame-don-pip--active'
+                          : '',
                       ]
                         .filter(Boolean)
                         .join(' ')}
@@ -661,7 +769,9 @@ export default function OnlinePostGame() {
                   {effectiveVotes}/{requiredVotes} agreed
                 </span>
                 {myVoted && !donLocked ? (
-                  <span className="online-postgame-don-my-vote-tag">Your vote cast</span>
+                  <span className="online-postgame-don-my-vote-tag">
+                    Your vote cast
+                  </span>
                 ) : null}
               </div>
 
@@ -707,9 +817,12 @@ export default function OnlinePostGame() {
             {showPayoutUi ? (
               <>
                 <div className="online-postgame-payout-choice">
-                  <p className="online-postgame-payout-title">Choose payout method</p>
+                  <p className="online-postgame-payout-title">
+                    Choose payout method
+                  </p>
                   <p className="online-postgame-payout-note">
-                    Pick one. Once selected, the other method and Double or Nothing are locked.
+                    Pick one. Once selected, the other method and Double or
+                    Nothing are locked.
                   </p>
                 </div>
                 <div className="online-postgame-payout-row">
@@ -718,8 +831,12 @@ export default function OnlinePostGame() {
                     className={[
                       isWinner ? '' : 'disabled',
                       'online-postgame-btn online-postgame-btn-withdraw',
-                      navFocus.type === 'payout' && navFocus.slot === 'withdraw' ? 'online-selected' : '',
-                    ].filter(Boolean).join(' ')}
+                      navFocus.type === 'payout' && navFocus.slot === 'withdraw'
+                        ? 'online-selected'
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
                     disabled={!isWinner || creatingWithdrawal || donLocked}
                     onClick={() => {
                       if (!socket || !roomId || !isWinner || donLocked) {
@@ -741,13 +858,30 @@ export default function OnlinePostGame() {
                   <Button
                     type="button"
                     className={[
-                      isWinner && winnerHasNostrLn && !donLocked ? '' : 'disabled',
+                      isWinner && winnerHasNostrLn && !donLocked
+                        ? ''
+                        : 'disabled',
                       'online-postgame-btn online-postgame-btn-nostr',
-                      navFocus.type === 'payout' && navFocus.slot === 'nostr' ? 'online-selected' : '',
-                    ].filter(Boolean).join(' ')}
-                    disabled={!isWinner || !winnerHasNostrLn || donLocked || creatingNostrPayout}
+                      navFocus.type === 'payout' && navFocus.slot === 'nostr'
+                        ? 'online-selected'
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    disabled={
+                      !isWinner ||
+                      !winnerHasNostrLn ||
+                      donLocked ||
+                      creatingNostrPayout
+                    }
                     onClick={() => {
-                      if (!socket || !roomId || !isWinner || !winnerHasNostrLn || donLocked) {
+                      if (
+                        !socket ||
+                        !roomId ||
+                        !isWinner ||
+                        !winnerHasNostrLn ||
+                        donLocked
+                      ) {
                         return;
                       }
                       setError('');
@@ -755,7 +889,9 @@ export default function OnlinePostGame() {
                       socket.emit('createOnlineNostrPayout', { roomId });
                     }}
                   >
-                    {creatingNostrPayout ? 'Sending to LN address...' : 'Pay to LN address'}
+                    {creatingNostrPayout
+                      ? 'Sending to LN address...'
+                      : 'Pay to LN address'}
                   </Button>
                 </div>
               </>
@@ -787,7 +923,11 @@ export default function OnlinePostGame() {
                     rel="noopener noreferrer"
                     title="Open withdrawal LNURL in a Lightning wallet"
                   >
-                    <QRCodeSVG value={withdrawalValue} size={220} includeMargin />
+                    <QRCodeSVG
+                      value={withdrawalValue}
+                      size={220}
+                      includeMargin
+                    />
                   </a>
                 ) : (
                   <QRCodeSVG
@@ -811,7 +951,9 @@ export default function OnlinePostGame() {
                 </a>
               ) : null}
               <p className="online-postgame-qr-note">
-                {lnurlw ? 'Scan with a compatible wallet, or use the link above.' : 'Winner can reveal QR by creating withdrawal.'}
+                {lnurlw
+                  ? 'Scan with a compatible wallet, or use the link above.'
+                  : 'Winner can reveal QR by creating withdrawal.'}
               </p>
             </div>
           ) : null}
@@ -820,8 +962,12 @@ export default function OnlinePostGame() {
         {showPayoutUi && payoutChosen ? (
           <p className="online-postgame-error">{payoutStatusText}</p>
         ) : null}
-        {showPayoutUi && error ? <p className="online-postgame-error">Error: {error}</p> : null}
-        {showPayoutUi && info?.payoutMethod === 'nostr_zap' && info.payoutTarget ? (
+        {showPayoutUi && error ? (
+          <p className="online-postgame-error">Error: {error}</p>
+        ) : null}
+        {showPayoutUi &&
+        info?.payoutMethod === 'nostr_zap' &&
+        info.payoutTarget ? (
           <p className="online-postgame-error">
             Payout sent to Nostr lightning address: {info.payoutTarget}
           </p>

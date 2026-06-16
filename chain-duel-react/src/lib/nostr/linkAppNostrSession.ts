@@ -23,7 +23,8 @@ export function linkAppNostrSession(
   const trace = createFlowTrace('marspay', `server-link/${signerMode}`);
 
   return new Promise((resolve, reject) => {
-    const timeoutMs = signerMode === 'nip46' ? NIP46_LINK_TIMEOUT_MS : LINK_TIMEOUT_MS;
+    const timeoutMs =
+      signerMode === 'nip46' ? NIP46_LINK_TIMEOUT_MS : LINK_TIMEOUT_MS;
     let challengeReceived = false;
     let confirmSent = false;
 
@@ -33,7 +34,10 @@ export function linkAppNostrSession(
         signerMode === 'nip46'
           ? ' Check that the game server is reachable and try again.'
           : '';
-      trace.fail('timeout', new Error(`Timed out after ${timeoutMs / 1000}s${hint}`));
+      trace.fail(
+        'timeout',
+        new Error(`Timed out after ${timeoutMs / 1000}s${hint}`)
+      );
       reject(new Error(`Timed out linking Nostr to the game server.${hint}`));
     }, timeoutMs);
 
@@ -43,9 +47,15 @@ export function linkAppNostrSession(
         return;
       }
       challengeReceived = true;
-      trace.step('challenge received', `nonce=${parsed.challenge.slice(0, 16)}…`);
+      trace.step(
+        'challenge received',
+        `nonce=${parsed.challenge.slice(0, 16)}…`
+      );
       try {
-        trace.step('signing kind-1 challenge', 'NIP-46 relay RPC follows as [relay]');
+        trace.step(
+          'signing kind-1 challenge',
+          'NIP-46 relay RPC follows as [relay]'
+        );
         const signed = await signOnlineSeatLinkChallenge({
           challenge: parsed.challenge,
         });
@@ -69,7 +79,10 @@ export function linkAppNostrSession(
         return;
       }
       if (parsed.ok) {
-        trace.step('resAppNostrSession ok', `pubkey=${parsed.pubkey?.slice(0, 12)}…`);
+        trace.step(
+          'resAppNostrSession ok',
+          `pubkey=${parsed.pubkey?.slice(0, 12)}…`
+        );
         cleanup();
         trace.done('server session bound');
         resolve();
@@ -80,7 +93,10 @@ export function linkAppNostrSession(
         return;
       }
       cleanup();
-      trace.fail('resAppNostrSession', parsed.reason ?? 'Nostr session link failed');
+      trace.fail(
+        'resAppNostrSession',
+        parsed.reason ?? 'Nostr session link failed'
+      );
       reject(new Error(parsed.reason ?? 'Nostr session link failed'));
     };
 
@@ -92,7 +108,10 @@ export function linkAppNostrSession(
 
     socket.on('resAppNostrLinkChallenge', onChallenge);
     socket.on('resAppNostrSession', onSession);
-    trace.step('emit requestAppNostrLinkChallenge', `socket connected=${socket.connected}`);
+    trace.step(
+      'emit requestAppNostrLinkChallenge',
+      `socket connected=${socket.connected}`
+    );
     socket.emit('requestAppNostrLinkChallenge');
   });
 }

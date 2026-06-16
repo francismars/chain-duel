@@ -18,12 +18,14 @@ function isHexPubkey64(s: string): boolean {
  * legacy `NPUB:dead…beef` only when pubkey is unknown.
  */
 export function formatHudPlayerName(
-  row: { name?: string; fallbackLabel?: string; nostrPubkey?: string } | undefined,
-  roleFallback: string,
+  row:
+    | { name?: string; fallbackLabel?: string; nostrPubkey?: string }
+    | undefined,
+  roleFallback: string
 ): string {
   if (!row) return roleFallback;
 
-  const combined = (row.name?.trim() || row.fallbackLabel?.trim() || '');
+  const combined = row.name?.trim() || row.fallbackLabel?.trim() || '';
   if (combined.startsWith('npub1')) {
     return midTruncateHud(combined, HUD_NPUB_HEAD, HUD_NPUB_TAIL);
   }
@@ -33,7 +35,8 @@ export function formatHudPlayerName(
 
   const pk = row.nostrPubkey?.trim() ?? '';
   if (pk) {
-    if (pk.startsWith('npub1')) return midTruncateHud(pk, HUD_NPUB_HEAD, HUD_NPUB_TAIL);
+    if (pk.startsWith('npub1'))
+      return midTruncateHud(pk, HUD_NPUB_HEAD, HUD_NPUB_TAIL);
     if (isHexPubkey64(pk)) {
       try {
         return midTruncateHud(npubEncode(pk), HUD_NPUB_HEAD, HUD_NPUB_TAIL);
@@ -104,7 +107,9 @@ export function resolveDuelInfo(data: SerializedGameInfo): DuelResolvedInfo {
     let tournamentP2 = formatHudPlayerName(p2, hudP2Fallback);
     let tournamentP1Picture = p1?.picture?.trim() ? String(p1.picture) : '';
     let tournamentP2Picture = p2?.picture?.trim() ? String(p2.picture) : '';
-    let tournamentStartSats = Math.floor(Number.parseInt(String(p1?.value ?? 1000), 10));
+    let tournamentStartSats = Math.floor(
+      Number.parseInt(String(p1?.value ?? 1000), 10)
+    );
     if (winners.length + 1 < numberOfPlayers) {
       const round1Games = Math.max(1, Math.floor(numberOfPlayers / 2));
       if (winners.length < round1Games) {
@@ -112,24 +117,46 @@ export function resolveDuelInfo(data: SerializedGameInfo): DuelResolvedInfo {
         const p2Idx = p1Idx + 1;
         tournamentP1 = playersList[p1Idx]?.trim() || hudP1Fallback;
         tournamentP2 = playersList[p2Idx]?.trim() || hudP2Fallback;
-        tournamentP1Picture = playersPictures[p1Idx]?.trim() ? String(playersPictures[p1Idx]) : '';
-        tournamentP2Picture = playersPictures[p2Idx]?.trim() ? String(playersPictures[p2Idx]) : '';
-        tournamentStartSats = Math.floor(playersValues[p1Idx] || tournamentStartSats);
+        tournamentP1Picture = playersPictures[p1Idx]?.trim()
+          ? String(playersPictures[p1Idx])
+          : '';
+        tournamentP2Picture = playersPictures[p2Idx]?.trim()
+          ? String(playersPictures[p2Idx])
+          : '';
+        tournamentStartSats = Math.floor(
+          playersValues[p1Idx] || tournamentStartSats
+        );
       } else {
-        const winnerNames = buildWinnerProgression(playersList, winners, numberOfPlayers, '');
+        const winnerNames = buildWinnerProgression(
+          playersList,
+          winners,
+          numberOfPlayers,
+          ''
+        );
         const winnerPictures = buildWinnerProgression(
           playersPictures,
           winners,
           numberOfPlayers,
           ''
         );
-        const winnerValues = buildWinnerProgression(playersValues, winners, numberOfPlayers, 0);
+        const winnerValues = buildWinnerProgression(
+          playersValues,
+          winners,
+          numberOfPlayers,
+          0
+        );
         const p1i = (winners.length - round1Games) * 2;
         tournamentP1 = winnerNames[p1i]?.trim() || hudP1Fallback;
         tournamentP2 = winnerNames[p1i + 1]?.trim() || hudP2Fallback;
-        tournamentP1Picture = winnerPictures[p1i]?.trim() ? String(winnerPictures[p1i]) : '';
-        tournamentP2Picture = winnerPictures[p1i + 1]?.trim() ? String(winnerPictures[p1i + 1]) : '';
-        tournamentStartSats = Math.floor(winnerValues[p1i] || tournamentStartSats);
+        tournamentP1Picture = winnerPictures[p1i]?.trim()
+          ? String(winnerPictures[p1i])
+          : '';
+        tournamentP2Picture = winnerPictures[p1i + 1]?.trim()
+          ? String(winnerPictures[p1i + 1])
+          : '';
+        tournamentStartSats = Math.floor(
+          winnerValues[p1i] || tournamentStartSats
+        );
       }
     }
     return {
@@ -178,7 +205,15 @@ export function parseZap(payload: unknown): ParsedZap | null {
   const source = payload as Record<string, unknown>;
   const amount = Number.parseInt(String(source.amount ?? 0), 10);
   const scale =
-    amount > 9999 ? 2 : amount >= 5000 ? 1.6 : amount >= 2000 ? 1.4 : amount >= 500 ? 1.2 : 1;
+    amount > 9999
+      ? 2
+      : amount >= 5000
+        ? 1.6
+        : amount >= 2000
+          ? 1.4
+          : amount >= 500
+            ? 1.2
+            : 1;
   return {
     username: String(source.username ?? 'zapper'),
     content: String(source.content ?? ''),
@@ -203,14 +238,14 @@ function buildWinnerProgression<T>(
     if (i < round1Games) {
       winnerValue =
         winner === 'Player 1'
-          ? entrants[i * 2] ?? fallback
-          : entrants[i * 2 + 1] ?? fallback;
+          ? (entrants[i * 2] ?? fallback)
+          : (entrants[i * 2 + 1] ?? fallback);
     } else {
       const p1i = (i - round1Games) * 2;
       winnerValue =
         winner === 'Player 1'
-          ? winnerProgression[p1i] ?? fallback
-          : winnerProgression[p1i + 1] ?? fallback;
+          ? (winnerProgression[p1i] ?? fallback)
+          : (winnerProgression[p1i + 1] ?? fallback);
     }
     winnerProgression.push(winnerValue);
   }

@@ -11,7 +11,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const animationStyle =
       glowing === true
         ? { ...style, animation: 'glowing 2000ms infinite' as const }
-        : style ?? undefined;
+        : (style ?? undefined);
 
     return (
       <button

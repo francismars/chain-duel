@@ -20,14 +20,25 @@ interface UseGameInputBindingsArgs {
 }
 
 const P1_MOVE_KEYS = new Set(['A', 'W', 'S', 'D']);
-const P2_MOVE_KEYS = new Set(['ARROWLEFT', 'ARROWRIGHT', 'ARROWUP', 'ARROWDOWN']);
+const P2_MOVE_KEYS = new Set([
+  'ARROWLEFT',
+  'ARROWRIGHT',
+  'ARROWUP',
+  'ARROWDOWN',
+]);
 const EXTRA0_MOVE_KEYS = new Set(['I', 'J', 'K', 'L']);
 const EXTRA1_MOVE_KEYS = new Set(['T', 'F', 'G', 'H']);
 
-function applyPreStartControllerTest(state: GameState, key: string, held: boolean): void {
+function applyPreStartControllerTest(
+  state: GameState,
+  key: string,
+  held: boolean
+): void {
   if (state.gameStarted) return;
-  if (state.meta.p1Human && P1_MOVE_KEYS.has(key)) setControllerTestHeld(state, 'P1', held);
-  if (state.meta.p2Human && P2_MOVE_KEYS.has(key)) setControllerTestHeld(state, 'P2', held);
+  if (state.meta.p1Human && P1_MOVE_KEYS.has(key))
+    setControllerTestHeld(state, 'P1', held);
+  if (state.meta.p2Human && P2_MOVE_KEYS.has(key))
+    setControllerTestHeld(state, 'P2', held);
   if (state.extraSnakes[0]?.humanControlled && EXTRA0_MOVE_KEYS.has(key)) {
     setExtraControllerTestHeld(state, 0, held);
   }
@@ -167,5 +178,11 @@ export function useGameInputBindings({
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [onEmitWinner, onNavigateAfterFinish, stateRef, winnerSentRef, readyToStartRef]);
+  }, [
+    onEmitWinner,
+    onNavigateAfterFinish,
+    stateRef,
+    winnerSentRef,
+    readyToStartRef,
+  ]);
 }

@@ -135,7 +135,10 @@
   border: 1px solid var(--cd-white-10);
   background: rgba(0, 0, 0, 0.35);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
   border-radius: 2px;
   color: inherit;
   font: inherit;
@@ -177,7 +180,10 @@
   border: 1px solid var(--cd-white-10);
   background: rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
   border-radius: 2px;
   color: inherit;
   font: inherit;
@@ -290,7 +296,10 @@
   top: 0;
   height: 100%;
   opacity: 0.75;
-  transition: left 0.25s ease, width 0.25s ease, background 0.25s;
+  transition:
+    left 0.25s ease,
+    width 0.25s ease,
+    background 0.25s;
 }
 
 .tn-tier-marker {
@@ -300,7 +309,9 @@
   height: 5px;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  transition: left 0.25s ease, background 0.25s;
+  transition:
+    left 0.25s ease,
+    background 0.25s;
 }
 
 .tn-tier-picks {
@@ -320,7 +331,9 @@
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  transition: border-color 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
   font: inherit;
   color: inherit;
   position: relative;
@@ -405,7 +418,9 @@
   background: rgba(0, 0, 0, 0.35);
   border-radius: 3px;
   position: relative;
-  transition: border-color 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
 }
 
 .practice-toggle input:checked + .practice-toggle-ui {
@@ -513,7 +528,9 @@
   background: transparent;
   color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  transition: color 0.12s, border-color 0.12s;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
   text-transform: uppercase;
 }
 
@@ -538,4 +555,3 @@
     padding: 5vw 4vw;
   }
 }
-

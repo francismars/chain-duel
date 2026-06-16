@@ -177,7 +177,9 @@ export const OnlineRoomStateSchema = z.object({
     .object({
       p1Picture: z.string().optional(),
       p2Picture: z.string().optional(),
-      winnerRole: z.union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)]).optional(),
+      winnerRole: z
+        .union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)])
+        .optional(),
       winnerSessionID: z.string().optional(),
       winnerName: z.string(),
       winnerPicture: z.string().optional(),
@@ -267,7 +269,10 @@ export const OnlineRoomSnapshotEventSchema = z.object({
 
 export const OnlineSeatAssignedSchema = z.object({
   roomId: z.string(),
-  playerRole: z.union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)]),
+  playerRole: z.union([
+    z.literal(PlayerRole.Player1),
+    z.literal(PlayerRole.Player2),
+  ]),
   sessionId: z.string(),
 });
 
@@ -412,7 +417,9 @@ export const OnlineMatchRoundSummarySchema = z.object({
   p1Score: z.number(),
   p2Score: z.number(),
   netPrize: z.number(),
-  winnerRole: z.union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)]).optional(),
+  winnerRole: z
+    .union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)])
+    .optional(),
 });
 
 export const ResOnlinePostGameInfoSchema = z.object({
@@ -426,7 +433,9 @@ export const ResOnlinePostGameInfoSchema = z.object({
   p2SessionID: z.string().optional(),
   p1Points: z.number(),
   p2Points: z.number(),
-  winnerRole: z.union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)]).optional(),
+  winnerRole: z
+    .union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)])
+    .optional(),
   winnerSessionID: z.string().optional(),
   winnerName: z.string(),
   winnerPicture: z.string().optional(),

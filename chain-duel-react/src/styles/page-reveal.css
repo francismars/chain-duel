@@ -35,7 +35,8 @@
 /* Game routes: legacy chainduel_bg_no_sat (no center orb) instead of default chainduel_bg.jpg */
 body.game-page {
   background-color: black;
-  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
+  background-image:
+    linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
     url('/images/chainduel_bg_no_sat.jpg');
   background-size: cover;
   background-position: center;

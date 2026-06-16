@@ -45,9 +45,14 @@ type NostrSessionContextValue = NostrSessionState & {
   clearPendingNip46AuthUrl: () => void;
 };
 
-const NostrSessionContext = createContext<NostrSessionContextValue | null>(null);
+const NostrSessionContext = createContext<NostrSessionContextValue | null>(
+  null
+);
 
-function profileFromPayload(profile: AppNostrProfile | undefined, pubkey: string) {
+function profileFromPayload(
+  profile: AppNostrProfile | undefined,
+  pubkey: string
+) {
   return {
     displayName: profile?.name ?? null,
     picture: profile?.picture ?? null,
@@ -67,7 +72,9 @@ function profileFromPayload(profile: AppNostrProfile | undefined, pubkey: string
 
 export function NostrSessionProvider({ children }: { children: ReactNode }) {
   const { socket } = useSocket();
-  const [pendingNip46AuthUrl, setPendingNip46AuthUrl] = useState<string | null>(null);
+  const [pendingNip46AuthUrl, setPendingNip46AuthUrl] = useState<string | null>(
+    null
+  );
   const [state, setState] = useState<NostrSessionState>(() => ({
     signedIn: false,
     pubkey: null,
@@ -174,15 +181,18 @@ export function NostrSessionProvider({ children }: { children: ReactNode }) {
     });
   }, [socket]);
 
-  const applyLocalSigner = useCallback((pubkey: string, mode: StoredSignerMode) => {
-    setState((prev) => ({
-      ...prev,
-      pubkey: pubkey.toLowerCase(),
-      signerMode: mode,
-      linking: false,
-      linkError: null,
-    }));
-  }, []);
+  const applyLocalSigner = useCallback(
+    (pubkey: string, mode: StoredSignerMode) => {
+      setState((prev) => ({
+        ...prev,
+        pubkey: pubkey.toLowerCase(),
+        signerMode: mode,
+        linking: false,
+        linkError: null,
+      }));
+    },
+    []
+  );
 
   const linkToServer = useCallback(
     async (signerMode: StoredSignerMode) => {
@@ -212,11 +222,21 @@ export function NostrSessionProvider({ children }: { children: ReactNode }) {
       pendingNip46AuthUrl,
       clearPendingNip46AuthUrl,
     }),
-    [state, refresh, signOut, linkToServer, applyLocalSigner, pendingNip46AuthUrl, clearPendingNip46AuthUrl]
+    [
+      state,
+      refresh,
+      signOut,
+      linkToServer,
+      applyLocalSigner,
+      pendingNip46AuthUrl,
+      clearPendingNip46AuthUrl,
+    ]
   );
 
   return (
-    <NostrSessionContext.Provider value={value}>{children}</NostrSessionContext.Provider>
+    <NostrSessionContext.Provider value={value}>
+      {children}
+    </NostrSessionContext.Provider>
   );
 }
 

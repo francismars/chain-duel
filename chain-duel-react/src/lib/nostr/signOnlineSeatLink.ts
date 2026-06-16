@@ -19,18 +19,29 @@ export type SignedSeatLinkEvent = {
 const SIGN_TIMEOUT_MS = 45_000;
 const NIP46_ZAP_SIGN_TIMEOUT_MS = 90_000;
 
-function withSignTimeout<T>(label: string, p: Promise<T>, timeoutMs = SIGN_TIMEOUT_MS): Promise<T> {
+function withSignTimeout<T>(
+  label: string,
+  p: Promise<T>,
+  timeoutMs = SIGN_TIMEOUT_MS
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const t = setTimeout(() => {
       const mode = resolveSignerMode();
-      const hint = mode === 'nip46'
-        ? 'Open your signer app and approve the signing request.'
-        : 'Signing request timed out.';
+      const hint =
+        mode === 'nip46'
+          ? 'Open your signer app and approve the signing request.'
+          : 'Signing request timed out.';
       reject(new Error(`${label} timed out. ${hint}`));
     }, timeoutMs);
     p.then(
-      (v) => { clearTimeout(t); resolve(v); },
-      (e) => { clearTimeout(t); reject(e); }
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      }
     );
   });
 }
@@ -49,7 +60,9 @@ export async function signNostrEvent(unsigned: {
   const signed = await withSignTimeout(
     'signNostrEvent',
     n.signEvent(unsigned),
-    resolveSignerMode() === 'nip46' ? NIP46_ZAP_SIGN_TIMEOUT_MS : SIGN_TIMEOUT_MS,
+    resolveSignerMode() === 'nip46'
+      ? NIP46_ZAP_SIGN_TIMEOUT_MS
+      : SIGN_TIMEOUT_MS
   );
   return signed as SignedSeatLinkEvent;
 }
@@ -71,8 +84,10 @@ export async function signOnlineSeatLinkChallenge(params: {
     withSignTimeout(
       'signOnlineSeatLinkChallenge',
       n.signEvent(unsigned),
-      resolveSignerMode() === 'nip46' ? NIP46_ZAP_SIGN_TIMEOUT_MS : SIGN_TIMEOUT_MS,
-    ),
+      resolveSignerMode() === 'nip46'
+        ? NIP46_ZAP_SIGN_TIMEOUT_MS
+        : SIGN_TIMEOUT_MS
+    )
   );
   return signed as SignedSeatLinkEvent;
 }

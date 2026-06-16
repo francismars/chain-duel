@@ -3,7 +3,8 @@
 @font-face {
   font-family: 'BureauGrotesque';
   src: url('/fonts/BureauGrotesque/BureauGrotesque.eot');
-  src: url('/fonts/BureauGrotesque/BureauGrotesque.eot?#iefix')
+  src:
+    url('/fonts/BureauGrotesque/BureauGrotesque.eot?#iefix')
       format('embedded-opentype'),
     url('/fonts/BureauGrotesque/BureauGrotesque.woff2') format('woff2'),
     url('/fonts/BureauGrotesque/BureauGrotesque.woff') format('woff'),
@@ -29,11 +30,8 @@ body {
   margin: 0;
   color: #fff;
   background-color: black;
-  background-image: linear-gradient(
-      to top,
-      rgba(0, 0, 0, 1),
-      rgba(0, 0, 0, 0.5)
-    ),
+  background-image:
+    linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.5)),
     url('/images/chainduel_bg.jpg');
   background-size: cover;
   background-position: center;

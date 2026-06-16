@@ -27,6 +27,9 @@ export async function expandOnlineReplayWire(wire: {
     return [];
   }
   const json = await gunzipBase64ToUtf8(wire.gzipBase64);
-  const data = JSON.parse(json) as { h: CompactReplayHeader; f: EncodedFrame[] };
+  const data = JSON.parse(json) as {
+    h: CompactReplayHeader;
+    f: EncodedFrame[];
+  };
   return ensureReplayVictoryEndFrame(decodeInnerJsonToFrames(data));
 }

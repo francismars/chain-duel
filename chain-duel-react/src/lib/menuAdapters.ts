@@ -44,7 +44,10 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
       items = candidate.payLinks;
     } else {
       const objectValues = Object.values(candidate);
-      if (objectValues.length > 0 && objectValues.every((v) => v && typeof v === 'object')) {
+      if (
+        objectValues.length > 0 &&
+        objectValues.every((v) => v && typeof v === 'object')
+      ) {
         items = objectValues;
       }
     }
@@ -70,7 +73,10 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
         lnurlp,
         description: String(src.description ?? ''),
         min: Number(src.min ?? 0),
-        mode: typeof src.mode === 'string' ? (src.mode as LNURLP['mode']) : undefined,
+        mode:
+          typeof src.mode === 'string'
+            ? (src.mode as LNURLP['mode'])
+            : undefined,
         hostLNAddress:
           typeof src.hostLNAddress === 'string' ? src.hostLNAddress : undefined,
       };
@@ -91,7 +97,9 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
       typeof item === 'object' &&
       'note1' in item &&
       'emojis' in item
-  ) as { note1?: string; emojis?: string; min?: number; mode?: string } | undefined;
+  ) as
+    | { note1?: string; emojis?: string; min?: number; mode?: string }
+    | undefined;
 
   return {
     payLinks,
@@ -99,7 +107,9 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
     modeMeta: modeMetaItem
       ? {
           mode: modeMetaItem.mode,
-          winnersCount: Array.isArray(modeMetaItem.winners) ? modeMetaItem.winners.length : undefined,
+          winnersCount: Array.isArray(modeMetaItem.winners)
+            ? modeMetaItem.winners.length
+            : undefined,
         }
       : null,
     nostrMeta:
@@ -107,7 +117,9 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
         ? {
             note1: nostrMetaItem.note1,
             emojis: nostrMetaItem.emojis,
-            min: Number.isFinite(nostrMetaItem.min) ? Number(nostrMetaItem.min) : 1,
+            min: Number.isFinite(nostrMetaItem.min)
+              ? Number(nostrMetaItem.min)
+              : 1,
             mode: nostrMetaItem.mode,
           }
         : null,

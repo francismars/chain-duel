@@ -18,7 +18,6 @@ import { ONLINE_HOME } from '@/shared/constants/onlineRoutes';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 
-
 /** Vertical menu focus — 5 rows: FREE PLAY, P2P, ONLINE, LEDGER, ABOUT+CONFIG */
 type MenuState = 1 | 2 | 3 | 4 | 5;
 type Row6Focus = 'about' | 'config';
@@ -134,7 +133,9 @@ export default function Index() {
 
   useEffect(() => {
     const fromMainMenu = Boolean(
-      (location.state as MenuNavigationState | null)?.[CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM]
+      (location.state as MenuNavigationState | null)?.[
+        CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM
+      ]
     );
     confirmSuppressUntilRef.current =
       performance.now() + indexConfirmSuppressMs(fromMainMenu);
@@ -247,7 +248,15 @@ export default function Index() {
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [location.pathname, location.search, location.hash, navigate, playSfx, keyboardNavState, row6Focus]);
+  }, [
+    location.pathname,
+    location.search,
+    location.hash,
+    navigate,
+    playSfx,
+    keyboardNavState,
+    row6Focus,
+  ]);
 
   return (
     <div className="flex full flex-center index-page">
@@ -352,7 +361,11 @@ export default function Index() {
                   }}
                   id="configbuttonhome"
                   className="index-config-home-btn"
-                  aria-label={nostrSession.signedIn ? 'Config (signed in with Nostr)' : 'Config'}
+                  aria-label={
+                    nostrSession.signedIn
+                      ? 'Config (signed in with Nostr)'
+                      : 'Config'
+                  }
                 >
                   {nostrSession.signedIn ? (
                     nostrSession.picture && !configAvatarBroken ? (
@@ -366,10 +379,17 @@ export default function Index() {
                         onError={() => setConfigAvatarBroken(true)}
                       />
                     ) : (
-                      <span className="index-config-home-btn__avatar-skeleton" aria-hidden />
+                      <span
+                        className="index-config-home-btn__avatar-skeleton"
+                        aria-hidden
+                      />
                     )
                   ) : (
-                    <span id="backendStatusHome" className="backend-status on" aria-hidden>
+                    <span
+                      id="backendStatusHome"
+                      className="backend-status on"
+                      aria-hidden
+                    >
                       •
                     </span>
                   )}
@@ -405,7 +425,10 @@ export default function Index() {
         alt="Announcement"
       />
 
-      <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
+      <BackgroundAudio
+        src="/sound/chain_duel_produced_menu.m4a"
+        autoplay={true}
+      />
     </div>
   );
 }

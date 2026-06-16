@@ -12,7 +12,10 @@ import {
   startCountdown,
   stepGame,
 } from '@/game/engine';
-import { applyPowerUpForPlayer, checkPowerUpPickup } from '@/game/engine/powerups';
+import {
+  applyPowerUpForPlayer,
+  checkPowerUpPickup,
+} from '@/game/engine/powerups';
 
 describe('game engine parity behavior', () => {
   it('paid duel preserves zero sats and locks to winner on refresh', () => {
@@ -139,7 +142,11 @@ describe('game engine parity behavior', () => {
     checkPowerUpPickup(state);
 
     expect(state.powerUpItems).toHaveLength(0);
-    expect(state.activePowerUps.some((ap) => ap.type === 'SURGE' && ap.playerIndex === 2)).toBe(true);
+    expect(
+      state.activePowerUps.some(
+        (ap) => ap.type === 'SURGE' && ap.playerIndex === 2
+      )
+    ).toBe(true);
   });
 
   it('FFA freeze slows all other players', () => {
@@ -157,9 +164,19 @@ describe('game engine parity behavior', () => {
 
     applyPowerUpForPlayer(state, 0, 'FREEZE');
 
-    expect(state.activePowerUps.filter((ap) => ap.type === 'FREEZE')).toHaveLength(3);
-    expect(state.activePowerUps.some((ap) => ap.type === 'FREEZE' && ap.playerIndex === 0)).toBe(false);
-    expect(state.activePowerUps.some((ap) => ap.type === 'FREEZE' && ap.playerIndex === 3)).toBe(true);
+    expect(
+      state.activePowerUps.filter((ap) => ap.type === 'FREEZE')
+    ).toHaveLength(3);
+    expect(
+      state.activePowerUps.some(
+        (ap) => ap.type === 'FREEZE' && ap.playerIndex === 0
+      )
+    ).toBe(false);
+    expect(
+      state.activePowerUps.some(
+        (ap) => ap.type === 'FREEZE' && ap.playerIndex === 3
+      )
+    ).toBe(true);
   });
 
   it('FFA extra snakes keep spawn facing on first tick', () => {
@@ -264,7 +281,10 @@ describe('game engine parity behavior', () => {
     state.gameStarted = true;
     const ghost = state.extraSnakes[0]!;
     ghost.snake.head = [0, 20];
-    ghost.snake.body = [[19, 12], [18, 12]];
+    ghost.snake.body = [
+      [19, 12],
+      [18, 12],
+    ];
     ghost.snake.dir = 'Left';
     ghost.snake.dirWanted = 'Left';
 

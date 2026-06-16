@@ -15,26 +15,76 @@ export type GameModifiersSectionProps = {
 
 function ZoneIcon() {
   return (
-    <svg className="p2p-duel-format__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1" fill="none" />
-      <circle cx="12" cy="12" r="5.5" stroke="currentColor" strokeWidth="1" fill="none" />
-      <circle cx="12" cy="12" r="1.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.3" />
+    <svg
+      className="p2p-duel-format__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeWidth="1"
+        fill="none"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="5.5"
+        stroke="currentColor"
+        strokeWidth="1"
+        fill="none"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="1.5"
+        stroke="currentColor"
+        strokeWidth="1"
+        fill="currentColor"
+        fillOpacity="0.3"
+      />
     </svg>
   );
 }
 
 function TimeLimitIcon() {
   return (
-    <svg className="p2p-duel-format__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1" fill="none" />
-      <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      className="p2p-duel-format__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeWidth="1"
+        fill="none"
+      />
+      <path
+        d="M12 7v5l3 3"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function PowerupsIcon() {
   return (
-    <svg className="p2p-duel-format__icon p2p-duel-format__icon--pop" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      className="p2p-duel-format__icon p2p-duel-format__icon--pop"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M 10.5 3 H 13.5 V 10.5 H 21 V 13.5 H 13.5 V 21 H 10.5 V 13.5 H 3 V 10.5 H 10.5 Z"
         stroke="currentColor"
@@ -72,36 +122,55 @@ function DisabledModifierCard({
 
 export function GameModifiersSection({ powerups }: GameModifiersSectionProps) {
   return (
-    <section className="practice-section p2p-modifiers-section" aria-label="Game modifiers">
+    <section
+      className="practice-section p2p-modifiers-section"
+      aria-label="Game modifiers"
+    >
       <div className="ph-picker-block">
         <h3 className="p2p-picker-group-label">MODIFIERS</h3>
-        <div className="p2p-duel-format" role="group" aria-label="Game modifiers">
-        {powerups ? (
-          <button
-            ref={powerups.buttonRef as Ref<HTMLButtonElement>}
-            type="button"
-            aria-pressed={powerups.enabled}
-            tabIndex={powerups.focused ? 0 : -1}
-            className={[
-              'p2p-duel-format__card',
-              powerups.enabled ? 'p2p-duel-format__card--active' : '',
-              powerups.focused ? 'practice-focus-target' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={powerups.onToggle}
-            onFocus={powerups.onFocus}
-          >
-            <PowerupsIcon />
-            <span className="p2p-duel-format__label">Power-ups</span>
-            <span className="p2p-duel-format__desc">Items</span>
-          </button>
-        ) : (
-          <DisabledModifierCard label="Power-ups" desc="Items" icon={<PowerupsIcon />} />
-        )}
-        <DisabledModifierCard label="Convergence" desc="Board shrink" icon={<ZoneIcon />} />
-        <DisabledModifierCard label="3 min" desc="Time limit" icon={<TimeLimitIcon />} />
-      </div>
+        <div
+          className="p2p-duel-format"
+          role="group"
+          aria-label="Game modifiers"
+        >
+          {powerups ? (
+            <button
+              ref={powerups.buttonRef as Ref<HTMLButtonElement>}
+              type="button"
+              aria-pressed={powerups.enabled}
+              tabIndex={powerups.focused ? 0 : -1}
+              className={[
+                'p2p-duel-format__card',
+                powerups.enabled ? 'p2p-duel-format__card--active' : '',
+                powerups.focused ? 'practice-focus-target' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={powerups.onToggle}
+              onFocus={powerups.onFocus}
+            >
+              <PowerupsIcon />
+              <span className="p2p-duel-format__label">Power-ups</span>
+              <span className="p2p-duel-format__desc">Items</span>
+            </button>
+          ) : (
+            <DisabledModifierCard
+              label="Power-ups"
+              desc="Items"
+              icon={<PowerupsIcon />}
+            />
+          )}
+          <DisabledModifierCard
+            label="Convergence"
+            desc="Board shrink"
+            icon={<ZoneIcon />}
+          />
+          <DisabledModifierCard
+            label="3 min"
+            desc="Time limit"
+            icon={<TimeLimitIcon />}
+          />
+        </div>
       </div>
     </section>
   );

@@ -43,9 +43,13 @@ export default function PostGame() {
   const { socket } = useSocket();
   const [loading, setLoading] = useState(true);
   const [menu, setMenu] = useState<MenuState>(1);
-  const [activeButtonMenu1, setActiveButtonMenu1] = useState<ActiveButtonMenu1>(0);
-  const [activeButtonMenu3, setActiveButtonMenu3] = useState<ActiveButtonMenu3>(0);
-  const [winnerPlayer, setWinnerPlayer] = useState<'Player 1' | 'Player 2'>('Player 1');
+  const [activeButtonMenu1, setActiveButtonMenu1] =
+    useState<ActiveButtonMenu1>(0);
+  const [activeButtonMenu3, setActiveButtonMenu3] =
+    useState<ActiveButtonMenu3>(0);
+  const [winnerPlayer, setWinnerPlayer] = useState<'Player 1' | 'Player 2'>(
+    'Player 1'
+  );
   const [winnerName, setWinnerName] = useState('PLAYER 1');
   const [winnerPicture, setWinnerPicture] = useState<string>('');
   const [p1Name, setP1Name] = useState('Player 1');
@@ -72,7 +76,10 @@ export default function PostGame() {
     const emitTimer = window.setTimeout(requestPostGameInfo, 0);
     socket.on('connect', requestPostGameInfo);
     // Do not keep the page blocked forever when backend does not answer.
-    const fallbackTimer = window.setTimeout(() => setLoading(false), LOADING_FALLBACK_TIMEOUT_MS);
+    const fallbackTimer = window.setTimeout(
+      () => setLoading(false),
+      LOADING_FALLBACK_TIMEOUT_MS
+    );
     return () => {
       window.clearTimeout(emitTimer);
       window.clearTimeout(fallbackTimer);
@@ -84,8 +91,12 @@ export default function PostGame() {
     try {
       const response = await fetch('/files/highscores.json');
       if (!response.ok) return;
-      const highscores = (await response.json()) as Array<Record<string, unknown>>;
-      const ordered = [...highscores].sort((a, b) => Number(b.prize) - Number(a.prize));
+      const highscores = (await response.json()) as Array<
+        Record<string, unknown>
+      >;
+      const ordered = [...highscores].sort(
+        (a, b) => Number(b.prize) - Number(a.prize)
+      );
       const last = ordered[ordered.length - 1];
       if (!last || Number(last.prize) >= totalPrize) return;
 
@@ -109,7 +120,15 @@ export default function PostGame() {
     } catch {
       // Keep UX resilient even if highscore update fails.
     }
-  }, [p1Deposit, p1Name, p2Deposit, p2Name, totalPrize, tournamentMode, winnerPlayer]);
+  }, [
+    p1Deposit,
+    p1Name,
+    p2Deposit,
+    p2Name,
+    totalPrize,
+    tournamentMode,
+    winnerPlayer,
+  ]);
 
   const onClaim = useCallback(() => {
     if (!socket) return;
@@ -137,7 +156,8 @@ export default function PostGame() {
 
   const onDoubleOrNothing = useCallback(() => {
     if (!socket) return;
-    if (qrRevealed || menu !== 1 || tournamentMode || prizeClaimed || loading) return;
+    if (qrRevealed || menu !== 1 || tournamentMode || prizeClaimed || loading)
+      return;
     logger.debug('emitting doubleornothing', {
       connected: socket.connected,
       id: socket.id,
@@ -150,9 +170,19 @@ export default function PostGame() {
         window.location.href = '/practice';
         return;
       }
-      window.location.href = gameMode === 'P2PNOSTR' ? '/gamemenu?nostr=true' : '/gamemenu';
+      window.location.href =
+        gameMode === 'P2PNOSTR' ? '/gamemenu?nostr=true' : '/gamemenu';
     }, 120);
-  }, [socket, qrRevealed, menu, tournamentMode, prizeClaimed, loading, gameMode, logger]);
+  }, [
+    socket,
+    qrRevealed,
+    menu,
+    tournamentMode,
+    prizeClaimed,
+    loading,
+    gameMode,
+    logger,
+  ]);
 
   useEffect(() => {
     if (!socket) return;
@@ -175,14 +205,14 @@ export default function PostGame() {
       setGameMode(info.mode ?? '');
 
       const p1N = p1?.name?.trim() || 'Player 1';
-      const p2N = p2?.name?.trim() || (info.mode === 'PRACTICE' ? 'BigToshi 🌊' : 'Player 2');
+      const p2N =
+        p2?.name?.trim() ||
+        (info.mode === 'PRACTICE' ? 'BigToshi 🌊' : 'Player 2');
       setP1Name(p1N);
       setP2Name(p2N);
 
       const p1S = Number(p1?.value ?? 0);
-      const p2S = Number(
-        info.mode === 'PRACTICE' ? 0 : p2?.value ?? 0
-      );
+      const p2S = Number(info.mode === 'PRACTICE' ? 0 : (p2?.value ?? 0));
       setP1Deposit(p1S);
       setP2Deposit(p2S);
 
@@ -206,9 +236,7 @@ export default function PostGame() {
         const winnerN = winnerP === 'Player 1' ? p1N : p2N;
         setWinnerName(winnerN.toUpperCase());
         const winnerPic =
-          winnerP === 'Player 1'
-            ? p1?.picture || ''
-            : p2?.picture || '';
+          winnerP === 'Player 1' ? p1?.picture || '' : p2?.picture || '';
         setWinnerPicture(winnerPic);
       }
 
@@ -261,7 +289,8 @@ export default function PostGame() {
   const designerFee = Math.floor(feeBase * DESIGNER_FEE_RATIO);
   const hostFee = developerFee;
   const practiceMode = gameMode === 'PRACTICE';
-  const canDoubleOrNothing = !qrRevealed && !tournamentMode && !prizeClaimed && !loading;
+  const canDoubleOrNothing =
+    !qrRevealed && !tournamentMode && !prizeClaimed && !loading;
   const qrCompatPulse = useLnurlQrCompatiblePulse(
     qrRevealed && menu === 2 && Boolean(qrValue) && !practiceMode
   );
@@ -274,7 +303,8 @@ export default function PostGame() {
 
   const claimButtonText = useMemo(() => {
     if (menu === 3) return 'LEDGER';
-    if (menu === 2) return creatingWithdrawal ? 'CREATING CODE...' : 'BLUR QR CODE';
+    if (menu === 2)
+      return creatingWithdrawal ? 'CREATING CODE...' : 'BLUR QR CODE';
     if (practiceMode) return 'END PRACTICE';
     if (tournamentMode) return 'CLAIM TOURNAMENT PRIZE';
     return 'SWEEP VIA LNURL';
@@ -290,14 +320,19 @@ export default function PostGame() {
       if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
         if (menu === 3) setActiveButtonMenu3(0);
       }
-      if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+      if (
+        event.key === 'ArrowRight' ||
+        event.key === 'd' ||
+        event.key === 'D'
+      ) {
         if (menu === 3) setActiveButtonMenu3(1);
       }
       if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
         if (menu === 1) setActiveButtonMenu1(0);
       }
       if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
-        if (menu === 1 && !tournamentMode && !qrRevealed) setActiveButtonMenu1(1);
+        if (menu === 1 && !tournamentMode && !qrRevealed)
+          setActiveButtonMenu1(1);
       }
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -315,7 +350,16 @@ export default function PostGame() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [menu, activeButtonMenu1, activeButtonMenu3, tournamentMode, qrRevealed, navigate, onClaim, onDoubleOrNothing]);
+  }, [
+    menu,
+    activeButtonMenu1,
+    activeButtonMenu3,
+    tournamentMode,
+    qrRevealed,
+    navigate,
+    onClaim,
+    onDoubleOrNothing,
+  ]);
 
   useEffect(() => {
     if (!canDoubleOrNothing) {
@@ -330,7 +374,10 @@ export default function PostGame() {
         <h2 id="duel">DUEL</h2>
       </header>
 
-      <div id="postGame" className={`flex full flex-center animateIn ${loading ? 'empty' : ''}`}>
+      <div
+        id="postGame"
+        className={`flex full flex-center animateIn ${loading ? 'empty' : ''}`}
+      >
         {practiceMode ? null : <Sponsorship id="sponsorship-postgame" />}
         <div className="flex">
           <h2 id="gameOver">GAME OVER</h2>
@@ -341,7 +388,10 @@ export default function PostGame() {
               src={winnerPicture || '/images/loading.gif'}
               alt=""
             />
-            <h1 id="winner" style={{ display: practiceMode ? 'none' : undefined }}>
+            <h1
+              id="winner"
+              style={{ display: practiceMode ? 'none' : undefined }}
+            >
               {winnerName} WINS
             </h1>
           </div>
@@ -350,23 +400,35 @@ export default function PostGame() {
         {practiceMode ? null : (
           <div id="fees">
             <span id="split1">
-              2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span> to the Sponsor (@piratehash)
+              2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span> to
+              the Sponsor (@piratehash)
             </span>{' '}
             ·{' '}
             <span id="split2">
-              2% <span id="developerFee">({developerFee.toLocaleString()} sats)</span> to the developer
-              (@francismars)
+              2%{' '}
+              <span id="developerFee">
+                ({developerFee.toLocaleString()} sats)
+              </span>{' '}
+              to the developer (@francismars)
             </span>{' '}
             ·{' '}
             <span id="split3">
-              1% <span id="designerFee">({designerFee.toLocaleString()} sats)</span> to the designer
-              (@bitcoinanatomy)
+              1%{' '}
+              <span id="designerFee">
+                ({designerFee.toLocaleString()} sats)
+              </span>{' '}
+              to the designer (@bitcoinanatomy)
             </span>
           </div>
         )}
 
-        <h1 id="prize">{totalPrize.toLocaleString()} SATS{prizeClaimed ? ' CLAIMED' : ''}</h1>
-        <p id="claimText" style={{ display: menu === 3 || practiceMode ? 'none' : undefined }}>
+        <h1 id="prize">
+          {totalPrize.toLocaleString()} SATS{prizeClaimed ? ' CLAIMED' : ''}
+        </h1>
+        <p
+          id="claimText"
+          style={{ display: menu === 3 || practiceMode ? 'none' : undefined }}
+        >
           CLAIM YOUR WINNINGS
         </p>
         <a
@@ -375,7 +437,12 @@ export default function PostGame() {
           className={qrcodeLinkClassName || undefined}
         >
           {menu === 3 ? null : qrValue ? (
-            <QRCodeCanvas className={`qrcode ${menu === 1 ? 'blur' : ''}`} id="qrCode1" value={qrValue} size={800} />
+            <QRCodeCanvas
+              className={`qrcode ${menu === 1 ? 'blur' : ''}`}
+              id="qrCode1"
+              value={qrValue}
+              size={800}
+            />
           ) : (
             <img
               className={menu === 1 ? 'blur' : ''}
@@ -401,7 +468,13 @@ export default function PostGame() {
             id="claimbutton"
             style={{
               animationDuration:
-                menu === 3 ? (activeButtonMenu3 === 0 ? '2s' : '0s') : (activeButtonMenu1 === 0 ? '2s' : '0s'),
+                menu === 3
+                  ? activeButtonMenu3 === 0
+                    ? '2s'
+                    : '0s'
+                  : activeButtonMenu1 === 0
+                    ? '2s'
+                    : '0s',
               marginLeft: menu === 3 ? '0px' : undefined,
               marginRight: menu === 3 ? '0px' : undefined,
             }}
@@ -442,7 +515,11 @@ export default function PostGame() {
               RETURN TO MAIN MENU
             </Button>
           ) : (
-            <Button id="startnewbutton" style={{ display: 'none' }} onClick={onMainMenu}>
+            <Button
+              id="startnewbutton"
+              style={{ display: 'none' }}
+              onClick={onMainMenu}
+            >
               RETURN TO MAIN MENU
             </Button>
           )}
@@ -458,7 +535,11 @@ export default function PostGame() {
           >
             _@chainduel.net
           </a>{' '}
-          <svg className="social-icon social-icon-x" viewBox="0 0 24 24" aria-hidden="true">
+          <svg
+            className="social-icon social-icon-x"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <path
               fill="currentColor"
               d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
@@ -484,7 +565,9 @@ export default function PostGame() {
   );
 }
 
-function resolveTournamentWinnerIdentity(info: PostGameInfoResponse): TournamentWinnerIdentity {
+function resolveTournamentWinnerIdentity(
+  info: PostGameInfoResponse
+): TournamentWinnerIdentity {
   const players = info.players ?? {};
   const winners = info.winners ?? [];
   const numberOfPlayers = Math.max(
@@ -494,7 +577,10 @@ function resolveTournamentWinnerIdentity(info: PostGameInfoResponse): Tournament
       : Object.keys(players).length || 2
   );
   if (winners.length === 0) {
-    return { name: players['Player 1']?.name?.trim() || 'Player 1', picture: players['Player 1']?.picture || '' };
+    return {
+      name: players['Player 1']?.name?.trim() || 'Player 1',
+      picture: players['Player 1']?.picture || '',
+    };
   }
 
   const entrantsNames: string[] = Array(numberOfPlayers).fill('');
@@ -539,14 +625,14 @@ function buildTournamentProgression<T>(
     if (i < round1Games) {
       winnerValue =
         winnerRole === 'Player 1'
-          ? entrants[i * 2] ?? fallback
-          : entrants[i * 2 + 1] ?? fallback;
+          ? (entrants[i * 2] ?? fallback)
+          : (entrants[i * 2 + 1] ?? fallback);
     } else {
       const p1i = (i - round1Games) * 2;
       winnerValue =
         winnerRole === 'Player 1'
-          ? progression[p1i] ?? fallback
-          : progression[p1i + 1] ?? fallback;
+          ? (progression[p1i] ?? fallback)
+          : (progression[p1i + 1] ?? fallback);
     }
     progression.push(winnerValue);
   }

@@ -38,7 +38,8 @@ export default function Highscores() {
   );
   const [pageHS, setPageHS] = useState<number>(0);
   const [highscores, setHighscores] = useState<Highscore[]>([]);
-  const [buttonSelected, setButtonSelected] = useState<ButtonSelected>('mainMenuButton');
+  const [buttonSelected, setButtonSelected] =
+    useState<ButtonSelected>('mainMenuButton');
   const prevButtonRef = useRef<HTMLButtonElement>(null);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const mainMenuButtonRef = useRef<HTMLButtonElement>(null);
@@ -118,7 +119,10 @@ export default function Highscores() {
 
       if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
         event.preventDefault();
-        if (buttonSelected === 'nextButton' || buttonSelected === 'prevButton') {
+        if (
+          buttonSelected === 'nextButton' ||
+          buttonSelected === 'prevButton'
+        ) {
           setButtonSelected('mainMenuButton');
         }
       }
@@ -130,7 +134,11 @@ export default function Highscores() {
         }
       }
 
-      if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+      if (
+        event.key === 'ArrowRight' ||
+        event.key === 'd' ||
+        event.key === 'D'
+      ) {
         event.preventDefault();
         if (buttonSelected === 'prevButton') {
           setButtonSelected('nextButton');
@@ -176,17 +184,28 @@ export default function Highscores() {
               const rank = pageHS * 7 + index + 1;
               const isTournament = highscore.tournament === true;
               const winnerName =
-                highscore.winner === 'Player1' ? highscore.p1Name : highscore.p2Name;
+                highscore.winner === 'Player1'
+                  ? highscore.p1Name
+                  : highscore.p2Name;
               const winnerSats =
-                highscore.winner === 'Player1' ? highscore.p1sats : highscore.p2sats;
+                highscore.winner === 'Player1'
+                  ? highscore.p1sats
+                  : highscore.p2sats;
               const loserName =
-                highscore.winner === 'Player1' ? highscore.p2Name : highscore.p1Name;
+                highscore.winner === 'Player1'
+                  ? highscore.p2Name
+                  : highscore.p1Name;
               const loserSats =
-                highscore.winner === 'Player1' ? highscore.p2sats : highscore.p1sats;
+                highscore.winner === 'Player1'
+                  ? highscore.p2sats
+                  : highscore.p1sats;
               const isLast = index === currentItems.length - 1;
 
               return (
-                <div key={rank} className={`score-row ${isLast ? 'score-row-last' : ''}`}>
+                <div
+                  key={rank}
+                  className={`score-row ${isLast ? 'score-row-last' : ''}`}
+                >
                   <h2 className="rankStyle">{rank}</h2>
                   <h2 className="tournStyle">{isTournament ? '🏆' : '👥'}</h2>
 
@@ -226,13 +245,18 @@ export default function Highscores() {
                       highscore.tournamentSponsor !== '' && (
                         <>
                           <span>sponsored by</span>
-                          <img src={highscore.tournamentSponsor} alt="Sponsor" />
+                          <img
+                            src={highscore.tournamentSponsor}
+                            alt="Sponsor"
+                          />
                         </>
                       )}
                   </div>
 
                   <div className="prizeinfo">
-                    <h2 className="prizeSatsStyle">{highscore.prize.toLocaleString()}</h2>
+                    <h2 className="prizeSatsStyle">
+                      {highscore.prize.toLocaleString()}
+                    </h2>
                     <span className="satsLabelStyle">sats</span>
                   </div>
                 </div>
@@ -249,14 +273,21 @@ export default function Highscores() {
                 Next
               </Button>
             </div>
-            <Button ref={mainMenuButtonRef} id="mainmenubutton" onClick={() => navigateToMainMenu(navigate)}>
+            <Button
+              ref={mainMenuButtonRef}
+              id="mainmenubutton"
+              onClick={() => navigateToMainMenu(navigate)}
+            >
               MAIN MENU
             </Button>
           </div>
         </div>
       </div>
 
-      <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
+      <BackgroundAudio
+        src="/sound/chain_duel_produced_menu.m4a"
+        autoplay={true}
+      />
     </>
   );
 }

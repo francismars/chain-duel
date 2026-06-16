@@ -11,7 +11,12 @@ const LEGACY_AI_TIER: Record<string, AiTier> = {
 
 /** Map persisted / legacy tier slugs to current AiTier values. */
 export function normalizeAiTier(tier: string | undefined): AiTier {
-  if (tier === 'normie' || tier === 'stacker' || tier === 'noderunner' || tier === 'sovereign') {
+  if (
+    tier === 'normie' ||
+    tier === 'stacker' ||
+    tier === 'noderunner' ||
+    tier === 'sovereign'
+  ) {
     return tier;
   }
   if (tier && tier in LEGACY_AI_TIER) return LEGACY_AI_TIER[tier]!;

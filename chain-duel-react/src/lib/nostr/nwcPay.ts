@@ -11,7 +11,10 @@
  */
 
 import { finalizeEvent, getPublicKey } from 'nostr-tools/pure';
-import { encrypt as nip04Encrypt, decrypt as nip04Decrypt } from 'nostr-tools/nip04';
+import {
+  encrypt as nip04Encrypt,
+  decrypt as nip04Decrypt,
+} from 'nostr-tools/nip04';
 import { hexToBytes } from 'nostr-tools/utils';
 
 // ─── Storage ─────────────────────────────────────────────────────────────────
@@ -50,11 +53,14 @@ export function parseNwcUri(uri: string): NwcConfig {
   }
   const rest = uri.slice(PREFIX.length);
   const qIdx = rest.indexOf('?');
-  if (qIdx === -1) throw new Error('Invalid NWC URI — missing query parameters');
+  if (qIdx === -1)
+    throw new Error('Invalid NWC URI — missing query parameters');
 
   const walletPubkey = rest.slice(0, qIdx);
   if (!/^[0-9a-f]{64}$/i.test(walletPubkey)) {
-    throw new Error('Invalid NWC URI — wallet pubkey must be 64 hex characters');
+    throw new Error(
+      'Invalid NWC URI — wallet pubkey must be 64 hex characters'
+    );
   }
 
   const params = new URLSearchParams(rest.slice(qIdx + 1));
@@ -66,7 +72,11 @@ export function parseNwcUri(uri: string): NwcConfig {
     throw new Error('Invalid NWC URI — missing or malformed secret parameter');
   }
 
-  return { walletPubkey: walletPubkey.toLowerCase(), relay, secretHex: secretHex.toLowerCase() };
+  return {
+    walletPubkey: walletPubkey.toLowerCase(),
+    relay,
+    secretHex: secretHex.toLowerCase(),
+  };
 }
 
 // ─── NIP-47 pay_invoice ───────────────────────────────────────────────────────
@@ -83,7 +93,10 @@ const DBG = '[NWC]';
  * @param bolt11     The bolt11 payment request string.
  * @param timeoutMs  How long to wait for the wallet's response (default 60 s).
  */
-export async function nwcPay(bolt11: string, timeoutMs = 60_000): Promise<NwcPayResult> {
+export async function nwcPay(
+  bolt11: string,
+  timeoutMs = 60_000
+): Promise<NwcPayResult> {
   const rawUri = getNwcUri();
   if (!rawUri) throw new Error('No NWC URI configured. Add one in Settings.');
 
@@ -97,7 +110,11 @@ export async function nwcPay(bolt11: string, timeoutMs = 60_000): Promise<NwcPay
     params: { invoice: bolt11 },
   });
 
-  const encryptedContent = await nip04Encrypt(secretHex, walletPubkey, requestPayload);
+  const encryptedContent = await nip04Encrypt(
+    secretHex,
+    walletPubkey,
+    requestPayload
+  );
 
   const requestEventTemplate = {
     kind: 23194,
@@ -135,7 +152,10 @@ export async function nwcPay(bolt11: string, timeoutMs = 60_000): Promise<NwcPay
     };
 
     timer = setTimeout(() => {
-      finish(null, new Error('NWC payment timed out — wallet did not respond in time.'));
+      finish(
+        null,
+        new Error('NWC payment timed out — wallet did not respond in time.')
+      );
     }, timeoutMs);
 
     ws = new WebSocket(relay);
@@ -159,27 +179,52 @@ export async function nwcPay(bolt11: string, timeoutMs = 60_000): Promise<NwcPay
 
     ws.onmessage = (msg) => {
       let parsed: unknown;
-      try { parsed = JSON.parse(msg.data as string); } catch { return; }
+      try {
+        parsed = JSON.parse(msg.data as string);
+      } catch {
+        return;
+      }
       if (!Array.isArray(parsed)) return;
 
-      const [type, , event] = parsed as [string, string, Record<string, unknown>];
+      const [type, , event] = parsed as [
+        string,
+        string,
+        Record<string, unknown>,
+      ];
       if (type !== 'EVENT') return;
       if (!event || event.kind !== 23195) return;
 
       void (async () => {
         let plaintext: string;
         try {
-          plaintext = await nip04Decrypt(secretHex, walletPubkey, event.content as string);
+          plaintext = await nip04Decrypt(
+            secretHex,
+            walletPubkey,
+            event.content as string
+          );
         } catch (e) {
           console.warn(DBG, 'failed to decrypt response:', e);
           return;
         }
 
-        let response: { result_type?: string; result?: { preimage?: string }; error?: { code?: string; message?: string } };
-        try { response = JSON.parse(plaintext); } catch { return; }
+        let response: {
+          result_type?: string;
+          result?: { preimage?: string };
+          error?: { code?: string; message?: string };
+        };
+        try {
+          response = JSON.parse(plaintext);
+        } catch {
+          return;
+        }
 
         if (response.error) {
-          finish(null, new Error(response.error.message ?? response.error.code ?? 'Payment failed'));
+          finish(
+            null,
+            new Error(
+              response.error.message ?? response.error.code ?? 'Payment failed'
+            )
+          );
           return;
         }
 

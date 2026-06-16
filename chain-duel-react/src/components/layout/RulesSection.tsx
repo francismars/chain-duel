@@ -7,9 +7,7 @@ export function RulesSection() {
     <div id="centerSection">
       <div id="gameCard">
         <p className="ruleTitle">1. Stake your sats</p>
-        <p className="gameDescription grey">
-          Deposit your sats, play, redeem.
-        </p>
+        <p className="gameDescription grey">Deposit your sats, play, redeem.</p>
         <p className="gameDescription grey">
           Cycle ends when one chain hits zero sats.
         </p>

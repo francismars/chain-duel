@@ -9,7 +9,10 @@ import {
   type ReactNode,
 } from 'react';
 import type { Socket } from 'socket.io-client';
-import type { ClientToServerEvents, ServerToClientEvents } from '@/types/socket';
+import type {
+  ClientToServerEvents,
+  ServerToClientEvents,
+} from '@/types/socket';
 import { disconnectSocket, getSocket, type SocketConfig } from '@/lib/socket';
 import { loadConfig } from '@/lib/config';
 
@@ -25,13 +28,17 @@ const SocketContext = createContext<SocketContextValue | null>(null);
 
 /** One Socket.io connection for the whole app — mount once near the root. */
 export function SocketProvider({ children }: { children: ReactNode }) {
-  const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(
-    null,
-  );
+  const [socket, setSocket] = useState<Socket<
+    ServerToClientEvents,
+    ClientToServerEvents
+  > | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const configRef = useRef<SocketConfig | null>(null);
-  const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+  const socketRef = useRef<Socket<
+    ServerToClientEvents,
+    ClientToServerEvents
+  > | null>(null);
 
   const connect = useCallback(async () => {
     try {
@@ -88,10 +95,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({ socket, connected, error, connect, disconnect }),
-    [socket, connected, error, connect, disconnect],
+    [socket, connected, error, connect, disconnect]
   );
 
-  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
+  return (
+    <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
+  );
 }
 
 export function useSocketContext(): SocketContextValue {

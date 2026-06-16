@@ -1,7 +1,10 @@
 import type { CSSProperties } from 'react';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import type { FfaHudPlayer } from '@/game/engine/types';
-import { GameInfoLabel, type ChallengeHudInfo } from '@/features/game/GameInfoLabel';
+import {
+  GameInfoLabel,
+  type ChallengeHudInfo,
+} from '@/features/game/GameInfoLabel';
 import './ffa-game-hud.css';
 
 interface FfaHudProps {
@@ -56,7 +59,11 @@ function DistributionBar({
     >
       {!live ? <div className="distributionTitle">{title}</div> : null}
       <div className="ffa-distribution-track" aria-hidden>
-        {live ? <div className="distributionTitle ffa-distribution-title-in-bar">{title}</div> : null}
+        {live ? (
+          <div className="distributionTitle ffa-distribution-title-in-bar">
+            {title}
+          </div>
+        ) : null}
         {players.map((player) => {
           const width = player[shareKey];
           const segment = (
@@ -78,7 +85,13 @@ function DistributionBar({
   );
 }
 
-function PlayerName({ player, index }: { player: FfaHudPlayer; index: number }) {
+function PlayerName({
+  player,
+  index,
+}: {
+  player: FfaHudPlayer;
+  index: number;
+}) {
   const alignRight = index >= 2;
   return (
     <div className={`ffa-hud-slot ffa-hud-slot-${index}`}>
@@ -113,7 +126,11 @@ function PlayerCapture({
 }) {
   return (
     <div className={`ffa-hud-slot ffa-hud-slot-${index}`}>
-      <CaptureLine player={player} alignRight={index >= 2} highlighted={highlighted} />
+      <CaptureLine
+        player={player}
+        alignRight={index >= 2}
+        highlighted={highlighted}
+      />
     </div>
   );
 }
@@ -138,7 +155,12 @@ function SatsSlot({ player, index }: { player: FfaHudPlayer; index: number }) {
 }
 
 /** Unified FFA HUD — stacked rows, shared 4-column grid for players and sats. */
-export function FfaHud({ players, gameInfo, challengeHud, captureHighlights = [] }: FfaHudProps) {
+export function FfaHud({
+  players,
+  gameInfo,
+  challengeHud,
+  captureHighlights = [],
+}: FfaHudProps) {
   return (
     <div className="ffa-hud">
       <div className="ffa-hud-players">
@@ -202,8 +224,19 @@ export function FfaPlayersBar(props: FfaHudProps) {
 export function FfaGameHud({ players }: { players: FfaHudPlayer[] }) {
   return (
     <div className="ffa-hud-bars-only">
-      <DistributionBar id="initialDistribution" title="Initial Distribution" players={players} shareKey="initialShare" />
-      <DistributionBar id="currentDistribution" title="Current Distribution" players={players} shareKey="currentShare" live />
+      <DistributionBar
+        id="initialDistribution"
+        title="Initial Distribution"
+        players={players}
+        shareKey="initialShare"
+      />
+      <DistributionBar
+        id="currentDistribution"
+        title="Current Distribution"
+        players={players}
+        shareKey="currentShare"
+        live
+      />
     </div>
   );
 }

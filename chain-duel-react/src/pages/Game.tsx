@@ -7,7 +7,11 @@ import { useNoteContentDisplay } from '@/lib/nostr/formatNoteContentForDisplay';
 import { signChallengeBountyNote } from '@/lib/nostr/signChallengeBountyNote';
 import { createFlowTrace } from '@/lib/nostr/nip46Trace';
 import { resolveSignerMode } from '@/lib/nostr/signerSession';
-import { claimChallengeBounty, retryChallengeZap, submitChallengeWin } from '@/lib/challengeBounty';
+import {
+  claimChallengeBounty,
+  retryChallengeZap,
+  submitChallengeWin,
+} from '@/lib/challengeBounty';
 import {
   clearPendingChallengeClaim,
   loadPendingChallengeClaim,
@@ -36,7 +40,10 @@ import { useGameRenderBridge } from '@/features/game/hooks/useGameRenderBridge';
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
 import { PowerUpLegend } from '@/features/game/PowerUpLegend';
 import { FfaHud } from '@/features/game/FfaGameHud';
-import { GameInfoLabel, readChallengeHudFromConfig } from '@/features/game/GameInfoLabel';
+import {
+  GameInfoLabel,
+  readChallengeHudFromConfig,
+} from '@/features/game/GameInfoLabel';
 import type { FfaHudPlayer } from '@/game/engine/types';
 import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import {
@@ -125,16 +132,26 @@ export default function Game() {
   const [currentP2Width, setCurrentP2Width] = useState(50);
   const [isFfa, setIsFfa] = useState(false);
   const [ffaPlayers, setFfaPlayers] = useState<FfaHudPlayer[]>([]);
-  const [ffaCaptureHighlights, setFfaCaptureHighlights] = useState([false, false, false, false]);
+  const [ffaCaptureHighlights, setFfaCaptureHighlights] = useState([
+    false,
+    false,
+    false,
+    false,
+  ]);
   const ffaCapturePrevRef = useRef(['2%', '2%', '2%', '2%']);
-  const [bitcoin, setBitcoin] = useState<BitcoinDetails>(DEFAULT_BITCOIN_DETAILS);
+  const [bitcoin, setBitcoin] = useState<BitcoinDetails>(
+    DEFAULT_BITCOIN_DETAILS
+  );
   const [footerHighlight, setFooterHighlight] = useState(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
-  const [soloPendingEndData, setSoloPendingEndData] = useState<SoloEndData | null>(null);
+  const [soloPendingEndData, setSoloPendingEndData] =
+    useState<SoloEndData | null>(null);
   const [showExitOverlay, setShowExitOverlay] = useState(false);
-  const [exitOverlayFocus, setExitOverlayFocus] = useState<'abort' | 'confirm'>('abort');
+  const [exitOverlayFocus, setExitOverlayFocus] = useState<'abort' | 'confirm'>(
+    'abort'
+  );
   const practiceSession = useMemo(() => {
     const cfg = readSessionGameConfig();
     return {
@@ -142,7 +159,9 @@ export default function Game() {
       isChallenge: isPracticeChallengeConfig(cfg),
     };
   }, []);
-  const [noteState, setNoteState] = useState<'idle' | 'posting' | 'posted' | 'error' | 'zapping'>('idle');
+  const [noteState, setNoteState] = useState<
+    'idle' | 'posting' | 'posted' | 'error' | 'zapping'
+  >('idle');
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteAuthorPubkey, setNoteAuthorPubkey] = useState<string | null>(null);
   const [noteAuthorName, setNoteAuthorName] = useState<string>('Nostr user');
@@ -151,20 +170,31 @@ export default function Game() {
   const noteContentDisplay = useNoteContentDisplay(soloEndData?.noteContent);
 
   const postBountyNote = useCallback(async () => {
-    if (!soloEndData?.claimToken || !soloEndData.noteContent || !soloEndData.noteTags) return;
+    if (
+      !soloEndData?.claimToken ||
+      !soloEndData.noteContent ||
+      !soloEndData.noteTags
+    )
+      return;
     const trace = createFlowTrace('challenge', 'post-and-claim');
     setNoteState('posting');
     setNoteError(null);
     try {
       if (!socket) throw new Error('Not connected to server.');
-      trace.step('begin', `bounty=${soloEndData.bounty} sats challenge=${soloEndData.challengeId}`);
+      trace.step(
+        'begin',
+        `bounty=${soloEndData.bounty} sats challenge=${soloEndData.challengeId}`
+      );
       const unsigned = {
         kind: 1 as const,
         created_at: Math.floor(Date.now() / 1000),
         tags: soloEndData.noteTags,
         content: soloEndData.noteContent,
       };
-      trace.step('signing bounty note', 'see [challenge] sign-bounty-note + [relay] bounty-note/kind-1');
+      trace.step(
+        'signing bounty note',
+        'see [challenge] sign-bounty-note + [relay] bounty-note/kind-1'
+      );
       const signed = await signChallengeBountyNote(unsigned);
       trace.step('sign complete', `event id=${signed.id?.slice(0, 12)}…`);
       setNoteState('zapping');
@@ -175,15 +205,23 @@ export default function Game() {
       });
       if (!result.ok) throw new Error(result.reason);
       setSoloEndData((prev) =>
-        prev ? { ...prev, zapPaid: result.zapPaid, zapReason: result.zapReason } : prev
+        prev
+          ? { ...prev, zapPaid: result.zapPaid, zapReason: result.zapReason }
+          : prev
       );
       clearPendingChallengeClaim();
       setNoteState('posted');
-      trace.done(result.zapPaid ? 'posted and zapped' : `posted (zap: ${result.zapReason ?? 'skipped'})`);
+      trace.done(
+        result.zapPaid
+          ? 'posted and zapped'
+          : `posted (zap: ${result.zapReason ?? 'skipped'})`
+      );
     } catch (err) {
       trace.fail('post-and-claim', err);
       setNoteState('error');
-      setNoteError(err instanceof Error ? err.message : 'Failed to claim bounty.');
+      setNoteError(
+        err instanceof Error ? err.message : 'Failed to claim bounty.'
+      );
     }
   }, [soloEndData, socket]);
 
@@ -193,7 +231,9 @@ export default function Game() {
     try {
       const result = await retryChallengeZap(socket, soloEndData.challengeId);
       if (!result.ok) throw new Error(result.reason ?? 'Zap retry failed');
-      setSoloEndData((prev) => (prev ? { ...prev, zapPaid: true, zapReason: undefined } : prev));
+      setSoloEndData((prev) =>
+        prev ? { ...prev, zapPaid: true, zapReason: undefined } : prev
+      );
     } catch (err) {
       setNoteError(err instanceof Error ? err.message : 'Zap retry failed.');
     }
@@ -301,17 +341,17 @@ export default function Game() {
 
   const ignoreSocketSessionUpdates = useMemo(
     () => sessionUsesPracticeHubConfig(),
-    [],
+    []
   );
 
   const isChallengeSession = useMemo(
     () => isPracticeChallengeConfig(readSessionGameConfig()),
-    [],
+    []
   );
 
   const challengeHud = useMemo(
     () => readChallengeHudFromConfig(readSessionGameConfig()),
-    [],
+    []
   );
 
   const bootstrapLocalGame = useCallback(() => {
@@ -326,7 +366,9 @@ export default function Game() {
     const isPowerup =
       isLegacyPowerup || (isPracticeHub && Boolean(gameConfig.powerupMode));
     const isPracticeMode = Boolean(gameConfig.practiceMode);
-    const aiTier = normalizeAiTier((gameConfig.aiTier as string | undefined) ?? undefined);
+    const aiTier = normalizeAiTier(
+      (gameConfig.aiTier as string | undefined) ?? undefined
+    );
     const optCfgStr = (v: unknown): string | undefined => {
       if (v == null) return undefined;
       const s = String(v).trim();
@@ -338,9 +380,11 @@ export default function Game() {
         fallbackLabel: optCfgStr(gameConfig.p1FallbackLabel),
         nostrPubkey: optCfgStr(gameConfig.p1NostrPubkey ?? gameConfig.p1Npub),
       },
-      'Player 1',
+      'Player 1'
     );
-    const rawP2Name = String(gameConfig.p2Name ?? (isPracticeMode ? 'BigToshi 🌊' : 'Player 2'));
+    const rawP2Name = String(
+      gameConfig.p2Name ?? (isPracticeMode ? 'BigToshi 🌊' : 'Player 2')
+    );
 
     let p1Human = true;
     let p2Human = !isPracticeMode;
@@ -364,9 +408,11 @@ export default function Game() {
           {
             name: optCfgStr(gameConfig.p2Name),
             fallbackLabel: optCfgStr(gameConfig.p2FallbackLabel),
-            nostrPubkey: optCfgStr(gameConfig.p2NostrPubkey ?? gameConfig.p2Npub),
+            nostrPubkey: optCfgStr(
+              gameConfig.p2NostrPubkey ?? gameConfig.p2Npub
+            ),
           },
-          'Player 2',
+          'Player 2'
         )
       : isPracticeMode
         ? rawP2Name
@@ -375,28 +421,36 @@ export default function Game() {
     const rawTeamMode = (gameConfig.teamMode as string | undefined) ?? 'solo';
     const teamMode = rawTeamMode === 'ffa' ? 'ffa' : 'solo';
 
-    const convergenceShrinkInterval = gameConfig.convergenceShrinkInterval != null
-      ? Number(gameConfig.convergenceShrinkInterval)
-      : undefined;
-    const convergenceMinCols = gameConfig.convergenceMinCols != null
-      ? Number(gameConfig.convergenceMinCols)
-      : undefined;
-    const convergenceMinRows = gameConfig.convergenceMinRows != null
-      ? Number(gameConfig.convergenceMinRows)
-      : undefined;
-    const convergenceStepMs = gameConfig.convergenceStepMs != null
-      ? Number(gameConfig.convergenceStepMs)
-      : undefined;
+    const convergenceShrinkInterval =
+      gameConfig.convergenceShrinkInterval != null
+        ? Number(gameConfig.convergenceShrinkInterval)
+        : undefined;
+    const convergenceMinCols =
+      gameConfig.convergenceMinCols != null
+        ? Number(gameConfig.convergenceMinCols)
+        : undefined;
+    const convergenceMinRows =
+      gameConfig.convergenceMinRows != null
+        ? Number(gameConfig.convergenceMinRows)
+        : undefined;
+    const convergenceStepMs =
+      gameConfig.convergenceStepMs != null
+        ? Number(gameConfig.convergenceStepMs)
+        : undefined;
 
     const challengeStake = challengeStartSatsPerPlayer(gameConfig);
     const defaultStake = challengeStake ?? 1000;
     const p1Points = Math.max(
       1,
-      Math.floor(Number(gameConfig.p1Points ?? gameConfig.p1Sats ?? defaultStake)),
+      Math.floor(
+        Number(gameConfig.p1Points ?? gameConfig.p1Sats ?? defaultStake)
+      )
     );
     const p2Points = Math.max(
       1,
-      Math.floor(Number(gameConfig.p2Points ?? gameConfig.p2Sats ?? defaultStake)),
+      Math.floor(
+        Number(gameConfig.p2Points ?? gameConfig.p2Sats ?? defaultStake)
+      )
     );
 
     if (!localBootRef.current) {
@@ -405,9 +459,10 @@ export default function Game() {
       challengeInputLogRef.current = [];
       challengeWinSubmittedRef.current = false;
 
-      const challengeSeed = typeof gameConfig.challengeRunSeed === 'string'
-        ? gameConfig.challengeRunSeed
-        : '';
+      const challengeSeed =
+        typeof gameConfig.challengeRunSeed === 'string'
+          ? gameConfig.challengeRunSeed
+          : '';
       if (isPracticeChallengeConfig(gameConfig) && challengeSeed) {
         initRunRng(challengeSeed);
       } else {
@@ -415,28 +470,28 @@ export default function Game() {
       }
 
       const state = createGameState({
-      p1Name,
-      p2Name: displayP2Name,
-      p1Points,
-      p2Points,
-      modeLabel,
-      practiceMode: isPracticeMode,
-      p1Human,
-      p2Human,
-      p3Human,
-      p4Human,
-      isTournament: false,
-      aiTier,
-      ffaAiTier: gameConfig.ffaAiTier
-        ? normalizeAiTier(gameConfig.ffaAiTier as string)
-        : undefined,
-      convergenceMode: isConvergence,
-      convergenceShrinkInterval,
-      convergenceMinCols,
-      convergenceMinRows,
-      convergenceStepMs,
-      powerupMode: isPowerup,
-      teamMode,
+        p1Name,
+        p2Name: displayP2Name,
+        p1Points,
+        p2Points,
+        modeLabel,
+        practiceMode: isPracticeMode,
+        p1Human,
+        p2Human,
+        p3Human,
+        p4Human,
+        isTournament: false,
+        aiTier,
+        ffaAiTier: gameConfig.ffaAiTier
+          ? normalizeAiTier(gameConfig.ffaAiTier as string)
+          : undefined,
+        convergenceMode: isConvergence,
+        convergenceShrinkInterval,
+        convergenceMinCols,
+        convergenceMinRows,
+        convergenceStepMs,
+        powerupMode: isPowerup,
+        teamMode,
       });
       stateRef.current = state;
       winnerSentRef.current = false;
@@ -494,7 +549,12 @@ export default function Game() {
   useEffect(() => {
     if (loading) return;
     let cfg: Record<string, unknown> = {};
-    try { const r = sessionStorage.getItem('gameConfig'); if (r) cfg = JSON.parse(r); } catch { /* ignore */ }
+    try {
+      const r = sessionStorage.getItem('gameConfig');
+      if (r) cfg = JSON.parse(r);
+    } catch {
+      /* ignore */
+    }
     if (!isPracticeChallengeConfig(cfg)) return;
 
     const poll = window.setInterval(() => {
@@ -524,7 +584,13 @@ export default function Game() {
           return;
         }
         challengeWinSubmittedRef.current = true;
-        setSoloPendingEndData({ won: true, name, bounty, challengeId, validating: true });
+        setSoloPendingEndData({
+          won: true,
+          name,
+          bounty,
+          challengeId,
+          validating: true,
+        });
         try {
           const result = await submitChallengeWin(socket, {
             runId,
@@ -558,7 +624,8 @@ export default function Game() {
             bounty,
             challengeId,
             validating: false,
-            validationError: err instanceof Error ? err.message : 'validation_failed',
+            validationError:
+              err instanceof Error ? err.message : 'validation_failed',
           });
         }
       }, 2000);
@@ -568,7 +635,11 @@ export default function Game() {
   }, [loading, stateRef, socket]);
 
   useEffect(() => {
-    if (soloEndData?.validating && soloPendingEndData && !soloPendingEndData.validating) {
+    if (
+      soloEndData?.validating &&
+      soloPendingEndData &&
+      !soloPendingEndData.validating
+    ) {
       setSoloEndData(soloPendingEndData);
       setSoloPendingEndData(null);
     }
@@ -577,7 +648,6 @@ export default function Game() {
   useEffect(() => {
     audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
   }, [isMuted, isMusicMuted, loading]);
-
 
   useEffect(() => {
     const gameConfig = readSessionGameConfig();
@@ -597,13 +667,16 @@ export default function Game() {
     socket.emit('getDuelInfos');
   }, [socket, connected, loading, bootstrapLocalGame]);
 
-  const emitWinner = useCallback((winner: 'P1' | 'P2') => {
-    if (!socket) return;
-    socket.emit(
-      'gameFinished',
-      winner === 'P1' ? PlayerRole.Player1 : PlayerRole.Player2
-    );
-  }, [socket]);
+  const emitWinner = useCallback(
+    (winner: 'P1' | 'P2') => {
+      if (!socket) return;
+      socket.emit(
+        'gameFinished',
+        winner === 'P1' ? PlayerRole.Player1 : PlayerRole.Player2
+      );
+    },
+    [socket]
+  );
 
   const handleSetGameHeader = useCallback(
     (info: {
@@ -653,77 +726,98 @@ export default function Game() {
     audioRef.current?.startMusic();
   }, []);
 
-  const handlePointsUpdated = useCallback((data: {
-    players: Record<string, { value?: number; name?: string; picture?: string; nostrPubkey?: string; fallbackLabel?: string }>;
-  }) => {
-    const p1 = data.players['Player 1'];
-    const p2 = data.players['Player 2'];
-    if (p1?.value != null) setP1Points(Math.floor(p1.value));
-    if (p2?.value != null) setP2Points(Math.floor(p2.value));
-    if (p1?.name?.trim()) {
-      setPlayer1Name(formatHudPlayerName(p1, 'Player 1'));
-    }
-    if (p2?.name?.trim()) {
-      setPlayer2Name(formatHudPlayerName(p2, 'Player 2'));
-    }
-    if (p1?.picture?.trim()) setPlayer1Img(String(p1.picture));
-    if (p2?.picture?.trim()) setPlayer2Img(String(p2.picture));
+  const handlePointsUpdated = useCallback(
+    (data: {
+      players: Record<
+        string,
+        {
+          value?: number;
+          name?: string;
+          picture?: string;
+          nostrPubkey?: string;
+          fallbackLabel?: string;
+        }
+      >;
+    }) => {
+      const p1 = data.players['Player 1'];
+      const p2 = data.players['Player 2'];
+      if (p1?.value != null) setP1Points(Math.floor(p1.value));
+      if (p2?.value != null) setP2Points(Math.floor(p2.value));
+      if (p1?.name?.trim()) {
+        setPlayer1Name(formatHudPlayerName(p1, 'Player 1'));
+      }
+      if (p2?.name?.trim()) {
+        setPlayer2Name(formatHudPlayerName(p2, 'Player 2'));
+      }
+      if (p1?.picture?.trim()) setPlayer1Img(String(p1.picture));
+      if (p2?.picture?.trim()) setPlayer2Img(String(p2.picture));
 
-    const state = stateRef.current;
-    if (!state) return;
-    if (p1?.value != null) state.score[0] = Math.floor(p1.value);
-    if (p2?.value != null) state.score[1] = Math.floor(p2.value);
-    if (applyTerminalGameOutcome(state)) {
-      handleHudSync(getHudState(state));
-    }
-  }, [handleHudSync]);
+      const state = stateRef.current;
+      if (!state) return;
+      if (p1?.value != null) state.score[0] = Math.floor(p1.value);
+      if (p2?.value != null) state.score[1] = Math.floor(p2.value);
+      if (applyTerminalGameOutcome(state)) {
+        handleHudSync(getHudState(state));
+      }
+    },
+    [handleHudSync]
+  );
 
-  const handleZapReceived = useCallback((data: {
-    username: string;
-    content: string;
-    amount: number;
-    profile: string;
-    scale: number;
-  }) => {
-    setZapMessages((prev) => [
-      ...prev,
-      {
-        ...data,
-        id: `zap-${Date.now()}-${prev.length}`,
-        top: 18,
-        hidden: true,
-      },
-    ]);
-  }, []);
+  const handleZapReceived = useCallback(
+    (data: {
+      username: string;
+      content: string;
+      amount: number;
+      profile: string;
+      scale: number;
+    }) => {
+      setZapMessages((prev) => [
+        ...prev,
+        {
+          ...data,
+          id: `zap-${Date.now()}-${prev.length}`,
+          top: 18,
+          hidden: true,
+        },
+      ]);
+    },
+    []
+  );
 
   const createRenderer = useCallback(() => new PixiGameRenderer(), []);
 
-  const handleHudTick = useCallback((hud: {
-    p1Points: number;
-    p2Points: number;
-    captureP1: string;
-    captureP2: string;
-    currentWidthP1: number;
-    currentWidthP2: number;
-    ffa?: { players: FfaHudPlayer[] };
-  }) => {
-    setP1Points(hud.p1Points);
-    setP2Points(hud.p2Points);
-    setCaptureP1(hud.captureP1);
-    setCaptureP2(hud.captureP2);
-    setCurrentP1Width(hud.currentWidthP1);
-    setCurrentP2Width(hud.currentWidthP2);
-    if (hud.ffa?.players) {
-      setFfaPlayers(hud.ffa.players);
-      const prev = ffaCapturePrevRef.current;
-      const flashes = hud.ffa.players.map((p, i) => p.capture !== prev[i]);
-      if (flashes.some(Boolean)) {
-        setFfaCaptureHighlights(flashes);
-        window.setTimeout(() => setFfaCaptureHighlights([false, false, false, false]), 100);
+  const handleHudTick = useCallback(
+    (hud: {
+      p1Points: number;
+      p2Points: number;
+      captureP1: string;
+      captureP2: string;
+      currentWidthP1: number;
+      currentWidthP2: number;
+      ffa?: { players: FfaHudPlayer[] };
+    }) => {
+      setP1Points(hud.p1Points);
+      setP2Points(hud.p2Points);
+      setCaptureP1(hud.captureP1);
+      setCaptureP2(hud.captureP2);
+      setCurrentP1Width(hud.currentWidthP1);
+      setCurrentP2Width(hud.currentWidthP2);
+      if (hud.ffa?.players) {
+        setFfaPlayers(hud.ffa.players);
+        const prev = ffaCapturePrevRef.current;
+        const flashes = hud.ffa.players.map((p, i) => p.capture !== prev[i]);
+        if (flashes.some(Boolean)) {
+          setFfaCaptureHighlights(flashes);
+          window.setTimeout(
+            () => setFfaCaptureHighlights([false, false, false, false]),
+            100
+          );
+        }
+        ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
       }
-      ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
-    }
-  }, []);
+    },
+    []
+  );
 
   const handleCaptureChanged = useCallback((side: 'P1' | 'P2') => {
     if (side === 'P1') {
@@ -735,39 +829,46 @@ export default function Game() {
     window.setTimeout(() => setCaptureP2Highlight(false), 100);
   }, []);
 
-  const handleNavigateAfterFinish = useCallback((isTourn: boolean) => {
-    if (isTourn) {
-      const mode = sessionStorage.getItem('tournamentMode');
-      navigate(mode === 'tournamentnostr' ? '/tournbracket?mode=tournamentnostr' : '/tournbracket');
-      return;
-    }
-    // Return to relevant menu for local-only modes
-    let gameConfig: Record<string, unknown> = {};
-    try {
-      const raw = sessionStorage.getItem('gameConfig');
-      if (raw) gameConfig = JSON.parse(raw);
-    } catch {
-      // ignore
-    }
-    const configMode = String(gameConfig.mode ?? '').toUpperCase();
-    if (isPracticeChallengeConfig(gameConfig)) {
-      // Challenge flow: first continue key reveals the results modal; second exits to list.
-      if (!soloEndData) {
-        if (soloPendingEndData) {
-          setSoloEndData(soloPendingEndData);
-          setSoloPendingEndData(null);
-        }
+  const handleNavigateAfterFinish = useCallback(
+    (isTourn: boolean) => {
+      if (isTourn) {
+        const mode = sessionStorage.getItem('tournamentMode');
+        navigate(
+          mode === 'tournamentnostr'
+            ? '/tournbracket?mode=tournamentnostr'
+            : '/tournbracket'
+        );
         return;
       }
-      navigate(practiceHubExitPath(gameConfig));
-      return;
-    }
-    if (isPracticeHubGameMode(configMode)) {
-      navigate(practiceHubExitPath(gameConfig));
-      return;
-    }
-    navigate('/postgame');
-  }, [navigate, soloEndData, soloPendingEndData]);
+      // Return to relevant menu for local-only modes
+      let gameConfig: Record<string, unknown> = {};
+      try {
+        const raw = sessionStorage.getItem('gameConfig');
+        if (raw) gameConfig = JSON.parse(raw);
+      } catch {
+        // ignore
+      }
+      const configMode = String(gameConfig.mode ?? '').toUpperCase();
+      if (isPracticeChallengeConfig(gameConfig)) {
+        // Challenge flow: first continue key reveals the results modal; second exits to list.
+        if (!soloEndData) {
+          if (soloPendingEndData) {
+            setSoloEndData(soloPendingEndData);
+            setSoloPendingEndData(null);
+          }
+          return;
+        }
+        navigate(practiceHubExitPath(gameConfig));
+        return;
+      }
+      if (isPracticeHubGameMode(configMode)) {
+        navigate(practiceHubExitPath(gameConfig));
+        return;
+      }
+      navigate('/postgame');
+    },
+    [navigate, soloEndData, soloPendingEndData]
+  );
 
   const confirmExitToMenu = useCallback(() => {
     navigate(practiceHubExitPath(readSessionGameConfig()));
@@ -806,7 +907,11 @@ export default function Game() {
         return;
       }
 
-      if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+      if (
+        event.key === 'ArrowRight' ||
+        event.key === 'd' ||
+        event.key === 'D'
+      ) {
         setExitOverlayFocus('confirm');
       }
     };
@@ -861,7 +966,9 @@ export default function Game() {
     try {
       const raw = sessionStorage.getItem('gameConfig');
       if (raw) cfg = JSON.parse(raw);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     const challengeRun = isPracticeChallengeConfig(cfg);
 
     const stopFeed = startMempoolFeed({
@@ -939,7 +1046,10 @@ export default function Game() {
         The Merkle Tree
       </h1>
 
-      <div id="gameContainer" className={`flex full game ${loading ? 'hide' : ''}`}>
+      <div
+        id="gameContainer"
+        className={`flex full game ${loading ? 'hide' : ''}`}
+      >
         <div className={showFfaUi ? 'game-hud-ffa-wrap' : undefined}>
           {showFfaUi ? (
             <>
@@ -954,14 +1064,21 @@ export default function Game() {
                   <div
                     key={zap.id}
                     className={`zapMessage ${zap.hidden ? 'hidden' : ''}`}
-                    style={{ top: `${zap.top}vw`, transform: `scale(${zap.scale})` }}
+                    style={{
+                      top: `${zap.top}vw`,
+                      transform: `scale(${zap.scale})`,
+                    }}
                   >
                     <div className="zapMessageInner">
                       <img src={zap.profile} alt="" />
                       <div className="zapText">
                         <div className="zapUser">{zap.username}</div>
-                        <div className="zapContent condensed">{zap.content}</div>
-                        <div className="zapAmount">{zap.amount.toLocaleString()} sats</div>
+                        <div className="zapContent condensed">
+                          {zap.content}
+                        </div>
+                        <div className="zapAmount">
+                          {zap.amount.toLocaleString()} sats
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -973,17 +1090,29 @@ export default function Game() {
               <div className="flex players">
                 <div id="player1info" className="condensed">
                   <div className="inline playerSquare white" />
-                  <img className={`inline playerImg ${canShowP1Image ? '' : 'hide'}`} id="player1Img" src={player1Img || '/images/loading.gif'} />
+                  <img
+                    className={`inline playerImg ${canShowP1Image ? '' : 'hide'}`}
+                    id="player1Img"
+                    src={player1Img || '/images/loading.gif'}
+                  />
                   <div className="inline" id="player1name">
                     {player1Name}
                   </div>
                 </div>
-                <GameInfoLabel id="gameInfo" gameInfo={gameInfo} challenge={challengeHud} />
+                <GameInfoLabel
+                  id="gameInfo"
+                  gameInfo={gameInfo}
+                  challenge={challengeHud}
+                />
                 <div id="player2info" className="condensed">
                   <div className="inline" id="player2name">
                     {player2Name}
                   </div>
-                  <img className={`inline playerImg ${canShowP2Image ? '' : 'hide'}`} id="player2Img" src={player2Img || '/images/loading.gif'} />
+                  <img
+                    className={`inline playerImg ${canShowP2Image ? '' : 'hide'}`}
+                    id="player2Img"
+                    src={player2Img || '/images/loading.gif'}
+                  />
                   <div className="inline playerSquare black" />
                 </div>
 
@@ -992,14 +1121,21 @@ export default function Game() {
                     <div
                       key={zap.id}
                       className={`zapMessage ${zap.hidden ? 'hidden' : ''}`}
-                      style={{ top: `${zap.top}vw`, transform: `scale(${zap.scale})` }}
+                      style={{
+                        top: `${zap.top}vw`,
+                        transform: `scale(${zap.scale})`,
+                      }}
                     >
                       <div className="zapMessageInner">
                         <img src={zap.profile} alt="" />
                         <div className="zapText">
                           <div className="zapUser">{zap.username}</div>
-                          <div className="zapContent condensed">{zap.content}</div>
-                          <div className="zapAmount">{zap.amount.toLocaleString()} sats</div>
+                          <div className="zapContent condensed">
+                            {zap.content}
+                          </div>
+                          <div className="zapAmount">
+                            {zap.amount.toLocaleString()} sats
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1010,29 +1146,61 @@ export default function Game() {
               <div className="gameState">
                 <div id="capturing">
                   <div id="capturingP1">
-                    <span id="capturingP1Amount" className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}>
+                    <span
+                      id="capturingP1Amount"
+                      className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}
+                    >
                       {captureP1}
                     </span>{' '}
                     capture
                   </div>
                   <div id="capturingP2">
                     capture{' '}
-                    <span id="capturingP2Amount" className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}>
+                    <span
+                      id="capturingP2Amount"
+                      className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}
+                    >
                       {captureP2}
                     </span>
                   </div>
                 </div>
 
                 <div id="distributions">
-                  <div id="initialDistribution" className="distributionBarOutter">
-                    <div className="distributionTitle">Initial Distribution</div>
-                    <div id="initialDistributionP1" className="distributionBar" style={{ width: `${initialP1Width}%` }} />
-                    <div id="initialDistributionP2" className="distributionBar" style={{ width: `${initialP2Width}%` }} />
+                  <div
+                    id="initialDistribution"
+                    className="distributionBarOutter"
+                  >
+                    <div className="distributionTitle">
+                      Initial Distribution
+                    </div>
+                    <div
+                      id="initialDistributionP1"
+                      className="distributionBar"
+                      style={{ width: `${initialP1Width}%` }}
+                    />
+                    <div
+                      id="initialDistributionP2"
+                      className="distributionBar"
+                      style={{ width: `${initialP2Width}%` }}
+                    />
                   </div>
-                  <div id="currentDistribution" className="distributionBarOutter">
-                    <div className="distributionTitle">Current Distribution</div>
-                    <div id="currentDistributionP1" className="distributionBar" style={{ width: `${currentP1Width}%` }} />
-                    <div id="currentDistributionP2" className="distributionBar" style={{ width: `${currentP2Width}%` }} />
+                  <div
+                    id="currentDistribution"
+                    className="distributionBarOutter"
+                  >
+                    <div className="distributionTitle">
+                      Current Distribution
+                    </div>
+                    <div
+                      id="currentDistributionP1"
+                      className="distributionBar"
+                      style={{ width: `${currentP1Width}%` }}
+                    />
+                    <div
+                      id="currentDistributionP2"
+                      className="distributionBar"
+                      style={{ width: `${currentP2Width}%` }}
+                    />
                   </div>
                 </div>
               </div>
@@ -1061,7 +1229,10 @@ export default function Game() {
 
           {isPowerupMode && <PowerUpLegend />}
 
-          <div id="bitcoinDetails" className={footerHighlight ? 'highlight' : ''}>
+          <div
+            id="bitcoinDetails"
+            className={footerHighlight ? 'highlight' : ''}
+          >
             <div className="detail">
               <div className="label">Latest Block</div>
               <div className="value" id="bitcoinblockHeight">
@@ -1099,7 +1270,6 @@ export default function Game() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -1131,7 +1301,13 @@ export default function Game() {
       </div>
 
       {practiceSession.active && showExitOverlay ? (
-        <div className="overlay" id="practiceExit" role="dialog" aria-modal="true" aria-label="Leave practice game">
+        <div
+          className="overlay"
+          id="practiceExit"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Leave practice game"
+        >
           <div className="warning">
             <div className="warning-inner">
               <h2 className="warning-title condensed">Leave game?</h2>
@@ -1164,7 +1340,12 @@ export default function Game() {
       ) : null}
 
       {soloEndData && (
-        <div className={`solo-zap-overlay${soloEndData.won ? '' : ' solo-zap-overlay--lose'}`} role="dialog" aria-modal="true" aria-label={soloEndData.won ? 'Challenge complete' : 'Game over'}>
+        <div
+          className={`solo-zap-overlay${soloEndData.won ? '' : ' solo-zap-overlay--lose'}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={soloEndData.won ? 'Challenge complete' : 'Game over'}
+        >
           <div className="solo-zap-card">
             {soloEndData.won ? (
               <>
@@ -1174,109 +1355,174 @@ export default function Game() {
                 </div>
 
                 <div className="solo-zap-amount">
-                  <span className="solo-zap-sats">{soloEndData.bounty.toLocaleString()}</span>
+                  <span className="solo-zap-sats">
+                    {soloEndData.bounty.toLocaleString()}
+                  </span>
                   <span className="solo-zap-unit">SATS</span>
                 </div>
 
                 {soloEndData.validating ? (
-                  <p className="solo-zap-note-label">VALIDATING WIN ON SERVER…</p>
+                  <p className="solo-zap-note-label">
+                    VALIDATING WIN ON SERVER…
+                  </p>
                 ) : soloEndData.validationError ? (
-                  <p className="solo-zap-note-err">Validation failed: {soloEndData.validationError}</p>
+                  <p className="solo-zap-note-err">
+                    Validation failed: {soloEndData.validationError}
+                  </p>
                 ) : (
-                <div className="solo-zap-note-section">
-                  <p className="solo-zap-note-label">POST THIS NOTE TO CLAIM YOUR ZAP</p>
-                  {resolveSignerMode() === 'nip46' && (noteState === 'posting' || noteState === 'zapping') ? (
-                    <p className="solo-zap-note-label">Approve in your Nostr app (Primal / Amber)…</p>
-                  ) : null}
-                  {nostrSession.pendingNip46AuthUrl && (noteState === 'posting' || noteState === 'zapping') ? (
-                    <button
-                      type="button"
-                      className="solo-zap-post-btn"
-                      onClick={() => {
-                        window.open(nostrSession.pendingNip46AuthUrl!, '_blank', 'noopener,noreferrer');
-                        nostrSession.clearPendingNip46AuthUrl();
-                      }}
-                    >
-                      OPEN PRIMAL TO APPROVE
-                    </button>
-                  ) : null}
-                  <div className="solo-zap-note-preview">
-                    {noteAuthorPubkey ? (
-                      <div className="solo-zap-note-author">
-                        <img
-                          className="solo-zap-note-author-avatar"
-                          src={!noteAuthorAvatarBroken && noteAuthorAvatar ? noteAuthorAvatar : '/images/social/Nostr.png'}
-                          alt=""
-                          width={20}
-                          height={20}
-                          onError={() => setNoteAuthorAvatarBroken(true)}
-                        />
-                        <div className="solo-zap-note-author-meta">
-                          <span className="solo-zap-note-author-name">{noteAuthorName}</span>
-                          <span className="solo-zap-note-author-pubkey">{formatPubkeyHex(noteAuthorPubkey)}</span>
-                        </div>
-                      </div>
-                    ) : null}
-                    <p className="solo-zap-note-text">
-                      {noteContentDisplay}
+                  <div className="solo-zap-note-section">
+                    <p className="solo-zap-note-label">
+                      POST THIS NOTE TO CLAIM YOUR ZAP
                     </p>
-                  </div>
+                    {resolveSignerMode() === 'nip46' &&
+                    (noteState === 'posting' || noteState === 'zapping') ? (
+                      <p className="solo-zap-note-label">
+                        Approve in your Nostr app (Primal / Amber)…
+                      </p>
+                    ) : null}
+                    {nostrSession.pendingNip46AuthUrl &&
+                    (noteState === 'posting' || noteState === 'zapping') ? (
+                      <button
+                        type="button"
+                        className="solo-zap-post-btn"
+                        onClick={() => {
+                          window.open(
+                            nostrSession.pendingNip46AuthUrl!,
+                            '_blank',
+                            'noopener,noreferrer'
+                          );
+                          nostrSession.clearPendingNip46AuthUrl();
+                        }}
+                      >
+                        OPEN PRIMAL TO APPROVE
+                      </button>
+                    ) : null}
+                    <div className="solo-zap-note-preview">
+                      {noteAuthorPubkey ? (
+                        <div className="solo-zap-note-author">
+                          <img
+                            className="solo-zap-note-author-avatar"
+                            src={
+                              !noteAuthorAvatarBroken && noteAuthorAvatar
+                                ? noteAuthorAvatar
+                                : '/images/social/Nostr.png'
+                            }
+                            alt=""
+                            width={20}
+                            height={20}
+                            onError={() => setNoteAuthorAvatarBroken(true)}
+                          />
+                          <div className="solo-zap-note-author-meta">
+                            <span className="solo-zap-note-author-name">
+                              {noteAuthorName}
+                            </span>
+                            <span className="solo-zap-note-author-pubkey">
+                              {formatPubkeyHex(noteAuthorPubkey)}
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
+                      <p className="solo-zap-note-text">{noteContentDisplay}</p>
+                    </div>
 
-                  {noteState === 'posted' ? (
-                    soloEndData.zapPaid ? (
-                      <p className="solo-zap-note-ok">✓ Note posted — zap sent ⚡</p>
-                    ) : (
-                      <>
-                        <p className="solo-zap-note-ok">✓ Note posted</p>
-                        <p className="solo-zap-note-err">Zap pending{soloEndData.zapReason ? `: ${soloEndData.zapReason}` : ''}</p>
-                        <button type="button" className="solo-zap-post-btn" onClick={() => { void retryZap(); }}>
-                          RETRY ZAP ⚡
-                        </button>
-                      </>
-                    )
-                  ) : soloEndData.claimToken ? (
-                    !nostrSession.signedIn ? (
-                      <>
-                        <p className="solo-zap-note-label">SIGN IN WITH NOSTR TO CLAIM YOUR ZAP</p>
+                    {noteState === 'posted' ? (
+                      soloEndData.zapPaid ? (
+                        <p className="solo-zap-note-ok">
+                          ✓ Note posted — zap sent ⚡
+                        </p>
+                      ) : (
+                        <>
+                          <p className="solo-zap-note-ok">✓ Note posted</p>
+                          <p className="solo-zap-note-err">
+                            Zap pending
+                            {soloEndData.zapReason
+                              ? `: ${soloEndData.zapReason}`
+                              : ''}
+                          </p>
+                          <button
+                            type="button"
+                            className="solo-zap-post-btn"
+                            onClick={() => {
+                              void retryZap();
+                            }}
+                          >
+                            RETRY ZAP ⚡
+                          </button>
+                        </>
+                      )
+                    ) : soloEndData.claimToken ? (
+                      !nostrSession.signedIn ? (
+                        <>
+                          <p className="solo-zap-note-label">
+                            SIGN IN WITH NOSTR TO CLAIM YOUR ZAP
+                          </p>
+                          <button
+                            type="button"
+                            className="solo-zap-post-btn"
+                            onClick={() => {
+                              navigate('/config', {
+                                state: { returnTo: '/game' },
+                              });
+                            }}
+                          >
+                            SIGN IN WITH NOSTR ⚡
+                          </button>
+                        </>
+                      ) : (
                         <button
                           type="button"
                           className="solo-zap-post-btn"
+                          disabled={
+                            noteState === 'posting' || noteState === 'zapping'
+                          }
                           onClick={() => {
-                            navigate('/config', { state: { returnTo: '/game' } });
+                            void postBountyNote();
                           }}
                         >
-                          SIGN IN WITH NOSTR ⚡
+                          {noteState === 'posting' ||
+                          noteState === 'zapping' ? (
+                            <>
+                              <svg
+                                className="solo-zap-post-spinner"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                aria-hidden
+                              >
+                                <circle
+                                  cx="12"
+                                  cy="12"
+                                  r="9"
+                                  strokeOpacity="0.15"
+                                />
+                                <path d="M12 3a9 9 0 0 1 9 9" />
+                              </svg>
+                              {resolveSignerMode() === 'nip46'
+                                ? 'WAITING FOR APPROVAL…'
+                                : noteState === 'zapping'
+                                  ? 'ZAPPING…'
+                                  : 'SIGNING…'}
+                            </>
+                          ) : (
+                            'POST NOTE & CLAIM ZAP ⚡'
+                          )}
                         </button>
-                      </>
-                    ) : (
-                    <button
-                      type="button"
-                      className="solo-zap-post-btn"
-                      disabled={noteState === 'posting' || noteState === 'zapping'}
-                      onClick={() => { void postBountyNote(); }}
-                    >
-                      {noteState === 'posting' || noteState === 'zapping' ? (
-                        <>
-                          <svg className="solo-zap-post-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-                            <circle cx="12" cy="12" r="9" strokeOpacity="0.15" />
-                            <path d="M12 3a9 9 0 0 1 9 9" />
-                          </svg>
-                          {resolveSignerMode() === 'nip46' ? 'WAITING FOR APPROVAL…' : noteState === 'zapping' ? 'ZAPPING…' : 'SIGNING…'}
-                        </>
-                      ) : 'POST NOTE & CLAIM ZAP ⚡'}
-                    </button>
-                    )
-                  ) : null}
-                  {noteState === 'error' && noteError ? (
-                    <p className="solo-zap-note-err">{noteError}</p>
-                  ) : null}
-                </div>
+                      )
+                    ) : null}
+                    {noteState === 'error' && noteError ? (
+                      <p className="solo-zap-note-err">{noteError}</p>
+                    ) : null}
+                  </div>
                 )}
               </>
             ) : (
               <>
                 <div className="solo-zap-header">
-                  <span className="solo-zap-badge solo-zap-badge--lose">✗ DEFEATED</span>
+                  <span className="solo-zap-badge solo-zap-badge--lose">
+                    ✗ DEFEATED
+                  </span>
                   <h2 className="solo-zap-title">GAME OVER</h2>
                   <p className="solo-zap-challenge">{soloEndData.name}</p>
                 </div>
@@ -1289,11 +1535,15 @@ export default function Game() {
                 <div className="solo-zap-receipt">
                   <div className="solo-zap-row">
                     <span className="solo-zap-label">BOUNTY</span>
-                    <span className="solo-zap-value">{soloEndData.bounty.toLocaleString()} sats — not earned</span>
+                    <span className="solo-zap-value">
+                      {soloEndData.bounty.toLocaleString()} sats — not earned
+                    </span>
                   </div>
                   <div className="solo-zap-row">
                     <span className="solo-zap-label">TIP</span>
-                    <span className="solo-zap-value solo-zap-value--tip">Study the AI pattern and try again</span>
+                    <span className="solo-zap-value solo-zap-value--tip">
+                      Study the AI pattern and try again
+                    </span>
                   </div>
                 </div>
               </>

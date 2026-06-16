@@ -4,7 +4,7 @@ export type LobbyPaymentMode = 'anon' | 'nostr' | 'pin-zap';
 const STORAGE_PREFIX = 'onlineSeatPayMethod:';
 
 export function lobbyPaymentModeFromSeatPayMethod(
-  payMethod?: OnlineSeatPayMethod | string | null,
+  payMethod?: OnlineSeatPayMethod | string | null
 ): LobbyPaymentMode | null {
   switch (payMethod) {
     case 'lightning':
@@ -18,7 +18,9 @@ export function lobbyPaymentModeFromSeatPayMethod(
   }
 }
 
-export function readStoredLobbyPaymentMode(roomId: string): LobbyPaymentMode | null {
+export function readStoredLobbyPaymentMode(
+  roomId: string
+): LobbyPaymentMode | null {
   if (typeof window === 'undefined' || !roomId) return null;
   const raw = sessionStorage.getItem(`${STORAGE_PREFIX}${roomId}`);
   if (raw === 'anon' || raw === 'nostr' || raw === 'pin-zap') {
@@ -27,7 +29,10 @@ export function readStoredLobbyPaymentMode(roomId: string): LobbyPaymentMode | n
   return null;
 }
 
-export function storeLobbyPaymentMode(roomId: string, mode: LobbyPaymentMode): void {
+export function storeLobbyPaymentMode(
+  roomId: string,
+  mode: LobbyPaymentMode
+): void {
   if (typeof window === 'undefined' || !roomId) return;
   sessionStorage.setItem(`${STORAGE_PREFIX}${roomId}`, mode);
 }

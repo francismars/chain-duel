@@ -4,10 +4,7 @@
  */
 
 import { Socket, io } from 'socket.io-client';
-import {
-  ClientToServerEvents,
-  ServerToClientEvents,
-} from '@/types/socket';
+import { ClientToServerEvents, ServerToClientEvents } from '@/types/socket';
 
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
@@ -20,10 +17,9 @@ export interface SocketConfig {
  * Get or create socket connection
  * Manages session persistence and reconnection
  */
-export function getSocket(config: SocketConfig): Socket<
-  ServerToClientEvents,
-  ClientToServerEvents
-> {
+export function getSocket(
+  config: SocketConfig
+): Socket<ServerToClientEvents, ClientToServerEvents> {
   const sessionID = sessionStorage.getItem('sessionID');
 
   // Reuse the singleton even while connecting — creating a second io() per hook mount
@@ -39,12 +35,11 @@ export function getSocket(config: SocketConfig): Socket<
   }
 
   // Build socket URL: backend may return full URL (e.g. wss://marspay.chainduel.net) in IP with empty PORT
-  const socketUrl =
-    config.serverIP.includes('://')
-      ? config.serverIP
-      : config.serverPORT
-        ? `${config.serverIP}:${config.serverPORT}`
-        : config.serverIP;
+  const socketUrl = config.serverIP.includes('://')
+    ? config.serverIP
+    : config.serverPORT
+      ? `${config.serverIP}:${config.serverPORT}`
+      : config.serverIP;
 
   socket = io(socketUrl, {
     transports: ['websocket'],

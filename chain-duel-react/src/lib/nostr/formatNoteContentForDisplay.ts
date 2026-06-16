@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 import { nip19 } from 'nostr-tools';
-import { fetchLatestKind0Profile, type Kind0Profile } from '@/lib/nostr/fetchKind0Profile';
+import {
+  fetchLatestKind0Profile,
+  type Kind0Profile,
+} from '@/lib/nostr/fetchKind0Profile';
 
 /** @chainduel — matches marspay victory note mention. */
-export const CHAINDUEL_NPUB = 'npub1kd3nlw09ufkgmts2kaf0x8m4mq57exn6l8rz50v5ngyr2h3j5cfswdsdth';
+export const CHAINDUEL_NPUB =
+  'npub1kd3nlw09ufkgmts2kaf0x8m4mq57exn6l8rz50v5ngyr2h3j5cfswdsdth';
 
 const NOSTR_URI_RE = /nostr:(npub1[a-z0-9]+|nprofile1[a-z0-9]+)/gi;
 
@@ -40,7 +44,9 @@ function applyKnownLabels(content: string): string {
 }
 
 /** Replace NIP-27 `nostr:` URIs with human-readable @handles for UI preview only. */
-export async function formatNoteContentForDisplay(content: string): Promise<string> {
+export async function formatNoteContentForDisplay(
+  content: string
+): Promise<string> {
   let out = applyKnownLabels(content);
   const uris = [...content.matchAll(NOSTR_URI_RE)].map((m) => m[0]);
   const unique = [...new Set(uris)];
@@ -53,7 +59,7 @@ export async function formatNoteContentForDisplay(content: string): Promise<stri
       const profile = await fetchLatestKind0Profile(hex);
       const label = profile ? profileDisplayLabel(profile) : '@user';
       out = out.replaceAll(uri, label);
-    }),
+    })
   );
 
   return out;

@@ -51,7 +51,9 @@ export async function probeRelaysForEvent(
   const eventId = eventIdFromNote1(note1);
   if (!eventId) return [];
 
-  const uniqueRelays = [...new Set(relayUrls.map((u) => u.trim()).filter(Boolean))];
+  const uniqueRelays = [
+    ...new Set(relayUrls.map((u) => u.trim()).filter(Boolean)),
+  ];
   if (uniqueRelays.length === 0) return [];
 
   const pool = new SimplePool();
@@ -59,7 +61,11 @@ export async function probeRelaysForEvent(
     const hits = await Promise.all(
       uniqueRelays.map(async (relayUrl) => {
         try {
-          const event = await pool.get([relayUrl], { ids: [eventId] }, { maxWait: timeoutMs });
+          const event = await pool.get(
+            [relayUrl],
+            { ids: [eventId] },
+            { maxWait: timeoutMs }
+          );
           return event ? relayUrl : null;
         } catch {
           return null;

@@ -36,7 +36,6 @@ import {
 } from '@/lib/nostr/nwcPay';
 import './config.css';
 
-
 type LoginTab = 'extension' | 'nip46' | 'nsec';
 
 function signerModeLabel(mode: StoredSignerMode | null): string {
@@ -100,7 +99,9 @@ export default function Config() {
   const [pendingAuthUrl, setPendingAuthUrl] = useState<string | null>(null);
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
   const [nip46Waiting, setNip46Waiting] = useState(false);
-  const [pairingPhase, setPairingPhase] = useState<'scanning' | 'handshake' | 'resolving'>('scanning');
+  const [pairingPhase, setPairingPhase] = useState<
+    'scanning' | 'handshake' | 'resolving'
+  >('scanning');
   const [pairingKey, setPairingKey] = useState(0);
   const [uriCopied, setUriCopied] = useState(false);
   const [profileAnimKey, setProfileAnimKey] = useState(0);
@@ -119,7 +120,9 @@ export default function Config() {
     if (isNsecSessionMissing()) {
       clearSignerSession();
       setNostrPubkeyHex(null);
-      setNostrError('nsec sign-in is limited to this browser tab. After a refresh, sign in again.');
+      setNostrError(
+        'nsec sign-in is limited to this browser tab. After a refresh, sign in again.'
+      );
     }
   }, []);
 
@@ -170,7 +173,9 @@ export default function Config() {
         }
       } catch (e) {
         setNostrError(
-          e instanceof Error ? e.message : 'Could not link Nostr identity to game server.'
+          e instanceof Error
+            ? e.message
+            : 'Could not link Nostr identity to game server.'
         );
       } finally {
         setNostrBusy(false);
@@ -234,7 +239,9 @@ export default function Config() {
             }
           } catch (e) {
             setNostrError(
-              e instanceof Error ? e.message : 'Could not link Nostr identity to game server.'
+              e instanceof Error
+                ? e.message
+                : 'Could not link Nostr identity to game server.'
             );
             setPairingPhase('scanning');
           } finally {
@@ -272,7 +279,15 @@ export default function Config() {
         disposeNostrConnectPairingAttempt();
       }
     };
-  }, [loginTab, nostrSignedIn, serverLinking, pairingKey, linkToServer, navigate, returnTo]);
+  }, [
+    loginTab,
+    nostrSignedIn,
+    serverLinking,
+    pairingKey,
+    linkToServer,
+    navigate,
+    returnTo,
+  ]);
 
   useEffect(() => {
     setAvatarBroken(false);
@@ -365,7 +380,9 @@ export default function Config() {
         }
       } catch (e) {
         setNostrError(
-          e instanceof Error ? e.message : 'Could not link Nostr identity to game server.'
+          e instanceof Error
+            ? e.message
+            : 'Could not link Nostr identity to game server.'
         );
       } finally {
         setNostrBusy(false);
@@ -376,7 +393,9 @@ export default function Config() {
 
   const handleExtensionSignIn = useCallback(async () => {
     if (!window.nostr) {
-      setNostrError('No Nostr extension found. Install Alby, nos2x, or another NIP-07 extension.');
+      setNostrError(
+        'No Nostr extension found. Install Alby, nos2x, or another NIP-07 extension.'
+      );
       return;
     }
     setNostrBusy(true);
@@ -408,7 +427,9 @@ export default function Config() {
       setNsecInput('');
       await finishSignIn(pubkey, 'nsec');
     } catch (e) {
-      setNostrError(e instanceof Error ? e.message : 'Invalid nsec or hex key.');
+      setNostrError(
+        e instanceof Error ? e.message : 'Invalid nsec or hex key.'
+      );
       setNostrBusy(false);
     }
   }, [nsecInput, finishSignIn]);
@@ -441,8 +462,11 @@ export default function Config() {
     ? (sessionSignerMode ?? getStoredSignerMode())
     : getStoredSignerMode();
   const pendingNip46ServerLink =
-    !nostrSignedIn && hasStoredNip46Session() && getStoredSignerMode() === 'nip46';
-  const avatarSrc = !avatarBroken && profile?.picture?.trim() ? profile.picture.trim() : null;
+    !nostrSignedIn &&
+    hasStoredNip46Session() &&
+    getStoredSignerMode() === 'nip46';
+  const avatarSrc =
+    !avatarBroken && profile?.picture?.trim() ? profile.picture.trim() : null;
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -450,7 +474,8 @@ export default function Config() {
       const target = e.target as HTMLElement | null;
       if (!target) return;
       const tag = target.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable)
+        return;
 
       const active = document.activeElement as HTMLElement | null;
       const mainEl = profileCardMainRef.current;
@@ -458,8 +483,7 @@ export default function Config() {
         mainEl?.querySelectorAll('.config-profile-card__field') ?? []
       ) as HTMLElement[];
       const fieldIdx = fieldEls.findIndex((el) => el === active);
-      const inProfileCard =
-        !!(mainEl && active && mainEl.contains(active));
+      const inProfileCard = !!(mainEl && active && mainEl.contains(active));
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -505,7 +529,9 @@ export default function Config() {
         }
       } catch (e) {
         setNostrError(
-          e instanceof Error ? e.message : 'Could not link Nostr identity to game server.'
+          e instanceof Error
+            ? e.message
+            : 'Could not link Nostr identity to game server.'
         );
       } finally {
         setNostrBusy(false);
@@ -520,10 +546,13 @@ export default function Config() {
       {!nostrSignedIn ? (
         <>
           <p className="config-nostr-hint">
-            Sign in with an extension, <strong>Nostr Connect</strong>, or nsec. After you pair your signer app, we link your
-            pubkey to this game session on our server and load your profile.
+            Sign in with an extension, <strong>Nostr Connect</strong>, or nsec.
+            After you pair your signer app, we link your pubkey to this game
+            session on our server and load your profile.
           </p>
-          {nostrError ? <p className="config-nostr-error">{nostrError}</p> : null}
+          {nostrError ? (
+            <p className="config-nostr-error">{nostrError}</p>
+          ) : null}
           {serverLinkError && !nostrError ? (
             <p className="config-nostr-error">{serverLinkError}</p>
           ) : null}
@@ -533,15 +562,20 @@ export default function Config() {
               <p className="config-nip46-auth-banner__text">
                 {nostrBusy || serverLinking ? (
                   <>
-                    Signer connected. <strong>Linking to the game server…</strong>
+                    Signer connected.{' '}
+                    <strong>Linking to the game server…</strong>
                     {signerMode === 'nip46' ? (
-                      <> Approve the sign request in your signer app if prompted.</>
+                      <>
+                        {' '}
+                        Approve the sign request in your signer app if prompted.
+                      </>
                     ) : null}
                   </>
                 ) : (
                   <>
-                    Signer connected. We could not finish linking to the game server — check that marspay is running,
-                    then retry, or disconnect to scan a new QR.
+                    Signer connected. We could not finish linking to the game
+                    server — check that marspay is running, then retry, or
+                    disconnect to scan a new QR.
                   </>
                 )}
               </p>
@@ -566,21 +600,35 @@ export default function Config() {
           ) : null}
 
           {serverLinking && !pendingNip46ServerLink ? (
-            <p className="config-nostr-hint config-nostr-hint--linking" role="status">
-              Linking to game server… Complete the signing prompt if your wallet shows one.
+            <p
+              className="config-nostr-hint config-nostr-hint--linking"
+              role="status"
+            >
+              Linking to game server… Complete the signing prompt if your wallet
+              shows one.
             </p>
           ) : null}
 
           {pendingAuthUrl ? (
             <div className="config-nip46-auth-banner" role="status">
-              <p className="config-nip46-auth-banner__text">Your signer is asking for approval in another app.</p>
-              <Button type="button" className="config-nip46-auth-banner__btn" onClick={openPendingAuth}>
+              <p className="config-nip46-auth-banner__text">
+                Your signer is asking for approval in another app.
+              </p>
+              <Button
+                type="button"
+                className="config-nip46-auth-banner__btn"
+                onClick={openPendingAuth}
+              >
                 Open approval page
               </Button>
             </div>
           ) : null}
 
-          <div className="config-login-tabs" role="tablist" aria-label="Sign-in method">
+          <div
+            className="config-login-tabs"
+            role="tablist"
+            aria-label="Sign-in method"
+          >
             <button
               type="button"
               role="tab"
@@ -643,16 +691,27 @@ export default function Config() {
             {loginTab === 'nip46' && !pendingNip46ServerLink ? (
               <div className="config-login-panel__block" role="tabpanel">
                 <p className="config-login-panel__lede config-nc-lede">
-                  NIP-46: scan QR or open the link in your signer app — Amber, Amethyst, etc.
+                  NIP-46: scan QR or open the link in your signer app — Amber,
+                  Amethyst, etc.
                 </p>
 
                 <div className="config-nc-layout">
                   {pairingPhase === 'resolving' ? (
                     <div className="config-nc-resolving" role="status">
-                      <svg className="config-nc-resolving__spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                      <svg
+                        className="config-nc-resolving__spinner"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        aria-hidden
+                      >
                         <path d="M12 2a10 10 0 0 1 10 10" />
                       </svg>
-                      <p className="config-nc-resolving__text">Signer detected — resolving identity…</p>
+                      <p className="config-nc-resolving__text">
+                        Signer detected — resolving identity…
+                      </p>
                     </div>
                   ) : (
                     <>
@@ -667,7 +726,10 @@ export default function Config() {
                               aria-label="Nostr Connect URI QR code"
                             />
                           ) : (
-                            <div className="config-nc-qr config-nc-qr--placeholder" aria-hidden />
+                            <div
+                              className="config-nc-qr config-nc-qr--placeholder"
+                              aria-hidden
+                            />
                           )}
                         </div>
                       </div>
@@ -690,12 +752,18 @@ export default function Config() {
                           ) : (
                             <>
                               Approve in your wallet when prompted.
-                              <span className="config-nc-hint-muted"> Amber · Amethyst · NIP-46</span>
+                              <span className="config-nc-hint-muted">
+                                {' '}
+                                Amber · Amethyst · NIP-46
+                              </span>
                             </>
                           )}
                         </p>
                         <div className="config-nc-uri-row">
-                          <code className="config-nc-uri-text" title={nostrConnectUri ?? ''}>
+                          <code
+                            className="config-nc-uri-text"
+                            title={nostrConnectUri ?? ''}
+                          >
                             {nostrConnectUri
                               ? `${nostrConnectUri.slice(0, 40)}${nostrConnectUri.length > 40 ? '…' : ''}`
                               : '…'}
@@ -705,7 +773,9 @@ export default function Config() {
                             className="config-nc-copy-btn"
                             onClick={copyNostrConnectUri}
                             disabled={!nostrConnectUri}
-                            aria-label={uriCopied ? 'Copied' : 'Copy connection URI'}
+                            aria-label={
+                              uriCopied ? 'Copied' : 'Copy connection URI'
+                            }
                           >
                             {uriCopied ? 'Copied' : 'Copy'}
                           </button>
@@ -736,11 +806,15 @@ export default function Config() {
             {loginTab === 'nsec' ? (
               <div className="config-login-panel__block" role="tabpanel">
                 <p className="config-nostr-warning">
-                  Pasting an <strong>nsec</strong> gives this site the ability to sign as you. Only use on a device you
-                  trust. The key is kept in <strong>session memory</strong> only (lost when the tab closes); it is not
-                  saved to disk.
+                  Pasting an <strong>nsec</strong> gives this site the ability
+                  to sign as you. Only use on a device you trust. The key is
+                  kept in <strong>session memory</strong> only (lost when the
+                  tab closes); it is not saved to disk.
                 </p>
-                <label className="config-login-panel__label" htmlFor="configNsecInput">
+                <label
+                  className="config-login-panel__label"
+                  htmlFor="configNsecInput"
+                >
                   nsec1… or 64-char hex
                 </label>
                 <input
@@ -770,7 +844,11 @@ export default function Config() {
           </div>
         </>
       ) : profileLoading ? (
-        <div className="config-profile-card config-profile-skeleton" aria-busy="true" aria-label="Loading profile">
+        <div
+          className="config-profile-card config-profile-skeleton"
+          aria-busy="true"
+          aria-label="Loading profile"
+        >
           <div className="config-profile-skeleton__banner" />
           <div className="config-profile-skeleton__main">
             <div className="config-profile-skeleton__avatar" aria-hidden>
@@ -778,16 +856,30 @@ export default function Config() {
               <span className="config-profile-skeleton__ring config-profile-skeleton__ring--2" />
             </div>
             <p className="config-profile-loading-text">
-              {profileRecovering ? 'VERIFYING IDENTITY… APPROVE IN SIGNER' : 'LOADING PROFILE'}
+              {profileRecovering
+                ? 'VERIFYING IDENTITY… APPROVE IN SIGNER'
+                : 'LOADING PROFILE'}
             </p>
           </div>
         </div>
       ) : (
-        <div key={profileAnimKey} className="config-profile-card config-profile-card--animate-in">
+        <div
+          key={profileAnimKey}
+          className="config-profile-card config-profile-card--animate-in"
+        >
           {pendingAuthUrl ? (
-            <div className="config-nip46-auth-banner config-nip46-auth-banner--card" role="status">
-              <p className="config-nip46-auth-banner__text">Approval needed in your remote signer.</p>
-              <Button type="button" className="config-nip46-auth-banner__btn" onClick={openPendingAuth}>
+            <div
+              className="config-nip46-auth-banner config-nip46-auth-banner--card"
+              role="status"
+            >
+              <p className="config-nip46-auth-banner__text">
+                Approval needed in your remote signer.
+              </p>
+              <Button
+                type="button"
+                className="config-nip46-auth-banner__btn"
+                onClick={openPendingAuth}
+              >
                 Open approval page
               </Button>
             </div>
@@ -796,11 +888,17 @@ export default function Config() {
             className="config-profile-card__banner"
             style={
               profile?.banner
-                ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,1) 100%), url(${profile.banner})` }
+                ? {
+                    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,1) 100%), url(${profile.banner})`,
+                  }
                 : undefined
             }
           />
-          <div className="config-profile-card__main" tabIndex={0} ref={profileCardMainRef}>
+          <div
+            className="config-profile-card__main"
+            tabIndex={0}
+            ref={profileCardMainRef}
+          >
             <div className="config-profile-card__identity">
               {avatarSrc ? (
                 <img
@@ -812,100 +910,202 @@ export default function Config() {
                   onError={() => setAvatarBroken(true)}
                 />
               ) : (
-                <div className="config-profile-card__avatar config-profile-card__avatar--placeholder" aria-hidden>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round">
+                <div
+                  className="config-profile-card__avatar config-profile-card__avatar--placeholder"
+                  aria-hidden
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="0.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                   </svg>
                 </div>
               )}
               <div className="config-profile-card__titles">
-                <h2 className="config-profile-card__name">{profile?.displayTitle ?? 'Nostr user'}</h2>
+                <h2 className="config-profile-card__name">
+                  {profile?.displayTitle ?? 'Nostr user'}
+                </h2>
               </div>
             </div>
 
             <div className="config-profile-card__detail-col config-profile-card__detail-col--below">
               <div className="config-profile-card__body">
-              {profile?.about ? (
-                <p className="config-profile-card__about">{profile.about}</p>
-              ) : null}
-
-              <div className="config-profile-card__fields">
-                {profile?.name && profile.displayName ? (
-                  <div className="config-profile-card__field" tabIndex={-1}>
-                    <div className="config-profile-card__field-label">Username</div>
-                    <div className="config-profile-card__field-value">@{profile.name}</div>
-                  </div>
+                {profile?.about ? (
+                  <p className="config-profile-card__about">{profile.about}</p>
                 ) : null}
 
-                <div className="config-profile-card__field" tabIndex={-1}>
-                  <div className="config-profile-card__field-label">Sign-in</div>
-                  <div className="config-profile-card__field-value">
-                    {signerModeLabel(signerMode)}
-                    <svg className="config-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                  </div>
-                </div>
+                <div className="config-profile-card__fields">
+                  {profile?.name && profile.displayName ? (
+                    <div className="config-profile-card__field" tabIndex={-1}>
+                      <div className="config-profile-card__field-label">
+                        Username
+                      </div>
+                      <div className="config-profile-card__field-value">
+                        @{profile.name}
+                      </div>
+                    </div>
+                  ) : null}
 
-                {profile?.nip05 ? (
                   <div className="config-profile-card__field" tabIndex={-1}>
-                    <div className="config-profile-card__field-label">NIP-05</div>
+                    <div className="config-profile-card__field-label">
+                      Sign-in
+                    </div>
                     <div className="config-profile-card__field-value">
-                      <span className="config-profile-card__nip05-text">{profile.nip05}</span>
-                      {nip05CheckPending ? (
-                        <svg className="config-field-icon config-field-icon--spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-label="Checking…">
-                          <path d="M12 2a10 10 0 0 1 10 10" />
-                        </svg>
-                      ) : nip05Ok === true ? (
-                        <svg className="config-field-icon config-field-icon--ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-label="Verified">
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                      ) : nip05Ok === false ? (
-                        <svg className="config-field-icon config-field-icon--fail" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Unverified">
-                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      ) : null}
-                    </div>
-                  </div>
-                ) : null}
-
-                {profile?.lud16 ? (
-                  <div className="config-profile-card__field" tabIndex={-1}>
-                    <div className="config-profile-card__field-label">Lightning</div>
-                    <div className="config-profile-card__field-value config-profile-card__field-value--ln">
-                      {profile.lud16}
-                      <svg className="config-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                      {signerModeLabel(signerMode)}
+                      <svg
+                        className="config-field-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                       </svg>
                     </div>
                   </div>
-                ) : null}
 
-                {profile?.lud06 && !profile?.lud16 ? (
+                  {profile?.nip05 ? (
+                    <div className="config-profile-card__field" tabIndex={-1}>
+                      <div className="config-profile-card__field-label">
+                        NIP-05
+                      </div>
+                      <div className="config-profile-card__field-value">
+                        <span className="config-profile-card__nip05-text">
+                          {profile.nip05}
+                        </span>
+                        {nip05CheckPending ? (
+                          <svg
+                            className="config-field-icon config-field-icon--spin"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            aria-label="Checking…"
+                          >
+                            <path d="M12 2a10 10 0 0 1 10 10" />
+                          </svg>
+                        ) : nip05Ok === true ? (
+                          <svg
+                            className="config-field-icon config-field-icon--ok"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-label="Verified"
+                          >
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        ) : nip05Ok === false ? (
+                          <svg
+                            className="config-field-icon config-field-icon--fail"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-label="Unverified"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {profile?.lud16 ? (
+                    <div className="config-profile-card__field" tabIndex={-1}>
+                      <div className="config-profile-card__field-label">
+                        Lightning
+                      </div>
+                      <div className="config-profile-card__field-value config-profile-card__field-value--ln">
+                        {profile.lud16}
+                        <svg
+                          className="config-field-icon"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden
+                        >
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {profile?.lud06 && !profile?.lud16 ? (
+                    <div className="config-profile-card__field" tabIndex={-1}>
+                      <div className="config-profile-card__field-label">
+                        Lightning
+                      </div>
+                      <div
+                        className="config-profile-card__field-value config-profile-card__field-value--lnurl"
+                        title={profile.lud06}
+                      >
+                        LNURL-pay (kind 0)
+                        <svg
+                          className="config-field-icon"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden
+                        >
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                      </div>
+                    </div>
+                  ) : null}
+
                   <div className="config-profile-card__field" tabIndex={-1}>
-                    <div className="config-profile-card__field-label">Lightning</div>
-                    <div className="config-profile-card__field-value config-profile-card__field-value--lnurl" title={profile.lud06}>
-                      LNURL-pay (kind 0)
-                      <svg className="config-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    <div className="config-profile-card__field-label">
+                      Public key
+                    </div>
+                    <div className="config-profile-card__field-value config-profile-card__field-value--mono">
+                      {nostrPubkeyHex ? formatPubkeyHex(nostrPubkeyHex) : ''}
+                      <svg
+                        className="config-field-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <rect
+                          x="3"
+                          y="11"
+                          width="18"
+                          height="11"
+                          rx="2"
+                          ry="2"
+                        />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
                     </div>
-                  </div>
-                ) : null}
-
-                <div className="config-profile-card__field" tabIndex={-1}>
-                  <div className="config-profile-card__field-label">Public key</div>
-                  <div className="config-profile-card__field-value config-profile-card__field-value--mono">
-                    {nostrPubkeyHex ? formatPubkeyHex(nostrPubkeyHex) : ''}
-                    <svg className="config-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
                   </div>
                 </div>
               </div>
-              </div>{/* config-profile-card__body */}
+              {/* config-profile-card__body */}
 
               {!profile ? (
                 <p className="config-profile-card__empty">
@@ -916,13 +1116,22 @@ export default function Config() {
               ) : null}
 
               {signerMode === 'nip46' ? (
-                <div className="config-signer-ping config-signer-ping--ok" role="status">
-                  <span className="config-signer-ping__text">Signer connected</span>
+                <div
+                  className="config-signer-ping config-signer-ping--ok"
+                  role="status"
+                >
+                  <span className="config-signer-ping__text">
+                    Signer connected
+                  </span>
                 </div>
               ) : null}
 
               <div className="config-profile-card__actions">
-                <Button id="nostrSignOut" type="button" onClick={handleNostrSignOut}>
+                <Button
+                  id="nostrSignOut"
+                  type="button"
+                  onClick={handleNostrSignOut}
+                >
                   Sign out
                 </Button>
               </div>
@@ -932,15 +1141,27 @@ export default function Config() {
       )}
 
       {/* ── Nostr Wallet Connect ── */}
-      <div key={`nwc-${profileAnimKey}`} className="config-nwc-block config-nwc-block--animate-in">
+      <div
+        key={`nwc-${profileAnimKey}`}
+        className="config-nwc-block config-nwc-block--animate-in"
+      >
         <p className="config-nwc-block__title">NOSTR WALLET CONNECT</p>
         <p className="config-nwc-block__lede">
-          Paste a <code>nostr+walletconnect://</code> URI from Primal, Alby, or any NIP-47 wallet to auto-pay entry fees without leaving the app.
+          Paste a <code>nostr+walletconnect://</code> URI from Primal, Alby, or
+          any NIP-47 wallet to auto-pay entry fees without leaving the app.
         </p>
         {nwcSaved ? (
           <div className="config-nwc-block__saved-row">
             <span className="config-nwc-block__pill config-nwc-block__pill--ok">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               Wallet connected
@@ -964,7 +1185,10 @@ export default function Config() {
               className="config-nwc-block__input"
               type="text"
               value={nwcInput}
-              onChange={(e) => { setNwcInput(e.target.value); setNwcError(null); }}
+              onChange={(e) => {
+                setNwcInput(e.target.value);
+                setNwcError(null);
+              }}
               placeholder="nostr+walletconnect://…"
               autoComplete="off"
               spellCheck={false}
@@ -987,10 +1211,15 @@ export default function Config() {
             </Button>
           </div>
         )}
-        {nwcError ? <p className="config-nwc-block__error">{nwcError}</p> : null}
+        {nwcError ? (
+          <p className="config-nwc-block__error">{nwcError}</p>
+        ) : null}
       </div>
 
-      <div key={`act-${profileAnimKey}`} className="config-page__actions config-page__actions--animate-in">
+      <div
+        key={`act-${profileAnimKey}`}
+        className="config-page__actions config-page__actions--animate-in"
+      >
         <Button
           id="backButton"
           ref={backButtonRef}
@@ -1006,8 +1235,10 @@ export default function Config() {
         </Button>
       </div>
 
-      <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay={true} />
-
+      <BackgroundAudio
+        src="/sound/chain_duel_produced_menu.m4a"
+        autoplay={true}
+      />
     </div>
   );
 }

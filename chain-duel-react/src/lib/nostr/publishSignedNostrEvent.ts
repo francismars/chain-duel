@@ -38,6 +38,8 @@ export function publishSignedNostrEvent(
     };
 
     socket.on('resPublishNostrEvent', onRes);
-    socket.emit('publishSignedNostrEvent', { event: event as unknown as Record<string, unknown> });
+    socket.emit('publishSignedNostrEvent', {
+      event: event as unknown as Record<string, unknown>,
+    });
   });
 }

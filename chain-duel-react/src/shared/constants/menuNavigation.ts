@@ -7,7 +7,8 @@ import { SETUP_MENU_KEY_GRACE_MS } from '@/shared/constants/timeouts';
  * cancel overlays etc. Next page reads this from location.state and ignores
  * the first confirm key only.
  */
-export const CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM = 'chainDuelSuppressNextMenuConfirm';
+export const CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM =
+  'chainDuelSuppressNextMenuConfirm';
 
 export type MenuNavigationState = {
   [CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM]?: boolean;
@@ -28,7 +29,9 @@ export function navigateToMainMenu(navigate: NavigateFunction): void {
 
 /** Ms to ignore confirm on Index after any mount (keyboard/gamepad timing). */
 export function indexConfirmSuppressMs(fromMainMenuButton: boolean): number {
-  return fromMainMenuButton ? MAIN_MENU_CONFIRM_SUPPRESS_MS : SETUP_MENU_KEY_GRACE_MS;
+  return fromMainMenuButton
+    ? MAIN_MENU_CONFIRM_SUPPRESS_MS
+    : SETUP_MENU_KEY_GRACE_MS;
 }
 
 /**

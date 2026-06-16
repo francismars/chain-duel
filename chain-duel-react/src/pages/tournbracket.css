@@ -118,19 +118,22 @@
 }
 
 /* Match legacy: game labels are Inter and start-aligned. */
-.tournbracket-page .tournbracketSVG-inline text[id^="G"]:not([id*="_"]) {
+.tournbracket-page .tournbracketSVG-inline text[id^='G']:not([id*='_']) {
   text-anchor: start;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
 }
 
 /* Player slot labels */
-.tournbracket-page .tournbracketSVG-inline text[id$="_name"] {
+.tournbracket-page .tournbracketSVG-inline text[id$='_name'] {
   font-weight: 400;
 }
 
 /* Nostr bracket avatars: circle crop on <image>; 1px ring is <circle data-avatar-ring> (see TournamentBracket.tsx) */
-.tournbracket-page .tournbracketSVG-inline g.bracket-avatar-wrap image[data-avatar="true"] {
+.tournbracket-page
+  .tournbracketSVG-inline
+  g.bracket-avatar-wrap
+  image[data-avatar='true'] {
   clip-path: circle(50% at 50% 50%);
   -webkit-clip-path: circle(50% at 50% 50%);
 }
@@ -210,8 +213,12 @@
   text-transform: lowercase;
 }
 
-.tournbracket-page .bracketPayment .mb-10 { margin-bottom: 0.5rem; }
-.tournbracket-page .bracketPayment .mt-10 { margin-top: 0.5rem; }
+.tournbracket-page .bracketPayment .mb-10 {
+  margin-bottom: 0.5rem;
+}
+.tournbracket-page .bracketPayment .mt-10 {
+  margin-top: 0.5rem;
+}
 
 .tournbracket-page .bracketPayment #buyinp {
   margin: 0;
@@ -266,9 +273,15 @@
 }
 
 @keyframes scalePop {
-  0%   { transform: scale(1); }
-  10%  { transform: scale(1.3); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Issue-refunds confirmation (view 2) */
@@ -308,7 +321,10 @@
   gap: 0.4rem;
 }
 
-.tournbracket-page .bracketPayment .issuerefundssecond #currentWithdrawalPlayer {
+.tournbracket-page
+  .bracketPayment
+  .issuerefundssecond
+  #currentWithdrawalPlayer {
   font-size: clamp(1.25rem, 3vw, 2rem);
   margin: 0;
 }
@@ -541,7 +557,9 @@
   box-shadow: 0 0 19px #ffffffb0;
 }
 
-.tournbracket-page .playerSquare.white { background: #fff; }
+.tournbracket-page .playerSquare.white {
+  background: #fff;
+}
 .tournbracket-page .playerSquare.black {
   background: #000;
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -567,7 +585,13 @@
   padding: 1vw;
   box-sizing: border-box;
   text-align: center;
-  background: radial-gradient(#000000b3, #000000a1, #00000061, #00000000, #00000000);
+  background: radial-gradient(
+    #000000b3,
+    #000000a1,
+    #00000061,
+    #00000000,
+    #00000000
+  );
 }
 
 .tournbracket-page .tournFinishedDiv h2.tourn-finished-headline {

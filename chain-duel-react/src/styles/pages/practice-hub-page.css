@@ -132,7 +132,10 @@
   gap: max(0.2rem, 0.3vw);
 }
 
-.practice-hub-page .practice-play-style-section .ph-picker-block .p2p-picker-row {
+.practice-hub-page
+  .practice-play-style-section
+  .ph-picker-block
+  .p2p-picker-row {
   gap: max(0.35rem, 0.45vw);
   padding-block: calc(var(--ph-card-glow-blur) * 0.12);
   margin-block: calc(var(--ph-card-glow-blur) * -0.12);
@@ -232,7 +235,8 @@
 
 .practice-hub-page .p2p-modifiers-section .ph-picker-block .p2p-duel-format {
   gap: max(0.35rem, 0.45vw);
-  padding: calc(var(--ph-card-glow-blur) * 0.12) calc(var(--ph-card-glow-blur) * 0.12);
+  padding: calc(var(--ph-card-glow-blur) * 0.12)
+    calc(var(--ph-card-glow-blur) * 0.12);
   margin: calc(var(--ph-card-glow-blur) * -0.12);
 }
 
@@ -243,7 +247,9 @@
 
 .practice-hub-page .practice-play-style-section .p2p-picker-card--lightning,
 .practice-hub-page .practice-play-style-section .p2p-picker-card--nostr,
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline,
 .practice-hub-page .ph-picker-block .p2p-duel-format__card,
 .practice-hub-page .ph-picker-block .practice-slot-btn {
   box-sizing: border-box;
@@ -257,15 +263,30 @@
   overflow: visible;
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning .p2p-picker-icon,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr .p2p-picker-icon,
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-icon {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning
+  .p2p-picker-icon,
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr
+  .p2p-picker-icon,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline
+  .p2p-picker-icon {
   width: var(--ph-compact-icon);
   height: var(--ph-compact-icon);
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning .p2p-picker-sub,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr .p2p-picker-sub {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning
+  .p2p-picker-sub,
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr
+  .p2p-picker-sub {
   line-height: 1.3;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -274,37 +295,67 @@
 }
 
 /* Icon scale on select must not grow the card (grid icon spans both rows) */
-.practice-hub-page .practice-play-style-section .p2p-picker-card--selected .p2p-picker-icon,
-.practice-hub-page .practice-play-style-section .p2p-picker-card:hover .p2p-picker-icon {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--selected
+  .p2p-picker-icon,
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card:hover
+  .p2p-picker-icon {
   transform: none;
 }
 
 /* HOW TO PLAY — rest = colored selected; focus = solid fill + white type */
-.practice-hub-page .practice-play-style-section .p2p-picker-card:not(.p2p-picker-card--selected):not(.practice-focus-target) {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card:not(.p2p-picker-card--selected):not(.practice-focus-target) {
   opacity: 0.7;
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target) {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ) {
   border-color: rgba(247, 147, 26, 0.48);
   background: rgba(247, 147, 26, 0.05);
   color: #f7931a;
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target) .p2p-picker-sub {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  )
+  .p2p-picker-sub {
   color: rgba(247, 147, 26, 0.58);
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target) {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ) {
   border-color: rgba(155, 89, 182, 0.48);
   background: rgba(155, 89, 182, 0.05);
   color: #c17ee6;
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target) .p2p-picker-sub {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  )
+  .p2p-picker-sub {
   color: rgba(193, 126, 230, 0.58);
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target) {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ) {
   border-color: #f7931a;
   background: rgba(247, 147, 26, 0.09);
   color: #f7931a;
@@ -314,12 +365,20 @@
     inset 0 0 40px rgba(247, 147, 26, 0.06);
 }
 
-
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning.p2p-picker-card--selected:not(
+    .practice-focus-target
+  )
+  .p2p-picker-sub {
   color: rgba(247, 147, 26, 0.82);
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target) {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ) {
   border-color: #9b59b6;
   background: rgba(155, 89, 182, 0.1);
   color: #c17ee6;
@@ -329,12 +388,19 @@
     inset 0 0 40px rgba(155, 89, 182, 0.06);
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target)
+  .p2p-picker-sub {
   color: rgba(193, 126, 230, 0.82);
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.practice-focus-target {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target,
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning.practice-focus-target {
   border-color: #f7931a;
   background: #f7931a;
   color: #fff;
@@ -343,13 +409,23 @@
   animation: none;
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning.practice-focus-target .p2p-picker-sub {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target
+  .p2p-picker-sub,
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning.practice-focus-target
+  .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.88);
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.practice-focus-target {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target,
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr.practice-focus-target {
   border-color: #9b59b6;
   background: #9b59b6;
   color: #fff;
@@ -358,11 +434,16 @@
   animation: none;
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr.practice-focus-target .p2p-picker-sub {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target
+  .p2p-picker-sub,
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr.practice-focus-target
+  .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.88);
 }
-
 
 /* Free play vs Challenges — stack panels in one grid cell so height = max(both) */
 .practice-hub-page .practice-play-style-area {
@@ -380,7 +461,9 @@
   box-sizing: border-box;
 }
 
-.practice-hub-page .practice-play-style-area > .practice-play-style-panel:not(.practice-play-style-inactive) {
+.practice-hub-page
+  .practice-play-style-area
+  > .practice-play-style-panel:not(.practice-play-style-inactive) {
   position: relative;
   z-index: 1;
   grid-column: 1;
@@ -403,17 +486,23 @@
   width: 100%;
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
 }
 
-.practice-hub-page .practice-play-style-area > .practice-play-style-panel.practice-play-style-inactive {
+.practice-hub-page
+  .practice-play-style-area
+  > .practice-play-style-panel.practice-play-style-inactive {
   z-index: 0;
   opacity: 0;
   transform: translateY(6px);
   pointer-events: none;
   user-select: none;
   overflow: hidden;
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
 }
 
 .practice-play-style-panel .practice-free-play-panel,
@@ -465,8 +554,12 @@
   animation: none;
 }
 
-.practice-hub-page .practice-hub-panel-footer .practice-start.button.practice-start--focused,
-.practice-hub-page .practice-hub-panel-footer .practice-back.button.practice-start--focused {
+.practice-hub-page
+  .practice-hub-panel-footer
+  .practice-start.button.practice-start--focused,
+.practice-hub-page
+  .practice-hub-panel-footer
+  .practice-back.button.practice-start--focused {
   animation: glowing 2s ease-in-out infinite;
 }
 
@@ -511,7 +604,6 @@
   gap: 0;
 }
 
-
 /* Compact inline tiles (icon + text side-by-side) — format + opponent pickers */
 .practice-hub-page .practice-free-play-panel__body .p2p-picker-card {
   min-height: 0;
@@ -523,7 +615,9 @@
   grid-template-columns: auto 1fr auto;
 }
 
-.practice-hub-page .local-format-section .p2p-picker-card--compact-inline::after {
+.practice-hub-page
+  .local-format-section
+  .p2p-picker-card--compact-inline::after {
   content: '';
   grid-row: 1 / 3;
   grid-column: 3;
@@ -536,24 +630,34 @@
   border-bottom: 1.5px solid currentColor;
   transform: rotate(-45deg);
   opacity: 0.28;
-  transition: opacity 0.12s ease, transform 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
   pointer-events: none;
 }
 
-.practice-hub-page .local-format-section .p2p-picker-card--compact-inline:hover::after {
+.practice-hub-page
+  .local-format-section
+  .p2p-picker-card--compact-inline:hover::after {
   opacity: 0.42;
 }
 
-.practice-hub-page .local-format-section .p2p-picker-card--compact-inline.p2p-picker-card--selected::after {
+.practice-hub-page
+  .local-format-section
+  .p2p-picker-card--compact-inline.p2p-picker-card--selected::after {
   opacity: 0.78;
   transform: rotate(-45deg) translateX(1px);
 }
 
-.practice-hub-page .local-format-section .p2p-picker-card--compact-inline.practice-focus-target::after {
+.practice-hub-page
+  .local-format-section
+  .p2p-picker-card--compact-inline.practice-focus-target::after {
   opacity: 0.88;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline {
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
@@ -566,35 +670,59 @@
   text-align: left;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-icon {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline
+  .p2p-picker-icon {
   grid-row: 1 / 3;
   grid-column: 1;
   align-self: center;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--duel .p2p-picker-icon {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.p2p-picker-card--duel
+  .p2p-picker-icon {
   transform: rotate(180deg);
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-label {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline
+  .p2p-picker-label {
   grid-row: 1;
   grid-column: 2;
   align-self: end;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-sub {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline
+  .p2p-picker-sub {
   grid-row: 2;
   grid-column: 2;
   align-self: start;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected .p2p-picker-icon,
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline:hover .p2p-picker-icon {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.p2p-picker-card--selected
+  .p2p-picker-icon,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline:hover
+  .p2p-picker-icon {
   transform: none;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--duel.p2p-picker-card--selected .p2p-picker-icon,
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--duel:hover .p2p-picker-icon {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.p2p-picker-card--duel.p2p-picker-card--selected
+  .p2p-picker-icon,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.p2p-picker-card--duel:hover
+  .p2p-picker-icon {
   transform: rotate(180deg);
 }
 
@@ -636,36 +764,66 @@
 }
 
 /* Column blocks share one outer inset — avoid double horizontal padding in the center gap */
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .ph-picker-block,
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .local-mode-config-block {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .ph-picker-block,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .local-mode-config-block {
   padding: 0;
   gap: max(0.2rem, 0.3vw);
 }
 
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .ph-picker-block,
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .p2p-picker-row,
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-four-slot,
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .local-tier-grid {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .ph-picker-block,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .p2p-picker-row,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .practice-four-slot,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .local-tier-grid {
   overflow: visible;
 }
 
 /* P1–P4 slots — match compact-inline format/opponent tile height */
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-four-slot {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .practice-four-slot {
   align-items: stretch;
 }
 
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-slot-btn {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .practice-slot-btn {
   height: auto;
   min-height: calc(var(--ph-compact-card-pad-y) * 2 + var(--ph-compact-icon));
   gap: 0.08rem;
   padding: var(--ph-compact-card-pad-y) max(0.35vw, 0.3rem);
 }
 
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-slot-id {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .practice-slot-id {
   line-height: 1;
 }
 
-.practice-hub-page .practice-free-play-panel__body .local-setup-top-row .practice-slot-role {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .local-setup-top-row
+  .practice-slot-role {
   font-family: 'Inter', sans-serif;
   font-size: 0.8cqw;
   font-weight: 400;
@@ -687,16 +845,24 @@
   gap: 0;
 }
 
-.practice-free-play-panel .local-mode-config-area > .practice-section.local-mode-inactive {
+.practice-free-play-panel
+  .local-mode-config-area
+  > .practice-section.local-mode-inactive {
   display: none;
 }
 
 /* ── Free-play picker cards (duel, ffa, humans, ai) — selected rest + focus ── */
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline:not(.p2p-picker-card--selected) {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline:not(.p2p-picker-card--selected) {
   animation: none;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected:not(.practice-focus-target) {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ) {
   border-color: rgba(255, 255, 255, 0.55);
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.9);
@@ -706,13 +872,21 @@
   animation: none;
 }
 
-
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.p2p-picker-card--selected:not(
+    .practice-focus-target
+  )
+  .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.55);
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.practice-focus-target,
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.p2p-picker-card--selected.practice-focus-target {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.practice-focus-target,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.p2p-picker-card--selected.practice-focus-target {
   border-color: #fff;
   color: #fff;
   box-shadow:
@@ -723,15 +897,26 @@
   animation: none;
 }
 
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.practice-focus-target .p2p-picker-label,
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline.practice-focus-target .p2p-picker-sub {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.practice-focus-target
+  .p2p-picker-label,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline.practice-focus-target
+  .p2p-picker-sub {
   color: #fff;
 }
 
-
 /* ── Modifiers + tier cards — selected rest + focus (match format pickers) ── */
-.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.p2p-duel-format__card--active:not(.practice-focus-target),
-.practice-hub-page .ph-picker-block .local-tier-card.p2p-duel-format__card--active:not(.practice-focus-target) {
+.practice-hub-page
+  .p2p-modifiers-section
+  .p2p-duel-format__card.p2p-duel-format__card--active:not(
+    .practice-focus-target
+  ),
+.practice-hub-page
+  .ph-picker-block
+  .local-tier-card.p2p-duel-format__card--active:not(.practice-focus-target) {
   border-color: rgba(255, 255, 255, 0.55);
   background: rgba(255, 255, 255, 0.06);
   box-shadow:
@@ -739,10 +924,16 @@
     inset 0 0 6px rgb(255 255 255 / 6%);
 }
 
-.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.practice-focus-target,
-.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.p2p-duel-format__card--active.practice-focus-target,
+.practice-hub-page
+  .p2p-modifiers-section
+  .p2p-duel-format__card.practice-focus-target,
+.practice-hub-page
+  .p2p-modifiers-section
+  .p2p-duel-format__card.p2p-duel-format__card--active.practice-focus-target,
 .practice-hub-page .ph-picker-block .local-tier-card.practice-focus-target,
-.practice-hub-page .ph-picker-block .local-tier-card.p2p-duel-format__card--active.practice-focus-target {
+.practice-hub-page
+  .ph-picker-block
+  .local-tier-card.p2p-duel-format__card--active.practice-focus-target {
   border-color: #fff;
   color: #fff;
   box-shadow:
@@ -753,19 +944,37 @@
   animation: none;
 }
 
-.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.practice-focus-target .p2p-duel-format__label,
-.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.practice-focus-target .p2p-duel-format__desc,
-.practice-hub-page .p2p-modifiers-section .p2p-duel-format__card.practice-focus-target .p2p-duel-format__icon,
-.practice-hub-page .ph-picker-block .local-tier-card.practice-focus-target .p2p-duel-format__label {
+.practice-hub-page
+  .p2p-modifiers-section
+  .p2p-duel-format__card.practice-focus-target
+  .p2p-duel-format__label,
+.practice-hub-page
+  .p2p-modifiers-section
+  .p2p-duel-format__card.practice-focus-target
+  .p2p-duel-format__desc,
+.practice-hub-page
+  .p2p-modifiers-section
+  .p2p-duel-format__card.practice-focus-target
+  .p2p-duel-format__icon,
+.practice-hub-page
+  .ph-picker-block
+  .local-tier-card.practice-focus-target
+  .p2p-duel-format__label {
   color: #fff;
   opacity: 1;
 }
 
-.practice-hub-page .ph-picker-block .local-tier-card.practice-focus-target .local-tier-pip {
+.practice-hub-page
+  .ph-picker-block
+  .local-tier-card.practice-focus-target
+  .local-tier-pip {
   border-color: rgba(255, 255, 255, 0.45);
 }
 
-.practice-hub-page .ph-picker-block .local-tier-card.practice-focus-target .local-tier-pip--filled {
+.practice-hub-page
+  .ph-picker-block
+  .local-tier-card.practice-focus-target
+  .local-tier-pip--filled {
   background: rgba(255, 255, 255, 0.88);
   border-color: rgba(255, 255, 255, 0.88);
 }
@@ -777,8 +986,14 @@
 }
 
 @keyframes lh-ffa-node-in {
-  from { transform: scale(0.4); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .p2p-picker-card--ffa.practice-focus-target .lh-ffa-icon > *:nth-child(1) {
@@ -798,9 +1013,18 @@
 }
 
 /* Players/Opponent + Difficulty — one block so labels and 4-col grids share edges */
-.practice-hub-page .local-mode-config-block > .practice-four-slot + .p2p-picker-group-label,
-.practice-hub-page .local-mode-config-block > .p2p-picker-row + .p2p-picker-group-label,
-.practice-hub-page .local-mode-config-block > .p2p-picker-row + .local-human-p2p-link {
+.practice-hub-page
+  .local-mode-config-block
+  > .practice-four-slot
+  + .p2p-picker-group-label,
+.practice-hub-page
+  .local-mode-config-block
+  > .p2p-picker-row
+  + .p2p-picker-group-label,
+.practice-hub-page
+  .local-mode-config-block
+  > .p2p-picker-row
+  + .local-human-p2p-link {
   margin-top: max(0px, calc(var(--ph-glow-gutter) * 0.2));
 }
 
@@ -842,17 +1066,24 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-
 /* Tier card layout */
 .local-tier-card {
   gap: 4px;
 }
 
 /* ── Per-tier brightness progression (no hues) ── */
-.local-tier-card[data-tier="normie"]     { --tier-brightness: 0.38; }
-.local-tier-card[data-tier="stacker"]    { --tier-brightness: 0.56; }
-.local-tier-card[data-tier="noderunner"] { --tier-brightness: 0.74; }
-.local-tier-card[data-tier="sovereign"]{ --tier-brightness: 0.94; }
+.local-tier-card[data-tier='normie'] {
+  --tier-brightness: 0.38;
+}
+.local-tier-card[data-tier='stacker'] {
+  --tier-brightness: 0.56;
+}
+.local-tier-card[data-tier='noderunner'] {
+  --tier-brightness: 0.74;
+}
+.local-tier-card[data-tier='sovereign'] {
+  --tier-brightness: 0.94;
+}
 
 /* Label opacity scales with difficulty */
 .local-tier-card .p2p-duel-format__label {
@@ -878,7 +1109,9 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: transparent;
   flex-shrink: 0;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .local-tier-pip--filled {
@@ -888,8 +1121,14 @@
 
 /* ── Tier difficulty pips: stagger reveal on keyboard focus ── */
 @keyframes ph-tier-pip-reveal {
-  from { transform: scaleX(0.15); opacity: 0.2; }
-  to   { transform: scaleX(1); opacity: 1; }
+  from {
+    transform: scaleX(0.15);
+    opacity: 0.2;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
 }
 
 .local-tier-card.practice-focus-target .local-tier-pip {
@@ -935,16 +1174,18 @@
   color: rgba(255, 255, 255, 0.35);
   line-height: 1;
   overflow: visible;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s,
+    color 0.2s;
 }
-
 
 .practice-hub-page .practice-slot-btn:hover {
   border-color: rgba(255, 255, 255, 0.26);
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.78);
 }
-
 
 /* Human slot = selected picker rest state */
 .practice-hub-page .practice-slot-btn.human:not(.practice-focus-target) {
@@ -956,8 +1197,9 @@
     inset 0 0 6px rgb(255 255 255 / 6%);
 }
 
-
-.practice-hub-page .practice-slot-btn.human:not(.practice-focus-target) .practice-slot-role {
+.practice-hub-page
+  .practice-slot-btn.human:not(.practice-focus-target)
+  .practice-slot-role {
   color: rgba(255, 255, 255, 0.55);
 }
 
@@ -968,7 +1210,9 @@
   color: rgba(255, 255, 255, 0.35);
 }
 
-.practice-hub-page .practice-slot-btn.ai:not(.practice-focus-target) .practice-slot-role {
+.practice-hub-page
+  .practice-slot-btn.ai:not(.practice-focus-target)
+  .practice-slot-role {
   color: rgba(255, 255, 255, 0.22);
 }
 
@@ -981,9 +1225,9 @@
     inset 0 0 18px rgba(255, 255, 255, 0.14);
 }
 
-
-
-.practice-hub-page .practice-slot-btn.practice-focus-target .practice-slot-role {
+.practice-hub-page
+  .practice-slot-btn.practice-focus-target
+  .practice-slot-role {
   color: #fff;
 }
 
@@ -1029,23 +1273,44 @@
 }
 
 /* Compact picker tiles — HOW TO PLAY tabs + free-play format/opponent cards */
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning .p2p-picker-label,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr .p2p-picker-label,
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-label {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning
+  .p2p-picker-label,
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr
+  .p2p-picker-label,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline
+  .p2p-picker-label {
   font-size: var(--ph-fs-ui);
   letter-spacing: 0.04vw;
 }
 
-.practice-hub-page .practice-play-style-section .p2p-picker-card--lightning .p2p-picker-sub,
-.practice-hub-page .practice-play-style-section .p2p-picker-card--nostr .p2p-picker-sub {
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--lightning
+  .p2p-picker-sub,
+.practice-hub-page
+  .practice-play-style-section
+  .p2p-picker-card--nostr
+  .p2p-picker-sub {
   font-size: var(--ph-fs-play-style-sub);
   line-height: 1.3;
   letter-spacing: 0.1em;
 }
 
 /* Free-play setup — section labels + compact tile subs match footer .practice-start type */
-.practice-hub-page .practice-free-play-panel__body .ph-picker-block .p2p-picker-group-label,
-.practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline .p2p-picker-sub {
+.practice-hub-page
+  .practice-free-play-panel__body
+  .ph-picker-block
+  .p2p-picker-group-label,
+.practice-hub-page
+  .practice-free-play-panel__body
+  .p2p-picker-card--compact-inline
+  .p2p-picker-sub {
   font-family: 'Inter', sans-serif;
   font-size: 0.8cqw;
   font-weight: 400;
@@ -1086,8 +1351,8 @@
 }
 
 /* Challenge rows — rank 1 (purple) → rank 6 (white) border + accent progression */
-.solo-challenges-panel .sc-row[data-rank="1"],
-.practice-hub-page--challenges .sc-row[data-rank="1"] {
+.solo-challenges-panel .sc-row[data-rank='1'],
+.practice-hub-page--challenges .sc-row[data-rank='1'] {
   border-color: rgba(155, 89, 182, 0.38);
   --sc-accent: 155, 89, 182;
   --sc-accent-strong: 193, 126, 230;
@@ -1095,8 +1360,8 @@
   --sc-sats-fs: calc(0.36rem + 0.92vw);
   --sc-sats-fs-locked: clamp(18px, 1.65vw, 26px);
 }
-.solo-challenges-panel .sc-row[data-rank="2"],
-.practice-hub-page--challenges .sc-row[data-rank="2"] {
+.solo-challenges-panel .sc-row[data-rank='2'],
+.practice-hub-page--challenges .sc-row[data-rank='2'] {
   border-color: rgba(175, 122, 197, 0.34);
   --sc-accent: 175, 122, 197;
   --sc-accent-strong: 200, 145, 215;
@@ -1104,8 +1369,8 @@
   --sc-sats-fs: calc(0.4rem + 1.05vw);
   --sc-sats-fs-locked: clamp(20px, 1.9vw, 30px);
 }
-.solo-challenges-panel .sc-row[data-rank="3"],
-.practice-hub-page--challenges .sc-row[data-rank="3"] {
+.solo-challenges-panel .sc-row[data-rank='3'],
+.practice-hub-page--challenges .sc-row[data-rank='3'] {
   border-color: rgba(195, 155, 212, 0.3);
   --sc-accent: 195, 155, 212;
   --sc-accent-strong: 215, 175, 225;
@@ -1113,8 +1378,8 @@
   --sc-sats-fs: calc(0.44rem + 1.18vw);
   --sc-sats-fs-locked: clamp(22px, 2.15vw, 34px);
 }
-.solo-challenges-panel .sc-row[data-rank="4"],
-.practice-hub-page--challenges .sc-row[data-rank="4"] {
+.solo-challenges-panel .sc-row[data-rank='4'],
+.practice-hub-page--challenges .sc-row[data-rank='4'] {
   border-color: rgba(215, 188, 227, 0.26);
   --sc-accent: 215, 188, 227;
   --sc-accent-strong: 228, 205, 235;
@@ -1122,8 +1387,8 @@
   --sc-sats-fs: calc(0.54rem + 1.48vw);
   --sc-sats-fs-locked: clamp(26px, 2.65vw, 42px);
 }
-.solo-challenges-panel .sc-row[data-rank="5"],
-.practice-hub-page--challenges .sc-row[data-rank="5"] {
+.solo-challenges-panel .sc-row[data-rank='5'],
+.practice-hub-page--challenges .sc-row[data-rank='5'] {
   border-color: rgba(235, 221, 242, 0.22);
   --sc-accent: 235, 221, 242;
   --sc-accent-strong: 245, 238, 248;
@@ -1131,8 +1396,8 @@
   --sc-sats-fs: calc(0.62rem + 1.72vw);
   --sc-sats-fs-locked: clamp(30px, 3.15vw, 50px);
 }
-.solo-challenges-panel .sc-row[data-rank="6"],
-.practice-hub-page--challenges .sc-row[data-rank="6"] {
+.solo-challenges-panel .sc-row[data-rank='6'],
+.practice-hub-page--challenges .sc-row[data-rank='6'] {
   border-color: rgba(255, 255, 255, 0.2);
   --sc-accent: 255, 255, 255;
   --sc-accent-strong: 255, 255, 255;
@@ -1142,37 +1407,34 @@
 }
 
 .practice-hub-page--challenges .sc-row[data-rank] {
-  background:
-    linear-gradient(
-      155deg,
-      rgba(var(--sc-accent-strong), calc(var(--sc-row-fill) * 1.2)) 0%,
-      rgba(var(--sc-accent), calc(var(--sc-row-fill) * 0.5)) 38%,
-      rgba(0, 0, 0, 0.3) 100%
-    );
+  background: linear-gradient(
+    155deg,
+    rgba(var(--sc-accent-strong), calc(var(--sc-row-fill) * 1.2)) 0%,
+    rgba(var(--sc-accent), calc(var(--sc-row-fill) * 0.5)) 38%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
 }
 
 .practice-hub-page--challenges .sc-row[data-rank]:hover {
   border-color: rgba(var(--sc-accent-strong), 0.48);
-  background:
-    linear-gradient(
-      155deg,
-      rgba(var(--sc-accent-strong), calc(var(--sc-row-fill) * 1.85)) 0%,
-      rgba(var(--sc-accent), calc(var(--sc-row-fill) * 0.82)) 38%,
-      rgba(0, 0, 0, 0.32) 100%
-    );
+  background: linear-gradient(
+    155deg,
+    rgba(var(--sc-accent-strong), calc(var(--sc-row-fill) * 1.85)) 0%,
+    rgba(var(--sc-accent), calc(var(--sc-row-fill) * 0.82)) 38%,
+    rgba(0, 0, 0, 0.32) 100%
+  );
 }
 
 .practice-hub-page--challenges .sc-row--selected[data-rank] {
-  background:
-    linear-gradient(
-      155deg,
-      rgba(var(--sc-accent-strong), calc(var(--sc-row-fill) * 2.4)) 0%,
-      rgba(var(--sc-accent), calc(var(--sc-row-fill) * 1.15)) 38%,
-      rgba(0, 0, 0, 0.38) 100%
-    );
+  background: linear-gradient(
+    155deg,
+    rgba(var(--sc-accent-strong), calc(var(--sc-row-fill) * 2.4)) 0%,
+    rgba(var(--sc-accent), calc(var(--sc-row-fill) * 1.15)) 38%,
+    rgba(0, 0, 0, 0.38) 100%
+  );
 }
 
-.practice-hub-page--challenges .sc-row--selected[data-rank="1"] {
+.practice-hub-page--challenges .sc-row--selected[data-rank='1'] {
   --button-glow-bg-low: rgb(155 89 182 / 12%);
   --button-glow-bg-peak: rgb(155 89 182 / 26%);
   --button-glow-shadow-low: 0 0 15px rgb(155 89 182 / 45%);
@@ -1181,7 +1443,7 @@
   border-color: rgba(193, 126, 230, 0.72);
   box-shadow: 0 0 15px rgb(155 89 182 / 45%);
 }
-.practice-hub-page--challenges .sc-row--selected[data-rank="2"] {
+.practice-hub-page--challenges .sc-row--selected[data-rank='2'] {
   --button-glow-bg-low: rgb(175 122 197 / 12%);
   --button-glow-bg-peak: rgb(175 122 197 / 24%);
   --button-glow-shadow-low: 0 0 15px rgb(175 122 197 / 40%);
@@ -1190,7 +1452,7 @@
   border-color: rgba(200, 145, 215, 0.68);
   box-shadow: 0 0 15px rgb(175 122 197 / 38%);
 }
-.practice-hub-page--challenges .sc-row--selected[data-rank="3"] {
+.practice-hub-page--challenges .sc-row--selected[data-rank='3'] {
   --button-glow-bg-low: rgb(195 155 212 / 12%);
   --button-glow-bg-peak: rgb(195 155 212 / 22%);
   --button-glow-shadow-low: 0 0 15px rgb(195 155 212 / 35%);
@@ -1199,7 +1461,7 @@
   border-color: rgba(215, 175, 225, 0.62);
   box-shadow: 0 0 15px rgb(195 155 212 / 32%);
 }
-.practice-hub-page--challenges .sc-row--selected[data-rank="4"] {
+.practice-hub-page--challenges .sc-row--selected[data-rank='4'] {
   --button-glow-bg-low: rgb(215 188 227 / 12%);
   --button-glow-bg-peak: rgb(215 188 227 / 20%);
   --button-glow-shadow-low: 0 0 15px rgb(255 255 255 / 28%);
@@ -1208,7 +1470,7 @@
   border-color: rgba(228, 205, 235, 0.58);
   box-shadow: 0 0 15px rgb(255 255 255 / 24%);
 }
-.practice-hub-page--challenges .sc-row--selected[data-rank="5"] {
+.practice-hub-page--challenges .sc-row--selected[data-rank='5'] {
   --button-glow-bg-low: rgb(235 221 242 / 10%);
   --button-glow-bg-peak: rgb(255 255 255 / 22%);
   --button-glow-shadow-low: 0 0 15px rgb(255 255 255 / 32%);
@@ -1217,7 +1479,7 @@
   border-color: rgba(245, 238, 248, 0.72);
   box-shadow: 0 0 15px rgb(255 255 255 / 30%);
 }
-.practice-hub-page--challenges .sc-row--selected[data-rank="6"] {
+.practice-hub-page--challenges .sc-row--selected[data-rank='6'] {
   --button-glow-bg-low: rgb(255 255 255 / 15%);
   --button-glow-bg-peak: rgb(255 255 255 / 30%);
   --button-glow-shadow-low: 0 0 15px rgb(255 255 255);
@@ -1240,20 +1502,32 @@
     animation: none;
   }
 
-  .practice-hub-page .practice-play-style-section .p2p-picker-row:not(.ph-picker-row--revealed) .p2p-picker-card {
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-row:not(.ph-picker-row--revealed)
+    .p2p-picker-card {
     opacity: 0;
     animation: sc-fade-up 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  .practice-hub-page .practice-play-style-section .p2p-picker-row:not(.ph-picker-row--revealed) .p2p-picker-card:nth-child(1) {
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-row:not(.ph-picker-row--revealed)
+    .p2p-picker-card:nth-child(1) {
     animation-delay: 0.04s;
   }
 
-  .practice-hub-page .practice-play-style-section .p2p-picker-row:not(.ph-picker-row--revealed) .p2p-picker-card:nth-child(2) {
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-row:not(.ph-picker-row--revealed)
+    .p2p-picker-card:nth-child(2) {
     animation-delay: 0.1s;
   }
 
-  .practice-hub-page .practice-play-style-section .p2p-picker-row.ph-picker-row--revealed .p2p-picker-card {
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-row.ph-picker-row--revealed
+    .p2p-picker-card {
     transform: none;
     animation: none;
   }
@@ -1263,24 +1537,80 @@
     animation: sc-fade-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row:nth-child(1) { animation-delay: 0.22s; }
-  .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row:nth-child(2) { animation-delay: 0.28s; }
-  .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row:nth-child(3) { animation-delay: 0.34s; }
-  .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row:nth-child(4) { animation-delay: 0.40s; }
-  .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row:nth-child(5) { animation-delay: 0.46s; }
-  .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row:nth-child(6) { animation-delay: 0.52s; }
+  .practice-hub-page--challenges
+    .sc-list:not(.sc-list--revealed)
+    .sc-row:nth-child(1) {
+    animation-delay: 0.22s;
+  }
+  .practice-hub-page--challenges
+    .sc-list:not(.sc-list--revealed)
+    .sc-row:nth-child(2) {
+    animation-delay: 0.28s;
+  }
+  .practice-hub-page--challenges
+    .sc-list:not(.sc-list--revealed)
+    .sc-row:nth-child(3) {
+    animation-delay: 0.34s;
+  }
+  .practice-hub-page--challenges
+    .sc-list:not(.sc-list--revealed)
+    .sc-row:nth-child(4) {
+    animation-delay: 0.4s;
+  }
+  .practice-hub-page--challenges
+    .sc-list:not(.sc-list--revealed)
+    .sc-row:nth-child(5) {
+    animation-delay: 0.46s;
+  }
+  .practice-hub-page--challenges
+    .sc-list:not(.sc-list--revealed)
+    .sc-row:nth-child(6) {
+    animation-delay: 0.52s;
+  }
 
-  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check {
+  .practice-hub-page--challenges
+    .sc-gate__checks:not(.sc-gate__checks--revealed)
+    .sc-gate__check {
     opacity: 0;
     animation: sc-fade-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(1) .sc-gate__check { animation-delay: 0.22s; }
-  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(2) .sc-gate__check { animation-delay: 0.28s; }
-  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(3) .sc-gate__check { animation-delay: 0.34s; }
-  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(4) .sc-gate__check { animation-delay: 0.40s; }
-  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(5) .sc-gate__check { animation-delay: 0.46s; }
-  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check-item:nth-child(6) .sc-gate__check { animation-delay: 0.52s; }
+  .practice-hub-page--challenges
+    .sc-gate__checks:not(.sc-gate__checks--revealed)
+    .sc-gate__check-item:nth-child(1)
+    .sc-gate__check {
+    animation-delay: 0.22s;
+  }
+  .practice-hub-page--challenges
+    .sc-gate__checks:not(.sc-gate__checks--revealed)
+    .sc-gate__check-item:nth-child(2)
+    .sc-gate__check {
+    animation-delay: 0.28s;
+  }
+  .practice-hub-page--challenges
+    .sc-gate__checks:not(.sc-gate__checks--revealed)
+    .sc-gate__check-item:nth-child(3)
+    .sc-gate__check {
+    animation-delay: 0.34s;
+  }
+  .practice-hub-page--challenges
+    .sc-gate__checks:not(.sc-gate__checks--revealed)
+    .sc-gate__check-item:nth-child(4)
+    .sc-gate__check {
+    animation-delay: 0.4s;
+  }
+  .practice-hub-page--challenges
+    .sc-gate__checks:not(.sc-gate__checks--revealed)
+    .sc-gate__check-item:nth-child(5)
+    .sc-gate__check {
+    animation-delay: 0.46s;
+  }
+  .practice-hub-page--challenges
+    .sc-gate__checks:not(.sc-gate__checks--revealed)
+    .sc-gate__check-item:nth-child(6)
+    .sc-gate__check {
+    animation-delay: 0.52s;
+  }
 }
 
 .practice-hub-page--challenges .sc-list--revealed .sc-row {
@@ -1316,7 +1646,8 @@
   border-color: rgba(var(--sc-accent-strong), 0.95);
   box-shadow:
     0 0 0 1px rgba(var(--sc-accent-strong), 0.75),
-    0 0 calc(var(--ph-card-glow-blur) * 1.05) rgba(var(--sc-accent-strong), 0.72);
+    0 0 calc(var(--ph-card-glow-blur) * 1.05)
+      rgba(var(--sc-accent-strong), 0.72);
   z-index: 5;
 }
 
@@ -1346,7 +1677,9 @@
 }
 
 .practice-hub-page--challenges .sc-row[data-rank]:hover .sc-tier-pip--filled,
-.practice-hub-page--challenges .sc-row--selected[data-rank] .sc-tier-pip--filled {
+.practice-hub-page--challenges
+  .sc-row--selected[data-rank]
+  .sc-tier-pip--filled {
   background: rgba(var(--sc-accent-strong), 0.88);
   border-color: rgba(var(--sc-accent-strong), 0.88);
 }
@@ -1369,7 +1702,8 @@
 }
 
 @keyframes sc-sats-shimmer-nostr {
-  0%, 100% {
+  0%,
+  100% {
     color: rgba(var(--sc-accent-strong), 0.75);
     text-shadow: none;
   }
@@ -1382,7 +1716,8 @@
 }
 
 @keyframes sc-sats-shimmer-white {
-  0%, 100% {
+  0%,
+  100% {
     color: rgba(255, 255, 255, 0.75);
     text-shadow: none;
   }
@@ -1399,43 +1734,60 @@
   color: rgba(var(--sc-accent-strong), 0.52);
 }
 
-.practice-hub-page--challenges .sc-row--selected[data-rank="1"] .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="2"] .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="3"] .sc-row__sats {
+.practice-hub-page--challenges .sc-row--selected[data-rank='1'] .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank='2'] .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank='3'] .sc-row__sats {
   color: rgba(var(--sc-accent-strong), 0.9);
   animation: sc-sats-shimmer-nostr 3s ease-in-out infinite;
 }
 
-.practice-hub-page--challenges .sc-row--selected[data-rank="4"] .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="5"] .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="6"] .sc-row__sats {
+.practice-hub-page--challenges .sc-row--selected[data-rank='4'] .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank='5'] .sc-row__sats,
+.practice-hub-page--challenges .sc-row--selected[data-rank='6'] .sc-row__sats {
   color: rgba(255, 255, 255, 0.9);
   animation: sc-sats-shimmer-white 3s ease-in-out infinite;
 }
 
 /* Sovereign tier inherits rank accent — no gold sats */
-.practice-hub-page--challenges .sc-row[data-tier="sovereign"] .sc-row__sats {
+.practice-hub-page--challenges .sc-row[data-tier='sovereign'] .sc-row__sats {
   color: rgba(var(--sc-accent-strong), 0.52);
 }
 
-.practice-hub-page--challenges .sc-row--selected[data-tier="sovereign"] .sc-row__sats {
+.practice-hub-page--challenges
+  .sc-row--selected[data-tier='sovereign']
+  .sc-row__sats {
   color: rgba(var(--sc-accent-strong), 0.9);
   animation: sc-sats-shimmer-nostr 3s ease-in-out infinite;
 }
 
-.practice-hub-page--challenges .sc-row--selected[data-tier="sovereign"][data-rank="4"] .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-tier="sovereign"][data-rank="5"] .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-tier="sovereign"][data-rank="6"] .sc-row__sats {
+.practice-hub-page--challenges
+  .sc-row--selected[data-tier='sovereign'][data-rank='4']
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row--selected[data-tier='sovereign'][data-rank='5']
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row--selected[data-tier='sovereign'][data-rank='6']
+  .sc-row__sats {
   color: rgba(255, 255, 255, 0.9);
   animation: sc-sats-shimmer-white 3s ease-in-out infinite;
 }
 
-.practice-hub-page--challenges .sc-row[data-tier="sovereign"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-tier="sovereign"] .sc-row__bounty--locked .sc-row__sats {
+.practice-hub-page--challenges
+  .sc-row[data-tier='sovereign']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row--selected[data-tier='sovereign']
+  .sc-row__bounty--locked
+  .sc-row__sats {
   color: rgba(255, 255, 255, 0.52);
 }
 
-.practice-hub-page--challenges .sc-row--selected[data-tier="sovereign"] .sc-row__bounty--locked .sc-row__sats {
+.practice-hub-page--challenges
+  .sc-row--selected[data-tier='sovereign']
+  .sc-row__bounty--locked
+  .sc-row__sats {
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -1455,33 +1807,87 @@
   flex-shrink: 0;
 }
 
-.practice-hub-page--challenges .sc-row[data-rank="1"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row[data-rank="2"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row[data-rank="3"] .sc-row__bounty--locked .sc-row__sats {
+.practice-hub-page--challenges
+  .sc-row[data-rank='1']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row[data-rank='2']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row[data-rank='3']
+  .sc-row__bounty--locked
+  .sc-row__sats {
   color: rgba(var(--sc-accent-strong), 0.52);
 }
 
-.practice-hub-page--challenges .sc-row[data-rank="4"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row[data-rank="5"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row[data-rank="6"] .sc-row__bounty--locked .sc-row__sats {
+.practice-hub-page--challenges
+  .sc-row[data-rank='4']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row[data-rank='5']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row[data-rank='6']
+  .sc-row__bounty--locked
+  .sc-row__sats {
   color: rgba(255, 255, 255, 0.52);
 }
 
-.practice-hub-page--challenges .sc-row:hover[data-rank="1"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row:hover[data-rank="2"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row:hover[data-rank="3"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="1"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="2"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="3"] .sc-row__bounty--locked .sc-row__sats {
+.practice-hub-page--challenges
+  .sc-row:hover[data-rank='1']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row:hover[data-rank='2']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row:hover[data-rank='3']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row--selected[data-rank='1']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row--selected[data-rank='2']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row--selected[data-rank='3']
+  .sc-row__bounty--locked
+  .sc-row__sats {
   color: rgba(var(--sc-accent-strong), 0.9);
 }
 
-.practice-hub-page--challenges .sc-row:hover[data-rank="4"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row:hover[data-rank="5"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row:hover[data-rank="6"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="4"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="5"] .sc-row__bounty--locked .sc-row__sats,
-.practice-hub-page--challenges .sc-row--selected[data-rank="6"] .sc-row__bounty--locked .sc-row__sats {
+.practice-hub-page--challenges
+  .sc-row:hover[data-rank='4']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row:hover[data-rank='5']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row:hover[data-rank='6']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row--selected[data-rank='4']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row--selected[data-rank='5']
+  .sc-row__bounty--locked
+  .sc-row__sats,
+.practice-hub-page--challenges
+  .sc-row--selected[data-rank='6']
+  .sc-row__bounty--locked
+  .sc-row__sats {
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -1512,11 +1918,9 @@
   border: none;
   background: rgb(var(--sc-accent-strong));
   box-shadow: none;
-  transform:
-    translateY(-50%)
+  transform: translateY(-50%)
     translateX(calc(max(0.12rem, 0.25vw) + var(--sc-unit-jitter-left, 1.7vw)))
-    rotate(var(--sc-unit-rotate, -21deg))
-    scale(0.88);
+    rotate(var(--sc-unit-rotate, -21deg)) scale(0.88);
   font-size: clamp(6.5px, 0.56vw, 9px);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1540,39 +1944,68 @@
 
 .solo-challenges-panel .sc-row:hover .sc-row__bounty--locked .sc-row__unit,
 .solo-challenges-panel .sc-row:focus .sc-row__bounty--locked .sc-row__unit,
-.solo-challenges-panel .sc-row:focus-visible .sc-row__bounty--locked .sc-row__unit,
-.practice-hub-page--challenges .sc-row:hover .sc-row__bounty--locked .sc-row__unit,
-.practice-hub-page--challenges .sc-row:focus .sc-row__bounty--locked .sc-row__unit,
-.practice-hub-page--challenges .sc-row:focus-visible .sc-row__bounty--locked .sc-row__unit,
+.solo-challenges-panel
+  .sc-row:focus-visible
+  .sc-row__bounty--locked
+  .sc-row__unit,
+.practice-hub-page--challenges
+  .sc-row:hover
+  .sc-row__bounty--locked
+  .sc-row__unit,
+.practice-hub-page--challenges
+  .sc-row:focus
+  .sc-row__bounty--locked
+  .sc-row__unit,
+.practice-hub-page--challenges
+  .sc-row:focus-visible
+  .sc-row__bounty--locked
+  .sc-row__unit,
 .solo-challenges-panel .sc-row:hover .sc-row__bounty--violator .sc-row__unit,
 .solo-challenges-panel .sc-row:focus .sc-row__bounty--violator .sc-row__unit,
-.solo-challenges-panel .sc-row:focus-visible .sc-row__bounty--violator .sc-row__unit,
-.practice-hub-page--challenges .sc-row:hover .sc-row__bounty--violator .sc-row__unit,
-.practice-hub-page--challenges .sc-row:focus .sc-row__bounty--violator .sc-row__unit,
-.practice-hub-page--challenges .sc-row:focus-visible .sc-row__bounty--violator .sc-row__unit {
+.solo-challenges-panel
+  .sc-row:focus-visible
+  .sc-row__bounty--violator
+  .sc-row__unit,
+.practice-hub-page--challenges
+  .sc-row:hover
+  .sc-row__bounty--violator
+  .sc-row__unit,
+.practice-hub-page--challenges
+  .sc-row:focus
+  .sc-row__bounty--violator
+  .sc-row__unit,
+.practice-hub-page--challenges
+  .sc-row:focus-visible
+  .sc-row__bounty--violator
+  .sc-row__unit {
   opacity: 1;
   pointer-events: auto;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22);
-  transform:
-    translateY(-50%)
+  transform: translateY(-50%)
     translateX(calc(max(0.12rem, 0.25vw) + var(--sc-unit-jitter-left, 1.7vw)))
-    rotate(var(--sc-unit-rotate, -21deg))
-    scale(1);
+    rotate(var(--sc-unit-rotate, -21deg)) scale(1);
   animation: sc-sign-in-claim-pop 0.34s cubic-bezier(0.22, 1.3, 0.36, 1) both;
 }
 
 .solo-challenges-panel .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
-.practice-hub-page--challenges .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
-.solo-challenges-panel .sc-row--selected .sc-row__bounty--violator .sc-row__unit,
-.practice-hub-page--challenges .sc-row--selected .sc-row__bounty--violator .sc-row__unit {
+.practice-hub-page--challenges
+  .sc-row--selected
+  .sc-row__bounty--locked
+  .sc-row__unit,
+.solo-challenges-panel
+  .sc-row--selected
+  .sc-row__bounty--violator
+  .sc-row__unit,
+.practice-hub-page--challenges
+  .sc-row--selected
+  .sc-row__bounty--violator
+  .sc-row__unit {
   opacity: 1;
   pointer-events: auto;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22);
-  transform:
-    translateY(-50%)
+  transform: translateY(-50%)
     translateX(calc(max(0.12rem, 0.25vw) + var(--sc-unit-jitter-left, 1.7vw)))
-    rotate(var(--sc-unit-rotate, -21deg))
-    scale(1);
+    rotate(var(--sc-unit-rotate, -21deg)) scale(1);
   animation:
     sc-sign-in-claim-pop 0.34s cubic-bezier(0.22, 1.3, 0.36, 1) both,
     sc-sign-in-claim-violator 1.2s ease-in-out 0.34s infinite;
@@ -1581,46 +2014,61 @@
 .solo-challenges-panel .sc-row__bounty--locked .sc-row__unit,
 .solo-challenges-panel .sc-row__bounty--locked .sc-row__unit-line,
 .solo-challenges-panel .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
-.solo-challenges-panel .sc-row--selected .sc-row__bounty--locked .sc-row__unit-line,
+.solo-challenges-panel
+  .sc-row--selected
+  .sc-row__bounty--locked
+  .sc-row__unit-line,
 .practice-hub-page--challenges .sc-row__bounty--locked .sc-row__unit,
 .practice-hub-page--challenges .sc-row__bounty--locked .sc-row__unit-line,
-.practice-hub-page--challenges .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
-.practice-hub-page--challenges .sc-row--selected .sc-row__bounty--locked .sc-row__unit-line,
+.practice-hub-page--challenges
+  .sc-row--selected
+  .sc-row__bounty--locked
+  .sc-row__unit,
+.practice-hub-page--challenges
+  .sc-row--selected
+  .sc-row__bounty--locked
+  .sc-row__unit-line,
 .solo-challenges-panel .sc-row__bounty--violator .sc-row__unit,
 .solo-challenges-panel .sc-row__bounty--violator .sc-row__unit-line,
-.solo-challenges-panel .sc-row--selected .sc-row__bounty--violator .sc-row__unit,
-.solo-challenges-panel .sc-row--selected .sc-row__bounty--violator .sc-row__unit-line,
+.solo-challenges-panel
+  .sc-row--selected
+  .sc-row__bounty--violator
+  .sc-row__unit,
+.solo-challenges-panel
+  .sc-row--selected
+  .sc-row__bounty--violator
+  .sc-row__unit-line,
 .practice-hub-page--challenges .sc-row__bounty--violator .sc-row__unit,
 .practice-hub-page--challenges .sc-row__bounty--violator .sc-row__unit-line,
-.practice-hub-page--challenges .sc-row--selected .sc-row__bounty--violator .sc-row__unit,
-.practice-hub-page--challenges .sc-row--selected .sc-row__bounty--violator .sc-row__unit-line {
+.practice-hub-page--challenges
+  .sc-row--selected
+  .sc-row__bounty--violator
+  .sc-row__unit,
+.practice-hub-page--challenges
+  .sc-row--selected
+  .sc-row__bounty--violator
+  .sc-row__unit-line {
   color: rgba(0, 0, 0, 0.92);
 }
 
 @keyframes sc-sign-in-claim-pop {
   0% {
     opacity: 0;
-    transform:
-      translateY(-50%)
+    transform: translateY(-50%)
       translateX(calc(max(0.12rem, 0.25vw) + var(--sc-unit-jitter-left, 1.7vw)))
-      rotate(var(--sc-unit-rotate, -21deg))
-      scale(0.35);
+      rotate(var(--sc-unit-rotate, -21deg)) scale(0.35);
   }
   68% {
     opacity: 1;
-    transform:
-      translateY(-50%)
+    transform: translateY(-50%)
       translateX(calc(max(0.12rem, 0.25vw) + var(--sc-unit-jitter-left, 1.7vw)))
-      rotate(var(--sc-unit-rotate, -21deg))
-      scale(1.1);
+      rotate(var(--sc-unit-rotate, -21deg)) scale(1.1);
   }
   100% {
     opacity: 1;
-    transform:
-      translateY(-50%)
+    transform: translateY(-50%)
       translateX(calc(max(0.12rem, 0.25vw) + var(--sc-unit-jitter-left, 1.7vw)))
-      rotate(var(--sc-unit-rotate, -21deg))
-      scale(1);
+      rotate(var(--sc-unit-rotate, -21deg)) scale(1);
   }
 }
 
@@ -1647,10 +2095,16 @@
 }
 
 /* While hovering one row, suppress keyboard-selection chrome on the other */
-.practice-hub-page--challenges .sc-list:has(.sc-row:hover) .sc-row:focus:not(:hover),
-.practice-hub-page--challenges .sc-list:has(.sc-row:hover) .sc-row:focus-visible:not(:hover),
+.practice-hub-page--challenges
+  .sc-list:has(.sc-row:hover)
+  .sc-row:focus:not(:hover),
+.practice-hub-page--challenges
+  .sc-list:has(.sc-row:hover)
+  .sc-row:focus-visible:not(:hover),
 .solo-challenges-panel .sc-list:has(.sc-row:hover) .sc-row:focus:not(:hover),
-.solo-challenges-panel .sc-list:has(.sc-row:hover) .sc-row:focus-visible:not(:hover) {
+.solo-challenges-panel
+  .sc-list:has(.sc-row:hover)
+  .sc-row:focus-visible:not(:hover) {
   outline: none;
   box-shadow: none;
   z-index: 1;
@@ -1722,9 +2176,7 @@
   flex-direction: column;
   justify-content: center;
   min-height: calc(
-    var(--ph-fs-gate-check) * 1.2 +
-    1px +
-    clamp(8px, 0.62vw, 10px) * 1.1
+    var(--ph-fs-gate-check) * 1.2 + 1px + clamp(8px, 0.62vw, 10px) * 1.1
   );
   gap: 1px;
 }
@@ -1742,15 +2194,20 @@
   outline: none;
 }
 
-.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--pass.practice-focus-target),
-.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--pass.sc-gate__check--focused),
-.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--pass:focus) {
+.practice-hub-page--challenges
+  .sc-gate__check-item:has(.sc-gate__check--pass.practice-focus-target),
+.practice-hub-page--challenges
+  .sc-gate__check-item:has(.sc-gate__check--pass.sc-gate__check--focused),
+.practice-hub-page--challenges
+  .sc-gate__check-item:has(.sc-gate__check--pass:focus) {
   position: relative;
   z-index: 2;
 }
 
-.practice-hub-page--challenges button.sc-gate__check--pass.practice-focus-target,
-.practice-hub-page--challenges button.sc-gate__check--pass.sc-gate__check--focused,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass.practice-focus-target,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass.sc-gate__check--focused,
 .practice-hub-page--challenges button.sc-gate__check--pass:focus,
 .practice-hub-page--challenges button.sc-gate__check--pass:focus-visible {
   position: relative;
@@ -1762,36 +2219,65 @@
     0 0 calc(var(--ph-card-glow-blur) * 0.45) rgba(155, 89, 182, 0.32) !important;
 }
 
-.practice-hub-page--challenges button.sc-gate__check--pass.practice-focus-target .sc-gate__check-mark,
-.practice-hub-page--challenges button.sc-gate__check--pass.sc-gate__check--focused .sc-gate__check-mark,
-.practice-hub-page--challenges button.sc-gate__check--pass:focus .sc-gate__check-mark,
-.practice-hub-page--challenges button.sc-gate__check--pass:focus-visible .sc-gate__check-mark {
+.practice-hub-page--challenges
+  button.sc-gate__check--pass.practice-focus-target
+  .sc-gate__check-mark,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass.sc-gate__check--focused
+  .sc-gate__check-mark,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass:focus
+  .sc-gate__check-mark,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass:focus-visible
+  .sc-gate__check-mark {
   color: rgba(193, 126, 230, 1);
 }
 
-.practice-hub-page--challenges button.sc-gate__check--pass.practice-focus-target .sc-gate__check-label,
-.practice-hub-page--challenges button.sc-gate__check--pass.sc-gate__check--focused .sc-gate__check-label,
-.practice-hub-page--challenges button.sc-gate__check--pass:focus .sc-gate__check-label,
-.practice-hub-page--challenges button.sc-gate__check--pass:focus-visible .sc-gate__check-label {
+.practice-hub-page--challenges
+  button.sc-gate__check--pass.practice-focus-target
+  .sc-gate__check-label,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass.sc-gate__check--focused
+  .sc-gate__check-label,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass:focus
+  .sc-gate__check-label,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass:focus-visible
+  .sc-gate__check-label {
   color: rgba(193, 126, 230, 0.95);
 }
 
-.practice-hub-page--challenges button.sc-gate__check--pass.practice-focus-target .sc-gate__check-meta,
-.practice-hub-page--challenges button.sc-gate__check--pass.sc-gate__check--focused .sc-gate__check-meta,
-.practice-hub-page--challenges button.sc-gate__check--pass:focus .sc-gate__check-meta,
-.practice-hub-page--challenges button.sc-gate__check--pass:focus-visible .sc-gate__check-meta {
+.practice-hub-page--challenges
+  button.sc-gate__check--pass.practice-focus-target
+  .sc-gate__check-meta,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass.sc-gate__check--focused
+  .sc-gate__check-meta,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass:focus
+  .sc-gate__check-meta,
+.practice-hub-page--challenges
+  button.sc-gate__check--pass:focus-visible
+  .sc-gate__check-meta {
   color: rgba(155, 89, 182, 0.82);
 }
 
-.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--fail.practice-focus-target),
-.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--fail.sc-gate__check--focused),
-.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--fail:focus) {
+.practice-hub-page--challenges
+  .sc-gate__check-item:has(.sc-gate__check--fail.practice-focus-target),
+.practice-hub-page--challenges
+  .sc-gate__check-item:has(.sc-gate__check--fail.sc-gate__check--focused),
+.practice-hub-page--challenges
+  .sc-gate__check-item:has(.sc-gate__check--fail:focus) {
   position: relative;
   z-index: 2;
 }
 
-.practice-hub-page--challenges button.sc-gate__check--fail.practice-focus-target,
-.practice-hub-page--challenges button.sc-gate__check--fail.sc-gate__check--focused,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail.practice-focus-target,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail.sc-gate__check--focused,
 .practice-hub-page--challenges button.sc-gate__check--fail:focus,
 .practice-hub-page--challenges button.sc-gate__check--fail:focus-visible {
   position: relative;
@@ -1803,24 +2289,48 @@
     0 0 calc(var(--ph-card-glow-blur) * 0.4) rgba(255, 100, 80, 0.28) !important;
 }
 
-.practice-hub-page--challenges button.sc-gate__check--fail.practice-focus-target .sc-gate__check-mark,
-.practice-hub-page--challenges button.sc-gate__check--fail.sc-gate__check--focused .sc-gate__check-mark,
-.practice-hub-page--challenges button.sc-gate__check--fail:focus .sc-gate__check-mark,
-.practice-hub-page--challenges button.sc-gate__check--fail:focus-visible .sc-gate__check-mark {
+.practice-hub-page--challenges
+  button.sc-gate__check--fail.practice-focus-target
+  .sc-gate__check-mark,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail.sc-gate__check--focused
+  .sc-gate__check-mark,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail:focus
+  .sc-gate__check-mark,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail:focus-visible
+  .sc-gate__check-mark {
   color: rgba(255, 140, 120, 1);
 }
 
-.practice-hub-page--challenges button.sc-gate__check--fail.practice-focus-target .sc-gate__check-label,
-.practice-hub-page--challenges button.sc-gate__check--fail.sc-gate__check--focused .sc-gate__check-label,
-.practice-hub-page--challenges button.sc-gate__check--fail:focus .sc-gate__check-label,
-.practice-hub-page--challenges button.sc-gate__check--fail:focus-visible .sc-gate__check-label {
+.practice-hub-page--challenges
+  button.sc-gate__check--fail.practice-focus-target
+  .sc-gate__check-label,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail.sc-gate__check--focused
+  .sc-gate__check-label,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail:focus
+  .sc-gate__check-label,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail:focus-visible
+  .sc-gate__check-label {
   color: rgba(255, 140, 120, 0.98);
 }
 
-.practice-hub-page--challenges button.sc-gate__check--fail.practice-focus-target .sc-gate__check-meta,
-.practice-hub-page--challenges button.sc-gate__check--fail.sc-gate__check--focused .sc-gate__check-meta,
-.practice-hub-page--challenges button.sc-gate__check--fail:focus .sc-gate__check-meta,
-.practice-hub-page--challenges button.sc-gate__check--fail:focus-visible .sc-gate__check-meta {
+.practice-hub-page--challenges
+  button.sc-gate__check--fail.practice-focus-target
+  .sc-gate__check-meta,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail.sc-gate__check--focused
+  .sc-gate__check-meta,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail:focus
+  .sc-gate__check-meta,
+.practice-hub-page--challenges
+  button.sc-gate__check--fail:focus-visible
+  .sc-gate__check-meta {
   color: rgba(255, 120, 100, 0.82);
 }
 
@@ -1832,13 +2342,19 @@
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .practice-play-style-area > .practice-play-style-panel,
-  .practice-play-style-area > .practice-play-style-panel.practice-play-style-inactive {
+  .practice-play-style-area
+    > .practice-play-style-panel.practice-play-style-inactive {
     transition: none;
   }
-  .practice-hub-page .practice-play-style-section .p2p-picker-row:not(.ph-picker-row--revealed) .p2p-picker-card,
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-row:not(.ph-picker-row--revealed)
+    .p2p-picker-card,
   .practice-hub-page--challenges .sc-gate:not(.sc-gate--revealed),
   .practice-hub-page--challenges .sc-list:not(.sc-list--revealed) .sc-row,
-  .practice-hub-page--challenges .sc-gate__checks:not(.sc-gate__checks--revealed) .sc-gate__check {
+  .practice-hub-page--challenges
+    .sc-gate__checks:not(.sc-gate__checks--revealed)
+    .sc-gate__check {
     opacity: 1;
     transform: none;
     animation: none !important;
@@ -1847,13 +2363,31 @@
   .local-tier-card.practice-focus-target .local-tier-pip,
   .practice-hub-page--challenges .sc-row--selected .sc-row__sats,
   .solo-challenges-panel .sc-row:hover .sc-row__bounty--locked .sc-row__unit,
-  .solo-challenges-panel .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
-  .practice-hub-page--challenges .sc-row:hover .sc-row__bounty--locked .sc-row__unit,
-  .practice-hub-page--challenges .sc-row--selected .sc-row__bounty--locked .sc-row__unit,
+  .solo-challenges-panel
+    .sc-row--selected
+    .sc-row__bounty--locked
+    .sc-row__unit,
+  .practice-hub-page--challenges
+    .sc-row:hover
+    .sc-row__bounty--locked
+    .sc-row__unit,
+  .practice-hub-page--challenges
+    .sc-row--selected
+    .sc-row__bounty--locked
+    .sc-row__unit,
   .solo-challenges-panel .sc-row:hover .sc-row__bounty--violator .sc-row__unit,
-  .solo-challenges-panel .sc-row--selected .sc-row__bounty--violator .sc-row__unit,
-  .practice-hub-page--challenges .sc-row:hover .sc-row__bounty--violator .sc-row__unit,
-  .practice-hub-page--challenges .sc-row--selected .sc-row__bounty--violator .sc-row__unit,
+  .solo-challenges-panel
+    .sc-row--selected
+    .sc-row__bounty--violator
+    .sc-row__unit,
+  .practice-hub-page--challenges
+    .sc-row:hover
+    .sc-row__bounty--violator
+    .sc-row__unit,
+  .practice-hub-page--challenges
+    .sc-row--selected
+    .sc-row__bounty--violator
+    .sc-row__unit,
   .practice-hub-page--challenges .sc-row--selected .sc-row__icon-part {
     animation: none !important;
   }
@@ -1861,7 +2395,9 @@
 
 /* ── Large screen / TV (≥1400px) — structural overrides only (sizes scale via vw above) ── */
 @media (min-width: 1400px) {
-  .practice-hub-page .practice-free-play-panel__body .p2p-picker-card--compact-inline {
+  .practice-hub-page
+    .practice-free-play-panel__body
+    .p2p-picker-card--compact-inline {
     display: grid;
     min-height: var(--ph-compact-card-min);
     height: auto;

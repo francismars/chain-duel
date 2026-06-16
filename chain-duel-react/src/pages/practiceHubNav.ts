@@ -13,7 +13,10 @@ export type PracticeNavFocus =
   | { kind: 'start' }
   | { kind: 'back' };
 
-export function navFocusEqual(a: PracticeNavFocus, b: PracticeNavFocus): boolean {
+export function navFocusEqual(
+  a: PracticeNavFocus,
+  b: PracticeNavFocus
+): boolean {
   if (a.kind !== b.kind) return false;
   if (a.kind === 'format' && b.kind === 'format') return a.idx === b.idx;
   if (a.kind === 'slot' && b.kind === 'slot') return a.idx === b.idx;
@@ -45,7 +48,10 @@ function showP2pWagerLink(ctx: NavContext): boolean {
 }
 
 /** Right column entry from the format column at the same visual row. */
-function formatRightTarget(idx: 0 | 1, ctx: NavContext): PracticeNavFocus | null {
+function formatRightTarget(
+  idx: 0 | 1,
+  ctx: NavContext
+): PracticeNavFocus | null {
   if (idx === 0) {
     if (ctx.show1v1Opponent) return { kind: 'opponent', idx: 0 };
     if (ctx.showTeamControl) return { kind: 'slot', idx: 0 };

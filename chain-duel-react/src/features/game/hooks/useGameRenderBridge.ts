@@ -180,7 +180,10 @@ export function useGameRenderBridge({
       if (state.countdownStart && !state.gameStarted) {
         countdownAccum += deltaMs;
         let steps = 0;
-        while (countdownAccum >= STEP_SPEED_MS && steps < MAX_SIM_STEPS_PER_FRAME) {
+        while (
+          countdownAccum >= STEP_SPEED_MS &&
+          steps < MAX_SIM_STEPS_PER_FRAME
+        ) {
           countdownAccum -= STEP_SPEED_MS;
           steps += 1;
           const prevCountdown = state.countdownTicks;
@@ -236,8 +239,10 @@ export function useGameRenderBridge({
           audio?.playBlockFound();
         }
 
-        if (state.p1.body.length > prevP1Len) audio?.playCapture(state.p1.body.length);
-        if (state.p2.body.length > prevP2Len) audio?.playCapture(state.p2.body.length);
+        if (state.p1.body.length > prevP1Len)
+          audio?.playCapture(state.p1.body.length);
+        if (state.p2.body.length > prevP2Len)
+          audio?.playCapture(state.p2.body.length);
 
         if (
           (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
@@ -286,5 +291,17 @@ export function useGameRenderBridge({
       renderer.destroy();
       audio?.stopAll();
     };
-  }, [loading, createRenderer, audioRef, captureP1Ref, captureP2Ref, challengeInputLogRef, hostRef, rendererRef, simStepRef, stateRef, winnerSentRef]);
+  }, [
+    loading,
+    createRenderer,
+    audioRef,
+    captureP1Ref,
+    captureP2Ref,
+    challengeInputLogRef,
+    hostRef,
+    rendererRef,
+    simStepRef,
+    stateRef,
+    winnerSentRef,
+  ]);
 }

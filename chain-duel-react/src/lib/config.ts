@@ -26,7 +26,10 @@ export async function loadConfig(): Promise<Config> {
     return { IP: socketUrl, PORT: '' };
   }
   const proxyTarget = getStringEnv('VITE_PROXY_TARGET');
-  if (proxyTarget && (proxyTarget.startsWith('ws://') || proxyTarget.startsWith('wss://'))) {
+  if (
+    proxyTarget &&
+    (proxyTarget.startsWith('ws://') || proxyTarget.startsWith('wss://'))
+  ) {
     return { IP: proxyTarget, PORT: '' };
   }
 

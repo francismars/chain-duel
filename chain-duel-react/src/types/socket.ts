@@ -3,10 +3,7 @@
  * These types match the backend socket events in marspayTS
  */
 
-import type {
-  AppNostrProfile,
-  ResAppNostrSession,
-} from '@/types/schemas';
+import type { AppNostrProfile, ResAppNostrSession } from '@/types/schemas';
 
 export type ResAppNostrSessionPayload = ResAppNostrSession;
 export type ResNostrProfilePayload = {
@@ -319,7 +316,10 @@ export interface ClientToServerEvents {
   canceltournament: () => void;
 
   // Online mode events
-  createOnlineRoom: (payload?: { buyin?: number; hostLNAddress?: string }) => void;
+  createOnlineRoom: (payload?: {
+    buyin?: number;
+    hostLNAddress?: string;
+  }) => void;
   listOnlineRooms: () => void;
   listOnlineArchivedRooms: () => void;
   /** Merged history (archived + finished still in RAM). Preferred over listOnlineArchivedRooms alone. */
@@ -329,7 +329,10 @@ export interface ClientToServerEvents {
   spectateOnlineRoom: (payload: { roomId: string }) => void;
   leaveOnlineRoom: (payload?: { roomId?: string }) => void;
   cancelOnlineRoom: (payload: { roomId: string }) => void;
-  getOnlineRoomState: (payload: { roomId: string; matchRound?: number }) => void;
+  getOnlineRoomState: (payload: {
+    roomId: string;
+    matchRound?: number;
+  }) => void;
   roomInput: (payload: { roomId: string; input: OnlineInputState }) => void;
   startOnlineGame: (payload: { roomId: string }) => void;
   onlineSetReady: (payload: { roomId: string; ready: boolean }) => void;
@@ -340,20 +343,29 @@ export interface ClientToServerEvents {
   getOnlineReplay: (payload: { roomId: string; matchRound?: number }) => void;
   /** NIP-07: request hex challenge to sign (kind 1) to bind pubkey → session before zap without PIN. */
   requestOnlineNostrLinkChallenge: (payload: { roomId: string }) => void;
-  confirmOnlineNostrLink: (payload: { roomId: string; event: Record<string, unknown> }) => void;
+  confirmOnlineNostrLink: (payload: {
+    roomId: string;
+    event: Record<string, unknown>;
+  }) => void;
   /** Load Kind1 note text from relays (server-side). */
   requestOnlineKind1Post: (payload: { roomId: string }) => void;
   /** Build unsigned NIP-57 zap request; client signs then sends `confirmOnlineSeatZapPay`. */
   requestOnlineSeatZapPayPrepare: (payload: { roomId: string }) => void;
   /** Signed kind 9734 zap request → server returns bolt11 from recipient LNURL. */
-  confirmOnlineSeatZapPay: (payload: { roomId: string; event: Record<string, unknown> }) => void;
+  confirmOnlineSeatZapPay: (payload: {
+    roomId: string;
+    event: Record<string, unknown>;
+  }) => void;
   /** Anonymous seat: LNURL-pay link (unique per session) paid via LNBits webhook; no PIN. */
   requestOnlineSeatLightning: (payload: { roomId: string }) => void;
   cancelOnlineSeatLightning: () => void;
   /** Round-trip probe; last arg is ack: `emit('pingLatency', () => { ... })` */
   pingLatency: (ack: () => void) => void;
   /** After measuring RTT, send so server can broadcast both players' ping via `onlineRoomUpdated`. */
-  reportOnlineRoomPing: (payload: { roomId: string; latencyMs: number }) => void;
+  reportOnlineRoomPing: (payload: {
+    roomId: string;
+    latencyMs: number;
+  }) => void;
 
   /** App-wide Nostr identity bound to socket session. */
   requestAppNostrLinkChallenge: () => void;
@@ -364,7 +376,9 @@ export interface ClientToServerEvents {
   getAppNostrSession: () => void;
   clearAppNostrSession: () => void;
   getNostrProfile: (payload?: { pubkey?: string }) => void;
-  publishSignedNostrEvent: (payload: { event: Record<string, unknown> }) => void;
+  publishSignedNostrEvent: (payload: {
+    event: Record<string, unknown>;
+  }) => void;
 
   getChallengeEligibility: () => void;
   getChallengeCatalog: () => void;
@@ -374,7 +388,10 @@ export interface ClientToServerEvents {
     inputLog: Array<{ tick: number; dir: string }>;
     countdownStartTick?: number;
   }) => void;
-  claimChallengeBounty: (payload: { claimToken: string; event: Record<string, unknown> }) => void;
+  claimChallengeBounty: (payload: {
+    claimToken: string;
+    event: Record<string, unknown>;
+  }) => void;
   retryChallengeZap: (payload: { challengeId: string }) => void;
 }
 
@@ -383,7 +400,10 @@ export interface ServerToClientEvents {
   // Session management
   session: (data: { sessionID: string; userID: string }) => void;
 
-  resAppNostrLinkChallenge: (data: { challenge: string; expiresAt: number }) => void;
+  resAppNostrLinkChallenge: (data: {
+    challenge: string;
+    expiresAt: number;
+  }) => void;
   resAppNostrSession: (data: ResAppNostrSessionPayload) => void;
   resNostrProfile: (data: ResNostrProfilePayload) => void;
   resPublishNostrEvent: (data: ResPublishNostrEventPayload) => void;
@@ -392,7 +412,16 @@ export interface ServerToClientEvents {
     ok: boolean;
     pubkey: string | null;
     eligible: boolean;
-    checks: Record<string, { pass: boolean; detail?: string; count?: number; ageDays?: number | null; address?: string | null }>;
+    checks: Record<
+      string,
+      {
+        pass: boolean;
+        detail?: string;
+        count?: number;
+        ageDays?: number | null;
+        address?: string | null;
+      }
+    >;
   }) => void;
   resChallengeCatalog: (data: { ok: boolean; challenges: unknown[] }) => void;
   resChallengeRun: (data: {
@@ -426,12 +455,8 @@ export interface ServerToClientEvents {
   resRetryChallengeZap: (data: { ok: boolean; reason?: string }) => void;
 
   // Menu responses
-  resGetGameMenuInfos: (
-    data: LNURLP[] | { lnurlw: LNURLW } | Kind1[]
-  ) => void;
-  resGetPracticeMenuInfos: (
-    data: LNURLP[] | { lnurlw: LNURLW }
-  ) => void;
+  resGetGameMenuInfos: (data: LNURLP[] | { lnurlw: LNURLW } | Kind1[]) => void;
+  resGetPracticeMenuInfos: (data: LNURLP[] | { lnurlw: LNURLW }) => void;
   resGetTournamentInfos: (data: {
     gameInfo?: SerializedGameInfo;
     lnurlp?: string;
@@ -450,7 +475,9 @@ export interface ServerToClientEvents {
   resGetDuelInfos: (data: SerializedGameInfo) => void;
 
   // Post-game responses
-  resPostGameInfoRequest: (data: SerializedGameInfo & { lnurlw?: string }) => void;
+  resPostGameInfoRequest: (
+    data: SerializedGameInfo & { lnurlw?: string }
+  ) => void;
   resCreateWithdrawalPostGame: (data: string) => void; // 'pass' or lnurlw string
 
   // Payment updates
@@ -458,10 +485,7 @@ export interface ServerToClientEvents {
   updatePaymentsNostrTournament: (data: SerializedGameInfo) => void;
 
   // Tournament cancellation
-  rescanceltourn: (data: {
-    depositcount: number;
-    lnurlw?: string;
-  }) => void;
+  rescanceltourn: (data: { depositcount: number; lnurlw?: string }) => void;
 
   // Nostr events
   zapReceived: (data: unknown) => void;
@@ -488,7 +512,10 @@ export interface ServerToClientEvents {
     room: OnlineRoomState;
   }) => void;
   onlineRoomUpdated: (data: OnlineRoomState) => void;
-  onlineRoomSnapshot: (data: { roomId: string; snapshot: OnlineRoomSnapshot }) => void;
+  onlineRoomSnapshot: (data: {
+    roomId: string;
+    snapshot: OnlineRoomSnapshot;
+  }) => void;
   /** New mempool tip block: server already spawned food; use for SFX / UI flash only. */
   onlineBitcoinBlock: (data: {
     roomId: string;
@@ -501,7 +528,11 @@ export interface ServerToClientEvents {
     sessionId: string;
   }) => void;
   onlinePinInvalid: (data: { reason: string }) => void;
-  resOnlineNostrLinkChallenge: (data: { roomId: string; challenge: string; expiresAt: number }) => void;
+  resOnlineNostrLinkChallenge: (data: {
+    roomId: string;
+    challenge: string;
+    expiresAt: number;
+  }) => void;
   resOnlineNostrLinkOk: (data: {
     expiresAt: number;
     profile?: { pubkey: string; name: string; picture?: string | null };

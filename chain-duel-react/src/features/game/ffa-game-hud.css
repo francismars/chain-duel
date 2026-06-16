@@ -253,14 +253,18 @@
   height: 100%;
   width: auto;
   box-shadow: none;
-  transition: left 0.15s ease-out, width 0.15s ease-out;
+  transition:
+    left 0.15s ease-out,
+    width 0.15s ease-out;
 }
 
 .ffa-distribution-segment {
   position: absolute;
   top: 0;
   height: 100%;
-  transition: left 0.15s ease-out, width 0.15s ease-out;
+  transition:
+    left 0.15s ease-out,
+    width 0.15s ease-out;
 }
 
 @media (max-width: 900px), (max-height: 700px) {

@@ -43,10 +43,12 @@
   line-height: 1;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s,
+    color 0.2s;
 }
-
-
 
 .p2p-picker-card:hover {
   border-color: rgba(255, 255, 255, 0.26);
@@ -54,13 +56,14 @@
   color: rgba(255, 255, 255, 0.78);
 }
 
-
 /* ── Icon ── */
 .p2p-picker-icon {
   width: clamp(32px, 3.2vw, 44px);
   height: clamp(32px, 3.2vw, 44px);
   flex-shrink: 0;
-  transition: color 0.2s, transform 0.2s;
+  transition:
+    color 0.2s,
+    transform 0.2s;
 }
 
 .p2p-picker-card:hover .p2p-picker-icon,
@@ -169,7 +172,6 @@
     inset 0 0 40px rgba(155, 89, 182, 0.08);
 }
 
-
 .p2p-picker-card--nostr.p2p-picker-card--selected .p2p-picker-sub {
   color: rgba(216, 153, 240, 0.78);
 }
@@ -200,8 +202,6 @@
     inset 0 0 40px rgba(255, 255, 255, 0.06);
 }
 
-
-
 .p2p-picker-card--tournament.p2p-picker-card--selected .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.58);
 }
@@ -227,8 +227,8 @@
     inset 0 0 16px rgba(255, 255, 255, 0.14);
 }
 
-
-.p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
+.p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target
+  .p2p-picker-sub,
 .p2p-picker-card--lightning.practice-focus-target .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.88);
 }
@@ -245,8 +245,8 @@
     inset 0 0 16px rgba(255, 255, 255, 0.14);
 }
 
-
-.p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub,
+.p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target
+  .p2p-picker-sub,
 .p2p-picker-card--nostr.practice-focus-target .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.88);
 }
@@ -291,7 +291,9 @@
   height: 6px;
   border-radius: 50%;
   margin-top: 0.35em;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
   background: rgba(255, 255, 255, 0.2);
 }
 
@@ -320,7 +322,10 @@
   opacity: 1;
   transform: translateY(0);
   /* visibility instantly becomes visible when activated */
-  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0s;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease,
+    visibility 0s linear 0s;
 }
 
 /* Still occupies space (no layout shift) — fades + slides out, then hides */
@@ -331,7 +336,10 @@
   pointer-events: none;
   user-select: none;
   /* delay visibility until after the opacity/transform have finished */
-  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s linear 0.22s;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease,
+    visibility 0s linear 0.22s;
 }
 
 /* ── Duel format picker ── */
@@ -355,7 +363,9 @@
   cursor: pointer;
   font: inherit;
   color: inherit;
-  transition: border-color 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
 }
 
 .p2p-duel-format__icon {
@@ -477,15 +487,33 @@
 }
 
 @keyframes p2p-sword-1-clash {
-  from { transform: translate(5px, -5px); opacity: 0; }
-  60%  { transform: translate(-1.5px, 1.5px); opacity: 1; }
-  to   { transform: translate(0, 0); opacity: 1; }
+  from {
+    transform: translate(5px, -5px);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(-1.5px, 1.5px);
+    opacity: 1;
+  }
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
 }
 
 @keyframes p2p-sword-2-clash {
-  from { transform: translate(-5px, -5px); opacity: 0; }
-  60%  { transform: translate(1.5px, 1.5px); opacity: 1; }
-  to   { transform: translate(0, 0); opacity: 1; }
+  from {
+    transform: translate(-5px, -5px);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(1.5px, 1.5px);
+    opacity: 1;
+  }
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
 }
 
 .p2p-picker-card--duel.practice-focus-target .p2p-sword--1 {
@@ -503,19 +531,35 @@
 }
 
 @keyframes p2p-bracket-node-in {
-  from { transform: scale(0.4); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
-.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(2),
-.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(3) {
+.p2p-picker-card--tournament.practice-focus-target
+  .p2p-bracket
+  > *:nth-child(2),
+.p2p-picker-card--tournament.practice-focus-target
+  .p2p-bracket
+  > *:nth-child(3) {
   animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
 }
-.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(4) {
-  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.09s both;
+.p2p-picker-card--tournament.practice-focus-target
+  .p2p-bracket
+  > *:nth-child(4) {
+  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.09s
+    both;
 }
-.p2p-picker-card--tournament.practice-focus-target .p2p-bracket > *:nth-child(1) {
-  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.18s both;
+.p2p-picker-card--tournament.practice-focus-target
+  .p2p-bracket
+  > *:nth-child(1) {
+  animation: p2p-bracket-node-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.18s
+    both;
 }
 
 /* ── Shared icon reveal on keyboard focus ── */
@@ -532,38 +576,69 @@
 }
 
 @keyframes p2p-icon-reveal-in {
-  from { transform: scale(0.4); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes p2p-icon-pop-in {
-  from { transform: scale(0.72); opacity: 0.45; }
-  to   { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.72);
+    opacity: 0.45;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* Two-person icon (free play, human opponent) */
-.p2p-picker-card.practice-focus-target .p2p-picker-icon--people > *:nth-child(1) {
+.p2p-picker-card.practice-focus-target
+  .p2p-picker-icon--people
+  > *:nth-child(1) {
   animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
 }
-.p2p-picker-card.practice-focus-target .p2p-picker-icon--people > *:nth-child(2) {
-  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.06s both;
+.p2p-picker-card.practice-focus-target
+  .p2p-picker-icon--people
+  > *:nth-child(2) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.06s
+    both;
 }
-.p2p-picker-card.practice-focus-target .p2p-picker-icon--people > *:nth-child(3) {
-  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s both;
+.p2p-picker-card.practice-focus-target
+  .p2p-picker-icon--people
+  > *:nth-child(3) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s
+    both;
 }
-.p2p-picker-card.practice-focus-target .p2p-picker-icon--people > *:nth-child(4) {
-  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
+.p2p-picker-card.practice-focus-target
+  .p2p-picker-icon--people
+  > *:nth-child(4) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s
+    both;
 }
 
 /* Challenges flag + shield */
-.p2p-picker-card.practice-focus-target .p2p-picker-icon--challenges > *:nth-child(1) {
+.p2p-picker-card.practice-focus-target
+  .p2p-picker-icon--challenges
+  > *:nth-child(1) {
   animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
 }
-.p2p-picker-card.practice-focus-target .p2p-picker-icon--challenges > *:nth-child(2) {
-  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.07s both;
+.p2p-picker-card.practice-focus-target
+  .p2p-picker-icon--challenges
+  > *:nth-child(2) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.07s
+    both;
 }
-.p2p-picker-card.practice-focus-target .p2p-picker-icon--challenges > *:nth-child(3) {
-  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.14s both;
+.p2p-picker-card.practice-focus-target
+  .p2p-picker-icon--challenges
+  > *:nth-child(3) {
+  animation: p2p-icon-reveal-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.14s
+    both;
 }
 
 /* AI bot — parts assemble in sequence */
@@ -571,32 +646,42 @@
   animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both;
 }
 .p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(2) {
-  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.04s both;
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.04s
+    both;
 }
 .p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(3) {
-  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.08s both;
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.08s
+    both;
 }
 .p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(4) {
-  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.12s both;
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.12s
+    both;
 }
 .p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(5) {
-  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s both;
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.16s
+    both;
 }
 .p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(6) {
-  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.2s both;
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.2s
+    both;
 }
 .p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(7) {
-  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.24s both;
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.24s
+    both;
 }
 .p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(8) {
-  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.28s both;
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.28s
+    both;
 }
 .p2p-picker-card.practice-focus-target .p2p-picker-icon--ai > *:nth-child(9) {
-  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.32s both;
+  animation: p2p-icon-reveal-in 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.32s
+    both;
 }
 
 /* Modifier power-ups plus */
-.p2p-modifiers-section .p2p-duel-format__card.practice-focus-target .p2p-duel-format__icon--pop {
+.p2p-modifiers-section
+  .p2p-duel-format__card.practice-focus-target
+  .p2p-duel-format__icon--pop {
   animation: p2p-icon-pop-in 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) both;
 }
 
@@ -648,15 +733,15 @@
    look identical — overrides the practiceHub.css .practice-start rule. */
 .p2p-entry-page .practice-start.button,
 .p2p-entry-page .practice-back.button {
-  flex: 1 1 0;         /* equal share of the row */
+  flex: 1 1 0; /* equal share of the row */
   width: auto;
-  height: 3vw;         /* same as base .button */
-  min-height: 30px;    /* floor for very small viewports */
+  height: 3vw; /* same as base .button */
+  min-height: 30px; /* floor for very small viewports */
   margin: 0;
-  padding: 1%;         /* same as base .button (% = relative to parent width) */
+  padding: 1%; /* same as base .button (% = relative to parent width) */
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;   /* same as base .button — explicit to override practiceHub */
+  font-size: 0.8cqw; /* same as base .button — explicit to override practiceHub */
   font-weight: 400;
   letter-spacing: 0.1rem; /* same as base .button */
   color: #fff;
@@ -681,7 +766,6 @@
   padding-bottom: clamp(16px, 2vw, 40px);
 }
 
-
 /* Slightly tighter sections than default hub */
 .p2p-entry-page .practice-panel {
   gap: clamp(12px, 1.6vw, 18px);
@@ -704,7 +788,9 @@
 
 .p2p-entry-page .p2p-picker-card--duel .p2p-picker-icon,
 .p2p-entry-page .p2p-picker-card--duel:hover .p2p-picker-icon,
-.p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected .p2p-picker-icon {
+.p2p-entry-page
+  .p2p-picker-card--duel.p2p-picker-card--selected
+  .p2p-picker-icon {
   transform: scaleY(-1);
 }
 
@@ -718,46 +804,88 @@
 }
 
 /* Payment — themed rest; hover does not wash to generic white */
-.p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target),
-.p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target) {
+.p2p-entry-page
+  .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ),
+.p2p-entry-page
+  .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ) {
   opacity: 0.55;
 }
 
-.p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target),
-.p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ),
+.p2p-entry-page
+  .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ):hover {
   border-color: rgba(247, 147, 26, 0.48);
   background: rgba(247, 147, 26, 0.05);
   color: #f7931a;
 }
 
-.p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target) .p2p-picker-sub,
-.p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target):hover .p2p-picker-sub {
+.p2p-entry-page
+  .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  )
+  .p2p-picker-sub,
+.p2p-entry-page
+  .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ):hover
+  .p2p-picker-sub {
   color: rgba(247, 147, 26, 0.58);
 }
 
-
-
-.p2p-entry-page .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(.practice-focus-target):hover,
-.p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-picker-card--lightning:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ):hover,
+.p2p-entry-page
+  .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ):hover {
   opacity: 1;
 }
 
-.p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target),
-.p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ),
+.p2p-entry-page
+  .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ):hover {
   border-color: rgba(155, 89, 182, 0.48);
   background: rgba(155, 89, 182, 0.05);
   color: #c17ee6;
 }
 
-.p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target) .p2p-picker-sub,
-.p2p-entry-page .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(.practice-focus-target):hover .p2p-picker-sub {
+.p2p-entry-page
+  .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  )
+  .p2p-picker-sub,
+.p2p-entry-page
+  .p2p-picker-card--nostr:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ):hover
+  .p2p-picker-sub {
   color: rgba(193, 126, 230, 0.58);
 }
 
-
-
-.p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target),
-.p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-picker-card--lightning.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ),
+.p2p-entry-page
+  .p2p-picker-card--lightning.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ):hover {
   opacity: 1;
   border-color: #f7931a;
   background: rgba(247, 147, 26, 0.09);
@@ -768,14 +896,25 @@
     inset 0 0 40px rgba(247, 147, 26, 0.08);
 }
 
-
-.p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub,
-.p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected:not(.practice-focus-target):hover .p2p-picker-sub {
+.p2p-entry-page
+  .p2p-picker-card--lightning.p2p-picker-card--selected:not(
+    .practice-focus-target
+  )
+  .p2p-picker-sub,
+.p2p-entry-page
+  .p2p-picker-card--lightning.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ):hover
+  .p2p-picker-sub {
   color: rgba(247, 147, 26, 0.82);
 }
 
-.p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target),
-.p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target),
+.p2p-entry-page
+  .p2p-picker-card--nostr.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ):hover {
   opacity: 1;
   border-color: #b06fd0;
   background: rgba(155, 89, 182, 0.1);
@@ -786,14 +925,20 @@
     inset 0 0 40px rgba(155, 89, 182, 0.08);
 }
 
-
-.p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub,
-.p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target):hover .p2p-picker-sub {
+.p2p-entry-page
+  .p2p-picker-card--nostr.p2p-picker-card--selected:not(.practice-focus-target)
+  .p2p-picker-sub,
+.p2p-entry-page
+  .p2p-picker-card--nostr.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ):hover
+  .p2p-picker-sub {
   color: rgba(216, 153, 240, 0.82);
 }
 
 .p2p-entry-page .p2p-picker-card--lightning.practice-focus-target,
-.p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target {
+.p2p-entry-page
+  .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target {
   opacity: 1;
   border-color: #f7931a;
   background: #f7931a;
@@ -805,15 +950,18 @@
   outline: none;
 }
 
-
-
-.p2p-entry-page .p2p-picker-card--lightning.practice-focus-target .p2p-picker-sub,
-.p2p-entry-page .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub {
+.p2p-entry-page
+  .p2p-picker-card--lightning.practice-focus-target
+  .p2p-picker-sub,
+.p2p-entry-page
+  .p2p-picker-card--lightning.p2p-picker-card--selected.practice-focus-target
+  .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.88);
 }
 
 .p2p-entry-page .p2p-picker-card--nostr.practice-focus-target,
-.p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target {
+.p2p-entry-page
+  .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target {
   opacity: 1;
   border-color: #9b59b6;
   background: #9b59b6;
@@ -825,15 +973,20 @@
   outline: none;
 }
 
-
 .p2p-entry-page .p2p-picker-card--nostr.practice-focus-target .p2p-picker-sub,
-.p2p-entry-page .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target .p2p-picker-sub {
+.p2p-entry-page
+  .p2p-picker-card--nostr.p2p-picker-card--selected.practice-focus-target
+  .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.88);
 }
 
 /* Session — duel selected rest matches compact-inline picker */
-.p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target),
-.p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target),
+.p2p-entry-page
+  .p2p-picker-card--duel.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ):hover {
   border-color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.95);
@@ -843,14 +996,20 @@
     inset 0 0 40px rgb(255 255 255 / 6%);
 }
 
-
-.p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub,
-.p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target):hover .p2p-picker-sub {
+.p2p-entry-page
+  .p2p-picker-card--duel.p2p-picker-card--selected:not(.practice-focus-target)
+  .p2p-picker-sub,
+.p2p-entry-page
+  .p2p-picker-card--duel.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ):hover
+  .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.58);
 }
 
 .p2p-entry-page .p2p-picker-card--duel.practice-focus-target,
-.p2p-entry-page .p2p-picker-card--duel.p2p-picker-card--selected.practice-focus-target {
+.p2p-entry-page
+  .p2p-picker-card--duel.p2p-picker-card--selected.practice-focus-target {
   opacity: 1;
   border-color: #fff;
   background: rgba(255, 255, 255, 0.16);
@@ -868,8 +1027,14 @@
 }
 
 /* Session — tournament selected matches duel white glow */
-.p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected:not(.practice-focus-target),
-.p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected:not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-picker-card--tournament.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ),
+.p2p-entry-page
+  .p2p-picker-card--tournament.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ):hover {
   border-color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.95);
@@ -879,14 +1044,22 @@
     inset 0 0 40px rgb(255 255 255 / 6%);
 }
 
-
-.p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected:not(.practice-focus-target) .p2p-picker-sub,
-.p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected:not(.practice-focus-target):hover .p2p-picker-sub {
+.p2p-entry-page
+  .p2p-picker-card--tournament.p2p-picker-card--selected:not(
+    .practice-focus-target
+  )
+  .p2p-picker-sub,
+.p2p-entry-page
+  .p2p-picker-card--tournament.p2p-picker-card--selected:not(
+    .practice-focus-target
+  ):hover
+  .p2p-picker-sub {
   color: rgba(255, 255, 255, 0.58);
 }
 
 .p2p-entry-page .p2p-picker-card--tournament.practice-focus-target,
-.p2p-entry-page .p2p-picker-card--tournament.p2p-picker-card--selected.practice-focus-target {
+.p2p-entry-page
+  .p2p-picker-card--tournament.p2p-picker-card--selected.practice-focus-target {
   opacity: 1;
   border-color: #fff;
   background: rgba(255, 255, 255, 0.16);
@@ -898,20 +1071,36 @@
   outline: none;
 }
 
-.p2p-entry-page .p2p-picker-card--tournament.practice-focus-target .p2p-picker-label,
-.p2p-entry-page .p2p-picker-card--tournament.practice-focus-target .p2p-picker-sub {
+.p2p-entry-page
+  .p2p-picker-card--tournament.practice-focus-target
+  .p2p-picker-label,
+.p2p-entry-page
+  .p2p-picker-card--tournament.practice-focus-target
+  .p2p-picker-sub {
   color: #fff;
 }
 
 /* Session — unselected rest; dim slightly so selected cards read clearly */
-.p2p-entry-page .p2p-picker-card--duel:not(.p2p-picker-card--selected):not(.practice-focus-target),
-.p2p-entry-page .p2p-picker-card--tournament:not(.p2p-picker-card--selected):not(.practice-focus-target) {
+.p2p-entry-page
+  .p2p-picker-card--duel:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ),
+.p2p-entry-page
+  .p2p-picker-card--tournament:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ) {
   opacity: 0.55;
 }
 
 /* Session — unselected subtle lift on hover (practice-slot-btn pattern) */
-.p2p-entry-page .p2p-picker-card--duel:not(.p2p-picker-card--selected):not(.practice-focus-target):hover,
-.p2p-entry-page .p2p-picker-card--tournament:not(.p2p-picker-card--selected):not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-picker-card--duel:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ):hover,
+.p2p-entry-page
+  .p2p-picker-card--tournament:not(.p2p-picker-card--selected):not(
+    .practice-focus-target
+  ):hover {
   opacity: 1;
   border-color: rgba(255, 255, 255, 0.26);
   background: rgba(255, 255, 255, 0.05);
@@ -919,13 +1108,22 @@
 }
 
 /* Duel format cards — active rest + inactive hover */
-.p2p-entry-page .p2p-duel-format__card:not(.p2p-duel-format__card--active):not(.p2p-duel-format__card--disabled):not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-duel-format__card:not(.p2p-duel-format__card--active):not(
+    .p2p-duel-format__card--disabled
+  ):not(.practice-focus-target):hover {
   border-color: rgba(255, 255, 255, 0.26);
   background: rgba(255, 255, 255, 0.05);
 }
 
-.p2p-entry-page .p2p-duel-format__card.p2p-duel-format__card--active:not(.practice-focus-target),
-.p2p-entry-page .p2p-duel-format__card.p2p-duel-format__card--active:not(.practice-focus-target):hover {
+.p2p-entry-page
+  .p2p-duel-format__card.p2p-duel-format__card--active:not(
+    .practice-focus-target
+  ),
+.p2p-entry-page
+  .p2p-duel-format__card.p2p-duel-format__card--active:not(
+    .practice-focus-target
+  ):hover {
   border-color: rgba(255, 255, 255, 0.55);
   background: rgba(255, 255, 255, 0.06);
   box-shadow:
@@ -934,7 +1132,8 @@
 }
 
 .p2p-entry-page .p2p-duel-format__card.practice-focus-target,
-.p2p-entry-page .p2p-duel-format__card.p2p-duel-format__card--active.practice-focus-target {
+.p2p-entry-page
+  .p2p-duel-format__card.p2p-duel-format__card--active.practice-focus-target {
   border-color: #fff;
   color: #fff;
   box-shadow:
@@ -944,9 +1143,15 @@
   outline: none;
 }
 
-.p2p-entry-page .p2p-duel-format__card.practice-focus-target .p2p-duel-format__label,
-.p2p-entry-page .p2p-duel-format__card.practice-focus-target .p2p-duel-format__desc,
-.p2p-entry-page .p2p-duel-format__card.practice-focus-target .p2p-duel-format__icon {
+.p2p-entry-page
+  .p2p-duel-format__card.practice-focus-target
+  .p2p-duel-format__label,
+.p2p-entry-page
+  .p2p-duel-format__card.practice-focus-target
+  .p2p-duel-format__desc,
+.p2p-entry-page
+  .p2p-duel-format__card.practice-focus-target
+  .p2p-duel-format__icon {
   color: #fff;
   opacity: 1;
 }
@@ -1071,7 +1276,6 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-
 /* Buy-in: 5×2 grid — all pills visible, no scroll */
 .bracket-sizing-hub__buyin-grid {
   display: grid;
@@ -1122,7 +1326,8 @@
   animation: none;
 }
 
-.bracket-sizing-hub__pill.active:not(.bracket-sizing-hub__focus-target) .bracket-sizing-hub__pill-suffix {
+.bracket-sizing-hub__pill.active:not(.bracket-sizing-hub__focus-target)
+  .bracket-sizing-hub__pill-suffix {
   color: rgba(255, 255, 255, 0.42);
 }
 
@@ -1137,8 +1342,10 @@
 .bracket-sizing-hub__pill.bracket-sizing-hub__focus-target {
   --button-glow-bg-low: rgb(255 255 255 / 5%);
   --button-glow-bg-peak: rgb(255 255 255 / 13%);
-  --button-glow-shadow-low: 0 0 6px rgb(255 255 255 / 22%), inset 0 0 6px rgb(255 255 255 / 5%);
-  --button-glow-shadow-peak: 0 0 16px rgb(255 255 255 / 48%), inset 0 0 10px rgb(255 255 255 / 10%);
+  --button-glow-shadow-low:
+    0 0 6px rgb(255 255 255 / 22%), inset 0 0 6px rgb(255 255 255 / 5%);
+  --button-glow-shadow-peak:
+    0 0 16px rgb(255 255 255 / 48%), inset 0 0 10px rgb(255 255 255 / 10%);
   --button-glow-border: rgba(255, 255, 255, 0.55);
   animation: glowing 2000ms ease-in-out infinite;
 }
@@ -1165,7 +1372,6 @@
    fills the wider container naturally. Only the clamp() ceilings are lifted.
    ────────────────────────────────────────────────────────────────────────── */
 @media (min-width: 1400px) {
-
   /* Page layout */
   .p2p-entry-page.practice-hub--practice {
     gap: clamp(16px, 1.6vw, 28px);
@@ -1288,4 +1494,3 @@
     font-size: clamp(32px, 4vw, 68px);
   }
 }
-

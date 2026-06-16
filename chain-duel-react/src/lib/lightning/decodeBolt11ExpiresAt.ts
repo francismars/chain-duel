@@ -5,7 +5,9 @@ const BOLT11_TAG_EXPIRY_TYPE = 6;
 const DEFAULT_BOLT11_EXPIRY_SECONDS = 3600;
 
 function bech32Polymod(values: number[]): number {
-  const generator = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+  const generator = [
+    0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3,
+  ];
   let chk = 1;
   for (const value of values) {
     const top = chk >> 25;
@@ -89,7 +91,9 @@ class BitReader {
   }
 }
 
-function parseBolt11Payload(words: number[]): { timestamp: number; expirySeconds: number } | null {
+function parseBolt11Payload(
+  words: number[]
+): { timestamp: number; expirySeconds: number } | null {
   if (words.length * 5 <= BOLT11_SIGNATURE_BITS + BOLT11_TIMESTAMP_BITS) {
     return null;
   }
@@ -124,7 +128,10 @@ function parseBolt11Payload(words: number[]): { timestamp: number; expirySeconds
 /** Returns invoice expiry as epoch milliseconds, or null when decoding fails. */
 export function decodeBolt11ExpiresAt(prOrUri: string): number | null {
   try {
-    const bolt11 = prOrUri.trim().replace(/^lightning:/i, '').toLowerCase();
+    const bolt11 = prOrUri
+      .trim()
+      .replace(/^lightning:/i, '')
+      .toLowerCase();
     const words = bech32DecodeWords(bolt11);
     const parsed = parseBolt11Payload(words);
     if (!parsed) {

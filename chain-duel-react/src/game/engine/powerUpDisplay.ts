@@ -22,7 +22,8 @@ export const POWERUP_DISPLAY: Record<PowerUpType, PowerUpDisplay> = {
     title: 'Sybil Attack',
     hud: 'SYBL',
     subtitle: 'Rivals move half speed for a while.',
-    tooltip: 'Network spam slows rivals — like mempool congestion on everyone else.',
+    tooltip:
+      'Network spam slows rivals — like mempool congestion on everyone else.',
   },
   PHANTOM: {
     title: 'Coinjoin',

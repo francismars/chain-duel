@@ -4,7 +4,10 @@ import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
 import { preStartControllerBobPx } from '@/game/controllerTest';
 import type { GameSeatIndex } from '@/game/controllerTest';
 import { getPowerUpHudLabel } from '@/game/engine/powerUpDisplay';
-import { getSnakeEffects, type PowerUpPlayerIndex } from '@/game/engine/powerups';
+import {
+  getSnakeEffects,
+  type PowerUpPlayerIndex,
+} from '@/game/engine/powerups';
 import type { PowerUpType } from '@/game/engine/types';
 
 export class PixiGameRenderer {
@@ -49,10 +52,7 @@ export class PixiGameRenderer {
   private lastResizeHeight = 0;
   /** Bumped on destroy / remount so in-flight async init cannot attach a stale canvas. */
   private mountGeneration = 0;
-  private powerUpLabelPool = new Map<
-    string,
-    { name: Text; letter: Text }
-  >();
+  private powerUpLabelPool = new Map<string, { name: Text; letter: Text }>();
 
   constructor() {
     const startWordStyle = new TextStyle({
@@ -123,10 +123,15 @@ export class PixiGameRenderer {
     this.countdownLfg = this.createCountdownText('LFG');
   }
 
-  private static async waitForHostLayout(host: HTMLElement, maxFrames = 12): Promise<void> {
+  private static async waitForHostLayout(
+    host: HTMLElement,
+    maxFrames = 12
+  ): Promise<void> {
     for (let i = 0; i < maxFrames; i += 1) {
       if (host.clientWidth > 0 && host.clientHeight > 0) return;
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())
+      );
     }
   }
 
@@ -178,7 +183,8 @@ export class PixiGameRenderer {
     if (!this.host) return;
     const width = Math.max(1, this.host.clientWidth);
     const height = Math.max(1, this.host.clientHeight);
-    if (width === this.lastResizeWidth && height === this.lastResizeHeight) return;
+    if (width === this.lastResizeWidth && height === this.lastResizeHeight)
+      return;
     this.lastResizeWidth = width;
     this.lastResizeHeight = height;
     this.gridCacheKey = '';
@@ -208,8 +214,13 @@ export class PixiGameRenderer {
       if ((state.pointChanges?.length ?? 0) > 0) return true;
       if ((state.powerUpItems?.length ?? 0) > 0) return true;
       if (this.p1Pulses.length > 0 || this.p2Pulses.length > 0) return true;
-      if (this.p1SurgeTrail.length > 0 || this.p2SurgeTrail.length > 0) return true;
-      if (state.activePowerUps?.some((ap) => ap.type === 'SURGE' || ap.type === 'AMPLIFIER')) {
+      if (this.p1SurgeTrail.length > 0 || this.p2SurgeTrail.length > 0)
+        return true;
+      if (
+        state.activePowerUps?.some(
+          (ap) => ap.type === 'SURGE' || ap.type === 'AMPLIFIER'
+        )
+      ) {
         return true;
       }
       return false;
@@ -271,16 +282,22 @@ export class PixiGameRenderer {
     // ── Coinbase capture pulse detection ─────────────────────────────────────
     const now = performance.now();
     if (state.gameStarted && !state.gameEnded) {
-      if (this.prevScoreP1 >= 0 && state.score[0] > this.prevScoreP1) this.p1Pulses.push(now);
-      if (this.prevScoreP2 >= 0 && state.score[1] > this.prevScoreP2) this.p2Pulses.push(now);
+      if (this.prevScoreP1 >= 0 && state.score[0] > this.prevScoreP1)
+        this.p1Pulses.push(now);
+      if (this.prevScoreP2 >= 0 && state.score[1] > this.prevScoreP2)
+        this.p2Pulses.push(now);
     } else if (!state.gameStarted) {
       this.p1Pulses = [];
       this.p2Pulses = [];
     }
     this.prevScoreP1 = state.score[0];
     this.prevScoreP2 = state.score[1];
-    this.p1Pulses = this.p1Pulses.filter((t) => now - t < PixiGameRenderer.PULSE_DURATION_MS);
-    this.p2Pulses = this.p2Pulses.filter((t) => now - t < PixiGameRenderer.PULSE_DURATION_MS);
+    this.p1Pulses = this.p1Pulses.filter(
+      (t) => now - t < PixiGameRenderer.PULSE_DURATION_MS
+    );
+    this.p2Pulses = this.p2Pulses.filter(
+      (t) => now - t < PixiGameRenderer.PULSE_DURATION_MS
+    );
 
     // ── Scene ─────────────────────────────────────────────────────────────────
     this.scene.clear();
@@ -289,12 +306,17 @@ export class PixiGameRenderer {
     for (const wall of state.obstacleWalls ?? []) {
       const px = wall.pos[0] * colSize;
       const py = wall.pos[1] * rowSize;
-      this.scene.rect(px, py, colSize, rowSize).fill({ color: 0xffffff, alpha: 0.8 });
-      this.scene.rect(px + 1, py + 1, colSize - 2, rowSize - 2).stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
+      this.scene
+        .rect(px, py, colSize, rowSize)
+        .fill({ color: 0xffffff, alpha: 0.8 });
+      this.scene
+        .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
+        .stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
     }
 
     // ── Board reveal (pre-start only) ────────────────────────────────────────
-    const preStart = !state.gameStarted && !state.countdownStart && !state.gameEnded;
+    const preStart =
+      !state.gameStarted && !state.countdownStart && !state.gameEnded;
     if (preStart) {
       if (this.boardRevealTime === -1) this.boardRevealTime = performance.now();
     } else {
@@ -302,9 +324,10 @@ export class PixiGameRenderer {
     }
     // Infinity = fully visible (during gameplay / after reveal completes).
     // 800ms initial delay lets the CSS canvas scale-in finish first.
-    const boardElapsed = this.boardRevealTime !== -1
-      ? Math.max(0, performance.now() - this.boardRevealTime - 800)
-      : Infinity;
+    const boardElapsed =
+      this.boardRevealTime !== -1
+        ? Math.max(0, performance.now() - this.boardRevealTime - 800)
+        : Infinity;
 
     // Snakes
     const p1Effects = getSnakeEffects(state, 0);
@@ -321,8 +344,16 @@ export class PixiGameRenderer {
     // Record surge trail positions each frame
     const FADE = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
     if (state.gameStarted && !state.gameEnded) {
-      if (p1Surging) this.p1SurgeTrail.push({ pos: [state.p1.head[0], state.p1.head[1]], time: now });
-      if (p2Surging) this.p2SurgeTrail.push({ pos: [state.p2.head[0], state.p2.head[1]], time: now });
+      if (p1Surging)
+        this.p1SurgeTrail.push({
+          pos: [state.p1.head[0], state.p1.head[1]],
+          time: now,
+        });
+      if (p2Surging)
+        this.p2SurgeTrail.push({
+          pos: [state.p2.head[0], state.p2.head[1]],
+          time: now,
+        });
     }
     this.p1SurgeTrail = this.p1SurgeTrail.filter((t) => now - t.time < FADE);
     this.p2SurgeTrail = this.p2SurgeTrail.filter((t) => now - t.time < FADE);
@@ -331,22 +362,51 @@ export class PixiGameRenderer {
     for (const t of this.p1SurgeTrail) {
       const a = (1 - (now - t.time) / FADE) * 0.6;
       const pad = 1;
-      this.scene.rect(t.pos[0] * colSize + pad, t.pos[1] * rowSize + pad, colSize - pad * 2, rowSize - pad * 2)
-        .fill({ color: 0xFF7200, alpha: a });
+      this.scene
+        .rect(
+          t.pos[0] * colSize + pad,
+          t.pos[1] * rowSize + pad,
+          colSize - pad * 2,
+          rowSize - pad * 2
+        )
+        .fill({ color: 0xff7200, alpha: a });
     }
     for (const t of this.p2SurgeTrail) {
       const a = (1 - (now - t.time) / FADE) * 0.6;
       const pad = 1;
-      this.scene.rect(t.pos[0] * colSize + pad, t.pos[1] * rowSize + pad, colSize - pad * 2, rowSize - pad * 2)
-        .fill({ color: 0xFF7200, alpha: a });
+      this.scene
+        .rect(
+          t.pos[0] * colSize + pad,
+          t.pos[1] * rowSize + pad,
+          colSize - pad * 2,
+          rowSize - pad * 2
+        )
+        .fill({ color: 0xff7200, alpha: a });
     }
 
     // Extra snakes (teams / ffa) — drawn behind main snakes
     for (let ei = 0; ei < (state.extraSnakes ?? []).length; ei += 1) {
       const extra = state.extraSnakes[ei];
-      const extraEffects = getSnakeEffects(state, (ei + 2) as PowerUpPlayerIndex);
-      const extraBob = preStartControllerBobPx(state, (ei + 2) as GameSeatIndex, rowSize);
-      this.drawSnake(extra.snake, extra.color, colSize, rowSize, extraEffects, [], now, boardElapsed, extraBob);
+      const extraEffects = getSnakeEffects(
+        state,
+        (ei + 2) as PowerUpPlayerIndex
+      );
+      const extraBob = preStartControllerBobPx(
+        state,
+        (ei + 2) as GameSeatIndex,
+        rowSize
+      );
+      this.drawSnake(
+        extra.snake,
+        extra.color,
+        colSize,
+        rowSize,
+        extraEffects,
+        [],
+        now,
+        boardElapsed,
+        extraBob
+      );
       // Ally / shadow border: solid inset outline distinguishes them from P1/P2
       if (extra.outline != null) {
         const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
@@ -359,7 +419,7 @@ export class PixiGameRenderer {
               seg[0] * colSize + lw / 2,
               segTop(seg[1]) + lw / 2,
               colSize - lw,
-              segH - lw,
+              segH - lw
             )
             .stroke({ width: lw, color: extra.outline, alpha: 0.85 });
         }
@@ -367,21 +427,53 @@ export class PixiGameRenderer {
     }
 
     const p1Bob = preStartControllerBobPx(state, 0, rowSize);
-    this.drawSnake(state.p1, 0xffffff, colSize, rowSize, {
-      frozen: p1Frozen, phantom: p1Phantom, surging: p1Surging, amped: p1Amped,
-    }, this.p1Pulses, now, boardElapsed, p1Bob);
+    this.drawSnake(
+      state.p1,
+      0xffffff,
+      colSize,
+      rowSize,
+      {
+        frozen: p1Frozen,
+        phantom: p1Phantom,
+        surging: p1Surging,
+        amped: p1Amped,
+      },
+      this.p1Pulses,
+      now,
+      boardElapsed,
+      p1Bob
+    );
 
     const p2Color = P2_SNAKE_COLOR;
     const p2Bob = preStartControllerBobPx(state, 1, rowSize);
-    this.drawSnake(state.p2, p2Color, colSize, rowSize, {
-      frozen: p2Frozen, phantom: p2Phantom, surging: p2Surging, amped: p2Amped,
-    }, this.p2Pulses, now, boardElapsed, p2Bob);
+    this.drawSnake(
+      state.p2,
+      p2Color,
+      colSize,
+      rowSize,
+      {
+        frozen: p2Frozen,
+        phantom: p2Phantom,
+        surging: p2Surging,
+        amped: p2Amped,
+      },
+      this.p2Pulses,
+      now,
+      boardElapsed,
+      p2Bob
+    );
 
     for (const cb of state.coinbases ?? []) {
-      this.drawCoinbase(cb.pos, colSize, rowSize, {
-        reward: cb.reward,
-        isDecoy: cb.isDecoy,
-      }, boardElapsed);
+      this.drawCoinbase(
+        cb.pos,
+        colSize,
+        rowSize,
+        {
+          reward: cb.reward,
+          isDecoy: cb.isDecoy,
+        },
+        boardElapsed
+      );
     }
 
     // Power-up items + labels (pooled texts; items pulse with `now`)
@@ -428,7 +520,10 @@ export class PixiGameRenderer {
     const winnerYOffset = Math.min(22, height * 0.09);
     const continueGap = Math.max(28, overlayWinnerPx * 0.85);
     this.endWinnerText.position.set(width / 2, height / 2 - winnerYOffset);
-    this.endContinueText.position.set(width / 2, height / 2 - winnerYOffset + continueGap);
+    this.endContinueText.position.set(
+      width / 2,
+      height / 2 - winnerYOffset + continueGap
+    );
     const startFontSize = compactBoard
       ? Math.max(12, (width / 14) * 1.05, height / 5.5)
       : Math.max(10, (width / 17) * 1.12);
@@ -446,7 +541,10 @@ export class PixiGameRenderer {
         for (const t of this.startWords) t.style.fontSize = startFontSize;
         // Layout words left-to-right inside the container, then centre it
         let totalW = 0;
-        const widths = this.startWords.map(t => { totalW += t.width; return t.width; });
+        const widths = this.startWords.map((t) => {
+          totalW += t.width;
+          return t.width;
+        });
         totalW += gap * (this.startWords.length - 1);
         let x = -totalW / 2;
         for (let i = 0; i < this.startWords.length; i++) {
@@ -456,7 +554,10 @@ export class PixiGameRenderer {
       }
       this.startWordsContainer.position.set(width / 2, height / 2);
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
-      const elapsed = Math.max(0, performance.now() - this.startRevealTime - 1000);
+      const elapsed = Math.max(
+        0,
+        performance.now() - this.startRevealTime - 1000
+      );
       const STAGGER = 110; // ms between each word
       const DURATION = 420; // ms each word takes to fade+rise in
       for (let i = 0; i < this.startWords.length; i++) {
@@ -469,7 +570,10 @@ export class PixiGameRenderer {
       // Hide words and reset state for next time
       this.startRevealTime = -1;
       this.startLayoutWidth = -1;
-      for (const t of this.startWords) { t.alpha = 0; t.y = 0; }
+      for (const t of this.startWords) {
+        t.alpha = 0;
+        t.y = 0;
+      }
       if (state.countdownStart) {
         this.endWinnerText.text = '';
         this.endContinueText.text = '';
@@ -480,7 +584,9 @@ export class PixiGameRenderer {
           // During the resolving-blocks animation, suppress the text until blocks cover the board
           if (resolveProgress >= 1.0 || !state.convergenceWallClosed) {
             this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
-            this.endContinueText.text = opts?.replayView ? '' : 'PRESS ANY BUTTON TO CONTINUE';
+            this.endContinueText.text = opts?.replayView
+              ? ''
+              : 'PRESS ANY BUTTON TO CONTINUE';
           }
         } else {
           this.endWinnerText.text = '';
@@ -491,7 +597,14 @@ export class PixiGameRenderer {
 
     // Draw resolving blocks on top of scene (but behind text overlay)
     if (resolveProgress > 0) {
-      this.renderResolveBlocks(state, width, height, colSize, rowSize, resolveProgress);
+      this.renderResolveBlocks(
+        state,
+        width,
+        height,
+        colSize,
+        rowSize,
+        resolveProgress
+      );
     }
 
     // Keep WebGL buffer in sync with layout (avoids stretched / nested-frame artifacts).
@@ -518,7 +631,11 @@ export class PixiGameRenderer {
     if (this.resolveAnimStartMs === null) {
       this.resolveAnimStartMs = performance.now();
     }
-    return Math.min(1, (performance.now() - this.resolveAnimStartMs) / PixiGameRenderer.RESOLVE_DURATION_MS);
+    return Math.min(
+      1,
+      (performance.now() - this.resolveAnimStartMs) /
+        PixiGameRenderer.RESOLVE_DURATION_MS
+    );
   }
 
   private renderResolveBlocks(
@@ -527,14 +644,14 @@ export class PixiGameRenderer {
     _height: number,
     colSize: number,
     rowSize: number,
-    progress: number,
+    progress: number
   ): void {
     const cols = state.cols;
     const rows = state.rows;
     const maxDist = Math.min(Math.floor(cols / 2), Math.floor(rows / 2));
     // Pseudo-random per-cell offset so blocks don't appear in a perfect geometric ring
     const hashOffset = (x: number, y: number) =>
-      ((x * 2654435761 + y * 2246822519) >>> 0) % 1000 / 1000;
+      (((x * 2654435761 + y * 2246822519) >>> 0) % 1000) / 1000;
 
     for (let x = 0; x < cols; x++) {
       for (let y = 0; y < rows; y++) {
@@ -548,13 +665,13 @@ export class PixiGameRenderer {
         const blockAlpha = Math.min(1, (progress - threshold) * 6 + 0.6);
         this.resolveBlocks
           .rect(px, py, colSize, rowSize)
-          .fill({ color: 0xC88820, alpha: blockAlpha * 0.9 });
+          .fill({ color: 0xc88820, alpha: blockAlpha * 0.9 });
         this.resolveBlocks
           .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
-          .fill({ color: 0x7A5010, alpha: blockAlpha * 0.75 });
+          .fill({ color: 0x7a5010, alpha: blockAlpha * 0.75 });
         this.resolveBlocks
           .rect(px + 2, py + 2, colSize - 4, rowSize - 4)
-          .fill({ color: 0x1A0E00, alpha: blockAlpha * 0.6 });
+          .fill({ color: 0x1a0e00, alpha: blockAlpha * 0.6 });
       }
     }
   }
@@ -579,38 +696,54 @@ export class PixiGameRenderer {
 
     // Left strip
     if (leftPx > 0) {
-      this.deadZone.rect(0, 0, leftPx, height).fill({ color: voidColor, alpha: voidAlpha });
+      this.deadZone
+        .rect(0, 0, leftPx, height)
+        .fill({ color: voidColor, alpha: voidAlpha });
     }
     // Right strip
     if (rightPx < width) {
-      this.deadZone.rect(rightPx, 0, width - rightPx, height).fill({ color: voidColor, alpha: voidAlpha });
+      this.deadZone
+        .rect(rightPx, 0, width - rightPx, height)
+        .fill({ color: voidColor, alpha: voidAlpha });
     }
     // Top strip
     if (topPx > 0) {
-      this.deadZone.rect(leftPx, 0, rightPx - leftPx, topPx).fill({ color: voidColor, alpha: voidAlpha });
+      this.deadZone
+        .rect(leftPx, 0, rightPx - leftPx, topPx)
+        .fill({ color: voidColor, alpha: voidAlpha });
     }
     // Bottom strip
     if (bottomPx < height) {
-      this.deadZone.rect(leftPx, bottomPx, rightPx - leftPx, height - bottomPx).fill({ color: voidColor, alpha: voidAlpha });
+      this.deadZone
+        .rect(leftPx, bottomPx, rightPx - leftPx, height - bottomPx)
+        .fill({ color: voidColor, alpha: voidAlpha });
     }
 
     // Amber gradient edge at the live boundary (warning glow)
     const edgeAlpha = sb.warningActive ? 0.55 : 0.18;
     const colEdge = colSize;
     const rowEdge = rowSize;
-    const edgeColor = 0xC88820;
+    const edgeColor = 0xc88820;
 
     if (leftPx > 0) {
-      this.deadZone.rect(leftPx, topPx, colEdge, bottomPx - topPx).fill({ color: edgeColor, alpha: edgeAlpha });
+      this.deadZone
+        .rect(leftPx, topPx, colEdge, bottomPx - topPx)
+        .fill({ color: edgeColor, alpha: edgeAlpha });
     }
     if (rightPx < width) {
-      this.deadZone.rect(rightPx - colEdge, topPx, colEdge, bottomPx - topPx).fill({ color: edgeColor, alpha: edgeAlpha });
+      this.deadZone
+        .rect(rightPx - colEdge, topPx, colEdge, bottomPx - topPx)
+        .fill({ color: edgeColor, alpha: edgeAlpha });
     }
     if (topPx > 0) {
-      this.deadZone.rect(leftPx, topPx, rightPx - leftPx, rowEdge).fill({ color: edgeColor, alpha: edgeAlpha });
+      this.deadZone
+        .rect(leftPx, topPx, rightPx - leftPx, rowEdge)
+        .fill({ color: edgeColor, alpha: edgeAlpha });
     }
     if (bottomPx < height) {
-      this.deadZone.rect(leftPx, bottomPx - rowEdge, rightPx - leftPx, rowEdge).fill({ color: edgeColor, alpha: edgeAlpha });
+      this.deadZone
+        .rect(leftPx, bottomPx - rowEdge, rightPx - leftPx, rowEdge)
+        .fill({ color: edgeColor, alpha: edgeAlpha });
     }
   }
 
@@ -621,11 +754,16 @@ export class PixiGameRenderer {
     color: number,
     colSize: number,
     rowSize: number,
-    effects: { frozen?: boolean; phantom?: boolean; surging?: boolean; amped?: boolean },
+    effects: {
+      frozen?: boolean;
+      phantom?: boolean;
+      surging?: boolean;
+      amped?: boolean;
+    },
     pulses: number[] = [],
     now: number = 0,
     boardElapsed: number = Infinity,
-    preStartBobPx: number = 0,
+    preStartBobPx: number = 0
   ): void {
     const bob = preStartBobPx;
     const segTop = (gy: number) => gy * rowSize - bob;
@@ -653,9 +791,9 @@ export class PixiGameRenderer {
           snake.head[0] * colSize - expand,
           segTop(snake.head[1]) - expand,
           colSize + expand * 2,
-          segHeight + expand * 2,
+          segHeight + expand * 2
         )
-        .fill({ color: 0xFFBB00, alpha: ampAlpha * 1.4 });
+        .fill({ color: 0xffbb00, alpha: ampAlpha * 1.4 });
       // Body glow
       for (const seg of snake.body) {
         this.scene
@@ -663,9 +801,9 @@ export class PixiGameRenderer {
             seg[0] * colSize - expand * 0.5,
             segTop(seg[1]) - expand * 0.5,
             colSize + expand,
-            segHeight + expand,
+            segHeight + expand
           )
-          .fill({ color: 0xFFBB00, alpha: ampAlpha * 0.7 });
+          .fill({ color: 0xffbb00, alpha: ampAlpha * 0.7 });
       }
     }
 
@@ -678,40 +816,60 @@ export class PixiGameRenderer {
           snake.head[0] * colSize - expand,
           segTop(snake.head[1]) - expand,
           colSize + expand * 2,
-          segHeight + expand * 2,
+          segHeight + expand * 2
         )
-        .fill({ color: isLight ? 0xffffff : 0xdddddd, alpha: headBoost * 0.35 });
+        .fill({
+          color: isLight ? 0xffffff : 0xdddddd,
+          alpha: headBoost * 0.35,
+        });
     }
-    this.scene.rect(snake.head[0] * colSize, segTop(snake.head[1]), colSize, segHeight)
+    this.scene
+      .rect(snake.head[0] * colSize, segTop(snake.head[1]), colSize, segHeight)
       .fill({ color, alpha: Math.max(0, headAlpha) });
 
     // Orange SURGE border on head
     if (effects.surging) {
       const surgePulse = 0.7 + 0.3 * Math.sin(now / 80);
       this.scene
-        .rect(snake.head[0] * colSize - 2, segTop(snake.head[1]) - 2, colSize + 4, segHeight + 4)
-        .stroke({ width: 2.5, color: 0xFF7200, alpha: surgePulse });
+        .rect(
+          snake.head[0] * colSize - 2,
+          segTop(snake.head[1]) - 2,
+          colSize + 4,
+          segHeight + 4
+        )
+        .stroke({ width: 2.5, color: 0xff7200, alpha: surgePulse });
     }
 
     // AMP pulsing gold border on head (on top of base)
     if (effects.amped) {
       const ampPulse = 0.6 + 0.4 * Math.sin(now / 220);
       this.scene
-        .rect(snake.head[0] * colSize - 2, segTop(snake.head[1]) - 2, colSize + 4, segHeight + 4)
-        .stroke({ width: 2, color: 0xFFBB00, alpha: ampPulse });
+        .rect(
+          snake.head[0] * colSize - 2,
+          segTop(snake.head[1]) - 2,
+          colSize + 4,
+          segHeight + 4
+        )
+        .stroke({ width: 2, color: 0xffbb00, alpha: ampPulse });
     }
 
     // Frozen ring around head
     if (effects.frozen) {
       this.scene
-        .rect(snake.head[0] * colSize - 2, segTop(snake.head[1]) - 2, colSize + 4, segHeight + 4)
-        .stroke({ width: 2, color: 0x3090C8, alpha: 0.7 });
+        .rect(
+          snake.head[0] * colSize - 2,
+          segTop(snake.head[1]) - 2,
+          colSize + 4,
+          segHeight + 4
+        )
+        .stroke({ width: 2, color: 0x3090c8, alpha: 0.7 });
     }
 
     // Body — pulse wave travels head → tail
     for (let i = 0; i < snake.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, totalLen, pulses, now);
-      const segAlpha = Math.min(1, baseBodyAlpha + boost * 0.36) * segReveal(i + 1);
+      const segAlpha =
+        Math.min(1, baseBodyAlpha + boost * 0.36) * segReveal(i + 1);
       const px = snake.body[i][0] * colSize;
       const py = segTop(snake.body[i][1]);
 
@@ -731,7 +889,7 @@ export class PixiGameRenderer {
         const surgePulse = 0.5 + 0.3 * Math.sin(now / 80 + i * 0.4);
         this.scene
           .rect(px - 1, py - 1, colSize + 2, segHeight + 2)
-          .stroke({ width: 1.5, color: 0xFF7200, alpha: surgePulse });
+          .stroke({ width: 1.5, color: 0xff7200, alpha: surgePulse });
       }
 
       // AMP gold border on body (subtler than head)
@@ -739,13 +897,18 @@ export class PixiGameRenderer {
         const ampPulse = 0.4 + 0.3 * Math.sin(now / 220 + i * 0.2);
         this.scene
           .rect(px - 1, py - 1, colSize + 2, segHeight + 2)
-          .stroke({ width: 1.5, color: 0xFFBB00, alpha: ampPulse * 0.7 });
+          .stroke({ width: 1.5, color: 0xffbb00, alpha: ampPulse * 0.7 });
       }
     }
   }
 
   /** Gaussian pulse: returns 0–1 boost for segment at index i as wave travels head→tail */
-  private getSegmentGlow(segIndex: number, totalLen: number, pulses: number[], now: number): number {
+  private getSegmentGlow(
+    segIndex: number,
+    totalLen: number,
+    pulses: number[],
+    now: number
+  ): number {
     if (pulses.length === 0 || totalLen === 0) return 0;
     const D = PixiGameRenderer.PULSE_DURATION_MS;
     const HALF_W = 0.16; // pulse width as fraction of body
@@ -767,7 +930,7 @@ export class PixiGameRenderer {
     colSize: number,
     rowSize: number,
     opts: { reward?: number; isDecoy?: boolean },
-    boardElapsed: number = Infinity,
+    boardElapsed: number = Infinity
   ): void {
     const coinReveal = (() => {
       if (boardElapsed === Infinity) return 1;
@@ -783,23 +946,48 @@ export class PixiGameRenderer {
       // Decoy: looks almost identical to real coinbase but has a faint irregular pulse
       const tick = Date.now() / 700;
       const pulse = 0.7 + 0.3 * Math.sin(tick * 1.7 + 1.2);
-      this.scene.circle(cx, cy, radius * 2.05).fill({ color: 0xffffff, alpha: 0.04 * pulse });
-      this.scene.circle(cx, cy, radius * 1.7).fill({ color: 0xffffff, alpha: 0.07 * pulse });
-      this.scene.circle(cx, cy, radius * 1.35).fill({ color: 0xffffff, alpha: 0.12 * pulse });
-      this.scene.circle(cx, cy, radius * 0.9).fill({ color: 0xffffff, alpha: 0.85 * pulse });
+      this.scene
+        .circle(cx, cy, radius * 2.05)
+        .fill({ color: 0xffffff, alpha: 0.04 * pulse });
+      this.scene
+        .circle(cx, cy, radius * 1.7)
+        .fill({ color: 0xffffff, alpha: 0.07 * pulse });
+      this.scene
+        .circle(cx, cy, radius * 1.35)
+        .fill({ color: 0xffffff, alpha: 0.12 * pulse });
+      this.scene
+        .circle(cx, cy, radius * 0.9)
+        .fill({ color: 0xffffff, alpha: 0.85 * pulse });
       return;
     }
 
     // Standard coinbase
-    this.scene.circle(cx, cy, radius * 2.05).fill({ color: 0xffffff, alpha: 0.05 });
-    this.scene.circle(cx, cy, radius * 1.7).fill({ color: 0xffffff, alpha: 0.08 });
-    this.scene.circle(cx, cy, radius * 1.35).fill({ color: 0xffffff, alpha: 0.14 });
-    this.scene.circle(cx, cy, radius * 1.1).fill({ color: 0xffffff, alpha: 0.22 });
+    this.scene
+      .circle(cx, cy, radius * 2.05)
+      .fill({ color: 0xffffff, alpha: 0.05 });
+    this.scene
+      .circle(cx, cy, radius * 1.7)
+      .fill({ color: 0xffffff, alpha: 0.08 });
+    this.scene
+      .circle(cx, cy, radius * 1.35)
+      .fill({ color: 0xffffff, alpha: 0.14 });
+    this.scene
+      .circle(cx, cy, radius * 1.1)
+      .fill({ color: 0xffffff, alpha: 0.22 });
     this.scene.circle(cx, cy, radius * 0.9).fill({ color: 0xffffff, alpha: 1 });
 
     // Reward rings
     if (opts.reward) {
-      const rings = opts.reward === 2 ? 2 : opts.reward === 4 ? 3 : opts.reward === 8 ? 4 : opts.reward === 16 ? 5 : 6;
+      const rings =
+        opts.reward === 2
+          ? 2
+          : opts.reward === 4
+            ? 3
+            : opts.reward === 8
+              ? 4
+              : opts.reward === 16
+                ? 5
+                : 6;
       let transparencyAdder = 1;
       for (let ring = rings; ring > 0; ring -= 1) {
         const alpha = 0.1 / rings + transparencyAdder / 20;
@@ -817,7 +1005,7 @@ export class PixiGameRenderer {
     state: GameState,
     colSize: number,
     rowSize: number,
-    gridAlpha: number,
+    gridAlpha: number
   ): void {
     this.grid.clear();
     for (let x = 0; x <= state.cols; x += 1) {
@@ -833,7 +1021,7 @@ export class PixiGameRenderer {
     items: NonNullable<GameState['powerUpItems']>,
     colSize: number,
     rowSize: number,
-    now: number,
+    now: number
   ): void {
     const pulse = 0.75 + 0.25 * Math.sin((now / 800) * 2);
     const activeKeys = new Set<string>();
@@ -907,7 +1095,7 @@ export class PixiGameRenderer {
     type: string,
     colSize: number,
     rowSize: number,
-    now: number,
+    now: number
   ): void {
     const cx = pos[0] * colSize + colSize / 2;
     const cy = pos[1] * rowSize + rowSize / 2;
@@ -929,7 +1117,9 @@ export class PixiGameRenderer {
 
     // Octagon fill
     this.scene.poly(octPoints).fill({ color: 0x000000, alpha: 0.7 });
-    this.scene.poly(octPoints).stroke({ width: 1.5, color, alpha: 0.9 * pulse });
+    this.scene
+      .poly(octPoints)
+      .stroke({ width: 1.5, color, alpha: 0.9 * pulse });
 
     // Inner symbol (small filled circle)
     this.scene.circle(cx, cy, r * 0.35).fill({ color, alpha: 0.85 * pulse });
@@ -1025,14 +1215,23 @@ export class PixiGameRenderer {
     const countdownSize = Math.max(18, Math.floor(height * 0.54));
     const cx = width / 2;
     const cy = height / 2;
-    for (const node of [this.countdown3, this.countdown2, this.countdown1, this.countdownLfg]) {
+    for (const node of [
+      this.countdown3,
+      this.countdown2,
+      this.countdown1,
+      this.countdownLfg,
+    ]) {
       node.style.fontSize = countdownSize;
       node.position.set(cx, cy);
       node.alpha = 1;
     }
   }
 
-  private renderCountdownOverlay(state: GameState, width: number, height: number): void {
+  private renderCountdownOverlay(
+    state: GameState,
+    width: number,
+    height: number
+  ): void {
     const phase = this.countdownPhaseFromTicks(state.countdownTicks);
     const sizeChanged =
       this.lastOverlayWidth !== width || this.lastOverlayHeight !== height;
@@ -1075,7 +1274,10 @@ export class PixiGameRenderer {
     this.resize();
   }
 
-  private renderFallback(state: GameState, opts?: { replayView?: boolean }): void {
+  private renderFallback(
+    state: GameState,
+    opts?: { replayView?: boolean }
+  ): void {
     if (!this.host || !this.fallbackCanvas || !this.fallbackCtx) return;
     const ctx = this.fallbackCtx;
     const width = this.fallbackCanvas.width;
@@ -1096,14 +1298,34 @@ export class PixiGameRenderer {
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fillRect(0, 0, sb.left * colSize, height);
       ctx.fillRect((sb.right + 1) * colSize, 0, width, height);
-      ctx.fillRect(sb.left * colSize, 0, (sb.right - sb.left + 1) * colSize, sb.top * rowSize);
-      ctx.fillRect(sb.left * colSize, (sb.bottom + 1) * rowSize, (sb.right - sb.left + 1) * colSize, height);
+      ctx.fillRect(
+        sb.left * colSize,
+        0,
+        (sb.right - sb.left + 1) * colSize,
+        sb.top * rowSize
+      );
+      ctx.fillRect(
+        sb.left * colSize,
+        (sb.bottom + 1) * rowSize,
+        (sb.right - sb.left + 1) * colSize,
+        height
+      );
 
       // Amber edge
       const edgeAlpha = sb.warningActive ? 0.5 : 0.15;
       ctx.fillStyle = `rgba(200,136,32,${edgeAlpha})`;
-      ctx.fillRect(sb.left * colSize, sb.top * rowSize, colSize, (sb.bottom - sb.top + 1) * rowSize);
-      ctx.fillRect((sb.right + 1) * colSize - colSize, sb.top * rowSize, colSize, (sb.bottom - sb.top + 1) * rowSize);
+      ctx.fillRect(
+        sb.left * colSize,
+        sb.top * rowSize,
+        colSize,
+        (sb.bottom - sb.top + 1) * rowSize
+      );
+      ctx.fillRect(
+        (sb.right + 1) * colSize - colSize,
+        sb.top * rowSize,
+        colSize,
+        (sb.bottom - sb.top + 1) * rowSize
+      );
     }
 
     // Grid
@@ -1118,22 +1340,33 @@ export class PixiGameRenderer {
     // Obstacle walls
     for (const wall of state.obstacleWalls ?? []) {
       ctx.fillStyle = 'rgba(255,255,255,0.8)';
-      ctx.fillRect(wall.pos[0] * colSize, wall.pos[1] * rowSize, colSize, rowSize);
+      ctx.fillRect(
+        wall.pos[0] * colSize,
+        wall.pos[1] * rowSize,
+        colSize,
+        rowSize
+      );
     }
 
     // Pulse detection (fallback path shares same pulse arrays as PixiJS path)
     const nowFb = performance.now();
     if (state.gameStarted && !state.gameEnded) {
-      if (this.prevScoreP1 >= 0 && state.score[0] > this.prevScoreP1) this.p1Pulses.push(nowFb);
-      if (this.prevScoreP2 >= 0 && state.score[1] > this.prevScoreP2) this.p2Pulses.push(nowFb);
+      if (this.prevScoreP1 >= 0 && state.score[0] > this.prevScoreP1)
+        this.p1Pulses.push(nowFb);
+      if (this.prevScoreP2 >= 0 && state.score[1] > this.prevScoreP2)
+        this.p2Pulses.push(nowFb);
     } else if (!state.gameStarted) {
       this.p1Pulses = [];
       this.p2Pulses = [];
     }
     this.prevScoreP1 = state.score[0];
     this.prevScoreP2 = state.score[1];
-    this.p1Pulses = this.p1Pulses.filter((t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS);
-    this.p2Pulses = this.p2Pulses.filter((t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS);
+    this.p1Pulses = this.p1Pulses.filter(
+      (t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS
+    );
+    this.p2Pulses = this.p2Pulses.filter(
+      (t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS
+    );
 
     const fbP1Effects = getSnakeEffects(state, 0);
     const fbP2Effects = getSnakeEffects(state, 1);
@@ -1147,20 +1380,42 @@ export class PixiGameRenderer {
     // FADE surge trails
     const FADE_FB = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
     if (state.gameStarted && !state.gameEnded) {
-      if (fbP1Surging) this.p1SurgeTrail.push({ pos: [state.p1.head[0], state.p1.head[1]], time: nowFb });
-      if (fbP2Surging) this.p2SurgeTrail.push({ pos: [state.p2.head[0], state.p2.head[1]], time: nowFb });
+      if (fbP1Surging)
+        this.p1SurgeTrail.push({
+          pos: [state.p1.head[0], state.p1.head[1]],
+          time: nowFb,
+        });
+      if (fbP2Surging)
+        this.p2SurgeTrail.push({
+          pos: [state.p2.head[0], state.p2.head[1]],
+          time: nowFb,
+        });
     }
-    this.p1SurgeTrail = this.p1SurgeTrail.filter((t) => nowFb - t.time < FADE_FB);
-    this.p2SurgeTrail = this.p2SurgeTrail.filter((t) => nowFb - t.time < FADE_FB);
+    this.p1SurgeTrail = this.p1SurgeTrail.filter(
+      (t) => nowFb - t.time < FADE_FB
+    );
+    this.p2SurgeTrail = this.p2SurgeTrail.filter(
+      (t) => nowFb - t.time < FADE_FB
+    );
     for (const t of this.p1SurgeTrail) {
       ctx.globalAlpha = (1 - (nowFb - t.time) / FADE_FB) * 0.6;
       ctx.fillStyle = '#FF7200';
-      ctx.fillRect(t.pos[0] * colSize + 1, t.pos[1] * rowSize + 1, colSize - 2, rowSize - 2);
+      ctx.fillRect(
+        t.pos[0] * colSize + 1,
+        t.pos[1] * rowSize + 1,
+        colSize - 2,
+        rowSize - 2
+      );
     }
     for (const t of this.p2SurgeTrail) {
       ctx.globalAlpha = (1 - (nowFb - t.time) / FADE_FB) * 0.6;
       ctx.fillStyle = '#FF7200';
-      ctx.fillRect(t.pos[0] * colSize + 1, t.pos[1] * rowSize + 1, colSize - 2, rowSize - 2);
+      ctx.fillRect(
+        t.pos[0] * colSize + 1,
+        t.pos[1] * rowSize + 1,
+        colSize - 2,
+        rowSize - 2
+      );
     }
     ctx.globalAlpha = 1;
 
@@ -1172,21 +1427,40 @@ export class PixiGameRenderer {
       const expand = 2 + ampP * 3;
       ctx.globalAlpha = 0.18 + ampP * 0.22;
       ctx.fillStyle = '#FFBB00';
-      ctx.fillRect(state.p1.head[0] * colSize - expand, state.p1.head[1] * rowSize - expand, colSize + expand * 2, rowSize + expand * 2);
+      ctx.fillRect(
+        state.p1.head[0] * colSize - expand,
+        state.p1.head[1] * rowSize - expand,
+        colSize + expand * 2,
+        rowSize + expand * 2
+      );
       for (const seg of state.p1.body) {
-        ctx.fillRect(seg[0] * colSize - expand * 0.5, seg[1] * rowSize - expand * 0.5, colSize + expand, rowSize + expand);
+        ctx.fillRect(
+          seg[0] * colSize - expand * 0.5,
+          seg[1] * rowSize - expand * 0.5,
+          colSize + expand,
+          rowSize + expand
+        );
       }
       ctx.globalAlpha = 1;
     }
     // Extra snakes (teams / ffa) – drawn behind main snakes
     for (let ei = 0; ei < (state.extraSnakes ?? []).length; ei += 1) {
       const extra = state.extraSnakes[ei]!;
-      const extraBob = preStartControllerBobPx(state, (ei + 2) as GameSeatIndex, rowSize);
+      const extraBob = preStartControllerBobPx(
+        state,
+        (ei + 2) as GameSeatIndex,
+        rowSize
+      );
       const extraTop = (gy: number) => gy * rowSize - extraBob;
       const extraH = rowSize + extraBob * 2;
       const hexStr = '#' + extra.color.toString(16).padStart(6, '0');
       ctx.fillStyle = hexStr;
-      ctx.fillRect(extra.snake.head[0] * colSize, extraTop(extra.snake.head[1]), colSize, extraH);
+      ctx.fillRect(
+        extra.snake.head[0] * colSize,
+        extraTop(extra.snake.head[1]),
+        colSize,
+        extraH
+      );
       ctx.globalAlpha = 0.75;
       for (const seg of extra.snake.body) {
         ctx.fillRect(seg[0] * colSize, extraTop(seg[1]), colSize, extraH);
@@ -1203,7 +1477,7 @@ export class PixiGameRenderer {
             seg[0] * colSize + lw / 2,
             extraTop(seg[1]) + lw / 2,
             colSize - lw,
-            extraH - lw,
+            extraH - lw
           );
         }
         ctx.globalAlpha = 1;
@@ -1224,44 +1498,89 @@ export class PixiGameRenderer {
         state.p1.head[0] * colSize - exp,
         p1SegTop(state.p1.head[1]) - exp,
         colSize + exp * 2,
-        p1SegH + exp * 2,
+        p1SegH + exp * 2
       );
     }
     ctx.globalAlpha = 1;
-    ctx.fillRect(state.p1.head[0] * colSize, p1SegTop(state.p1.head[1]), colSize, p1SegH);
+    ctx.fillRect(
+      state.p1.head[0] * colSize,
+      p1SegTop(state.p1.head[1]),
+      colSize,
+      p1SegH
+    );
     if (fbP1Surging) {
       const sp = 0.7 + 0.3 * Math.sin(nowFb / 80);
-      ctx.globalAlpha = sp; ctx.strokeStyle = '#FF7200'; ctx.lineWidth = 2.5;
-      ctx.strokeRect(state.p1.head[0] * colSize - 2, p1SegTop(state.p1.head[1]) - 2, colSize + 4, p1SegH + 4);
+      ctx.globalAlpha = sp;
+      ctx.strokeStyle = '#FF7200';
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(
+        state.p1.head[0] * colSize - 2,
+        p1SegTop(state.p1.head[1]) - 2,
+        colSize + 4,
+        p1SegH + 4
+      );
       ctx.globalAlpha = 1;
     }
     if (fbP1Amped) {
       const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
-      ctx.globalAlpha = ap; ctx.strokeStyle = '#FFBB00'; ctx.lineWidth = 2;
-      ctx.strokeRect(state.p1.head[0] * colSize - 2, p1SegTop(state.p1.head[1]) - 2, colSize + 4, p1SegH + 4);
+      ctx.globalAlpha = ap;
+      ctx.strokeStyle = '#FFBB00';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        state.p1.head[0] * colSize - 2,
+        p1SegTop(state.p1.head[1]) - 2,
+        colSize + 4,
+        p1SegH + 4
+      );
       ctx.globalAlpha = 1;
     }
     if (fbP1Frozen) {
-      ctx.globalAlpha = 0.7; ctx.strokeStyle = '#3090C8'; ctx.lineWidth = 2;
-      ctx.strokeRect(state.p1.head[0] * colSize - 2, p1SegTop(state.p1.head[1]) - 2, colSize + 4, p1SegH + 4);
+      ctx.globalAlpha = 0.7;
+      ctx.strokeStyle = '#3090C8';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        state.p1.head[0] * colSize - 2,
+        p1SegTop(state.p1.head[1]) - 2,
+        colSize + 4,
+        p1SegH + 4
+      );
       ctx.globalAlpha = 1;
     }
     for (let i = 0; i < state.p1.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, p1Total, this.p1Pulses, nowFb);
       ctx.fillStyle = '#ffffff';
       ctx.globalAlpha = Math.min(1, 0.6 + boost * 0.36);
-      ctx.fillRect(state.p1.body[i][0] * colSize, p1SegTop(state.p1.body[i][1]), colSize, p1SegH);
+      ctx.fillRect(
+        state.p1.body[i][0] * colSize,
+        p1SegTop(state.p1.body[i][1]),
+        colSize,
+        p1SegH
+      );
       ctx.globalAlpha = 1;
       if (fbP1Surging) {
         const sp = 0.5 + 0.3 * Math.sin(nowFb / 80 + i * 0.4);
-        ctx.globalAlpha = sp; ctx.strokeStyle = '#FF7200'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(state.p1.body[i][0] * colSize - 1, p1SegTop(state.p1.body[i][1]) - 1, colSize + 2, p1SegH + 2);
+        ctx.globalAlpha = sp;
+        ctx.strokeStyle = '#FF7200';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(
+          state.p1.body[i][0] * colSize - 1,
+          p1SegTop(state.p1.body[i][1]) - 1,
+          colSize + 2,
+          p1SegH + 2
+        );
         ctx.globalAlpha = 1;
       }
       if (fbP1Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
-        ctx.globalAlpha = ap; ctx.strokeStyle = '#FFBB00'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(state.p1.body[i][0] * colSize - 1, p1SegTop(state.p1.body[i][1]) - 1, colSize + 2, p1SegH + 2);
+        ctx.globalAlpha = ap;
+        ctx.strokeStyle = '#FFBB00';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(
+          state.p1.body[i][0] * colSize - 1,
+          p1SegTop(state.p1.body[i][1]) - 1,
+          colSize + 2,
+          p1SegH + 2
+        );
         ctx.globalAlpha = 1;
       }
     }
@@ -1274,9 +1593,19 @@ export class PixiGameRenderer {
       const expand = 2 + ampP * 3;
       ctx.globalAlpha = 0.18 + ampP * 0.22;
       ctx.fillStyle = '#FFBB00';
-      ctx.fillRect(state.p2.head[0] * colSize - expand, state.p2.head[1] * rowSize - expand, colSize + expand * 2, rowSize + expand * 2);
+      ctx.fillRect(
+        state.p2.head[0] * colSize - expand,
+        state.p2.head[1] * rowSize - expand,
+        colSize + expand * 2,
+        rowSize + expand * 2
+      );
       for (const seg of state.p2.body) {
-        ctx.fillRect(seg[0] * colSize - expand * 0.5, seg[1] * rowSize - expand * 0.5, colSize + expand, rowSize + expand);
+        ctx.fillRect(
+          seg[0] * colSize - expand * 0.5,
+          seg[1] * rowSize - expand * 0.5,
+          colSize + expand,
+          rowSize + expand
+        );
       }
       ctx.globalAlpha = 1;
     }
@@ -1294,34 +1623,65 @@ export class PixiGameRenderer {
         state.p2.head[0] * colSize - exp,
         p2SegTop(state.p2.head[1]) - exp,
         colSize + exp * 2,
-        p2SegH + exp * 2,
+        p2SegH + exp * 2
       );
       ctx.fillStyle = '#111111';
     }
     ctx.globalAlpha = 1;
-    ctx.fillRect(state.p2.head[0] * colSize, p2SegTop(state.p2.head[1]), colSize, p2SegH);
+    ctx.fillRect(
+      state.p2.head[0] * colSize,
+      p2SegTop(state.p2.head[1]),
+      colSize,
+      p2SegH
+    );
     if (fbP2Surging) {
       const sp = 0.7 + 0.3 * Math.sin(nowFb / 80);
-      ctx.globalAlpha = sp; ctx.strokeStyle = '#FF7200'; ctx.lineWidth = 2.5;
-      ctx.strokeRect(state.p2.head[0] * colSize - 2, p2SegTop(state.p2.head[1]) - 2, colSize + 4, p2SegH + 4);
+      ctx.globalAlpha = sp;
+      ctx.strokeStyle = '#FF7200';
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(
+        state.p2.head[0] * colSize - 2,
+        p2SegTop(state.p2.head[1]) - 2,
+        colSize + 4,
+        p2SegH + 4
+      );
       ctx.globalAlpha = 1;
     }
     if (fbP2Amped) {
       const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
-      ctx.globalAlpha = ap; ctx.strokeStyle = '#FFBB00'; ctx.lineWidth = 2;
-      ctx.strokeRect(state.p2.head[0] * colSize - 2, p2SegTop(state.p2.head[1]) - 2, colSize + 4, p2SegH + 4);
+      ctx.globalAlpha = ap;
+      ctx.strokeStyle = '#FFBB00';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        state.p2.head[0] * colSize - 2,
+        p2SegTop(state.p2.head[1]) - 2,
+        colSize + 4,
+        p2SegH + 4
+      );
       ctx.globalAlpha = 1;
     }
     if (fbP2Frozen) {
-      ctx.globalAlpha = 0.7; ctx.strokeStyle = '#3090C8'; ctx.lineWidth = 2;
-      ctx.strokeRect(state.p2.head[0] * colSize - 2, p2SegTop(state.p2.head[1]) - 2, colSize + 4, p2SegH + 4);
+      ctx.globalAlpha = 0.7;
+      ctx.strokeStyle = '#3090C8';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        state.p2.head[0] * colSize - 2,
+        p2SegTop(state.p2.head[1]) - 2,
+        colSize + 4,
+        p2SegH + 4
+      );
       ctx.globalAlpha = 1;
     }
     for (let i = 0; i < state.p2.body.length; i++) {
       const boost = this.getSegmentGlow(i + 1, p2Total, this.p2Pulses, nowFb);
       ctx.fillStyle = '#111111';
       ctx.globalAlpha = Math.min(1, 0.6 + boost * 0.36);
-      ctx.fillRect(state.p2.body[i][0] * colSize, p2SegTop(state.p2.body[i][1]), colSize, p2SegH);
+      ctx.fillRect(
+        state.p2.body[i][0] * colSize,
+        p2SegTop(state.p2.body[i][1]),
+        colSize,
+        p2SegH
+      );
       ctx.globalAlpha = 1;
       if (boost > 0.05) {
         ctx.globalAlpha = boost * 0.28;
@@ -1330,20 +1690,34 @@ export class PixiGameRenderer {
           state.p2.body[i][0] * colSize + 1,
           p2SegTop(state.p2.body[i][1]) + 1,
           colSize - 2,
-          p2SegH - 2,
+          p2SegH - 2
         );
       }
       ctx.globalAlpha = 1;
       if (fbP2Surging) {
         const sp = 0.5 + 0.3 * Math.sin(nowFb / 80 + i * 0.4);
-        ctx.globalAlpha = sp; ctx.strokeStyle = '#FF7200'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(state.p2.body[i][0] * colSize - 1, p2SegTop(state.p2.body[i][1]) - 1, colSize + 2, p2SegH + 2);
+        ctx.globalAlpha = sp;
+        ctx.strokeStyle = '#FF7200';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(
+          state.p2.body[i][0] * colSize - 1,
+          p2SegTop(state.p2.body[i][1]) - 1,
+          colSize + 2,
+          p2SegH + 2
+        );
         ctx.globalAlpha = 1;
       }
       if (fbP2Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
-        ctx.globalAlpha = ap; ctx.strokeStyle = '#FFBB00'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(state.p2.body[i][0] * colSize - 1, p2SegTop(state.p2.body[i][1]) - 1, colSize + 2, p2SegH + 2);
+        ctx.globalAlpha = ap;
+        ctx.strokeStyle = '#FFBB00';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(
+          state.p2.body[i][0] * colSize - 1,
+          p2SegTop(state.p2.body[i][1]) - 1,
+          colSize + 2,
+          p2SegH + 2
+        );
         ctx.globalAlpha = 1;
       }
     }
@@ -1362,7 +1736,16 @@ export class PixiGameRenderer {
       ctx.shadowBlur = 0;
 
       if (cb.reward) {
-        const rings = cb.reward === 2 ? 2 : cb.reward === 4 ? 3 : cb.reward === 8 ? 4 : cb.reward === 16 ? 5 : 6;
+        const rings =
+          cb.reward === 2
+            ? 2
+            : cb.reward === 4
+              ? 3
+              : cb.reward === 8
+                ? 4
+                : cb.reward === 16
+                  ? 5
+                  : 6;
         let ta = 1;
         for (let ring = rings; ring > 0; ring -= 1) {
           const alpha = 0.1 / rings + ta / 20;
@@ -1383,7 +1766,12 @@ export class PixiGameRenderer {
       const g = (color >> 8) & 0xff;
       const b = color & 0xff;
       ctx.fillStyle = `rgba(${r},${g},${b},0.85)`;
-      ctx.fillRect(item.pos[0] * colSize + 2, item.pos[1] * rowSize + 2, colSize - 4, rowSize - 4);
+      ctx.fillRect(
+        item.pos[0] * colSize + 2,
+        item.pos[1] * rowSize + 2,
+        colSize - 4,
+        rowSize - 4
+      );
       const shortLabel = getPowerUpHudLabel(item.type as PowerUpType);
       const cx2 = item.pos[0] * colSize + colSize / 2;
       const cy2 = item.pos[1] * rowSize + rowSize / 2;
@@ -1408,12 +1796,16 @@ export class PixiGameRenderer {
       for (let x = 0; x < cols2; x++) {
         for (let y = 0; y < rows2; y++) {
           const distFromEdge = Math.min(x, cols2 - 1 - x, y, rows2 - 1 - y);
-          const hashOff = ((x * 2654435761 + y * 2246822519) >>> 0) % 1000 / 1000;
+          const hashOff =
+            (((x * 2654435761 + y * 2246822519) >>> 0) % 1000) / 1000;
           const threshold = (distFromEdge + hashOff * 0.6) / maxDist2;
           if (resolveProgressFb < threshold) continue;
           const px = x * colSize;
           const py = y * rowSize;
-          const blockAlpha = Math.min(1, (resolveProgressFb - threshold) * 6 + 0.6);
+          const blockAlpha = Math.min(
+            1,
+            (resolveProgressFb - threshold) * 6 + 0.6
+          );
           ctx.globalAlpha = blockAlpha * 0.9;
           ctx.fillStyle = '#C88820';
           ctx.fillRect(px, py, colSize, rowSize);
@@ -1439,7 +1831,10 @@ export class PixiGameRenderer {
         : Math.max(10, Math.floor(width / 17));
       ctx.font = `${fbStartPx}px BureauGrotesque`;
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
-      const fbElapsed = Math.max(0, performance.now() - this.startRevealTime - 1000);
+      const fbElapsed = Math.max(
+        0,
+        performance.now() - this.startRevealTime - 1000
+      );
       const words = ['PRESS', 'BUTTON', 'TO', 'START'];
       const STAGGER = 110;
       const visibleWords = words.filter((_, i) => fbElapsed > i * STAGGER);
@@ -1447,7 +1842,13 @@ export class PixiGameRenderer {
     } else if (state.countdownStart) {
       this.startRevealTime = -1;
       const countdownText =
-        state.countdownTicks <= 10 ? '3' : state.countdownTicks <= 20 ? '2' : state.countdownTicks <= 30 ? '1' : 'LFG';
+        state.countdownTicks <= 10
+          ? '3'
+          : state.countdownTicks <= 20
+            ? '2'
+            : state.countdownTicks <= 30
+              ? '1'
+              : 'LFG';
       ctx.font = `${Math.floor(height * 0.5)}px BureauGrotesque`;
       ctx.fillText(countdownText, width / 2, height / 2);
     } else if (state.gameEnded) {
@@ -1463,10 +1864,18 @@ export class PixiGameRenderer {
         const fbY0 = Math.min(22, height * 0.09);
         const fbGap = Math.max(28, fbWinPx * 0.85);
         ctx.font = `${fbWinPx}px BureauGrotesque`;
-        ctx.fillText(`${state.winnerName.toUpperCase()} WINS!`, width / 2, height / 2 - fbY0);
+        ctx.fillText(
+          `${state.winnerName.toUpperCase()} WINS!`,
+          width / 2,
+          height / 2 - fbY0
+        );
         if (!opts?.replayView) {
           ctx.font = `${fbContPx}px BureauGrotesque`;
-          ctx.fillText('PRESS ANY BUTTON TO CONTINUE', width / 2, height / 2 - fbY0 + fbGap);
+          ctx.fillText(
+            'PRESS ANY BUTTON TO CONTINUE',
+            width / 2,
+            height / 2 - fbY0 + fbGap
+          );
         }
       }
     }

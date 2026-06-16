@@ -1,12 +1,25 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { useAudio } from '@/contexts/AudioContext';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
-import { ONLINE_HOME, onlinePostGameUrl } from '@/shared/constants/onlineRoutes';
+import {
+  ONLINE_HOME,
+  onlinePostGameUrl,
+} from '@/shared/constants/onlineRoutes';
 import { NAVIGATE_AFTER_FINISH_DELAY_MS } from '@/shared/constants/timeouts';
-import type { OnlineReplayBlockEvent, OnlineRoomSnapshot } from '@/types/socket';
+import type {
+  OnlineReplayBlockEvent,
+  OnlineRoomSnapshot,
+} from '@/types/socket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { canContinueOnlineAfterGame } from '@/game/engine';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
@@ -22,9 +35,21 @@ import '@/styles/pages/onlineGame.css';
 
 const REPLAY_SPEEDS = [0.25, 0.5, 1, 1.5, 2, 4, 8, 16, 32, 64] as const;
 
-type ReplayNavFocus = 'slider' | 'play' | 'restart' | 'victory' | 'exit' | 'speed';
+type ReplayNavFocus =
+  | 'slider'
+  | 'play'
+  | 'restart'
+  | 'victory'
+  | 'exit'
+  | 'speed';
 
-const REPLAY_BTN_ORDER: ReplayNavFocus[] = ['play', 'restart', 'victory', 'exit', 'speed'];
+const REPLAY_BTN_ORDER: ReplayNavFocus[] = [
+  'play',
+  'restart',
+  'victory',
+  'exit',
+  'speed',
+];
 
 type ReplaySpeedPickerHandle = {
   focus: () => void;
@@ -90,10 +115,13 @@ export default function OnlineGame() {
   const [replayLoaded, setReplayLoaded] = useState(false);
   const [replayError, setReplayError] = useState('');
   /** Server-recorded mempool block cosmetics, keyed by replay frame index. */
-  const [replayBlockEvents, setReplayBlockEvents] = useState<OnlineReplayBlockEvent[]>([]);
+  const [replayBlockEvents, setReplayBlockEvents] = useState<
+    OnlineReplayBlockEvent[]
+  >([]);
   /** Set to true while the speed picker dropdown is open so the global key handler yields to it. */
   const replaySpeedOpenRef = useRef(false);
-  const [replayNavFocus, setReplayNavFocus] = useState<ReplayNavFocus>('slider');
+  const [replayNavFocus, setReplayNavFocus] =
+    useState<ReplayNavFocus>('slider');
   const replaySliderRef = useRef<HTMLInputElement>(null);
   const replayPlayBtnRef = useRef<HTMLButtonElement>(null);
   const replayRestartBtnRef = useRef<HTMLButtonElement>(null);
@@ -157,7 +185,11 @@ export default function OnlineGame() {
     const state = snapshot.state as GameState;
     const prev = prevGameStateRef.current;
     if (prev) {
-      if (state.countdownStart && !state.gameStarted && state.countdownTicks !== prev.countdownTicks) {
+      if (
+        state.countdownStart &&
+        !state.gameStarted &&
+        state.countdownTicks !== prev.countdownTicks
+      ) {
         audioRef.current?.playCountdownTick(state.countdownTicks);
       }
       if (state.gameStarted && !state.gameEnded) {
@@ -185,7 +217,11 @@ export default function OnlineGame() {
         }
         const prevStepMs = prev.meta?.currentStepMs;
         const newStepMs = state.meta?.currentStepMs;
-        if (prevStepMs != null && newStepMs != null && newStepMs !== prevStepMs) {
+        if (
+          prevStepMs != null &&
+          newStepMs != null &&
+          newStepMs !== prevStepMs
+        ) {
           audioRef.current?.playBlockFound();
         }
       }
@@ -222,7 +258,11 @@ export default function OnlineGame() {
       if (snap?.state && rendererRef.current) {
         let raw = snap.state as GameState;
         if (!replayViewRef.current && !raw.gameStarted && !raw.gameEnded) {
-          raw = withLocalOnlineControllerTest(raw, localRoleRef.current, keysHeldRef.current);
+          raw = withLocalOnlineControllerTest(
+            raw,
+            localRoleRef.current,
+            keysHeldRef.current
+          );
         }
         const renderState =
           raw.meta?.modeLabel === 'ONLINE'
@@ -231,7 +271,9 @@ export default function OnlineGame() {
         const snapshotChanged = snap !== lastPaintedSnapshot;
         const animActive = rendererRef.current.needsPaint(renderState, now);
         if (snapshotChanged || animActive) {
-          rendererRef.current.render(renderState, { replayView: replayViewRef.current });
+          rendererRef.current.render(renderState, {
+            replayView: replayViewRef.current,
+          });
           lastPaintedSnapshot = snap;
         }
       }
@@ -273,7 +315,9 @@ export default function OnlineGame() {
       if (replayMode) {
         socket.emit(
           'getOnlineReplay',
-          replayMatchRound != null ? { roomId, matchRound: replayMatchRound } : { roomId }
+          replayMatchRound != null
+            ? { roomId, matchRound: replayMatchRound }
+            : { roomId }
         );
       }
     };
@@ -281,24 +325,36 @@ export default function OnlineGame() {
       if (replayMode) {
         return;
       }
-      const parsed = SocketBoundaryParsers.onlineRoomSnapshot(payload) ?? coerceOnlineRoomSnapshotEvent(payload);
+      const parsed =
+        SocketBoundaryParsers.onlineRoomSnapshot(payload) ??
+        coerceOnlineRoomSnapshotEvent(payload);
       if (parsed && parsed.roomId === roomId) {
         setSnapshot((prev) => {
           const snap = normalizeOnlineRoomSnapshot(parsed.snapshot);
           const merged = mergeOnlineSnapshot(prev, snap);
-          ingestOnlinePointChanges(merged, pointAnimationsRef.current, prevPointCountByKeyRef.current);
+          ingestOnlinePointChanges(
+            merged,
+            pointAnimationsRef.current,
+            prevPointCountByKeyRef.current
+          );
           return merged;
         });
       }
     };
     const onUpdated = (payload: unknown) => {
-      const parsed = SocketBoundaryParsers.onlineRoomUpdated(payload) ?? coerceOnlineRoomUpdated(payload);
+      const parsed =
+        SocketBoundaryParsers.onlineRoomUpdated(payload) ??
+        coerceOnlineRoomUpdated(payload);
       if (parsed && parsed.roomId === roomId) {
         if (!replayMode) {
           setSnapshot((prev) => {
             const snap = normalizeOnlineRoomSnapshot(parsed.snapshot);
             const merged = mergeOnlineSnapshot(prev, snap);
-            ingestOnlinePointChanges(merged, pointAnimationsRef.current, prevPointCountByKeyRef.current);
+            ingestOnlinePointChanges(
+              merged,
+              pointAnimationsRef.current,
+              prevPointCountByKeyRef.current
+            );
             return merged;
           });
         }
@@ -513,7 +569,9 @@ export default function OnlineGame() {
       return;
     }
 
-    const axisForKey = (key: string): 'up' | 'down' | 'left' | 'right' | null => {
+    const axisForKey = (
+      key: string
+    ): 'up' | 'down' | 'left' | 'right' | null => {
       switch (key) {
         case 'ArrowUp':
         case 'w':
@@ -667,7 +725,7 @@ export default function OnlineGame() {
           break;
       }
     },
-    [exitReplayRoom, goReplayVictoryScreen, restartReplay, toggleReplayPlay],
+    [exitReplayRoom, goReplayVictoryScreen, restartReplay, toggleReplayPlay]
   );
 
   useEffect(() => {
@@ -808,18 +866,21 @@ export default function OnlineGame() {
     toggleReplayPlay,
   ]);
 
-  const effectiveSessionID = currentSessionID || sessionStorage.getItem('sessionID') || '';
+  const effectiveSessionID =
+    currentSessionID || sessionStorage.getItem('sessionID') || '';
   const isP1 = Boolean(
     (roomInfo?.p1SessionID && roomInfo.p1SessionID === effectiveSessionID) ||
-      (roomInfo?.p1SocketID && roomInfo.p1SocketID === currentSocketID)
+    (roomInfo?.p1SocketID && roomInfo.p1SocketID === currentSocketID)
   );
   const isP2 = Boolean(
     (roomInfo?.p2SessionID && roomInfo.p2SessionID === effectiveSessionID) ||
-      (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID)
+    (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID)
   );
   localRoleRef.current = { isP1, isP2 };
-  const replayDurationSec = replayFrames.length > 0 ? (replayFrames.length * replayTickMs) / 1000 : 0;
-  const replayPositionSec = replayFrames.length > 0 ? (replayIndex * replayTickMs) / 1000 : 0;
+  const replayDurationSec =
+    replayFrames.length > 0 ? (replayFrames.length * replayTickMs) / 1000 : 0;
+  const replayPositionSec =
+    replayFrames.length > 0 ? (replayIndex * replayTickMs) / 1000 : 0;
 
   return (
     <>
@@ -930,7 +991,12 @@ export default function OnlineGame() {
           <div className="flex points">
             <div className="player-sats player-sats-p1">
               <span id="p1Points" className="condensed">
-                {Math.floor(snapshot?.hud.p1Points ?? roomInfo?.p1Paid ?? roomInfo?.buyin ?? 0).toLocaleString()}
+                {Math.floor(
+                  snapshot?.hud.p1Points ??
+                    roomInfo?.p1Paid ??
+                    roomInfo?.buyin ??
+                    0
+                ).toLocaleString()}
               </span>{' '}
               <span className="grey">sats</span>
             </div>
@@ -938,7 +1004,12 @@ export default function OnlineGame() {
             <div className="player-sats player-sats-p2">
               <span className="grey">sats</span>{' '}
               <span id="p2Points" className="condensed">
-                {Math.floor(snapshot?.hud.p2Points ?? roomInfo?.p2Paid ?? roomInfo?.buyin ?? 0).toLocaleString()}
+                {Math.floor(
+                  snapshot?.hud.p2Points ??
+                    roomInfo?.p2Paid ??
+                    roomInfo?.buyin ??
+                    0
+                ).toLocaleString()}
               </span>
             </div>
           </div>
@@ -954,7 +1025,10 @@ export default function OnlineGame() {
                 type="range"
                 min={0}
                 max={Math.max(0, replayFrames.length - 1)}
-                value={Math.min(replayIndex, Math.max(0, replayFrames.length - 1))}
+                value={Math.min(
+                  replayIndex,
+                  Math.max(0, replayFrames.length - 1)
+                )}
                 onChange={(event) => {
                   const idx = Number(event.target.value);
                   setReplayPlaying(false);
@@ -989,7 +1063,9 @@ export default function OnlineGame() {
                   <span className="online-replay-btn__icon" aria-hidden>
                     {replayPlaying ? <ReplayIconPause /> : <ReplayIconPlay />}
                   </span>
-                  <span className="online-replay-btn__label">{replayPlaying ? 'PAUSE' : 'PLAY'}</span>
+                  <span className="online-replay-btn__label">
+                    {replayPlaying ? 'PAUSE' : 'PLAY'}
+                  </span>
                 </button>
                 <button
                   ref={replayRestartBtnRef}
@@ -1022,7 +1098,9 @@ export default function OnlineGame() {
                   <span className="online-replay-btn__icon" aria-hidden>
                     <ReplayIconBackToRoom />
                   </span>
-                  <span className="online-replay-btn__label">VICTORY SCREEN</span>
+                  <span className="online-replay-btn__label">
+                    VICTORY SCREEN
+                  </span>
                 </button>
                 <button
                   ref={replayExitBtnRef}
@@ -1045,20 +1123,31 @@ export default function OnlineGame() {
                     ref={replaySpeedPickerRef}
                     value={replaySpeed}
                     onChange={setReplaySpeed}
-                    onOpenChange={(o) => { replaySpeedOpenRef.current = o; }}
+                    onOpenChange={(o) => {
+                      replaySpeedOpenRef.current = o;
+                    }}
                     navFocused={replayNavFocus === 'speed'}
                     onNavFocus={() => setReplayNavFocus('speed')}
                   />
-                  <div className="online-replay-time" aria-label="Replay position">
-                    {formatSeconds(replayPositionSec)} / {formatSeconds(replayDurationSec)}
+                  <div
+                    className="online-replay-time"
+                    aria-label="Replay position"
+                  >
+                    {formatSeconds(replayPositionSec)} /{' '}
+                    {formatSeconds(replayDurationSec)}
                   </div>
                 </div>
               </div>
-              {replayError ? <div className="online-replay-error">{replayError}</div> : null}
+              {replayError ? (
+                <div className="online-replay-error">{replayError}</div>
+              ) : null}
             </div>
           ) : null}
 
-          <div id="bitcoinDetails" className={footerHighlight ? 'highlight' : ''}>
+          <div
+            id="bitcoinDetails"
+            className={footerHighlight ? 'highlight' : ''}
+          >
             <div className="detail">
               <div className="label">Latest Block</div>
               <div className="value">{bitcoin.height}</div>
@@ -1080,21 +1169,22 @@ export default function OnlineGame() {
               <div className="value">{bitcoin.medianFee}</div>
             </div>
           </div>
-
         </div>
       </div>
 
-      <div className={`overlay ${snapshot || (replayMode && replayLoaded) ? 'hide' : ''}`} id="loading">
+      <div
+        className={`overlay ${snapshot || (replayMode && replayLoaded) ? 'hide' : ''}`}
+        id="loading"
+      >
         <img src="/images/loading.gif" alt="Loading" />
       </div>
-
     </>
   );
 }
 
-function coerceOnlineRoomSnapshotEvent(payload: unknown):
-  | { roomId: string; snapshot: OnlineRoomSnapshot }
-  | null {
+function coerceOnlineRoomSnapshotEvent(
+  payload: unknown
+): { roomId: string; snapshot: OnlineRoomSnapshot } | null {
   if (!payload || typeof payload !== 'object') {
     return null;
   }
@@ -1111,27 +1201,25 @@ function coerceOnlineRoomSnapshotEvent(payload: unknown):
   };
 }
 
-function coerceOnlineRoomUpdated(payload: unknown):
-  | {
-      roomId: string;
-      roomCode?: string;
-      hostSessionID?: string;
-      phase?: string;
-      buyin?: number;
-      snapshot: OnlineRoomSnapshot;
-      seats: Record<
-        string,
-        {
-          name?: string;
-          picture?: string;
-          paidAmount?: number;
-          sessionID?: string;
-          socketID?: string;
-          pingMs?: number;
-        }
-      >;
+function coerceOnlineRoomUpdated(payload: unknown): {
+  roomId: string;
+  roomCode?: string;
+  hostSessionID?: string;
+  phase?: string;
+  buyin?: number;
+  snapshot: OnlineRoomSnapshot;
+  seats: Record<
+    string,
+    {
+      name?: string;
+      picture?: string;
+      paidAmount?: number;
+      sessionID?: string;
+      socketID?: string;
+      pingMs?: number;
     }
-  | null {
+  >;
+} | null {
   if (!payload || typeof payload !== 'object') {
     return null;
   }
@@ -1152,19 +1240,26 @@ function coerceOnlineRoomUpdated(payload: unknown):
   }
   const seats =
     candidate.seats && typeof candidate.seats === 'object'
-      ? (candidate.seats as Record<string, {
-          name?: string;
-          picture?: string;
-          paidAmount?: number;
-          sessionID?: string;
-          socketID?: string;
-          pingMs?: number;
-        }>)
+      ? (candidate.seats as Record<
+          string,
+          {
+            name?: string;
+            picture?: string;
+            paidAmount?: number;
+            sessionID?: string;
+            socketID?: string;
+            pingMs?: number;
+          }
+        >)
       : {};
   return {
     roomId: candidate.roomId,
-    roomCode: typeof candidate.roomCode === 'string' ? candidate.roomCode : undefined,
-    hostSessionID: typeof candidate.hostSessionID === 'string' ? candidate.hostSessionID : undefined,
+    roomCode:
+      typeof candidate.roomCode === 'string' ? candidate.roomCode : undefined,
+    hostSessionID:
+      typeof candidate.hostSessionID === 'string'
+        ? candidate.hostSessionID
+        : undefined,
     phase: typeof candidate.phase === 'string' ? candidate.phase : undefined,
     buyin: typeof candidate.buyin === 'number' ? candidate.buyin : undefined,
     snapshot: candidate.snapshot as OnlineRoomSnapshot,
@@ -1172,7 +1267,10 @@ function coerceOnlineRoomUpdated(payload: unknown):
   };
 }
 
-function mergeOnlineSnapshot(prev: OnlineRoomSnapshot | null, next: OnlineRoomSnapshot): OnlineRoomSnapshot {
+function mergeOnlineSnapshot(
+  prev: OnlineRoomSnapshot | null,
+  next: OnlineRoomSnapshot
+): OnlineRoomSnapshot {
   if (!prev?.state || !next?.state) {
     return next;
   }
@@ -1203,8 +1301,14 @@ function mergeOnlineSnapshot(prev: OnlineRoomSnapshot | null, next: OnlineRoomSn
     return {
       ...incoming,
       // Never move a popup backwards between snapshots.
-      p1YOffsetPx: Math.min(incoming.p1YOffsetPx ?? 0, previous.p1YOffsetPx ?? 0),
-      p2YOffsetPx: Math.min(incoming.p2YOffsetPx ?? 0, previous.p2YOffsetPx ?? 0),
+      p1YOffsetPx: Math.min(
+        incoming.p1YOffsetPx ?? 0,
+        previous.p1YOffsetPx ?? 0
+      ),
+      p2YOffsetPx: Math.min(
+        incoming.p2YOffsetPx ?? 0,
+        previous.p2YOffsetPx ?? 0
+      ),
       alpha: Math.min(incoming.alpha ?? 1, previous.alpha ?? 1),
     };
   });
@@ -1221,8 +1325,12 @@ function mergeOnlineSnapshot(prev: OnlineRoomSnapshot | null, next: OnlineRoomSn
 function pointChangeKey(change: PointChangeLike): string {
   const player = change?.player ?? '';
   const value = change?.value ?? 0;
-  const p1 = Array.isArray(change?.p1Pos) ? `${change.p1Pos[0]}:${change.p1Pos[1]}` : 'x:y';
-  const p2 = Array.isArray(change?.p2Pos) ? `${change.p2Pos[0]}:${change.p2Pos[1]}` : 'x:y';
+  const p1 = Array.isArray(change?.p1Pos)
+    ? `${change.p1Pos[0]}:${change.p1Pos[1]}`
+    : 'x:y';
+  const p2 = Array.isArray(change?.p2Pos)
+    ? `${change.p2Pos[0]}:${change.p2Pos[1]}`
+    : 'x:y';
   return `${player}|${value}|${p1}|${p2}`;
 }
 
@@ -1244,7 +1352,8 @@ function ingestOnlinePointChanges(
   prevPointCountByKey: Map<string, number>
 ) {
   const state = snapshot.state as Record<string, unknown> | null;
-  const modeLabel = (state?.meta as { modeLabel?: string } | undefined)?.modeLabel;
+  const modeLabel = (state?.meta as { modeLabel?: string } | undefined)
+    ?.modeLabel;
   if (modeLabel !== 'ONLINE') {
     return;
   }
@@ -1365,10 +1474,7 @@ function ReplayIconPlay() {
 function ReplayIconPause() {
   return (
     <svg className="online-replay-btn__svg" viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"
-      />
+      <path fill="currentColor" d="M6 5h4v14H6V5zm8 0h4v14h-4V5z" />
     </svg>
   );
 }
@@ -1421,7 +1527,7 @@ const ReplaySpeedPicker = forwardRef<
   }
 >(function ReplaySpeedPicker(
   { value, onChange, onOpenChange, navFocused = false, onNavFocus },
-  ref,
+  ref
 ) {
   const [open, setOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(2); // default: 1x
@@ -1496,7 +1602,11 @@ const ReplaySpeedPicker = forwardRef<
   }
 
   return (
-    <div className="online-replay-speed" ref={containerRef} onKeyDown={onKeyDown}>
+    <div
+      className="online-replay-speed"
+      ref={containerRef}
+      onKeyDown={onKeyDown}
+    >
       <span className="online-replay-speed-label" aria-hidden>
         SPEED
       </span>
@@ -1522,12 +1632,20 @@ const ReplaySpeedPicker = forwardRef<
         }}
       >
         <span className="online-replay-speed-value">{value}x</span>
-        <svg className="online-replay-speed-chevron" viewBox="0 0 10 6" aria-hidden>
+        <svg
+          className="online-replay-speed-chevron"
+          viewBox="0 0 10 6"
+          aria-hidden
+        >
           <path fill="currentColor" fillOpacity="0.85" d="M0 0h10L5 6z" />
         </svg>
 
         {open && (
-          <div className="online-replay-speed-list" role="listbox" aria-label="Playback speed">
+          <div
+            className="online-replay-speed-list"
+            role="listbox"
+            aria-label="Playback speed"
+          >
             {REPLAY_SPEEDS.map((speed, idx) => (
               <button
                 key={speed}

@@ -13,7 +13,11 @@ import {
   parseBunkerInput,
   type BunkerPointer,
 } from 'nostr-tools/nip46';
-import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools/pure';
+import {
+  finalizeEvent,
+  generateSecretKey,
+  getPublicKey,
+} from 'nostr-tools/pure';
 import { PlainKeySigner } from 'nostr-tools/signer';
 import { bytesToHex, hexToBytes } from 'nostr-tools/utils';
 import { decode as nip19Decode } from 'nostr-tools/nip19';
@@ -26,7 +30,11 @@ import {
 } from 'nostr-tools/nip44';
 
 import type { NostrNip07Provider } from '@/types/nostr-nip07';
-import { consumePendingSignFlow, createFlowTrace, relayHost } from '@/lib/nostr/nip46Trace';
+import {
+  consumePendingSignFlow,
+  createFlowTrace,
+  relayHost,
+} from '@/lib/nostr/nip46Trace';
 
 export const STORED_NOSTR_PUBKEY_KEY = 'arcadeNostrPubkey';
 
@@ -87,7 +95,10 @@ function withTimeout<T>(label: string, p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     p,
     new Promise<T>((_, reject) => {
-      setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms);
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms / 1000}s`)),
+        ms
+      );
     }),
   ]);
 }
@@ -122,9 +133,15 @@ async function rawNip46Rpc(
     relays: string[];
     timeoutMs?: number;
     traceFlow?: string;
-  },
+  }
 ): Promise<{ id: string; result: string; error?: string }> {
-  const { clientSk, signerPubkey, relays, timeoutMs = 60_000, traceFlow } = opts;
+  const {
+    clientSk,
+    signerPubkey,
+    relays,
+    timeoutMs = 60_000,
+    traceFlow,
+  } = opts;
   const skHex = bytesToHex(clientSk);
   const clientPubkey = getPublicKey(clientSk);
   const relayList = relaysForNip46Rpc(relays);
@@ -141,7 +158,7 @@ async function rawNip46Rpc(
       tags: [['p', signerPubkey]],
       content: encryptedContent,
     },
-    clientSk,
+    clientSk
   );
 
   const filter = {
@@ -154,7 +171,7 @@ async function rawNip46Rpc(
   const trace = createFlowTrace('relay', flow);
   trace.step(
     'rpc start',
-    `id=${reqId.slice(0, 8)}… bunker=${signerPubkey.slice(0, 12)}… → ${relayList.map(relayHost).join(', ')}`,
+    `id=${reqId.slice(0, 8)}… bunker=${signerPubkey.slice(0, 12)}… → ${relayList.map(relayHost).join(', ')}`
   );
 
   return new Promise((resolve, reject) => {
@@ -183,13 +200,21 @@ async function rawNip46Rpc(
       trace.step('EVENT published', `${reason} → ${count} open relay(s)`);
     };
 
-    const finish = (result: { id: string; result: string; error?: string } | null, err?: Error) => {
+    const finish = (
+      result: { id: string; result: string; error?: string } | null,
+      err?: Error
+    ) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       clearTimeout(publishFallback);
       for (const ws of sockets) {
-        try { ws.send(JSON.stringify(['CLOSE', subId])); ws.close(); } catch { /* ignore */ }
+        try {
+          ws.send(JSON.stringify(['CLOSE', subId]));
+          ws.close();
+        } catch {
+          /* ignore */
+        }
       }
       if (err) {
         trace.fail('rpc', err);
@@ -203,7 +228,11 @@ async function rawNip46Rpc(
     const handlePlain = (plain: string, fromHost: string) => {
       let parsed: { id?: string; result?: string; error?: string };
       try {
-        parsed = JSON.parse(plain) as { id?: string; result?: string; error?: string };
+        parsed = JSON.parse(plain) as {
+          id?: string;
+          result?: string;
+          error?: string;
+        };
       } catch {
         return;
       }
@@ -225,16 +254,27 @@ async function rawNip46Rpc(
     };
 
     const timer = setTimeout(
-      () => finish(null, new Error(`${method} timed out after ${timeoutMs / 1000}s`)),
-      timeoutMs,
+      () =>
+        finish(
+          null,
+          new Error(`${method} timed out after ${timeoutMs / 1000}s`)
+        ),
+      timeoutMs
     );
 
-    const publishFallback = setTimeout(() => publishRequest('3s fallback (no EOSE)'), 3_000);
+    const publishFallback = setTimeout(
+      () => publishRequest('3s fallback (no EOSE)'),
+      3_000
+    );
 
     for (const relayUrl of relayList) {
       const host = relayHost(relayUrl);
       let ws: WebSocket;
-      try { ws = new WebSocket(relayUrl); } catch { continue; }
+      try {
+        ws = new WebSocket(relayUrl);
+      } catch {
+        continue;
+      }
       sockets.push(ws);
       wsHost.set(ws, host);
 
@@ -258,18 +298,31 @@ async function rawNip46Rpc(
               return;
             }
             if (msg[0] !== 'EVENT' || msg[1] !== subId) return;
-            const ev = msg[2] as { pubkey?: string; content?: string; kind?: number };
+            const ev = msg[2] as {
+              pubkey?: string;
+              content?: string;
+              kind?: number;
+            };
             if (!ev || ev.kind !== 24133 || !ev.content || !ev.pubkey) return;
 
             let plain: string | null = null;
-            const storedUserPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY)?.toLowerCase();
+            const storedUserPk = localStorage
+              .getItem(STORED_NOSTR_PUBKEY_KEY)
+              ?.toLowerCase();
             const authorCandidates = [ev.pubkey, signerPubkey.toLowerCase()];
-            if (storedUserPk && /^[0-9a-f]{64}$/.test(storedUserPk) && !authorCandidates.includes(storedUserPk)) {
+            if (
+              storedUserPk &&
+              /^[0-9a-f]{64}$/.test(storedUserPk) &&
+              !authorCandidates.includes(storedUserPk)
+            ) {
               authorCandidates.push(storedUserPk);
             }
             for (const author of authorCandidates) {
               try {
-                plain = nip44Decrypt(ev.content, getConversationKey(clientSk, author));
+                plain = nip44Decrypt(
+                  ev.content,
+                  getConversationKey(clientSk, author)
+                );
                 if (plain) break;
               } catch {
                 /* try next */
@@ -288,7 +341,9 @@ async function rawNip46Rpc(
             }
             if (!plain) return;
             handlePlain(plain, fromHost);
-          } catch { /* ignore malformed */ }
+          } catch {
+            /* ignore malformed */
+          }
         })();
       };
 
@@ -307,7 +362,7 @@ async function nip46GetPublicKey(timeoutMs: number): Promise<string> {
 
 async function rawNip46GetPublicKey(
   sess: { clientSk: Uint8Array; bp: BunkerPointer },
-  timeoutMs: number,
+  timeoutMs: number
 ): Promise<string> {
   const resp = await rawNip46Rpc('get_public_key', [], {
     clientSk: sess.clientSk,
@@ -339,8 +394,13 @@ function ensureSession(): { clientSk: Uint8Array; bp: BunkerPointer } | null {
   if (!skHex || !bpRaw) return null;
 
   let bp: BunkerPointer;
-  try { bp = JSON.parse(bpRaw) as BunkerPointer; } catch { return null; }
-  if (!bp.pubkey || !Array.isArray(bp.relays) || bp.relays.length === 0) return null;
+  try {
+    bp = JSON.parse(bpRaw) as BunkerPointer;
+  } catch {
+    return null;
+  }
+  if (!bp.pubkey || !Array.isArray(bp.relays) || bp.relays.length === 0)
+    return null;
 
   bp = { ...bp, relays: sanitizeNip46Relays(bp.relays) };
   localStorage.setItem(NIP46_BP_KEY, JSON.stringify(bp));
@@ -372,7 +432,10 @@ function disposeNip46(): void {
   disposeNip46Pool();
 }
 
-function finishNip46Handshake(signer: BunkerSigner, clientSk: Uint8Array): BunkerPointer {
+function finishNip46Handshake(
+  signer: BunkerSigner,
+  clientSk: Uint8Array
+): BunkerPointer {
   const bp = { ...signer.bp, relays: sanitizeNip46Relays(signer.bp.relays) };
   nip46Session = { clientSk, bp };
   void signer.close();
@@ -381,10 +444,21 @@ function finishNip46Handshake(signer: BunkerSigner, clientSk: Uint8Array): Bunke
 }
 
 function persistPubkeyFromSigned(signed: Record<string, unknown>): void {
-  const signedPk = typeof signed.pubkey === 'string' ? (signed.pubkey as string).toLowerCase() : null;
-  const currentPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY)?.toLowerCase();
+  const signedPk =
+    typeof signed.pubkey === 'string'
+      ? (signed.pubkey as string).toLowerCase()
+      : null;
+  const currentPk = localStorage
+    .getItem(STORED_NOSTR_PUBKEY_KEY)
+    ?.toLowerCase();
   if (signedPk && /^[0-9a-f]{64}$/.test(signedPk) && signedPk !== currentPk) {
-    console.log(DBG, '[sign] ✓ correcting pubkey:', currentPk?.slice(0, 12), '→', signedPk.slice(0, 12));
+    console.log(
+      DBG,
+      '[sign] ✓ correcting pubkey:',
+      currentPk?.slice(0, 12),
+      '→',
+      signedPk.slice(0, 12)
+    );
     localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, signedPk);
   }
 }
@@ -419,15 +493,19 @@ export function getStoredSignerMode(): StoredSignerMode | null {
 export function hasStoredNip46Session(): boolean {
   return Boolean(
     getStoredSignerMode() === 'nip46' &&
-      localStorage.getItem(NIP46_CLIENT_SK_KEY) &&
-      localStorage.getItem(NIP46_BP_KEY)
+    localStorage.getItem(NIP46_CLIENT_SK_KEY) &&
+    localStorage.getItem(NIP46_BP_KEY)
   );
 }
 
 export function resolveSignerMode(): StoredSignerMode | null {
   const explicit = getStoredSignerMode();
   if (explicit) return explicit;
-  if (localStorage.getItem(STORED_NOSTR_PUBKEY_KEY) && typeof window !== 'undefined' && window.nostr) {
+  if (
+    localStorage.getItem(STORED_NOSTR_PUBKEY_KEY) &&
+    typeof window !== 'undefined' &&
+    window.nostr
+  ) {
     return 'extension';
   }
   return null;
@@ -441,12 +519,16 @@ function resolveNostrConnectAppUrl(explicit?: string): string | undefined {
 }
 
 function createHandshakePool(): SimplePool {
-  return new SimplePool({ maxWaitForConnection: 8_000 } as ConstructorParameters<typeof SimplePool>[0]);
+  return new SimplePool({
+    maxWaitForConnection: 8_000,
+  } as ConstructorParameters<typeof SimplePool>[0]);
 }
 
 async function signEventViaNip46(
-  ev: import('@/types/nostr-nip07').NostrUnsignedEvent | import('nostr-tools').EventTemplate,
-  timeoutMs: number,
+  ev:
+    | import('@/types/nostr-nip07').NostrUnsignedEvent
+    | import('nostr-tools').EventTemplate,
+  timeoutMs: number
 ): Promise<import('@/types/nostr-nip07').NostrSignedEvent> {
   const kind = (ev as { kind?: number }).kind;
   const sess = ensureSession();
@@ -487,7 +569,7 @@ export function beginNostrConnectPairing(opts: {
   const secret = bytesToHex(secretBytes);
 
   const relays = sanitizeNip46Relays(
-    opts.relays?.length ? opts.relays : [...DEFAULT_NOSTR_CONNECT_RELAYS],
+    opts.relays?.length ? opts.relays : [...DEFAULT_NOSTR_CONNECT_RELAYS]
   );
 
   const connectionURI = createNostrConnectURI({
@@ -499,26 +581,42 @@ export function beginNostrConnectPairing(opts: {
   });
 
   const trace = createFlowTrace('pairing', 'qr-connect');
-  trace.step('start', `client=${clientPubkey.slice(0, 12)}… relays=${relays.map(relayHost).join(', ')}`);
+  trace.step(
+    'start',
+    `client=${clientPubkey.slice(0, 12)}… relays=${relays.map(relayHost).join(', ')}`
+  );
 
   const finished = (async (): Promise<string> => {
     const signal = opts.signal;
-    if (signal?.aborted) throw new DOMException('Pairing aborted.', 'AbortError');
+    if (signal?.aborted)
+      throw new DOMException('Pairing aborted.', 'AbortError');
 
-    const onAbort = () => { disposeNip46(); };
+    const onAbort = () => {
+      disposeNip46();
+    };
     signal?.addEventListener('abort', onAbort, { once: true });
 
     try {
       trace.step('waiting for handshake', 'BunkerSigner.fromURI + pool');
       const signer = await BunkerSigner.fromURI(
-        clientSk, connectionURI,
-        { pool, onauth: (url) => { authUrlHandler?.(url); trace.step('auth_url', url.slice(0, 60)); } },
-        NOSTR_CONNECT_PAIR_WAIT_MS,
+        clientSk,
+        connectionURI,
+        {
+          pool,
+          onauth: (url) => {
+            authUrlHandler?.(url);
+            trace.step('auth_url', url.slice(0, 60));
+          },
+        },
+        NOSTR_CONNECT_PAIR_WAIT_MS
       );
       trace.step('handshake ok', `bunker=${signer.bp.pubkey.slice(0, 12)}…`);
       opts.onHandshake?.();
 
-      signer.bp = { ...signer.bp, relays: sanitizeNip46Relays(signer.bp.relays) };
+      signer.bp = {
+        ...signer.bp,
+        relays: sanitizeNip46Relays(signer.bp.relays),
+      };
       const bp = finishNip46Handshake(signer, clientSk);
       const pubkey = normalizeNostrPubkeyHex(bp.pubkey);
 
@@ -558,7 +656,9 @@ export function clearSignerSession(): void {
 // connectNostrConnect — bunker:// URL flow
 // ---------------------------------------------------------------------------
 
-export async function connectNostrConnect(bunkerInput: string): Promise<string> {
+export async function connectNostrConnect(
+  bunkerInput: string
+): Promise<string> {
   const trimmed = bunkerInput.trim();
   if (!trimmed) throw new Error('Paste a bunker URL or a NIP-05 identifier.');
 
@@ -617,12 +717,16 @@ function parseNsecInput(input: string): Uint8Array {
   if (t.toLowerCase().startsWith('nsec')) {
     try {
       const decoded = nip19Decode(t);
-      if (decoded.type !== 'nsec') throw new Error('Expected an nsec1… bech32 key.');
+      if (decoded.type !== 'nsec')
+        throw new Error('Expected an nsec1… bech32 key.');
       return decoded.data;
-    } catch { throw new Error('Invalid nsec encoding.'); }
+    } catch {
+      throw new Error('Invalid nsec encoding.');
+    }
   }
   const hex = t.replace(/^0x/i, '');
-  if (!/^[0-9a-fA-F]{64}$/.test(hex)) throw new Error('Expected nsec1… or a 64-character hex private key.');
+  if (!/^[0-9a-fA-F]{64}$/.test(hex))
+    throw new Error('Expected nsec1… or a 64-character hex private key.');
   return hexToBytes(hex.toLowerCase());
 }
 
@@ -678,7 +782,9 @@ export async function getActiveNostrSigner(): Promise<NostrNip07Provider | null>
         getPublicKey: () => signer.getPublicKey(),
         signEvent: (ev) => signer.signEvent(ev),
       };
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   if (mode === 'extension' || (mode === null && storedPk && window.nostr)) {
@@ -693,13 +799,19 @@ export async function getActiveNostrSigner(): Promise<NostrNip07Provider | null>
 // ---------------------------------------------------------------------------
 
 export function isNsecSessionMissing(): boolean {
-  return getStoredSignerMode() === 'nsec' && !sessionStorage.getItem(NSEC_SESSION_SK_KEY);
+  return (
+    getStoredSignerMode() === 'nsec' &&
+    !sessionStorage.getItem(NSEC_SESSION_SK_KEY)
+  );
 }
 
 export function recordExtensionSignIn(pubkey: string): void {
   sessionStorage.removeItem(NSEC_SESSION_SK_KEY);
   disposeNip46();
-  localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, normalizeNostrPubkeyHex(pubkey));
+  localStorage.setItem(
+    STORED_NOSTR_PUBKEY_KEY,
+    normalizeNostrPubkeyHex(pubkey)
+  );
   localStorage.setItem(SIGNER_MODE_KEY, 'extension');
 }
 
@@ -725,12 +837,20 @@ export async function pingNip46Signer(): Promise<Nip46PingResult> {
       throw new Error(`expected pong, got ${resp.result}`);
     }
 
-    const storedPk = localStorage.getItem(STORED_NOSTR_PUBKEY_KEY)?.toLowerCase();
+    const storedPk = localStorage
+      .getItem(STORED_NOSTR_PUBKEY_KEY)
+      ?.toLowerCase();
     if (storedPk && storedPk === sess.bp.pubkey.toLowerCase()) {
       try {
         const recovered = await nip46GetPublicKey(PING_MS);
         if (recovered !== storedPk) {
-          console.log(DBG, '[ping] ✓ correcting pubkey:', storedPk.slice(0, 12), '→', recovered.slice(0, 12));
+          console.log(
+            DBG,
+            '[ping] ✓ correcting pubkey:',
+            storedPk.slice(0, 12),
+            '→',
+            recovered.slice(0, 12)
+          );
           localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, recovered);
           return { status: 'ok', recoveredPubkey: recovered };
         }
@@ -744,7 +864,10 @@ export async function pingNip46Signer(): Promise<Nip46PingResult> {
   } catch (err) {
     const msg = (err as Error).message ?? '';
     if (msg.includes('timed out')) {
-      console.log(DBG, '[ping] optional check timed out (sign-in may still be valid)');
+      console.log(
+        DBG,
+        '[ping] optional check timed out (sign-in may still be valid)'
+      );
       return { status: 'timeout' };
     }
     console.warn(DBG, '[ping] error:', msg);
@@ -766,7 +889,13 @@ export async function recoverNip46UserPubkey(): Promise<string | null> {
   try {
     const recovered = await nip46GetPublicKey(10_000);
     if (recovered === storedPk.toLowerCase()) return null;
-    console.log(DBG, '[recover] ✓ corrected:', storedPk.slice(0, 12), '→', recovered.slice(0, 12));
+    console.log(
+      DBG,
+      '[recover] ✓ corrected:',
+      storedPk.slice(0, 12),
+      '→',
+      recovered.slice(0, 12)
+    );
     localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, recovered);
     return recovered;
   } catch {

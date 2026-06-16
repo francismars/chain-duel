@@ -24,7 +24,8 @@ export function useQrExpandState({
   const show = useCallback(
     (side: ExpandSide) => {
       const now = Date.now();
-      if (now - (expandKeyUpTimeRef.current[side] ?? 0) < EXPAND_DEBOUNCE_MS) return;
+      if (now - (expandKeyUpTimeRef.current[side] ?? 0) < EXPAND_DEBOUNCE_MS)
+        return;
       if (backdropTimeoutRef.current) clearTimeout(backdropTimeoutRef.current);
       onExpandedChange({ [side]: true });
       onBackdropVisibleChange(true);

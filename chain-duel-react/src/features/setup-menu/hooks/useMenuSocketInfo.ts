@@ -57,7 +57,10 @@ export function useMenuSocketInfo({
 
     socket.on(responseEvent, onPayload);
     const emitTimer = window.setTimeout(requestInfos, 0);
-    const fallbackTimer = window.setTimeout(onLoadingTimeout, LOADING_FALLBACK_TIMEOUT_MS);
+    const fallbackTimer = window.setTimeout(
+      onLoadingTimeout,
+      LOADING_FALLBACK_TIMEOUT_MS
+    );
 
     return () => {
       socket.off(responseEvent, onPayload);

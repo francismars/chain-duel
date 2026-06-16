@@ -299,8 +299,14 @@
   transition: opacity var(--qr-compat-transition);
 }
 
-.gamemenu-page #player1card.expanded .qrcodeContainer.qrcodeContainer--compatible .qrcode,
-.gamemenu-page #player2card.expanded .qrcodeContainer.qrcodeContainer--compatible .qrcode {
+.gamemenu-page
+  #player1card.expanded
+  .qrcodeContainer.qrcodeContainer--compatible
+  .qrcode,
+.gamemenu-page
+  #player2card.expanded
+  .qrcodeContainer.qrcodeContainer--compatible
+  .qrcode {
   filter: invert(0);
   mix-blend-mode: normal;
 }
@@ -595,7 +601,10 @@
   transform: scale(1);
   transform-origin: bottom center;
   border: 0 solid transparent;
-  transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out, border 0.25s ease-in-out;
+  transition:
+    transform 0.25s ease-in-out,
+    box-shadow 0.25s ease-in-out,
+    border 0.25s ease-in-out;
 }
 
 .gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer.expanded .qrcode {

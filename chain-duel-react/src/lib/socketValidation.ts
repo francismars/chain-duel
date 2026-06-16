@@ -60,7 +60,10 @@ export function validateSocketEvent<T>(
     if (result.success) {
       return { success: true, data: result.data };
     } else {
-      console.error(`[Socket Validation] ${eventName} validation failed:`, result.error);
+      console.error(
+        `[Socket Validation] ${eventName} validation failed:`,
+        result.error
+      );
       return {
         success: false,
         error: `Invalid ${eventName} payload: ${result.error.message}`,
@@ -68,7 +71,10 @@ export function validateSocketEvent<T>(
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`[Socket Validation] ${eventName} validation error:`, message);
+    console.error(
+      `[Socket Validation] ${eventName} validation error:`,
+      message
+    );
     return {
       success: false,
       error: `Validation error for ${eventName}: ${message}`,
@@ -123,7 +129,11 @@ export const SocketValidators = {
     validateSocketEvent(ResListOnlineRoomsSchema, data, 'resListOnlineRooms'),
 
   resListOnlineArchivedRooms: (data: unknown) =>
-    validateSocketEvent(ResListOnlineArchivedRoomsSchema, data, 'resListOnlineArchivedRooms'),
+    validateSocketEvent(
+      ResListOnlineArchivedRoomsSchema,
+      data,
+      'resListOnlineArchivedRooms'
+    ),
 
   resOnlineHistory: (data: unknown) =>
     validateSocketEvent(ResOnlineHistorySchema, data, 'resOnlineHistory'),
@@ -135,7 +145,11 @@ export const SocketValidators = {
     validateSocketEvent(OnlineRoomStateSchema, data, 'onlineRoomUpdated'),
 
   onlineRoomSnapshot: (data: unknown) =>
-    validateSocketEvent(OnlineRoomSnapshotEventSchema, data, 'onlineRoomSnapshot'),
+    validateSocketEvent(
+      OnlineRoomSnapshotEventSchema,
+      data,
+      'onlineRoomSnapshot'
+    ),
 
   onlineSeatAssigned: (data: unknown) =>
     validateSocketEvent(OnlineSeatAssignedSchema, data, 'onlineSeatAssigned'),
@@ -144,13 +158,25 @@ export const SocketValidators = {
     validateSocketEvent(OnlinePinInvalidSchema, data, 'onlinePinInvalid'),
 
   resOnlineNostrLinkChallenge: (data: unknown) =>
-    validateSocketEvent(ResOnlineNostrLinkChallengeSchema, data, 'resOnlineNostrLinkChallenge'),
+    validateSocketEvent(
+      ResOnlineNostrLinkChallengeSchema,
+      data,
+      'resOnlineNostrLinkChallenge'
+    ),
 
   resOnlineNostrLinkOk: (data: unknown) =>
-    validateSocketEvent(ResOnlineNostrLinkOkSchema, data, 'resOnlineNostrLinkOk'),
+    validateSocketEvent(
+      ResOnlineNostrLinkOkSchema,
+      data,
+      'resOnlineNostrLinkOk'
+    ),
 
   resAppNostrLinkChallenge: (data: unknown) =>
-    validateSocketEvent(ResAppNostrLinkChallengeSchema, data, 'resAppNostrLinkChallenge'),
+    validateSocketEvent(
+      ResAppNostrLinkChallengeSchema,
+      data,
+      'resAppNostrLinkChallenge'
+    ),
 
   resAppNostrSession: (data: unknown) =>
     validateSocketEvent(ResAppNostrSessionSchema, data, 'resAppNostrSession'),
@@ -159,55 +185,111 @@ export const SocketValidators = {
     validateSocketEvent(ResNostrProfileSchema, data, 'resNostrProfile'),
 
   resPublishNostrEvent: (data: unknown) =>
-    validateSocketEvent(ResPublishNostrEventSchema, data, 'resPublishNostrEvent'),
+    validateSocketEvent(
+      ResPublishNostrEventSchema,
+      data,
+      'resPublishNostrEvent'
+    ),
 
   resChallengeEligibility: (data: unknown) =>
-    validateSocketEvent(ResChallengeEligibilitySchema, data, 'resChallengeEligibility'),
+    validateSocketEvent(
+      ResChallengeEligibilitySchema,
+      data,
+      'resChallengeEligibility'
+    ),
 
   resChallengeRun: (data: unknown) =>
     validateSocketEvent(ResChallengeRunSchema, data, 'resChallengeRun'),
 
   resSubmitChallengeWin: (data: unknown) =>
-    validateSocketEvent(ResSubmitChallengeWinSchema, data, 'resSubmitChallengeWin'),
+    validateSocketEvent(
+      ResSubmitChallengeWinSchema,
+      data,
+      'resSubmitChallengeWin'
+    ),
 
   resChallengeClaim: (data: unknown) =>
     validateSocketEvent(ResChallengeClaimSchema, data, 'resChallengeClaim'),
 
   resRetryChallengeZap: (data: unknown) =>
-    validateSocketEvent(ResRetryChallengeZapSchema, data, 'resRetryChallengeZap'),
+    validateSocketEvent(
+      ResRetryChallengeZapSchema,
+      data,
+      'resRetryChallengeZap'
+    ),
 
   resOnlineKind1Post: (data: unknown) =>
     validateSocketEvent(ResOnlineKind1PostSchema, data, 'resOnlineKind1Post'),
 
   resOnlineSeatZapPayPrepare: (data: unknown) =>
-    validateSocketEvent(ResOnlineSeatZapPayPrepareSchema, data, 'resOnlineSeatZapPayPrepare'),
+    validateSocketEvent(
+      ResOnlineSeatZapPayPrepareSchema,
+      data,
+      'resOnlineSeatZapPayPrepare'
+    ),
 
   resOnlineSeatZapPayInvoice: (data: unknown) =>
-    validateSocketEvent(ResOnlineSeatZapPayInvoiceSchema, data, 'resOnlineSeatZapPayInvoice'),
+    validateSocketEvent(
+      ResOnlineSeatZapPayInvoiceSchema,
+      data,
+      'resOnlineSeatZapPayInvoice'
+    ),
 
   resOnlineSeatZapPayError: (data: unknown) =>
-    validateSocketEvent(ResOnlineSeatZapPayErrorSchema, data, 'resOnlineSeatZapPayError'),
+    validateSocketEvent(
+      ResOnlineSeatZapPayErrorSchema,
+      data,
+      'resOnlineSeatZapPayError'
+    ),
 
   resOnlineSeatLightning: (data: unknown) =>
-    validateSocketEvent(ResOnlineSeatLightningSchema, data, 'resOnlineSeatLightning'),
+    validateSocketEvent(
+      ResOnlineSeatLightningSchema,
+      data,
+      'resOnlineSeatLightning'
+    ),
 
   resOnlineSeatLightningError: (data: unknown) =>
-    validateSocketEvent(ResOnlineSeatLightningErrorSchema, data, 'resOnlineSeatLightningError'),
+    validateSocketEvent(
+      ResOnlineSeatLightningErrorSchema,
+      data,
+      'resOnlineSeatLightningError'
+    ),
 
   resOnlineSeatLightningCancelled: (data: unknown) =>
-    validateSocketEvent(ResOnlineSeatLightningCancelledSchema, data, 'resOnlineSeatLightningCancelled'),
+    validateSocketEvent(
+      ResOnlineSeatLightningCancelledSchema,
+      data,
+      'resOnlineSeatLightningCancelled'
+    ),
 
   resOnlinePostGameInfo: (data: unknown) =>
-    validateSocketEvent(ResOnlinePostGameInfoSchema, data, 'resOnlinePostGameInfo'),
+    validateSocketEvent(
+      ResOnlinePostGameInfoSchema,
+      data,
+      'resOnlinePostGameInfo'
+    ),
 
   resCreateOnlineWithdrawal: (data: unknown) =>
-    validateSocketEvent(ResCreateOnlineWithdrawalSchema, data, 'resCreateOnlineWithdrawal'),
+    validateSocketEvent(
+      ResCreateOnlineWithdrawalSchema,
+      data,
+      'resCreateOnlineWithdrawal'
+    ),
 
   resCreateOnlineNostrPayout: (data: unknown) =>
-    validateSocketEvent(ResCreateOnlineNostrPayoutSchema, data, 'resCreateOnlineNostrPayout'),
+    validateSocketEvent(
+      ResCreateOnlineNostrPayoutSchema,
+      data,
+      'resCreateOnlineNostrPayout'
+    ),
 
   onlineDoubleOrNothingUpdate: (data: unknown) =>
-    validateSocketEvent(OnlineDoubleOrNothingUpdateSchema, data, 'onlineDoubleOrNothingUpdate'),
+    validateSocketEvent(
+      OnlineDoubleOrNothingUpdateSchema,
+      data,
+      'onlineDoubleOrNothingUpdate'
+    ),
 
   resOnlineReplay: (data: unknown) =>
     validateSocketEvent(ResOnlineReplaySchema, data, 'resOnlineReplay'),

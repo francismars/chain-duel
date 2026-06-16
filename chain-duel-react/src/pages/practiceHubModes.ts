@@ -24,14 +24,18 @@ export function isPracticeHubGameMode(mode: unknown): boolean {
   return (PRACTICE_HUB_BOOTSTRAP_MODES as readonly string[]).includes(m);
 }
 
-export function isPracticeChallengeConfig(cfg: Record<string, unknown>): boolean {
+export function isPracticeChallengeConfig(
+  cfg: Record<string, unknown>
+): boolean {
   const m = normalizeGameConfigMode(cfg.mode);
   if (m === 'SOLO') return true;
   return m === 'PRACTICE' && cfg.practiceChallenge === true;
 }
 
 /** Practice hub free play (not bounty challenges). */
-export function isPracticeFreePlayConfig(cfg: Record<string, unknown>): boolean {
+export function isPracticeFreePlayConfig(
+  cfg: Record<string, unknown>
+): boolean {
   return isExplicitPracticeSession(cfg) && !isPracticeChallengeConfig(cfg);
 }
 
@@ -41,7 +45,9 @@ export function practiceHubExitPath(cfg: Record<string, unknown>): string {
 }
 
 /** Starting sats per player in a challenge (bounty split evenly across players). */
-export function challengeStartSatsPerPlayer(cfg: Record<string, unknown>): number | undefined {
+export function challengeStartSatsPerPlayer(
+  cfg: Record<string, unknown>
+): number | undefined {
   if (!isPracticeChallengeConfig(cfg)) return undefined;
   const bounty = Math.floor(Number(cfg.soloBounty ?? 0));
   if (bounty <= 0) return undefined;
@@ -61,7 +67,9 @@ export function readSessionGameConfig(): Record<string, unknown> {
 }
 
 /** True only for matches started from the Practice hub (not stale mode strings alone). */
-export function isExplicitPracticeSession(cfg: Record<string, unknown>): boolean {
+export function isExplicitPracticeSession(
+  cfg: Record<string, unknown>
+): boolean {
   return cfg.sessionOrigin === PRACTICE_SESSION_ORIGIN;
 }
 
@@ -73,7 +81,7 @@ export function sessionUsesPracticeHubConfig(): boolean {
 export function savePracticeGameConfig(config: Record<string, unknown>): void {
   sessionStorage.setItem(
     GAME_CONFIG_STORAGE_KEY,
-    JSON.stringify({ ...config, sessionOrigin: PRACTICE_SESSION_ORIGIN }),
+    JSON.stringify({ ...config, sessionOrigin: PRACTICE_SESSION_ORIGIN })
   );
 }
 

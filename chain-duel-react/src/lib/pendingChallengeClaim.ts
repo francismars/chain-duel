@@ -22,7 +22,11 @@ export function loadPendingChallengeClaim(): PendingChallengeClaim | null {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PendingChallengeClaim;
-    if (!parsed?.claimToken || !parsed.noteContent || !Array.isArray(parsed.noteTags)) {
+    if (
+      !parsed?.claimToken ||
+      !parsed.noteContent ||
+      !Array.isArray(parsed.noteTags)
+    ) {
       return null;
     }
     return parsed;

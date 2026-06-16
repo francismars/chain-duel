@@ -1,5 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useRef, useEffect, useState, useCallback, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  type ReactNode,
+} from 'react';
 
 /** One-shot sound effect paths for menu UI (existing audio files) */
 export const SFX = {
@@ -28,7 +36,9 @@ interface BackgroundAudioContextType {
   currentSrc: string | null;
 }
 
-const BackgroundAudioContext = createContext<BackgroundAudioContextType | null>(null);
+const BackgroundAudioContext = createContext<BackgroundAudioContextType | null>(
+  null
+);
 
 const STORAGE_KEY_MUSIC_MUTED = 'chainduel_musicMuted';
 const STORAGE_KEY_MUTED = 'chainduel_muted';
@@ -192,7 +202,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (src) {
       audio.loop = true;
       setCurrentSrc(src);
-      audio.addEventListener('canplay', () => audio.play().catch(() => {}), { once: true });
+      audio.addEventListener('canplay', () => audio.play().catch(() => {}), {
+        once: true,
+      });
       audio.src = src;
       if (audio.readyState >= 3) {
         audio.play().catch(() => {});
@@ -223,7 +235,21 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <BackgroundAudioContext.Provider value={{ play, stop, pause, resume, playSfx, isPlaying, isMusicMuted, isMuted, toggleMusicMute, toggleMute, currentSrc }}>
+    <BackgroundAudioContext.Provider
+      value={{
+        play,
+        stop,
+        pause,
+        resume,
+        playSfx,
+        isPlaying,
+        isMusicMuted,
+        isMuted,
+        toggleMusicMute,
+        toggleMute,
+        currentSrc,
+      }}
+    >
       {children}
     </BackgroundAudioContext.Provider>
   );

@@ -249,7 +249,10 @@
   letter-spacing: 0.05rem;
   user-select: none;
   outline: none;
-  transition: border-color 0.12s, background-color 0.12s, box-shadow 0.12s;
+  transition:
+    border-color 0.12s,
+    background-color 0.12s,
+    box-shadow 0.12s;
 }
 
 .online-replay-speed-picker:hover,
@@ -302,8 +305,14 @@
 }
 
 @keyframes speed-list-in {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .online-replay-speed-option {
@@ -312,7 +321,7 @@
   padding: 0.28vw 0.55vw;
   text-align: left;
   font-family: 'Inter', sans-serif;
-  font-size: 0.60cqw;
+  font-size: 0.6cqw;
   font-weight: 500;
   letter-spacing: 0.04rem;
   color: rgb(255 255 255 / 0.52);
@@ -321,7 +330,9 @@
   border-bottom: 1px solid rgb(255 255 255 / 0.05);
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.08s, color 0.08s;
+  transition:
+    background-color 0.08s,
+    color 0.08s;
 }
 
 .online-replay-speed-option:last-child {

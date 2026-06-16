@@ -19,7 +19,10 @@ export function relayHost(url: string): string {
   }
 }
 
-export function createFlowTrace(channel: Nip46TraceChannel, flow: string): FlowTrace {
+export function createFlowTrace(
+  channel: Nip46TraceChannel,
+  flow: string
+): FlowTrace {
   const t0 = Date.now();
   let last = t0;
   const prefix = `[NIP-46][${channel}] ${flow}`;
@@ -30,14 +33,20 @@ export function createFlowTrace(channel: Nip46TraceChannel, flow: string): FlowT
       const delta = now - last;
       const total = now - t0;
       last = now;
-      console.log(`${prefix} | ${phase} +${delta}ms (${total}ms)${detail ? ` — ${detail}` : ''}`);
+      console.log(
+        `${prefix} | ${phase} +${delta}ms (${total}ms)${detail ? ` — ${detail}` : ''}`
+      );
     },
     fail(phase, err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`${prefix} | ${phase} FAILED (${Date.now() - t0}ms) — ${msg}`);
+      console.warn(
+        `${prefix} | ${phase} FAILED (${Date.now() - t0}ms) — ${msg}`
+      );
     },
     done(detail) {
-      console.log(`${prefix} | ✓ done (${Date.now() - t0}ms)${detail ? ` — ${detail}` : ''}`);
+      console.log(
+        `${prefix} | ✓ done (${Date.now() - t0}ms)${detail ? ` — ${detail}` : ''}`
+      );
     },
   };
 }
@@ -45,7 +54,10 @@ export function createFlowTrace(channel: Nip46TraceChannel, flow: string): FlowT
 /** Tags the next NIP-46 sign_event RPC log (server link vs bounty note, etc.). */
 let pendingSignFlow: string | null = null;
 
-export function withNip46SignFlow<T>(flow: string, fn: () => Promise<T>): Promise<T> {
+export function withNip46SignFlow<T>(
+  flow: string,
+  fn: () => Promise<T>
+): Promise<T> {
   pendingSignFlow = flow;
   return fn().finally(() => {
     pendingSignFlow = null;

@@ -6,7 +6,9 @@ import type { OnlineRoomSnapshot } from '@/types/socket';
  * Server recorders sometimes omit the tick where `gameEnded` flips true; we patch
  * client-side and mirror this in `encodeFramesToInnerJson` for marspayTS parity.
  */
-export function ensureReplayVictoryEndFrame(frames: OnlineRoomSnapshot[]): OnlineRoomSnapshot[] {
+export function ensureReplayVictoryEndFrame(
+  frames: OnlineRoomSnapshot[]
+): OnlineRoomSnapshot[] {
   if (frames.length === 0) {
     return frames;
   }
@@ -22,12 +24,19 @@ export function ensureReplayVictoryEndFrame(frames: OnlineRoomSnapshot[]): Onlin
     const name = String(st.winnerName ?? '').trim();
     if (!name && st.winnerPlayer) {
       const inferred =
-        st.winnerPlayer === 'P1' ? (st.p1Name || 'Player 1') : (st.p2Name || 'Player 2');
+        st.winnerPlayer === 'P1'
+          ? st.p1Name || 'Player 1'
+          : st.p2Name || 'Player 2';
       return replaceLast({ ...st, winnerName: inferred });
     }
-    if (!name && (st.score[0] <= 0 || st.score[1] <= 0) && !(st.score[0] <= 0 && st.score[1] <= 0)) {
+    if (
+      !name &&
+      (st.score[0] <= 0 || st.score[1] <= 0) &&
+      !(st.score[0] <= 0 && st.score[1] <= 0)
+    ) {
       const winner = st.score[0] <= 0 ? ('P2' as const) : ('P1' as const);
-      const inferred = winner === 'P1' ? (st.p1Name || 'Player 1') : (st.p2Name || 'Player 2');
+      const inferred =
+        winner === 'P1' ? st.p1Name || 'Player 1' : st.p2Name || 'Player 2';
       return replaceLast({ ...st, winnerPlayer: winner, winnerName: inferred });
     }
     return frames;
@@ -40,7 +49,8 @@ export function ensureReplayVictoryEndFrame(frames: OnlineRoomSnapshot[]): Onlin
 
   if (economyWin) {
     const winner = st.score[0] <= 0 ? ('P2' as const) : ('P1' as const);
-    const winnerName = winner === 'P1' ? (st.p1Name || 'Player 1') : (st.p2Name || 'Player 2');
+    const winnerName =
+      winner === 'P1' ? st.p1Name || 'Player 1' : st.p2Name || 'Player 2';
     return replaceLast({
       ...st,
       gameEnded: true,
@@ -53,7 +63,9 @@ export function ensureReplayVictoryEndFrame(frames: OnlineRoomSnapshot[]): Onlin
   if (st.winnerPlayer) {
     const winnerName =
       String(st.winnerName ?? '').trim() ||
-      (st.winnerPlayer === 'P1' ? (st.p1Name || 'Player 1') : (st.p2Name || 'Player 2'));
+      (st.winnerPlayer === 'P1'
+        ? st.p1Name || 'Player 1'
+        : st.p2Name || 'Player 2');
     return replaceLast({
       ...st,
       gameEnded: true,

@@ -54,7 +54,9 @@ export default function TournamentBracket() {
   const svgWrapperRef = useRef<HTMLDivElement>(null);
 
   const [payLink, setPayLink] = useState<string | null>(null);
-  const [playersPaid, setPlayersPaid] = useState<Record<string, TournamentPlayerIdentity>>({});
+  const [playersPaid, setPlayersPaid] = useState<
+    Record<string, TournamentPlayerIdentity>
+  >({});
   const [nostrNote1, setNostrNote1] = useState<string>('');
   const [nostrCode, setNostrCode] = useState<string>('');
   const [showPaymentPanel, setShowPaymentPanel] = useState(false);
@@ -68,7 +70,9 @@ export default function TournamentBracket() {
   // Cancel / refund flow
   const [panelView, setPanelView] = useState<PanelView>('payment');
   const [withdrawLnurl, setWithdrawLnurl] = useState<string | null>(null);
-  const [playerListSequential, setPlayerListSequential] = useState<string[]>([]);
+  const [playerListSequential, setPlayerListSequential] = useState<string[]>(
+    []
+  );
   const timesWithdrawnRef = useRef(0);
 
   // Keyboard-focused button: 'left' = Cancel/Back, 'right' = Start/Confirm
@@ -80,10 +84,16 @@ export default function TournamentBracket() {
 
   const numberOfPlayersFromUrl = Math.max(
     TOURNAMENT_MIN_PLAYERS,
-    parseInt(params.get('players') || String(TOURNAMENT_MIN_PLAYERS), 10) || TOURNAMENT_MIN_PLAYERS
+    parseInt(params.get('players') || String(TOURNAMENT_MIN_PLAYERS), 10) ||
+      TOURNAMENT_MIN_PLAYERS
   );
-  const [numberOfPlayers, setNumberOfPlayers] = useState(numberOfPlayersFromUrl);
-  const parsedDeposit = parseInt(params.get('deposit') || String(TOURNAMENT_DEFAULT_BUY_IN_SATS), 10);
+  const [numberOfPlayers, setNumberOfPlayers] = useState(
+    numberOfPlayersFromUrl
+  );
+  const parsedDeposit = parseInt(
+    params.get('deposit') || String(TOURNAMENT_DEFAULT_BUY_IN_SATS),
+    10
+  );
   const urlDeposit =
     Number.isFinite(parsedDeposit) && parsedDeposit > 0
       ? parsedDeposit
@@ -129,7 +139,7 @@ export default function TournamentBracket() {
   // Bracket computation: next-game players, champion name, WinnerNames list
   const bracketState = useMemo(
     () => computeBracketState(playersList, winnersList, numberOfPlayers),
-    [playersList, winnersList, numberOfPlayers],
+    [playersList, winnersList, numberOfPlayers]
   );
 
   /** Profile image for each side of the upcoming match (match display label to paid roster). */
@@ -152,11 +162,17 @@ export default function TournamentBracket() {
       p1Src: p1 ?? (isNostrTournament ? nostrFallback : null),
       p2Src: p2 ?? (isNostrTournament ? nostrFallback : null),
     };
-  }, [playersPaid, bracketState.nextP1, bracketState.nextP2, isNostrTournament]);
+  }, [
+    playersPaid,
+    bracketState.nextP1,
+    bracketState.nextP2,
+    isNostrTournament,
+  ]);
 
   // Tournament phase drives which overlay is shown
   const tournamentPhase: 'payment' | 'next-game' | 'finished' = useMemo(() => {
-    if (winnersList.length > 0 && winnersList.length >= numberOfPlayers - 1) return 'finished';
+    if (winnersList.length > 0 && winnersList.length >= numberOfPlayers - 1)
+      return 'finished';
     if (winnersList.length > 0) return 'next-game';
     return 'payment';
   }, [winnersList, numberOfPlayers]);
@@ -185,9 +201,14 @@ export default function TournamentBracket() {
         min: number;
       };
     }) => {
-      if (d.gameInfo?.numberOfPlayers) setNumberOfPlayers(d.gameInfo.numberOfPlayers);
+      if (d.gameInfo?.numberOfPlayers)
+        setNumberOfPlayers(d.gameInfo.numberOfPlayers);
       const incomingMin =
-        d.min != null ? Number(d.min) : d.nostrMeta?.min != null ? Number(d.nostrMeta.min) : null;
+        d.min != null
+          ? Number(d.min)
+          : d.nostrMeta?.min != null
+            ? Number(d.nostrMeta.min)
+            : null;
       if (incomingMin != null && Number.isFinite(incomingMin)) {
         setDeposit(parseInt(String(incomingMin), 10));
       }
@@ -208,7 +229,9 @@ export default function TournamentBracket() {
 
       if (d.lnurlw) {
         const seq = d.gameInfo?.players
-          ? Object.values(d.gameInfo.players).map((p) => p.name ?? '').filter(Boolean)
+          ? Object.values(d.gameInfo.players)
+              .map((p) => p.name ?? '')
+              .filter(Boolean)
           : [];
         const claimed = d.claimedCount ?? 0;
         const remaining = seq.slice(claimed);
@@ -225,11 +248,14 @@ export default function TournamentBracket() {
     [navigate]
   );
 
-  const handleTournamentPayments = useCallback((players: Record<string, TournamentPlayerIdentity>) => {
-    setPlayersPaid(players);
-    setHighlightDeposit(true);
-    setTimeout(() => setHighlightDeposit(false), 1200);
-  }, []);
+  const handleTournamentPayments = useCallback(
+    (players: Record<string, TournamentPlayerIdentity>) => {
+      setPlayersPaid(players);
+      setHighlightDeposit(true);
+      setTimeout(() => setHighlightDeposit(false), 1200);
+    },
+    []
+  );
 
   const handleTournamentCancel = useCallback(
     (d: { depositcount: number; lnurlw?: string }) => {
@@ -238,7 +264,9 @@ export default function TournamentBracket() {
         return;
       }
       setPlayersPaid((current) => {
-        const seq = Object.values(current).map((p) => p.name ?? '').filter(Boolean);
+        const seq = Object.values(current)
+          .map((p) => p.name ?? '')
+          .filter(Boolean);
         setPlayerListSequential(seq);
         return current;
       });
@@ -263,9 +291,15 @@ export default function TournamentBracket() {
     setSvgMarkup(null);
     fetch(bracketSvg)
       .then((r) => r.text())
-      .then((text) => { if (!cancelled) setSvgMarkup(stripSvgStyle(text)); })
-      .catch(() => { if (!cancelled) setSvgMarkup(null); });
-    return () => { cancelled = true; };
+      .then((text) => {
+        if (!cancelled) setSvgMarkup(stripSvgStyle(text));
+      })
+      .catch(() => {
+        if (!cancelled) setSvgMarkup(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [bracketSvg]);
 
   // Write initial player names into inlined SVG bracket slots
@@ -275,10 +309,12 @@ export default function TournamentBracket() {
     const svgEl = svgWrapperRef.current;
     const svgRoot = svgEl.querySelector('svg');
     if (!svgRoot) return;
-    svgRoot.querySelectorAll('g.bracket-avatar-wrap').forEach((node) => node.remove());
-    svgRoot.querySelectorAll<SVGImageElement>('image[data-avatar="true"]').forEach((node) =>
-      node.remove()
-    );
+    svgRoot
+      .querySelectorAll('g.bracket-avatar-wrap')
+      .forEach((node) => node.remove());
+    svgRoot
+      .querySelectorAll<SVGImageElement>('image[data-avatar="true"]')
+      .forEach((node) => node.remove());
     const paid = playersPaid;
     for (const key of Object.keys(paid)) {
       const idx = parseInt(key.replace('Player ', '')) - 1;
@@ -293,7 +329,9 @@ export default function TournamentBracket() {
       if (isNostrTournament && nameEl) {
         const textNode = nameEl as unknown as SVGGraphicsElement | null;
         if (!textNode) continue;
-        const originalTransform = nameEl.getAttribute('data-original-transform');
+        const originalTransform = nameEl.getAttribute(
+          'data-original-transform'
+        );
         if (!originalTransform) {
           const currentTransform = nameEl.getAttribute('transform') ?? '';
           nameEl.setAttribute('data-original-transform', currentTransform);
@@ -320,22 +358,43 @@ export default function TournamentBracket() {
         const alignedBBox = textNode.getBBox();
         const picture = paid[key]?.picture;
         const imageHref =
-          picture && picture.trim() !== '' ? picture : '/images/social/Nostr.png';
-        const wrap = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          picture && picture.trim() !== ''
+            ? picture
+            : '/images/social/Nostr.png';
+        const wrap = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'g'
+        );
         wrap.setAttribute('class', 'bracket-avatar-wrap');
-        const ix = tx + alignedBBox.x - avatarSize - gap - avatarLeftExtra - avatarLeftNudge;
+        const ix =
+          tx +
+          alignedBBox.x -
+          avatarSize -
+          gap -
+          avatarLeftExtra -
+          avatarLeftNudge;
         const iy = ty + refBBox.y + (refBBox.height - avatarSize) / 2;
-        const avatar = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        const avatar = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'image'
+        );
         avatar.setAttribute('data-avatar', 'true');
         avatar.setAttribute('x', `${ix}`);
         avatar.setAttribute('y', `${iy}`);
         avatar.setAttribute('width', `${avatarSize}`);
         avatar.setAttribute('height', `${avatarSize}`);
         avatar.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-        avatar.setAttributeNS('http://www.w3.org/1999/xlink', 'href', imageHref);
+        avatar.setAttributeNS(
+          'http://www.w3.org/1999/xlink',
+          'href',
+          imageHref
+        );
         avatar.setAttribute('href', imageHref);
         /* Same ring as HUD .playerImg: 1px rgba(255,255,255,0.28) — vector stroke survives clip-path on <image> */
-        const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        const ring = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'circle'
+        );
         ring.setAttribute('cx', `${ix + avatarSize / 2}`);
         ring.setAttribute('cy', `${iy + avatarSize / 2}`);
         ring.setAttribute('r', `${avatarSize / 2 - 0.5}`);
@@ -363,7 +422,10 @@ export default function TournamentBracket() {
       const p = svgEl.querySelector<SVGElement>(`#${id}_path`);
       if (n) n.style.fill = 'black';
       if (r) r.style.fill = '#fff';
-      if (p) { p.style.opacity = '1'; p.style.strokeWidth = '5'; }
+      if (p) {
+        p.style.opacity = '1';
+        p.style.strokeWidth = '5';
+      }
     };
 
     const dimLoser = (id: string) => {
@@ -374,9 +436,10 @@ export default function TournamentBracket() {
     };
 
     const setAdvancingName = (posId: string, name: string) => {
-      const el = posId === 'Winner'
-        ? svgEl.querySelector<SVGElement>('#Winner_name')
-        : svgEl.querySelector<SVGElement>(`#${posId}_name`);
+      const el =
+        posId === 'Winner'
+          ? svgEl.querySelector<SVGElement>('#Winner_name')
+          : svgEl.querySelector<SVGElement>(`#${posId}_name`);
       if (!el) return;
       applyBracketNameText(el, name, false);
       el.style.opacity = '1';
@@ -443,7 +506,10 @@ export default function TournamentBracket() {
         if (r) r.style.strokeWidth = '6';
       }
       const gEl = svgEl.querySelector<SVGElement>(`#G${nextIdx + 1}`);
-      if (gEl) { gEl.style.opacity = '1'; gEl.style.fontWeight = '900'; }
+      if (gEl) {
+        gEl.style.opacity = '1';
+        gEl.style.fontWeight = '900';
+      }
     }
   }, [winnersList, svgMarkup, numberOfPlayers, playersList, preStartReady]);
 
@@ -517,10 +583,12 @@ export default function TournamentBracket() {
   // Sync glowing animation with focused button (matches legacy animationDuration trick)
   useEffect(() => {
     if (backBtnRef.current) {
-      backBtnRef.current.style.animationDuration = focusedBtn === 'left' ? '2s' : '0s';
+      backBtnRef.current.style.animationDuration =
+        focusedBtn === 'left' ? '2s' : '0s';
     }
     if (proceedBtnRef.current) {
-      proceedBtnRef.current.style.animationDuration = focusedBtn === 'right' ? '2s' : '0s';
+      proceedBtnRef.current.style.animationDuration =
+        focusedBtn === 'right' ? '2s' : '0s';
     }
   }, [focusedBtn, panelView]);
 
@@ -531,48 +599,60 @@ export default function TournamentBracket() {
         tournamentPhase === 'next-game' || preStartReady ? '2s' : '0s';
     }
     if (claimBtnRef.current) {
-      claimBtnRef.current.style.animationDuration = tournamentPhase === 'finished' ? '2s' : '0s';
+      claimBtnRef.current.style.animationDuration =
+        tournamentPhase === 'finished' ? '2s' : '0s';
     }
   }, [tournamentPhase, preStartReady]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Tournament in progress: only Enter/Space to start next game
-    if (tournamentPhase === 'next-game' || preStartReady) {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handleStartNextGame();
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // Tournament in progress: only Enter/Space to start next game
+      if (tournamentPhase === 'next-game' || preStartReady) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleStartNextGame();
+        }
+        return;
       }
-      return;
-    }
 
-    // Tournament finished: Enter/Space to claim sats
-    if (tournamentPhase === 'finished') {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        navigate('/postgame');
+      // Tournament finished: Enter/Space to claim sats
+      if (tournamentPhase === 'finished') {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigate('/postgame');
+        }
+        return;
       }
-      return;
-    }
 
-    // Payment / refund panel keyboard navigation
-    if (panelView === 'refunding') return;
-    if (e.key === 'ArrowLeft' || e.key === 'a') {
-      setFocusedBtn('left');
-    } else if (e.key === 'ArrowRight' || e.key === 'd') {
-      if (panelView === 'payment' && !canStart) return;
-      setFocusedBtn('right');
-    } else if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      if (panelView === 'payment') {
-        if (focusedBtn === 'left') handleCancel();
-        else if (focusedBtn === 'right') handleStartTournament();
-      } else if (panelView === 'confirm-cancel') {
-        if (focusedBtn === 'left') handleBackToPayment();
-        else if (focusedBtn === 'right') handleConfirmCancel();
+      // Payment / refund panel keyboard navigation
+      if (panelView === 'refunding') return;
+      if (e.key === 'ArrowLeft' || e.key === 'a') {
+        setFocusedBtn('left');
+      } else if (e.key === 'ArrowRight' || e.key === 'd') {
+        if (panelView === 'payment' && !canStart) return;
+        setFocusedBtn('right');
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (panelView === 'payment') {
+          if (focusedBtn === 'left') handleCancel();
+          else if (focusedBtn === 'right') handleStartTournament();
+        } else if (panelView === 'confirm-cancel') {
+          if (focusedBtn === 'left') handleBackToPayment();
+          else if (focusedBtn === 'right') handleConfirmCancel();
+        }
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panelView, focusedBtn, canStart, paidCount, tournamentPhase, navigate, preStartReady]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [
+      panelView,
+      focusedBtn,
+      canStart,
+      paidCount,
+      tournamentPhase,
+      navigate,
+      preStartReady,
+    ]
+  );
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -606,7 +686,11 @@ export default function TournamentBracket() {
                   dangerouslySetInnerHTML={{ __html: svgMarkup }}
                 />
               ) : (
-                <img src={bracketSvg} alt="Tournament bracket" className="tournbracketSVG" />
+                <img
+                  src={bracketSvg}
+                  alt="Tournament bracket"
+                  className="tournbracketSVG"
+                />
               )}
             </div>
           </div>
@@ -615,22 +699,38 @@ export default function TournamentBracket() {
 
       {/* ── Payment collection panel ── */}
       {showPaymentPanel && tournamentPhase === 'payment' && !preStartReady && (
-        <div className={`bracketPayment${canStart ? ' paymentComplete' : ''}`} id="bracketPayment">
-          <Sponsorship id="sponsorshipBracketPayment" className="bracketPayment-sponsor" />
+        <div
+          className={`bracketPayment${canStart ? ' paymentComplete' : ''}`}
+          id="bracketPayment"
+        >
+          <Sponsorship
+            id="sponsorshipBracketPayment"
+            className="bracketPayment-sponsor"
+          />
           <div className="bracketPaymentInner">
-
             {/* View 1: normal payment / QR check-in */}
             {panelView === 'payment' && (
               <>
                 <div className="buyintext" id="buyintext">
-                  <div className="label mb-10" id="buyinDepositLabel">BUY IN DEPOSIT</div>
+                  <div className="label mb-10" id="buyinDepositLabel">
+                    BUY IN DEPOSIT
+                  </div>
                   <div id="buyinp">
                     {canStart ? (
-                      <h3 className="buyinvalue" id="buyinvalue">LET'S GO</h3>
+                      <h3 className="buyinvalue" id="buyinvalue">
+                        LET'S GO
+                      </h3>
                     ) : (
                       <>
-                        <h3 className="buyinvalue" id="buyinvalue">{deposit.toLocaleString()}</h3>{' '}
-                        <span className="label sats-label-inline" id="satsLabel">sats</span>
+                        <h3 className="buyinvalue" id="buyinvalue">
+                          {deposit.toLocaleString()}
+                        </h3>{' '}
+                        <span
+                          className="label sats-label-inline"
+                          id="satsLabel"
+                        >
+                          sats
+                        </span>
                       </>
                     )}
                   </div>
@@ -675,7 +775,9 @@ export default function TournamentBracket() {
                           />
                         )}
                       </span>
-                      {nostrCode ? <div className="label mt-10">{nostrCode}</div> : null}
+                      {nostrCode ? (
+                        <div className="label mt-10">{nostrCode}</div>
+                      ) : null}
                     </a>
                   ) : payLink ? (
                     <a
@@ -686,7 +788,13 @@ export default function TournamentBracket() {
                       className="qr-code-link"
                     >
                       <span className="qr-code-stack">
-                        <QRCodeCanvas id="qrTournament" value={payLink} size={800} level="M" className="qrcode" />
+                        <QRCodeCanvas
+                          id="qrTournament"
+                          value={payLink}
+                          size={800}
+                          level="M"
+                          className="qrcode"
+                        />
                         {highlightDeposit && (
                           <img
                             id="qrcodeDecoration"
@@ -701,10 +809,16 @@ export default function TournamentBracket() {
                     <div id="qrTournament" className="qr-placeholder" />
                   )}
                 </div>
-                <div className={`deposited mt-10${highlightDeposit ? ' highlight' : ''}`} id="satsdeposited">
+                <div
+                  className={`deposited mt-10${highlightDeposit ? ' highlight' : ''}`}
+                  id="satsdeposited"
+                >
                   <b className="depositedvalue" id="depositedvalue">
                     {(isNostrTournament
-                      ? Object.values(playersPaid).reduce((sum, player) => sum + (player.value ?? 0), 0)
+                      ? Object.values(playersPaid).reduce(
+                          (sum, player) => sum + (player.value ?? 0),
+                          0
+                        )
                       : deposit * paidCount
                     ).toLocaleString()}
                   </b>{' '}
@@ -719,11 +833,14 @@ export default function TournamentBracket() {
                 <h2>Issue Refunds</h2>
                 <div id="issuerefundsfirst">
                   Are you sure you want to cancel?
-                  <br /><br />
+                  <br />
+                  <br />
                   This will display a QR code to withdraw{' '}
-                  <b id="withdrawablevaluefirst">{refundPerPlayer.toLocaleString()}</b> sats
-                  for each of the{' '}
-                  <b id="withdrawableuses">{paidCount}</b> player{paidCount !== 1 ? 's' : ''} that already paid.
+                  <b id="withdrawablevaluefirst">
+                    {refundPerPlayer.toLocaleString()}
+                  </b>{' '}
+                  sats for each of the <b id="withdrawableuses">{paidCount}</b>{' '}
+                  player{paidCount !== 1 ? 's' : ''} that already paid.
                 </div>
               </div>
             )}
@@ -735,16 +852,28 @@ export default function TournamentBracket() {
                 <h1 id="currentWithdrawalPlayer" className="condensed">
                   {playerListSequential[0] ?? ''}
                 </h1>
-                <a id="qrWithdrawalLink" href={`lightning:${withdrawLnurl}`} target="_blank" rel="noopener noreferrer">
-                  <QRCodeCanvas id="qrWithdrawal" value={withdrawLnurl} size={800} level="M" className="qrcode" />
+                <a
+                  id="qrWithdrawalLink"
+                  href={`lightning:${withdrawLnurl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <QRCodeCanvas
+                    id="qrWithdrawal"
+                    value={withdrawLnurl}
+                    size={800}
+                    level="M"
+                    className="qrcode"
+                  />
                 </a>
                 <div>
-                  <b className="label" id="withdrawablevalue">{refundPerPlayer.toLocaleString()}</b>{' '}
+                  <b className="label" id="withdrawablevalue">
+                    {refundPerPlayer.toLocaleString()}
+                  </b>{' '}
                   <span className="label">sats</span>
                 </div>
               </div>
             )}
-
           </div>
 
           {/* Buttons: hidden during refunding */}
@@ -752,7 +881,12 @@ export default function TournamentBracket() {
             <div className="buttonsDiv">
               {panelView === 'payment' && (
                 <>
-                  <Button ref={backBtnRef} id="backButton" type="button" onClick={handleCancel}>
+                  <Button
+                    ref={backBtnRef}
+                    id="backButton"
+                    type="button"
+                    onClick={handleCancel}
+                  >
                     Cancel
                   </Button>
                   <Button
@@ -768,10 +902,20 @@ export default function TournamentBracket() {
               )}
               {panelView === 'confirm-cancel' && (
                 <>
-                  <Button ref={backBtnRef} id="backButton" type="button" onClick={handleBackToPayment}>
+                  <Button
+                    ref={backBtnRef}
+                    id="backButton"
+                    type="button"
+                    onClick={handleBackToPayment}
+                  >
                     Back
                   </Button>
-                  <Button ref={proceedBtnRef} id="proceedButton" type="button" onClick={handleConfirmCancel}>
+                  <Button
+                    ref={proceedBtnRef}
+                    id="proceedButton"
+                    type="button"
+                    onClick={handleConfirmCancel}
+                  >
                     Confirm
                   </Button>
                 </>
@@ -799,11 +943,15 @@ export default function TournamentBracket() {
                   alt=""
                 />
               ) : null}
-              <span id="nextGame_P1" className="condensed playerName">{bracketState.nextP1}</span>
+              <span id="nextGame_P1" className="condensed playerName">
+                {bracketState.nextP1}
+              </span>
             </div>
             <span className="next-game-vs"> vs </span>
             <div className="next-game-player next-game-player--p2">
-              <span id="nextGame_P2" className="condensed playerName">{bracketState.nextP2}</span>
+              <span id="nextGame_P2" className="condensed playerName">
+                {bracketState.nextP2}
+              </span>
               {nextGameAvatars.p2Src ? (
                 <img
                   className="inline next-game-player-img"
@@ -833,7 +981,9 @@ export default function TournamentBracket() {
           <h2 className="m-0 tourn-finished-headline">
             <span className="tourn-finished-title">Champion</span>
           </h2>
-          <h1><span id="winnerName">{bracketState.champion}</span></h1>
+          <h1>
+            <span id="winnerName">{bracketState.champion}</span>
+          </h1>
           <Button
             ref={claimBtnRef}
             id="claimSatsButton"
@@ -847,7 +997,10 @@ export default function TournamentBracket() {
       )}
 
       <div className="tournbracket-bottom">
-        <div className={`bracketDetails${loading ? ' hide' : ''}`} id="bracketDetails">
+        <div
+          className={`bracketDetails${loading ? ' hide' : ''}`}
+          id="bracketDetails"
+        >
           <div className="bracketDetail" id="bracketDetailPlayers">
             <div className="label">Players</div>
             <div className="value players">
@@ -857,13 +1010,15 @@ export default function TournamentBracket() {
           <div className="bracketDetail" id="bracketDetailFinalPrize">
             <div className="label">Final Prize</div>
             <div className="value">
-              <h3 id="bracketFinalPrize">{finalPrize.toLocaleString()}</h3> <span className="sats-bottom">sats</span>
+              <h3 id="bracketFinalPrize">{finalPrize.toLocaleString()}</h3>{' '}
+              <span className="sats-bottom">sats</span>
             </div>
           </div>
           <div className="bracketDetail" id="bracketDetailBuyIn">
             <div className="label">Buy In</div>
             <div className="value">
-              <h3 id="buyinvalue2">{deposit.toLocaleString()}</h3> <span className="sats-bottom">sats</span>
+              <h3 id="buyinvalue2">{deposit.toLocaleString()}</h3>{' '}
+              <span className="sats-bottom">sats</span>
             </div>
           </div>
         </div>
@@ -892,7 +1047,10 @@ function isHexPubkey64(s: string): boolean {
 }
 
 /** Display label for roster + bracket: prefer name, else trimmed `npub1…` from hex pubkey, not `NPUB:dead…beef`. */
-function resolveIdentityLabel(player: TournamentPlayerIdentity | undefined, fallbackRole: string): string {
+function resolveIdentityLabel(
+  player: TournamentPlayerIdentity | undefined,
+  fallbackRole: string
+): string {
   if (!player) return fallbackRole;
   const name = player.name?.trim() ?? '';
   if (name !== '') return name;
@@ -904,7 +1062,11 @@ function resolveIdentityLabel(player: TournamentPlayerIdentity | undefined, fall
     }
     if (isHexPubkey64(rawPk)) {
       try {
-        return midTruncateDisplay(npubEncode(rawPk), NPUB_BRACKET_HEAD, NPUB_BRACKET_TAIL);
+        return midTruncateDisplay(
+          npubEncode(rawPk),
+          NPUB_BRACKET_HEAD,
+          NPUB_BRACKET_TAIL
+        );
       } catch {
         /* fall through */
       }
@@ -917,7 +1079,9 @@ function resolveIdentityLabel(player: TournamentPlayerIdentity | undefined, fall
   }
 
   // Server legacy: "NPUB:29a0…aafd" — no full hex, cannot bech32; compact for bracket width
-  const legacy = fb.match(/^NPUB:\s*([0-9a-fA-F]+)\s*\.\.\.\s*([0-9a-fA-F]+)\s*$/i);
+  const legacy = fb.match(
+    /^NPUB:\s*([0-9a-fA-F]+)\s*\.\.\.\s*([0-9a-fA-F]+)\s*$/i
+  );
   if (legacy) {
     return `${legacy[1].slice(0, 5)}…${legacy[2].slice(-4)}`;
   }
@@ -933,7 +1097,8 @@ function getBracketSlotMaxTextWidth(nameEl: SVGElement): number {
   if (!slotGroup) return 95;
 
   const rectG =
-    slotGroup.querySelector(`#${posId}_rect`) ?? slotGroup.querySelector('[id$="_rect"]');
+    slotGroup.querySelector(`#${posId}_rect`) ??
+    slotGroup.querySelector('[id$="_rect"]');
   const rect = rectG?.querySelector('rect');
   if (!rect) return 95;
 
@@ -943,8 +1108,12 @@ function getBracketSlotMaxTextWidth(nameEl: SVGElement): number {
   const padding = 3;
 
   const transformAttr =
-    nameEl.getAttribute('data-original-transform') ?? nameEl.getAttribute('transform') ?? '';
-  const match = transformAttr.match(/translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/);
+    nameEl.getAttribute('data-original-transform') ??
+    nameEl.getAttribute('transform') ??
+    '';
+  const match = transformAttr.match(
+    /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
+  );
   const nameX = match ? Number.parseFloat(match[1]) : 0;
 
   if (nameEl.id === 'Winner_name') {
@@ -955,7 +1124,11 @@ function getBracketSlotMaxTextWidth(nameEl: SVGElement): number {
   return Math.max(36, rectRight - nameX - padding);
 }
 
-function fitBracketNameText(nameEl: SVGElement, name: string, reserveRightShift = 0): void {
+function fitBracketNameText(
+  nameEl: SVGElement,
+  name: string,
+  reserveRightShift = 0
+): void {
   const tspan = nameEl.querySelector('tspan');
   if (tspan) tspan.textContent = name;
   else nameEl.textContent = name;
@@ -967,7 +1140,10 @@ function fitBracketNameText(nameEl: SVGElement, name: string, reserveRightShift 
     nameEl.setAttribute('data-base-font-size', attrBase);
   }
 
-  const maxWidth = Math.max(28, getBracketSlotMaxTextWidth(nameEl) - reserveRightShift);
+  const maxWidth = Math.max(
+    28,
+    getBracketSlotMaxTextWidth(nameEl) - reserveRightShift
+  );
   const textGfx = nameEl as unknown as SVGGraphicsElement;
   const minFontSize = Math.max(20, Math.round(baseFontSize * 0.82));
 
@@ -982,10 +1158,15 @@ function fitBracketNameText(nameEl: SVGElement, name: string, reserveRightShift 
 }
 
 /** Fixed avatar size from base slot font — independent of shrunk long-name text. */
-function getBracketAvatarLayout(nameEl: SVGElement): { size: number; refBBox: DOMRect } {
+function getBracketAvatarLayout(nameEl: SVGElement): {
+  size: number;
+  refBBox: DOMRect;
+} {
   const textGfx = nameEl as unknown as SVGGraphicsElement;
   const baseFontSize = Number.parseFloat(
-    nameEl.getAttribute('data-base-font-size') ?? nameEl.getAttribute('font-size') ?? '26'
+    nameEl.getAttribute('data-base-font-size') ??
+      nameEl.getAttribute('font-size') ??
+      '26'
   );
   const currentFontSize = nameEl.getAttribute('font-size');
   nameEl.setAttribute('font-size', `${baseFontSize}`);
@@ -998,7 +1179,11 @@ function getBracketAvatarLayout(nameEl: SVGElement): { size: number; refBBox: DO
 }
 
 /** Shrink long names to fit bracket slots; reserve space when a Nostr avatar shifts the label right. */
-function applyBracketNameText(nameEl: SVGElement, name: string, withNostrAvatar: boolean): void {
+function applyBracketNameText(
+  nameEl: SVGElement,
+  name: string,
+  withNostrAvatar: boolean
+): void {
   const tspan = nameEl.querySelector('tspan');
   if (tspan) tspan.textContent = name;
   else nameEl.textContent = name;

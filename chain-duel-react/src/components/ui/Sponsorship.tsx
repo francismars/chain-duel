@@ -13,7 +13,11 @@ export interface SponsorshipProps {
   showLabel?: boolean;
 }
 
-export function Sponsorship({ id, className = '', showLabel = true }: SponsorshipProps) {
+export function Sponsorship({
+  id,
+  className = '',
+  showLabel = true,
+}: SponsorshipProps) {
   const [show] = useState(SPONSORSHIP_SWITCH && !HIDE_SPONSOR_INFO);
 
   if (!show) {
@@ -27,7 +31,12 @@ export function Sponsorship({ id, className = '', showLabel = true }: Sponsorshi
           {sponsorText}
         </div>
       ) : null}
-      <img src={sponsorImage} className="sponsored-img" alt="Sponsor" id={`sponsored-img-${id}`} />
+      <img
+        src={sponsorImage}
+        className="sponsored-img"
+        alt="Sponsor"
+        id={`sponsored-img-${id}`}
+      />
     </div>
   );
 }

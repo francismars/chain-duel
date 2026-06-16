@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
-import { asSocketBoundary, SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
+import {
+  asSocketBoundary,
+  SocketBoundaryParsers,
+} from '@/shared/socket/socketBoundary';
 import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 
 interface TournamentInfosPayload {
@@ -8,7 +11,12 @@ interface TournamentInfosPayload {
     winners?: string[];
     players?: Record<
       string,
-      { name?: string; picture?: string; fallbackLabel?: string; nostrPubkey?: string }
+      {
+        name?: string;
+        picture?: string;
+        fallbackLabel?: string;
+        nostrPubkey?: string;
+      }
     >;
   };
   lnurlp?: string;
@@ -35,7 +43,12 @@ interface UseTournamentSocketEventsArgs {
   onPayments: (
     players: Record<
       string,
-      { name?: string; picture?: string; fallbackLabel?: string; nostrPubkey?: string }
+      {
+        name?: string;
+        picture?: string;
+        fallbackLabel?: string;
+        nostrPubkey?: string;
+      }
     >
   ) => void;
   onCancel: (data: { depositcount: number; lnurlw?: string }) => void;
@@ -59,11 +72,14 @@ export function useTournamentSocketEvents({
 
     const emitTournamentInfos = () => {
       const hostLNAddress = localStorage.getItem('hostLNAddress') || undefined;
-      s.emit(isNostrTournament ? 'getTournamentInfosNostr' : 'getTournamentInfos', {
-        buyin: urlDeposit,
-        players: numberOfPlayersFromUrl,
-        hostLNAddress,
-      });
+      s.emit(
+        isNostrTournament ? 'getTournamentInfosNostr' : 'getTournamentInfos',
+        {
+          buyin: urlDeposit,
+          players: numberOfPlayersFromUrl,
+          hostLNAddress,
+        }
+      );
     };
 
     const onInfosEvent = (payload: unknown) => {
@@ -80,7 +96,12 @@ export function useTournamentSocketEvents({
       const source = payload as {
         players?: Record<
           string,
-          { name?: string; picture?: string; fallbackLabel?: string; nostrPubkey?: string }
+          {
+            name?: string;
+            picture?: string;
+            fallbackLabel?: string;
+            nostrPubkey?: string;
+          }
         >;
       };
       if (!source.players) return;
@@ -101,7 +122,9 @@ export function useTournamentSocketEvents({
     };
 
     s.on(
-      isNostrTournament ? 'resGetTournamentInfosNostr' : 'resGetTournamentInfos',
+      isNostrTournament
+        ? 'resGetTournamentInfosNostr'
+        : 'resGetTournamentInfos',
       onInfosEvent
     );
     s.on('updatePayments', onPaymentsEvent);
@@ -122,7 +145,9 @@ export function useTournamentSocketEvents({
     return () => {
       window.clearTimeout(loadingTimer);
       s.off(
-        isNostrTournament ? 'resGetTournamentInfosNostr' : 'resGetTournamentInfos',
+        isNostrTournament
+          ? 'resGetTournamentInfosNostr'
+          : 'resGetTournamentInfos',
         onInfosEvent
       );
       s.off('updatePayments', onPaymentsEvent);

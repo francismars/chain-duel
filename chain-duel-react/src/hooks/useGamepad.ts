@@ -23,7 +23,10 @@ const ARCADE_CENTER_Y = -0.003921568393707275;
 const MENU_REPEAT_DELAY_MS = 350;
 const MENU_REPEAT_INTERVAL_MS = 100;
 
-function dispatchKey(type: 'keydown' | 'keyup', init: { key?: string; code?: string }) {
+function dispatchKey(
+  type: 'keydown' | 'keyup',
+  init: { key?: string; code?: string }
+) {
   window.dispatchEvent(new KeyboardEvent(type, { ...init, bubbles: true }));
 }
 
@@ -90,7 +93,13 @@ function fireDirection(
   state[which].tick(down, now, () => dispatchKey('keydown', { key }));
 }
 
-function fireFace(mode: GamepadInputMode, state: PadPollState, now: number, down: boolean, key: string) {
+function fireFace(
+  mode: GamepadInputMode,
+  state: PadPollState,
+  now: number,
+  down: boolean,
+  key: string
+) {
   if (mode === 'game') {
     if (down) dispatchKey('keydown', { key });
     return;
@@ -236,9 +245,12 @@ function pollPlayerPad(
   fireFace(mode, state, now, faceDown, faceKey);
 
   const upDown = !!pad.buttons[12]?.pressed || pad.axes[1] < -JOYSTICK_DEADZONE;
-  const downDown = !!pad.buttons[13]?.pressed || pad.axes[1] > JOYSTICK_DEADZONE;
-  const leftDown = !!pad.buttons[14]?.pressed || pad.axes[0] < -JOYSTICK_DEADZONE;
-  const rightDown = !!pad.buttons[15]?.pressed || pad.axes[0] > JOYSTICK_DEADZONE;
+  const downDown =
+    !!pad.buttons[13]?.pressed || pad.axes[1] > JOYSTICK_DEADZONE;
+  const leftDown =
+    !!pad.buttons[14]?.pressed || pad.axes[0] < -JOYSTICK_DEADZONE;
+  const rightDown =
+    !!pad.buttons[15]?.pressed || pad.axes[0] > JOYSTICK_DEADZONE;
 
   fireDirection(mode, state, now, 'up', upDown, keys.up);
   fireDirection(mode, state, now, 'down', downDown, keys.down);
@@ -246,7 +258,12 @@ function pollPlayerPad(
   fireDirection(mode, state, now, 'right', rightDown, keys.right);
 
   if (mode === 'game') {
-    if (pad.buttons[12] && pad.buttons[13] && pad.buttons[14] && pad.buttons[15]) {
+    if (
+      pad.buttons[12] &&
+      pad.buttons[13] &&
+      pad.buttons[14] &&
+      pad.buttons[15]
+    ) {
       if (
         !pad.buttons[12].pressed &&
         !pad.buttons[13].pressed &&
@@ -289,14 +306,25 @@ function createPollSessionState(): PollSessionState {
  * Poll gamepads and dispatch keyboard events.
  * Use `inputMode: 'game'` during snake gameplay; default `menu` for navigation pages.
  */
-export function pollGamepads(mode: GamepadInputMode = 'menu', session = createPollSessionState()) {
+export function pollGamepads(
+  mode: GamepadInputMode = 'menu',
+  session = createPollSessionState()
+) {
   const now = performance.now();
   const gamepads = navigator.getGamepads();
   const pad1 = gamepads[0];
   const pad2 = gamepads[1];
 
   if (pad1) {
-    pollPlayerPad(pad1, mode, session.p1, now, { up: 'w', down: 's', left: 'a', right: 'd' }, ' ', 'ControlLeft');
+    pollPlayerPad(
+      pad1,
+      mode,
+      session.p1,
+      now,
+      { up: 'w', down: 's', left: 'a', right: 'd' },
+      ' ',
+      'ControlLeft'
+    );
   }
   if (pad2) {
     pollPlayerPad(
@@ -304,7 +332,12 @@ export function pollGamepads(mode: GamepadInputMode = 'menu', session = createPo
       mode,
       session.p2,
       now,
-      { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' },
+      {
+        up: 'ArrowUp',
+        down: 'ArrowDown',
+        left: 'ArrowLeft',
+        right: 'ArrowRight',
+      },
       'Enter',
       'ControlRight'
     );
@@ -315,7 +348,10 @@ export function pollGamepads(mode: GamepadInputMode = 'menu', session = createPo
  * Hook for gamepad support.
  * Polls on requestAnimationFrame (game) or the same loop with menu-friendly repeat rules.
  */
-export function useGamepad(enabled: boolean = true, options?: UseGamepadOptions) {
+export function useGamepad(
+  enabled: boolean = true,
+  options?: UseGamepadOptions
+) {
   const optsRef = useRef(options);
   optsRef.current = options;
   const sessionRef = useRef<PollSessionState>(createPollSessionState());

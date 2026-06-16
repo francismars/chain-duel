@@ -93,7 +93,9 @@ export default function GameMenu() {
   const [nostrMinP1, setNostrMinP1] = useState<number>(1);
   const [nostrMinP2, setNostrMinP2] = useState<number>(1);
   const [nostrServingRelays, setNostrServingRelays] = useState<string[]>([]);
-  const [nostrRelayProbe, setNostrRelayProbe] = useState<'idle' | 'loading' | 'done'>('idle');
+  const [nostrRelayProbe, setNostrRelayProbe] = useState<
+    'idle' | 'loading' | 'done'
+  >('idle');
   const [player1Image, setPlayer1Image] = useState<string>('');
   const [player2Image, setPlayer2Image] = useState<string>('');
   const [leaderboardThreshold, setLeaderboardThreshold] = useState<number>(1);
@@ -102,11 +104,19 @@ export default function GameMenu() {
   const lastKnownP2SatsRef = useRef(0);
   const prevWinnerRef = useRef<string | null>(null);
   const nostrNote1Ref = useRef('');
-  const highlightTimeoutP1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const highlightTimeoutP2Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const highlightTimeoutP1Ref = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const highlightTimeoutP2Ref = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const setupMenuKeyGraceUntilRef = useRef(0);
-  const startShakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const startHintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startShakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const startHintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   useGamepad(true, { lnurlCompatScan: !isNostrMode });
   const { compatibleP1, compatibleP2 } = useLnurlCompatibleQrHold(!isNostrMode);
@@ -166,7 +176,8 @@ export default function GameMenu() {
   }, [nostrNote1, nostrProbeRelays]);
 
   useEffect(() => {
-    setupMenuKeyGraceUntilRef.current = performance.now() + SETUP_MENU_KEY_GRACE_MS;
+    setupMenuKeyGraceUntilRef.current =
+      performance.now() + SETUP_MENU_KEY_GRACE_MS;
   }, []);
 
   // Paid P2P uses server session + getDuelInfos — drop any leftover practice blob.
@@ -216,8 +227,16 @@ export default function GameMenu() {
       const isNostrPayload =
         useNostrFromQuery &&
         (Boolean(parsed.nostrMeta) ||
-          Boolean(parsed.modeMeta?.mode && /nostr/i.test(parsed.modeMeta.mode)));
-      setStatusMessage(isNostrPayload ? '' : links.length > 0 ? '' : 'Waiting for payment links from backend...');
+          Boolean(
+            parsed.modeMeta?.mode && /nostr/i.test(parsed.modeMeta.mode)
+          ));
+      setStatusMessage(
+        isNostrPayload
+          ? ''
+          : links.length > 0
+            ? ''
+            : 'Waiting for payment links from backend...'
+      );
       setLoading(false);
     },
     [navigate, useNostrFromQuery]
@@ -230,7 +249,9 @@ export default function GameMenu() {
   useMenuSocketInfo({
     socket,
     connected: true,
-    requestEvent: useNostrFromQuery ? 'getGameMenuInfosNostr' : 'getGameMenuInfos',
+    requestEvent: useNostrFromQuery
+      ? 'getGameMenuInfosNostr'
+      : 'getGameMenuInfos',
     responseEvent: 'resGetGameMenuInfos',
     maxRetries: 3,
     onParsed: handleMenuParsed,
@@ -261,12 +282,16 @@ export default function GameMenu() {
         // Ensure we fetch note1/emojis payload when switching into Nostr mode.
         if (!nostrNote1Ref.current) {
           const hostLNAddress = localStorage.getItem('hostLNAddress');
-          const hostInfo = hostLNAddress ? { LNAddress: hostLNAddress } : undefined;
+          const hostInfo = hostLNAddress
+            ? { LNAddress: hostLNAddress }
+            : undefined;
           if (hostInfo) socket.emit('getGameMenuInfosNostr', hostInfo);
           else socket.emit('getGameMenuInfosNostr');
         }
       }
-      const latestWinner = body.winners?.length ? body.winners.slice(-1)[0] : null;
+      const latestWinner = body.winners?.length
+        ? body.winners.slice(-1)[0]
+        : null;
       if (body.winners && body.winners.length > 0) {
         prevWinnerRef.current = latestWinner;
         setPrevWinner(latestWinner);
@@ -287,7 +312,8 @@ export default function GameMenu() {
           setPlayer1Sats(nextP1Sats);
           if (didP1Change) {
             lastKnownP1SatsRef.current = nextP1Sats;
-            if (highlightTimeoutP1Ref.current) clearTimeout(highlightTimeoutP1Ref.current);
+            if (highlightTimeoutP1Ref.current)
+              clearTimeout(highlightTimeoutP1Ref.current);
             setHighlightP1(true);
             highlightTimeoutP1Ref.current = setTimeout(
               () => setHighlightP1(false),
@@ -307,7 +333,8 @@ export default function GameMenu() {
           setPlayer2Sats(nextP2Sats);
           if (didP2Change) {
             lastKnownP2SatsRef.current = nextP2Sats;
-            if (highlightTimeoutP2Ref.current) clearTimeout(highlightTimeoutP2Ref.current);
+            if (highlightTimeoutP2Ref.current)
+              clearTimeout(highlightTimeoutP2Ref.current);
             setHighlightP2(true);
             highlightTimeoutP2Ref.current = setTimeout(
               () => setHighlightP2(false),
@@ -357,9 +384,12 @@ export default function GameMenu() {
         }>;
         if (!Array.isArray(highscores) || highscores.length === 0) return;
 
-        const ordered = [...highscores].sort((a, b) => Number(b.prize ?? 0) - Number(a.prize ?? 0));
+        const ordered = [...highscores].sort(
+          (a, b) => Number(b.prize ?? 0) - Number(a.prize ?? 0)
+        );
         const last = ordered[ordered.length - 1];
-        const threshold = Number(last?.p1sats ?? 0) + Number(last?.p2sats ?? 0) + 1;
+        const threshold =
+          Number(last?.p1sats ?? 0) + Number(last?.p2sats ?? 0) + 1;
         if (mounted && Number.isFinite(threshold) && threshold > 0) {
           setLeaderboardThreshold(threshold);
         }
@@ -382,9 +412,19 @@ export default function GameMenu() {
   useEffect(() => {
     if (!canStart || showCancelOverlay) return;
     setButtonSelected((current) =>
-      current === 'cancelGameAbort' || current === 'cancelGameConfirm' ? current : 'startgame'
+      current === 'cancelGameAbort' || current === 'cancelGameConfirm'
+        ? current
+        : 'startgame'
     );
-  }, [canStart, showCancelOverlay, player1Sats, player2Sats, winnerSats, loserSats, prevWinner]);
+  }, [
+    canStart,
+    showCancelOverlay,
+    player1Sats,
+    player2Sats,
+    winnerSats,
+    loserSats,
+    prevWinner,
+  ]);
 
   const openExitOverlay = useCallback(() => {
     playSfx(SFX.MENU_CONFIRM);
@@ -405,10 +445,17 @@ export default function GameMenu() {
   const triggerStartBlockedFeedback = useCallback((message: string) => {
     setStartShaking(true);
     setStartBlockedHint(message);
-    if (startShakeTimeoutRef.current) clearTimeout(startShakeTimeoutRef.current);
+    if (startShakeTimeoutRef.current)
+      clearTimeout(startShakeTimeoutRef.current);
     if (startHintTimeoutRef.current) clearTimeout(startHintTimeoutRef.current);
-    startShakeTimeoutRef.current = setTimeout(() => setStartShaking(false), 450);
-    startHintTimeoutRef.current = setTimeout(() => setStartBlockedHint(null), 4000);
+    startShakeTimeoutRef.current = setTimeout(
+      () => setStartShaking(false),
+      450
+    );
+    startHintTimeoutRef.current = setTimeout(
+      () => setStartBlockedHint(null),
+      4000
+    );
   }, []);
 
   const handleStartAttempt = useCallback(() => {
@@ -446,8 +493,10 @@ export default function GameMenu() {
 
   useEffect(() => {
     return () => {
-      if (startShakeTimeoutRef.current) clearTimeout(startShakeTimeoutRef.current);
-      if (startHintTimeoutRef.current) clearTimeout(startHintTimeoutRef.current);
+      if (startShakeTimeoutRef.current)
+        clearTimeout(startShakeTimeoutRef.current);
+      if (startHintTimeoutRef.current)
+        clearTimeout(startHintTimeoutRef.current);
     };
   }, []);
 
@@ -537,8 +586,10 @@ export default function GameMenu() {
   useQrExpandState({
     dualControls: true,
     onExpandedChange: (expanded) => {
-      if (typeof expanded.left === 'boolean') setPlayer1CardExpanded(expanded.left);
-      if (typeof expanded.right === 'boolean') setPlayer2CardExpanded(expanded.right);
+      if (typeof expanded.left === 'boolean')
+        setPlayer1CardExpanded(expanded.left);
+      if (typeof expanded.right === 'boolean')
+        setPlayer2CardExpanded(expanded.right);
     },
     onBackdropVisibleChange: setQrBackdropVisible,
   });
@@ -564,7 +615,9 @@ export default function GameMenu() {
         pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}`}
         mainMenuDisabled={false}
         canStart={canStart}
-        mainMenuLabel={prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'}
+        mainMenuLabel={
+          prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'
+        }
         cancelOverlayTitle={
           prevWinner
             ? 'Return to claim screen?'
@@ -599,16 +652,30 @@ export default function GameMenu() {
         )}
         {isNostrMode ? (
           <>
-            <div id="player1card" className={player1CardExpanded ? 'expanded' : ''}>
+            <div
+              id="player1card"
+              className={player1CardExpanded ? 'expanded' : ''}
+            >
               <div id="player1cardinfo" className="player-card-info">
-                <div id="player1satsContainer" className={`player-sats ${highlightP1 ? 'highlight' : ''}`}>
+                <div
+                  id="player1satsContainer"
+                  className={`player-sats ${highlightP1 ? 'highlight' : ''}`}
+                >
                   <span id="nostrPlayer1sats">{fmt(player1Sats)}</span>{' '}
                   <span className="grey sats-label">sats</span>
                 </div>
                 <div className="condensed">
                   <div className="inline playerSquare white" />
-                  <img className="inline playerImg" id="player1Img" src={player1Image || '/images/loading.gif'} alt="" />
-                  <div id="nostrPlayer1info" className={`player1info inline ${highlightP1 ? 'highlight' : ''}`}>
+                  <img
+                    className="inline playerImg"
+                    id="player1Img"
+                    src={player1Image || '/images/loading.gif'}
+                    alt=""
+                  />
+                  <div
+                    id="nostrPlayer1info"
+                    className={`player1info inline ${highlightP1 ? 'highlight' : ''}`}
+                  >
                     {p1Name}
                   </div>
                 </div>
@@ -640,7 +707,10 @@ export default function GameMenu() {
             </div>
 
             <div className="prizeinfocard nostr-center-card">
-              <h2 className="hero-outline condensed nostr-zap-title" aria-label="Zap this note">
+              <h2
+                className="hero-outline condensed nostr-zap-title"
+                aria-label="Zap this note"
+              >
                 <span aria-hidden="true">
                   {'Zap this note'.split('').map((char, i) => (
                     <span
@@ -707,7 +777,10 @@ export default function GameMenu() {
                       {nostrNote1Display}
                     </div>
                     {nostrNeventDisplay ? (
-                      <div className="label nostr-event-id" title={nostrNevent ?? undefined}>
+                      <div
+                        className="label nostr-event-id"
+                        title={nostrNevent ?? undefined}
+                      >
                         {nostrNeventDisplay}
                       </div>
                     ) : null}
@@ -718,17 +791,31 @@ export default function GameMenu() {
               </div>
             </div>
 
-            <div id="player2card" className={player2CardExpanded ? 'expanded' : ''}>
+            <div
+              id="player2card"
+              className={player2CardExpanded ? 'expanded' : ''}
+            >
               <div id="player2cardinfo" className="player-card-info">
-                <div id="player2satsContainer" className={`player-sats ${highlightP2 ? 'highlight' : ''}`}>
+                <div
+                  id="player2satsContainer"
+                  className={`player-sats ${highlightP2 ? 'highlight' : ''}`}
+                >
                   <span className="grey sats-label">sats</span>
                   <span id="nostrPlayer2sats">{fmt(player2Sats)}</span>
                 </div>
                 <div className="condensed">
-                  <div id="nostrPlayer2info" className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}>
+                  <div
+                    id="nostrPlayer2info"
+                    className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}
+                  >
                     {p2Name}
                   </div>
-                  <img className="inline playerImg" id="player2Img" src={player2Image || '/images/loading.gif'} alt="" />
+                  <img
+                    className="inline playerImg"
+                    id="player2Img"
+                    src={player2Image || '/images/loading.gif'}
+                    alt=""
+                  />
                   <div className="inline playerSquare black" />
                 </div>
                 <div className="deposit-message">
@@ -743,16 +830,26 @@ export default function GameMenu() {
           </>
         ) : (
           <>
-            <div id="player1card" className={player1CardExpanded ? 'expanded' : ''}>
+            <div
+              id="player1card"
+              className={player1CardExpanded ? 'expanded' : ''}
+            >
               <div
                 id="qrcodeContainer1"
-                className={['qrcodeContainer', lnurlCompatP1 ? 'qrcodeContainer--compatible' : '']
+                className={[
+                  'qrcodeContainer',
+                  lnurlCompatP1 ? 'qrcodeContainer--compatible' : '',
+                ]
                   .filter(Boolean)
                   .join(' ')}
               >
                 <a
                   id="qrcode1Link"
-                  href={p1PayLink?.lnurlp ? `lightning:${p1PayLink.lnurlp}` : undefined}
+                  href={
+                    p1PayLink?.lnurlp
+                      ? `lightning:${p1PayLink.lnurlp}`
+                      : undefined
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -785,18 +882,25 @@ export default function GameMenu() {
                 </a>
               </div>
               <div id="player1cardinfo" className="player-card-info">
-                <div id="player1satsContainer" className={`player-sats ${highlightP1 ? 'highlight' : ''}`}>
+                <div
+                  id="player1satsContainer"
+                  className={`player-sats ${highlightP1 ? 'highlight' : ''}`}
+                >
                   <span id="player1sats">{fmt(player1Sats)}</span>{' '}
                   <span className="grey sats-label">sats</span>
                 </div>
                 <div className="condensed">
                   <div className="inline playerSquare white" />
-                  <div id="player1info" className={`player1info inline ${highlightP1 ? 'highlight' : ''}`}>
+                  <div
+                    id="player1info"
+                    className={`player1info inline ${highlightP1 ? 'highlight' : ''}`}
+                  >
                     {p1Name}
                   </div>
                 </div>
                 <div className="deposit-message">
-                  Deposit between <b>{fmt(minP1)}</b> and <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
+                  Deposit between <b>{fmt(minP1)}</b> and{' '}
+                  <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
                   <br />
                   Set player name on the payment note
                   <br />
@@ -820,25 +924,36 @@ export default function GameMenu() {
               </div>
               <div id="leaderboard">
                 <p id="leaderboard-inner">
-                  <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span> sats qualifies for the ledger
+                  <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span>{' '}
+                  sats qualifies for the ledger
                 </p>
               </div>
             </div>
 
-            <div id="player2card" className={player2CardExpanded ? 'expanded' : ''}>
+            <div
+              id="player2card"
+              className={player2CardExpanded ? 'expanded' : ''}
+            >
               <div id="player2cardinfo" className="player-card-info">
-                <div id="player2satsContainer" className={`player-sats ${highlightP2 ? 'highlight' : ''}`}>
+                <div
+                  id="player2satsContainer"
+                  className={`player-sats ${highlightP2 ? 'highlight' : ''}`}
+                >
                   <span className="grey sats-label">sats</span>
                   <span id="player2sats">{fmt(player2Sats)}</span>
                 </div>
                 <div className="condensed">
-                  <div id="player2info" className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}>
+                  <div
+                    id="player2info"
+                    className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}
+                  >
                     {p2Name}
                   </div>
                   <div className="inline playerSquare black" />
                 </div>
                 <div className="deposit-message">
-                  Deposit between <b>{fmt(minP2)}</b> and <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
+                  Deposit between <b>{fmt(minP2)}</b> and{' '}
+                  <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
                   <br />
                   Set player name on the payment note
                   <br />
@@ -849,13 +964,20 @@ export default function GameMenu() {
               </div>
               <div
                 id="qrcodeContainer2"
-                className={['qrcodeContainer', lnurlCompatP2 ? 'qrcodeContainer--compatible' : '']
+                className={[
+                  'qrcodeContainer',
+                  lnurlCompatP2 ? 'qrcodeContainer--compatible' : '',
+                ]
                   .filter(Boolean)
                   .join(' ')}
               >
                 <a
                   id="qrcode2Link"
-                  href={p2PayLink?.lnurlp ? `lightning:${p2PayLink.lnurlp}` : undefined}
+                  href={
+                    p2PayLink?.lnurlp
+                      ? `lightning:${p2PayLink.lnurlp}`
+                      : undefined
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -910,7 +1032,9 @@ function getStartBlockedMessage(
   if (prevWinner) {
     const loserName = prevWinner === 'Player 1' ? p2Name : p1Name;
     if (winnerSats <= 0) {
-      return isNostr ? 'Waiting for winner to zap' : 'Waiting for winner deposit';
+      return isNostr
+        ? 'Waiting for winner to zap'
+        : 'Waiting for winner deposit';
     }
     if (loserSats < winnerSats) {
       const amount = winnerSats.toLocaleString();
@@ -918,7 +1042,9 @@ function getStartBlockedMessage(
         ? `${loserName} must zap at least ${amount} sats`
         : `${loserName} must deposit at least ${amount} sats`;
     }
-    return isNostr ? 'Waiting for both players to zap' : 'Waiting for both players to pay';
+    return isNostr
+      ? 'Waiting for both players to zap'
+      : 'Waiting for both players to pay';
   }
 
   const missing: string[] = [];
@@ -934,7 +1060,9 @@ function getStartBlockedMessage(
       ? `Waiting for ${missing[0]} to zap`
       : `${missing[0]} must deposit to start`;
   }
-  return isNostr ? 'Waiting for both players to zap' : 'Waiting for both players to pay';
+  return isNostr
+    ? 'Waiting for both players to zap'
+    : 'Waiting for both players to pay';
 }
 
 function resolvePlayerName(
@@ -961,7 +1089,10 @@ function extractNameFromPayments(payments: unknown): string {
       return note.trim();
     }
     if (Array.isArray(note)) {
-      const joined = note.map((part) => String(part ?? '')).join('').trim();
+      const joined = note
+        .map((part) => String(part ?? ''))
+        .join('')
+        .trim();
       if (joined !== '') return joined;
     }
   }

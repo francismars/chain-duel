@@ -30,42 +30,62 @@ export function activePlayerCount(state: GameState): number {
   return isFfaMode(state) ? 4 : 2;
 }
 
-export function getSnakeByIndex(state: GameState, index: PowerUpPlayerIndex): SnakeState {
+export function getSnakeByIndex(
+  state: GameState,
+  index: PowerUpPlayerIndex
+): SnakeState {
   if (index === 0) return state.p1;
   if (index === 1) return state.p2;
   if (index === 2) return state.extraSnakes[0]!.snake;
   return state.extraSnakes[1]!.snake;
 }
 
-export function getPlayerHead(state: GameState, index: PowerUpPlayerIndex): GridPos {
+export function getPlayerHead(
+  state: GameState,
+  index: PowerUpPlayerIndex
+): GridPos {
   return getSnakeByIndex(state, index).head;
 }
 
 export function hasPowerUp(
   state: GameState,
   index: PowerUpPlayerIndex,
-  type: PowerUpType,
+  type: PowerUpType
 ): boolean {
-  return state.activePowerUps.some((ap) => ap.playerIndex === index && ap.type === type);
+  return state.activePowerUps.some(
+    (ap) => ap.playerIndex === index && ap.type === type
+  );
 }
 
-export function getSnakeEffects(state: GameState, index: PowerUpPlayerIndex): SnakePowerUpEffects {
+export function getSnakeEffects(
+  state: GameState,
+  index: PowerUpPlayerIndex
+): SnakePowerUpEffects {
   return {
     frozen: hasPowerUp(state, index, 'FREEZE'),
     phantom: hasPowerUp(state, index, 'PHANTOM'),
     surging: hasPowerUp(state, index, 'SURGE'),
     amped: state.activePowerUps.some(
-      (ap) => ap.type === 'AMPLIFIER' && ap.playerIndex === index && (ap.chargesLeft ?? 0) > 0,
+      (ap) =>
+        ap.type === 'AMPLIFIER' &&
+        ap.playerIndex === index &&
+        (ap.chargesLeft ?? 0) > 0
     ),
   };
 }
 
-export function shouldPlayerMove(state: GameState, index: PowerUpPlayerIndex): boolean {
+export function shouldPlayerMove(
+  state: GameState,
+  index: PowerUpPlayerIndex
+): boolean {
   const frozen = hasPowerUp(state, index, 'FREEZE');
   return !frozen || (frozen && state.tickCount % 2 === 0);
 }
 
-export function hasSurgeDoubleStep(state: GameState, index: PowerUpPlayerIndex): boolean {
+export function hasSurgeDoubleStep(
+  state: GameState,
+  index: PowerUpPlayerIndex
+): boolean {
   return (
     hasPowerUp(state, index, 'SURGE') &&
     shouldPlayerMove(state, index) &&
@@ -73,24 +93,36 @@ export function hasSurgeDoubleStep(state: GameState, index: PowerUpPlayerIndex):
   );
 }
 
-function removePowerUp(state: GameState, index: PowerUpPlayerIndex, type: PowerUpType): void {
+function removePowerUp(
+  state: GameState,
+  index: PowerUpPlayerIndex,
+  type: PowerUpType
+): void {
   state.activePowerUps = state.activePowerUps.filter(
-    (ap) => !(ap.playerIndex === index && ap.type === type),
+    (ap) => !(ap.playerIndex === index && ap.type === type)
   );
 }
 
-export function clearPowerUpsForPlayer(state: GameState, index: PowerUpPlayerIndex): void {
-  state.activePowerUps = state.activePowerUps.filter((ap) => ap.playerIndex !== index);
+export function clearPowerUpsForPlayer(
+  state: GameState,
+  index: PowerUpPlayerIndex
+): void {
+  state.activePowerUps = state.activePowerUps.filter(
+    (ap) => ap.playerIndex !== index
+  );
 }
 
-function pushPowerUp(state: GameState, active: Omit<ActivePowerUp, 'expiresAtTick'> & { expiresAtTick?: number }): void {
+function pushPowerUp(
+  state: GameState,
+  active: Omit<ActivePowerUp, 'expiresAtTick'> & { expiresAtTick?: number }
+): void {
   state.activePowerUps.push(active as ActivePowerUp);
 }
 
 export function applyPowerUpForPlayer(
   state: GameState,
   pickerIndex: PowerUpPlayerIndex,
-  type: PowerUpType,
+  type: PowerUpType
 ): void {
   switch (type) {
     case 'SURGE':
@@ -104,7 +136,9 @@ export function applyPowerUpForPlayer(
 
     case 'FREEZE': {
       const targets = isFfaMode(state)
-        ? ([0, 1, 2, 3] as PowerUpPlayerIndex[]).filter((i) => i !== pickerIndex)
+        ? ([0, 1, 2, 3] as PowerUpPlayerIndex[]).filter(
+            (i) => i !== pickerIndex
+          )
         : [(pickerIndex === 0 ? 1 : 0) as PowerUpPlayerIndex];
       for (const target of targets) {
         removePowerUp(state, target, 'FREEZE');
@@ -173,7 +207,8 @@ function getPlayableInteriorBounds(state: GameState): {
 
 function hasCollisionAtForDecoy(state: GameState, pos: GridPos): boolean {
   const { minX, maxX, minY, maxY } = getPlayableInteriorBounds(state);
-  if (pos[0] < minX || pos[0] > maxX || pos[1] < minY || pos[1] > maxY) return true;
+  if (pos[0] < minX || pos[0] > maxX || pos[1] < minY || pos[1] > maxY)
+    return true;
   const samePos = (a: GridPos, b: GridPos) => a[0] === b[0] && a[1] === b[1];
   for (let i = 0; i < activePlayerCount(state); i += 1) {
     const snake = getSnakeByIndex(state, i as PowerUpPlayerIndex);
@@ -196,7 +231,8 @@ export function checkPowerUpPickup(state: GameState): void {
       if (head[0] !== item.pos[0] || head[1] !== item.pos[1]) continue;
       applyPowerUpForPlayer(state, index, item.type);
       state.powerUpItems.splice(i, 1);
-      state.powerUpRespawnCooldownTick = state.tickCount + POWERUP_RESPAWN_COOLDOWN_TICKS;
+      state.powerUpRespawnCooldownTick =
+        state.tickCount + POWERUP_RESPAWN_COOLDOWN_TICKS;
       return;
     }
   }
@@ -206,16 +242,18 @@ export function computeCaptureChangeForIndex(
   state: GameState,
   playerIndex: PowerUpPlayerIndex,
   cb: Coinbase,
-  totalPoints: number,
+  totalPoints: number
 ): number {
   const snake = getSnakeByIndex(state, playerIndex);
   const basePercent = cb.reward ?? capturePercentByLength(snake.body.length);
   const effects = getSnakeEffects(state, playerIndex);
-  const finalPercent = effects.amped ? Math.min(32, basePercent * 2) : basePercent;
+  const finalPercent = effects.amped
+    ? Math.min(32, basePercent * 2)
+    : basePercent;
 
   if (effects.amped) {
     const amp = state.activePowerUps.find(
-      (ap) => ap.type === 'AMPLIFIER' && ap.playerIndex === playerIndex,
+      (ap) => ap.type === 'AMPLIFIER' && ap.playerIndex === playerIndex
     );
     if (amp?.chargesLeft !== undefined) {
       amp.chargesLeft -= 1;
@@ -230,7 +268,8 @@ export function computeCaptureChangeForIndex(
 
 function capturePercentByLength(length: number): number {
   for (const level of CAPTURE_LEVELS) {
-    if (length >= level.minLength && length <= level.maxLength) return level.percent;
+    if (length >= level.minLength && length <= level.maxLength)
+      return level.percent;
   }
   return 32;
 }
@@ -242,8 +281,8 @@ export function wrapSnakeHeadRef(state: GameState, snake: SnakeState): void {
     const w = sb.right - sb.left + 1;
     const h = sb.bottom - sb.top + 1;
     snake.head = [
-      sb.left + (((x - sb.left) % w + w) % w),
-      sb.top + (((y - sb.top) % h + h) % h),
+      sb.left + ((((x - sb.left) % w) + w) % w),
+      sb.top + ((((y - sb.top) % h) + h) % h),
     ];
   } else {
     snake.head = [

@@ -14,7 +14,12 @@ interface SessionSocket {
 export function useSessionPersistence(socket: SessionSocket | null) {
   useEffect(() => {
     if (!socket) return;
-    const onSession = ({ sessionID }: { sessionID: string; userID: string }) => {
+    const onSession = ({
+      sessionID,
+    }: {
+      sessionID: string;
+      userID: string;
+    }) => {
       sessionStorage.setItem('sessionID', sessionID);
     };
     socket.on('session', onSession);

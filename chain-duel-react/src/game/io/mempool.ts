@@ -32,8 +32,12 @@ export function startMempoolFeed(callbacks: FeedCallbacks): () => void {
 
   const update = async () => {
     try {
-      const tipHash = await fetchText('https://mempool.space/api/blocks/tip/hash');
-      const block = (await fetchJson(`https://mempool.space/api/v1/block/${tipHash}`)) as BlockInfo;
+      const tipHash = await fetchText(
+        'https://mempool.space/api/blocks/tip/hash'
+      );
+      const block = (await fetchJson(
+        `https://mempool.space/api/v1/block/${tipHash}`
+      )) as BlockInfo;
       if (disposed) return;
       latestTimestamp = block.timestamp;
       const details = toDetails(block, latestTimestamp);

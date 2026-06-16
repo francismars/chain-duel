@@ -99,7 +99,10 @@ export const SocketBoundaryParsers = {
   resOnlineSeatLightningError: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.resOnlineSeatLightningError),
   resOnlineSeatLightningCancelled: (payload: unknown) =>
-    parseWithValidator(payload, SocketValidators.resOnlineSeatLightningCancelled),
+    parseWithValidator(
+      payload,
+      SocketValidators.resOnlineSeatLightningCancelled
+    ),
   onlinePostGameInfo: (payload: unknown) =>
     parseWithValidator(payload, SocketValidators.resOnlinePostGameInfo),
   createOnlineWithdrawal: (payload: unknown) =>

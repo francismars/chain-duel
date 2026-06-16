@@ -28,11 +28,13 @@ function buildMeta(partial: GameMeta): GameMeta {
   return {
     ...partial,
     p1Human: (p.p1Human as boolean | undefined) ?? true,
-    p2Human: (p.p2Human as boolean | undefined) ??
+    p2Human:
+      (p.p2Human as boolean | undefined) ??
       !Boolean((p.practiceMode as boolean | undefined) ?? false),
     aiTier: normalizeAiTier(p.aiTier as string | undefined),
     convergenceMode: (p.convergenceMode as boolean | undefined) ?? false,
-    convergenceShrinkInterval: (p.convergenceShrinkInterval as number | undefined) ?? 150,
+    convergenceShrinkInterval:
+      (p.convergenceShrinkInterval as number | undefined) ?? 150,
     convergenceMinCols: (p.convergenceMinCols as number | undefined) ?? 11,
     convergenceMinRows: (p.convergenceMinRows as number | undefined) ?? 11,
     powerupMode: (p.powerupMode as boolean | undefined) ?? false,
@@ -43,7 +45,13 @@ function buildMeta(partial: GameMeta): GameMeta {
 
 type OnlinePhase = OnlineRoomSnapshot['phase'];
 
-const PHASE_LIST: OnlinePhase[] = ['lobby', 'playing', 'postgame', 'finished', 'cancelled'];
+const PHASE_LIST: OnlinePhase[] = [
+  'lobby',
+  'playing',
+  'postgame',
+  'finished',
+  'cancelled',
+];
 
 const DIR_LIST: Direction[] = ['', 'Up', 'Down', 'Left', 'Right'];
 
@@ -306,7 +314,10 @@ function buildState(ef: EncodedFrame, header: CompactReplayHeader): GameState {
   return st;
 }
 
-function decodeFrame(ef: EncodedFrame, header: CompactReplayHeader): OnlineRoomSnapshot {
+function decodeFrame(
+  ef: EncodedFrame,
+  header: CompactReplayHeader
+): OnlineRoomSnapshot {
   const state = buildState(ef, header);
   const hud = hudFromState(state);
   return {
@@ -330,9 +341,10 @@ function headerFromFirstFrame(first: OnlineRoomSnapshot): CompactReplayHeader {
 }
 
 /** Build inner JSON before gzip (server) or after gunzip (client). */
-export function encodeFramesToInnerJson(
-  frames: OnlineRoomSnapshot[]
-): { h: CompactReplayHeader; f: EncodedFrame[] } {
+export function encodeFramesToInnerJson(frames: OnlineRoomSnapshot[]): {
+  h: CompactReplayHeader;
+  f: EncodedFrame[];
+} {
   const normalized = ensureReplayVictoryEndFrame(frames);
   if (normalized.length === 0) {
     throw new Error('encodeFramesToInnerJson: empty frames');

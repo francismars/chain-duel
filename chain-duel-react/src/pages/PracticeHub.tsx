@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -59,7 +65,9 @@ export default function PracticeHub() {
         setSearchParams({ play: value }, { replace: true });
       }
       setHubFocus((prev) =>
-        prev.zone === 'playStyle' ? { zone: 'playStyle', idx: playStyleToIdx(next) } : prev
+        prev.zone === 'playStyle'
+          ? { zone: 'playStyle', idx: playStyleToIdx(next) }
+          : prev
       );
     },
     [searchParams, setSearchParams]
@@ -67,7 +75,9 @@ export default function PracticeHub() {
 
   useEffect(() => {
     setHubFocus((prev) =>
-      prev.zone === 'playStyle' ? { zone: 'playStyle', idx: playStyleIdx } : prev
+      prev.zone === 'playStyle'
+        ? { zone: 'playStyle', idx: playStyleIdx }
+        : prev
     );
   }, [playStyleIdx]);
 
@@ -141,11 +151,11 @@ export default function PracticeHub() {
           : active === footerStartRef.current
             ? 'start'
             : null;
-      const inFooterZone =
-        hubFocus.zone === 'footer' || footerWhich !== null;
+      const inFooterZone = hubFocus.zone === 'footer' || footerWhich !== null;
 
       const handleFooterKeys = (which: 'back' | 'start') => {
-        if (!isLeft && !isRight && !isUp && !isDown && !isActivate) return false;
+        if (!isLeft && !isRight && !isUp && !isDown && !isActivate)
+          return false;
         e.preventDefault();
         e.stopImmediatePropagation();
         if (e.repeat && isActivate) return true;
@@ -179,7 +189,9 @@ export default function PracticeHub() {
 
       if (inFooterZone) {
         const which =
-          hubFocus.zone === 'footer' ? hubFocus.which : footerWhich ?? 'start';
+          hubFocus.zone === 'footer'
+            ? hubFocus.which
+            : (footerWhich ?? 'start');
         if (handleFooterKeys(which)) {
           return;
         }
@@ -201,7 +213,14 @@ export default function PracticeHub() {
         return;
       }
 
-      if (!isLeft && !isRight && !isDown && !isActivate && !isTab && !isTabBack) {
+      if (
+        !isLeft &&
+        !isRight &&
+        !isDown &&
+        !isActivate &&
+        !isTab &&
+        !isTabBack
+      ) {
         return;
       }
 
@@ -260,7 +279,9 @@ export default function PracticeHub() {
   }, [hubFocus, focusPlayStyleCard]);
 
   const playStyleFocusClass = (idx: 0 | 1) =>
-    hubFocus.zone === 'playStyle' && hubFocus.idx === idx ? 'practice-focus-target' : '';
+    hubFocus.zone === 'playStyle' && hubFocus.idx === idx
+      ? 'practice-focus-target'
+      : '';
 
   const footerBackFocused =
     hubFocus.zone === 'footer' && hubFocus.which === 'back';
@@ -342,81 +363,132 @@ export default function PracticeHub() {
               role="radiogroup"
               aria-label="Play style"
             >
-            <button
-              ref={(el) => {
-                playStyleRefs.current[0] = el;
-              }}
-              type="button"
-              role="radio"
-              aria-checked={playStyle === 'free'}
-              tabIndex={hubFocus.zone === 'playStyle' && hubFocus.idx === 0 ? 0 : -1}
-              className={[
-                'p2p-picker-card',
-                'p2p-picker-card--lightning',
-                playStyle === 'free' ? 'p2p-picker-card--selected' : '',
-                playStyleFocusClass(0),
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => {
-                setHubFocus({ zone: 'playStyle', idx: 0 });
-                activatePlayStyle(0);
-              }}
-            >
-              <svg className="p2p-picker-icon p2p-picker-icon--people" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="8" cy="7" r="2.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15" />
-                <path d="M3 18a5 4 0 0 1 10 0" stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none" />
-                <circle cx="16" cy="7" r="2.5" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.15" />
-                <path d="M11 18a5 4 0 0 1 10 0" stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none" />
-              </svg>
-              <span className="p2p-picker-label">QUICK MATCH</span>
-              <span className="p2p-picker-sub">1v1 or 4-player: humans, bots, or both</span>
-            </button>
+              <button
+                ref={(el) => {
+                  playStyleRefs.current[0] = el;
+                }}
+                type="button"
+                role="radio"
+                aria-checked={playStyle === 'free'}
+                tabIndex={
+                  hubFocus.zone === 'playStyle' && hubFocus.idx === 0 ? 0 : -1
+                }
+                className={[
+                  'p2p-picker-card',
+                  'p2p-picker-card--lightning',
+                  playStyle === 'free' ? 'p2p-picker-card--selected' : '',
+                  playStyleFocusClass(0),
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => {
+                  setHubFocus({ zone: 'playStyle', idx: 0 });
+                  activatePlayStyle(0);
+                }}
+              >
+                <svg
+                  className="p2p-picker-icon p2p-picker-icon--people"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="8"
+                    cy="7"
+                    r="2.5"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    fill="currentColor"
+                    fillOpacity="0.15"
+                  />
+                  <path
+                    d="M3 18a5 4 0 0 1 10 0"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  <circle
+                    cx="16"
+                    cy="7"
+                    r="2.5"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    fill="currentColor"
+                    fillOpacity="0.15"
+                  />
+                  <path
+                    d="M11 18a5 4 0 0 1 10 0"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                </svg>
+                <span className="p2p-picker-label">QUICK MATCH</span>
+                <span className="p2p-picker-sub">
+                  1v1 or 4-player: humans, bots, or both
+                </span>
+              </button>
 
-            <button
-              ref={(el) => {
-                playStyleRefs.current[1] = el;
-              }}
-              type="button"
-              role="radio"
-              aria-checked={playStyle === 'challenges'}
-              tabIndex={hubFocus.zone === 'playStyle' && hubFocus.idx === 1 ? 0 : -1}
-              className={[
-                'p2p-picker-card',
-                'p2p-picker-card--nostr',
-                playStyle === 'challenges' ? 'p2p-picker-card--selected' : '',
-                playStyleFocusClass(1),
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => {
-                setHubFocus({ zone: 'playStyle', idx: 1 });
-                activatePlayStyle(1);
-              }}
-            >
-              <svg className="p2p-picker-icon p2p-picker-icon--challenges" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M13.5 8.5 V20.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-                <path
-                  d="M13.5 8.5 H21 V13.5 H13.5 Z"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  strokeLinejoin="round"
-                  fill="currentColor"
-                  fillOpacity="0.15"
-                />
-                <path
-                  d="M7 14.5 C4 11.8 2.5 8.2 2.5 4.8 V2.8 L7 1.2 L11.5 2.8 V4.8 C11.5 8.2 10 11.8 7 14.5 Z"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  strokeLinejoin="round"
-                  fill="currentColor"
-                  fillOpacity="0.12"
-                />
-              </svg>
-              <span className="p2p-picker-label">CHALLENGES</span>
-              <span className="p2p-picker-sub">Beat the bots: win sats on Nostr</span>
-            </button>
-          </div>
+              <button
+                ref={(el) => {
+                  playStyleRefs.current[1] = el;
+                }}
+                type="button"
+                role="radio"
+                aria-checked={playStyle === 'challenges'}
+                tabIndex={
+                  hubFocus.zone === 'playStyle' && hubFocus.idx === 1 ? 0 : -1
+                }
+                className={[
+                  'p2p-picker-card',
+                  'p2p-picker-card--nostr',
+                  playStyle === 'challenges' ? 'p2p-picker-card--selected' : '',
+                  playStyleFocusClass(1),
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => {
+                  setHubFocus({ zone: 'playStyle', idx: 1 });
+                  activatePlayStyle(1);
+                }}
+              >
+                <svg
+                  className="p2p-picker-icon p2p-picker-icon--challenges"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M13.5 8.5 V20.5"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M13.5 8.5 H21 V13.5 H13.5 Z"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeLinejoin="round"
+                    fill="currentColor"
+                    fillOpacity="0.15"
+                  />
+                  <path
+                    d="M7 14.5 C4 11.8 2.5 8.2 2.5 4.8 V2.8 L7 1.2 L11.5 2.8 V4.8 C11.5 8.2 10 11.8 7 14.5 Z"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeLinejoin="round"
+                    fill="currentColor"
+                    fillOpacity="0.12"
+                  />
+                </svg>
+                <span className="p2p-picker-label">CHALLENGES</span>
+                <span className="p2p-picker-sub">
+                  Beat the bots: win sats on Nostr
+                </span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -454,7 +526,9 @@ export default function PracticeHub() {
             <PracticeChallengesPanel
               ref={challengesPanelRef}
               isActive={playStyle === 'challenges'}
-              menuZone={playStyle === 'challenges' ? hubFocus.zone : 'playStyle'}
+              menuZone={
+                playStyle === 'challenges' ? hubFocus.zone : 'playStyle'
+              }
               footerBackRef={footerBackRef}
               footerStartRef={footerStartRef}
               onExitToPlayStyle={enterPlayStyle}

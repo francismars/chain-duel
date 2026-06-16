@@ -17,6 +17,7 @@ export function onlinePostGameUrl(roomId: string): string {
 }
 
 export function onlineReplayUrl(roomId: string, round?: number): string {
-  const roundQ = round != null ? `&round=${encodeURIComponent(String(round))}` : '';
+  const roundQ =
+    round != null ? `&round=${encodeURIComponent(String(round))}` : '';
   return `${ONLINE_GAME}?roomId=${encodeURIComponent(roomId)}&replay=1${roundQ}`;
 }

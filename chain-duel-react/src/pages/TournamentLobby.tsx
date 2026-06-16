@@ -29,19 +29,23 @@ export default function TournamentLobby() {
   const { socket, connected } = useSocket();
   const [playersPaid, setPlayersPaid] = useState<Record<string, string>>({});
   const [payLink, setPayLink] = useState<TournamentPayLink | null>(null);
-  const [buttonSelected, setButtonSelected] = useState<SelectState>('backButton');
+  const [buttonSelected, setButtonSelected] =
+    useState<SelectState>('backButton');
 
   const proceedRef = useRef<HTMLButtonElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
 
   const numberOfPlayers = Math.max(
     TOURNAMENT_MIN_PLAYERS,
-    parseInt(params.get('players') || String(TOURNAMENT_MIN_PLAYERS), 10) || TOURNAMENT_MIN_PLAYERS
+    parseInt(params.get('players') || String(TOURNAMENT_MIN_PLAYERS), 10) ||
+      TOURNAMENT_MIN_PLAYERS
   );
   const deposit = Math.max(
     TOURNAMENT_DEFAULT_BUY_IN_SATS,
-    parseInt(params.get('deposit') || String(TOURNAMENT_DEFAULT_BUY_IN_SATS), 10) ||
-      TOURNAMENT_DEFAULT_BUY_IN_SATS
+    parseInt(
+      params.get('deposit') || String(TOURNAMENT_DEFAULT_BUY_IN_SATS),
+      10
+    ) || TOURNAMENT_DEFAULT_BUY_IN_SATS
   );
   const finalPrize = computeFinalPrize(numberOfPlayers, deposit);
   const paidCount = Object.keys(playersPaid).length;
@@ -89,7 +93,10 @@ export default function TournamentLobby() {
 
     anySocket.on('rescreatePaylink', onPaylink);
     anySocket.on('invoicePaid', onInvoicePaid);
-    anySocket.emit('createPaylink', { description: 'tournament', buyIn: deposit });
+    anySocket.emit('createPaylink', {
+      description: 'tournament',
+      buyIn: deposit,
+    });
 
     return () => {
       anySocket.off('rescreatePaylink', onPaylink);
@@ -105,7 +112,9 @@ export default function TournamentLobby() {
           navigate('/p2p');
         } else if (buttonSelected === 'proceedButton') {
           sessionStorage.setItem('Players', JSON.stringify(playersPaid));
-          navigate(`/tournbracket?players=${numberOfPlayers}&deposit=${deposit}`);
+          navigate(
+            `/tournbracket?players=${numberOfPlayers}&deposit=${deposit}`
+          );
         }
       }
     };
@@ -133,12 +142,17 @@ export default function TournamentLobby() {
 
           <div className="tournlobby-deposit-card">
             <div className="tournlobby-deposit-header">
-              <span className="tournlobby-deposit-label">Buy In (per player)</span>
+              <span className="tournlobby-deposit-label">
+                Buy In (per player)
+              </span>
               <span className="tournlobby-deposit-amount">
-                {deposit.toLocaleString()} <span className="sats-label">sats</span>
+                {deposit.toLocaleString()}{' '}
+                <span className="sats-label">sats</span>
               </span>
             </div>
-            <p className="tournlobby-deposit-note">Set player name on the payment note</p>
+            <p className="tournlobby-deposit-note">
+              Set player name on the payment note
+            </p>
 
             <div className="tournlobby-qr-wrap" id="qrCodeDiv">
               {qrValue ? (
@@ -178,8 +192,13 @@ export default function TournamentLobby() {
                 type="button"
                 onClick={() => {
                   if (!canProceed) return;
-                  sessionStorage.setItem('Players', JSON.stringify(playersPaid));
-                  navigate(`/tournbracket?players=${numberOfPlayers}&deposit=${deposit}`);
+                  sessionStorage.setItem(
+                    'Players',
+                    JSON.stringify(playersPaid)
+                  );
+                  navigate(
+                    `/tournbracket?players=${numberOfPlayers}&deposit=${deposit}`
+                  );
                 }}
               >
                 Start
@@ -200,13 +219,15 @@ export default function TournamentLobby() {
           <div className="tournlobby-detail">
             <div className="label">Final Prize</div>
             <div className="value">
-              <span id="finalPrize">{finalPrize.toLocaleString()}</span> <span>sats</span>
+              <span id="finalPrize">{finalPrize.toLocaleString()}</span>{' '}
+              <span>sats</span>
             </div>
           </div>
           <div className="tournlobby-detail">
             <div className="label">Buy In</div>
             <div className="value">
-              <span id="buyIn">{deposit.toLocaleString()}</span> <span>sats</span>
+              <span id="buyIn">{deposit.toLocaleString()}</span>{' '}
+              <span>sats</span>
             </div>
           </div>
         </div>
@@ -223,7 +244,10 @@ function normalizeInvoiceComment(comment: unknown): string {
       return String(comment[0] ?? '').trim();
     }
     // Some backends emit comment as char array; join to recover full name.
-    const joined = comment.map((part) => String(part ?? '')).join('').trim();
+    const joined = comment
+      .map((part) => String(part ?? ''))
+      .join('')
+      .trim();
     return joined;
   }
   return String(comment ?? '').trim();

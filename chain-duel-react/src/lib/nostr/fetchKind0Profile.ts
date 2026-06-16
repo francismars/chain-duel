@@ -29,8 +29,8 @@ export type Kind0Profile = {
 
 /** Public relays for kind-0 reads. Standard NIP-01 WebSocket relays only — no proprietary cache endpoints. */
 export const KIND0_DEFAULT_RELAYS = [
-  'wss://purplepag.es',         // purpose-built metadata relay — most reliable for kind 0
-  'wss://relay.damus.io',       // high-availability; stores metadata for almost every user
+  'wss://purplepag.es', // purpose-built metadata relay — most reliable for kind 0
+  'wss://relay.damus.io', // high-availability; stores metadata for almost every user
   'wss://relay.primal.net',
   'wss://nos.lol',
   'wss://relay.snort.social',
@@ -67,14 +67,24 @@ function parseKind0Event(ev: NostrRawEvent): Kind0Profile {
 
   const name = typeof meta.name === 'string' ? meta.name.trim() || null : null;
   const displayName =
-    typeof meta.display_name === 'string' ? meta.display_name.trim() || null : null;
+    typeof meta.display_name === 'string'
+      ? meta.display_name.trim() || null
+      : null;
   const displayTitle = displayName || name || 'Nostr user';
-  const picture = normalizeMediaUrl(typeof meta.picture === 'string' ? meta.picture : null);
-  const banner = normalizeMediaUrl(typeof meta.banner === 'string' ? meta.banner : null);
-  const nip05 = typeof meta.nip05 === 'string' ? meta.nip05.trim() || null : null;
-  const lud16 = typeof meta.lud16 === 'string' ? meta.lud16.trim() || null : null;
-  const lud06 = typeof meta.lud06 === 'string' ? meta.lud06.trim() || null : null;
-  const about = typeof meta.about === 'string' ? meta.about.trim() || null : null;
+  const picture = normalizeMediaUrl(
+    typeof meta.picture === 'string' ? meta.picture : null
+  );
+  const banner = normalizeMediaUrl(
+    typeof meta.banner === 'string' ? meta.banner : null
+  );
+  const nip05 =
+    typeof meta.nip05 === 'string' ? meta.nip05.trim() || null : null;
+  const lud16 =
+    typeof meta.lud16 === 'string' ? meta.lud16.trim() || null : null;
+  const lud06 =
+    typeof meta.lud06 === 'string' ? meta.lud06.trim() || null : null;
+  const about =
+    typeof meta.about === 'string' ? meta.about.trim() || null : null;
 
   return {
     displayTitle,
@@ -101,12 +111,14 @@ function pickBest(events: NostrRawEvent[], hex: string): NostrRawEvent | null {
 }
 
 /** Fetch kind 0 via Primal's HTTP API — returns null on any error. */
-async function fetchKind0FromPrimalApi(hex: string): Promise<NostrRawEvent | null> {
+async function fetchKind0FromPrimalApi(
+  hex: string
+): Promise<NostrRawEvent | null> {
   try {
     const res = await fetch('https://api.primal.net/v1', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(["user_profile", { pubkey: hex }]),
+      body: JSON.stringify(['user_profile', { pubkey: hex }]),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
@@ -114,7 +126,10 @@ async function fetchKind0FromPrimalApi(hex: string): Promise<NostrRawEvent | nul
       return null;
     }
     const text = await res.text();
-    console.log('[kind0] Primal API raw response (first 400 chars):', text.slice(0, 400));
+    console.log(
+      '[kind0] Primal API raw response (first 400 chars):',
+      text.slice(0, 400)
+    );
     // Response may be NDJSON (one event per line) or a JSON array
     const candidates: NostrRawEvent[] = [];
     // Try NDJSON first
@@ -125,28 +140,44 @@ async function fetchKind0FromPrimalApi(hex: string): Promise<NostrRawEvent | nul
         const item = JSON.parse(t) as NostrRawEvent | unknown[];
         if (Array.isArray(item)) {
           // Could be ["EVENT", sub, event] or just [event]
-          const ev = item.find((x): x is NostrRawEvent =>
-            x !== null && typeof x === 'object' && (x as NostrRawEvent).kind === 0
+          const ev = item.find(
+            (x): x is NostrRawEvent =>
+              x !== null &&
+              typeof x === 'object' &&
+              (x as NostrRawEvent).kind === 0
           );
           if (ev) candidates.push(ev);
         } else if ((item as NostrRawEvent).kind === 0) {
           candidates.push(item as NostrRawEvent);
         }
-      } catch { /* skip malformed line */ }
+      } catch {
+        /* skip malformed line */
+      }
     }
     // Try JSON array as fallback
     if (candidates.length === 0) {
       try {
         const arr = JSON.parse(text) as unknown[];
         for (const x of arr) {
-          if (x !== null && typeof x === 'object' && (x as NostrRawEvent).kind === 0) {
+          if (
+            x !== null &&
+            typeof x === 'object' &&
+            (x as NostrRawEvent).kind === 0
+          ) {
             candidates.push(x as NostrRawEvent);
           }
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     const best = pickBest(candidates, hex);
-    console.log('[kind0] Primal API →', candidates.length, 'kind-0 events, best:', best ? 'found' : 'none');
+    console.log(
+      '[kind0] Primal API →',
+      candidates.length,
+      'kind-0 events, best:',
+      best ? 'found' : 'none'
+    );
     return best;
   } catch (err) {
     console.warn('[kind0] Primal API fetch failed:', err);
@@ -169,10 +200,20 @@ async function fetchKind0FromRelays(
       if (finished) return;
       finished = true;
       clearTimeout(timer);
-      try { sub.close(); } catch { /* ignore */ }
+      try {
+        sub.close();
+      } catch {
+        /* ignore */
+      }
       // Defer pool destruction slightly so close() can flush
       setTimeout(() => pool.destroy(), 100);
-      console.log('[kind0] subscribeMany returned', events.length, 'events from', relayUrls.length, 'relays');
+      console.log(
+        '[kind0] subscribeMany returned',
+        events.length,
+        'events from',
+        relayUrls.length,
+        'relays'
+      );
       resolve(events);
     };
 
@@ -204,7 +245,9 @@ export async function fetchLatestKind0Profile(
     onProgress?: (p: Kind0FetchProgress) => void;
   }
 ): Promise<Kind0Profile | null> {
-  const relays = options?.relayUrls?.length ? options.relayUrls : KIND0_DEFAULT_RELAYS;
+  const relays = options?.relayUrls?.length
+    ? options.relayUrls
+    : KIND0_DEFAULT_RELAYS;
   const timeout = options?.perRelayTimeoutMs ?? 10000;
   const onProgress = options?.onProgress;
   const hex = pubkeyHex.trim().toLowerCase();
@@ -241,7 +284,10 @@ export async function fetchLatestKind0Profile(
  * NIP-05: verify that the identifier maps to this pubkey via the domain's well-known URL.
  * May fail in the browser when the domain does not send CORS headers.
  */
-export async function verifyNip05(pubkeyHex: string, nip05Raw: string): Promise<boolean> {
+export async function verifyNip05(
+  pubkeyHex: string,
+  nip05Raw: string
+): Promise<boolean> {
   const trimmed = nip05Raw.trim().toLowerCase();
   const at = trimmed.lastIndexOf('@');
   if (at < 1) return false;

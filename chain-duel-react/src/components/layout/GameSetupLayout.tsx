@@ -36,7 +36,12 @@ export interface GameSetupLayoutProps {
   /** Shown below READY TO START when the player tries to start before everyone has paid */
   startBlockedHint?: string | null;
   startShaking?: boolean;
-  selectedButton?: 'mainMenuButton' | 'startgame' | 'cancelGameAbort' | 'cancelGameConfirm' | null;
+  selectedButton?:
+    | 'mainMenuButton'
+    | 'startgame'
+    | 'cancelGameAbort'
+    | 'cancelGameConfirm'
+    | null;
   mainMenuButtonRef?: RefObject<HTMLButtonElement>;
   startGameButtonRef?: RefObject<HTMLButtonElement>;
   cancelGameAbortRef?: RefObject<HTMLButtonElement>;
@@ -81,7 +86,12 @@ export function GameSetupLayout({
       cancelGameAbort: cancelGameAbortRef ?? internalAbortRef,
       cancelGameConfirm: cancelGameConfirmRef ?? internalConfirmRef,
     }),
-    [mainMenuButtonRef, startGameButtonRef, cancelGameAbortRef, cancelGameConfirmRef]
+    [
+      mainMenuButtonRef,
+      startGameButtonRef,
+      cancelGameAbortRef,
+      cancelGameConfirmRef,
+    ]
   );
 
   useEffect(() => {
@@ -90,9 +100,9 @@ export function GameSetupLayout({
     });
     if (!selectedButton) {
       const active = document.activeElement;
-      const isGameButton = (Object.values(refs) as Array<RefObject<HTMLButtonElement | null>>).some(
-        (ref) => ref.current === active
-      );
+      const isGameButton = (
+        Object.values(refs) as Array<RefObject<HTMLButtonElement | null>>
+      ).some((ref) => ref.current === active);
       if (isGameButton && active instanceof HTMLElement) {
         active.blur();
       }
@@ -112,7 +122,9 @@ export function GameSetupLayout({
             >
               <div className="warning">
                 <div className="warning-inner">
-                  <h2 className="warning-title condensed">{cancelOverlayTitle}</h2>
+                  <h2 className="warning-title condensed">
+                    {cancelOverlayTitle}
+                  </h2>
                   <div className="warning-text">{cancelOverlayText}</div>
                 </div>
                 <div className="warning-actions">

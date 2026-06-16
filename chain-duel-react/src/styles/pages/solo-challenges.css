@@ -16,10 +16,18 @@
 }
 
 @keyframes sc-row-pop {
-  0%   { transform: scaleX(1)    scaleY(1); }
-  38%  { transform: scaleX(1.012) scaleY(1.045); }
-  68%  { transform: scaleX(0.997) scaleY(0.992); }
-  100% { transform: scaleX(1)    scaleY(1); }
+  0% {
+    transform: scaleX(1) scaleY(1);
+  }
+  38% {
+    transform: scaleX(1.012) scaleY(1.045);
+  }
+  68% {
+    transform: scaleX(0.997) scaleY(0.992);
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+  }
 }
 
 @keyframes sc-check-row-in {
@@ -180,7 +188,9 @@
   display: block;
 }
 
-.practice-hub-page--challenges .practice-challenges-panel .solo-challenges-layout {
+.practice-hub-page--challenges
+  .practice-challenges-panel
+  .solo-challenges-layout {
   flex: 0 1 auto;
   min-height: 0;
   height: auto;
@@ -242,9 +252,7 @@
   width: 100%;
   min-height: 0;
   height: auto;
-  padding:
-    var(--ph-compact-card-pad-y)
-    var(--ph-compact-card-pad-x)
+  padding: var(--ph-compact-card-pad-y) var(--ph-compact-card-pad-x)
     max(0.55rem, 0.75vw);
   overflow: visible;
   text-align: left;
@@ -320,18 +328,18 @@
   color: rgba(255, 255, 255, 0.78);
 }
 
-.practice-hub-page--challenges .sc-row[data-rank="1"] .sc-row__icon,
-.practice-hub-page--challenges .sc-row[data-rank="2"] .sc-row__icon,
-.practice-hub-page--challenges .sc-row[data-rank="3"] .sc-row__icon {
+.practice-hub-page--challenges .sc-row[data-rank='1'] .sc-row__icon,
+.practice-hub-page--challenges .sc-row[data-rank='2'] .sc-row__icon,
+.practice-hub-page--challenges .sc-row[data-rank='3'] .sc-row__icon {
   color: rgba(var(--sc-accent-strong), 0.42);
 }
 
-.practice-hub-page--challenges .sc-row[data-rank="1"]:hover .sc-row__icon,
-.practice-hub-page--challenges .sc-row[data-rank="2"]:hover .sc-row__icon,
-.practice-hub-page--challenges .sc-row[data-rank="3"]:hover .sc-row__icon,
-.practice-hub-page--challenges .sc-row--selected[data-rank="1"] .sc-row__icon,
-.practice-hub-page--challenges .sc-row--selected[data-rank="2"] .sc-row__icon,
-.practice-hub-page--challenges .sc-row--selected[data-rank="3"] .sc-row__icon {
+.practice-hub-page--challenges .sc-row[data-rank='1']:hover .sc-row__icon,
+.practice-hub-page--challenges .sc-row[data-rank='2']:hover .sc-row__icon,
+.practice-hub-page--challenges .sc-row[data-rank='3']:hover .sc-row__icon,
+.practice-hub-page--challenges .sc-row--selected[data-rank='1'] .sc-row__icon,
+.practice-hub-page--challenges .sc-row--selected[data-rank='2'] .sc-row__icon,
+.practice-hub-page--challenges .sc-row--selected[data-rank='3'] .sc-row__icon {
   color: rgba(var(--sc-accent-strong), 0.92);
 }
 
@@ -400,36 +408,182 @@
   }
 }
 
-.practice-hub-page--challenges .sc-row--selected[data-challenge="normie"] .sc-row__icon--normie .sc-row__icon-part:nth-child(1) { animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="normie"] .sc-row__icon--normie .sc-row__icon-part:nth-child(2) { animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="normie"] .sc-row__icon--normie .sc-row__icon-part:nth-child(3) { animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="normie"] .sc-row__icon--normie .sc-row__icon-part:nth-child(4) { animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.15s both; }
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='normie']
+  .sc-row__icon--normie
+  .sc-row__icon-part:nth-child(1) {
+  animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='normie']
+  .sc-row__icon--normie
+  .sc-row__icon-part:nth-child(2) {
+  animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='normie']
+  .sc-row__icon--normie
+  .sc-row__icon-part:nth-child(3) {
+  animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='normie']
+  .sc-row__icon--normie
+  .sc-row__icon-part:nth-child(4) {
+  animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.15s
+    both;
+}
 
-.practice-hub-page--challenges .sc-row--selected[data-challenge="stacker"] .sc-row__icon--stacker .sc-row__icon-part:nth-child(1) { animation: sc-challenge-icon-rise 0.28s cubic-bezier(0.22, 1.2, 0.36, 1) 0.12s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="stacker"] .sc-row__icon--stacker .sc-row__icon-part:nth-child(2) { animation: sc-challenge-icon-rise 0.28s cubic-bezier(0.22, 1.2, 0.36, 1) 0.06s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="stacker"] .sc-row__icon--stacker .sc-row__icon-part:nth-child(3) { animation: sc-challenge-icon-rise 0.28s cubic-bezier(0.22, 1.2, 0.36, 1) 0s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="stacker"] .sc-row__icon--stacker .sc-row__icon-part:nth-child(4) { animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.18s both; }
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='stacker']
+  .sc-row__icon--stacker
+  .sc-row__icon-part:nth-child(1) {
+  animation: sc-challenge-icon-rise 0.28s cubic-bezier(0.22, 1.2, 0.36, 1) 0.12s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='stacker']
+  .sc-row__icon--stacker
+  .sc-row__icon-part:nth-child(2) {
+  animation: sc-challenge-icon-rise 0.28s cubic-bezier(0.22, 1.2, 0.36, 1) 0.06s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='stacker']
+  .sc-row__icon--stacker
+  .sc-row__icon-part:nth-child(3) {
+  animation: sc-challenge-icon-rise 0.28s cubic-bezier(0.22, 1.2, 0.36, 1) 0s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='stacker']
+  .sc-row__icon--stacker
+  .sc-row__icon-part:nth-child(4) {
+  animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.18s
+    both;
+}
 
-.practice-hub-page--challenges .sc-row--selected[data-challenge="noderunner"] .sc-row__icon--noderunner .sc-row__icon-part:nth-child(1) { animation: sc-challenge-icon-pulse 1.4s ease-in-out infinite; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="noderunner"] .sc-row__icon--noderunner .sc-row__icon-part:nth-child(2) { animation: sc-challenge-icon-pulse 1.4s ease-in-out 0.12s infinite; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="noderunner"] .sc-row__icon--noderunner .sc-row__icon-part:nth-child(3) { animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="noderunner"] .sc-row__icon--noderunner .sc-row__icon-part:nth-child(4) { animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="noderunner"] .sc-row__icon--noderunner .sc-row__icon-part:nth-child(5) { animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="noderunner"] .sc-row__icon--noderunner .sc-row__icon-part:nth-child(6) { animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.15s both; }
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='noderunner']
+  .sc-row__icon--noderunner
+  .sc-row__icon-part:nth-child(1) {
+  animation: sc-challenge-icon-pulse 1.4s ease-in-out infinite;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='noderunner']
+  .sc-row__icon--noderunner
+  .sc-row__icon-part:nth-child(2) {
+  animation: sc-challenge-icon-pulse 1.4s ease-in-out 0.12s infinite;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='noderunner']
+  .sc-row__icon--noderunner
+  .sc-row__icon-part:nth-child(3) {
+  animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='noderunner']
+  .sc-row__icon--noderunner
+  .sc-row__icon-part:nth-child(4) {
+  animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='noderunner']
+  .sc-row__icon--noderunner
+  .sc-row__icon-part:nth-child(5) {
+  animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='noderunner']
+  .sc-row__icon--noderunner
+  .sc-row__icon-part:nth-child(6) {
+  animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.15s
+    both;
+}
 
-.practice-hub-page--challenges .sc-row--selected[data-challenge="gauntlet"] .sc-row__icon--gauntlet .sc-row__icon-part:nth-child(1) { animation: sc-challenge-icon-shield 0.42s cubic-bezier(0.22, 1.15, 0.36, 1) 0s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="gauntlet"] .sc-row__icon--gauntlet .sc-row__icon-part:nth-child(2) { animation: sc-challenge-icon-pop 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.14s both; }
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='gauntlet']
+  .sc-row__icon--gauntlet
+  .sc-row__icon-part:nth-child(1) {
+  animation: sc-challenge-icon-shield 0.42s cubic-bezier(0.22, 1.15, 0.36, 1) 0s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='gauntlet']
+  .sc-row__icon--gauntlet
+  .sc-row__icon-part:nth-child(2) {
+  animation: sc-challenge-icon-pop 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) 0.14s
+    both;
+}
 
-.practice-hub-page--challenges .sc-row--selected[data-challenge="ffa"] .sc-row__icon--ffa .sc-row__icon-part:nth-child(1) { animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="ffa"] .sc-row__icon--ffa .sc-row__icon-part:nth-child(2) { animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="ffa"] .sc-row__icon--ffa .sc-row__icon-part:nth-child(3) { animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="ffa"] .sc-row__icon--ffa .sc-row__icon-part:nth-child(4) { animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.15s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="ffa"] .sc-row__icon--ffa .sc-row__icon-part:nth-child(5) { animation: sc-challenge-icon-pulse 1.6s ease-in-out 0.2s infinite; }
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='ffa']
+  .sc-row__icon--ffa
+  .sc-row__icon-part:nth-child(1) {
+  animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='ffa']
+  .sc-row__icon--ffa
+  .sc-row__icon-part:nth-child(2) {
+  animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.05s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='ffa']
+  .sc-row__icon--ffa
+  .sc-row__icon-part:nth-child(3) {
+  animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.1s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='ffa']
+  .sc-row__icon--ffa
+  .sc-row__icon-part:nth-child(4) {
+  animation: sc-challenge-icon-pop 0.22s cubic-bezier(0.22, 1.25, 0.36, 1) 0.15s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='ffa']
+  .sc-row__icon--ffa
+  .sc-row__icon-part:nth-child(5) {
+  animation: sc-challenge-icon-pulse 1.6s ease-in-out 0.2s infinite;
+}
 
-.practice-hub-page--challenges .sc-row--selected[data-challenge="sovereign-stack"] .sc-row__icon--sovereign .sc-row__icon-part:nth-child(1) { animation: sc-challenge-icon-rise 0.3s cubic-bezier(0.22, 1.2, 0.36, 1) 0s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="sovereign-stack"] .sc-row__icon--sovereign .sc-row__icon-part:nth-child(2) { animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.08s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="sovereign-stack"] .sc-row__icon--sovereign .sc-row__icon-part:nth-child(3) { animation: sc-challenge-icon-shield 0.36s cubic-bezier(0.22, 1.15, 0.36, 1) 0.12s both; }
-.practice-hub-page--challenges .sc-row--selected[data-challenge="sovereign-stack"] .sc-row__icon--sovereign .sc-row__icon-part:nth-child(4) { animation: sc-challenge-icon-spark 1.1s ease-in-out 0.2s infinite; }
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='sovereign-stack']
+  .sc-row__icon--sovereign
+  .sc-row__icon-part:nth-child(1) {
+  animation: sc-challenge-icon-rise 0.3s cubic-bezier(0.22, 1.2, 0.36, 1) 0s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='sovereign-stack']
+  .sc-row__icon--sovereign
+  .sc-row__icon-part:nth-child(2) {
+  animation: sc-challenge-icon-pop 0.24s cubic-bezier(0.22, 1.25, 0.36, 1) 0.08s
+    both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='sovereign-stack']
+  .sc-row__icon--sovereign
+  .sc-row__icon-part:nth-child(3) {
+  animation: sc-challenge-icon-shield 0.36s cubic-bezier(0.22, 1.15, 0.36, 1)
+    0.12s both;
+}
+.practice-hub-page--challenges
+  .sc-row--selected[data-challenge='sovereign-stack']
+  .sc-row__icon--sovereign
+  .sc-row__icon-part:nth-child(4) {
+  animation: sc-challenge-icon-spark 1.1s ease-in-out 0.2s infinite;
+}
 
 .practice-hub-page--challenges .sc-row__tags {
   display: flex;
@@ -815,8 +969,11 @@
   margin-bottom: 0;
   gap: max(0.4rem, 0.55vw);
   border-color: rgba(155, 89, 182, 0.24);
-  background:
-    linear-gradient(135deg, rgba(155, 89, 182, 0.08) 0%, rgba(0, 0, 0, 0.42) 55%);
+  background: linear-gradient(
+    135deg,
+    rgba(155, 89, 182, 0.08) 0%,
+    rgba(0, 0, 0, 0.42) 55%
+  );
   box-shadow:
     0 0 0 1px rgba(155, 89, 182, 0.1),
     0 12px 28px rgba(0, 0, 0, 0.35);
@@ -858,12 +1015,16 @@
   background: rgba(155, 89, 182, 0.16);
 }
 
-.practice-hub-page--challenges .sc-gate__card--sign-in .sc-gate__nostr-btn .sc-gate__icon {
+.practice-hub-page--challenges
+  .sc-gate__card--sign-in
+  .sc-gate__nostr-btn
+  .sc-gate__icon {
   opacity: 0.9;
   color: rgba(193, 126, 230, 0.95);
 }
 
-.practice-hub-page--challenges .sc-gate__card--action-focused:not(.sc-gate__card--sign-in) {
+.practice-hub-page--challenges
+  .sc-gate__card--action-focused:not(.sc-gate__card--sign-in) {
   border-color: rgba(155, 89, 182, 0.58);
   box-shadow:
     0 0 0 1px rgba(155, 89, 182, 0.22),
@@ -883,20 +1044,25 @@
   }
 }
 
-.practice-hub-page--challenges .sc-gate__card--sign-in.sc-gate__card--action-focused {
+.practice-hub-page--challenges
+  .sc-gate__card--sign-in.sc-gate__card--action-focused {
   position: relative;
   isolation: isolate;
   overflow: visible;
   border-color: rgba(193, 126, 230, 0.62);
-  background:
-    linear-gradient(135deg, rgba(155, 89, 182, 0.18) 0%, rgba(55, 20, 80, 0.44) 55%);
+  background: linear-gradient(
+    135deg,
+    rgba(155, 89, 182, 0.18) 0%,
+    rgba(55, 20, 80, 0.44) 55%
+  );
   box-shadow:
     0 0 0 1px rgba(193, 126, 230, 0.28),
     0 0 calc(var(--ph-card-glow-blur) * 0.35) rgba(155, 89, 182, 0.22),
     0 12px 28px rgba(0, 0, 0, 0.35);
 }
 
-.practice-hub-page--challenges .sc-gate__card--sign-in.sc-gate__card--action-focused::before {
+.practice-hub-page--challenges
+  .sc-gate__card--sign-in.sc-gate__card--action-focused::before {
   --sc-gate-laser-angle: 0deg;
   content: '';
   position: absolute;
@@ -931,11 +1097,14 @@
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
   padding: 1px;
-  animation: sc-gate-laser-border-spin 3.5s cubic-bezier(0.35, 0.1, 0.65, 0.9) infinite;
+  animation: sc-gate-laser-border-spin 3.5s cubic-bezier(0.35, 0.1, 0.65, 0.9)
+    infinite;
   will-change: --sc-gate-laser-angle;
 }
 
-.practice-hub-page--challenges .sc-gate__card--sign-in.sc-gate__card--action-focused > * {
+.practice-hub-page--challenges
+  .sc-gate__card--sign-in.sc-gate__card--action-focused
+  > * {
   position: relative;
   z-index: 3;
 }
@@ -966,7 +1135,8 @@
   overflow: visible;
 }
 
-.practice-hub-page--challenges .sc-gate__card--check-focused:not(.sc-gate__card--sign-in) {
+.practice-hub-page--challenges
+  .sc-gate__card--check-focused:not(.sc-gate__card--sign-in) {
   border-color: rgba(155, 89, 182, 0.42);
   box-shadow:
     0 0 0 1px rgba(155, 89, 182, 0.16),
@@ -974,7 +1144,9 @@
     0 12px 28px rgba(0, 0, 0, 0.35);
 }
 
-.practice-hub-page--challenges .sc-gate__nostr-btn.practice-focus-target .sc-gate__icon {
+.practice-hub-page--challenges
+  .sc-gate__nostr-btn.practice-focus-target
+  .sc-gate__icon {
   opacity: 1;
   color: #fff;
 }
@@ -1194,7 +1366,10 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  transition: border-color 0.18s, color 0.18s, background 0.18s;
+  transition:
+    border-color 0.18s,
+    color 0.18s,
+    background 0.18s;
   white-space: nowrap;
   flex-shrink: 0;
   width: 100%;
@@ -1300,7 +1475,10 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: border-color 0.18s, color 0.18s, background 0.18s;
+  transition:
+    border-color 0.18s,
+    color 0.18s,
+    background 0.18s;
 }
 
 .sc-gate__config-link:hover {
@@ -1382,7 +1560,10 @@
   padding: clamp(5px, 0.55vw, 7px) clamp(6px, 0.65vw, 8px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.22);
-  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+  transition:
+    border-color 0.18s,
+    background 0.18s,
+    box-shadow 0.18s;
 }
 
 .sc-gate__check--pass {
@@ -1556,15 +1737,31 @@
 }
 
 /* Per-difficulty rank brightness */
-.sc-row[data-tier="normie"] .sc-row__rank     { color: rgba(255, 255, 255, 0.18); }
-.sc-row[data-tier="stacker"] .sc-row__rank    { color: rgba(255, 255, 255, 0.28); }
-.sc-row[data-tier="noderunner"] .sc-row__rank { color: rgba(255, 255, 255, 0.42); }
-.sc-row[data-tier="sovereign"] .sc-row__rank { color: rgba(255, 255, 255, 0.62); }
+.sc-row[data-tier='normie'] .sc-row__rank {
+  color: rgba(255, 255, 255, 0.18);
+}
+.sc-row[data-tier='stacker'] .sc-row__rank {
+  color: rgba(255, 255, 255, 0.28);
+}
+.sc-row[data-tier='noderunner'] .sc-row__rank {
+  color: rgba(255, 255, 255, 0.42);
+}
+.sc-row[data-tier='sovereign'] .sc-row__rank {
+  color: rgba(255, 255, 255, 0.62);
+}
 
-.sc-row--selected[data-tier="normie"] .sc-row__rank     { color: rgba(255, 255, 255, 0.5); }
-.sc-row--selected[data-tier="stacker"] .sc-row__rank    { color: rgba(255, 255, 255, 0.62); }
-.sc-row--selected[data-tier="noderunner"] .sc-row__rank { color: rgba(255, 255, 255, 0.76); }
-.sc-row--selected[data-tier="sovereign"] .sc-row__rank { color: rgba(255, 255, 255, 0.92); }
+.sc-row--selected[data-tier='normie'] .sc-row__rank {
+  color: rgba(255, 255, 255, 0.5);
+}
+.sc-row--selected[data-tier='stacker'] .sc-row__rank {
+  color: rgba(255, 255, 255, 0.62);
+}
+.sc-row--selected[data-tier='noderunner'] .sc-row__rank {
+  color: rgba(255, 255, 255, 0.76);
+}
+.sc-row--selected[data-tier='sovereign'] .sc-row__rank {
+  color: rgba(255, 255, 255, 0.92);
+}
 
 /* ── Info column ── */
 .sc-row__info {
@@ -1630,7 +1827,9 @@
   min-width: 0;
 }
 
-.practice-challenges-panel.solo-challenges-panel .sc-row__title-text .sc-row__name,
+.practice-challenges-panel.solo-challenges-panel
+  .sc-row__title-text
+  .sc-row__name,
 .solo-challenges-panel .sc-row__title-text .sc-row__name,
 .practice-hub-page--challenges .sc-row__title-text .sc-row__name {
   display: flex;
@@ -1671,7 +1870,9 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.25);
   white-space: nowrap;
-  transition: color 0.18s, border-color 0.18s;
+  transition:
+    color 0.18s,
+    border-color 0.18s;
 }
 
 .sc-row--selected .sc-tag {
@@ -1700,14 +1901,28 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: transparent;
   flex-shrink: 0;
-  transition: background 0.18s, border-color 0.18s;
+  transition:
+    background 0.18s,
+    border-color 0.18s;
 }
 
 /* Filled pip brightness scales with tier */
-.sc-tag--tier[data-tier="normie"]     .sc-tier-pip--filled { background: rgba(255,255,255,0.30); border-color: rgba(255,255,255,0.30); }
-.sc-tag--tier[data-tier="stacker"]    .sc-tier-pip--filled { background: rgba(255,255,255,0.50); border-color: rgba(255,255,255,0.50); }
-.sc-tag--tier[data-tier="noderunner"] .sc-tier-pip--filled { background: rgba(255,255,255,0.70); border-color: rgba(255,255,255,0.70); }
-.sc-tag--tier[data-tier="sovereign"] .sc-tier-pip--filled { background: rgba(255,255,255,0.92); border-color: rgba(255,255,255,0.92); }
+.sc-tag--tier[data-tier='normie'] .sc-tier-pip--filled {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.sc-tag--tier[data-tier='stacker'] .sc-tier-pip--filled {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.sc-tag--tier[data-tier='noderunner'] .sc-tier-pip--filled {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+.sc-tag--tier[data-tier='sovereign'] .sc-tier-pip--filled {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(255, 255, 255, 0.92);
+}
 
 /* Convergence tag */
 .sc-tag--cvg {
@@ -1752,7 +1967,9 @@
   letter-spacing: 0.04em;
   line-height: 1;
   color: rgba(255, 255, 255, 0.38);
-  transition: color 0.18s, text-shadow 0.18s;
+  transition:
+    color 0.18s,
+    text-shadow 0.18s;
 }
 
 @keyframes sc-sats-to-zero {
@@ -1786,13 +2003,16 @@
 }
 
 @keyframes sc-sats-shimmer {
-  0%, 100% {
+  0%,
+  100% {
     color: rgba(255, 255, 255, 0.75);
     text-shadow: none;
   }
   50% {
     color: rgba(255, 255, 255, 0.98);
-    text-shadow: 0 0 14px rgba(255, 255, 255, 0.35), 0 0 32px rgba(255, 255, 255, 0.1);
+    text-shadow:
+      0 0 14px rgba(255, 255, 255, 0.35),
+      0 0 32px rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -1819,31 +2039,34 @@
   color: rgba(255, 255, 255, 0.22);
 }
 
-.sc-row[data-tier="sovereign"] .sc-row__bounty--locked .sc-row__sats,
-.sc-row--selected[data-tier="sovereign"] .sc-row__bounty--locked .sc-row__sats {
+.sc-row[data-tier='sovereign'] .sc-row__bounty--locked .sc-row__sats,
+.sc-row--selected[data-tier='sovereign'] .sc-row__bounty--locked .sc-row__sats {
   color: rgba(230, 195, 40, 0.28);
   animation: none;
   text-shadow: none;
 }
 
 /* Sovereign row gets the gold accent on sats */
-.sc-row[data-tier="sovereign"] .sc-row__sats {
+.sc-row[data-tier='sovereign'] .sc-row__sats {
   color: rgba(230, 195, 40, 0.52);
 }
 
-.sc-row--selected[data-tier="sovereign"] .sc-row__sats {
+.sc-row--selected[data-tier='sovereign'] .sc-row__sats {
   color: rgba(230, 195, 40, 0.9);
   animation: sc-sats-shimmer-gold 3s ease-in-out infinite;
 }
 
 @keyframes sc-sats-shimmer-gold {
-  0%, 100% {
+  0%,
+  100% {
     color: rgba(230, 195, 40, 0.78);
     text-shadow: none;
   }
   50% {
     color: rgba(255, 220, 60, 1);
-    text-shadow: 0 0 14px rgba(230, 195, 40, 0.4), 0 0 32px rgba(230, 195, 40, 0.12);
+    text-shadow:
+      0 0 14px rgba(230, 195, 40, 0.4),
+      0 0 32px rgba(230, 195, 40, 0.12);
   }
 }
 
@@ -1930,18 +2153,30 @@
     animation: sc-fade-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  .sc-list .sc-row:nth-child(1) { animation-delay: 0.22s; }
-  .sc-list .sc-row:nth-child(2) { animation-delay: 0.28s; }
-  .sc-list .sc-row:nth-child(3) { animation-delay: 0.34s; }
-  .sc-list .sc-row:nth-child(4) { animation-delay: 0.40s; }
-  .sc-list .sc-row:nth-child(5) { animation-delay: 0.46s; }
-  .sc-list .sc-row:nth-child(6) { animation-delay: 0.52s; }
+  .sc-list .sc-row:nth-child(1) {
+    animation-delay: 0.22s;
+  }
+  .sc-list .sc-row:nth-child(2) {
+    animation-delay: 0.28s;
+  }
+  .sc-list .sc-row:nth-child(3) {
+    animation-delay: 0.34s;
+  }
+  .sc-list .sc-row:nth-child(4) {
+    animation-delay: 0.4s;
+  }
+  .sc-list .sc-row:nth-child(5) {
+    animation-delay: 0.46s;
+  }
+  .sc-list .sc-row:nth-child(6) {
+    animation-delay: 0.52s;
+  }
 
   /* Actions slide in last */
   .solo-challenges-page .practice-actions,
   .practice-hub-page--challenges .practice-challenges-panel .practice-actions {
     opacity: 0;
-    animation: sc-fade-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.60s forwards;
+    animation: sc-fade-up 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
   }
 
   /* Pop on the inner wrapper — button's glowing is completely unaffected */
@@ -1957,17 +2192,22 @@
   .solo-challenges-page .practice-start.button,
   .practice-hub-page .practice-back.button,
   .practice-hub-page .practice-start.button,
-  .practice-hub-page--challenges .sc-gate__card--sign-in.sc-gate__card--action-focused {
+  .practice-hub-page--challenges
+    .sc-gate__card--sign-in.sc-gate__card--action-focused {
     border-color: rgba(193, 126, 230, 0.72);
-    background:
-      linear-gradient(135deg, rgba(155, 89, 182, 0.18) 0%, rgba(55, 20, 80, 0.44) 55%);
+    background: linear-gradient(
+      135deg,
+      rgba(155, 89, 182, 0.18) 0%,
+      rgba(55, 20, 80, 0.44) 55%
+    );
     box-shadow:
       0 0 0 1px rgba(193, 126, 230, 0.38),
       0 0 calc(var(--ph-card-glow-blur) * 0.35) rgba(155, 89, 182, 0.28),
       0 12px 28px rgba(0, 0, 0, 0.35);
   }
 
-  .practice-hub-page--challenges .sc-gate__card--sign-in.sc-gate__card--action-focused::before {
+  .practice-hub-page--challenges
+    .sc-gate__card--sign-in.sc-gate__card--action-focused::before {
     animation: none;
   }
 
@@ -2029,19 +2269,32 @@ button.sc-gate__check--fail:hover {
 }
 
 /* Focus ring on button — backup layer; li ::after is primary visible ring */
-.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--pass.sc-gate__check--focused::after,
-.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--pass.practice-focus-target::after,
-.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--pass:focus::after {
+.practice-hub-page--challenges
+  .sc-gate__checks
+  button.sc-gate__check--pass.sc-gate__check--focused::after,
+.practice-hub-page--challenges
+  .sc-gate__checks
+  button.sc-gate__check--pass.practice-focus-target::after,
+.practice-hub-page--challenges
+  .sc-gate__checks
+  button.sc-gate__check--pass:focus::after {
   content: none;
 }
 
-.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--fail.sc-gate__check--focused::after,
-.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--fail.practice-focus-target::after,
-.practice-hub-page--challenges .sc-gate__checks button.sc-gate__check--fail:focus::after {
+.practice-hub-page--challenges
+  .sc-gate__checks
+  button.sc-gate__check--fail.sc-gate__check--focused::after,
+.practice-hub-page--challenges
+  .sc-gate__checks
+  button.sc-gate__check--fail.practice-focus-target::after,
+.practice-hub-page--challenges
+  .sc-gate__checks
+  button.sc-gate__check--fail:focus::after {
   content: none;
 }
 
-.practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check--focused),
+.practice-hub-page--challenges
+  .sc-gate__check-item:has(.sc-gate__check--focused),
 .practice-hub-page--challenges .sc-gate__check-item:has(.sc-gate__check:focus) {
   position: relative;
   z-index: 3;
@@ -2085,9 +2338,14 @@ button.sc-gate__check--fail:hover {
   display: flex;
   flex-direction: column;
   gap: max(1rem, 1.25vw);
-  padding: max(2rem, 2.5vw) max(calc(var(--ph-compact-card-pad-x) + 0.85rem), 2vw);
+  padding: max(2rem, 2.5vw)
+    max(calc(var(--ph-compact-card-pad-x) + 0.85rem), 2vw);
   border: none;
-  background: linear-gradient(165deg, rgba(22, 14, 28, 0.98) 0%, rgba(8, 8, 10, 0.98) 100%);
+  background: linear-gradient(
+    165deg,
+    rgba(22, 14, 28, 0.98) 0%,
+    rgba(8, 8, 10, 0.98) 100%
+  );
   box-shadow: 0 10px 28px rgb(0 0 0 / 0.45);
 }
 
@@ -2185,7 +2443,10 @@ button.sc-gate__check--fail:hover {
   letter-spacing: 0.06vw;
   text-transform: uppercase;
   cursor: pointer;
-  transition: border-color 0.18s, color 0.18s, background 0.18s;
+  transition:
+    border-color 0.18s,
+    color 0.18s,
+    background 0.18s;
 }
 
 .sc-gate-check-overlay__btn:hover:not(:disabled) {

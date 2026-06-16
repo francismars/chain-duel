@@ -1,6 +1,11 @@
 import { useEffect, type MutableRefObject } from 'react';
 import type { Socket } from 'socket.io-client';
-import { getMetaFromDuel, createGameState, getHudState, applyTerminalGameOutcome } from '@/game/engine';
+import {
+  getMetaFromDuel,
+  createGameState,
+  getHudState,
+  applyTerminalGameOutcome,
+} from '@/game/engine';
 import type { GameState } from '@/game/engine/types';
 import type {
   ClientToServerEvents,

@@ -1,4 +1,8 @@
-import { ChallengeRowIcon, isChallengeIconId, type ChallengeIconId } from '@/features/practice/ChallengeRowIcon';
+import {
+  ChallengeRowIcon,
+  isChallengeIconId,
+  type ChallengeIconId,
+} from '@/features/practice/ChallengeRowIcon';
 import { isPracticeChallengeConfig } from '@/pages/practiceHubModes';
 
 export interface ChallengeHudInfo {
@@ -16,7 +20,9 @@ const CHALLENGE_RANK_BY_ID: Record<ChallengeIconId, number> = {
   'sovereign-stack': 6,
 };
 
-export function readChallengeHudFromConfig(cfg: Record<string, unknown>): ChallengeHudInfo | null {
+export function readChallengeHudFromConfig(
+  cfg: Record<string, unknown>
+): ChallengeHudInfo | null {
   if (!isPracticeChallengeConfig(cfg)) return null;
   const id = String(cfg.challengeId ?? '');
   if (!isChallengeIconId(id)) return null;
@@ -24,9 +30,12 @@ export function readChallengeHudFromConfig(cfg: Record<string, unknown>): Challe
   return {
     id,
     name: String(cfg.soloChallengeName ?? 'CHALLENGE'),
-    rank: Number.isFinite(rankFromConfig) && rankFromConfig >= 1 && rankFromConfig <= 6
-      ? rankFromConfig
-      : CHALLENGE_RANK_BY_ID[id],
+    rank:
+      Number.isFinite(rankFromConfig) &&
+      rankFromConfig >= 1 &&
+      rankFromConfig <= 6
+        ? rankFromConfig
+        : CHALLENGE_RANK_BY_ID[id],
   };
 }
 
@@ -37,13 +46,27 @@ interface GameInfoLabelProps {
   id?: string;
 }
 
-export function GameInfoLabel({ gameInfo, challenge, className = '', id }: GameInfoLabelProps) {
-  const classes = ['outline', 'condensed', challenge ? 'gameInfo--challenge' : '', className]
+export function GameInfoLabel({
+  gameInfo,
+  challenge,
+  className = '',
+  id,
+}: GameInfoLabelProps) {
+  const classes = [
+    'outline',
+    'condensed',
+    challenge ? 'gameInfo--challenge' : '',
+    className,
+  ]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <div id={id} className={classes} data-rank={challenge ? challenge.rank : undefined}>
+    <div
+      id={id}
+      className={classes}
+      data-rank={challenge ? challenge.rank : undefined}
+    >
       {challenge ? (
         <>
           <span className="gameInfo__icon" aria-hidden="true">

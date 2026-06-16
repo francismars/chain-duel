@@ -4,7 +4,10 @@
  */
 
 import { useEffect } from 'react';
-import { useSocketContext, type SocketContextValue } from '@/contexts/SocketContext';
+import {
+  useSocketContext,
+  type SocketContextValue,
+} from '@/contexts/SocketContext';
 
 export interface UseSocketOptions {
   /** @deprecated Connection is always managed by SocketProvider at the app root. */
@@ -29,7 +32,8 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
 
     const handleConnect = () => onConnect?.();
     const handleDisconnect = () => onDisconnect?.();
-    const handleError = (err: Error) => onError?.(new Error(`Socket connection error: ${err.message}`));
+    const handleError = (err: Error) =>
+      onError?.(new Error(`Socket connection error: ${err.message}`));
 
     if (onConnect) s.on('connect', handleConnect);
     if (onDisconnect) s.on('disconnect', handleDisconnect);
