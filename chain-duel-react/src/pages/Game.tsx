@@ -113,6 +113,8 @@ export default function Game() {
   const simStepRef = useRef(0);
   const challengeInputLogRef = useRef<Array<{ tick: number; dir: string }>>([]);
   const challengeWinSubmittedRef = useRef(false);
+  const blockChallengeContinueRef = useRef(false);
+  const challengeContinueLabelRef = useRef<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [player1Name, setPlayer1Name] = useState('Player 1');
@@ -146,8 +148,6 @@ export default function Game() {
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
-  const [soloPendingEndData, setSoloPendingEndData] =
-    useState<SoloEndData | null>(null);
   const [showExitOverlay, setShowExitOverlay] = useState(false);
   const [exitOverlayFocus, setExitOverlayFocus] = useState<'abort' | 'confirm'>(
     'abort'
@@ -561,89 +561,76 @@ export default function Game() {
       const state = stateRef.current;
       if (!state?.gameEnded || !state.winnerPlayer) return;
       window.clearInterval(poll);
+
       const won = state.winnerPlayer === 'P1';
       const name = String(cfg.soloChallengeName ?? 'CHALLENGE');
       const bounty = Number(cfg.soloBounty ?? 0);
       const runId = String(cfg.challengeRunId ?? '');
       const challengeId = String(cfg.challengeId ?? '');
+      const base = { name, bounty, challengeId };
 
-      window.setTimeout(async () => {
-        if (!won) {
-          setSoloPendingEndData({ won: false, name, bounty, challengeId });
-          return;
-        }
-        if (!socket || !runId || challengeWinSubmittedRef.current) {
-          setSoloPendingEndData({
+      if (!won) {
+        setSoloEndData({ won: false, ...base });
+        return;
+      }
+
+      if (challengeWinSubmittedRef.current) return;
+      challengeWinSubmittedRef.current = true;
+      setSoloEndData({ won: true, ...base, validating: true });
+
+      void (async () => {
+        if (!socket || !runId) {
+          setSoloEndData({
             won: true,
-            name,
-            bounty,
-            challengeId,
+            ...base,
             validating: false,
             validationError: !runId ? 'missing_run' : 'no_socket',
           });
           return;
         }
-        challengeWinSubmittedRef.current = true;
-        setSoloPendingEndData({
-          won: true,
-          name,
-          bounty,
-          challengeId,
-          validating: true,
-        });
         try {
           const result = await submitChallengeWin(socket, {
             runId,
             inputLog: [...challengeInputLogRef.current],
           });
           if (!result.ok) {
-            setSoloPendingEndData({
+            setSoloEndData({
               won: true,
-              name,
-              bounty,
-              challengeId,
+              ...base,
               validating: false,
               validationError: result.reason,
             });
             return;
           }
-          setSoloPendingEndData({
+          setSoloEndData({
             won: true,
-            name,
             bounty: result.bountySats,
             challengeId,
+            name,
             claimToken: result.claimToken,
             noteContent: result.noteContent,
             noteTags: result.noteTags,
             validating: false,
           });
         } catch (err) {
-          setSoloPendingEndData({
+          setSoloEndData({
             won: true,
-            name,
-            bounty,
-            challengeId,
+            ...base,
             validating: false,
             validationError:
               err instanceof Error ? err.message : 'validation_failed',
           });
         }
-      }, 2000);
+      })();
     }, 150);
 
     return () => window.clearInterval(poll);
   }, [loading, stateRef, socket]);
 
-  useEffect(() => {
-    if (
-      soloEndData?.validating &&
-      soloPendingEndData &&
-      !soloPendingEndData.validating
-    ) {
-      setSoloEndData(soloPendingEndData);
-      setSoloPendingEndData(null);
-    }
-  }, [soloEndData?.validating, soloPendingEndData]);
+  blockChallengeContinueRef.current = Boolean(soloEndData?.validating);
+  challengeContinueLabelRef.current = soloEndData?.validating
+    ? 'VALIDATING WIN ON SERVER…'
+    : null;
 
   useEffect(() => {
     audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
@@ -850,14 +837,7 @@ export default function Game() {
       }
       const configMode = String(gameConfig.mode ?? '').toUpperCase();
       if (isPracticeChallengeConfig(gameConfig)) {
-        // Challenge flow: first continue key reveals the results modal; second exits to list.
-        if (!soloEndData) {
-          if (soloPendingEndData) {
-            setSoloEndData(soloPendingEndData);
-            setSoloPendingEndData(null);
-          }
-          return;
-        }
+        if (!soloEndData || soloEndData.validating) return;
         navigate(practiceHubExitPath(gameConfig));
         return;
       }
@@ -867,7 +847,7 @@ export default function Game() {
       }
       navigate('/postgame');
     },
-    [navigate, soloEndData, soloPendingEndData]
+    [navigate, soloEndData]
   );
 
   const confirmExitToMenu = useCallback(() => {
@@ -958,6 +938,9 @@ export default function Game() {
     onCaptureChanged: handleCaptureChanged,
     simStepRef: isChallengeSession ? simStepRef : undefined,
     challengeInputLogRef: isChallengeSession ? challengeInputLogRef : undefined,
+    challengeContinueLabelRef: isChallengeSession
+      ? challengeContinueLabelRef
+      : undefined,
   });
 
   useEffect(() => {
@@ -1032,6 +1015,9 @@ export default function Game() {
     onEmitWinner: emitWinner,
     onNavigateAfterFinish: handleNavigateAfterFinish,
     readyToStartRef,
+    blockContinueAfterGameRef: isChallengeSession
+      ? blockChallengeContinueRef
+      : undefined,
   });
 
   return (
@@ -1362,8 +1348,8 @@ export default function Game() {
                 </div>
 
                 {soloEndData.validating ? (
-                  <p className="solo-zap-note-label">
-                    VALIDATING WIN ON SERVER…
+                  <p className="solo-zap-note-label solo-zap-note-label--validating">
+                    CHECKING YOUR WIN ON THE SERVER…
                   </p>
                 ) : soloEndData.validationError ? (
                   <p className="solo-zap-note-err">
@@ -1549,7 +1535,15 @@ export default function Game() {
               </>
             )}
 
-            <p className="solo-zap-hint">PRESS ANY BUTTON TO CONTINUE</p>
+            <p className="solo-zap-hint">
+              {soloEndData.validating
+                ? 'PLEASE WAIT — VERIFYING YOUR RUN…'
+                : soloEndData.won &&
+                    soloEndData.claimToken &&
+                    noteState !== 'posted'
+                  ? 'POST YOUR NOTE ABOVE TO CLAIM, OR PRESS CONTINUE TO RETURN LATER'
+                  : 'PRESS ANY BUTTON TO CONTINUE'}
+            </p>
           </div>
         </div>
       )}

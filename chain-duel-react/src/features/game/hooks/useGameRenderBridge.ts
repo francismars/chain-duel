@@ -59,6 +59,8 @@ interface UseGameRenderBridgeArgs {
   simStepRef?: MutableRefObject<number>;
   /** When set, record P1 direction changes at sim step boundaries (challenge replay). */
   challengeInputLogRef?: MutableRefObject<Array<{ tick: number; dir: string }>>;
+  /** Optional canvas continue hint while challenge bounty is validating. */
+  challengeContinueLabelRef?: MutableRefObject<string | null>;
 }
 
 /** Wait until #gameContainer is visible and laid out (drops `display:none` hide class). */
@@ -98,6 +100,7 @@ export function useGameRenderBridge({
   onSpeedChanged,
   simStepRef,
   challengeInputLogRef,
+  challengeContinueLabelRef,
 }: UseGameRenderBridgeArgs) {
   const emitWinnerRef = useRef(emitWinner);
   const onHudTickRef = useRef(onHudTick);
@@ -135,6 +138,11 @@ export function useGameRenderBridge({
       challengeInputLogRef.current.push({ tick: simStepRef.current, dir });
     };
 
+    const renderOpts = () => {
+      const label = challengeContinueLabelRef?.current;
+      return label ? { challengeContinueLabel: label } : undefined;
+    };
+
     void (async () => {
       await waitForHostVisible(host);
       if (cancelled || !mounted) return;
@@ -148,7 +156,7 @@ export function useGameRenderBridge({
       const initialState = stateRef.current;
       if (initialState) {
         lastLoggedP1Dir = initialState.p1.dirWanted || 'Right';
-        renderer.render(initialState);
+        renderer.render(initialState, renderOpts());
       }
       const onResize = () => {
         renderer.resize();
@@ -275,7 +283,7 @@ export function useGameRenderBridge({
 
       if (mountReady && state) {
         runSimulation(state, deltaMs);
-        renderer.render(state);
+        renderer.render(state, renderOpts());
       }
 
       frameRef = window.requestAnimationFrame(frame);
@@ -298,6 +306,7 @@ export function useGameRenderBridge({
     captureP1Ref,
     captureP2Ref,
     challengeInputLogRef,
+    challengeContinueLabelRef,
     hostRef,
     rendererRef,
     simStepRef,

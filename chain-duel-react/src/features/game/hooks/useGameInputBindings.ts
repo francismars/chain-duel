@@ -17,6 +17,8 @@ interface UseGameInputBindingsArgs {
   onNavigateAfterFinish: (isTournament: boolean) => void;
   /** When provided, start-key presses are ignored until this ref is true (reveal animation gate). */
   readyToStartRef?: MutableRefObject<boolean>;
+  /** When true, ignore continue keys (e.g. challenge win validating on server). */
+  blockContinueAfterGameRef?: MutableRefObject<boolean>;
 }
 
 const P1_MOVE_KEYS = new Set(['A', 'W', 'S', 'D']);
@@ -124,6 +126,7 @@ export function useGameInputBindings({
   onEmitWinner,
   onNavigateAfterFinish,
   readyToStartRef,
+  blockContinueAfterGameRef,
 }: UseGameInputBindingsArgs) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -147,6 +150,7 @@ export function useGameInputBindings({
       }
 
       if (canContinueAfterGame(state, event.key)) {
+        if (blockContinueAfterGameRef?.current) return;
         if (!winnerSentRef.current && state.winnerPlayer) {
           onEmitWinner(state.winnerPlayer);
           winnerSentRef.current = true;
@@ -184,5 +188,6 @@ export function useGameInputBindings({
     stateRef,
     winnerSentRef,
     readyToStartRef,
+    blockContinueAfterGameRef,
   ]);
 }

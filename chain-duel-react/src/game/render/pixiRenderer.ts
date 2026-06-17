@@ -232,7 +232,10 @@ export class PixiGameRenderer {
     return false;
   }
 
-  render(state: GameState, opts?: { replayView?: boolean }): void {
+  render(
+    state: GameState,
+    opts?: { replayView?: boolean; challengeContinueLabel?: string }
+  ): void {
     if (!this.app) {
       this.renderFallback(state, opts);
       return;
@@ -586,7 +589,7 @@ export class PixiGameRenderer {
             this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
             this.endContinueText.text = opts?.replayView
               ? ''
-              : 'PRESS ANY BUTTON TO CONTINUE';
+              : opts?.challengeContinueLabel ?? 'PRESS ANY BUTTON TO CONTINUE';
           }
         } else {
           this.endWinnerText.text = '';
