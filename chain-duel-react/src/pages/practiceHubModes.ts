@@ -1,3 +1,5 @@
+import { CHALLENGE_START_SATS_PER_PLAYER } from '@/game/engine/constants';
+
 /** `sessionStorage` key for client-only practice setup (must not overlap paid P2P/tournament). */
 export const GAME_CONFIG_STORAGE_KEY = 'gameConfig';
 
@@ -44,15 +46,12 @@ export function practiceHubExitPath(cfg: Record<string, unknown>): string {
   return '/practice';
 }
 
-/** Starting sats per player in a challenge (bounty split evenly across players). */
+/** Starting sats per player in a bounty challenge (fixed pot; zap payout uses `soloBounty`). */
 export function challengeStartSatsPerPlayer(
   cfg: Record<string, unknown>
 ): number | undefined {
   if (!isPracticeChallengeConfig(cfg)) return undefined;
-  const bounty = Math.floor(Number(cfg.soloBounty ?? 0));
-  if (bounty <= 0) return undefined;
-  const playerCount = String(cfg.teamMode ?? '') === 'ffa' ? 4 : 2;
-  return Math.max(1, Math.floor(bounty / playerCount));
+  return CHALLENGE_START_SATS_PER_PLAYER;
 }
 
 /** Parsed `sessionStorage.gameConfig` (empty object if missing or invalid). */

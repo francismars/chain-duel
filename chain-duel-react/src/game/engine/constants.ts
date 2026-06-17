@@ -33,6 +33,9 @@ export const FFA_HUD_COLORS = [
 /** FFA: each of the four players starts with this many sats (4000 total pot). */
 export const FFA_START_SATS_PER_PLAYER = 1000;
 
+/** Bounty challenges: fixed in-game pot per player (payout bounty is separate). */
+export const CHALLENGE_START_SATS_PER_PLAYER = 1000;
+
 export const CAPTURE_LEVELS = [
   { minLength: 1, maxLength: 1, percent: 2 },
   { minLength: 2, maxLength: 3, percent: 4 },

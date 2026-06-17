@@ -35,7 +35,7 @@ const TAB_ORDER: OnlineTab[] = ['live', 'history', 'hof'];
 type OnlineMode = 'create' | 'join';
 type OnlineTab = 'live' | 'history' | 'hof';
 
-const BUYIN_MIN = 100;
+const BUYIN_MIN = 1000;
 const BUYIN_DEFAULT = 1000;
 const BUYIN_MAX = 1_000_000;
 const BUYIN_STEP = 10;
@@ -278,7 +278,7 @@ export default function OnlineRooms() {
 
   const parseBuyin = useCallback(() => {
     const parsed = Number.parseInt(buyin, 10);
-    if (!Number.isFinite(parsed)) return 100;
+    if (!Number.isFinite(parsed)) return BUYIN_MIN;
     return Math.max(BUYIN_MIN, Math.min(BUYIN_MAX, parsed));
   }, [buyin]);
 
@@ -286,7 +286,7 @@ export default function OnlineRooms() {
     setBuyin((currentStr) => {
       const parsed = Number.parseInt(currentStr, 10);
       const current = !Number.isFinite(parsed)
-        ? 100
+        ? BUYIN_MIN
         : Math.max(BUYIN_MIN, Math.min(BUYIN_MAX, parsed));
       const next = Math.max(BUYIN_MIN, Math.min(BUYIN_MAX, current + delta));
       return String(next);
