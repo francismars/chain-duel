@@ -11,8 +11,14 @@ import {
 } from '@/lib/nostr/fetchKind0Profile';
 import { fetchProfileFromServer } from '@/lib/nostr/fetchProfileFromServer';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
+import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
-import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
+import {
+  CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
+  clearMenuNavigationState,
+  navigateToMainMenu,
+  type MenuNavigationState,
+} from '@/shared/constants/menuNavigation';
 import type { AppNostrProfile } from '@/types/schemas';
 import {
   beginNostrConnectPairing,
@@ -35,10 +41,16 @@ import {
   parseNwcUri,
 } from '@/lib/nostr/nwcPay';
 import { GamepadTester } from '@/features/config/GamepadTester';
+import {
+  type ConfigFocus,
+  type ConfigTab,
+  type LoginTab,
+  isTypingTarget,
+  loginTabFromIndex,
+  moveConfigFocus,
+  tabFromSectionIndex,
+} from './configNav';
 import './config.css';
-
-type ConfigTab = 'signin' | 'nwc' | 'gamepad';
-type LoginTab = 'extension' | 'nip46' | 'nsec';
 
 function signerModeLabel(mode: StoredSignerMode | null): string {
   if (mode === 'nip46') return 'Nostr Connect';
@@ -64,9 +76,20 @@ function appProfileToKind0(p: AppNostrProfile): Kind0Profile {
 
 type ConfigLocationState = { returnTo?: string };
 
+function kbdFocus(active: boolean): string {
+  return active ? ' config-kbd-focus' : '';
+}
+
 export default function Config() {
   const navigate = useNavigate();
   const location = useLocation();
+  const suppressNextMenuConfirmRef = useRef(
+    Boolean(
+      (location.state as MenuNavigationState | null)?.[
+        CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM
+      ]
+    )
+  );
   const returnTo =
     (location.state as ConfigLocationState | null)?.returnTo ??
     new URLSearchParams(location.search).get('returnTo') ??
@@ -98,6 +121,10 @@ export default function Config() {
   const [nip05CheckPending, setNip05CheckPending] = useState(false);
   const [configTab, setConfigTab] = useState<ConfigTab>('signin');
   const [loginTab, setLoginTab] = useState<LoginTab>('extension');
+  const [navFocus, setNavFocus] = useState<ConfigFocus>({
+    kind: 'section',
+    index: 0,
+  });
   const [nsecInput, setNsecInput] = useState('');
   const [pendingAuthUrl, setPendingAuthUrl] = useState<string | null>(null);
   const [nostrConnectUri, setNostrConnectUri] = useState<string | null>(null);
@@ -117,7 +144,12 @@ export default function Config() {
   const playSfxRef = useRef(playSfx);
   const profileCardMainRef = useRef<HTMLDivElement | null>(null);
   const backButtonRef = useRef<HTMLButtonElement | null>(null);
+  const nwcSaveRef = useRef<HTMLButtonElement | null>(null);
+  const nwcDisconnectRef = useRef<HTMLButtonElement | null>(null);
+  const nip46RegenRef = useRef<HTMLButtonElement | null>(null);
   playSfxRef.current = playSfx;
+
+  useGamepad(true);
 
   useEffect(() => {
     if (isNsecSessionMissing()) {
@@ -473,52 +505,122 @@ export default function Config() {
   const avatarSrc =
     !avatarBroken && profile?.picture?.trim() ? profile.picture.trim() : null;
 
+  const activateConfigNav = useCallback(() => {
+    if (navFocus.kind === 'section') {
+      setConfigTab(tabFromSectionIndex(navFocus.index));
+      return;
+    }
+    if (navFocus.kind === 'login') {
+      setLoginTab(loginTabFromIndex(navFocus.index));
+      return;
+    }
+    if (navFocus.kind === 'mainMenu') {
+      if (!returnTo || returnTo === '/') {
+        navigateToMainMenu(navigate);
+      } else {
+        navigate(returnTo);
+      }
+      return;
+    }
+    if (navFocus.kind === 'action') {
+      if (configTab === 'signin' && nostrSignedIn) {
+        handleNostrSignOut();
+        return;
+      }
+      if (configTab === 'signin' && loginTab === 'extension') {
+        void handleExtensionSignIn();
+        return;
+      }
+      if (configTab === 'signin' && loginTab === 'nsec') {
+        void handleNsecSignIn();
+        return;
+      }
+      if (configTab === 'signin' && loginTab === 'nip46') {
+        nip46RegenRef.current?.click();
+        return;
+      }
+      if (configTab === 'nwc') {
+        if (nwcSaved) {
+          nwcDisconnectRef.current?.click();
+        } else {
+          nwcSaveRef.current?.click();
+        }
+      }
+    }
+  }, [
+    navFocus,
+    configTab,
+    loginTab,
+    nostrSignedIn,
+    nwcSaved,
+    returnTo,
+    navigate,
+    handleNostrSignOut,
+    handleExtensionSignIn,
+    handleNsecSignIn,
+  ]);
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (!nostrSignedIn) return;
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      const tag = target.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable)
-        return;
+      if (isTypingTarget(e.target)) return;
 
-      const active = document.activeElement as HTMLElement | null;
-      const mainEl = profileCardMainRef.current;
-      const fieldEls = Array.from(
-        mainEl?.querySelectorAll('.config-profile-card__field') ?? []
-      ) as HTMLElement[];
-      const fieldIdx = fieldEls.findIndex((el) => el === active);
-      const inProfileCard = !!(mainEl && active && mainEl.contains(active));
+      const isConfirm =
+        e.key === 'Enter' || e.key === ' ' || e.code === 'NumpadEnter';
+      const isUp =
+        e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W';
+      const isDown =
+        e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
+      const isLeft =
+        e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A';
+      const isRight =
+        e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
 
-      if (e.key === 'ArrowDown') {
+      if (!isConfirm && !isUp && !isDown && !isLeft && !isRight) return;
+
+      if (isConfirm) {
+        if (e.repeat) {
+          e.preventDefault();
+          return;
+        }
+        if (suppressNextMenuConfirmRef.current) {
+          suppressNextMenuConfirmRef.current = false;
+          e.preventDefault();
+          clearMenuNavigationState(navigate, location);
+          return;
+        }
         e.preventDefault();
-        playSfxRef.current(SFX.MENU_SELECT);
-        backButtonRef.current?.focus({ preventScroll: true });
-        return;
-      }
-
-      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-      if (fieldEls.length === 0) return;
-
-      if (fieldIdx >= 0) {
-        e.preventDefault();
-        playSfxRef.current(SFX.MENU_SELECT);
-        const delta = e.key === 'ArrowRight' ? 1 : -1;
-        const next = (fieldIdx + delta + fieldEls.length) % fieldEls.length;
-        fieldEls[next]?.focus({ preventScroll: true });
+        playSfxRef.current(SFX.MENU_CONFIRM);
+        activateConfigNav();
         return;
       }
 
-      if (active === backButtonRef.current || inProfileCard) {
-        e.preventDefault();
-        playSfxRef.current(SFX.MENU_SELECT);
-        fieldEls[0]?.focus({ preventScroll: true });
-      }
+      e.preventDefault();
+      playSfxRef.current(SFX.MENU_SELECT);
+      const dir = isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right';
+      setNavFocus((prev) => {
+        const next = moveConfigFocus(prev, dir, {
+          configTab,
+          signedIn: nostrSignedIn,
+        });
+        if (next.kind === 'section' && (dir === 'left' || dir === 'right')) {
+          setConfigTab(tabFromSectionIndex(next.index));
+        }
+        if (next.kind === 'login' && (dir === 'left' || dir === 'right')) {
+          setLoginTab(loginTabFromIndex(next.index));
+        }
+        return next;
+      });
     };
 
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [nostrSignedIn]);
+  }, [
+    activateConfigNav,
+    configTab,
+    nostrSignedIn,
+    navigate,
+    location,
+  ]);
 
   const retryNip46ServerLink = useCallback(() => {
     setNostrError(null);
@@ -546,19 +648,23 @@ export default function Config() {
 
   return (
     <div className="flex full flex-center config-page">
-      <p className="page-title label">Config</p>
+      <div className="config-shell">
+        <p className="page-title label">Config</p>
 
-      <div
-        className="config-section-tabs"
-        role="tablist"
-        aria-label="Config sections"
-      >
+        <div
+          className="config-section-tabs"
+          role="tablist"
+          aria-label="Config sections"
+        >
         <button
           type="button"
           role="tab"
           aria-selected={configTab === 'signin'}
-          className={`config-section-tab${configTab === 'signin' ? ' config-section-tab--active' : ''}`}
-          onClick={() => setConfigTab('signin')}
+          className={`config-section-tab${configTab === 'signin' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 0)}`}
+          onClick={() => {
+            setConfigTab('signin');
+            setNavFocus({ kind: 'section', index: 0 });
+          }}
         >
           Sign in
         </button>
@@ -566,8 +672,11 @@ export default function Config() {
           type="button"
           role="tab"
           aria-selected={configTab === 'nwc'}
-          className={`config-section-tab${configTab === 'nwc' ? ' config-section-tab--active' : ''}`}
-          onClick={() => setConfigTab('nwc')}
+          className={`config-section-tab${configTab === 'nwc' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 1)}`}
+          onClick={() => {
+            setConfigTab('nwc');
+            setNavFocus({ kind: 'section', index: 1 });
+          }}
         >
           Wallet (NWC)
         </button>
@@ -575,19 +684,22 @@ export default function Config() {
           type="button"
           role="tab"
           aria-selected={configTab === 'gamepad'}
-          className={`config-section-tab${configTab === 'gamepad' ? ' config-section-tab--active' : ''}`}
-          onClick={() => setConfigTab('gamepad')}
+          className={`config-section-tab${configTab === 'gamepad' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 2)}`}
+          onClick={() => {
+            setConfigTab('gamepad');
+            setNavFocus({ kind: 'section', index: 2 });
+          }}
         >
           Gamepad
         </button>
-      </div>
+        </div>
 
+        <div className="config-panel">
       {configTab === 'signin' && !nostrSignedIn ? (
         <>
-          <p className="config-nostr-hint">
-            Sign in with an extension, <strong>Nostr Connect</strong>, or nsec.
-            After you pair your signer app, we link your pubkey to this game
-            session on our server and load your profile.
+          <p className="config-panel__lede">
+            Choose a sign-in method. We link your pubkey to this game session
+            and load your profile.
           </p>
           {nostrError ? (
             <p className="config-nostr-error">{nostrError}</p>
@@ -672,9 +784,10 @@ export default function Config() {
               type="button"
               role="tab"
               aria-selected={loginTab === 'extension'}
-              className={`config-login-tab${loginTab === 'extension' ? ' config-login-tab--active' : ''}`}
+              className={`config-login-tab${loginTab === 'extension' ? ' config-login-tab--active' : ''}${kbdFocus(navFocus.kind === 'login' && navFocus.index === 0)}`}
               onClick={() => {
                 setLoginTab('extension');
+                setNavFocus({ kind: 'login', index: 0 });
                 setNostrError(null);
               }}
             >
@@ -684,9 +797,10 @@ export default function Config() {
               type="button"
               role="tab"
               aria-selected={loginTab === 'nip46'}
-              className={`config-login-tab${loginTab === 'nip46' ? ' config-login-tab--active' : ''}`}
+              className={`config-login-tab${loginTab === 'nip46' ? ' config-login-tab--active' : ''}${kbdFocus(navFocus.kind === 'login' && navFocus.index === 1)}`}
               onClick={() => {
                 setLoginTab('nip46');
+                setNavFocus({ kind: 'login', index: 1 });
                 setNostrError(null);
               }}
             >
@@ -696,9 +810,10 @@ export default function Config() {
               type="button"
               role="tab"
               aria-selected={loginTab === 'nsec'}
-              className={`config-login-tab${loginTab === 'nsec' ? ' config-login-tab--active' : ''}`}
+              className={`config-login-tab${loginTab === 'nsec' ? ' config-login-tab--active' : ''}${kbdFocus(navFocus.kind === 'login' && navFocus.index === 2)}`}
               onClick={() => {
                 setLoginTab('nsec');
+                setNavFocus({ kind: 'login', index: 2 });
                 setNostrError(null);
               }}
             >
@@ -708,14 +823,18 @@ export default function Config() {
 
           <div className="config-login-panel">
             {loginTab === 'extension' ? (
-              <div className="config-login-panel__block" role="tabpanel">
-                <p className="config-login-panel__lede">
-                  NIP-07 — Alby, nos2x, etc.
+              <div
+                className="config-login-panel__block config-login-panel__block--center"
+                role="tabpanel"
+              >
+                <p className="config-login-panel__lede config-login-panel__lede--muted">
+                  NIP-07 · Alby, nos2x, and other browser extensions
                 </p>
-                <div className="config-page__actions config-page__actions--inline">
+                <div className="config-page__actions config-page__actions--inline config-page__actions--fill">
                   <Button
                     id="nostrSignInExtension"
                     type="button"
+                    className={kbdFocus(navFocus.kind === 'action').trim()}
                     onClick={() => {
                       void handleExtensionSignIn();
                     }}
@@ -826,8 +945,14 @@ export default function Config() {
 
                 <div className="config-page__actions config-page__actions--inline config-page__actions--regen">
                   <Button
+                    ref={nip46RegenRef}
                     type="button"
-                    className="config-nc-regen-btn"
+                    className={`config-nc-regen-btn${kbdFocus(
+                      navFocus.kind === 'action' &&
+                        configTab === 'signin' &&
+                        loginTab === 'nip46' &&
+                        !pendingNip46ServerLink
+                    )}`}
                     onClick={() => {
                       nip46PairingAbortRef.current?.abort();
                       clearSignerSession();
@@ -870,6 +995,7 @@ export default function Config() {
                   <Button
                     id="nostrSignInNsec"
                     type="button"
+                    className={kbdFocus(navFocus.kind === 'action').trim()}
                     onClick={() => {
                       void handleNsecSignIn();
                     }}
@@ -1173,6 +1299,7 @@ export default function Config() {
                 <Button
                   id="nostrSignOut"
                   type="button"
+                  className={kbdFocus(navFocus.kind === 'action').trim()}
                   onClick={handleNostrSignOut}
                 >
                   Sign out
@@ -1210,8 +1337,9 @@ export default function Config() {
               Wallet connected
             </span>
             <button
+              ref={nwcDisconnectRef}
               type="button"
-              className="config-nwc-block__disconnect-btn"
+              className={`config-nwc-block__disconnect-btn${kbdFocus(navFocus.kind === 'action')}`}
               onClick={() => {
                 clearNwcUri();
                 setNwcInput('');
@@ -1237,7 +1365,9 @@ export default function Config() {
               spellCheck={false}
             />
             <Button
+              ref={nwcSaveRef}
               type="button"
+              className={kbdFocus(navFocus.kind === 'action').trim()}
               disabled={!nwcInput.trim()}
               onClick={() => {
                 try {
@@ -1263,24 +1393,27 @@ export default function Config() {
       {configTab === 'gamepad' ? (
         <GamepadTester active={configTab === 'gamepad'} />
       ) : null}
+        </div>
 
-      <div
-        key={`act-${profileAnimKey}`}
-        className="config-page__actions config-page__actions--animate-in"
-      >
-        <Button
-          id="backButton"
-          ref={backButtonRef}
-          onClick={() => {
-            if (!returnTo || returnTo === '/') {
-              navigateToMainMenu(navigate);
-            } else {
-              navigate(returnTo);
-            }
-          }}
+        <div
+          key={`act-${profileAnimKey}`}
+          className="config-shell__footer config-page__actions--animate-in"
         >
-          Main Menu
-        </Button>
+          <Button
+            id="backButton"
+            ref={backButtonRef}
+            className={kbdFocus(navFocus.kind === 'mainMenu').trim()}
+            onClick={() => {
+              if (!returnTo || returnTo === '/') {
+                navigateToMainMenu(navigate);
+              } else {
+                navigate(returnTo);
+              }
+            }}
+          >
+            Main Menu
+          </Button>
+        </div>
       </div>
 
       <BackgroundAudio

@@ -84,8 +84,7 @@ export function GamepadTester({ active }: GamepadTesterProps) {
   return (
     <div className="config-gp-tester config-gp-tester--animate-in">
       <p className="config-gp-tester__lede">
-        Verify controllers before a match. Player 1 ={' '}
-        <strong>WASD + Space</strong>, Player 2 ={' '}
+        Player 1 = <strong>WASD + Space</strong>, Player 2 ={' '}
         <strong>arrows + Enter</strong>.
       </p>
 
