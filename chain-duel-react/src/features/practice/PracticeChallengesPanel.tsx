@@ -389,6 +389,8 @@ export const PracticeChallengesPanel = forwardRef<
   const nostrProfilePic = nostrSession.picture;
   const payoutReady = eligibility?.eligible === true;
   const showSetupGate = nostrSession.signedIn && !payoutReady;
+  const challengesLocked =
+    !nostrSession.signedIn || eligibilityLoading || !payoutReady;
   const eligibilityChecks = useMemo(
     () =>
       eligibility && showSetupGate
@@ -405,7 +407,6 @@ export const PracticeChallengesPanel = forwardRef<
     payoutReady,
   });
   const showSignInGate = !nostrSession.signedIn && !payoutReady;
-  const challengesLocked = !nostrSession.signedIn;
   /** Gate has a focusable button (sign-in / config); absent when payout-ready (status text only). */
   const hasGateActionButton = showSignInGate || showSetupGate;
   const showBountyViolator = !nostrSession.signedIn || showSetupGate;
@@ -792,13 +793,30 @@ export const PracticeChallengesPanel = forwardRef<
         playSfx(SFX.MENU_SELECT);
         return;
       }
+      if (eligibilityLoading) {
+        setLaunchError('Checking eligibility — try again in a moment');
+        playSfx(SFX.MENU_SELECT);
+        return;
+      }
+      if (!payoutReady) {
+        setLaunchError('Complete all requirements before starting a challenge');
+        playSfx(SFX.MENU_SELECT);
+        return;
+      }
       setLaunchError(null);
       clearPendingChallengeClaim();
       playSfx(SFX.MENU_CONFIRM);
 
       const runResult = await requestChallengeRun(socket, challenge.id);
       if (!runResult.ok) {
-        setLaunchError(runResult.reason);
+        const runReasonMessages: Record<string, string> = {
+          not_eligible: 'Complete all requirements before starting a challenge',
+          nostr_sign_in_required: 'Sign in with Nostr to start a bounty challenge',
+          rate_limited: 'Too many attempts — wait a moment and try again',
+        };
+        setLaunchError(
+          runReasonMessages[runResult.reason] ?? runResult.reason
+        );
         playSfx(SFX.MENU_SELECT);
         return;
       }
@@ -847,6 +865,8 @@ export const PracticeChallengesPanel = forwardRef<
       nostrSession.pubkey,
       nostrSession.displayName,
       nostrSession.signedIn,
+      payoutReady,
+      eligibilityLoading,
     ]
   );
 
