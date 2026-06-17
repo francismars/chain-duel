@@ -85,7 +85,8 @@ export function GamepadTester({ active }: GamepadTesterProps) {
     <div className="config-gp-tester config-gp-tester--animate-in">
       <p className="config-gp-tester__lede">
         Player 1 = <strong>WASD + Space</strong>, Player 2 ={' '}
-        <strong>arrows + Enter</strong>.
+        <strong>arrows + Enter</strong>. Controller input is captured here only
+        — use the keyboard to change tabs.
       </p>
 
       <div className="config-gp-tester__status" role="status">

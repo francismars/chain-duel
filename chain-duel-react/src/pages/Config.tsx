@@ -149,7 +149,7 @@ export default function Config() {
   const nip46RegenRef = useRef<HTMLButtonElement | null>(null);
   playSfxRef.current = playSfx;
 
-  useGamepad(true);
+  useGamepad(configTab !== 'gamepad');
 
   useEffect(() => {
     if (isNsecSessionMissing()) {
