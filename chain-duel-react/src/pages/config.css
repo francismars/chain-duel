@@ -54,6 +54,45 @@
   border-radius: 0;
 }
 
+.config-section-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  width: min(90vw, 44rem);
+  max-width: 100%;
+  margin: 0.15rem auto 0.5rem;
+}
+
+.config-section-tab {
+  flex: 1 1 auto;
+  min-width: 7rem;
+  padding: 0.42rem 0.75rem;
+  font-size: clamp(0.68rem, 1.25vw, 0.78rem);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.48);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.config-section-tab:hover {
+  color: rgba(255, 255, 255, 0.88);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: none;
+}
+
+.config-section-tab--active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: none;
+}
+
 .config-login-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -1287,7 +1326,7 @@
 .config-nwc-block {
   width: min(90vw, 44rem);
   max-width: 100%;
-  margin: 1.5rem auto 0;
+  margin: 0.35rem auto 0;
   border: 1px solid rgb(255 255 255 / 0.14);
   padding: 1rem 1.25rem 1.1rem;
   background: rgb(0 0 0 / 28%);
@@ -1409,6 +1448,301 @@
   color: rgb(255 140 120 / 0.9);
 }
 
+/* ── Gamepad tester ── */
+
+.config-gp-tester {
+  width: min(90vw, 44rem);
+  max-width: 100%;
+  margin: 0.35rem auto 0;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  padding: 1rem 1.1rem 1.15rem;
+  background: rgb(0 0 0 / 28%);
+}
+
+.config-gp-tester--animate-in {
+  animation: config-profile-reveal-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.12s
+    both;
+}
+
+.config-gp-tester__lede {
+  margin: 0 0 0.75rem;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.68rem, 0.82vw, 0.85rem);
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.5);
+  text-align: left;
+}
+
+.config-gp-tester__status {
+  margin-bottom: 0.85rem;
+}
+
+.config-gp-tester__count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.62rem, 0.72vw, 0.78rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.65rem;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  color: rgb(255 255 255 / 0.42);
+  background: rgb(0 0 0 / 25%);
+}
+
+.config-gp-tester__count--on {
+  color: rgb(160 230 175 / 0.9);
+  border-color: rgb(100 200 130 / 0.35);
+  background: rgb(60 160 90 / 0.08);
+}
+
+.config-gp-slots {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.config-gp-slot {
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(0 0 0 / 22%);
+  padding: 0.75rem 0.8rem 0.85rem;
+}
+
+.config-gp-slot--empty {
+  opacity: 0.82;
+}
+
+.config-gp-slot__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.55rem;
+}
+
+.config-gp-slot__identity {
+  min-width: 0;
+}
+
+.config-gp-slot__title {
+  margin: 0;
+  font-family: 'BureauGrotesque', 'Inter', sans-serif;
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.94);
+}
+
+.config-gp-slot__device {
+  margin: 0.2rem 0 0;
+  font-family: ui-monospace, 'Courier New', monospace;
+  font-size: clamp(0.62rem, 0.72vw, 0.74rem);
+  color: rgb(255 255 255 / 0.42);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.config-gp-slot__badge {
+  flex-shrink: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.58rem, 0.68vw, 0.7rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.5rem;
+  border: 1px solid;
+}
+
+.config-gp-slot__badge--on {
+  color: rgb(160 230 175 / 0.9);
+  border-color: rgb(100 200 130 / 0.35);
+  background: rgb(60 160 90 / 0.08);
+}
+
+.config-gp-slot__badge--off {
+  color: rgb(255 255 255 / 0.38);
+  border-color: rgb(255 255 255 / 0.14);
+}
+
+.config-gp-slot__empty-text {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.68rem, 0.82vw, 0.82rem);
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.45);
+  text-align: left;
+}
+
+.config-gp-slot__mapping {
+  margin: 0 0 0.65rem;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.62rem, 0.72vw, 0.74rem);
+  letter-spacing: 0.04em;
+  color: rgb(255 255 255 / 0.42);
+}
+
+.config-gp-slot__mapping-sep {
+  margin: 0 0.35rem;
+  opacity: 0.5;
+}
+
+.config-gp-slot__diagram-wrap {
+  padding: 0.85rem 0.65rem 0.55rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background:
+    radial-gradient(
+      ellipse 80% 55% at 50% 100%,
+      rgb(255 255 255 / 0.04) 0%,
+      transparent 70%
+    ),
+    rgb(0 0 0 / 35%);
+}
+
+.config-gp-diagram {
+  display: block;
+  width: 100%;
+  max-width: 20rem;
+  margin: 0 auto;
+  aspect-ratio: 400 / 220;
+}
+
+.config-gp-diagram__shadow {
+  fill: rgb(0 0 0 / 0.45);
+}
+
+.config-gp-diagram__body {
+  stroke: rgb(255 255 255 / 0.2);
+  stroke-width: 1.5;
+}
+
+.config-gp-diagram__body-rim {
+  pointer-events: none;
+}
+
+.config-gp-diagram__shoulder {
+  fill: rgb(70 70 76);
+  stroke: rgb(255 255 255 / 0.14);
+  stroke-width: 1;
+  transition: fill 0.1s ease;
+}
+
+.config-gp-diagram__shoulder--active {
+  fill: rgb(230 230 235);
+  stroke: rgb(255 255 255 / 0.85);
+  filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.35));
+}
+
+.config-gp-diagram__meta {
+  fill: rgb(58 58 64);
+  stroke: rgb(255 255 255 / 0.16);
+  stroke-width: 1;
+  transition: fill 0.1s ease;
+}
+
+.config-gp-diagram__meta--active {
+  fill: rgb(220 220 228);
+  stroke: rgb(255 255 255 / 0.8);
+}
+
+.config-gp-diagram__meta-caption {
+  font-family: 'Inter', sans-serif;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  fill: rgb(255 255 255 / 0.38);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.config-gp-diagram__dpad-arm {
+  fill: rgb(34 34 38);
+  stroke: rgb(255 255 255 / 0.12);
+  stroke-width: 0.8;
+  transition: fill 0.1s ease;
+}
+
+.config-gp-diagram__dpad-arm--active {
+  fill: rgb(210 210 218);
+  stroke: rgb(255 255 255 / 0.75);
+}
+
+.config-gp-diagram__dpad-hub {
+  fill: rgb(24 24 28);
+  pointer-events: none;
+}
+
+.config-gp-diagram__face-btn {
+  stroke: rgb(255 255 255 / 0.22);
+  stroke-width: 1.2;
+  transition:
+    stroke 0.1s ease,
+    filter 0.1s ease;
+}
+
+.config-gp-diagram__face-btn--active {
+  stroke: rgb(255 255 255 / 0.9);
+  stroke-width: 2;
+}
+
+.config-gp-diagram__face-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  fill: rgb(255 255 255 / 0.75);
+  pointer-events: none;
+}
+
+.config-gp-diagram__face-label--active {
+  fill: #fff;
+}
+
+.config-gp-diagram__stick-well {
+  fill: rgb(14 14 18);
+  stroke: rgb(255 255 255 / 0.12);
+  stroke-width: 1.2;
+}
+
+.config-gp-diagram__stick-groove {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.06);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.config-gp-diagram__stick-cap {
+  stroke: rgb(255 255 255 / 0.1);
+  stroke-width: 1;
+}
+
+.config-gp-diagram__stick-dot {
+  fill: rgb(255 255 255 / 0.28);
+}
+
+.config-gp-diagram__stick-dot--active {
+  fill: rgb(255 255 255 / 0.95);
+}
+
+.config-gp-diagram__star,
+.config-gp-diagram__home {
+  fill: rgb(58 58 64);
+  stroke: rgb(255 255 255 / 0.14);
+  stroke-width: 1;
+}
+
+.config-gp-diagram__star-icon {
+  font-family: 'Inter', sans-serif;
+  font-size: 7px;
+  fill: rgb(255 255 255 / 0.45);
+  pointer-events: none;
+}
+
+.config-gp-diagram__home--active {
+  fill: rgb(220 220 228);
+  stroke: rgb(255 255 255 / 0.85);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .config-kind0-load__relay--pending .config-kind0-load__relay-status {
     animation: none;
@@ -1428,6 +1762,7 @@
   .config-profile-card--animate-in .config-profile-card__actions,
   .config-profile-card--animate-in .config-signer-ping,
   .config-nwc-block--animate-in,
+  .config-gp-tester--animate-in,
   .config-page__actions--animate-in {
     animation: none !important;
     opacity: 1 !important;

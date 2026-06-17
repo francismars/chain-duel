@@ -34,8 +34,10 @@ import {
   clearNwcUri,
   parseNwcUri,
 } from '@/lib/nostr/nwcPay';
+import { GamepadTester } from '@/features/config/GamepadTester';
 import './config.css';
 
+type ConfigTab = 'signin' | 'nwc' | 'gamepad';
 type LoginTab = 'extension' | 'nip46' | 'nsec';
 
 function signerModeLabel(mode: StoredSignerMode | null): string {
@@ -94,6 +96,7 @@ export default function Config() {
   const [avatarBroken, setAvatarBroken] = useState(false);
   const [nip05Ok, setNip05Ok] = useState<boolean | null>(null);
   const [nip05CheckPending, setNip05CheckPending] = useState(false);
+  const [configTab, setConfigTab] = useState<ConfigTab>('signin');
   const [loginTab, setLoginTab] = useState<LoginTab>('extension');
   const [nsecInput, setNsecInput] = useState('');
   const [pendingAuthUrl, setPendingAuthUrl] = useState<string | null>(null);
@@ -147,7 +150,7 @@ export default function Config() {
     if (nostrSignedIn || serverLinking || nostrBusy) {
       return;
     }
-    if (loginTab !== 'nip46' || !hasStoredNip46Session()) {
+    if (configTab !== 'signin' || loginTab !== 'nip46' || !hasStoredNip46Session()) {
       return;
     }
     if (!socket?.connected) {
@@ -182,6 +185,7 @@ export default function Config() {
       }
     })();
   }, [
+    configTab,
     loginTab,
     nostrSignedIn,
     serverLinking,
@@ -199,7 +203,7 @@ export default function Config() {
     if (hasStoredNip46Session()) {
       return;
     }
-    if (loginTab !== 'nip46') {
+    if (configTab !== 'signin' || loginTab !== 'nip46') {
       return;
     }
 
@@ -280,6 +284,7 @@ export default function Config() {
       }
     };
   }, [
+    configTab,
     loginTab,
     nostrSignedIn,
     serverLinking,
@@ -543,7 +548,41 @@ export default function Config() {
     <div className="flex full flex-center config-page">
       <p className="page-title label">Config</p>
 
-      {!nostrSignedIn ? (
+      <div
+        className="config-section-tabs"
+        role="tablist"
+        aria-label="Config sections"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={configTab === 'signin'}
+          className={`config-section-tab${configTab === 'signin' ? ' config-section-tab--active' : ''}`}
+          onClick={() => setConfigTab('signin')}
+        >
+          Sign in
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={configTab === 'nwc'}
+          className={`config-section-tab${configTab === 'nwc' ? ' config-section-tab--active' : ''}`}
+          onClick={() => setConfigTab('nwc')}
+        >
+          Wallet (NWC)
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={configTab === 'gamepad'}
+          className={`config-section-tab${configTab === 'gamepad' ? ' config-section-tab--active' : ''}`}
+          onClick={() => setConfigTab('gamepad')}
+        >
+          Gamepad
+        </button>
+      </div>
+
+      {configTab === 'signin' && !nostrSignedIn ? (
         <>
           <p className="config-nostr-hint">
             Sign in with an extension, <strong>Nostr Connect</strong>, or nsec.
@@ -843,7 +882,9 @@ export default function Config() {
             ) : null}
           </div>
         </>
-      ) : profileLoading ? (
+      ) : null}
+
+      {configTab === 'signin' && nostrSignedIn && profileLoading ? (
         <div
           className="config-profile-card config-profile-skeleton"
           aria-busy="true"
@@ -862,7 +903,9 @@ export default function Config() {
             </p>
           </div>
         </div>
-      ) : (
+      ) : null}
+
+      {configTab === 'signin' && nostrSignedIn && !profileLoading ? (
         <div
           key={profileAnimKey}
           className="config-profile-card config-profile-card--animate-in"
@@ -1138,9 +1181,9 @@ export default function Config() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* ── Nostr Wallet Connect ── */}
+      {configTab === 'nwc' ? (
       <div
         key={`nwc-${profileAnimKey}`}
         className="config-nwc-block config-nwc-block--animate-in"
@@ -1215,6 +1258,11 @@ export default function Config() {
           <p className="config-nwc-block__error">{nwcError}</p>
         ) : null}
       </div>
+      ) : null}
+
+      {configTab === 'gamepad' ? (
+        <GamepadTester active={configTab === 'gamepad'} />
+      ) : null}
 
       <div
         key={`act-${profileAnimKey}`}
