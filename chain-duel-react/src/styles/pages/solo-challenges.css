@@ -1669,6 +1669,10 @@
   align-content: start;
 }
 
+.sc-list--locked {
+  opacity: 0.5;
+}
+
 /* ── Challenge row ── */
 .sc-row {
   display: block;
@@ -1692,6 +1696,20 @@
   border-color: rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.72);
+}
+
+.sc-row:disabled,
+.sc-row--locked {
+  cursor: not-allowed;
+}
+
+.sc-row:disabled:hover,
+.sc-row--locked:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.45);
+  box-shadow: none;
+  animation: none;
 }
 
 .sc-row--selected {

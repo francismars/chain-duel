@@ -14,11 +14,6 @@ import { useAudio, SFX } from '@/contexts/AudioContext';
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import type { PracticeChallengesPanelHandle } from '@/features/practice/practicePanelHandles';
 import type { AiTier } from '@/game/engine/types';
-import {
-  CONVERGENCE_MIN_COLS,
-  CONVERGENCE_MIN_ROWS,
-  PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
-} from '@/game/engine/constants';
 import '@/components/ui/Button.css';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { savePracticeGameConfig } from '@/pages/practiceHubModes';
@@ -40,13 +35,6 @@ import {
   ChallengeRowIcon,
   type ChallengeIconId,
 } from '@/features/practice/ChallengeRowIcon';
-
-const CONVERGENCE_PRESET = {
-  shrinkIntervalTicks: PRACTICE_HUB_CONVERGENCE_SHRINK_INTERVAL_TICKS,
-  stepMs: 100,
-  minCols: CONVERGENCE_MIN_COLS,
-  minRows: CONVERGENCE_MIN_ROWS,
-} as const;
 
 interface Challenge {
   id: ChallengeIconId;
@@ -417,6 +405,7 @@ export const PracticeChallengesPanel = forwardRef<
     payoutReady,
   });
   const showSignInGate = !nostrSession.signedIn && !payoutReady;
+  const challengesLocked = !nostrSession.signedIn;
   /** Gate has a focusable button (sign-in / config); absent when payout-ready (status text only). */
   const hasGateActionButton = showSignInGate || showSetupGate;
   const showBountyViolator = !nostrSession.signedIn || showSetupGate;
@@ -790,6 +779,11 @@ export const PracticeChallengesPanel = forwardRef<
         setLaunchError('Not connected to server');
         return;
       }
+      if (!nostrSession.signedIn || !nostrSession.pubkey) {
+        setLaunchError('Sign in with Nostr to start a bounty challenge');
+        playSfx(SFX.MENU_SELECT);
+        return;
+      }
       setLaunchError(null);
       clearPendingChallengeClaim();
       playSfx(SFX.MENU_CONFIRM);
@@ -802,7 +796,7 @@ export const PracticeChallengesPanel = forwardRef<
       }
 
       const isFfa = challenge.format === '4P FFA';
-      const parts: string[] = ['PRACTICE', isFfa ? 'FFA' : '1v1', 'CVG'];
+      const parts: string[] = ['PRACTICE', isFfa ? 'FFA' : '1v1'];
       if (challenge.powerup) parts.push('PWR');
 
       const config: Record<string, unknown> = {
@@ -828,12 +822,8 @@ export const PracticeChallengesPanel = forwardRef<
           : {}),
         p2Name: 'BigToshi 🌊',
         aiTier: challenge.aiTier,
-        convergenceMode: true,
+        convergenceMode: false,
         powerupMode: challenge.powerup,
-        convergenceShrinkInterval: CONVERGENCE_PRESET.shrinkIntervalTicks,
-        convergenceMinCols: CONVERGENCE_PRESET.minCols,
-        convergenceMinRows: CONVERGENCE_PRESET.minRows,
-        convergenceStepMs: CONVERGENCE_PRESET.stepMs,
       };
       if (isFfa) config.ffaAiTier = challenge.aiTier;
 
@@ -848,14 +838,19 @@ export const PracticeChallengesPanel = forwardRef<
       nostrProfilePic,
       nostrSession.pubkey,
       nostrSession.displayName,
+      nostrSession.signedIn,
     ]
   );
 
   const focusChallengeFromGate = useCallback(() => {
+    if (challengesLocked) {
+      focusGateAction();
+      return;
+    }
     const idx = hasPickedChallengeRef.current ? selected : 0;
     setSelected(idx);
     rowRefs.current[idx]?.focus({ preventScroll: true });
-  }, [selected]);
+  }, [challengesLocked, focusGateAction, selected]);
 
   const focusDefault = useCallback(() => {
     if (hasGateActionButton) {
@@ -878,11 +873,15 @@ export const PracticeChallengesPanel = forwardRef<
   }, [activeCheckOverlay, focusDefault, isActive, menuZone]);
 
   const focusBeforeFooter = useCallback(() => {
+    if (challengesLocked) {
+      focusGateAction();
+      return;
+    }
     const lastIdx = CHALLENGES.length - 1;
     const idx = hasPickedChallengeRef.current ? selected : lastIdx;
     setSelected(idx);
     rowRefs.current[idx]?.focus({ preventScroll: true });
-  }, [selected]);
+  }, [challengesLocked, focusGateAction, selected]);
 
   useImperativeHandle(
     ref,
@@ -970,6 +969,11 @@ export const PracticeChallengesPanel = forwardRef<
           return;
         }
         if (rowNavIndex < 0) return;
+        if (challengesLocked) {
+          playSfx(SFX.MENU_SELECT);
+          focusGateAction();
+          return;
+        }
         setSelected((prev) => {
           const from = onRow ? focusedRowIndex : prev;
           const next = from + CHALLENGE_GRID_COLS;
@@ -1010,6 +1014,11 @@ export const PracticeChallengesPanel = forwardRef<
           return;
         }
         if (rowNavIndex < 0) return;
+        if (challengesLocked) {
+          playSfx(SFX.MENU_SELECT);
+          focusGateAction();
+          return;
+        }
         const from = onRow ? focusedRowIndex : selected;
         if (from < CHALLENGE_GRID_COLS) {
           playSfx(SFX.MENU_SELECT);
@@ -1065,6 +1074,11 @@ export const PracticeChallengesPanel = forwardRef<
           return;
         }
         if (rowNavIndex < 0) return;
+        if (challengesLocked) {
+          playSfx(SFX.MENU_SELECT);
+          focusGateAction();
+          return;
+        }
         e.preventDefault();
         const from = onRow ? focusedRowIndex : selected;
         playSfx(SFX.MENU_SELECT);
@@ -1105,6 +1119,11 @@ export const PracticeChallengesPanel = forwardRef<
           return;
         }
         if (rowNavIndex < 0) return;
+        if (challengesLocked) {
+          playSfx(SFX.MENU_SELECT);
+          focusGateAction();
+          return;
+        }
         e.preventDefault();
         const from = onRow ? focusedRowIndex : selected;
         const onRightCol =
@@ -1138,7 +1157,11 @@ export const PracticeChallengesPanel = forwardRef<
           return;
         }
         if (onStart) {
-          launchChallenge();
+          if (!challengesLocked) launchChallenge();
+          return;
+        }
+        if (challengesLocked) {
+          focusGateAction();
           return;
         }
         launchChallenge();
@@ -1166,11 +1189,12 @@ export const PracticeChallengesPanel = forwardRef<
     footerStartRef,
     hasGateActionButton,
     showSetupGate,
+    challengesLocked,
     selected,
   ]);
 
   useEffect(() => {
-    if (!isActive || menuZone !== 'panel') {
+    if (!isActive || menuZone !== 'panel' || challengesLocked) {
       prevMenuZoneRef.current = menuZone;
       return;
     }
@@ -1203,7 +1227,7 @@ export const PracticeChallengesPanel = forwardRef<
       inner.removeEventListener('animationend', onEnd);
       inner.classList.remove('sc-row__inner--pop');
     };
-  }, [isActive, menuZone, selected]);
+  }, [challengesLocked, isActive, menuZone, selected]);
 
   const checkOverlayPortal =
     typeof document !== 'undefined' &&
@@ -1626,9 +1650,16 @@ export const PracticeChallengesPanel = forwardRef<
           {/* ── Challenge rows ── */}
           <div
             key={listRevealKey}
-            className={`sc-list${listRevealed ? ' sc-list--revealed' : ''}`}
+            className={[
+              'sc-list',
+              listRevealed ? 'sc-list--revealed' : '',
+              challengesLocked ? 'sc-list--locked' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             role="listbox"
             aria-label="Solo challenges"
+            aria-disabled={challengesLocked}
             onMouseLeave={() => setHoveredChallenge(null)}
           >
             {CHALLENGES.map((c, i) => {
@@ -1643,12 +1674,29 @@ export const PracticeChallengesPanel = forwardRef<
                   ref={(el) => {
                     rowRefs.current[i] = el;
                   }}
-                  className={`sc-row${showSelectedStyle ? ' sc-row--selected' : ''}`}
+                  className={[
+                    'sc-row',
+                    showSelectedStyle ? 'sc-row--selected' : '',
+                    challengesLocked ? 'sc-row--locked' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   role="option"
                   aria-selected={isSelected}
-                  tabIndex={panelKeyboardFocus && isSelected ? 0 : -1}
-                  onMouseEnter={() => setHoveredChallenge(i)}
+                  aria-disabled={challengesLocked}
+                  disabled={challengesLocked}
+                  tabIndex={
+                    challengesLocked
+                      ? -1
+                      : panelKeyboardFocus && isSelected
+                        ? 0
+                        : -1
+                  }
+                  onMouseEnter={() => {
+                    if (!challengesLocked) setHoveredChallenge(i);
+                  }}
                   onClick={() => {
+                    if (challengesLocked) return;
                     hasPickedChallengeRef.current = true;
                     setSelected(i);
                     launchChallenge(i);
@@ -1689,7 +1737,6 @@ export const PracticeChallengesPanel = forwardRef<
                           <TierPips tier={c.aiTier} />
                         </span>
                         <span className="sc-tag">{c.format}</span>
-                        <span className="sc-tag sc-tag--cvg">CVG</span>
                         {c.powerup && (
                           <span className="sc-tag sc-tag--mod">+POWER-UPS</span>
                         )}

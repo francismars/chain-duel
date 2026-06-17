@@ -10,9 +10,15 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+/** FNV-1a 32-bit hash of full seed hex (must match marspay `challengeEngine/runRng.ts`). */
 function seedFromHex(hex: string): number {
-  const clean = hex.replace(/^0x/i, '').slice(0, 8);
-  return parseInt(clean.padEnd(8, '0').slice(0, 8), 16) >>> 0;
+  const clean = hex.replace(/^0x/i, '').toLowerCase();
+  let hash = 2166136261;
+  for (let i = 0; i < clean.length; i++) {
+    hash ^= clean.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
 let activeNext: (() => number) | null = null;
