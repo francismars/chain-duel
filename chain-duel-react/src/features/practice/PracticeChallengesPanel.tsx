@@ -448,27 +448,35 @@ export const PracticeChallengesPanel = forwardRef<
     return () => window.clearTimeout(timer);
   }, [isActive]);
 
+  const loadEligibility = useCallback(
+    (refresh = false) => {
+      if (!socket || !connected || !nostrSession.signedIn) {
+        setEligibility(null);
+        return;
+      }
+      setEligibilityLoading(true);
+      void fetchChallengeEligibility(socket, { refresh })
+        .then((res) => {
+          setEligibility(res);
+        })
+        .catch(() => {
+          setEligibility(null);
+        })
+        .finally(() => {
+          setEligibilityLoading(false);
+        });
+    },
+    [socket, connected, nostrSession.signedIn, nostrSession.pubkey]
+  );
+
   useEffect(() => {
-    if (!socket || !connected || !nostrSession.signedIn) {
-      setEligibility(null);
-      return;
-    }
-    let cancelled = false;
-    setEligibilityLoading(true);
-    void fetchChallengeEligibility(socket)
-      .then((res) => {
-        if (!cancelled) setEligibility(res);
-      })
-      .catch(() => {
-        if (!cancelled) setEligibility(null);
-      })
-      .finally(() => {
-        if (!cancelled) setEligibilityLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [socket, connected, nostrSession.signedIn, nostrSession.pubkey]);
+    loadEligibility(false);
+  }, [loadEligibility]);
+
+  useEffect(() => {
+    if (!isActive || !nostrSession.signedIn) return;
+    loadEligibility(true);
+  }, [isActive, loadEligibility, nostrSession.signedIn]);
 
   const openConfigForNostr = useCallback(() => {
     navigate('/config', { state: { returnTo: '/practice?play=challenges' } });
@@ -1456,6 +1464,20 @@ export const PracticeChallengesPanel = forwardRef<
 
                   {eligibilityLoading ? (
                     <p className="sc-gate__status">Checking eligibility…</p>
+                  ) : null}
+
+                  {showSetupGate ? (
+                    <button
+                      type="button"
+                      className="sc-gate__refresh"
+                      disabled={eligibilityLoading}
+                      onClick={() => {
+                        playSfx(SFX.MENU_SELECT);
+                        loadEligibility(true);
+                      }}
+                    >
+                      Re-check requirements
+                    </button>
                   ) : null}
 
                   {eligibility && eligibilityChecks.length > 0 ? (

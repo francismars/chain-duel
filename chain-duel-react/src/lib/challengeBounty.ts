@@ -58,12 +58,13 @@ export type ChallengeEligibilityResponse = {
 };
 
 export function fetchChallengeEligibility(
-  socket: GameSocket
+  socket: GameSocket,
+  options?: { refresh?: boolean }
 ): Promise<ChallengeEligibilityResponse> {
   return waitFor(
     socket,
     'resChallengeEligibility',
-    () => socket.emit('getChallengeEligibility'),
+    () => socket.emit('getChallengeEligibility', { refresh: options?.refresh === true }),
     (p) => SocketBoundaryParsers.resChallengeEligibility(p)
   );
 }

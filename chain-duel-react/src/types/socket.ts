@@ -382,7 +382,7 @@ export interface ClientToServerEvents {
     event: Record<string, unknown>;
   }) => void;
 
-  getChallengeEligibility: () => void;
+  getChallengeEligibility: (payload?: { refresh?: boolean }) => void;
   getChallengeCatalog: () => void;
   requestChallengeRun: (payload: { challengeId: string }) => void;
   submitChallengeWin: (payload: {
