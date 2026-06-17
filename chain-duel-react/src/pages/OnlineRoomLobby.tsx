@@ -319,6 +319,7 @@ export default function OnlineRoomLobby() {
   const pendingNostrLinkPubkeyRef = useRef<string | null>(null);
   const paymentModeRef = useRef(paymentMode);
   const rematchPendingRef = useRef(false);
+  const matchStartRetryRef = useRef(false);
   /** Cached kind1 post — avoids refetch when switching payment paths while note is already loaded. */
   const kind1PostCacheRef = useRef<{
     key: string;
@@ -456,7 +457,40 @@ export default function OnlineRoomLobby() {
       const parsed = SocketBoundaryParsers.onlineRoomUpdated(payload);
       if (parsed && parsed.roomId === roomId) {
         setRoom(parsed);
+        return;
       }
+      // Strict validation can drop updates when the wire payload drifts; still
+      // apply phase/snapshot so a started match is not missed in the lobby.
+      if (!payload || typeof payload !== 'object') {
+        return;
+      }
+      const raw = payload as {
+        roomId?: unknown;
+        phase?: unknown;
+        snapshot?: unknown;
+        seats?: unknown;
+      };
+      if (typeof raw.roomId !== 'string' || raw.roomId !== roomId) {
+        return;
+      }
+      setRoom((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const phase =
+          typeof raw.phase === 'string'
+            ? (raw.phase as typeof prev.phase)
+            : prev.phase;
+        const snapshot =
+          raw.snapshot && typeof raw.snapshot === 'object'
+            ? (raw.snapshot as typeof prev.snapshot)
+            : prev.snapshot;
+        const seats =
+          raw.seats && typeof raw.seats === 'object'
+            ? (raw.seats as typeof prev.seats)
+            : prev.seats;
+        return { ...prev, phase, snapshot, seats };
+      });
     };
     const onJoin = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.joinOnlineRoom(payload);
@@ -597,6 +631,11 @@ export default function OnlineRoomLobby() {
       setCurrentSessionID(sessionStorage.getItem('sessionID') ?? '');
       setCurrentSocketID(socket.id ?? '');
     };
+    const syncRoomPresence = () => {
+      refreshLocalIdentity();
+      socket.emit('getOnlineRoomState', { roomId });
+      socket.emit('joinOnlineRoom', { roomId });
+    };
 
     const onKind1Post = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.resOnlineKind1Post(payload);
@@ -639,10 +678,8 @@ export default function OnlineRoomLobby() {
     socket.on('resOnlineSeatLightningError', onLightningErr);
     socket.on('resOnlineSeatLightningCancelled', onLightningCancelled);
     socket.on('session', onSession);
-    socket.on('connect', refreshLocalIdentity);
-    refreshLocalIdentity();
-    socket.emit('getOnlineRoomState', { roomId });
-    socket.emit('joinOnlineRoom', { roomId });
+    socket.on('connect', syncRoomPresence);
+    syncRoomPresence();
     return () => {
       socket.off('onlineRoomUpdated', onUpdated);
       socket.off('resJoinOnlineRoom', onJoin);
@@ -655,7 +692,7 @@ export default function OnlineRoomLobby() {
       socket.off('resOnlineSeatLightningError', onLightningErr);
       socket.off('resOnlineSeatLightningCancelled', onLightningCancelled);
       socket.off('session', onSession);
-      socket.off('connect', refreshLocalIdentity);
+      socket.off('connect', syncRoomPresence);
     };
   }, [roomId, socket, kind1]);
 
@@ -1066,7 +1103,10 @@ export default function OnlineRoomLobby() {
       cardMod: 'online-lobby-pin-card--go',
       label: 'SEAT PAID',
       pin: 'BOTH READY',
-      copy: 'Both players are in. The game is about to start.',
+      copy:
+        room?.phase === 'lobby'
+          ? 'Both players are in. Syncing match start — if this lasts more than a few seconds, toggle UNREADY then MARK AS READY again.'
+          : 'Both players are in. The game is about to start.',
     };
   })();
   const snapshotP1Name =
@@ -2006,11 +2046,36 @@ export default function OnlineRoomLobby() {
   };
 
   useEffect(() => {
-    if (!roomId || room?.phase !== 'playing') {
+    const phase = room?.phase ?? room?.snapshot?.phase;
+    if (!roomId || phase !== 'playing') {
       return;
     }
     navigate(onlineGameUrl(roomId));
-  }, [navigate, room?.phase, roomId]);
+  }, [navigate, room?.phase, room?.snapshot?.phase, roomId]);
+
+  useEffect(() => {
+    if (!socket || !roomId || !room || room.phase !== 'lobby') {
+      matchStartRetryRef.current = false;
+      return;
+    }
+    if (!bothPlayersReady || !mySeat) {
+      matchStartRetryRef.current = false;
+      return;
+    }
+    if (matchStartRetryRef.current) {
+      return;
+    }
+    const t = window.setTimeout(() => {
+      if (matchStartRetryRef.current) {
+        return;
+      }
+      matchStartRetryRef.current = true;
+      socket.emit('getOnlineRoomState', { roomId });
+      socket.emit('joinOnlineRoom', { roomId });
+      socket.emit('startOnlineGame', { roomId });
+    }, 2500);
+    return () => window.clearTimeout(t);
+  }, [socket, roomId, room, bothPlayersReady, mySeat, room?.phase]);
 
   const retryKind1PostLoad = () => {
     kind1PostCacheRef.current = null;
