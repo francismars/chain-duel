@@ -1,8 +1,9 @@
 /**
  * Unified Nostr signing: NIP-07 extension, Nostr Connect (NIP-46 / "bunker"), or nsec (session-only).
  *
- * Architecture (Primal / NIP-46):
+ * Architecture (NIP-46):
  * - BunkerSigner.fromURI for QR handshake only, then close
+ * - Signer relay list from switch_relays / bunker pointer (signer-first)
  * - All RPC (get_public_key, sign_event, ping) via raw WebSocket to relays
  * - Pubkey placeholder until first sign_event corrects it
  */
@@ -35,6 +36,17 @@ import {
   createFlowTrace,
   relayHost,
 } from '@/lib/nostr/nip46Trace';
+import {
+  normalizeSignerRelays,
+  parseSwitchRelaysResult,
+  relaysForNip46Rpc,
+  relaysForNostrConnectQr,
+} from '@/lib/nostr/nip46Relays';
+
+export {
+  DEFAULT_NOSTR_CONNECT_RELAYS,
+  sanitizeNip46Relays,
+} from '@/lib/nostr/nip46Relays';
 
 export const STORED_NOSTR_PUBKEY_KEY = 'arcadeNostrPubkey';
 
@@ -58,38 +70,8 @@ export const NSEC_SESSION_SK_KEY = 'arcadeNostrNsecSkHex';
 
 export type StoredSignerMode = 'extension' | 'nip46' | 'nsec';
 
-/** Relays advertised in nostrconnect:// QR — keep small; pool opens every URL. */
-export const DEFAULT_NOSTR_CONNECT_RELAYS: string[] = [
-  'wss://relay.primal.net',
-  'wss://premium.primal.net',
-  'wss://relay.damus.io',
-  'wss://nos.lol',
-];
-
-/** Often unreachable in Firefox/WSL — drop from stored bunker pointers. */
-const BLOCKED_RELAY_HOSTS = new Set([
-  'relay.nostr.band',
-  'relay.nsecbunker.com',
-  'relay.snort.social',
-  'purplepag.es',
-]);
-
-function normalizeRelayUrl(url: string): string {
-  return url.trim().replace(/\/+$/, '');
-}
-
-/** Prefer Primal relays; strip hosts that spam connection errors in the browser. */
-export function sanitizeNip46Relays(relays: string[]): string[] {
-  const filtered = relays.map(normalizeRelayUrl).filter((url) => {
-    try {
-      return !BLOCKED_RELAY_HOSTS.has(new URL(url).hostname);
-    } catch {
-      return false;
-    }
-  });
-  const merged = [...new Set([...filtered, ...DEFAULT_NOSTR_CONNECT_RELAYS])];
-  return merged.slice(0, 6);
-}
+const NOSTR_CONNECT_PAIR_WAIT_MS = 8 * 60 * 1000;
+const DBG = '[NIP-46]';
 
 function withTimeout<T>(label: string, p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -103,26 +85,9 @@ function withTimeout<T>(label: string, p: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-const NOSTR_CONNECT_PAIR_WAIT_MS = 8 * 60 * 1000;
-const DBG = '[NIP-46]';
-
 // ---------------------------------------------------------------------------
-// Raw WebSocket NIP-46 RPC (primary for Primal sign/ping after handshake)
+// Raw WebSocket NIP-46 RPC
 // ---------------------------------------------------------------------------
-
-/** Prefer Primal relays for RPC — fewer connections, faster responses. */
-function relaysForNip46Rpc(relays: string[]): string[] {
-  const all = sanitizeNip46Relays(relays);
-  const primal = all.filter((u) => {
-    try {
-      return new URL(u).hostname.includes('primal.net');
-    } catch {
-      return false;
-    }
-  });
-  if (primal.length >= 1) return primal;
-  return all.slice(0, 3);
-}
 
 async function rawNip46Rpc(
   method: string,
@@ -239,7 +204,7 @@ async function rawNip46Rpc(
       if (parsed.id !== reqId) return;
 
       if (parsed.result === 'auth_url' && parsed.error) {
-        trace.step('auth_url', `${fromHost} — open Primal to approve`);
+        trace.step('auth_url', `${fromHost} — open signer app to approve`);
         authUrlHandler?.(parsed.error);
         return;
       }
@@ -402,7 +367,7 @@ function ensureSession(): { clientSk: Uint8Array; bp: BunkerPointer } | null {
   if (!bp.pubkey || !Array.isArray(bp.relays) || bp.relays.length === 0)
     return null;
 
-  bp = { ...bp, relays: sanitizeNip46Relays(bp.relays) };
+  bp = { ...bp, relays: normalizeSignerRelays(bp.relays) };
   localStorage.setItem(NIP46_BP_KEY, JSON.stringify(bp));
 
   nip46Session = { clientSk: hexToBytes(skHex), bp };
@@ -432,15 +397,53 @@ function disposeNip46(): void {
   disposeNip46Pool();
 }
 
+function persistNip46BunkerPointer(bp: BunkerPointer): void {
+  const normalized = { ...bp, relays: normalizeSignerRelays(bp.relays) };
+  if (nip46Session) {
+    nip46Session = { ...nip46Session, bp: normalized };
+  }
+  localStorage.setItem(NIP46_BP_KEY, JSON.stringify(normalized));
+}
+
 function finishNip46Handshake(
   signer: BunkerSigner,
   clientSk: Uint8Array
 ): BunkerPointer {
-  const bp = { ...signer.bp, relays: sanitizeNip46Relays(signer.bp.relays) };
+  const bp = { ...signer.bp, relays: normalizeSignerRelays(signer.bp.relays) };
   nip46Session = { clientSk, bp };
   void signer.close();
   disposeNip46Pool();
+  localStorage.setItem(NIP46_BP_KEY, JSON.stringify(bp));
   return bp;
+}
+
+/** NIP-46: ask the bunker for its preferred relay set and persist if changed. */
+async function refreshSignerRelaysFromBunker(
+  sess: { clientSk: Uint8Array; bp: BunkerPointer },
+  timeoutMs = 10_000
+): Promise<boolean> {
+  try {
+    const resp = await rawNip46Rpc('switch_relays', [], {
+      clientSk: sess.clientSk,
+      signerPubkey: sess.bp.pubkey,
+      relays: sess.bp.relays,
+      timeoutMs,
+      traceFlow: 'switch_relays',
+    });
+    const updated = parseSwitchRelaysResult(resp.result);
+    if (!updated) return false;
+    const prev = normalizeSignerRelays(sess.bp.relays);
+    if (JSON.stringify(updated) === JSON.stringify(prev)) return false;
+    persistNip46BunkerPointer({ ...sess.bp, relays: updated });
+    console.log(
+      DBG,
+      '[switch_relays] updated:',
+      updated.map(relayHost).join(', ')
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function persistPubkeyFromSigned(signed: Record<string, unknown>): void {
@@ -568,8 +571,8 @@ export function beginNostrConnectPairing(opts: {
   crypto.getRandomValues(secretBytes);
   const secret = bytesToHex(secretBytes);
 
-  const relays = sanitizeNip46Relays(
-    opts.relays?.length ? opts.relays : [...DEFAULT_NOSTR_CONNECT_RELAYS]
+  const relays = relaysForNostrConnectQr(
+    opts.relays?.length ? opts.relays : undefined
   );
 
   const connectionURI = createNostrConnectURI({
@@ -615,15 +618,19 @@ export function beginNostrConnectPairing(opts: {
 
       signer.bp = {
         ...signer.bp,
-        relays: sanitizeNip46Relays(signer.bp.relays),
+        relays: normalizeSignerRelays(signer.bp.relays),
       };
       const bp = finishNip46Handshake(signer, clientSk);
+      await refreshSignerRelaysFromBunker({ clientSk, bp }, 8_000);
       const pubkey = normalizeNostrPubkeyHex(bp.pubkey);
 
       localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pubkey);
       localStorage.setItem(SIGNER_MODE_KEY, 'nip46');
       localStorage.setItem(NIP46_CLIENT_SK_KEY, bytesToHex(clientSk));
-      localStorage.setItem(NIP46_BP_KEY, JSON.stringify(bp));
+      localStorage.setItem(
+        NIP46_BP_KEY,
+        JSON.stringify(ensureSession()?.bp ?? bp)
+      );
 
       trace.done('session saved — user pubkey resolves on server-link sign');
       return pubkey;
@@ -688,9 +695,15 @@ export async function connectNostrConnect(
     }
 
     const finishedBp = finishNip46Handshake(signer, clientSk);
+    await refreshSignerRelaysFromBunker({ clientSk, bp: finishedBp }, 8_000);
+    const bpForRpc = ensureSession()?.bp ?? finishedBp;
+
     let pubkey: string;
     try {
-      pubkey = await rawNip46GetPublicKey({ clientSk, bp: finishedBp }, 10_000);
+      pubkey = await rawNip46GetPublicKey(
+        { clientSk, bp: bpForRpc },
+        10_000
+      );
     } catch {
       pubkey = normalizeNostrPubkeyHex(finishedBp.pubkey);
     }
@@ -698,7 +711,7 @@ export async function connectNostrConnect(
     localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pubkey);
     localStorage.setItem(SIGNER_MODE_KEY, 'nip46');
     localStorage.setItem(NIP46_CLIENT_SK_KEY, bytesToHex(clientSk));
-    localStorage.setItem(NIP46_BP_KEY, JSON.stringify(finishedBp));
+    localStorage.setItem(NIP46_BP_KEY, JSON.stringify(ensureSession()?.bp ?? finishedBp));
 
     return pubkey;
   } catch (err) {
