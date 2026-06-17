@@ -25,20 +25,62 @@ interface FeedCallbacks {
   onNewBlock: (block: BlockInfo, details: BitcoinDetails) => void;
 }
 
+/** Keep in sync with marspay `src/state/mempoolApi.ts` `MEMPOOL_API_HOSTS`. */
+export const MEMPOOL_API_HOSTS = [
+  'https://mempool.space',
+  'https://mempool.emzy.de',
+  'https://mempool.bitaroo.net',
+] as const;
+
+export function resolveMempoolApiHosts(): string[] {
+  const custom = import.meta.env.VITE_MEMPOOL_HOST?.trim();
+  const hosts = [...MEMPOOL_API_HOSTS];
+  if (import.meta.env.DEV) {
+    hosts.unshift('/mempool-proxy');
+  }
+  if (!custom) {
+    return hosts;
+  }
+  const normalized = custom.replace(/\/$/, '');
+  return [normalized, ...hosts.filter((host) => host !== normalized)];
+}
+
+export async function fetchLatestMempoolBlock(
+  hosts: readonly string[] = resolveMempoolApiHosts()
+): Promise<BlockInfo | null> {
+  for (const host of hosts) {
+    try {
+      const tipHash = (await fetchText(`${host}/api/blocks/tip/hash`)).trim();
+      if (!tipHash) {
+        continue;
+      }
+      const block = (await fetchJson(
+        `${host}/api/v1/block/${tipHash}`
+      )) as BlockInfo;
+      if (
+        typeof block?.height === 'number' &&
+        Number.isFinite(block.height) &&
+        typeof block.timestamp === 'number'
+      ) {
+        return block;
+      }
+    } catch {
+      // try next host
+    }
+  }
+  return null;
+}
+
 export function startMempoolFeed(callbacks: FeedCallbacks): () => void {
   let disposed = false;
   let latestHeight = -1;
   let latestTimestamp = 0;
+  const hosts = resolveMempoolApiHosts();
 
   const update = async () => {
     try {
-      const tipHash = await fetchText(
-        'https://mempool.space/api/blocks/tip/hash'
-      );
-      const block = (await fetchJson(
-        `https://mempool.space/api/v1/block/${tipHash}`
-      )) as BlockInfo;
-      if (disposed) return;
+      const block = await fetchLatestMempoolBlock(hosts);
+      if (!block || disposed) return;
       latestTimestamp = block.timestamp;
       const details = toDetails(block, latestTimestamp);
       if (latestHeight === -1) {
@@ -96,7 +138,7 @@ async function fetchJson(url: string): Promise<unknown> {
   return response.json();
 }
 
-function toDetails(block: BlockInfo, timestamp: number): BitcoinDetails {
+export function toDetails(block: BlockInfo, timestamp: number): BitcoinDetails {
   return {
     height: String(block.height),
     timeAgo: formatTimeAgo(timestamp),

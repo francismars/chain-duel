@@ -944,7 +944,7 @@ export default function Game() {
   });
 
   useEffect(() => {
-    if (loading || !stateRef.current) return;
+    if (loading) return;
     let cfg: Record<string, unknown> = {};
     try {
       const raw = sessionStorage.getItem('gameConfig');
