@@ -1,74 +1,127 @@
-# Chain Duel - React Rewrite
+# Chain Duel — React Frontend
 
-Modern React + PixiJS rewrite of Chain Duel frontend.
+Modern React + PixiJS rewrite of the Chain Duel frontend. This is the **primary client** for the game.
 
-**Location**: This project is located inside the `chain-duel` repository to maintain git history and allow gradual migration from the legacy frontend.
+**Location:** inside the `chain-duel` repository to preserve git history during migration from the legacy frontend.
+
+**Backend:** connects to [marspay](https://github.com/francismars/marspayV2) via Socket.IO for sessions, Lightning payments, Nostr, and authoritative ONLINE play.
+
+For the full feature guide across all components, see **[../docs/FEATURES.md](../docs/FEATURES.md)**.
 
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
-2. Start development server:
+2. Configure the socket URL:
+
 ```bash
-npm run dev
+cp .env.example .env
+# Set VITE_SOCKET_URL (e.g. wss://marspay.chainduel.net)
 ```
 
-3. Socket URL: copy `.env.example` to `.env` and set `VITE_SOCKET_URL` (e.g. `wss://marspay.chainduel.net`). Marspay has no `/loadconfig` API; the legacy chain-duel Express app had that on its own server. With `VITE_SOCKET_URL` set, the app connects to the socket directly and does not call `/loadconfig`. Restart the dev server after changing `.env`.
+marspay has no `/loadconfig` API. With `VITE_SOCKET_URL` set, the app connects directly. Restart the dev server after changing `.env`.
 
-## Project Structure
+3. Start development:
+
+```bash
+npm run dev   # http://localhost:5173
+```
+
+For local backend development, run marspay on port 3001 and set `VITE_PROXY_TARGET=http://localhost:3001`. See [SETUP.md](SETUP.md).
+
+## Features
+
+### Game modes
+
+| Mode | Route | Description |
+|------|-------|-------------|
+| **Practice — Free Play** | `/practice?play=free` | 1v1 or 4P FFA vs AI; configurable tier, power-ups, convergence. Client-only. |
+| **Practice — Challenges** | `/practice?play=challenges` | 6 ranked bounty challenges (21–4,200 sats). Server-validated replays, Nostr zap payout. |
+| **P2P Duel** | `/p2p` → `/gamemenu` → `/game` | 1v1 Lightning LNURL or Nostr zap buy-in. Double-or-nothing rematches. |
+| **Tournament** | `/p2p` (tournament) → `/tournbracket` | 4/8/16/32-player brackets. Lightning or Nostr entry. |
+| **ONLINE** | `/online/*` | Server-authoritative 2P rooms. Room browser, lobby, live play, replays, Hall of Fame. |
+
+### Nostr & Lightning
+
+- **NIP-07** browser extension, **NIP-46** Nostr Connect / bunker, nsec (session-only)
+- **App Nostr session** — sign-in linked to socket session via marspay
+- **NWC (NIP-47)** — pay ONLINE seat invoices from a configured Nostr wallet
+- **LNURL-pay / LNURL-withdraw** — P2P, tournament, and post-game payout QR codes
+- **NIP-57 zaps** — Nostr P2P/tournament entry, ONLINE seats, challenge bounties
+
+### UX
+
+- PixiJS 8 game renderer with keyboard + dual gamepad input on all menus
+- Live mempool.space block feed with bonus coinbase spawns
+- Background music, SFX, zap overlay animations
+- Fullscreen, mute, TV-safe inset, Nostr avatar shortcut
+- Highscores, About carousel, Config page
+
+## Project structure
 
 ```
 src/
-├── types/          # TypeScript type definitions
-├── lib/            # Utility libraries (socket, config)
-├── components/     # Reusable React components
-├── pages/          # Page components
-├── game/           # Game engine and rendering
-│   ├── engine/     # Pure game logic
-│   ├── render/     # PixiJS rendering
-│   ├── input/      # Keyboard/gamepad input
-│   └── audio/       # Sound management
-├── hooks/          # Custom React hooks
-├── contexts/       # React context providers (e.g. audio)
-├── features/       # Route-specific hooks and UI logic
-├── shared/         # Cross-cutting constants, socket helpers
-└── styles/         # CSS styles
+├── pages/           # Route components (Index, Game, OnlineRooms, …)
+├── features/        # Route-specific hooks and UI (game, practice, tournament)
+├── game/            # Pure engine, Pixi render, input, audio, mempool feed
+├── lib/             # Socket, config, Nostr, Lightning, challenge, online helpers
+├── replay/          # ONLINE replay codec (synced with marspay)
+├── contexts/        # Socket, Nostr, Audio providers
+├── components/      # UI, layout, paid-entry widgets
+├── shared/          # Constants, socket boundary parsers
+├── types/           # socket.ts (marspay contract), schemas
+├── hooks/           # useSocket, useGamepad, useKeyboardNavigation
+└── styles/          # Global + page CSS
 ```
 
 ## Development
 
-- `npm run dev` - Start dev server
-- `npm run build` - Build for production
-- `npm run lint` - Run ESLint
-- `npm run format` - Format code with Prettier
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+| `npm test` | Vitest |
 
-## Status
+## Tech stack
 
-🚧 **In Progress** - Major page migration is implemented; final parity polish remains.
+React 18, TypeScript, Vite 8, PixiJS 8, React Router 6, socket.io-client, nostr-tools, Zod, Vitest.
+
+## Migration status
+
+Major page migration is **complete**. Final visual/keyboard parity polish is in progress.
 
 ### Implemented
 
-- Core routes implemented in React: `Index`, `PracticeHub` (`/practice` — Free play + Challenges via `?play=free|challenges`), `P2pEntry` (`/p2p`), `GameMenu`, `Game`, `PostGame`, `TournamentLobby`, `TournamentBracket`, plus online flow (`OnlineRooms`, `OnlineRoomLobby`, `OnlineGame`, `OnlinePostGame`). Legacy paths `/local`, `/regtest`, `/testnet` → `/practice`; `/testnet-entry` → `/p2p`; `/solo` → `/practice?play=challenges`.
-- Game engine/render/audio/io stack implemented under `src/game/*` with Pixi renderer + Canvas fallback.
-- Socket/config/env flow implemented (`VITE_SOCKET_URL` primary path, legacy `/loadconfig` fallback where applicable).
-- Payment-gated entry logic is active (`GameMenu` requires both players funded; P2P tournament entry uses `P2pEntry`).
-- Tournament flow parity has advanced substantially:
-  - `TournamentBracket` now uses legacy-style loading overlay timing, cancel/confirm flow, and stricter QR/deposit rendering behavior.
-  - `Game` no longer shows the tournament bottom strip during active match flow (matching legacy hidden state).
-  - `PostGame` tournament mode now hides the DoN button, shows fee split text, and uses legacy tournament prize math (`buy-in * players * 0.95`).
+- All core routes: Index, PracticeHub, P2pEntry, GameMenu, Game, PostGame, TournamentLobby, TournamentBracket, OnlineRooms, OnlineRoomLobby, OnlineGame, OnlinePostGame
+- Game engine/render/audio/io with Pixi renderer
+- Socket/config via `VITE_SOCKET_URL`
+- Payment-gated entry, tournament bracket flow, ONLINE multiplayer
+- Nostr session (NIP-07/46), NWC, challenge bounties
+- Legacy route redirects (`/local`, `/solo`, `/network/*`, etc.)
 
-### Remaining / In Parity Polish
+### Remaining
 
-- Pixel-level visual parity pass (windowed and fullscreen) is still in progress, with the largest open deltas in `TournamentBracket` micro-layout (title/modal/logo/typography spacing) and final `Game` typography polish.
-- Final keyboard/gamepad edge-case parity validation across all routes.
-- Legacy `demo` view is not exposed as a React route.
-- Tournament pages are functionally migrated but still need final visual sign-off against legacy screenshots.
+- Pixel-level visual parity vs legacy (see [docs/visual-parity-checklist.md](docs/visual-parity-checklist.md))
+- Final keyboard/gamepad edge-case validation
+- Legacy `demo` route not migrated
 
-### Notes For Testing
+See [docs/parity-matrix.md](docs/parity-matrix.md) for the full legacy → React mapping.
 
-- `/game` still has a local bootstrap fallback if duel payload is unavailable, so loading does not hard-block local UI testing.
-- Keep `VITE_SOCKET_URL` configured in `.env` for backend-integrated flows.
-- For tournament payout parity, ensure backend uses fee-adjusted withdrawal math on postgame (`gross tournament pool * 0.95`) so frontend and backend totals match.
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [../docs/FEATURES.md](../docs/FEATURES.md) | Full feature guide (all components) |
+| [SETUP.md](SETUP.md) | Detailed setup with marspay |
+| [docs/parity-matrix.md](docs/parity-matrix.md) | Legacy page mapping |
+| [docs/game-parity-checklist.md](docs/game-parity-checklist.md) | Game behavior parity |
+| [docs/release-retirement-checklist.md](docs/release-retirement-checklist.md) | Release gates |
+| [marspay/docs/AGENTS_ONLINE.md](../../marspay/docs/AGENTS_ONLINE.md) | ONLINE protocol |
+| [marspay/docs/AGENTS_CHALLENGE_BOUNTY.md](../../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md) | Challenge bounty protocol |
+| [src/types/socket.ts](src/types/socket.ts) | Socket event type definitions |
