@@ -361,6 +361,7 @@ export const PracticeChallengesPanel = forwardRef<
   const gateBtnFocused = panelKeyboardFocus && gateActionFocused;
 
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const innerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const checkRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const gateActionRef = useRef<HTMLButtonElement | null>(null);
@@ -377,6 +378,8 @@ export const PracticeChallengesPanel = forwardRef<
   );
   const prevChallengesActiveRef = useRef(false);
   const hasPickedChallengeRef = useRef(false);
+  const eligibilityRef = useRef(eligibility);
+  eligibilityRef.current = eligibility;
 
   const npubDisplay = nostrSession.npub;
   const nostrNip05 = (nostrSession.nip05 ?? '').trim();
@@ -450,33 +453,42 @@ export const PracticeChallengesPanel = forwardRef<
   }, [isActive]);
 
   const loadEligibility = useCallback(
-    (refresh = false) => {
+    (options?: { refresh?: boolean; background?: boolean }) => {
+      const refresh = options?.refresh === true;
+      const background = options?.background === true;
       if (!socket || !connected || !nostrSession.signedIn) {
         setEligibility(null);
         return;
       }
-      setEligibilityLoading(true);
+      if (!background) {
+        setEligibilityLoading(true);
+      }
       void fetchChallengeEligibility(socket, { refresh })
         .then((res) => {
           setEligibility(res);
         })
         .catch(() => {
-          setEligibility(null);
+          if (!background) {
+            setEligibility(null);
+          }
         })
         .finally(() => {
-          setEligibilityLoading(false);
+          if (!background) {
+            setEligibilityLoading(false);
+          }
         });
     },
     [socket, connected, nostrSession.signedIn, nostrSession.pubkey]
   );
 
   useEffect(() => {
-    loadEligibility(false);
+    loadEligibility();
   }, [loadEligibility]);
 
   useEffect(() => {
     if (!isActive || !nostrSession.signedIn) return;
-    loadEligibility(true);
+    const background = eligibilityRef.current != null;
+    loadEligibility({ refresh: true, background });
   }, [isActive, loadEligibility, nostrSession.signedIn]);
 
   const openConfigForNostr = useCallback(() => {
@@ -942,6 +954,12 @@ export const PracticeChallengesPanel = forwardRef<
       const onCheck = focusedCheckIndex >= 0;
       const focusedRowIndex = rowRefs.current.findIndex((r) => r === activeEl);
       const onRow = focusedRowIndex >= 0;
+      const focusOutsidePanel =
+        activeEl != null &&
+        panelRef.current != null &&
+        !panelRef.current.contains(activeEl) &&
+        activeEl !== footerBackRef.current &&
+        activeEl !== footerStartRef.current;
       // Clicks on non-focusables leave focus on <body>; keep navigating from last selection.
       const orphanListNav =
         !onRow &&
@@ -949,6 +967,7 @@ export const PracticeChallengesPanel = forwardRef<
         !onGateAction &&
         !onBack &&
         !onStart &&
+        !focusOutsidePanel &&
         document.body.contains(activeEl);
       const rowNavIndex = onRow
         ? focusedRowIndex
@@ -968,11 +987,16 @@ export const PracticeChallengesPanel = forwardRef<
 
       if (isDown) {
         e.preventDefault();
+        if (focusOutsidePanel) {
+          playSfx(SFX.MENU_SELECT);
+          focusDefault();
+          return;
+        }
         if (onGateAction) {
           playSfx(SFX.MENU_SELECT);
-          if (hasSetupChecks) {
+          if (hasSetupChecks && eligibilityChecks.length > 0) {
             focusCheckAt(Math.min(checkFocusIdx, eligibilityChecks.length - 1));
-          } else {
+          } else if (!challengesLocked) {
             focusChallengeFromGate();
           }
           return;
@@ -1203,6 +1227,7 @@ export const PracticeChallengesPanel = forwardRef<
     clearChecksFocus,
     eligibilityChecks.length,
     focusBeforeFooter,
+    focusDefault,
     focusChallengeFromGate,
     focusCheckAt,
     focusGateAction,
@@ -1383,6 +1408,7 @@ export const PracticeChallengesPanel = forwardRef<
 
   return (
     <div
+      ref={panelRef}
       className="practice-challenges-panel solo-challenges-panel"
       role="group"
       aria-label="Challenges"
@@ -1493,7 +1519,7 @@ export const PracticeChallengesPanel = forwardRef<
                       disabled={eligibilityLoading}
                       onClick={() => {
                         playSfx(SFX.MENU_SELECT);
-                        loadEligibility(true);
+                        loadEligibility({ refresh: true });
                       }}
                     >
                       Re-check requirements

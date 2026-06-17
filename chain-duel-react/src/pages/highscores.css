@@ -2,7 +2,6 @@
 
 #brand {
   position: fixed;
-  margin-top: 1rem;
   width: 100%;
   display: flex;
   justify-content: space-between;
@@ -25,24 +24,12 @@
   margin-right: 1%;
 }
 
-.highscores-page {
-  justify-content: flex-start;
-}
-
-.highscores-page > div {
-  width: 100%;
-  box-sizing: border-box;
-  /* Match horizontal inset of the legacy 70%-wide list: (100% - 70%) / 2 */
-  padding: 15% 15% 0;
-}
-
 #page-title {
   font-size: 3cqw;
-  margin: 0;
 }
 
 #highscoresList {
-  width: 100%;
+  width: 70%;
   padding-bottom: 2vw;
   box-sizing: border-box;
 }
