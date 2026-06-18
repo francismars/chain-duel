@@ -41,6 +41,7 @@ import {
   activePlayerCount,
   checkPowerUpPickup,
   clearPowerUpsForPlayer,
+  clearSurgeForPlayer,
   computeCaptureChangeForIndex,
   getPlayerHead,
   getSnakeByIndex,
@@ -1091,6 +1092,7 @@ function resetSnake(state: GameState, player: PlayerId): void {
   if (!retainSpeed) {
     clearPowerUpsForPlayer(state, 1);
   }
+  clearSurgeForPlayer(state, 1);
 }
 
 // ============================================================================

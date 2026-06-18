@@ -369,7 +369,9 @@ export const PracticeChallengesPanel = forwardRef<
   const [eligibilityLoading, setEligibilityLoading] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
 
-  const [selected, setSelected] = useState(0);
+  const [selected, setSelected] = useState(
+    () => peekChallengeMenuFocus() ?? 0
+  );
   const [hoveredChallenge, setHoveredChallenge] = useState<number | null>(null);
   const [nostrProfilePicBroken, setNostrProfilePicBroken] = useState(false);
 
@@ -938,22 +940,52 @@ export const PracticeChallengesPanel = forwardRef<
     ]
   );
 
+  const hasReturningChallengeFocus = useCallback(
+    () =>
+      pendingMenuFocusRef.current !== null ||
+      peekChallengeMenuFocus() !== null,
+    []
+  );
+
+  const restoreReturningChallengeSelection = useCallback(() => {
+    let idx = pendingMenuFocusRef.current;
+    if (idx === null) {
+      idx = peekChallengeMenuFocus();
+      if (idx !== null) {
+        pendingMenuFocusRef.current = idx;
+      }
+    }
+    if (idx === null) return null;
+    hasPickedChallengeRef.current = true;
+    setSelected(idx);
+    return idx;
+  }, []);
+
+  const focusReturningChallengeStart = useCallback(() => {
+    if (restoreReturningChallengeSelection() === null) return;
+    if (challengesLocked) return;
+
+    pendingMenuFocusRef.current = null;
+    consumeChallengeMenuFocus();
+    onEnterFooter?.('start');
+    footerStartRef.current?.focus({ preventScroll: true });
+  }, [
+    challengesLocked,
+    footerStartRef,
+    onEnterFooter,
+    restoreReturningChallengeSelection,
+  ]);
+
   const focusChallengeFromGate = useCallback(() => {
     if (challengesLocked) {
+      if (hasReturningChallengeFocus()) return;
       focusGateAction();
       return;
     }
-    let idx = pendingMenuFocusRef.current;
-    if (idx !== null) {
-      pendingMenuFocusRef.current = null;
-      consumeChallengeMenuFocus();
-      hasPickedChallengeRef.current = true;
-    } else {
-      idx = hasPickedChallengeRef.current ? selected : 0;
-    }
+    const idx = hasPickedChallengeRef.current ? selected : 0;
     setSelected(idx);
     rowRefs.current[idx]?.focus({ preventScroll: true });
-  }, [challengesLocked, focusGateAction, selected]);
+  }, [challengesLocked, focusGateAction, hasReturningChallengeFocus, selected]);
 
   useEffect(() => {
     const idx = peekChallengeMenuFocus();
@@ -964,19 +996,30 @@ export const PracticeChallengesPanel = forwardRef<
   }, []);
 
   const focusDefault = useCallback(() => {
+    if (hasReturningChallengeFocus()) {
+      focusReturningChallengeStart();
+      return;
+    }
     if (hasGateActionButton) {
       focusGateAction();
     } else {
       focusChallengeFromGate();
     }
-  }, [focusChallengeFromGate, focusGateAction, hasGateActionButton]);
+  }, [
+    focusChallengeFromGate,
+    focusGateAction,
+    focusReturningChallengeStart,
+    hasGateActionButton,
+    hasReturningChallengeFocus,
+  ]);
 
   const lastMenuZoneRef = useRef(menuZone);
   useEffect(() => {
     const prev = lastMenuZoneRef.current;
     lastMenuZoneRef.current = menuZone;
     if (!isActive || activeCheckOverlay) return;
-    if (prev !== 'panel' && menuZone === 'panel') {
+    // Footer → panel is handled by PracticeHub.resumePanelFromFooter (focusBeforeFooter).
+    if (prev !== 'panel' && menuZone === 'panel' && prev !== 'footer') {
       window.requestAnimationFrame(() => {
         focusDefault();
       });
@@ -985,11 +1028,39 @@ export const PracticeChallengesPanel = forwardRef<
 
   useEffect(() => {
     if (!isActive || menuZone !== 'panel' || activeCheckOverlay) return;
-    if (pendingMenuFocusRef.current === null) return;
+    if (!hasReturningChallengeFocus()) return;
     window.requestAnimationFrame(() => {
       focusDefault();
     });
-  }, [activeCheckOverlay, focusDefault, isActive, menuZone]);
+  }, [
+    activeCheckOverlay,
+    focusDefault,
+    hasReturningChallengeFocus,
+    isActive,
+    menuZone,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isActive ||
+      menuZone !== 'panel' ||
+      activeCheckOverlay ||
+      challengesLocked
+    ) {
+      return;
+    }
+    if (!hasReturningChallengeFocus()) return;
+    window.requestAnimationFrame(() => {
+      focusReturningChallengeStart();
+    });
+  }, [
+    activeCheckOverlay,
+    challengesLocked,
+    focusReturningChallengeStart,
+    hasReturningChallengeFocus,
+    isActive,
+    menuZone,
+  ]);
 
   const focusBeforeFooter = useCallback(() => {
     if (challengesLocked) {

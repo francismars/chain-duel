@@ -1,9 +1,12 @@
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { GameState, GridPos } from '@/game/engine/types';
 import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
+import {
+  drawPowerUpIconPixi,
+  drawPowerUpTileCanvas,
+} from '@/game/engine/powerUpIcons';
 import { preStartControllerBobPx } from '@/game/controllerTest';
 import type { GameSeatIndex } from '@/game/controllerTest';
-import { getPowerUpHudLabel } from '@/game/engine/powerUpDisplay';
 import {
   getSnakeEffects,
   type PowerUpPlayerIndex,
@@ -20,7 +23,6 @@ export class PixiGameRenderer {
   private grid: Graphics = new Graphics();
   private scene: Graphics = new Graphics();
   private resolveBlocks: Graphics = new Graphics();
-  private powerUpLabels: Container = new Container();
   private overlay: Container = new Container();
   private resolveAnimStartMs: number | null = null;
   // Coinbase capture pulse tracking
@@ -52,7 +54,6 @@ export class PixiGameRenderer {
   private lastResizeHeight = 0;
   /** Bumped on destroy / remount so in-flight async init cannot attach a stale canvas. */
   private mountGeneration = 0;
-  private powerUpLabelPool = new Map<string, { name: Text; letter: Text }>();
 
   constructor() {
     const startWordStyle = new TextStyle({
@@ -161,7 +162,6 @@ export class PixiGameRenderer {
       this.root.addChild(this.grid);
       this.root.addChild(this.scene);
       this.root.addChild(this.resolveBlocks);
-      this.root.addChild(this.powerUpLabels);
       this.overlay.addChild(this.startWordsContainer);
       this.overlay.addChild(this.endWinnerText);
       this.overlay.addChild(this.endContinueText);
@@ -479,11 +479,10 @@ export class PixiGameRenderer {
       );
     }
 
-    // Power-up items + labels (pooled texts; items pulse with `now`)
+    // Power-up items
     for (const item of state.powerUpItems ?? []) {
       this.drawPowerUpItem(item.pos, item.type, colSize, rowSize, now);
     }
-    this.syncPowerUpLabels(state.powerUpItems ?? [], colSize, rowSize, now);
 
     // Point pop-ups
     for (const change of state.pointChanges ?? []) {
@@ -1020,79 +1019,6 @@ export class PixiGameRenderer {
     }
   }
 
-  private syncPowerUpLabels(
-    items: NonNullable<GameState['powerUpItems']>,
-    colSize: number,
-    rowSize: number,
-    now: number
-  ): void {
-    const pulse = 0.75 + 0.25 * Math.sin((now / 800) * 2);
-    const activeKeys = new Set<string>();
-
-    for (const item of items) {
-      const key = `${item.pos[0]},${item.pos[1]},${item.type}`;
-      activeKeys.add(key);
-      const color = POWERUP_COLORS[item.type] ?? 0xffffff;
-      const cx = item.pos[0] * colSize + colSize / 2;
-      const cy = item.pos[1] * rowSize + rowSize / 2;
-      const hex = `#${color.toString(16).padStart(6, '0')}`;
-      const label = getPowerUpHudLabel(item.type as PowerUpType);
-      const nameSize = Math.max(7, rowSize * 0.58);
-      const letterSize = Math.max(10, rowSize * 0.72);
-
-      let entry = this.powerUpLabelPool.get(key);
-      if (!entry) {
-        const name = new Text({
-          text: label,
-          style: new TextStyle({
-            fontFamily: 'BureauGrotesque',
-            fontSize: nameSize,
-            fill: hex,
-            fontWeight: '700',
-            align: 'center',
-            letterSpacing: 0.5,
-          }),
-        });
-        name.anchor.set(0.5, 0);
-        const letter = new Text({
-          text: item.type[0],
-          style: new TextStyle({
-            fontFamily: 'BureauGrotesque',
-            fontSize: letterSize,
-            fill: hex,
-            fontWeight: '700',
-            align: 'center',
-          }),
-        });
-        letter.anchor.set(0.5);
-        entry = { name, letter };
-        this.powerUpLabelPool.set(key, entry);
-        this.powerUpLabels.addChild(name);
-        this.powerUpLabels.addChild(letter);
-      }
-
-      entry.name.visible = true;
-      entry.letter.visible = true;
-      entry.name.style.fontSize = nameSize;
-      entry.letter.style.fontSize = letterSize;
-      entry.name.style.fill = hex;
-      entry.letter.style.fill = hex;
-      entry.name.text = label;
-      entry.letter.text = label[0] ?? item.type[0];
-      entry.name.position.set(cx, cy + rowSize * 0.46);
-      entry.letter.position.set(cx, cy - rowSize * 0.04);
-      entry.name.alpha = pulse * 0.95;
-      entry.letter.alpha = pulse;
-    }
-
-    for (const [key, entry] of this.powerUpLabelPool) {
-      if (!activeKeys.has(key)) {
-        entry.name.visible = false;
-        entry.letter.visible = false;
-      }
-    }
-  }
-
   private drawPowerUpItem(
     pos: GridPos,
     type: string,
@@ -1102,41 +1028,25 @@ export class PixiGameRenderer {
   ): void {
     const cx = pos[0] * colSize + colSize / 2;
     const cy = pos[1] * rowSize + rowSize / 2;
-    const r = Math.min(colSize, rowSize) * 0.42;
+    const iconSize = Math.min(colSize, rowSize) * 1.5;
     const color = POWERUP_COLORS[type] ?? 0xffffff;
-    const tick = now / 800;
-    const pulse = 0.75 + 0.25 * Math.sin(tick * 2);
+    const pulse = 0.75 + 0.25 * Math.sin((now / 800) * 2);
 
-    // Octagon shape (8 sides)
-    const octPoints: number[] = [];
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2 - Math.PI / 8;
-      octPoints.push(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
-    }
-
-    // Outer glow
-    this.scene.circle(cx, cy, r * 1.6).fill({ color, alpha: 0.08 * pulse });
-    this.scene.circle(cx, cy, r * 1.3).fill({ color, alpha: 0.12 * pulse });
-
-    // Octagon fill
-    this.scene.poly(octPoints).fill({ color: 0x000000, alpha: 0.7 });
-    this.scene
-      .poly(octPoints)
-      .stroke({ width: 1.5, color, alpha: 0.9 * pulse });
-
-    // Inner symbol (small filled circle)
-    this.scene.circle(cx, cy, r * 0.35).fill({ color, alpha: 0.85 * pulse });
+    drawPowerUpIconPixi(
+      this.scene,
+      cx,
+      cy,
+      iconSize,
+      type as PowerUpType,
+      color,
+      0.95 * pulse
+    );
   }
 
   // ── Point text ─────────────────────────────────────────────────────────────
 
   destroy(): void {
     this.mountGeneration += 1;
-    this.powerUpLabelPool.forEach((entry) => {
-      entry.name.destroy();
-      entry.letter.destroy();
-    });
-    this.powerUpLabelPool.clear();
     this.gridCacheKey = '';
     this.lastResizeWidth = 0;
     this.lastResizeHeight = 0;
@@ -1762,32 +1672,22 @@ export class PixiGameRenderer {
       }
     }
 
-    // Power-up items (fallback: colored squares)
+    // Power-up items (fallback: octagon tiles + icons)
+    const puPulse = 0.75 + 0.25 * Math.sin((nowFb / 800) * 2);
     for (const item of state.powerUpItems ?? []) {
       const color = POWERUP_COLORS[item.type] ?? 0xffffff;
-      const r = (color >> 16) & 0xff;
-      const g = (color >> 8) & 0xff;
-      const b = color & 0xff;
-      ctx.fillStyle = `rgba(${r},${g},${b},0.85)`;
-      ctx.fillRect(
-        item.pos[0] * colSize + 2,
-        item.pos[1] * rowSize + 2,
-        colSize - 4,
-        rowSize - 4
-      );
-      const shortLabel = getPowerUpHudLabel(item.type as PowerUpType);
       const cx2 = item.pos[0] * colSize + colSize / 2;
       const cy2 = item.pos[1] * rowSize + rowSize / 2;
-      // First letter centered
-      ctx.fillStyle = '#000000';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = `bold ${Math.floor(rowSize * 0.72)}px BureauGrotesque`;
-      ctx.fillText(shortLabel[0] ?? item.type[0], cx2, cy2 - rowSize * 0.04);
-      // Full short name below
-      ctx.font = `bold ${Math.floor(rowSize * 0.58)}px BureauGrotesque`;
-      ctx.textBaseline = 'top';
-      ctx.fillText(shortLabel, cx2, cy2 + rowSize * 0.46);
+      const iconSize = Math.min(colSize, rowSize) * 1.5;
+      drawPowerUpTileCanvas(
+        ctx,
+        cx2,
+        cy2,
+        iconSize,
+        item.type as PowerUpType,
+        color,
+        puPulse
+      );
     }
 
     // Resolving blocks (Canvas2D fallback)

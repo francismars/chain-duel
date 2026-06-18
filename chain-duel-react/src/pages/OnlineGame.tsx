@@ -199,6 +199,11 @@ export default function OnlineGame() {
         if (state.p2.body.length > prev.p2.body.length) {
           audioRef.current?.playCapture(state.p2.body.length);
         }
+        if (
+          state.powerUpItems.length < (prev.powerUpItems?.length ?? 0)
+        ) {
+          audioRef.current?.playPowerUp();
+        }
         const prevP1Head = prev.p1.head;
         const prevP2Head = prev.p2.head;
         if (

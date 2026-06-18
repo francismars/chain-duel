@@ -825,6 +825,18 @@
     0 0 48px rgba(var(--solo-accent), 0.22);
 }
 
+/* Sovereign (rank 6): white accent reads opaque at default multipliers — soften the panel */
+.solo-zap-overlay--win .solo-zap-card[data-rank='6'] {
+  background:
+    linear-gradient(
+      155deg,
+      rgba(var(--solo-accent-strong), 0.14) 0%,
+      rgba(var(--solo-accent), 0.07) 38%,
+      rgba(10, 10, 10, 0.34) 100%
+    ),
+    rgba(0, 0, 0, 0.22);
+}
+
 .solo-zap-overlay--lose .solo-zap-card[data-rank] {
   border-color: rgba(255, 255, 255, 0.14);
   background:

@@ -15,6 +15,7 @@ import {
 import {
   applyPowerUpForPlayer,
   checkPowerUpPickup,
+  hasPowerUp,
 } from '@/game/engine/powerups';
 
 describe('game engine parity behavior', () => {
@@ -265,6 +266,33 @@ describe('game engine parity behavior', () => {
     expect(ghost.snake.body[0]).toEqual([47, 20]);
     expect(specter.snake.head).toEqual([4, 20]);
     expect(specter.snake.body[0]).toEqual([3, 20]);
+  });
+
+  it('P2 loses ASIC boost on respawn but keeps other power-ups in power-up mode', () => {
+    const state = createGameState({
+      p1Name: 'P1',
+      p2Name: 'P2',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'PRACTICE · PWR',
+      practiceMode: true,
+      powerupMode: true,
+    });
+    state.gameStarted = true;
+    state.tickCount = 100;
+
+    applyPowerUpForPlayer(state, 1, 'SURGE');
+    applyPowerUpForPlayer(state, 1, 'AMPLIFIER');
+
+    state.p2.head = [-1, 12];
+    state.p2.body = [[0, 12]];
+    state.p2.dir = 'Left';
+    state.p2.dirWanted = 'Left';
+
+    stepGame(state);
+
+    expect(hasPowerUp(state, 1, 'SURGE')).toBe(false);
+    expect(hasPowerUp(state, 1, 'AMPLIFIER')).toBe(true);
   });
 
   it('FFA extra snakes respawn with tail after death', () => {

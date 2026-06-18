@@ -103,6 +103,14 @@ function removePowerUp(
   );
 }
 
+/** ASIC Boost never survives a respawn. */
+export function clearSurgeForPlayer(
+  state: GameState,
+  index: PowerUpPlayerIndex
+): void {
+  removePowerUp(state, index, 'SURGE');
+}
+
 export function clearPowerUpsForPlayer(
   state: GameState,
   index: PowerUpPlayerIndex

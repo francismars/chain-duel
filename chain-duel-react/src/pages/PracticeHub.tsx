@@ -89,6 +89,15 @@ export default function PracticeHub() {
     );
   }, [playStyleIdx]);
 
+  useEffect(() => {
+    if (!hasChallengeMenuFocus()) return;
+    setHubFocus({ zone: 'panel' });
+    const frame = window.requestAnimationFrame(() => {
+      challengesPanelRef.current?.focusDefault();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
   const focusPlayStyleCard = useCallback((idx: 0 | 1) => {
     playStyleRefs.current[idx]?.focus();
   }, []);

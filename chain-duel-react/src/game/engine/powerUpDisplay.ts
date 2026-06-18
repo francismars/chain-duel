@@ -15,32 +15,32 @@ export const POWERUP_DISPLAY: Record<PowerUpType, PowerUpDisplay> = {
   SURGE: {
     title: 'ASIC Boost',
     hud: 'ASIC',
-    subtitle: 'Double movement for a short time.',
+    subtitle: '2x movement briefly',
     tooltip: 'Move twice as often briefly — like an ASIC surging ahead.',
   },
   FREEZE: {
     title: 'Sybil Attack',
     hud: 'SYBL',
-    subtitle: 'Rivals move half speed for a while.',
+    subtitle: 'Halve rival speed',
     tooltip:
       'Network spam slows rivals — like mempool congestion on everyone else.',
   },
   PHANTOM: {
     title: 'Coinjoin',
     hud: 'CJ',
-    subtitle: 'Pass through walls and the border.',
+    subtitle: 'Pass through walls',
     tooltip: 'Mixed path through walls — wrap the grid instead of bouncing.',
   },
   AMPLIFIER: {
     title: 'Full Block',
     hud: 'FULL',
-    subtitle: 'Next 3 captures take double %.',
+    subtitle: '2x % on next 3 captures',
     tooltip: 'Your next three captures count at double percent.',
   },
   DECOY: {
     title: 'Fork Coin',
     hud: 'FORK',
-    subtitle: 'Spawns a fake coin on the field.',
+    subtitle: 'Spawns a fake coin',
     tooltip:
       'Touch the fork coin and you reset to spawn — wrong chain, zero hashrate (BCH joke).',
   },

@@ -224,10 +224,15 @@ export function useGameRenderBridge({
         const prevP1Head = [...state.p1.head] as [number, number];
         const prevP2Head = [...state.p2.head] as [number, number];
         const prevStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
+        const prevPowerUpItems = state.powerUpItems.length;
 
         recordChallengeInput(state);
         stepGame(state);
         if (simStepRef) simStepRef.current += 1;
+
+        if (state.powerUpItems.length < prevPowerUpItems) {
+          audio?.playPowerUp();
+        }
 
         const hud = getHudState(state);
         applyHud({

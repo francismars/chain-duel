@@ -18,6 +18,7 @@ export class GameAudioSystem {
   private capture16 = createAudio('/sound/P-FC_16.aac');
   private capture32 = createAudio('/sound/P-FC_32.aac');
   private blockFound = createAudio('/sound/MAINNET_BLOCK.aac');
+  private powerUp = createAudio('/sound/powerup.mp3');
 
   /** Set by startMusic(); gates resume after unmute and avoids BGM before match load. */
   private musicShouldPlay = false;
@@ -38,6 +39,7 @@ export class GameAudioSystem {
     this.capture16,
     this.capture32,
     this.blockFound,
+    this.powerUp,
   ];
 
   /**
@@ -100,6 +102,10 @@ export class GameAudioSystem {
 
   playBlockFound(): void {
     this.play(this.blockFound);
+  }
+
+  playPowerUp(): void {
+    this.play(this.powerUp);
   }
 
   private play(audio: HTMLAudioElement): void {
