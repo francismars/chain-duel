@@ -297,6 +297,45 @@ function GateCheckIcon({ pass }: { pass: boolean }) {
   );
 }
 
+function GateProgressBadge({
+  passed,
+  total,
+}: {
+  passed: number;
+  total: number;
+}) {
+  const complete = total > 0 && passed >= total;
+
+  return (
+    <span
+      className={[
+        'sc-gate__progress',
+        complete ? 'sc-gate__progress--complete' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {complete ? (
+        <svg
+          className="sc-gate__progress-check"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : null}
+      <span className="sc-gate__progress-count">
+        {passed}/{total}
+      </span>
+    </span>
+  );
+}
+
 interface PracticeChallengesPanelProps {
   isActive: boolean;
   menuZone: PracticeHubFocus['zone'];
@@ -1534,10 +1573,10 @@ export const PracticeChallengesPanel = forwardRef<
                     </div>
                     <div className="sc-gate__setup-heading">
                       {eligibilityProgress ? (
-                        <span className="sc-gate__progress">
-                          {eligibilityProgress.passed}/
-                          {eligibilityProgress.total}
-                        </span>
+                        <GateProgressBadge
+                          passed={eligibilityProgress.passed}
+                          total={eligibilityProgress.total}
+                        />
                       ) : null}
                       {gateCopy.title ? (
                         <h3 className="sc-gate__title">{gateCopy.title}</h3>
@@ -1722,9 +1761,10 @@ export const PracticeChallengesPanel = forwardRef<
                 <>
                   {eligibilityProgress && !payoutReady ? (
                     <div className="sc-gate__header">
-                      <span className="sc-gate__progress">
-                        {eligibilityProgress.passed}/{eligibilityProgress.total}
-                      </span>
+                      <GateProgressBadge
+                        passed={eligibilityProgress.passed}
+                        total={eligibilityProgress.total}
+                      />
                     </div>
                   ) : null}
 

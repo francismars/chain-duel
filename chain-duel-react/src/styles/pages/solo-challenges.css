@@ -793,15 +793,17 @@
 .practice-hub-page--challenges .sc-gate__setup-actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: stretch;
   gap: max(0.2rem, 0.28vw);
   flex-shrink: 0;
   justify-self: end;
   grid-column: 3;
 }
 
-.practice-hub-page--challenges .sc-gate__config-link--setup {
-  flex-shrink: 0;
+.practice-hub-page--challenges .sc-gate__setup-actions .sc-gate__config-link--setup {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .practice-hub-page--challenges .sc-gate__card--setup .sc-gate__checks {
@@ -1322,15 +1324,17 @@
 .sc-gate__setup-actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: stretch;
   gap: clamp(4px, 0.4vw, 6px);
   flex-shrink: 0;
   justify-self: end;
   grid-column: 3;
 }
 
-.sc-gate__config-link--setup {
-  flex-shrink: 0;
+.sc-gate__setup-actions .sc-gate__config-link--setup {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .sc-gate__header {
@@ -1358,6 +1362,22 @@
   color: rgba(230, 195, 40, 0.82);
   line-height: 1;
   flex-shrink: 0;
+}
+
+.sc-gate__progress--complete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.sc-gate__progress-check {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+.sc-gate__progress-count {
+  line-height: 1;
 }
 
 .sc-gate__top {
