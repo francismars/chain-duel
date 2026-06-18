@@ -700,6 +700,22 @@
 }
 
 .solo-zap-card {
+  /* Fluid type — same scale as /practice (practice-hub-page.css) */
+  --ph-fs-soon: calc(0.2rem + 0.58vw);
+  --ph-fs-gate-check: calc(0.18rem + 0.52vw);
+  --ph-fs-gate-meta: calc(0.16rem + 0.48vw);
+  --ph-fs-play-style-sub: calc(0.2rem + 0.65vw);
+  --ph-fs-caption: calc(0.24rem + 0.78vw);
+  --ph-fs-body-sm: calc(0.28rem + 0.86vw);
+  --ph-fs-tier: calc(0.3rem + 0.82vw);
+  --ph-fs-body: calc(0.36rem + 0.98vw);
+  --ph-fs-ui: calc(0.4rem + 1.08vw);
+  --ph-fs-heading-sm: calc(0.46rem + 1.2vw);
+  --ph-fs-heading: calc(0.5rem + 1.38vw);
+  --ph-fs-display-sm: calc(0.58rem + 1.9vw);
+  --ph-fs-display: calc(0.72rem + 2.85vw);
+  --ph-fs-button: calc(0.24rem + 0.8vw);
+
   width: min(580px, 90vw);
   background: #0a0a0a;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -721,7 +737,7 @@
 
 .solo-zap-badge {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.8vw, 11px);
+  font-size: var(--ph-fs-caption);
   font-weight: 600;
   letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.4);
@@ -729,16 +745,15 @@
 
 .solo-zap-title {
   font-family: 'BureauGrotesque', sans-serif;
-  font-size: clamp(22px, 2.4vw, 32px);
+  font-size: var(--ph-fs-heading-sm);
   font-weight: 400;
-  letter-spacing: 0.06em;
   color: #fff;
   margin: 0;
 }
 
 .solo-zap-challenge {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(10px, 0.9vw, 13px);
+  font-size: var(--ph-fs-caption);
   color: rgba(255, 255, 255, 0.4);
   margin: 0;
   letter-spacing: 0.1em;
@@ -758,7 +773,7 @@
 
 .solo-zap-sats {
   font-family: 'BureauGrotesque', sans-serif;
-  font-size: clamp(40px, 5vw, 68px);
+  font-size: var(--ph-fs-display);
   font-weight: 400;
   color: #fff;
   line-height: 1;
@@ -766,7 +781,7 @@
 
 .solo-zap-unit {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(11px, 1vw, 14px);
+  font-size: var(--ph-fs-caption);
   font-weight: 600;
   letter-spacing: 0.14em;
   color: rgba(255, 255, 255, 0.35);
@@ -788,7 +803,7 @@
 
 .solo-zap-label {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(8px, 0.65vw, 9px);
+  font-size: var(--ph-fs-gate-meta);
   font-weight: 600;
   letter-spacing: 0.14em;
   color: rgba(255, 255, 255, 0.25);
@@ -796,7 +811,7 @@
 
 .solo-zap-value {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(10px, 0.85vw, 12px);
+  font-size: var(--ph-fs-body-sm);
   font-weight: 500;
   color: rgba(255, 255, 255, 0.75);
   word-break: break-all;
@@ -805,7 +820,7 @@
 
 .solo-zap-value--hash {
   font-family: 'Courier New', monospace;
-  font-size: clamp(8px, 0.65vw, 10px);
+  font-size: var(--ph-fs-gate-meta);
   color: rgba(255, 255, 255, 0.3);
   letter-spacing: 0.04em;
 }
@@ -820,14 +835,114 @@
   color: rgba(255, 255, 255, 0.75);
 }
 
-.solo-zap-hint {
+.solo-zap-note-label {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(8px, 0.7vw, 10px);
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.2);
-  text-align: center;
+  font-size: var(--ph-fs-gate-meta);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.25);
   margin: 0;
+}
+
+.solo-zap-note-label--pulse {
   animation: solo-zap-pulse 2s ease-in-out infinite;
+}
+
+.solo-zap-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(4px, 0.45vw, 6px);
+  width: 100%;
+}
+
+.solo-zap-note-section + .solo-zap-footer {
+  margin-top: clamp(-10px, -1vw, -4px);
+}
+
+.solo-zap-card .button.solo-zap-post-btn,
+.solo-zap-card .button.solo-zap-footer-btn {
+  width: 100%;
+  height: 3vw;
+  min-height: 30px;
+  margin: 0;
+  padding: clamp(9px, 1vw, 12px) clamp(20px, 2.2vw, 28px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--ph-fs-button);
+  font-weight: 400;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+  background-color: transparent;
+  box-shadow: none;
+  animation: none;
+  cursor: pointer;
+}
+
+.solo-zap-card .button.solo-zap-post-btn {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+}
+
+.solo-zap-card .button.solo-zap-footer-btn {
+  color: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.solo-zap-card .button.solo-zap-footer-btn--subtle {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.solo-zap-card .button.solo-zap-footer-btn--subtle:hover:not(:disabled):not(.practice-start--focused),
+.solo-zap-card
+  .button.solo-zap-footer-btn--subtle:focus-visible:not(:disabled):not(
+    .practice-start--focused
+  ) {
+  animation: none !important;
+  color: #fff;
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+
+.solo-zap-card .button.solo-zap-footer-btn--subtle:active:not(:disabled),
+.solo-zap-card .button.solo-zap-footer-btn--subtle:hover:active:not(:disabled) {
+  color: #fff;
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+}
+
+.solo-zap-card .button.solo-zap-footer-btn--subtle.practice-start--focused {
+  animation: none;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.04);
+  box-shadow: none;
+}
+
+.solo-zap-card .button.solo-zap-post-btn:focus,
+.solo-zap-card .button.solo-zap-post-btn:focus-visible,
+.solo-zap-card .button.solo-zap-footer-btn:focus,
+.solo-zap-card .button.solo-zap-footer-btn:focus-visible {
+  outline: none;
+}
+
+.solo-zap-card .button.solo-zap-post-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.solo-zap-card .button.practice-start--focused:not(.solo-zap-footer-btn--subtle),
+.solo-zap-card .button.practice-back.practice-start--focused:not(.solo-zap-footer-btn--subtle) {
+  animation: glowing 2s ease-in-out infinite;
 }
 
 /* ── Post-note section ── */
@@ -836,18 +951,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: clamp(8px, 0.9vw, 12px);
   width: 100%;
   padding-top: clamp(14px, 1.5vw, 20px);
-}
-
-.solo-zap-note-label {
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(8px, 0.65vw, 9px);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  color: rgba(255, 255, 255, 0.25);
-  margin: 0;
 }
 
 .solo-zap-note-preview {
@@ -857,6 +963,7 @@
   border-radius: 4px;
   padding: clamp(10px, 1.2vw, 16px) clamp(12px, 1.4vw, 18px);
   text-align: left;
+  margin-bottom: clamp(12px, 1.5vw, 22px);
 }
 
 .solo-zap-note-author {
@@ -869,8 +976,12 @@
 }
 
 .solo-zap-note-author-avatar {
-  width: 20px;
-  height: 20px;
+  width: 2.4vw;
+  height: 2.4vw;
+  min-width: 18px;
+  min-height: 18px;
+  max-width: 28px;
+  max-height: 28px;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -887,7 +998,7 @@
 
 .solo-zap-note-author-name {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.75vw, 11px);
+  font-size: var(--ph-fs-ui);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.86);
   line-height: 1.2;
@@ -895,44 +1006,19 @@
 
 .solo-zap-note-author-pubkey {
   font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
-  font-size: clamp(8px, 0.65vw, 10px);
+  font-size: var(--ph-fs-gate-meta);
   color: rgba(255, 255, 255, 0.45);
   line-height: 1.2;
 }
 
 .solo-zap-note-text {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(10px, 0.85vw, 13px);
+  font-size: var(--ph-fs-body-sm);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.65);
   line-height: 1.6;
   white-space: pre-wrap;
   margin: 0;
-}
-
-.solo-zap-post-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  letter-spacing: 0.1em;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: clamp(9px, 1vw, 12px) clamp(20px, 2.2vw, 28px);
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
-}
-
-.solo-zap-post-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.solo-zap-post-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 @keyframes solo-zap-spin {
@@ -950,7 +1036,7 @@
 
 .solo-zap-note-ok {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(10px, 0.85vw, 12px);
+  font-size: var(--ph-fs-body-sm);
   font-weight: 600;
   color: #4cff8f;
   letter-spacing: 0.08em;
@@ -959,7 +1045,7 @@
 
 .solo-zap-note-err {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.75vw, 11px);
+  font-size: var(--ph-fs-body-sm);
   color: rgba(255, 100, 100, 0.85);
   margin: 0;
   text-align: center;
@@ -1212,53 +1298,6 @@
   .solo-zap-card {
     width: min(92vw, 520px);
     padding: clamp(16px, 4vmin, 28px) clamp(14px, 3.5vmin, 24px);
-  }
-
-  .solo-zap-badge {
-    font-size: clamp(10px, 2.4vmax, 13px);
-  }
-
-  .solo-zap-title {
-    font-size: clamp(1.2rem, 5.5vmax, 1.95rem);
-  }
-
-  .solo-zap-challenge {
-    font-size: clamp(0.65rem, 2.4vmax, 0.85rem);
-  }
-
-  .solo-zap-sats {
-    font-size: clamp(2.1rem, 11vmax, 3.4rem);
-  }
-
-  .solo-zap-unit {
-    font-size: clamp(11px, 2.8vmax, 15px);
-  }
-
-  .solo-zap-hint {
-    font-size: clamp(10px, 2.6vmax, 14px);
-  }
-
-  .solo-zap-label,
-  .solo-zap-note-label {
-    font-size: clamp(9px, 2.2vmax, 12px);
-  }
-
-  .solo-zap-value,
-  .solo-zap-note-text {
-    font-size: clamp(0.7rem, 2.6vmax, 0.95rem);
-  }
-
-  .solo-zap-note-author-name {
-    font-size: clamp(0.65rem, 2.3vmax, 0.85rem);
-  }
-
-  .solo-zap-post-btn {
-    font-size: clamp(0.68rem, 2.4vmax, 0.88rem);
-  }
-
-  .solo-zap-note-ok,
-  .solo-zap-note-err {
-    font-size: clamp(0.65rem, 2.3vmax, 0.85rem);
   }
 }
 
