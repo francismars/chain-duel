@@ -6,6 +6,7 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
+import { useMenuSfx } from '@/hooks/useMenuSfx';
 import {
   computeBracketState,
   computeFinalPrize,
@@ -81,6 +82,7 @@ export default function TournamentBracket() {
   const proceedBtnRef = useRef<HTMLButtonElement>(null);
   const startGameBtnRef = useRef<HTMLButtonElement>(null);
   const claimBtnRef = useRef<HTMLButtonElement>(null);
+  const { playSelect, playConfirm } = useMenuSfx();
 
   const numberOfPlayersFromUrl = Math.max(
     TOURNAMENT_MIN_PLAYERS,
@@ -526,18 +528,21 @@ export default function TournamentBracket() {
   });
 
   const handleCancel = useCallback(() => {
+    playConfirm();
     // Legacy behavior: Cancel always opens the refund confirmation view first.
     // If there are 0 deposits, backend responds and navigates back to P2P entry.
     setPanelView('confirm-cancel');
     setFocusedBtn('left');
-  }, []);
+  }, [playConfirm]);
 
   function handleBackToPayment() {
+    playSelect();
     setPanelView('payment');
     setFocusedBtn('left');
   }
 
   const handleConfirmCancel = useCallback(() => {
+    playConfirm();
     const s = asSocketBoundary(socket);
     if (!s) return;
     // Legacy shows loading while waiting for rescanceltourn.
@@ -556,15 +561,17 @@ export default function TournamentBracket() {
     logger.debug('socket not connected, waiting connect for canceltournament');
     s.once?.('connect', emitCancel);
     s.connect?.();
-  }, [socket, logger]);
+  }, [playConfirm, socket, logger]);
 
   const handleStartTournament = useCallback(() => {
     if (!canStart) return;
+    playConfirm();
     // Legacy behavior: first move from payment panel to "UP NEXT".
     setPreStartReady(true);
-  }, [canStart]);
+  }, [canStart, playConfirm]);
 
   const handleStartNextGame = useCallback(() => {
+    playConfirm();
     const names = Object.fromEntries(
       Object.entries(playersPaid).map(([k, v]) => [
         k,
@@ -578,7 +585,7 @@ export default function TournamentBracket() {
     );
     clearClientGameConfig();
     navigate('/game');
-  }, [playersPaid, isNostrTournament, navigate]);
+  }, [isNostrTournament, navigate, playConfirm, playersPaid]);
 
   // Sync glowing animation with focused button (matches legacy animationDuration trick)
   useEffect(() => {
@@ -619,6 +626,7 @@ export default function TournamentBracket() {
       if (tournamentPhase === 'finished') {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
+          playConfirm();
           navigate('/postgame');
         }
         return;
@@ -627,9 +635,11 @@ export default function TournamentBracket() {
       // Payment / refund panel keyboard navigation
       if (panelView === 'refunding') return;
       if (e.key === 'ArrowLeft' || e.key === 'a') {
+        if (focusedBtn !== 'left') playSelect();
         setFocusedBtn('left');
       } else if (e.key === 'ArrowRight' || e.key === 'd') {
         if (panelView === 'payment' && !canStart) return;
+        if (focusedBtn !== 'right') playSelect();
         setFocusedBtn('right');
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -648,6 +658,8 @@ export default function TournamentBracket() {
       canStart,
       tournamentPhase,
       navigate,
+      playConfirm,
+      playSelect,
       preStartReady,
       handleCancel,
       handleConfirmCancel,
@@ -991,7 +1003,10 @@ export default function TournamentBracket() {
             id="claimSatsButton"
             className="claimSatsButton"
             type="button"
-            onClick={() => navigate('/postgame')}
+            onClick={() => {
+              playConfirm();
+              navigate('/postgame');
+            }}
           >
             Claim Sats
           </Button>

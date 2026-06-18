@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useGamepad } from '@/hooks/useGamepad';
+import { useMenuSfx } from '@/hooks/useMenuSfx';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import {
@@ -223,8 +224,15 @@ export default function OnlineRooms() {
   const createBtnRef = useRef<HTMLButtonElement>(null);
   const backBtnRef = useRef<HTMLButtonElement>(null);
   const enterRoomBtnRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const { playSelect, playConfirm } = useMenuSfx();
 
   useGamepad(true);
+
+  const exitToMainMenu = useCallback(() => {
+    playSelect();
+    sessionStorage.removeItem('onlineRoomsTab');
+    navigateToMainMenu(navigate);
+  }, [navigate, playSelect]);
 
   // Persist selected tab across in-online navigation; cleared on back-to-menu
   useEffect(() => {
@@ -294,6 +302,7 @@ export default function OnlineRooms() {
   }, []);
 
   const createRoom = useCallback(() => {
+    playConfirm();
     setError('');
     setCreatingRoom(true);
     creatingRoomRef.current = true;
@@ -301,10 +310,11 @@ export default function OnlineRooms() {
     socket?.emit('createOnlineRoom', {
       buyin: parseBuyin(),
     });
-  }, [socket, parseBuyin]);
+  }, [playConfirm, socket, parseBuyin]);
 
   const activateRoom = useCallback(
     (room: OnlineRoomListItem) => {
+      playConfirm();
       if (room.phase === 'playing') {
         socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
         navigate(onlineGameUrl(room.roomId));
@@ -313,14 +323,15 @@ export default function OnlineRooms() {
       socket?.emit('joinOnlineRoom', { roomId: room.roomId });
       navigate(onlineLobbyUrl(room.roomId));
     },
-    [socket, navigate]
+    [playConfirm, socket, navigate]
   );
 
   const openHistoryPostGame = useCallback(
     (roomId: string) => {
+      playConfirm();
       navigate(onlinePostGameUrl(roomId));
     },
-    [navigate]
+    [navigate, playConfirm]
   );
 
   const openHistoryReplay = (roomId: string, matchRound?: number) => {
@@ -462,6 +473,7 @@ export default function OnlineRooms() {
 
       // ── Left / Right ────────────────────────────────────────────
       if (isLeft || isRight) {
+        playSelect();
         if (navFocus.type === 'tab' || navFocus.type === 'room') {
           // Switch between tabs (also reachable from room list)
           const curIdx =
@@ -519,6 +531,7 @@ export default function OnlineRooms() {
           updateBuyinBy(step);
           return;
         }
+        playSelect();
         setNavFocus((prev) => {
           if (prev.type === 'back') {
             return { type: 'switch' };
@@ -558,6 +571,7 @@ export default function OnlineRooms() {
           updateBuyinBy(-step);
           return;
         }
+        playSelect();
         setNavFocus((prev) => {
           if (prev.type === 'tab') {
             return onlineMode === 'join'
@@ -587,8 +601,12 @@ export default function OnlineRooms() {
 
       // ── Enter / Space ────────────────────────────────────────────
       if (isEnter) {
+        if (navFocus.type === 'back') {
+          exitToMainMenu();
+          return;
+        }
         if (navFocus.type === 'tab') {
-          // Tab is already active via Left/Right; Enter navigates into the list
+          playSelect();
           setNavFocus(
             displayedRooms.length > 0
               ? { type: 'room', index: 0 }
@@ -598,17 +616,8 @@ export default function OnlineRooms() {
           );
           return;
         }
-        if (navFocus.type === 'create') {
-          createRoom();
-          return;
-        }
-        if (navFocus.type === 'createBtn') {
-          if (onlineMode === 'create') createRoom();
-          else
-            socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() });
-          return;
-        }
         if (navFocus.type === 'switch') {
+          playSelect();
           const next: OnlineMode = onlineMode === 'create' ? 'join' : 'create';
           setOnlineMode(next);
           setNavFocus({ type: next });
@@ -616,11 +625,25 @@ export default function OnlineRooms() {
           return;
         }
         if (navFocus.type === 'preset') {
+          playSelect();
           setBuyin(String(PRESET_AMOUNTS[navFocus.index]));
           setNavFocus({ type: 'createBtn' });
           return;
         }
+        if (navFocus.type === 'create') {
+          createRoom();
+          return;
+        }
+        if (navFocus.type === 'createBtn') {
+          if (onlineMode === 'create') createRoom();
+          else {
+            playConfirm();
+            socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() });
+          }
+          return;
+        }
         if (navFocus.type === 'join') {
+          playConfirm();
           socket?.emit('joinOnlineRoomByCode', { roomCode: roomCode.trim() });
           return;
         }
@@ -632,10 +655,6 @@ export default function OnlineRooms() {
             else activateRoom(room);
           }
           return;
-        }
-        if (navFocus.type === 'back') {
-          sessionStorage.removeItem('onlineRoomsTab');
-          navigateToMainMenu(navigate);
         }
       }
     };
@@ -662,7 +681,10 @@ export default function OnlineRooms() {
     roomCode,
     activateRoom,
     createRoom,
+    exitToMainMenu,
     openHistoryPostGame,
+    playConfirm,
+    playSelect,
     updateBuyinBy,
   ]);
 
@@ -766,6 +788,7 @@ export default function OnlineRooms() {
                         .filter(Boolean)
                         .join(' ')}
                       onClick={() => {
+                        playSelect();
                         setOnlineTab('live');
                         setNavFocus({ type: 'tab', index: 0 });
                       }}
@@ -790,6 +813,7 @@ export default function OnlineRooms() {
                         .filter(Boolean)
                         .join(' ')}
                       onClick={() => {
+                        playSelect();
                         setOnlineTab('history');
                         setNavFocus({ type: 'tab', index: 1 });
                       }}
@@ -819,6 +843,7 @@ export default function OnlineRooms() {
                         .filter(Boolean)
                         .join(' ')}
                       onClick={() => {
+                        playSelect();
                         setOnlineTab('hof');
                         setNavFocus({ type: 'tab', index: 2 });
                       }}
@@ -1164,6 +1189,7 @@ export default function OnlineRooms() {
                           .filter(Boolean)
                           .join(' ')}
                         onClick={() => {
+                          playSelect();
                           setBuyin(String(amount));
                           setNavFocus({ type: 'createBtn' });
                         }}
@@ -1183,6 +1209,7 @@ export default function OnlineRooms() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
+                      playConfirm();
                       socket?.emit('joinOnlineRoomByCode', {
                         roomCode: roomCode.trim(),
                       });
@@ -1203,10 +1230,12 @@ export default function OnlineRooms() {
                   onClick={
                     onlineMode === 'create'
                       ? createRoom
-                      : () =>
+                      : () => {
+                          playConfirm();
                           socket?.emit('joinOnlineRoomByCode', {
                             roomCode: roomCode.trim(),
-                          })
+                          });
+                        }
                   }
                   disabled={onlineMode === 'create' && creatingRoom}
                 >
@@ -1232,6 +1261,7 @@ export default function OnlineRooms() {
                 type="button"
                 className={`online-action-switch${navFocus.type === 'switch' ? ' online-selected' : ''}`}
                 onClick={() => {
+                  playSelect();
                   const next: OnlineMode =
                     onlineMode === 'create' ? 'join' : 'create';
                   setOnlineMode(next);
@@ -1256,10 +1286,7 @@ export default function OnlineRooms() {
               <Button
                 ref={backBtnRef}
                 className="online-back"
-                onClick={() => {
-                  sessionStorage.removeItem('onlineRoomsTab');
-                  navigateToMainMenu(navigate);
-                }}
+                onClick={exitToMainMenu}
               >
                 MAIN MENU
               </Button>

@@ -790,10 +790,18 @@
   color: rgba(255, 255, 255, 0.48);
 }
 
-.practice-hub-page--challenges .sc-gate__config-link--setup {
+.practice-hub-page--challenges .sc-gate__setup-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: max(0.2rem, 0.28vw);
   flex-shrink: 0;
   justify-self: end;
   grid-column: 3;
+}
+
+.practice-hub-page--challenges .sc-gate__config-link--setup {
+  flex-shrink: 0;
 }
 
 .practice-hub-page--challenges .sc-gate__card--setup .sc-gate__checks {
@@ -1311,10 +1319,18 @@
   color: rgba(255, 255, 255, 0.48);
 }
 
-.sc-gate__config-link--setup {
+.sc-gate__setup-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: clamp(4px, 0.4vw, 6px);
   flex-shrink: 0;
   justify-self: end;
   grid-column: 3;
+}
+
+.sc-gate__config-link--setup {
+  flex-shrink: 0;
 }
 
 .sc-gate__header {
@@ -1502,6 +1518,17 @@
   border-color: #fff;
 }
 
+.sc-gate__config-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sc-gate__config-link:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .sc-gate__icon {
   width: 14px;
   height: 14px;
@@ -1530,31 +1557,6 @@
 
 .sc-gate__status--ready {
   color: rgba(255, 255, 255, 0.78);
-}
-
-.sc-gate__refresh {
-  margin: 0.35rem 0 0;
-  padding: 0;
-  border: none;
-  background: none;
-  font-family: 'Inter', sans-serif;
-  font-size: var(--ph-fs-soon);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.sc-gate__refresh:hover:not(:disabled) {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.sc-gate__refresh:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .sc-gate__error {

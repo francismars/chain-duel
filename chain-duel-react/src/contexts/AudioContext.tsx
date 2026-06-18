@@ -9,17 +9,18 @@ import {
   type ReactNode,
 } from 'react';
 
-/** One-shot sound effect paths for menu UI (existing audio files) */
+/** One-shot sound effect paths for menu UI */
 export const SFX = {
-  /** Play when changing button selection (e.g. arrow keys) */
-  MENU_SELECT: '/sound/Beep1.m4a',
+  /** Play when moving focus between buttons (e.g. arrow keys) */
+  MENU_SELECT: '/sound/button-select.mp3',
   /** Play when confirming / pressing a button (Enter, click) */
-  MENU_CONFIRM: '/sound/Beep2.m4a',
+  MENU_CONFIRM: '/sound/button-focus.mp3',
 } as const;
 
 /** Gain per SFX path (0–1). Selection uses a new Audio each play so clips can overlap and finish. */
 const SFX_VOLUME: Partial<Record<string, number>> = {
-  [SFX.MENU_SELECT]: 0.32,
+  [SFX.MENU_SELECT]: 0.5,
+  [SFX.MENU_CONFIRM]: 0.7,
 };
 
 interface BackgroundAudioContextType {

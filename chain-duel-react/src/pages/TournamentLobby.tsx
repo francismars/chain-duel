@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
+import { useMenuSfx } from '@/hooks/useMenuSfx';
 import { asSocketBoundary } from '@/shared/socket/socketBoundary';
 import {
   TOURNAMENT_DEFAULT_BUY_IN_SATS,
@@ -34,6 +35,7 @@ export default function TournamentLobby() {
 
   const proceedRef = useRef<HTMLButtonElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
+  const { playSelect, playConfirm } = useMenuSfx();
 
   const numberOfPlayers = Math.max(
     TOURNAMENT_MIN_PLAYERS,
@@ -104,13 +106,33 @@ export default function TournamentLobby() {
     };
   }, [socket, connected, deposit, numberOfPlayers]);
 
+  const canProceed = paidCount >= numberOfPlayers;
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
+        event.preventDefault();
+        if (buttonSelected !== 'backButton') playSelect();
+        setButtonSelected('backButton');
+        return;
+      }
+      if (
+        event.key === 'ArrowRight' ||
+        event.key === 'd' ||
+        event.key === 'D'
+      ) {
+        event.preventDefault();
+        if (canProceed && buttonSelected !== 'proceedButton') playSelect();
+        if (canProceed) setButtonSelected('proceedButton');
+        return;
+      }
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         if (buttonSelected === 'backButton') {
+          playSelect();
           navigate('/p2p');
         } else if (buttonSelected === 'proceedButton') {
+          playConfirm();
           sessionStorage.setItem('Players', JSON.stringify(playersPaid));
           navigate(
             `/tournbracket?players=${numberOfPlayers}&deposit=${deposit}`
@@ -121,10 +143,18 @@ export default function TournamentLobby() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [buttonSelected, playersPaid, numberOfPlayers, deposit, navigate]);
+  }, [
+    buttonSelected,
+    canProceed,
+    deposit,
+    navigate,
+    numberOfPlayers,
+    playersPaid,
+    playConfirm,
+    playSelect,
+  ]);
 
   const qrValue = payLink?.lnurl || payLink?.lnurlp || '';
-  const canProceed = paidCount >= numberOfPlayers;
 
   return (
     <div className="tournlobby-page">
@@ -181,7 +211,10 @@ export default function TournamentLobby() {
                 className={paidCount > 0 ? 'disabled' : ''}
                 id="backButton"
                 type="button"
-                onClick={() => navigate('/p2p')}
+                onClick={() => {
+                  playSelect();
+                  navigate('/p2p');
+                }}
               >
                 Cancel
               </Button>
@@ -192,6 +225,7 @@ export default function TournamentLobby() {
                 type="button"
                 onClick={() => {
                   if (!canProceed) return;
+                  playConfirm();
                   sessionStorage.setItem(
                     'Players',
                     JSON.stringify(playersPaid)

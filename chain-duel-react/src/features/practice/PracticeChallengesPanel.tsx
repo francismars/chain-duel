@@ -339,6 +339,9 @@ export const PracticeChallengesPanel = forwardRef<
     () => CHALLENGES.map(() => 0)
   );
   const [gateActionFocused, setGateActionFocused] = useState(false);
+  const [gateSetupFocus, setGateSetupFocus] = useState<'config' | 'refresh' | null>(
+    null
+  );
   const [listRevealed, setListRevealed] = useState(false);
   const [listRevealKey, setListRevealKey] = useState(0);
   const [activeCheckOverlay, setActiveCheckOverlay] = useState<Exclude<
@@ -361,6 +364,7 @@ export const PracticeChallengesPanel = forwardRef<
   const innerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const checkRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const gateActionRef = useRef<HTMLButtonElement | null>(null);
+  const gateRefreshRef = useRef<HTMLButtonElement | null>(null);
   const overlayBackRef = useRef<HTMLButtonElement | null>(null);
   const overlayActionRef = useRef<HTMLButtonElement | null>(null);
   const overlayInputRef = useRef<HTMLInputElement | null>(null);
@@ -430,11 +434,16 @@ export const PracticeChallengesPanel = forwardRef<
     if (panelKeyboardFocus) {
       if (document.activeElement === gateActionRef.current) {
         setGateActionFocused(true);
+        setGateSetupFocus('config');
+      } else if (document.activeElement === gateRefreshRef.current) {
+        setGateActionFocused(true);
+        setGateSetupFocus('refresh');
       }
       return;
     }
     if (!isActive || menuZone !== 'panel') {
       setGateActionFocused(false);
+      setGateSetupFocus(null);
       setChecksRowFocused(false);
     }
   }, [panelKeyboardFocus, isActive, menuZone]);
@@ -532,13 +541,22 @@ export const PracticeChallengesPanel = forwardRef<
     setCheckFocusIdx(idx);
     lastCheckFocusIdxRef.current = idx;
     setGateActionFocused(false);
+    setGateSetupFocus(null);
     checkRefs.current[idx]?.focus({ preventScroll: true });
   }, []);
 
   const focusGateAction = useCallback(() => {
     setChecksRowFocused(false);
     setGateActionFocused(true);
+    setGateSetupFocus('config');
     gateActionRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  const focusGateRefresh = useCallback(() => {
+    setChecksRowFocused(false);
+    setGateActionFocused(true);
+    setGateSetupFocus('refresh');
+    gateRefreshRef.current?.focus({ preventScroll: true });
   }, []);
 
   const handleCheckPointerDown = useCallback(
@@ -546,6 +564,7 @@ export const PracticeChallengesPanel = forwardRef<
       e.preventDefault();
       clearChecksFocus();
       setGateActionFocused(false);
+      setGateSetupFocus(null);
     },
     [clearChecksFocus]
   );
@@ -968,7 +987,9 @@ export const PracticeChallengesPanel = forwardRef<
       const activeEl = document.activeElement as HTMLElement | null;
       const onBack = activeEl === footerBackRef.current;
       const onStart = activeEl === footerStartRef.current;
-      const onGateAction = activeEl === gateActionRef.current;
+      const onGateConfig = activeEl === gateActionRef.current;
+      const onGateRefresh = activeEl === gateRefreshRef.current;
+      const onGateAction = onGateConfig || onGateRefresh;
       const focusedCheckIndex = checkRefs.current.findIndex(
         (r) => r === activeEl
       );
@@ -1015,6 +1036,10 @@ export const PracticeChallengesPanel = forwardRef<
         }
         if (onGateAction) {
           playSfx(SFX.MENU_SELECT);
+          if (onGateConfig && showSignedInSetup) {
+            focusGateRefresh();
+            return;
+          }
           if (hasSetupChecks && eligibilityChecks.length > 0) {
             focusCheckAt(Math.min(checkFocusIdx, eligibilityChecks.length - 1));
           } else if (!challengesLocked) {
@@ -1067,12 +1092,20 @@ export const PracticeChallengesPanel = forwardRef<
         e.preventDefault();
         if (onGateAction) {
           playSfx(SFX.MENU_SELECT);
+          if (onGateRefresh) {
+            focusGateAction();
+            return;
+          }
           onExitToPlayStyle?.();
           return;
         }
         if (onCheck) {
           playSfx(SFX.MENU_SELECT);
-          focusGateAction();
+          if (showSignedInSetup) {
+            focusGateRefresh();
+          } else {
+            focusGateAction();
+          }
           return;
         }
         if (onStart) {
@@ -1214,8 +1247,12 @@ export const PracticeChallengesPanel = forwardRef<
 
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        if (onGateAction) {
+        if (onGateConfig) {
           gateActionRef.current?.click();
+          return;
+        }
+        if (onGateRefresh) {
+          gateRefreshRef.current?.click();
           return;
         }
         if (onCheck) {
@@ -1252,6 +1289,7 @@ export const PracticeChallengesPanel = forwardRef<
     focusChallengeFromGate,
     focusCheckAt,
     focusGateAction,
+    focusGateRefresh,
     isActive,
     menuZone,
     onEnterFooter,
@@ -1505,46 +1543,79 @@ export const PracticeChallengesPanel = forwardRef<
                         <h3 className="sc-gate__title">{gateCopy.title}</h3>
                       ) : null}
                     </div>
-                    <button
-                      type="button"
-                      className={[
-                        'sc-gate__config-link sc-gate__config-link--setup',
-                        gateBtnFocused ? 'practice-focus-target' : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                      ref={gateActionRef}
-                      tabIndex={panelKeyboardFocus ? 0 : -1}
-                      onFocus={() => {
-                        setChecksRowFocused(false);
-                        setGateActionFocused(true);
-                      }}
-                      onBlur={() => setGateActionFocused(false)}
-                      onClick={() => {
-                        playSfx(SFX.MENU_CONFIRM);
-                        openConfigForNostr();
-                      }}
-                    >
-                      Config
-                    </button>
+                    <div className="sc-gate__setup-actions">
+                      <button
+                        type="button"
+                        className={[
+                          'sc-gate__config-link sc-gate__config-link--setup',
+                          gateSetupFocus === 'config' ? 'practice-focus-target' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        ref={gateActionRef}
+                        tabIndex={panelKeyboardFocus ? 0 : -1}
+                        onFocus={() => {
+                          setChecksRowFocused(false);
+                          setGateActionFocused(true);
+                          setGateSetupFocus('config');
+                        }}
+                        onBlur={(e) => {
+                          const next = e.relatedTarget as Node | null;
+                          if (
+                            next === gateActionRef.current ||
+                            next === gateRefreshRef.current
+                          ) {
+                            return;
+                          }
+                          setGateActionFocused(false);
+                          setGateSetupFocus(null);
+                        }}
+                        onClick={() => {
+                          playSfx(SFX.MENU_CONFIRM);
+                          openConfigForNostr();
+                        }}
+                      >
+                        Config
+                      </button>
+                      <button
+                        type="button"
+                        className={[
+                          'sc-gate__config-link sc-gate__config-link--setup',
+                          gateSetupFocus === 'refresh' ? 'practice-focus-target' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        ref={gateRefreshRef}
+                        tabIndex={panelKeyboardFocus ? 0 : -1}
+                        disabled={eligibilityLoading}
+                        onFocus={() => {
+                          setChecksRowFocused(false);
+                          setGateActionFocused(true);
+                          setGateSetupFocus('refresh');
+                        }}
+                        onBlur={(e) => {
+                          const next = e.relatedTarget as Node | null;
+                          if (
+                            next === gateActionRef.current ||
+                            next === gateRefreshRef.current
+                          ) {
+                            return;
+                          }
+                          setGateActionFocused(false);
+                          setGateSetupFocus(null);
+                        }}
+                        onClick={() => {
+                          playSfx(SFX.MENU_SELECT);
+                          loadEligibility({ refresh: true });
+                        }}
+                      >
+                        Re-check
+                      </button>
+                    </div>
                   </div>
 
                   {eligibilityLoading ? (
                     <p className="sc-gate__status">Checking eligibility…</p>
-                  ) : null}
-
-                  {showSignedInSetup ? (
-                    <button
-                      type="button"
-                      className="sc-gate__refresh"
-                      disabled={eligibilityLoading}
-                      onClick={() => {
-                        playSfx(SFX.MENU_SELECT);
-                        loadEligibility({ refresh: true });
-                      }}
-                    >
-                      Re-check requirements
-                    </button>
                   ) : null}
 
                   {eligibility && eligibilityChecks.length > 0 ? (

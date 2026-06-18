@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useGamepad } from '@/hooks/useGamepad';
+import { useMenuSfx } from '@/hooks/useMenuSfx';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import {
@@ -227,6 +228,7 @@ export default function OnlineRoomLobby() {
   const configReturnTo = `${location.pathname}${location.search}`;
   const nostrSession = useNostrSession();
   const { socket } = useSocket({ autoConnect: true });
+  const { playSelect, playConfirm } = useMenuSfx();
   const [room, setRoom] = useState<OnlineRoomState | null>(null);
   const [joinPin, setJoinPin] = useState<string>('');
   const [error, setError] = useState('');
@@ -1241,9 +1243,10 @@ export default function OnlineRoomLobby() {
     if (!roomId) {
       return;
     }
+    playSelect();
     socket?.emit('leaveOnlineRoom', { roomId });
     navigate(ONLINE_HOME);
-  }, [socket, roomId, navigate]);
+  }, [navigate, playSelect, roomId, socket]);
 
   const resolvePaymentPanelBottomCta = useCallback(
     (panel: HTMLElement | null) => {
@@ -1394,19 +1397,21 @@ export default function OnlineRoomLobby() {
   }, [enterPaymentPanel]);
 
   const selectPaymentNav = useCallback((index: number) => {
+    playSelect();
     const clamped =
       ((index % PAYMENT_MODES.length) + PAYMENT_MODES.length) %
       PAYMENT_MODES.length;
     lastPaymentNavIndexRef.current = clamped;
     setLobbyNavFocus({ type: 'payment', index: clamped });
     setPaymentMode(PAYMENT_MODES[clamped]);
-  }, []);
+  }, [playSelect]);
 
   const triggerFinishedAction = useCallback(
     (index: number) => {
       if (!roomId) {
         return;
       }
+      playConfirm();
       if (index === 0) {
         navigate(onlinePostGameUrl(roomId));
       } else if (index === 1) {
@@ -1415,7 +1420,7 @@ export default function OnlineRoomLobby() {
         leaveRoom();
       }
     },
-    [leaveRoom, navigate, room?.matchRound, roomId]
+    [leaveRoom, navigate, playConfirm, room?.matchRound, roomId]
   );
 
   const showInviteFinder =
@@ -1632,6 +1637,7 @@ export default function OnlineRoomLobby() {
           (lobbyNavFocus.type === 'finished' || !showSeatPaymentPaths)
         ) {
           e.preventDefault();
+          playSelect();
           setLobbyNavFocus((prev) => {
             const cur = prev.type === 'finished' ? prev.index : 0;
             const dir = isRight ? 1 : -1;
@@ -1657,6 +1663,7 @@ export default function OnlineRoomLobby() {
         if (showFinishedNav) {
           e.preventDefault();
           const dir = isDown ? 1 : -1;
+          playSelect();
           setLobbyNavFocus((prev) => {
             const cur = prev.type === 'finished' ? prev.index : 0;
             const next = cur + dir;
@@ -1687,16 +1694,19 @@ export default function OnlineRoomLobby() {
           const hasBottomStep = Boolean(bottom && bottom !== primary);
 
           if (isUp && paymentPanelFocusSlot === 'bottom' && hasBottomStep) {
+            playSelect();
             setPaymentPanelFocusSlot('primary');
             return;
           }
 
           if (isUp && paymentPanelFocusSlot === 'primary' && copy) {
+            playSelect();
             setPaymentPanelFocusSlot('copy');
             return;
           }
 
           if (isUp) {
+            playSelect();
             setPaymentPanelFocusIn(false);
             setPaymentPanelFocusSlot('primary');
             setLobbyNavFocus({
@@ -1714,16 +1724,19 @@ export default function OnlineRoomLobby() {
           }
 
           if (isDown && paymentPanelFocusSlot === 'copy' && primary) {
+            playSelect();
             setPaymentPanelFocusSlot('primary');
             return;
           }
 
           if (isDown && paymentPanelFocusSlot === 'primary' && hasBottomStep) {
+            playSelect();
             setPaymentPanelFocusSlot('bottom');
             return;
           }
 
           if (isDown) {
+            playSelect();
             lastPaymentNavIndexRef.current = prev.index;
             setPaymentPanelFocusIn(false);
             setPaymentPanelFocusSlot('primary');
@@ -1738,6 +1751,7 @@ export default function OnlineRoomLobby() {
           paymentMode !== null &&
           paymentPanelHasPrimaryControl()
         ) {
+          playSelect();
           setLobbyNavFocus({
             type: 'payment',
             index: lastPaymentNavIndexRef.current,
@@ -1753,11 +1767,13 @@ export default function OnlineRoomLobby() {
           !focusInPaymentPanel
         ) {
           if (paymentMode === 'pin-zap') {
+            playSelect();
             lastPaymentNavIndexRef.current = prev.index;
             setLobbyNavFocus({ type: 'leave' });
             return;
           }
           if (paymentPanelHasPrimaryControl()) {
+            playSelect();
             enterPaymentPanel();
             return;
           }
@@ -1782,6 +1798,7 @@ export default function OnlineRoomLobby() {
           return;
         }
 
+        playSelect();
         setLobbyNavFocus(next);
         return;
       }
@@ -1792,12 +1809,13 @@ export default function OnlineRoomLobby() {
 
       e.preventDefault();
 
-      if (lobbyNavFocus.type === 'leave') {
-        leaveRoom();
+      if (lobbyNavFocus.type === 'ready') {
+        playConfirm();
+        socket?.emit('onlineSetReady', { roomId, ready: !myReady });
         return;
       }
-      if (lobbyNavFocus.type === 'ready') {
-        socket?.emit('onlineSetReady', { roomId, ready: !myReady });
+      if (lobbyNavFocus.type === 'leave') {
+        leaveRoom();
         return;
       }
       if (lobbyNavFocus.type === 'finished') {
@@ -1808,6 +1826,7 @@ export default function OnlineRoomLobby() {
         const mode = PAYMENT_MODES[lobbyNavFocus.index];
 
         if (paymentPanelFocusInRef.current) {
+          playConfirm();
           const panelCta = resolvePaymentPanelCta(paymentPanelRef.current);
           if (panelCta) {
             panelCta.click();
@@ -1823,6 +1842,7 @@ export default function OnlineRoomLobby() {
         }
 
         if (!activatePaymentPanelPrimary()) {
+          playConfirm();
           enterPaymentPanel();
         }
         return;
@@ -1848,6 +1868,8 @@ export default function OnlineRoomLobby() {
     paymentPanelHasPrimaryControl,
     paymentMode,
     paymentPanelFocusSlot,
+    playConfirm,
+    playSelect,
     resolvePaymentPanelBottomCta,
     resolvePaymentPanelCopyCta,
     resolvePaymentPanelPrimaryCta,

@@ -19,6 +19,7 @@ import '@/components/ui/Button.css';
 import {
   advancePracticeHubFlatNav,
   movePracticeHubNav,
+  navFocusEqual,
   normalizePracticeNavFocus,
   type PracticeNavFocus,
 } from '@/pages/practiceHubNav';
@@ -282,30 +283,34 @@ export const PracticeFreePlayPanel = forwardRef<
 
       if (isTab) {
         e.preventDefault();
-        setNavFocus((prev) =>
-          advancePracticeHubFlatNav(
+        setNavFocus((prev) => {
+          const next = advancePracticeHubFlatNav(
             prev,
             1,
             showTeamControl,
             show1v1Opponent,
             opponent,
             allFourHuman
-          )
-        );
+          );
+          if (!navFocusEqual(prev, next)) playSfx(SFX.MENU_SELECT);
+          return next;
+        });
         return;
       }
       if (isTabBack) {
         e.preventDefault();
-        setNavFocus((prev) =>
-          advancePracticeHubFlatNav(
+        setNavFocus((prev) => {
+          const next = advancePracticeHubFlatNav(
             prev,
             -1,
             showTeamControl,
             show1v1Opponent,
             opponent,
             allFourHuman
-          )
-        );
+          );
+          if (!navFocusEqual(prev, next)) playSfx(SFX.MENU_SELECT);
+          return next;
+        });
         return;
       }
       if (isActivate) {
@@ -316,6 +321,7 @@ export const PracticeFreePlayPanel = forwardRef<
 
       if (isUp && navFocus.kind === 'format' && navFocus.idx === 0) {
         e.preventDefault();
+        playSfx(SFX.MENU_SELECT);
         onExitToPlayStyle?.();
         return;
       }
@@ -323,6 +329,7 @@ export const PracticeFreePlayPanel = forwardRef<
       e.preventDefault();
       setNavFocus((prev) => {
         if (isDown && prev.kind === 'rulePowerup') {
+          playSfx(SFX.MENU_SELECT);
           onEnterFooter?.('start');
           return prev;
         }
@@ -334,6 +341,7 @@ export const PracticeFreePlayPanel = forwardRef<
           opponent,
           allFourHuman
         );
+        if (!navFocusEqual(prev, next)) playSfx(SFX.MENU_SELECT);
         return next;
       });
     };

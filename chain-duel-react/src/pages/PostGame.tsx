@@ -6,6 +6,7 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
+import { useMenuSfx } from '@/hooks/useMenuSfx';
 import type { SerializedGameInfo } from '@/types/socket';
 import {
   DEVELOPER_FEE_RATIO,
@@ -66,6 +67,7 @@ export default function PostGame() {
   const [qrRevealed, setQrRevealed] = useState(false);
 
   useGamepad(true);
+  const { playSelect, playConfirm } = useMenuSfx();
 
   useEffect(() => {
     if (!socket) return;
@@ -132,6 +134,7 @@ export default function PostGame() {
 
   const onClaim = useCallback(() => {
     if (!socket) return;
+    playConfirm();
     if (menu === 3) {
       navigate('/highscores');
       return;
@@ -152,12 +155,13 @@ export default function PostGame() {
       setQrRevealed(true);
       setMenu(2);
     }
-  }, [socket, menu, navigate, lnurlw]);
+  }, [socket, menu, navigate, lnurlw, playConfirm]);
 
   const onDoubleOrNothing = useCallback(() => {
     if (!socket) return;
     if (qrRevealed || menu !== 1 || tournamentMode || prizeClaimed || loading)
       return;
+    playConfirm();
     logger.debug('emitting doubleornothing', {
       connected: socket.connected,
       id: socket.id,
@@ -182,6 +186,7 @@ export default function PostGame() {
     loading,
     gameMode,
     logger,
+    playConfirm,
   ]);
 
   useEffect(() => {
@@ -311,28 +316,40 @@ export default function PostGame() {
   }, [menu, tournamentMode, practiceMode, creatingWithdrawal]);
   const qrHref = lnurlw ? `lightning:${lnurlw}` : undefined;
 
-  const onMainMenu = () => {
+  const onMainMenu = useCallback(() => {
+    playSelect();
     navigateToMainMenu(navigate);
-  };
+  }, [navigate, playSelect]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-        if (menu === 3) setActiveButtonMenu3(0);
+        if (menu === 3) {
+          if (activeButtonMenu3 !== 0) playSelect();
+          setActiveButtonMenu3(0);
+        }
       }
       if (
         event.key === 'ArrowRight' ||
         event.key === 'd' ||
         event.key === 'D'
       ) {
-        if (menu === 3) setActiveButtonMenu3(1);
+        if (menu === 3) {
+          if (activeButtonMenu3 !== 1) playSelect();
+          setActiveButtonMenu3(1);
+        }
       }
       if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
-        if (menu === 1) setActiveButtonMenu1(0);
+        if (menu === 1) {
+          if (activeButtonMenu1 !== 0) playSelect();
+          setActiveButtonMenu1(0);
+        }
       }
       if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
-        if (menu === 1 && !tournamentMode && !qrRevealed)
+        if (menu === 1 && !tournamentMode && !qrRevealed) {
+          if (activeButtonMenu1 !== 1) playSelect();
           setActiveButtonMenu1(1);
+        }
       }
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -342,8 +359,10 @@ export default function PostGame() {
         } else if (menu === 2) {
           onClaim();
         } else if (menu === 3) {
-          if (activeButtonMenu3 === 0) navigate('/highscores');
-          else navigateToMainMenu(navigate);
+          if (activeButtonMenu3 === 0) {
+            playConfirm();
+            navigate('/highscores');
+          } else onMainMenu();
         }
       }
     };
@@ -359,6 +378,10 @@ export default function PostGame() {
     navigate,
     onClaim,
     onDoubleOrNothing,
+    onMainMenu,
+    playConfirm,
+    playSelect,
+    qrRevealed,
   ]);
 
   useEffect(() => {

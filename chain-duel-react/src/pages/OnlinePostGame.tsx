@@ -6,6 +6,7 @@ import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
+import { useMenuSfx } from '@/hooks/useMenuSfx';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import {
   ONLINE_HOME,
@@ -107,6 +108,7 @@ export default function OnlinePostGame() {
   const navFocusPrimedRef = useRef(false);
   const exitBtnRef = useRef<HTMLButtonElement>(null);
   const replayBtnRefs = useRef(new Map<number, HTMLButtonElement>());
+  const { playSelect, playConfirm } = useMenuSfx();
 
   useGamepad(true);
 
@@ -159,10 +161,19 @@ export default function OnlinePostGame() {
 
   const openSessionRoundReplay = useCallback(
     (matchRound: number) => {
+      playConfirm();
       navigate(onlineReplayUrl(roomId, matchRound));
     },
-    [navigate, roomId]
+    [navigate, playConfirm, roomId]
   );
+
+  const exitRoom = useCallback(() => {
+    playSelect();
+    if (socket && roomId) {
+      socket.emit('leaveOnlineRoom', { roomId });
+    }
+    navigate(ONLINE_HOME);
+  }, [navigate, playSelect, roomId, socket]);
 
   // ── Keyboard / gamepad navigation ──────────────────────────────────
   useEffect(() => {
@@ -185,6 +196,7 @@ export default function OnlinePostGame() {
 
       if (isLeft || isRight) {
         exitConfirmPendingRef.current = false;
+        if (navFocus.type === 'payout') playSelect();
         setNavFocus((prev) =>
           prev.type === 'payout'
             ? {
@@ -198,6 +210,7 @@ export default function OnlinePostGame() {
 
       if (isUp) {
         exitConfirmPendingRef.current = false;
+        playSelect();
         setNavFocus((prev) => {
           if (prev.type === 'exit') {
             if (showPayoutUi) return { type: 'payout', slot: 'withdraw' };
@@ -228,6 +241,7 @@ export default function OnlinePostGame() {
 
       if (isDown) {
         exitConfirmPendingRef.current = false;
+        playSelect();
         setNavFocus((prev) => {
           if (prev.type === 'replay') {
             if (prev.index < roundCount - 1)
@@ -253,6 +267,7 @@ export default function OnlinePostGame() {
         }
         if (navFocus.type === 'don') {
           if (!socket || !roomId || donLocked || myVoted) return;
+          playConfirm();
           setError('');
           setMyVoted(true);
           socket.emit('onlineDoubleOrNothing', { roomId });
@@ -261,6 +276,7 @@ export default function OnlinePostGame() {
         if (navFocus.type === 'payout') {
           if (navFocus.slot === 'withdraw') {
             if (!socket || !roomId || !isWinner || donLocked) return;
+            playConfirm();
             setError('');
             setCreatingWithdrawal(true);
             socket.emit('createOnlineWithdrawal', { roomId });
@@ -273,6 +289,7 @@ export default function OnlinePostGame() {
               donLocked
             )
               return;
+            playConfirm();
             setError('');
             setCreatingNostrPayout(true);
             socket.emit('createOnlineNostrPayout', { roomId });
@@ -281,14 +298,14 @@ export default function OnlinePostGame() {
         }
         if (navFocus.type === 'exit') {
           if (!exitConfirmPendingRef.current) {
+            playConfirm();
             exitConfirmPendingRef.current = true;
             setError('Press Space or Enter again to leave the room.');
             return;
           }
           exitConfirmPendingRef.current = false;
           setError('');
-          if (socket && roomId) socket.emit('leaveOnlineRoom', { roomId });
-          navigate(ONLINE_HOME);
+          exitRoom();
         }
       }
     };
@@ -304,12 +321,14 @@ export default function OnlinePostGame() {
     };
   }, [
     donLocked,
+    exitRoom,
     info,
     isWinner,
     myVoted,
     navFocus,
-    navigate,
     openSessionRoundReplay,
+    playConfirm,
+    playSelect,
     roomId,
     showPayoutUi,
     socket,
@@ -793,6 +812,7 @@ export default function OnlinePostGame() {
                   if (!socket || !roomId || donLocked || myVoted) {
                     return;
                   }
+                  playConfirm();
                   setError('');
                   setMyVoted(true);
                   socket.emit('onlineDoubleOrNothing', { roomId });
@@ -845,6 +865,7 @@ export default function OnlinePostGame() {
                       if (!socket || !roomId || !isWinner || donLocked) {
                         return;
                       }
+                      playConfirm();
                       setError('');
                       setCreatingWithdrawal(true);
                       socket.emit('createOnlineWithdrawal', { roomId });
@@ -887,6 +908,7 @@ export default function OnlinePostGame() {
                       ) {
                         return;
                       }
+                      playConfirm();
                       setError('');
                       setCreatingNostrPayout(true);
                       socket.emit('createOnlineNostrPayout', { roomId });
@@ -903,12 +925,7 @@ export default function OnlinePostGame() {
               ref={exitBtnRef}
               type="button"
               className={`online-postgame-btn online-postgame-btn-back${navFocus.type === 'exit' ? ' online-selected' : ''}`}
-              onClick={() => {
-                if (socket && roomId) {
-                  socket.emit('leaveOnlineRoom', { roomId });
-                }
-                navigate(ONLINE_HOME);
-              }}
+              onClick={exitRoom}
             >
               EXIT ROOM
             </Button>

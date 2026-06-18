@@ -121,6 +121,11 @@ export default function PracticeHub() {
     else footerStartRef.current?.focus();
   }, []);
 
+  const exitToMainMenu = useCallback(() => {
+    playSfx(SFX.MENU_SELECT);
+    navigateToMainMenu(navigate);
+  }, [navigate, playSfx]);
+
   const resumePanelFromFooter = useCallback(() => {
     setHubFocus({ zone: 'panel' });
     if (playStyle === 'free') {
@@ -139,8 +144,7 @@ export default function PracticeHub() {
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopImmediatePropagation();
-        playSfx(SFX.MENU_SELECT);
-        navigateToMainMenu(navigate);
+        exitToMainMenu();
         return;
       }
 
@@ -169,7 +173,7 @@ export default function PracticeHub() {
         if (e.repeat && isActivate) return true;
 
         if (isActivate) {
-          if (which === 'back') footerBackRef.current?.click();
+          if (which === 'back') exitToMainMenu();
           else footerStartRef.current?.click();
           return true;
         }
@@ -209,6 +213,7 @@ export default function PracticeHub() {
         if (isTabBack) {
           e.preventDefault();
           e.stopImmediatePropagation();
+          playSfx(SFX.MENU_SELECT);
           enterPlayStyle();
           return;
         }
@@ -234,6 +239,7 @@ export default function PracticeHub() {
 
       if (isTab || isDown) {
         e.preventDefault();
+        playSfx(SFX.MENU_SELECT);
         enterPanel();
         return;
       }
@@ -265,11 +271,11 @@ export default function PracticeHub() {
     return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [
     activatePlayStyle,
+    exitToMainMenu,
     enterFooter,
     enterPanel,
     enterPlayStyle,
     hubFocus,
-    navigate,
     playSfx,
     resumePanelFromFooter,
     setPlayStyle,
@@ -556,10 +562,7 @@ export default function PracticeHub() {
               .filter(Boolean)
               .join(' ')}
             onFocus={() => enterFooter('back')}
-            onClick={() => {
-              playSfx(SFX.MENU_SELECT);
-              navigateToMainMenu(navigate);
-            }}
+            onClick={exitToMainMenu}
           >
             MAIN MENU
           </Button>
