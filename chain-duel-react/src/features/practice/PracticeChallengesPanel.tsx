@@ -199,18 +199,13 @@ function getGateCopy(opts: { signedIn: boolean; payoutReady: boolean }): {
   title: string | null;
   lede: string;
 } {
-  if (opts.payoutReady) {
-    return {
-      eyebrow: null,
-      title: 'Ready to claim sats',
-      lede: 'Win, sign your note, get zapped to your Lightning address.',
-    };
-  }
   if (opts.signedIn) {
     return {
       eyebrow: null,
       title: 'Validation checks',
-      lede: '',
+      lede: opts.payoutReady
+        ? 'Win, sign your note, get zapped to your Lightning address.'
+        : '',
     };
   }
   return {
@@ -391,18 +386,19 @@ export const PracticeChallengesPanel = forwardRef<
   const nostrProfileName = nostrSession.displayName ?? 'Nostr user';
   const nostrProfilePic = nostrSession.picture;
   const payoutReady = eligibility?.eligible === true;
-  const showSetupGate = nostrSession.signedIn && !payoutReady;
+  const showSignedInSetup = nostrSession.signedIn;
+  const showSetupGate = showSignedInSetup && !payoutReady;
   const challengesLocked =
     !nostrSession.signedIn || eligibilityLoading || !payoutReady;
   const eligibilityChecks = useMemo(
     () =>
-      eligibility && showSetupGate
+      eligibility && showSignedInSetup
         ? formatGateEligibilityChecks(eligibility.checks)
         : [],
-    [eligibility, showSetupGate]
+    [eligibility, showSignedInSetup]
   );
   const eligibilityProgress =
-    eligibility && showSetupGate
+    eligibility && showSignedInSetup
       ? countGateEligibilityChecks(eligibility.checks)
       : null;
   const gateCopy = getGateCopy({
@@ -411,7 +407,7 @@ export const PracticeChallengesPanel = forwardRef<
   });
   const showSignInGate = !nostrSession.signedIn && !payoutReady;
   /** Gate has a focusable button (sign-in / config); absent when payout-ready (status text only). */
-  const hasGateActionButton = showSignInGate || showSetupGate;
+  const hasGateActionButton = showSignInGate || showSignedInSetup;
   const showBountyViolator = !nostrSession.signedIn || showSetupGate;
   const setupViolatorPrompt = useMemo((): [string, string] => {
     if (eligibilityLoading) return ['Checking', 'validation'];
@@ -938,7 +934,7 @@ export const PracticeChallengesPanel = forwardRef<
   useEffect(() => {
     if (!isActive || menuZone !== 'panel' || activeCheckOverlay) return;
 
-    const hasSetupChecks = showSetupGate && eligibilityChecks.length > 0;
+    const hasSetupChecks = showSignedInSetup && eligibilityChecks.length > 0;
 
     const handleKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
@@ -1241,7 +1237,7 @@ export const PracticeChallengesPanel = forwardRef<
     footerBackRef,
     footerStartRef,
     hasGateActionButton,
-    showSetupGate,
+    showSignedInSetup,
     challengesLocked,
     selected,
   ]);
@@ -1424,7 +1420,7 @@ export const PracticeChallengesPanel = forwardRef<
               className={[
                 'sc-gate__card',
                 showSignInGate ? 'sc-gate__card--sign-in' : '',
-                showSetupGate ? 'sc-gate__card--setup' : '',
+                showSignedInSetup ? 'sc-gate__card--setup' : '',
                 gateBtnFocused ? 'sc-gate__card--action-focused' : '',
                 checksRowFocused && !gateBtnFocused
                   ? 'sc-gate__card--check-focused'
@@ -1433,7 +1429,7 @@ export const PracticeChallengesPanel = forwardRef<
                 .filter(Boolean)
                 .join(' ')}
             >
-              {showSetupGate ? (
+              {showSignedInSetup ? (
                 <>
                   <div className="sc-gate__setup-bar">
                     <div
@@ -1512,7 +1508,7 @@ export const PracticeChallengesPanel = forwardRef<
                     <p className="sc-gate__status">Checking eligibility…</p>
                   ) : null}
 
-                  {showSetupGate ? (
+                  {showSignedInSetup ? (
                     <button
                       type="button"
                       className="sc-gate__refresh"

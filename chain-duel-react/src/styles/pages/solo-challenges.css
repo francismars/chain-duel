@@ -1538,9 +1538,9 @@
   border: none;
   background: none;
   font-family: 'Inter', sans-serif;
-  font-size: clamp(9px, 0.72vw, 11px);
+  font-size: var(--ph-fs-soon);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
