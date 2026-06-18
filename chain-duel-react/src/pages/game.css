@@ -689,6 +689,53 @@
   }
 }
 
+@keyframes solo-zap-card-shell {
+  from {
+    opacity: 0;
+    transform: scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes solo-zap-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes solo-zap-reveal-amount {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes solo-zap-avatar-in {
+  from {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  68% {
+    transform: scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .solo-zap-overlay {
   position: fixed;
   inset: 0;
@@ -696,7 +743,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
+  background: transparent;
 }
 
 .solo-zap-card {
@@ -716,23 +763,241 @@
   --ph-fs-display: calc(0.72rem + 2.85vw);
   --ph-fs-button: calc(0.24rem + 0.8vw);
 
-  width: min(580px, 90vw);
-  background: #0a0a0a;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 0 60px rgba(255, 255, 255, 0.04);
-  padding: clamp(24px, 3vw, 40px) clamp(24px, 3.5vw, 48px);
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  width: 52vw;
+  max-width: 92vw;
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  backdrop-filter: blur(24px) saturate(1.2);
+  padding: clamp(16px, 2vw, 28px) clamp(20px, 2.8vw, 40px);
+}
+
+.solo-zap-overlay--lose .solo-zap-card {
+  animation: solo-zap-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .solo-zap-overlay--win .solo-zap-card {
+    animation: solo-zap-card-shell 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .solo-zap-overlay--win .solo-zap-profile__avatar {
+    animation: solo-zap-avatar-in 0.58s cubic-bezier(0.22, 1.34, 0.36, 1) 0.1s both;
+  }
+
+  .solo-zap-overlay--win .solo-zap-profile__text {
+    animation: solo-zap-reveal-up 0.44s cubic-bezier(0.22, 1.2, 0.36, 1) 0.2s both;
+  }
+
+  .solo-zap-overlay--win .solo-zap-header {
+    animation: solo-zap-reveal-up 0.46s cubic-bezier(0.22, 1.18, 0.36, 1) 0.28s both;
+  }
+
+  .solo-zap-overlay--win .solo-zap-amount {
+    animation: solo-zap-reveal-amount 0.52s cubic-bezier(0.22, 1.22, 0.36, 1) 0.4s both;
+  }
+
+  .solo-zap-overlay--win .solo-zap-note-section,
+  .solo-zap-overlay--win .solo-zap-note-label--validating,
+  .solo-zap-overlay--win .solo-zap-card__content > .solo-zap-note-err {
+    animation: solo-zap-reveal-up 0.46s cubic-bezier(0.22, 1.15, 0.36, 1) 0.52s both;
+  }
+
+  .solo-zap-overlay--win .solo-zap-footer {
+    animation: solo-zap-reveal-up 0.44s cubic-bezier(0.22, 1.12, 0.36, 1) 0.64s both;
+  }
+}
+
+.solo-zap-card[data-rank] {
+  border: 1px solid rgba(var(--solo-accent-strong), 0.48);
+  background:
+    linear-gradient(
+      155deg,
+      rgba(var(--solo-accent-strong), calc(var(--solo-row-fill) * 9)) 0%,
+      rgba(var(--solo-accent), calc(var(--solo-row-fill) * 4.5)) 38%,
+      rgba(10, 10, 10, 0.32) 100%
+    ),
+    rgba(0, 0, 0, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--solo-accent-strong), 0.14),
+    0 24px 72px rgba(0, 0, 0, 0.32),
+    0 0 48px rgba(var(--solo-accent), 0.22);
+}
+
+.solo-zap-overlay--lose .solo-zap-card[data-rank] {
+  border-color: rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(
+      155deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(10, 10, 10, 0.28) 100%
+    ),
+    rgba(0, 0, 0, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 72px rgba(0, 0, 0, 0.32);
+}
+
+@keyframes solo-zap-fx-settle {
+  0% {
+    filter: brightness(1.35) contrast(1.08);
+  }
+  100% {
+    filter: brightness(1) contrast(1);
+  }
+}
+
+@keyframes solo-zap-vignette-settle {
+  0% {
+    opacity: 0.62;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.solo-zap-overlay__radiating-lines {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.88;
+  animation: solo-zap-fx-settle 1.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.solo-zap-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  animation: solo-zap-vignette-settle 1.8s ease-out both;
+  background: radial-gradient(
+    ellipse 82% 76% at 50% 50%,
+    rgba(0, 0, 0, 0.08) 0%,
+    rgba(0, 0, 0, 0.28) 55%,
+    rgba(0, 0, 0, 0.48) 100%
+  );
+}
+
+.solo-zap-overlay[data-rank]::after {
+  background: radial-gradient(
+    ellipse 82% 76% at 50% 50%,
+    rgba(var(--solo-accent), 0.1) 0%,
+    rgba(0, 0, 0, 0.26) 52%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .solo-zap-overlay__radiating-lines {
+    animation: none;
+    opacity: 0.85;
+    filter: none;
+  }
+
+  .solo-zap-overlay::after {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+.solo-zap-card__content {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: clamp(16px, 2vw, 24px);
   align-items: center;
+  gap: clamp(10px, 1.15vw, 16px);
+  width: 100%;
   text-align: center;
-  animation: solo-zap-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.solo-zap-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(5px, 0.55vw, 8px);
+  width: 100%;
+  padding-bottom: 0;
+}
+
+.solo-zap-profile__avatar {
+  width: clamp(44px, 4.2vw, 64px);
+  height: clamp(44px, 4.2vw, 64px);
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  background: rgba(20, 20, 24, 0.65);
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.08);
+}
+
+.solo-zap-card[data-rank] .solo-zap-profile__avatar {
+  border-color: rgba(var(--solo-accent-strong), 0.5);
+  box-shadow: 0 0 28px rgba(var(--solo-accent), 0.3);
+}
+
+.solo-zap-profile__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.solo-zap-profile__greeting {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--ph-fs-caption);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  margin: 0;
+}
+
+.solo-zap-card[data-rank] .solo-zap-profile__greeting {
+  color: rgba(var(--solo-accent-strong), 0.62);
+  text-shadow: none;
+}
+
+.solo-zap-profile__name {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: calc(0.46rem + 1.2vw);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+}
+
+.solo-zap-profile__npub {
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+  font-size: calc(0.14rem + 0.42vw);
+  color: rgba(255, 255, 255, 0.42);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.solo-zap-profile__hint {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--ph-fs-caption);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.52);
+  margin: 0;
+  line-height: 1.35;
+  max-width: 30ch;
 }
 
 .solo-zap-header {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .solo-zap-badge {
@@ -743,12 +1008,79 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
+.solo-zap-card[data-rank] .solo-zap-badge {
+  color: rgba(var(--solo-accent-strong), 0.72);
+}
+
+.solo-zap-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--ph-fs-caption);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.52);
+  margin: 0;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  max-width: 34ch;
+}
+
+.solo-zap-card[data-rank] .solo-zap-subtitle {
+  color: rgba(var(--solo-accent-strong), 0.62);
+}
+
+.solo-zap-subtitle--lose {
+  color: rgba(255, 255, 255, 0.38);
+}
+
 .solo-zap-title {
   font-family: 'BureauGrotesque', sans-serif;
   font-size: var(--ph-fs-heading-sm);
   font-weight: 400;
   color: #fff;
   margin: 0;
+}
+
+.solo-zap-card[data-rank] .solo-zap-title {
+  color: rgba(var(--solo-accent-strong), 0.94);
+  text-shadow: 0 0 28px rgba(var(--solo-accent), 0.34);
+}
+
+.solo-zap-title-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 0.85vw, 14px);
+  max-width: 100%;
+}
+
+.solo-zap-title-row--compact {
+  gap: clamp(6px, 0.65vw, 10px);
+}
+
+.solo-zap-title-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(24px, 2.6vw, 36px);
+  height: clamp(24px, 2.6vw, 36px);
+  margin-left: max(-0.15rem, -0.28vw);
+  color: rgba(var(--solo-accent-strong), 0.92);
+  filter: drop-shadow(0 0 8px rgba(var(--solo-accent), 0.38));
+}
+
+.solo-zap-title-icon--compact {
+  width: clamp(18px, 1.65vw, 26px);
+  height: clamp(18px, 1.65vw, 26px);
+  margin-left: 0;
+}
+
+.solo-zap-title-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.solo-zap-title-row .solo-zap-title {
+  min-width: 0;
 }
 
 .solo-zap-challenge {
@@ -760,6 +1092,11 @@
   text-transform: uppercase;
 }
 
+.solo-zap-card[data-rank] .solo-zap-challenge .solo-zap-title-row--compact {
+  color: rgba(var(--solo-accent-strong), 0.78);
+  text-shadow: 0 0 18px rgba(var(--solo-accent), 0.22);
+}
+
 .solo-zap-amount {
   display: flex;
   align-items: baseline;
@@ -768,15 +1105,24 @@
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   width: 100%;
-  padding: clamp(12px, 1.5vw, 20px) 0;
+  padding: clamp(6px, 0.85vw, 12px) 0;
+}
+
+.solo-zap-card[data-rank] .solo-zap-amount {
+  border-color: rgba(var(--solo-accent-strong), 0.22);
 }
 
 .solo-zap-sats {
   font-family: 'BureauGrotesque', sans-serif;
-  font-size: var(--ph-fs-display);
+  font-size: calc(0.6rem + 2.2vw);
   font-weight: 400;
   color: #fff;
   line-height: 1;
+}
+
+.solo-zap-card[data-rank] .solo-zap-sats {
+  color: rgba(var(--solo-accent-strong), 0.96);
+  text-shadow: 0 0 28px rgba(var(--solo-accent), 0.38);
 }
 
 .solo-zap-unit {
@@ -790,7 +1136,7 @@
 .solo-zap-receipt {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   width: 100%;
 }
 
@@ -852,28 +1198,29 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: clamp(4px, 0.45vw, 6px);
+  gap: clamp(3px, 0.35vw, 5px);
   width: 100%;
+  margin-top: clamp(14px, 1.5vw, 22px);
 }
 
 .solo-zap-note-section + .solo-zap-footer {
-  margin-top: clamp(-10px, -1vw, -4px);
+  margin-top: clamp(16px, 1.65vw, 24px);
 }
 
 .solo-zap-card .button.solo-zap-post-btn,
 .solo-zap-card .button.solo-zap-footer-btn {
   width: 100%;
-  height: 3vw;
-  min-height: 30px;
+  height: 2.65vw;
+  min-height: 28px;
   margin: 0;
-  padding: clamp(9px, 1vw, 12px) clamp(20px, 2.2vw, 28px);
+  padding: clamp(6px, 0.75vw, 10px) clamp(20px, 2.2vw, 28px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: var(--ph-fs-button);
+  font-size: 0.8cqw;
   font-weight: 400;
   letter-spacing: 0.1rem;
   text-transform: uppercase;
@@ -951,27 +1298,69 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(8px, 0.9vw, 12px);
+  gap: clamp(6px, 0.65vw, 10px);
   width: 100%;
-  padding-top: clamp(14px, 1.5vw, 20px);
+  padding-top: 0;
 }
 
 .solo-zap-note-preview {
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  padding: clamp(10px, 1.2vw, 16px) clamp(12px, 1.4vw, 18px);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: clamp(8px, 0.9vw, 12px) clamp(12px, 1.4vw, 18px);
   text-align: left;
-  margin-bottom: clamp(12px, 1.5vw, 22px);
+  margin-bottom: clamp(4px, 0.5vw, 10px);
+}
+
+.solo-zap-note-preview__actions {
+  margin-top: clamp(10px, 1vw, 14px);
+  padding-top: clamp(10px, 1vw, 14px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.solo-zap-card[data-rank] .solo-zap-note-preview__actions {
+  border-top-color: rgba(var(--solo-accent-strong), 0.16);
+}
+
+.solo-zap-note-preview__actions .solo-zap-post-btn {
+  width: 100%;
+}
+
+.solo-zap-note-preview__actions .solo-zap-note-ok--in-note {
+  width: 100%;
+  height: 2.65vw;
+  min-height: 28px;
+  margin: 0;
+  padding: clamp(6px, 0.75vw, 10px) clamp(20px, 2.2vw, 28px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8cqw;
+  font-weight: 400;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.solo-zap-note-preview__actions .solo-zap-note-err--in-note {
+  margin: clamp(4px, 0.45vw, 6px) 0 0;
+  text-align: center;
+  font-size: 0.8cqw;
+}
+
+.solo-zap-card[data-rank] .solo-zap-note-preview {
+  border-color: rgba(var(--solo-accent-strong), 0.18);
+  background: rgba(var(--solo-accent), 0.06);
 }
 
 .solo-zap-note-author {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
@@ -998,7 +1387,7 @@
 
 .solo-zap-note-author-name {
   font-family: 'Inter', sans-serif;
-  font-size: var(--ph-fs-ui);
+  font-size: calc(0.34rem + 0.92vw);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.86);
   line-height: 1.2;
@@ -1006,17 +1395,17 @@
 
 .solo-zap-note-author-pubkey {
   font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
-  font-size: var(--ph-fs-gate-meta);
+  font-size: calc(0.14rem + 0.42vw);
   color: rgba(255, 255, 255, 0.45);
   line-height: 1.2;
 }
 
 .solo-zap-note-text {
   font-family: 'Inter', sans-serif;
-  font-size: var(--ph-fs-body-sm);
+  font-size: calc(0.24rem + 0.74vw);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.65);
-  line-height: 1.6;
+  line-height: 1.45;
   white-space: pre-wrap;
   margin: 0;
 }
@@ -1052,10 +1441,6 @@
 }
 
 /* ── Lose variants ── */
-
-.solo-zap-overlay--lose .solo-zap-card {
-  border-color: rgba(255, 255, 255, 0.08);
-}
 
 .solo-zap-badge--lose {
   color: rgba(255, 80, 80, 0.7);
@@ -1296,8 +1681,9 @@
   }
 
   .solo-zap-card {
-    width: min(92vw, 520px);
-    padding: clamp(16px, 4vmin, 28px) clamp(14px, 3.5vmin, 24px);
+    width: 92vw;
+    max-width: 92vw;
+    padding: clamp(12px, 3vmin, 20px) clamp(14px, 3.5vmin, 24px);
   }
 }
 

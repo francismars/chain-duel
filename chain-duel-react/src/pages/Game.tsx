@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { Button } from '@/components/ui/Button';
-import { trimNip19Identifier } from '@/lib/nostr/nip19Display';
 import { useNoteContentDisplay } from '@/lib/nostr/formatNoteContentForDisplay';
 import { signChallengeBountyNote } from '@/lib/nostr/signChallengeBountyNote';
 import { createFlowTrace } from '@/lib/nostr/nip46Trace';
@@ -17,6 +16,7 @@ import {
   loadPendingChallengeClaim,
   savePendingChallengeClaim,
 } from '@/lib/pendingChallengeClaim';
+import { saveChallengeMenuFocus } from '@/lib/challengeMenuFocus';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import {
   applyTerminalGameOutcome,
@@ -39,6 +39,15 @@ import { useGameSocketEvents } from '@/features/game/hooks/useGameSocketEvents';
 import { useGameRenderBridge } from '@/features/game/hooks/useGameRenderBridge';
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
 import { PowerUpLegend } from '@/features/game/PowerUpLegend';
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
+import {
+  ChallengeRowIcon,
+  isChallengeIconId,
+} from '@/features/practice/ChallengeRowIcon';
+import {
+  challengeThemeStyle,
+  getChallengeTheme,
+} from '@/lib/challenges/challengeTheme';
 import { FfaHud } from '@/features/game/FfaGameHud';
 import {
   GameInfoLabel,
@@ -150,6 +159,7 @@ export default function Game() {
   const simStepRef = useRef(0);
   const challengeInputLogRef = useRef<Array<{ tick: number; dir: string }>>([]);
   const challengeWinSubmittedRef = useRef(false);
+  const soloZapSkipOverlayDelayRef = useRef(false);
   const blockChallengeContinueRef = useRef(false);
   const challengeContinueLabelRef = useRef<string | null>(null);
 
@@ -185,6 +195,7 @@ export default function Game() {
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
+  const [soloZapOverlayVisible, setSoloZapOverlayVisible] = useState(false);
   const [showExitOverlay, setShowExitOverlay] = useState(false);
   const [exitOverlayFocus, setExitOverlayFocus] = useState<'abort' | 'confirm'>(
     'abort'
@@ -200,7 +211,6 @@ export default function Game() {
     'idle' | 'posting' | 'posted' | 'error' | 'zapping'
   >('idle');
   const [noteError, setNoteError] = useState<string | null>(null);
-  const [noteAuthorPubkey, setNoteAuthorPubkey] = useState<string | null>(null);
   const [noteAuthorName, setNoteAuthorName] = useState<string>('Nostr user');
   const [noteAuthorAvatar, setNoteAuthorAvatar] = useState<string | null>(null);
   const [noteAuthorAvatarBroken, setNoteAuthorAvatarBroken] = useState(false);
@@ -284,6 +294,9 @@ export default function Game() {
 
   const exitSoloEndOverlay = useCallback(() => {
     if (!soloEndData || soloEndData.validating) return;
+    if (soloEndData.challengeId) {
+      saveChallengeMenuFocus(soloEndData.challengeId, soloEndData.won);
+    }
     navigate(practiceHubExitPath(readSessionGameConfig()));
     setSoloEndData(null);
   }, [soloEndData, navigate]);
@@ -291,6 +304,9 @@ export default function Game() {
   const forfeitClaimAndExit = useCallback(() => {
     if (!soloEndData || soloEndData.validating) return;
     clearPendingChallengeClaim();
+    if (soloEndData.challengeId) {
+      saveChallengeMenuFocus(soloEndData.challengeId, true);
+    }
     navigate(practiceHubExitPath(readSessionGameConfig()));
     setSoloEndData(null);
   }, [soloEndData, navigate]);
@@ -299,6 +315,13 @@ export default function Game() {
     Boolean(soloEndData?.won) &&
     Boolean(soloEndData?.claimToken) &&
     noteState !== 'posted';
+
+  const soloZapMenuLabel = useMemo(() => {
+    if (canForfeitUnclaimedPrize) {
+      return 'LEAVE WITHOUT CLAIMING ZAP';
+    }
+    return 'RETURN TO CHALLENGES';
+  }, [canForfeitUnclaimedPrize]);
 
   const soloZapOpenPrimalVisible =
     Boolean(soloEndData?.won) &&
@@ -331,6 +354,45 @@ export default function Game() {
     nostrSession.signedIn;
 
   const soloZapMenuVisible = Boolean(soloEndData) && !soloEndData?.validating;
+
+  const soloChallengeTheme = useMemo(
+    () => getChallengeTheme(soloEndData?.challengeId),
+    [soloEndData?.challengeId]
+  );
+
+  const soloZapThemeVars = useMemo(
+    () => challengeThemeStyle(soloChallengeTheme),
+    [soloChallengeTheme]
+  );
+
+  const soloChallengeIconId = useMemo(() => {
+    const id = soloEndData?.challengeId;
+    return id && isChallengeIconId(id) ? id : null;
+  }, [soloEndData?.challengeId]);
+
+  const soloZapGreeting = useMemo(() => {
+    if (!soloEndData) return '';
+    if (soloEndData.won) {
+      return nostrSession.signedIn ? 'Nice work' : 'Victory is yours';
+    }
+    return nostrSession.signedIn ? 'Tough break' : 'Better luck next time';
+  }, [soloEndData, nostrSession.signedIn]);
+
+  const soloZapProfileHint = useMemo(() => {
+    if (!soloEndData || nostrSession.signedIn) return null;
+    if (soloEndData.won) {
+      return `${soloEndData.bounty.toLocaleString()} sats — sign in with Nostr to claim`;
+    }
+    return 'Connect Nostr to track your challenge runs';
+  }, [soloEndData, nostrSession.signedIn]);
+
+  const soloZapWinBadge = useMemo(() => {
+    if (!soloEndData?.won) return null;
+    if (soloEndData.validating) return 'VERIFYING YOUR WIN';
+    if (soloEndData.validationError) return 'ALMOST THERE';
+    if (noteState === 'posted' && soloEndData.zapPaid) return 'ZAP DELIVERED';
+    return null;
+  }, [soloEndData, noteState]);
 
   const soloZapFocusOrder = useMemo(() => {
     const ids: SoloZapFocusId[] = [];
@@ -436,12 +498,10 @@ export default function Game() {
   useEffect(() => {
     setNoteAuthorAvatarBroken(false);
     if (!nostrSession.signedIn || !nostrSession.pubkey) {
-      setNoteAuthorPubkey(null);
       setNoteAuthorName('Nostr user');
       setNoteAuthorAvatar(null);
       return;
     }
-    setNoteAuthorPubkey(nostrSession.pubkey);
     setNoteAuthorName(nostrSession.displayName ?? 'Nostr user');
     setNoteAuthorAvatar(nostrSession.picture?.trim() || null);
   }, [
@@ -454,6 +514,7 @@ export default function Game() {
   useEffect(() => {
     const pending = loadPendingChallengeClaim();
     if (!pending) return;
+    soloZapSkipOverlayDelayRef.current = true;
     setSoloEndData({
       won: true,
       name: pending.name,
@@ -470,6 +531,7 @@ export default function Game() {
     if (!nostrSession.signedIn) return;
     const pending = loadPendingChallengeClaim();
     if (!pending) return;
+    soloZapSkipOverlayDelayRef.current = true;
     setSoloEndData((prev) => {
       if (prev?.claimToken) return prev;
       return {
@@ -507,6 +569,22 @@ export default function Game() {
       noteContent: soloEndData.noteContent,
       noteTags: soloEndData.noteTags,
     });
+  }, [soloEndData]);
+
+  useEffect(() => {
+    if (!soloEndData) {
+      setSoloZapOverlayVisible(false);
+      return;
+    }
+
+    const delayMs = soloZapSkipOverlayDelayRef.current ? 0 : 1000;
+    soloZapSkipOverlayDelayRef.current = false;
+
+    const timer = window.setTimeout(() => {
+      setSoloZapOverlayVisible(true);
+    }, delayMs);
+
+    return () => window.clearTimeout(timer);
   }, [soloEndData]);
 
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
@@ -1032,6 +1110,11 @@ export default function Game() {
       const configMode = String(gameConfig.mode ?? '').toUpperCase();
       if (isPracticeChallengeConfig(gameConfig)) {
         if (!soloEndData || soloEndData.validating) return;
+        const challengeId =
+          soloEndData.challengeId ?? String(gameConfig.challengeId ?? '');
+        if (challengeId) {
+          saveChallengeMenuFocus(challengeId, soloEndData.won);
+        }
         navigate(practiceHubExitPath(gameConfig));
         return;
       }
@@ -1519,19 +1602,72 @@ export default function Game() {
         </div>
       ) : null}
 
-      {soloEndData && (
+      {soloEndData && soloZapOverlayVisible && (
         <div
-          className={`solo-zap-overlay${soloEndData.won ? '' : ' solo-zap-overlay--lose'}`}
+          className={`solo-zap-overlay${
+            soloEndData.won ? ' solo-zap-overlay--win' : ' solo-zap-overlay--lose'
+          }`}
+          data-challenge={soloEndData.challengeId}
+          data-rank={soloChallengeTheme.rank}
+          style={soloZapThemeVars}
           role="dialog"
           aria-modal="true"
           aria-label={soloEndData.won ? 'Challenge complete' : 'Game over'}
         >
-          <div className="solo-zap-card">
+          {soloEndData.won ? (
+            <SoloZapRadiatingLines
+              className="solo-zap-overlay__radiating-lines"
+              accent={soloChallengeTheme.accent}
+              accentStrong={soloChallengeTheme.accentStrong}
+            />
+          ) : null}
+          <div
+            className="solo-zap-card"
+            data-challenge={soloEndData.challengeId}
+            data-rank={soloChallengeTheme.rank}
+            style={soloZapThemeVars}
+          >
+            <div className="solo-zap-card__content">
+            <div className="solo-zap-profile">
+              <img
+                className="solo-zap-profile__avatar"
+                src={
+                  nostrSession.signedIn &&
+                  !noteAuthorAvatarBroken &&
+                  noteAuthorAvatar
+                    ? noteAuthorAvatar
+                    : '/images/social/Nostr.png'
+                }
+                alt=""
+                width={56}
+                height={56}
+                onError={() => setNoteAuthorAvatarBroken(true)}
+              />
+              <div className="solo-zap-profile__text">
+                {nostrSession.signedIn ? (
+                  <>
+                    <p className="solo-zap-profile__greeting">{soloZapGreeting}</p>
+                    <p className="solo-zap-profile__name">{noteAuthorName}</p>
+                  </>
+                ) : soloZapProfileHint ? (
+                  <p className="solo-zap-profile__hint">{soloZapProfileHint}</p>
+                ) : null}
+              </div>
+            </div>
             {soloEndData.won ? (
               <>
                 <div className="solo-zap-header">
-                  <span className="solo-zap-badge">CHALLENGE COMPLETE</span>
-                  <h2 className="solo-zap-title">{soloEndData.name}</h2>
+                  {soloZapWinBadge ? (
+                    <span className="solo-zap-badge">{soloZapWinBadge}</span>
+                  ) : null}
+                  <div className="solo-zap-title-row">
+                    {soloChallengeIconId ? (
+                      <span className="solo-zap-title-icon" aria-hidden="true">
+                        <ChallengeRowIcon id={soloChallengeIconId} />
+                      </span>
+                    ) : null}
+                    <h2 className="solo-zap-title">{soloEndData.name}</h2>
+                  </div>
                 </div>
 
                 <div className="solo-zap-amount">
@@ -1590,70 +1726,94 @@ export default function Game() {
                       </Button>
                     ) : null}
                     <div className="solo-zap-note-preview">
-                      {noteAuthorPubkey ? (
-                        <div className="solo-zap-note-author">
-                          <img
-                            className="solo-zap-note-author-avatar"
-                            src={
-                              !noteAuthorAvatarBroken && noteAuthorAvatar
-                                ? noteAuthorAvatar
-                                : '/images/social/Nostr.png'
-                            }
-                            alt=""
-                            width={20}
-                            height={20}
-                            onError={() => setNoteAuthorAvatarBroken(true)}
-                          />
-                          <div className="solo-zap-note-author-meta">
-                            <span className="solo-zap-note-author-name">
-                              {noteAuthorName}
-                            </span>
-                            <span
-                              className="solo-zap-note-author-pubkey"
-                              title={nostrSession.npub ?? undefined}
+                      <p className="solo-zap-note-text">{noteContentDisplay}</p>
+                      {soloEndData.claimToken && nostrSession.signedIn ? (
+                        <div className="solo-zap-note-preview__actions">
+                          {noteState === 'posted' && soloEndData.zapPaid ? (
+                            <p className="solo-zap-note-ok solo-zap-note-ok--in-note">
+                              ✓ Note posted — zap sent ⚡
+                            </p>
+                          ) : noteState === 'posted' ? (
+                            <>
+                              <p className="solo-zap-note-ok solo-zap-note-ok--in-note">
+                                ✓ Note posted
+                              </p>
+                              <p className="solo-zap-note-err solo-zap-note-err--in-note">
+                                Zap pending
+                                {soloEndData.zapReason
+                                  ? `: ${soloEndData.zapReason}`
+                                  : ''}
+                              </p>
+                              <Button
+                                ref={soloZapRetryRef}
+                                type="button"
+                                tabIndex={soloZapFocus === 'retryZap' ? 0 : -1}
+                                className={soloZapButtonClass(
+                                  'retryZap',
+                                  'practice-start solo-zap-post-btn'
+                                )}
+                                onFocus={() => setSoloZapFocus('retryZap')}
+                                onClick={() => {
+                                  void retryZap();
+                                }}
+                              >
+                                RETRY ZAP
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              ref={soloZapClaimRef}
+                              type="button"
+                              tabIndex={soloZapFocus === 'claim' ? 0 : -1}
+                              className={soloZapButtonClass(
+                                'claim',
+                                'practice-start solo-zap-post-btn'
+                              )}
+                              onFocus={() => setSoloZapFocus('claim')}
+                              disabled={
+                                noteState === 'posting' ||
+                                noteState === 'zapping'
+                              }
+                              onClick={() => {
+                                void postBountyNote();
+                              }}
                             >
-                              {nostrSession.npub
-                                ? trimNip19Identifier(nostrSession.npub, 12, 8)
-                                : null}
-                            </span>
-                          </div>
+                              {noteState === 'posting' ||
+                              noteState === 'zapping' ? (
+                                <>
+                                  <svg
+                                    className="solo-zap-post-spinner"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    aria-hidden
+                                  >
+                                    <circle
+                                      cx="12"
+                                      cy="12"
+                                      r="9"
+                                      strokeOpacity="0.15"
+                                    />
+                                    <path d="M12 3a9 9 0 0 1 9 9" />
+                                  </svg>
+                                  {resolveSignerMode() === 'nip46'
+                                    ? 'WAITING FOR APPROVAL…'
+                                    : noteState === 'zapping'
+                                      ? 'ZAPPING…'
+                                      : 'SIGNING…'}
+                                </>
+                              ) : (
+                                'POST NOTE AND CLAIM PRIZE'
+                              )}
+                            </Button>
+                          )}
                         </div>
                       ) : null}
-                      <p className="solo-zap-note-text">{noteContentDisplay}</p>
                     </div>
 
-                    {noteState === 'posted' ? (
-                      soloEndData.zapPaid ? (
-                        <p className="solo-zap-note-ok">
-                          ✓ Note posted — zap sent ⚡
-                        </p>
-                      ) : (
-                        <>
-                          <p className="solo-zap-note-ok">✓ Note posted</p>
-                          <p className="solo-zap-note-err">
-                            Zap pending
-                            {soloEndData.zapReason
-                              ? `: ${soloEndData.zapReason}`
-                              : ''}
-                          </p>
-                          <Button
-                            ref={soloZapRetryRef}
-                            type="button"
-                            tabIndex={soloZapFocus === 'retryZap' ? 0 : -1}
-                            className={soloZapButtonClass(
-                              'retryZap',
-                              'practice-start solo-zap-post-btn'
-                            )}
-                            onFocus={() => setSoloZapFocus('retryZap')}
-                            onClick={() => {
-                              void retryZap();
-                            }}
-                          >
-                            RETRY ZAP
-                          </Button>
-                        </>
-                      )
-                    ) : soloEndData.claimToken ? (
+                    {soloEndData.claimToken ? (
                       !nostrSession.signedIn ? (
                         <>
                           <p className="solo-zap-note-label">
@@ -1677,54 +1837,7 @@ export default function Game() {
                             SIGN IN WITH NOSTR
                           </Button>
                         </>
-                      ) : (
-                        <Button
-                          ref={soloZapClaimRef}
-                          type="button"
-                          tabIndex={soloZapFocus === 'claim' ? 0 : -1}
-                          className={soloZapButtonClass(
-                            'claim',
-                            'practice-start solo-zap-post-btn'
-                          )}
-                          onFocus={() => setSoloZapFocus('claim')}
-                          disabled={
-                            noteState === 'posting' || noteState === 'zapping'
-                          }
-                          onClick={() => {
-                            void postBountyNote();
-                          }}
-                        >
-                          {noteState === 'posting' ||
-                          noteState === 'zapping' ? (
-                            <>
-                              <svg
-                                className="solo-zap-post-spinner"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                aria-hidden
-                              >
-                                <circle
-                                  cx="12"
-                                  cy="12"
-                                  r="9"
-                                  strokeOpacity="0.15"
-                                />
-                                <path d="M12 3a9 9 0 0 1 9 9" />
-                              </svg>
-                              {resolveSignerMode() === 'nip46'
-                                ? 'WAITING FOR APPROVAL…'
-                                : noteState === 'zapping'
-                                  ? 'ZAPPING…'
-                                  : 'SIGNING…'}
-                            </>
-                          ) : (
-                            'POST NOTE AND CLAIM PRIZE'
-                          )}
-                        </Button>
-                      )
+                      ) : null
                     ) : null}
                     {noteState === 'error' && noteError ? (
                       <p className="solo-zap-note-err">{noteError}</p>
@@ -1736,10 +1849,22 @@ export default function Game() {
               <>
                 <div className="solo-zap-header">
                   <span className="solo-zap-badge solo-zap-badge--lose">
-                    ✗ DEFEATED
+                    RUN ENDED
                   </span>
                   <h2 className="solo-zap-title">GAME OVER</h2>
-                  <p className="solo-zap-challenge">{soloEndData.name}</p>
+                  <p className="solo-zap-challenge">
+                    <span className="solo-zap-title-row solo-zap-title-row--compact">
+                      {soloChallengeIconId ? (
+                        <span
+                          className="solo-zap-title-icon solo-zap-title-icon--compact"
+                          aria-hidden="true"
+                        >
+                          <ChallengeRowIcon id={soloChallengeIconId} />
+                        </span>
+                      ) : null}
+                      <span>{soloEndData.name}</span>
+                    </span>
+                  </p>
                 </div>
 
                 <div className="solo-zap-amount solo-zap-amount--lose">
@@ -1787,12 +1912,11 @@ export default function Game() {
                     }
                   }}
                 >
-                  {canForfeitUnclaimedPrize
-                    ? 'BACK TO MENU WITHOUT PRIZE'
-                    : 'BACK TO MENU'}
+                  {soloZapMenuLabel}
                 </Button>
               </div>
             )}
+            </div>
           </div>
         </div>
       )}

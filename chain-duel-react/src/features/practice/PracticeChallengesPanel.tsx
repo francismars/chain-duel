@@ -25,6 +25,7 @@ import {
   type ChallengeEligibilityResponse,
 } from '@/lib/challengeBounty';
 import { clearPendingChallengeClaim } from '@/lib/pendingChallengeClaim';
+import { consumeChallengeMenuFocus, peekChallengeMenuFocus } from '@/lib/challengeMenuFocus';
 import {
   countGateEligibilityChecks,
   formatGateEligibilityChecks,
@@ -373,6 +374,7 @@ export const PracticeChallengesPanel = forwardRef<
   );
   const prevChallengesActiveRef = useRef(false);
   const hasPickedChallengeRef = useRef(false);
+  const pendingMenuFocusRef = useRef<number | null>(null);
   const eligibilityRef = useRef(eligibility);
   eligibilityRef.current = eligibility;
 
@@ -883,10 +885,25 @@ export const PracticeChallengesPanel = forwardRef<
       focusGateAction();
       return;
     }
-    const idx = hasPickedChallengeRef.current ? selected : 0;
+    let idx = pendingMenuFocusRef.current;
+    if (idx !== null) {
+      pendingMenuFocusRef.current = null;
+      consumeChallengeMenuFocus();
+      hasPickedChallengeRef.current = true;
+    } else {
+      idx = hasPickedChallengeRef.current ? selected : 0;
+    }
     setSelected(idx);
     rowRefs.current[idx]?.focus({ preventScroll: true });
   }, [challengesLocked, focusGateAction, selected]);
+
+  useEffect(() => {
+    const idx = peekChallengeMenuFocus();
+    if (idx === null) return;
+    pendingMenuFocusRef.current = idx;
+    hasPickedChallengeRef.current = true;
+    setSelected(idx);
+  }, []);
 
   const focusDefault = useCallback(() => {
     if (hasGateActionButton) {
@@ -906,6 +923,14 @@ export const PracticeChallengesPanel = forwardRef<
         focusDefault();
       });
     }
+  }, [activeCheckOverlay, focusDefault, isActive, menuZone]);
+
+  useEffect(() => {
+    if (!isActive || menuZone !== 'panel' || activeCheckOverlay) return;
+    if (pendingMenuFocusRef.current === null) return;
+    window.requestAnimationFrame(() => {
+      focusDefault();
+    });
   }, [activeCheckOverlay, focusDefault, isActive, menuZone]);
 
   const focusBeforeFooter = useCallback(() => {

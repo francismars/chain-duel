@@ -33,6 +33,17 @@ import {
   type PracticeHubFocus,
   type PracticePlayStyle,
 } from '@/pages/practiceHubPlayStyleNav';
+import { hasChallengeMenuFocus } from '@/lib/challengeMenuFocus';
+
+function readInitialHubFocus(): PracticeHubFocus {
+  if (hasChallengeMenuFocus()) {
+    return { zone: 'panel' };
+  }
+  const play = parsePlaySearchParam(
+    new URLSearchParams(window.location.search).get('play')
+  );
+  return { zone: 'playStyle', idx: playStyleToIdx(play) };
+}
 
 export default function PracticeHub() {
   const navigate = useNavigate();
@@ -43,10 +54,7 @@ export default function PracticeHub() {
   const playStyle = parsePlaySearchParam(searchParams.get('play'));
   const playStyleIdx = playStyleToIdx(playStyle);
 
-  const [hubFocus, setHubFocus] = useState<PracticeHubFocus>({
-    zone: 'playStyle',
-    idx: playStyleIdx,
-  });
+  const [hubFocus, setHubFocus] = useState<PracticeHubFocus>(readInitialHubFocus);
   const [pickerRowRevealed, setPickerRowRevealed] = useState(false);
 
   const playStyleRefs = useRef<(HTMLButtonElement | null)[]>([]);
