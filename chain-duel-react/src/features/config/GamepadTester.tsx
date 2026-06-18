@@ -82,7 +82,7 @@ export function GamepadTester({ active }: GamepadTesterProps) {
   const connectedCount = gamepads.length;
 
   return (
-    <div className="config-gp-tester config-gp-tester--animate-in">
+    <div className="config-gp-tester">
       <p className="config-gp-tester__lede">
         Player 1 = <strong>WASD + Space</strong>, Player 2 ={' '}
         <strong>arrows + Enter</strong>. Controller input is captured here only

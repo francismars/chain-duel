@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
@@ -47,6 +48,7 @@ import {
   type LoginTab,
   isTypingTarget,
   loginTabFromIndex,
+  loginIndex,
   moveConfigFocus,
   tabFromSectionIndex,
 } from './configNav';
@@ -134,7 +136,9 @@ export default function Config() {
   >('scanning');
   const [pairingKey, setPairingKey] = useState(0);
   const [uriCopied, setUriCopied] = useState(false);
-  const [profileAnimKey, setProfileAnimKey] = useState(0);
+  const [ncQrModalOpen, setNcQrModalOpen] = useState(false);
+  const [ncQrModalSize, setNcQrModalSize] = useState(320);
+  const [profileEntranceActive, setProfileEntranceActive] = useState(false);
   const [nwcInput, setNwcInput] = useState(() => getNwcUri() ?? '');
   const [nwcSaved, setNwcSaved] = useState(() => Boolean(getNwcUri()));
   const [nwcError, setNwcError] = useState<string | null>(null);
@@ -147,9 +151,30 @@ export default function Config() {
   const nwcSaveRef = useRef<HTMLButtonElement | null>(null);
   const nwcDisconnectRef = useRef<HTMLButtonElement | null>(null);
   const nip46RegenRef = useRef<HTMLButtonElement | null>(null);
+  const nip46ShowQrRef = useRef<HTMLButtonElement | null>(null);
+  const nip46SignerRef = useRef<HTMLAnchorElement | null>(null);
+  const profileEntrancePlayedRef = useRef(false);
   playSfxRef.current = playSfx;
 
   useGamepad(configTab !== 'gamepad');
+
+  useEffect(() => {
+    if (!ncQrModalOpen) return;
+    const updateSize = () => {
+      setNcQrModalSize(
+        Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.72)
+      );
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [ncQrModalOpen]);
+
+  useEffect(() => {
+    if (loginTab !== 'nip46' || pairingPhase === 'resolving') {
+      setNcQrModalOpen(false);
+    }
+  }, [loginTab, pairingPhase]);
 
   useEffect(() => {
     if (isNsecSessionMissing()) {
@@ -327,18 +352,25 @@ export default function Config() {
   ]);
 
   useEffect(() => {
+    if (!profileEntranceActive) return;
+    const timerId = window.setTimeout(() => setProfileEntranceActive(false), 1200);
+    return () => window.clearTimeout(timerId);
+  }, [profileEntranceActive]);
+
+  useEffect(() => {
     setAvatarBroken(false);
     setNip05Ok(null);
     setNip05CheckPending(false);
     if (!nostrSignedIn || !sessionPubkey) {
       setProfile(null);
       setProfileLoading(false);
+      profileEntrancePlayedRef.current = false;
+      setProfileEntranceActive(false);
       return;
     }
 
     let cancelled = false;
     setProfileLoading(true);
-    setProfileAnimKey((k) => k + 1);
     void (async () => {
       let pubkey = sessionPubkey;
       let p: Kind0Profile | null = null;
@@ -377,6 +409,10 @@ export default function Config() {
       if (cancelled) return;
       setProfile(p);
       setProfileLoading(false);
+      if (!profileEntrancePlayedRef.current) {
+        profileEntrancePlayedRef.current = true;
+        setProfileEntranceActive(true);
+      }
       if (pubkey !== sessionPubkey) {
         setNostrPubkeyHex(pubkey);
       }
@@ -505,6 +541,24 @@ export default function Config() {
   const avatarSrc =
     !avatarBroken && profile?.picture?.trim() ? profile.picture.trim() : null;
 
+  useEffect(() => {
+    if (navFocus.kind !== 'nip46Inline') return;
+    if (
+      configTab !== 'signin' ||
+      nostrSignedIn ||
+      loginTab !== 'nip46' ||
+      pendingNip46ServerLink
+    ) {
+      setNavFocus({ kind: 'login', index: loginIndex(loginTab) });
+    }
+  }, [
+    navFocus.kind,
+    configTab,
+    nostrSignedIn,
+    loginTab,
+    pendingNip46ServerLink,
+  ]);
+
   const activateConfigNav = useCallback(() => {
     if (navFocus.kind === 'section') {
       setConfigTab(tabFromSectionIndex(navFocus.index));
@@ -519,6 +573,14 @@ export default function Config() {
         navigateToMainMenu(navigate);
       } else {
         navigate(returnTo);
+      }
+      return;
+    }
+    if (navFocus.kind === 'nip46Inline') {
+      if (navFocus.index === 0) {
+        nip46ShowQrRef.current?.click();
+      } else {
+        nip46SignerRef.current?.click();
       }
       return;
     }
@@ -575,6 +637,19 @@ export default function Config() {
       const isRight =
         e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
 
+      if (ncQrModalOpen) {
+        if (isConfirm || e.key === 'Escape') {
+          if (e.repeat) {
+            e.preventDefault();
+            return;
+          }
+          e.preventDefault();
+          playSfxRef.current(SFX.MENU_CONFIRM);
+          setNcQrModalOpen(false);
+        }
+        return;
+      }
+
       if (!isConfirm && !isUp && !isDown && !isLeft && !isRight) return;
 
       if (isConfirm) {
@@ -601,6 +676,8 @@ export default function Config() {
         const next = moveConfigFocus(prev, dir, {
           configTab,
           signedIn: nostrSignedIn,
+          loginTab,
+          pendingNip46ServerLink,
         });
         if (next.kind === 'section' && (dir === 'left' || dir === 'right')) {
           setConfigTab(tabFromSectionIndex(next.index));
@@ -617,7 +694,11 @@ export default function Config() {
   }, [
     activateConfigNav,
     configTab,
+    loginTab,
+    ncQrModalOpen,
+    navFocus,
     nostrSignedIn,
+    pendingNip46ServerLink,
     navigate,
     location,
   ]);
@@ -695,6 +776,7 @@ export default function Config() {
         </div>
 
         <div className="config-panel">
+        <div key={configTab} className="config-tab-panel">
       {configTab === 'signin' && !nostrSignedIn ? (
         <>
           <p className="config-panel__lede">
@@ -892,15 +974,33 @@ export default function Config() {
                         </div>
                       </div>
                       <div className="config-nc-layout__col">
-                        <a
-                          className="config-nc-signer-btn"
-                          href={nostrConnectUri ?? undefined}
-                          onClick={(e) => {
-                            if (!nostrConnectUri) e.preventDefault();
-                          }}
-                        >
-                          Open in signer app
-                        </a>
+                        <div className="config-nc-signer-row">
+                          <button
+                            ref={nip46ShowQrRef}
+                            type="button"
+                            className={`config-nc-signer-btn${kbdFocus(
+                              navFocus.kind === 'nip46Inline' &&
+                                navFocus.index === 0
+                            )}`}
+                            onClick={() => setNcQrModalOpen(true)}
+                            disabled={!nostrConnectUri}
+                          >
+                            Enlarge QR
+                          </button>
+                          <a
+                            ref={nip46SignerRef}
+                            className={`config-nc-signer-btn${kbdFocus(
+                              navFocus.kind === 'nip46Inline' &&
+                                navFocus.index === 1
+                            )}`}
+                            href={nostrConnectUri ?? undefined}
+                            onClick={(e) => {
+                              if (!nostrConnectUri) e.preventDefault();
+                            }}
+                          >
+                            Open in signer app
+                          </a>
+                        </div>
                         <p className="config-nc-waiting" role="status">
                           {nip46Waiting ? (
                             <>
@@ -1033,8 +1133,7 @@ export default function Config() {
 
       {configTab === 'signin' && nostrSignedIn && !profileLoading ? (
         <div
-          key={profileAnimKey}
-          className="config-profile-card config-profile-card--animate-in"
+          className={`config-profile-card${profileEntranceActive ? ' config-profile-card--animate-in' : ''}`}
         >
           {pendingAuthUrl ? (
             <div
@@ -1311,10 +1410,7 @@ export default function Config() {
       ) : null}
 
       {configTab === 'nwc' ? (
-      <div
-        key={`nwc-${profileAnimKey}`}
-        className="config-nwc-block config-nwc-block--animate-in"
-      >
+      <div className="config-nwc-block">
         <p className="config-nwc-block__title">NOSTR WALLET CONNECT</p>
         <p className="config-nwc-block__lede">
           Paste a <code>nostr+walletconnect://</code> URI from Primal, Alby, or
@@ -1394,11 +1490,9 @@ export default function Config() {
         <GamepadTester active={configTab === 'gamepad'} />
       ) : null}
         </div>
+        </div>
 
-        <div
-          key={`act-${profileAnimKey}`}
-          className="config-shell__footer config-page__actions--animate-in"
-        >
+        <div className="config-shell__footer">
           <Button
             id="backButton"
             ref={backButtonRef}
@@ -1415,6 +1509,48 @@ export default function Config() {
           </Button>
         </div>
       </div>
+
+      {ncQrModalOpen && nostrConnectUri && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className="config-nc-qr-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Nostr Connect QR code"
+            >
+              <div className="config-nc-qr-modal__body">
+                <div className="config-nc-qr-modal__qr-wrap">
+                  <QRCodeSVG
+                    value={nostrConnectUri}
+                    size={ncQrModalSize}
+                    includeMargin
+                    className="config-nc-qr-modal__qr"
+                    aria-label="Nostr Connect URI QR code"
+                  />
+                </div>
+                <p className="config-nc-qr-modal__hint" role="status">
+                  {nip46Waiting ? (
+                    <>
+                      <span className="config-nc-spinner" aria-hidden />
+                      Waiting for connection…
+                    </>
+                  ) : (
+                    'Scan with your signer app, then approve the connection.'
+                  )}
+                </p>
+                <Button
+                  type="button"
+                  className="config-nc-qr-modal__back"
+                  glowing
+                  onClick={() => setNcQrModalOpen(false)}
+                >
+                  Back
+                </Button>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       <BackgroundAudio
         src="/sound/chain_duel_produced_menu.m4a"

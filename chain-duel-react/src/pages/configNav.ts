@@ -4,11 +4,41 @@ export type LoginTab = 'extension' | 'nip46' | 'nsec';
 export type ConfigFocus =
   | { kind: 'section'; index: number }
   | { kind: 'login'; index: number }
+  | { kind: 'nip46Inline'; index: number }
   | { kind: 'action' }
   | { kind: 'mainMenu' };
 
 const SECTION_COUNT = 3;
 const LOGIN_COUNT = 3;
+const NIP46_INLINE_COUNT = 2;
+
+export type ConfigNavContext = {
+  configTab: ConfigTab;
+  signedIn: boolean;
+  loginTab: LoginTab;
+  pendingNip46ServerLink: boolean;
+};
+
+function hasLoginRow(ctx: ConfigNavContext): boolean {
+  return ctx.configTab === 'signin' && !ctx.signedIn;
+}
+
+function hasActionRow(ctx: ConfigNavContext): boolean {
+  if (ctx.configTab === 'gamepad') return false;
+  if (ctx.configTab === 'signin' && ctx.signedIn) return true;
+  if (ctx.configTab === 'signin' && !ctx.signedIn) return true;
+  if (ctx.configTab === 'nwc') return true;
+  return false;
+}
+
+function hasNip46InlineRow(ctx: ConfigNavContext): boolean {
+  return (
+    ctx.configTab === 'signin' &&
+    !ctx.signedIn &&
+    ctx.loginTab === 'nip46' &&
+    !ctx.pendingNip46ServerLink
+  );
+}
 
 export function sectionIndex(tab: ConfigTab): number {
   if (tab === 'nwc') return 1;
@@ -34,25 +64,14 @@ export function loginTabFromIndex(index: number): LoginTab {
   return 'extension';
 }
 
-function hasLoginRow(configTab: ConfigTab, signedIn: boolean): boolean {
-  return configTab === 'signin' && !signedIn;
-}
-
-function hasActionRow(configTab: ConfigTab, signedIn: boolean): boolean {
-  if (configTab === 'gamepad') return false;
-  if (configTab === 'signin' && signedIn) return true;
-  if (configTab === 'signin' && !signedIn) return true;
-  if (configTab === 'nwc') return true;
-  return false;
-}
-
 export function moveConfigFocus(
   focus: ConfigFocus,
   dir: 'up' | 'down' | 'left' | 'right',
-  ctx: { configTab: ConfigTab; signedIn: boolean }
+  ctx: ConfigNavContext
 ): ConfigFocus {
-  const loginRow = hasLoginRow(ctx.configTab, ctx.signedIn);
-  const actionRow = hasActionRow(ctx.configTab, ctx.signedIn);
+  const loginRow = hasLoginRow(ctx);
+  const actionRow = hasActionRow(ctx);
+  const nip46InlineRow = hasNip46InlineRow(ctx);
 
   if (dir === 'left' || dir === 'right') {
     const delta = dir === 'right' ? 1 : -1;
@@ -68,6 +87,13 @@ export function moveConfigFocus(
         index: (focus.index + delta + LOGIN_COUNT) % LOGIN_COUNT,
       };
     }
+    if (focus.kind === 'nip46Inline' && nip46InlineRow) {
+      return {
+        kind: 'nip46Inline',
+        index:
+          (focus.index + delta + NIP46_INLINE_COUNT) % NIP46_INLINE_COUNT,
+      };
+    }
     return focus;
   }
 
@@ -78,6 +104,11 @@ export function moveConfigFocus(
       return { kind: 'mainMenu' };
     }
     if (focus.kind === 'login') {
+      if (nip46InlineRow) return { kind: 'nip46Inline', index: 0 };
+      if (actionRow) return { kind: 'action' };
+      return { kind: 'mainMenu' };
+    }
+    if (focus.kind === 'nip46Inline') {
       if (actionRow) return { kind: 'action' };
       return { kind: 'mainMenu' };
     }
@@ -90,12 +121,17 @@ export function moveConfigFocus(
   // up
   if (focus.kind === 'mainMenu') {
     if (actionRow) return { kind: 'action' };
-    if (loginRow) return { kind: 'login', index: 0 };
+    if (nip46InlineRow) return { kind: 'nip46Inline', index: 0 };
+    if (loginRow) return { kind: 'login', index: loginIndex(ctx.loginTab) };
     return { kind: 'section', index: sectionIndex(ctx.configTab) };
   }
   if (focus.kind === 'action') {
-    if (loginRow) return { kind: 'login', index: 0 };
+    if (nip46InlineRow) return { kind: 'nip46Inline', index: 0 };
+    if (loginRow) return { kind: 'login', index: loginIndex(ctx.loginTab) };
     return { kind: 'section', index: sectionIndex(ctx.configTab) };
+  }
+  if (focus.kind === 'nip46Inline') {
+    return { kind: 'login', index: loginIndex(ctx.loginTab) };
   }
   if (focus.kind === 'login') {
     return { kind: 'section', index: sectionIndex(ctx.configTab) };

@@ -116,6 +116,21 @@
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.45);
 }
 
+.config-tab-panel {
+  animation: config-tab-enter 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes config-tab-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .config-panel__lede {
   margin: 0 0 0.75rem;
   font-family: 'Inter', sans-serif;
@@ -428,9 +443,107 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-.config-nc-signer-btn:not([href]) {
+a.config-nc-signer-btn:not([href]) {
   opacity: 0.4;
   pointer-events: none;
+}
+
+.config-nc-signer-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  width: 100%;
+  max-width: 24rem;
+}
+
+.config-nc-signer-row .config-nc-signer-btn {
+  flex: 1 1 7.5rem;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+}
+
+button.config-nc-signer-btn {
+  cursor: pointer;
+  font: inherit;
+}
+
+button.config-nc-signer-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button.config-nc-signer-btn.config-kbd-focus:not(:disabled) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 16px rgb(255 255 255 / 0.22);
+}
+
+a.config-nc-signer-btn.config-kbd-focus {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 16px rgb(255 255 255 / 0.22);
+}
+
+.config-nc-qr-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: min(4vw, 24px);
+  background: rgb(0 0 0 / 0.88);
+  backdrop-filter: blur(6px);
+}
+
+.config-nc-qr-modal__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  width: min(100%, 560px);
+  text-align: center;
+}
+
+.config-nc-qr-modal__qr-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem;
+  background: #fff;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.55);
+}
+
+.config-nc-qr-modal__qr {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(72vmin, 480px);
+  max-height: min(72vmin, 480px);
+}
+
+.config-nc-qr-modal__hint {
+  margin: 0;
+  max-width: 28rem;
+  font-size: clamp(0.72rem, 1.35vw, 0.9rem);
+  line-height: 1.35;
+  letter-spacing: 0.05em;
+  color: rgb(255 255 255 / 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.config-nc-qr-modal__back {
+  min-width: min(100%, 14rem);
+  margin-top: 0.25rem;
 }
 
 .config-nc-resolving {
@@ -779,7 +892,7 @@
   z-index: 0;
 }
 
-.config-page > * {
+.config-page > *:not(.config-nc-qr-modal) {
   position: relative;
   z-index: 1;
 }
@@ -1895,7 +2008,8 @@
   .config-profile-card--animate-in .config-signer-ping,
   .config-nwc-block--animate-in,
   .config-gp-tester--animate-in,
-  .config-page__actions--animate-in {
+  .config-page__actions--animate-in,
+  .config-tab-panel {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
