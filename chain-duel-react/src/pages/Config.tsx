@@ -116,7 +116,6 @@ export default function Config() {
   const [nostrBusy, setNostrBusy] = useState(false);
   const [nostrError, setNostrError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Kind0Profile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(false);
   const [profileRecovering, setProfileRecovering] = useState(false);
   const [avatarBroken, setAvatarBroken] = useState(false);
   const [nip05Ok, setNip05Ok] = useState<boolean | null>(null);
@@ -363,35 +362,47 @@ export default function Config() {
     setNip05CheckPending(false);
     if (!nostrSignedIn || !sessionPubkey) {
       setProfile(null);
-      setProfileLoading(false);
+      setProfileRecovering(false);
       profileEntrancePlayedRef.current = false;
       setProfileEntranceActive(false);
       return;
     }
 
     let cancelled = false;
-    setProfileLoading(true);
+    let pubkey = sessionPubkey;
+    const sessionProfile = appProfileToKind0({
+      pubkey: sessionPubkey,
+      name: sessionDisplayName ?? formatPubkeyHex(sessionPubkey),
+      picture: sessionPicture,
+      nip05: sessionNip05,
+      lud16: sessionLud16,
+      lud06: sessionLud06,
+    });
+
+    setProfile(sessionProfile);
+    if (!profileEntrancePlayedRef.current) {
+      profileEntrancePlayedRef.current = true;
+      setProfileEntranceActive(true);
+    }
+
     void (async () => {
-      let pubkey = sessionPubkey;
-      let p: Kind0Profile | null = null;
-      if (sessionDisplayName || sessionPicture || sessionNip05) {
-        p = appProfileToKind0({
-          pubkey,
-          name: sessionDisplayName ?? '',
-          picture: sessionPicture,
-          nip05: sessionNip05,
-          lud16: sessionLud16,
-          lud06: sessionLud06,
-        });
-      }
+      let p: Kind0Profile = sessionProfile;
+
       if (socket?.connected) {
         const appP = await fetchProfileFromServer(socket, pubkey);
-        if (appP) {
+        if (!cancelled && appP) {
           p = appProfileToKind0(appP);
+          setProfile(p);
         }
       }
 
-      if (!p && !cancelled && getStoredSignerMode() === 'nip46') {
+      if (
+        !cancelled &&
+        getStoredSignerMode() === 'nip46' &&
+        !sessionDisplayName &&
+        !sessionPicture &&
+        !sessionNip05
+      ) {
         setProfileRecovering(true);
         const recovered = await recoverNip46UserPubkey();
         if (!cancelled) setProfileRecovering(false);
@@ -401,23 +412,18 @@ export default function Config() {
             const appP2 = await fetchProfileFromServer(socket, recovered);
             if (appP2) {
               p = appProfileToKind0(appP2);
+              setProfile(p);
             }
           }
         }
       }
 
       if (cancelled) return;
-      setProfile(p);
-      setProfileLoading(false);
-      if (!profileEntrancePlayedRef.current) {
-        profileEntrancePlayedRef.current = true;
-        setProfileEntranceActive(true);
-      }
       if (pubkey !== sessionPubkey) {
         setNostrPubkeyHex(pubkey);
       }
 
-      if (p?.nip05) {
+      if (p.nip05) {
         setNip05CheckPending(true);
         const ok = await verifyNip05(pubkey, p.nip05);
         if (cancelled) return;
@@ -1110,31 +1116,20 @@ export default function Config() {
         </>
       ) : null}
 
-      {configTab === 'signin' && nostrSignedIn && profileLoading ? (
-        <div
-          className="config-profile-card config-profile-skeleton"
-          aria-busy="true"
-          aria-label="Loading profile"
-        >
-          <div className="config-profile-skeleton__banner" />
-          <div className="config-profile-skeleton__main">
-            <div className="config-profile-skeleton__avatar" aria-hidden>
-              <span className="config-profile-skeleton__ring" />
-              <span className="config-profile-skeleton__ring config-profile-skeleton__ring--2" />
-            </div>
-            <p className="config-profile-loading-text">
-              {profileRecovering
-                ? 'VERIFYING IDENTITY… APPROVE IN SIGNER'
-                : 'LOADING PROFILE'}
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      {configTab === 'signin' && nostrSignedIn && !profileLoading ? (
+      {configTab === 'signin' && nostrSignedIn ? (
         <div
           className={`config-profile-card${profileEntranceActive ? ' config-profile-card--animate-in' : ''}`}
         >
+          {profileRecovering ? (
+            <div
+              className="config-nip46-auth-banner config-nip46-auth-banner--card"
+              role="status"
+            >
+              <p className="config-nip46-auth-banner__text">
+                Verifying identity… approve in your signer if prompted.
+              </p>
+            </div>
+          ) : null}
           {pendingAuthUrl ? (
             <div
               className="config-nip46-auth-banner config-nip46-auth-banner--card"
