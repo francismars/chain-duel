@@ -349,7 +349,7 @@ export interface ClientToServerEvents {
     roomId: string;
     event: Record<string, unknown>;
   }) => void;
-  /** Load Kind1 note text from relays (server-side). */
+  /** Load Kind1 note for display (server memory, relay fallback after restart). */
   requestOnlineKind1Post: (payload: { roomId: string }) => void;
   /** Build unsigned NIP-57 zap request; client signs then sends `confirmOnlineSeatZapPay`. */
   requestOnlineSeatZapPayPrepare: (payload: { roomId: string }) => void;
@@ -558,6 +558,8 @@ export interface ServerToClientEvents {
           npubDisplay: string;
           authorName: string;
           authorPicture?: string | null;
+          authorNip05?: string | null;
+          authorLud16?: string | null;
         }
       | { roomId: string; ok: false; reason: string }
   ) => void;

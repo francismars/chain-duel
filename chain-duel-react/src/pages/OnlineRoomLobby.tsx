@@ -47,10 +47,7 @@ import {
   buildOnlineRoomInviteText,
 } from '@/lib/online/buildOnlineRoomInvite';
 import { publishSignedNostrEvent } from '@/lib/nostr/publishSignedNostrEvent';
-import {
-  fetchLatestKind0Profile,
-  verifyNip05,
-} from '@/lib/nostr/fetchKind0Profile';
+import { verifyNip05 } from '@/lib/nostr/fetchKind0Profile';
 import { decodeBolt11ExpiresAt } from '@/lib/lightning/decodeBolt11ExpiresAt';
 import '@/styles/pages/onlineRoomLobby.css';
 
@@ -129,6 +126,8 @@ type Kind1PostLoaded = {
   npubDisplay: string;
   authorName: string;
   authorPicture?: string | null;
+  authorNip05?: string | null;
+  authorLud16?: string | null;
 };
 
 /** Show first `head` + … + last `tail` chars of a string. */
@@ -655,6 +654,8 @@ export default function OnlineRoomLobby() {
           npubDisplay: parsed.npubDisplay,
           authorName: parsed.authorName,
           authorPicture: parsed.authorPicture,
+          authorNip05: parsed.authorNip05 ?? null,
+          authorLud16: parsed.authorLud16 ?? null,
         };
         kind1PostCacheRef.current = {
           key: `${roomId}:${kind1}`,
@@ -2121,33 +2122,19 @@ export default function OnlineRoomLobby() {
   }, [kind1, kind1PostRetry, socket, roomId]);
 
   useEffect(() => {
-    const pubkey = kind1PostEvent?.pubkey;
-    if (!pubkey) {
-      setKind1AuthorNip05(null);
+    const nip05 = kind1PostEvent?.authorNip05?.trim() || null;
+    setKind1AuthorNip05(nip05);
+    setKind1AuthorLud16(kind1PostEvent?.authorLud16?.trim() || null);
+    if (!nip05 || !kind1PostEvent?.pubkey) {
       setKind1AuthorNip05Verified(null);
-      setKind1AuthorLud16(null);
       return;
     }
 
     let cancelled = false;
-    setKind1AuthorNip05(null);
     setKind1AuthorNip05Verified(null);
-    setKind1AuthorLud16(null);
 
     void (async () => {
-      const profile = await fetchLatestKind0Profile(pubkey);
-      if (cancelled) return;
-
-      setKind1AuthorLud16(profile?.lud16?.trim() || null);
-
-      const nip05 = profile?.nip05?.trim() || null;
-      setKind1AuthorNip05(nip05);
-      if (!nip05) {
-        setKind1AuthorNip05Verified(null);
-        return;
-      }
-
-      const verified = await verifyNip05(pubkey, nip05);
+      const verified = await verifyNip05(kind1PostEvent.pubkey, nip05);
       if (!cancelled) {
         setKind1AuthorNip05Verified(verified);
       }
@@ -2156,7 +2143,7 @@ export default function OnlineRoomLobby() {
     return () => {
       cancelled = true;
     };
-  }, [kind1PostEvent?.pubkey]);
+  }, [kind1PostEvent?.pubkey, kind1PostEvent?.authorNip05, kind1PostEvent?.authorLud16]);
 
   useEffect(() => {
     setNostrUriQrOpen(false);
