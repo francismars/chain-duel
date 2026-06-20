@@ -37,6 +37,8 @@ import {
   get2v1AiTeamCaptureLabel,
   get2v1AiTeamInitialScore,
   get2v1AiTeamScore,
+  get2v1HudTeamScores,
+  init2v1Economy,
   initFfaEconomy,
   is2v1Mode,
   isEliminationMode,
@@ -86,6 +88,8 @@ export {
   get2v1AiTeamCaptureLabel,
   get2v1AiTeamInitialScore,
   get2v1AiTeamScore,
+  get2v1HudTeamScores,
+  init2v1Economy,
   is2v1Mode,
   isEliminationMode,
   isFfaMode,
@@ -345,7 +349,7 @@ export function createGameState(args: CreateStateArgs): GameState {
       ),
     ];
     state.controllerTestExtra = [false];
-    initFfaEconomy(state, p1, p2);
+    init2v1Economy(state, p1);
   }
 
   return state;
@@ -359,10 +363,7 @@ export function getHudState(state: GameState): HudState {
   const total = state.totalPoints || 1;
 
   if (is2v1Mode(state)) {
-    const p1Score = state.score[0];
-    const aiScore = get2v1AiTeamScore(state);
-    const p1Initial = state.ffaInitialScores?.[0] ?? state.initialScore[0];
-    const aiInitial = get2v1AiTeamInitialScore(state);
+    const { p1Score, aiScore, p1Initial, aiInitial } = get2v1HudTeamScores(state);
     const hud: HudState = {
       p1Points: p1Score,
       p2Points: aiScore,
@@ -548,10 +549,20 @@ export function stepGame(state: GameState): TickResult {
     const playerCount = activePlayerCount(state);
     const doubleStepIndices: PowerUpPlayerIndex[] = [];
 
-    for (let i = 0; i < playerCount; i += 1) {
-      const index = i as PowerUpPlayerIndex;
-      if (!isPlayerActive(state, index)) continue;
-      if (!isPlayerHuman(state, index)) decideAiForPlayer(state, index);
+    if (is2v1Mode(state)) {
+      const plan = getTeamSovereign2v1Plan(state);
+      const aiOrder: PowerUpPlayerIndex[] =
+        plan.capturer === 1 ? [1, 2] : [2, 1];
+      for (const index of aiOrder) {
+        if (!isPlayerActive(state, index)) continue;
+        if (!isPlayerHuman(state, index)) decideAiForPlayer(state, index);
+      }
+    } else {
+      for (let i = 0; i < playerCount; i += 1) {
+        const index = i as PowerUpPlayerIndex;
+        if (!isPlayerActive(state, index)) continue;
+        if (!isPlayerHuman(state, index)) decideAiForPlayer(state, index);
+      }
     }
 
     for (let i = 0; i < playerCount; i += 1) {
@@ -1491,6 +1502,503 @@ function swapP1P2Snakes(state: GameState): void {
   state.p2 = t;
 }
 
+/** Swap P2 with an extra snake so sovereign pathing can reuse P2-oriented helpers. */
+function swapP2WithExtra(state: GameState, extraIndex: number): void {
+  const extra = state.extraSnakes[extraIndex];
+  if (!extra) return;
+  const tmp = state.p2;
+  state.p2 = extra.snake;
+  extra.snake = tmp;
+}
+
+function getSovereignInterceptPlan(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex
+): SovereignInterceptPlan | undefined {
+  return sovereignInterceptPlans.get(state)?.get(botIndex);
+}
+
+function setSovereignInterceptPlan(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  plan: SovereignInterceptPlan
+): void {
+  let plans = sovereignInterceptPlans.get(state);
+  if (!plans) {
+    plans = new Map();
+    sovereignInterceptPlans.set(state, plans);
+  }
+  plans.set(botIndex, plan);
+}
+
+function clearSovereignInterceptPlan(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex
+): void {
+  sovereignInterceptPlans.get(state)?.delete(botIndex);
+}
+
+function runSovereignForBot(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex
+): void {
+  if (botIndex === 1) {
+    decideSovereign(state, botIndex);
+    return;
+  }
+  if (botIndex === 2 && state.extraSnakes[0]) {
+    swapP2WithExtra(state, 0);
+    decideSovereign(state, botIndex);
+    swapP2WithExtra(state, 0);
+  }
+}
+
+type Ai2v1BotIndex = 1 | 2;
+
+interface TeamSovereign2v1Plan {
+  coinTarget: GridPos | null;
+  capturer: Ai2v1BotIndex;
+  support: Ai2v1BotIndex;
+  supportMode: 'block' | 'position';
+}
+
+const teamSovereign2v1Cache = new WeakMap<
+  GameState,
+  { tick: number; plan: TeamSovereign2v1Plan }
+>();
+
+const team2v1CapturerLock = new WeakMap<
+  GameState,
+  { coinKey: string; capturer: Ai2v1BotIndex }
+>();
+
+function predictedNextHead(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex
+): GridPos {
+  const snake = getSnakeByIndex(state, playerIndex);
+  const dir = snake.dirWanted || snake.dir;
+  const [x, y] = snake.head;
+  if (dir === 'Up') return [x, y - 1];
+  if (dir === 'Down') return [x, y + 1];
+  if (dir === 'Left') return [x - 1, y];
+  if (dir === 'Right') return [x + 1, y];
+  return [x, y];
+}
+
+function wouldCollideWithTeammateAt(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  cell: GridPos,
+  teammateIndex: PowerUpPlayerIndex
+): boolean {
+  if (!isPlayerActive(state, teammateIndex)) return false;
+  const teammate = getSnakeByIndex(state, teammateIndex);
+  if (samePos(teammate.head, cell)) return true;
+  if (teammate.body.some((p) => samePos(p, cell))) return true;
+  if (samePos(predictedNextHead(state, teammateIndex), cell)) return true;
+  return false;
+}
+
+function getLocked2v1Capturer(
+  state: GameState,
+  coinTarget: GridPos,
+  humanContesting: boolean
+): Ai2v1BotIndex {
+  const coinKey = posKey(coinTarget);
+  const lock = team2v1CapturerLock.get(state);
+  if (lock?.coinKey === coinKey) return lock.capturer;
+  const capturer = pick2v1Capturer(state, coinTarget, humanContesting);
+  team2v1CapturerLock.set(state, { coinKey, capturer });
+  return capturer;
+}
+
+function pathStepsToCoin(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  coin: GridPos
+): number {
+  const head = getPlayerHead(state, playerIndex);
+  const path = findPathForPlayer(state, playerIndex, head, coin);
+  return Math.max(0, path.length - 1);
+}
+
+function chooseTeamCoinFor2v1(state: GameState): GridPos | null {
+  if (state.coinbases.length === 0) return null;
+  let best: GridPos | null = null;
+  let bestTeamScore = Number.NEGATIVE_INFINITY;
+
+  for (const cb of state.coinbases) {
+    if (cb.isDecoy) continue;
+    const s1 = scoreCoinForPlayer(state, 1, cb, true);
+    const s2 = scoreCoinForPlayer(state, 2, cb, true);
+    const teamScore = Math.max(s1, s2) + Math.min(s1, s2) * 0.4;
+    if (teamScore > bestTeamScore) {
+      bestTeamScore = teamScore;
+      best = cb.pos;
+    }
+  }
+  return best;
+}
+
+function isHumanContestingTeamCoin(
+  state: GameState,
+  coin: GridPos
+): boolean {
+  if (!isPlayerActive(state, 0)) return false;
+  const dHuman = pathStepsToCoin(state, 0, coin);
+  const minAi = Math.min(
+    pathStepsToCoin(state, 1, coin),
+    pathStepsToCoin(state, 2, coin)
+  );
+  return (
+    dHuman <= SOVEREIGN_INTERCEPT_COMMIT_RANGE &&
+    dHuman <= minAi + SOVEREIGN_COIN_CONTEST_SLACK
+  );
+}
+
+function pick2v1Capturer(
+  state: GameState,
+  coinTarget: GridPos,
+  humanContesting: boolean
+): Ai2v1BotIndex {
+  const d1 = pathStepsToCoin(state, 1, coinTarget);
+  const d2 = pathStepsToCoin(state, 2, coinTarget);
+  const len1 = snakeLengthForPlayer(state, 1);
+  const len2 = snakeLengthForPlayer(state, 2);
+
+  if (humanContesting && Math.abs(len1 - len2) >= 3) {
+    return len1 >= len2 ? 1 : 2;
+  }
+  if (d1 + 1 < d2) return 1;
+  if (d2 + 1 < d1) return 2;
+  return len1 >= len2 ? 1 : 2;
+}
+
+function playableMapCenter(state: GameState): GridPos {
+  const border = state.shrinkBorder;
+  const cx = border
+    ? Math.floor((border.left + border.right) / 2)
+    : Math.floor((state.cols - 1) / 2);
+  const cy = border
+    ? Math.floor((border.top + border.bottom) / 2)
+    : Math.floor((state.rows - 1) / 2);
+  return [cx, cy];
+}
+
+/** Support bot stages ahead on P1's food route or map center for the next contest. */
+function pickSupportPosition(
+  state: GameState,
+  coinTarget: GridPos | null,
+  capturerIndex: Ai2v1BotIndex
+): GridPos {
+  const capturerPathKeys = new Set<string>();
+  if (coinTarget) {
+    const capturerHead = getPlayerHead(state, capturerIndex);
+    for (const p of findPathForPlayer(
+      state,
+      capturerIndex,
+      capturerHead,
+      coinTarget
+    )) {
+      capturerPathKeys.add(posKey(p));
+    }
+  }
+
+  if (coinTarget && isPlayerActive(state, 0)) {
+    const p1Path = findPlayerFoodPath(state, coinTarget);
+    const capturerHead = getPlayerHead(state, capturerIndex);
+    let best: GridPos | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    const scanMax = Math.min(p1Path.length - 1, SOVEREIGN_PREDICT_STEPS + 4);
+    for (let i = 3; i <= scanMax; i += 1) {
+      const cell = p1Path[i]!;
+      if (samePos(cell, coinTarget)) continue;
+      if (capturerPathKeys.has(posKey(cell))) continue;
+      const score = i * 2 + gridDist(capturerHead, cell);
+      if (score > bestScore) {
+        bestScore = score;
+        best = cell;
+      }
+    }
+    if (best) return best;
+  }
+  return playableMapCenter(state);
+}
+
+function computeTeamSovereign2v1Plan(state: GameState): TeamSovereign2v1Plan {
+  const coinTarget = chooseTeamCoinFor2v1(state);
+  if (!coinTarget) {
+    team2v1CapturerLock.delete(state);
+    return {
+      coinTarget: null,
+      capturer: 1,
+      support: 2,
+      supportMode: 'position',
+    };
+  }
+
+  const humanContesting = isHumanContestingTeamCoin(state, coinTarget);
+  const capturer = getLocked2v1Capturer(state, coinTarget, humanContesting);
+  const support: Ai2v1BotIndex = capturer === 1 ? 2 : 1;
+  const supportMode: TeamSovereign2v1Plan['supportMode'] = humanContesting
+    ? 'block'
+    : 'position';
+
+  return { coinTarget, capturer, support, supportMode };
+}
+
+function getTeamSovereign2v1Plan(state: GameState): TeamSovereign2v1Plan {
+  const cached = teamSovereign2v1Cache.get(state);
+  if (cached?.tick === state.tickCount) return cached.plan;
+  const plan = computeTeamSovereign2v1Plan(state);
+  teamSovereign2v1Cache.set(state, { tick: state.tickCount, plan });
+  return plan;
+}
+
+function decide2v1CapturerSafeStep(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  coinTarget: GridPos,
+  supportIndex: Ai2v1BotIndex
+): void {
+  const snake = getSnakeByIndex(state, botIndex);
+  const head = snake.head;
+  const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
+  let bestDir: Exclude<Direction, ''> | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (const d of dirs) {
+    if (wouldHitWall(state, snake, d)) continue;
+    const next: GridPos =
+      d === 'Up'
+        ? [head[0], head[1] - 1]
+        : d === 'Down'
+          ? [head[0], head[1] + 1]
+          : d === 'Left'
+            ? [head[0] - 1, head[1]]
+            : [head[0] + 1, head[1]];
+    if (wouldCollideWithTeammateAt(state, botIndex, next, supportIndex)) {
+      continue;
+    }
+    const score = -gridDist(next, coinTarget);
+    if (score > bestScore) {
+      bestScore = score;
+      bestDir = d;
+    }
+  }
+
+  if (bestDir) applyAiDirToSnake(snake, bestDir);
+}
+
+function decide2v1SupportSafeFallback(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  coinTarget: GridPos | null,
+  capturerIndex: Ai2v1BotIndex
+): void {
+  clearSovereignInterceptPlan(state, botIndex);
+  const snake = getSnakeByIndex(state, botIndex);
+  const head = snake.head;
+  const teammateHead = getPlayerHead(state, capturerIndex);
+  const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
+  let bestDir: Exclude<Direction, ''> | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (const d of dirs) {
+    if (wouldHitWall(state, snake, d)) continue;
+    const next: GridPos =
+      d === 'Up'
+        ? [head[0], head[1] - 1]
+        : d === 'Down'
+          ? [head[0], head[1] + 1]
+          : d === 'Left'
+            ? [head[0] - 1, head[1]]
+            : [head[0] + 1, head[1]];
+    if (coinTarget && samePos(next, coinTarget)) continue;
+    if (wouldCollideWithTeammateAt(state, botIndex, next, capturerIndex)) {
+      continue;
+    }
+    let score = gridDist(next, teammateHead);
+    if (coinTarget) score += gridDist(next, coinTarget) * 1.5;
+    if (score > bestScore) {
+      bestScore = score;
+      bestDir = d;
+    }
+  }
+
+  if (bestDir) applyAiDirToSnake(snake, bestDir);
+}
+
+function decide2v1Capturer(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  coinTarget: GridPos | null,
+  supportIndex: Ai2v1BotIndex
+): void {
+  clearSovereignInterceptPlan(state, botIndex);
+  if (!coinTarget) {
+    decide2v1SupportSafeFallback(state, botIndex, null, supportIndex);
+    return;
+  }
+  const head = getPlayerHead(state, botIndex);
+  const path = findPathForPlayer(state, botIndex, head, coinTarget);
+  if (path.length > 1) {
+    const next = path[1]!;
+    if (!wouldCollideWithTeammateAt(state, botIndex, next, supportIndex)) {
+      applyPathToPlayer(state, botIndex, path);
+      return;
+    }
+  }
+  decide2v1CapturerSafeStep(state, botIndex, coinTarget, supportIndex);
+}
+
+function decide2v1SupportPosition(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  coinTarget: GridPos | null,
+  capturerIndex: Ai2v1BotIndex
+): void {
+  clearSovereignInterceptPlan(state, botIndex);
+  const target = pickSupportPosition(state, coinTarget, capturerIndex);
+  const head = getPlayerHead(state, botIndex);
+  if (gridDist(head, target) <= 1) return;
+  const path = findPathForPlayer(state, botIndex, head, target);
+  if (path.length > 1) {
+    const next = path[1]!;
+    if (!wouldCollideWithTeammateAt(state, botIndex, next, capturerIndex)) {
+      applyPathToPlayer(state, botIndex, path);
+      return;
+    }
+  }
+  decide2v1SupportSafeFallback(state, botIndex, coinTarget, capturerIndex);
+}
+
+function withBotAsP2(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  fn: () => boolean
+): boolean {
+  if (botIndex === 1) return fn();
+  if (botIndex === 2 && state.extraSnakes[0]) {
+    swapP2WithExtra(state, 0);
+    const acted = fn();
+    swapP2WithExtra(state, 0);
+    return acted;
+  }
+  return false;
+}
+
+/** Sovereign intercept focused on denying P1 the team coin (support role). */
+function decideSovereignInterceptToCoin(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  coinTarget: GridPos
+): boolean {
+  const start: GridPos = [state.p2.head[0], state.p2.head[1]];
+  const coinPath = findPath(state, start, coinTarget, 'head-and-body');
+
+  const existingPlan = getSovereignInterceptPlan(state, botIndex);
+  if (existingPlan?.mode === 'intercept') {
+    const refreshed = findSovereignInterceptTarget(state, coinTarget);
+    const plan: SovereignInterceptPlan = refreshed
+      ? { mode: 'intercept', ...refreshed }
+      : existingPlan;
+    const moveTarget = sovereignInterceptMoveTarget(state, plan);
+    const avoidance = sovereignPathAvoidance(plan.strategy);
+    const interceptPath = findPath(state, start, moveTarget, avoidance);
+
+    if (
+      shouldContinueSovereignIntercept(state, plan, interceptPath, coinTarget)
+    ) {
+      if (interceptPath.length >= 2) {
+        applyPathToAi(state, interceptPath);
+      } else if (isHoldingBlockCell(state, plan.blockCell)) {
+        applyHoldAtBlockCell(state, plan.blockCell);
+      }
+      setSovereignInterceptPlan(state, botIndex, {
+        mode: 'intercept',
+        headTarget: plan.headTarget,
+        blockCell: plan.blockCell,
+        strategy: plan.strategy,
+      });
+      return true;
+    }
+    clearSovereignInterceptPlan(state, botIndex);
+  }
+
+  const intercept = findSovereignInterceptTarget(state, coinTarget);
+  if (intercept) {
+    const avoidance = sovereignPathAvoidance(intercept.strategy);
+    const interceptPath = findPath(
+      state,
+      start,
+      intercept.headTarget,
+      avoidance
+    );
+    if (
+      shouldStartSovereignIntercept(state, coinTarget, coinPath, interceptPath)
+    ) {
+      applyPathToAi(state, interceptPath);
+      setSovereignInterceptPlan(state, botIndex, {
+        mode: 'intercept',
+        headTarget: intercept.headTarget,
+        blockCell: intercept.blockCell,
+        strategy: intercept.strategy,
+      });
+      return true;
+    }
+  }
+
+  clearSovereignInterceptPlan(state, botIndex);
+  return false;
+}
+
+function decide2v1SupportBlock(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  coinTarget: GridPos,
+  capturerIndex: Ai2v1BotIndex
+): void {
+  const blocked = withBotAsP2(state, botIndex, () =>
+    decideSovereignInterceptToCoin(state, botIndex, coinTarget)
+  );
+  if (!blocked) {
+    decide2v1SupportPosition(state, botIndex, coinTarget, capturerIndex);
+  }
+}
+
+function decideSovereign2v1Coordinated(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex
+): void {
+  if (botIndex !== 1 && botIndex !== 2) return;
+  const plan = getTeamSovereign2v1Plan(state);
+  const aiBot = botIndex as Ai2v1BotIndex;
+
+  if (aiBot === plan.capturer) {
+    decide2v1Capturer(state, botIndex, plan.coinTarget, plan.support);
+    return;
+  }
+
+  if (plan.supportMode === 'block' && plan.coinTarget) {
+    decide2v1SupportBlock(
+      state,
+      botIndex,
+      plan.coinTarget,
+      plan.capturer
+    );
+    return;
+  }
+
+  decide2v1SupportPosition(
+    state,
+    botIndex,
+    plan.coinTarget,
+    plan.capturer
+  );
+}
+
 const POWER_UP_CHASE_RANGE = 6;
 
 function isPlayerHuman(state: GameState, index: PowerUpPlayerIndex): boolean {
@@ -1621,6 +2129,12 @@ function blockedSetForPlayer(
     add(s.head);
     s.body.forEach(add);
   }
+  if (is2v1Mode(state) && (playerIndex === 1 || playerIndex === 2)) {
+    const teammate: PowerUpPlayerIndex = playerIndex === 1 ? 2 : 1;
+    if (isPlayerActive(state, teammate)) {
+      add(predictedNextHead(state, teammate));
+    }
+  }
   return blocked;
 }
 
@@ -1655,6 +2169,12 @@ function applyPathToPlayer(
     const s = getSnakeByIndex(state, i as PowerUpPlayerIndex);
     if (s.body.some((p) => samePos(p, next))) return;
     if (samePos(s.head, next)) return;
+  }
+  if (is2v1Mode(state) && (playerIndex === 1 || playerIndex === 2)) {
+    const teammate: PowerUpPlayerIndex = playerIndex === 1 ? 2 : 1;
+    if (isPlayerActive(state, teammate)) {
+      if (samePos(predictedNextHead(state, teammate), next)) return;
+    }
   }
   const snake = getSnakeByIndex(state, playerIndex);
   const [x, y] = snake.head;
@@ -1843,18 +2363,22 @@ function decideSovereignDuelLegacy(
   state: GameState,
   botIndex: PowerUpPlayerIndex
 ): boolean {
-  if (isEliminationMode(state)) {
+  if (is2v1Mode(state)) {
+    decideSovereign2v1Coordinated(state, botIndex);
+    return true;
+  }
+  if (isFfaMode(state)) {
     decideEconomyChaseForPlayer(state, botIndex, true, true);
     return true;
   }
   if (activePlayerCount(state) !== 2) return false;
   if (botIndex === 1) {
-    decideSovereign(state);
+    decideSovereign(state, botIndex);
     return true;
   }
   if (botIndex === 0) {
     swapP1P2Snakes(state);
-    decideSovereign(state);
+    decideSovereign(state, 1);
     swapP1P2Snakes(state);
     return true;
   }
@@ -1913,7 +2437,7 @@ interface SovereignInterceptPlan {
 
 const sovereignInterceptPlans = new WeakMap<
   GameState,
-  SovereignInterceptPlan
+  Map<PowerUpPlayerIndex, SovereignInterceptPlan>
 >();
 
 interface SimSnake {
@@ -1987,6 +2511,12 @@ function findPlayerFoodPath(state: GameState, coinTarget: GridPos): GridPos[] {
   state.p1.body.forEach(add);
   state.p2.body.forEach(add);
   add(state.p2.head);
+  if (isEliminationMode(state)) {
+    for (const extra of state.extraSnakes) {
+      extra.snake.body.forEach(add);
+      add(extra.snake.head);
+    }
+  }
   const facing = state.p1.dir || state.p1.dirWanted;
   return findPathGeneric(
     state,
@@ -2256,15 +2786,19 @@ function decideEconomyChase(state: GameState): void {
 }
 
 /** Sovereign: economy play + intercept when racing P1 for the best coin. */
-function decideSovereign(state: GameState): void {
+function decideSovereign(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex = 1
+): void {
   const coinTarget =
-    chooseBestCoinbaseForAi(state) ?? nearestCoinbaseTarget(state);
+    chooseBestCoinbaseForPlayer(state, botIndex, true) ??
+    nearestCoinbaseTarget(state);
   const start: GridPos = [state.p2.head[0], state.p2.head[1]];
   const coinPath = coinTarget
     ? findPath(state, start, coinTarget, 'head-and-body')
     : [start];
 
-  const existingPlan = sovereignInterceptPlans.get(state);
+  const existingPlan = getSovereignInterceptPlan(state, botIndex);
   if (existingPlan?.mode === 'intercept' && coinTarget) {
     const refreshed = findSovereignInterceptTarget(state, coinTarget);
     const plan: SovereignInterceptPlan = refreshed
@@ -2282,7 +2816,7 @@ function decideSovereign(state: GameState): void {
       } else if (isHoldingBlockCell(state, plan.blockCell)) {
         applyHoldAtBlockCell(state, plan.blockCell);
       }
-      sovereignInterceptPlans.set(state, {
+      setSovereignInterceptPlan(state, botIndex, {
         mode: 'intercept',
         headTarget: plan.headTarget,
         blockCell: plan.blockCell,
@@ -2290,7 +2824,7 @@ function decideSovereign(state: GameState): void {
       });
       return;
     }
-    sovereignInterceptPlans.delete(state);
+    clearSovereignInterceptPlan(state, botIndex);
   }
 
   const intercept = coinTarget
@@ -2308,7 +2842,7 @@ function decideSovereign(state: GameState): void {
       shouldStartSovereignIntercept(state, coinTarget, coinPath, interceptPath)
     ) {
       applyPathToAi(state, interceptPath);
-      sovereignInterceptPlans.set(state, {
+      setSovereignInterceptPlan(state, botIndex, {
         mode: 'intercept',
         headTarget: intercept.headTarget,
         blockCell: intercept.blockCell,
@@ -2318,8 +2852,8 @@ function decideSovereign(state: GameState): void {
     }
   }
 
-  sovereignInterceptPlans.delete(state);
-  decideEconomyChase(state);
+  clearSovereignInterceptPlan(state, botIndex);
+  decideEconomyChaseForPlayer(state, botIndex, true, true);
 }
 
 function chooseBestCoinbaseForAi(state: GameState): GridPos | null {
@@ -2443,6 +2977,27 @@ function findPath(
       if (outOfBounds(state, neighbor)) continue;
       if (hitsObstacle(state, neighbor)) continue;
       if (state.p2.body.some((p) => samePos(p, neighbor))) continue;
+      if (
+        isEliminationMode(state) &&
+        state.extraSnakes.some(
+          (extra) =>
+            extra.snake.body.some((p) => samePos(p, neighbor)) ||
+            samePos(extra.snake.head, neighbor)
+        )
+      ) {
+        continue;
+      }
+      if (is2v1Mode(state)) {
+        let blockedByTeammateNext = false;
+        for (const idx of [1, 2] as PowerUpPlayerIndex[]) {
+          if (!isPlayerActive(state, idx)) continue;
+          if (samePos(neighbor, predictedNextHead(state, idx))) {
+            blockedByTeammateNext = true;
+            break;
+          }
+        }
+        if (blockedByTeammateNext) continue;
+      }
       if (
         playerAvoidance !== 'none' &&
         state.p1.body.some((p) => samePos(p, neighbor))

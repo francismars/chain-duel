@@ -3,6 +3,10 @@ import {
   isChallengeIconId,
   type ChallengeIconId,
 } from '@/features/practice/ChallengeRowIcon';
+import {
+  CHALLENGE_CLIENT_RANK,
+  getChallengeClientName,
+} from '@/lib/challenges/challengeCatalogClient';
 import { isPracticeChallengeConfig } from '@/pages/practiceHubModes';
 
 export interface ChallengeHudInfo {
@@ -11,14 +15,7 @@ export interface ChallengeHudInfo {
   rank: number;
 }
 
-const CHALLENGE_RANK_BY_ID: Record<ChallengeIconId, number> = {
-  normie: 1,
-  stacker: 2,
-  noderunner: 3,
-  gauntlet: 4,
-  ffa: 5,
-  'sovereign-stack': 6,
-};
+const CHALLENGE_RANK_BY_ID = CHALLENGE_CLIENT_RANK;
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function readChallengeHudFromConfig(
@@ -30,7 +27,7 @@ export function readChallengeHudFromConfig(
   const rankFromConfig = Number(cfg.challengeRank);
   return {
     id,
-    name: String(cfg.soloChallengeName ?? 'CHALLENGE'),
+    name: getChallengeClientName(id) ?? String(cfg.soloChallengeName ?? 'CHALLENGE'),
     rank:
       Number.isFinite(rankFromConfig) &&
       rankFromConfig >= 1 &&

@@ -36,6 +36,11 @@ import {
   ChallengeRowIcon,
   type ChallengeIconId,
 } from '@/features/practice/ChallengeRowIcon';
+import {
+  CHALLENGE_CLIENT_NAMES,
+  CHALLENGE_CLIENT_RANK,
+  CHALLENGE_CLIENT_TAGLINES,
+} from '@/lib/challenges/challengeCatalogClient';
 
 interface Challenge {
   id: ChallengeIconId;
@@ -50,68 +55,41 @@ interface Challenge {
 
 const CHALLENGE_GRID_COLS = 6;
 
-const DEFAULT_CHALLENGES: Challenge[] = [
-  {
-    id: 'normie',
-    rank: 1,
-    name: 'NORMIE DUEL',
-    tagline: 'BigToshi on easy mode',
-    format: '1v1',
-    aiTier: 'normie',
-    powerup: false,
-    bounty: 21,
-  },
-  {
-    id: 'stacker',
-    rank: 2,
-    name: 'STACKER TRIAL',
-    tagline: 'Shortest path to your sats',
-    format: '1v1',
-    aiTier: 'stacker',
-    powerup: false,
-    bounty: 50,
-  },
-  {
-    id: 'noderunner',
-    rank: 3,
-    name: 'NODE RUNNER',
-    tagline: 'Best coin, power-ups, no handouts',
-    format: '1v1',
-    aiTier: 'noderunner',
-    powerup: true,
-    bounty: 210,
-  },
-  {
-    id: 'ffa',
-    rank: 4,
-    name: 'FFA RUMBLE',
-    tagline: 'Four bots. One survivor.',
-    format: '4P FFA',
-    aiTier: 'noderunner',
-    powerup: false,
-    bounty: 600,
-  },
-  {
-    id: 'gauntlet',
-    rank: 5,
-    name: 'SOVEREIGN GAUNTLET',
-    tagline: 'BigToshi cuts your food line',
-    format: '1v1',
-    aiTier: 'sovereign',
-    powerup: false,
-    bounty: 1337,
-  },
-  {
-    id: 'sovereign-stack',
-    rank: 6,
-    name: 'TWIN GAUNTLET',
-    tagline: 'Two sovereigns. Pure skill.',
-    format: '2v1',
-    aiTier: 'sovereign',
-    powerup: false,
-    bounty: 6900,
-  },
-];
+const DEFAULT_CHALLENGES: Challenge[] = (
+  Object.keys(CHALLENGE_CLIENT_NAMES) as ChallengeIconId[]
+).map((id) => ({
+  id,
+  rank: CHALLENGE_CLIENT_RANK[id],
+  name: CHALLENGE_CLIENT_NAMES[id],
+  tagline: CHALLENGE_CLIENT_TAGLINES[id],
+  format:
+    id === 'ffa'
+      ? '4P FFA'
+      : id === 'sovereign-stack'
+        ? '2v1'
+        : '1v1',
+  aiTier:
+    id === 'normie'
+      ? 'normie'
+      : id === 'stacker'
+        ? 'stacker'
+        : id === 'noderunner' || id === 'ffa'
+          ? 'noderunner'
+          : 'sovereign',
+  powerup: id === 'noderunner',
+  bounty:
+    id === 'normie'
+      ? 21
+      : id === 'stacker'
+        ? 50
+        : id === 'noderunner'
+          ? 210
+          : id === 'ffa'
+            ? 600
+            : id === 'gauntlet'
+              ? 1337
+              : 6900,
+}));
 
 const TIER_LABELS: Record<AiTier, string> = {
   normie: 'NORMIE',
@@ -205,14 +183,7 @@ type ServerCatalogEntry = {
   bountySats: number;
 };
 
-const CHALLENGE_TAGLINES: Record<ChallengeIconId, string> = {
-  normie: 'BigToshi on easy mode',
-  stacker: 'Shortest path to your sats',
-  noderunner: 'Best coin, power-ups, no handouts',
-  ffa: 'Four bots. One survivor.',
-  gauntlet: 'BigToshi cuts your food line',
-  'sovereign-stack': 'Two sovereigns. Pure skill.',
-};
+const CHALLENGE_TAGLINES = CHALLENGE_CLIENT_TAGLINES;
 
 function mergeServerCatalog(entries: ServerCatalogEntry[]): Challenge[] {
   const byId = new Map(DEFAULT_CHALLENGES.map((c) => [c.id, c]));
@@ -220,15 +191,16 @@ function mergeServerCatalog(entries: ServerCatalogEntry[]): Challenge[] {
     .map((entry) => {
       const fallback = byId.get(entry.id as ChallengeIconId);
       if (!fallback) return null;
+      const id = entry.id as ChallengeIconId;
       return {
         ...fallback,
         rank: entry.rank,
-        name: entry.name,
+        name: CHALLENGE_CLIENT_NAMES[id] ?? fallback.name,
+        tagline: CHALLENGE_CLIENT_TAGLINES[id] ?? fallback.tagline,
         format: entry.format,
         aiTier: entry.aiTier,
         powerup: entry.powerup,
         bounty: entry.bountySats,
-        tagline: CHALLENGE_TAGLINES[entry.id as ChallengeIconId] ?? fallback.tagline,
       };
     })
     .filter((c): c is Challenge => c !== null)
@@ -992,7 +964,9 @@ export const PracticeChallengesPanel = forwardRef<
         challengeRank: challenge.rank,
         challengeRunId: runResult.runId,
         challengeRunSeed: runResult.seed,
-        soloChallengeName: challenge.name,
+        soloChallengeName:
+          CHALLENGE_CLIENT_NAMES[challenge.id as ChallengeIconId] ??
+          challenge.name,
         soloBounty: runResult.bountySats,
         practiceHudLabel: parts.join(' · '),
         teamMode: isFfa ? 'ffa' : is2v1 ? '2v1' : 'solo',

@@ -19,8 +19,8 @@ const CHALLENGE_RANK: Record<ChallengeId, ChallengeRank> = {
   normie: 1,
   stacker: 2,
   noderunner: 3,
-  gauntlet: 4,
-  ffa: 5,
+  ffa: 4,
+  gauntlet: 5,
   'sovereign-stack': 6,
 };
 

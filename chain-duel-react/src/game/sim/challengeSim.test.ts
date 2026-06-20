@@ -102,7 +102,7 @@ describe('FFA elimination at 0 sats', () => {
 });
 
 describe('2v1 format', () => {
-  it('starts with three players and 3000 total pot', () => {
+  it('starts with three players and 2000 total pot (1000 per side)', () => {
     const state = createGameState({
       p1Name: 'P1',
       p2Name: 'P2',
@@ -115,10 +115,12 @@ describe('2v1 format', () => {
       ffaAiTier: 'sovereign',
     });
     expect(state.extraSnakes).toHaveLength(1);
-    expect(state.totalPoints).toBe(3000);
+    expect(state.totalPoints).toBe(2000);
+    expect(state.score[0]).toBe(1000);
+    expect(state.score[1] + state.extraSnakes[0]!.score).toBe(1000);
   });
 
-  it('aggregates both AI sats on the P2 HUD side', () => {
+  it('aggregates both AI sats on the P2 HUD side with 50/50 start bars', () => {
     const state = createGameState({
       p1Name: 'P1',
       p2Name: 'P2',
@@ -130,15 +132,21 @@ describe('2v1 format', () => {
       aiTier: 'sovereign',
       ffaAiTier: 'sovereign',
     });
-    state.score[0] = 900;
-    state.score[1] = 1050;
-    state.extraSnakes[0]!.score = 1050;
+    const hudStart = getHudState(state);
+    expect(hudStart.p1Points).toBe(1000);
+    expect(hudStart.p2Points).toBe(1000);
+    expect(hudStart.initialWidthP1).toBeCloseTo(50, 5);
+    expect(hudStart.initialWidthP2).toBeCloseTo(50, 5);
+
+    state.score[0] = 800;
+    state.score[1] = 600;
+    state.extraSnakes[0]!.score = 600;
     const hud = getHudState(state);
-    expect(hud.p1Points).toBe(900);
-    expect(hud.p2Points).toBe(2100);
-    expect(hud.currentWidthP1).toBeCloseTo(30, 5);
-    expect(hud.currentWidthP2).toBeCloseTo(70, 5);
-    expect(hud.initialWidthP1).toBeCloseTo(33.333, 2);
-    expect(hud.initialWidthP2).toBeCloseTo(66.667, 2);
+    expect(hud.p1Points).toBe(800);
+    expect(hud.p2Points).toBe(1200);
+    expect(hud.currentWidthP1).toBeCloseTo(40, 5);
+    expect(hud.currentWidthP2).toBeCloseTo(60, 5);
+    expect(hud.ffa?.players[1]?.name.length).toBeGreaterThan(0);
+    expect(hud.ffa?.players[2]?.name.length).toBeGreaterThan(0);
   });
 });

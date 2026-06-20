@@ -245,6 +245,71 @@
   font-size: 1cqw;
 }
 
+#capturingP2.game-2v1-captures {
+  width: 33.3333%;
+  height: auto;
+}
+
+.game-2v1-ai-team {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 1.4vw;
+  width: 100%;
+}
+
+#player2info.game-2v1-ai-info {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.game-2v1-ai-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  max-width: 48%;
+}
+
+.game-2v1-ai-name-row {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.42vw;
+  max-width: 100%;
+}
+
+.game-2v1-ai-name {
+  font-size: 1.5vw;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-2v1-ai-swatch {
+  flex-shrink: 0;
+  width: 0.72vw;
+  height: 0.72vw;
+  border: 1px solid #1f1f1f;
+  box-shadow: 0 0 11px #ffffffb0;
+}
+
+.game-2v1-capture-row {
+  white-space: nowrap;
+  font-size: 0.55vw;
+  color: #9a9a9a;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.game-2v1-capture-row.highlight .capturingAmount {
+  font-size: 0.82vw;
+}
+
 #p1Points {
   color: white;
   margin-right: 0.1vw;

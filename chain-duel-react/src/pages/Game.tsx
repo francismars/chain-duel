@@ -180,6 +180,7 @@ export default function Game() {
   const [currentP1Width, setCurrentP1Width] = useState(50);
   const [currentP2Width, setCurrentP2Width] = useState(50);
   const [isFfa, setIsFfa] = useState(false);
+  const [is2v1, setIs2v1] = useState(false);
   const [ffaPlayers, setFfaPlayers] = useState<FfaHudPlayer[]>([]);
   const [ffaCaptureHighlights, setFfaCaptureHighlights] = useState([
     false,
@@ -589,7 +590,10 @@ export default function Game() {
 
   const canShowP1Image = useMemo(() => player1Img.length > 0, [player1Img]);
   const canShowP2Image = useMemo(() => player2Img.length > 0, [player2Img]);
-  const showFfaUi = isFfa && ffaPlayers.length === 4;
+  const showFfaUi = isFfa && !is2v1 && ffaPlayers.length === 4;
+  const show2v1Ui = is2v1 && ffaPlayers.length >= 3;
+  const aiHud1 = show2v1Ui ? ffaPlayers[1] : undefined;
+  const aiHud2 = show2v1Ui ? ffaPlayers[2] : undefined;
 
   const isPowerupMode = useMemo(() => {
     try {
@@ -783,6 +787,7 @@ export default function Game() {
       setCurrentP1Width(hud.currentWidthP1);
       setCurrentP2Width(hud.currentWidthP2);
       setIsFfa(teamMode === 'ffa' || teamMode === '2v1');
+      setIs2v1(teamMode === '2v1');
       if (hud.ffa?.players) {
         setFfaPlayers(hud.ffa.players);
         ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
@@ -1318,7 +1323,7 @@ export default function Game() {
         id="gameContainer"
         className={`flex full game ${loading ? 'hide' : ''}`}
       >
-        <div className={showFfaUi ? 'game-hud-ffa-wrap' : undefined}>
+        <div className={showFfaUi ? 'game-hud-ffa-wrap' : show2v1Ui ? 'game-hud-2v1-wrap' : undefined}>
           {showFfaUi ? (
             <>
               <FfaHud
@@ -1372,16 +1377,41 @@ export default function Game() {
                   gameInfo={gameInfo}
                   challenge={challengeHud}
                 />
-                <div id="player2info" className="condensed">
-                  <div className="inline" id="player2name">
-                    {player2Name}
-                  </div>
-                  <img
-                    className={`inline playerImg ${canShowP2Image ? '' : 'hide'}`}
-                    id="player2Img"
-                    src={player2Img || '/images/loading.gif'}
-                  />
-                  <div className="inline playerSquare black" />
+                <div
+                  id="player2info"
+                  className={`condensed${show2v1Ui ? ' game-2v1-ai-info' : ''}`}
+                >
+                  {show2v1Ui ? (
+                    <div className="game-2v1-ai-team">
+                      {[aiHud1, aiHud2].map(
+                        (ai, idx) =>
+                          ai && (
+                            <div key={ai.index} className="game-2v1-ai-slot">
+                              <div className="game-2v1-ai-name-row">
+                                <span className="game-2v1-ai-name">{ai.name}</span>
+                                <span
+                                  className="game-2v1-ai-swatch"
+                                  style={{ background: ai.color }}
+                                  aria-hidden
+                                />
+                              </div>
+                            </div>
+                          )
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="inline" id="player2name">
+                        {player2Name}
+                      </div>
+                      <img
+                        className={`inline playerImg ${canShowP2Image ? '' : 'hide'}`}
+                        id="player2Img"
+                        src={player2Img || '/images/loading.gif'}
+                      />
+                      <div className="inline playerSquare black" />
+                    </>
+                  )}
                 </div>
 
                 <div id="zapMessages">
@@ -1422,14 +1452,39 @@ export default function Game() {
                     </span>{' '}
                     capture
                   </div>
-                  <div id="capturingP2">
-                    capture{' '}
-                    <span
-                      id="capturingP2Amount"
-                      className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}
-                    >
-                      {captureP2}
-                    </span>
+                  <div
+                    id="capturingP2"
+                    className={show2v1Ui ? 'game-2v1-captures' : undefined}
+                  >
+                    {show2v1Ui ? (
+                      <div className="game-2v1-ai-team">
+                        {[aiHud1, aiHud2].map(
+                          (ai) =>
+                            ai && (
+                              <div key={ai.index} className="game-2v1-ai-slot">
+                                <div
+                                  className={`game-2v1-capture-row ${ffaCaptureHighlights[ai.index] ? 'highlight' : ''}`}
+                                >
+                                  capture{' '}
+                                  <span className="capturingAmount">
+                                    {ai.capture}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        capture{' '}
+                        <span
+                          id="capturingP2Amount"
+                          className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}
+                        >
+                          {captureP2}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 

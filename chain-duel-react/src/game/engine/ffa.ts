@@ -93,6 +93,25 @@ export function initFfaEconomy(
   state.ffaEliminated = [false, false, false, false];
 }
 
+/** 2v1: one human side vs AI team — equal starting sats per side (e.g. 1000 vs 1000). */
+export function init2v1Economy(state: GameState, sideStake?: number): void {
+  const perSide =
+    sideStake != null && sideStake > 0 ? sideStake : FFA_START_SATS_PER_PLAYER;
+  const aiFirst = Math.floor(perSide / 2);
+  const aiSecond = perSide - aiFirst;
+  state.totalPoints = perSide * 2;
+  const initial: [number, number, number, number] = [
+    perSide,
+    aiFirst,
+    aiSecond,
+    0,
+  ];
+  state.initialScore = [perSide, perSide];
+  setFfaScores(state, initial);
+  state.ffaInitialScores = [...initial];
+  state.ffaEliminated = [false, false, false, false];
+}
+
 /** Clear snake from board when eliminated at 0 sats. */
 export function eliminateFfaPlayer(
   state: GameState,
@@ -274,10 +293,27 @@ export function get2v1AiTeamInitialScore(state: GameState): number {
   return initial[1] + initial[2];
 }
 
+/** Team-side totals for 2v1 distribution bars (50/50 at equal starting stakes). */
+export function get2v1HudTeamScores(state: GameState): {
+  p1Score: number;
+  aiScore: number;
+  p1Initial: number;
+  aiInitial: number;
+} {
+  const scores = getFfaScores(state);
+  const initial = state.ffaInitialScores ?? scores;
+  return {
+    p1Score: scores[0],
+    aiScore: scores[1] + scores[2],
+    p1Initial: initial[0],
+    aiInitial: initial[1] + initial[2],
+  };
+}
+
 /** Highest capture % among the two AI snakes — shown on the shared P2 HUD side. */
 export function get2v1AiTeamCaptureLabel(state: GameState): string {
   const p2Len = state.p2.body.length;
-  const p3Len = state.extraSnakes[0]?.body?.length ?? 1;
+  const p3Len = state.extraSnakes[0]?.snake.body?.length ?? 1;
   const p2Pct = captureLabelForLength(p2Len).replace('%', '');
   const p3Pct = captureLabelForLength(p3Len).replace('%', '');
   const maxPct = Math.max(Number(p2Pct) || 2, Number(p3Pct) || 2);
