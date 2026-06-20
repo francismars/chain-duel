@@ -42,7 +42,7 @@ interface Challenge {
   rank: number;
   name: string;
   tagline: string;
-  format: '1v1' | '4P FFA';
+  format: '1v1' | '4P FFA' | '2v1';
   aiTier: AiTier;
   powerup: boolean;
   bounty: number;
@@ -50,7 +50,7 @@ interface Challenge {
 
 const CHALLENGE_GRID_COLS = 6;
 
-const CHALLENGES: Challenge[] = [
+const DEFAULT_CHALLENGES: Challenge[] = [
   {
     id: 'normie',
     rank: 1,
@@ -69,7 +69,7 @@ const CHALLENGES: Challenge[] = [
     format: '1v1',
     aiTier: 'stacker',
     powerup: false,
-    bounty: 210,
+    bounty: 50,
   },
   {
     id: 'noderunner',
@@ -79,37 +79,37 @@ const CHALLENGES: Challenge[] = [
     format: '1v1',
     aiTier: 'noderunner',
     powerup: true,
-    bounty: 420,
-  },
-  {
-    id: 'gauntlet',
-    rank: 4,
-    name: 'SOVEREIGN GAUNTLET',
-    tagline: 'BigToshi cuts your food line',
-    format: '1v1',
-    aiTier: 'sovereign',
-    powerup: false,
-    bounty: 1000,
+    bounty: 210,
   },
   {
     id: 'ffa',
-    rank: 5,
+    rank: 4,
     name: 'FFA RUMBLE',
     tagline: 'Four bots. One survivor.',
     format: '4P FFA',
     aiTier: 'noderunner',
     powerup: false,
-    bounty: 2100,
+    bounty: 600,
+  },
+  {
+    id: 'gauntlet',
+    rank: 5,
+    name: 'SOVEREIGN GAUNTLET',
+    tagline: 'BigToshi cuts your food line',
+    format: '1v1',
+    aiTier: 'sovereign',
+    powerup: false,
+    bounty: 1337,
   },
   {
     id: 'sovereign-stack',
     rank: 6,
-    name: 'SOVEREIGN TRIAL',
-    tagline: 'Intercept, power-ups, no escape',
-    format: '1v1',
+    name: 'TWIN GAUNTLET',
+    tagline: 'Two sovereigns. Pure skill.',
+    format: '2v1',
     aiTier: 'sovereign',
-    powerup: true,
-    bounty: 4200,
+    powerup: false,
+    bounty: 6900,
   },
 ];
 
@@ -182,7 +182,7 @@ const VIOLATOR_LEFT_NUDGE_BY_ID: Partial<Record<Challenge['id'], number>> = {
 };
 
 const VIOLATOR_JITTER_BY_ID = Object.fromEntries(
-  CHALLENGES.map((c) => {
+  DEFAULT_CHALLENGES.map((c) => {
     const jitter = violatorJitter(c.id);
     return [
       c.id,
@@ -194,6 +194,46 @@ const VIOLATOR_JITTER_BY_ID = Object.fromEntries(
     ];
   })
 );
+
+type ServerCatalogEntry = {
+  id: string;
+  rank: number;
+  name: string;
+  format: '1v1' | '4P FFA' | '2v1';
+  aiTier: AiTier;
+  powerup: boolean;
+  bountySats: number;
+};
+
+const CHALLENGE_TAGLINES: Record<ChallengeIconId, string> = {
+  normie: 'BigToshi on easy mode',
+  stacker: 'Shortest path to your sats',
+  noderunner: 'Best coin, power-ups, no handouts',
+  ffa: 'Four bots. One survivor.',
+  gauntlet: 'BigToshi cuts your food line',
+  'sovereign-stack': 'Two sovereigns. Pure skill.',
+};
+
+function mergeServerCatalog(entries: ServerCatalogEntry[]): Challenge[] {
+  const byId = new Map(DEFAULT_CHALLENGES.map((c) => [c.id, c]));
+  return entries
+    .map((entry) => {
+      const fallback = byId.get(entry.id as ChallengeIconId);
+      if (!fallback) return null;
+      return {
+        ...fallback,
+        rank: entry.rank,
+        name: entry.name,
+        format: entry.format,
+        aiTier: entry.aiTier,
+        powerup: entry.powerup,
+        bounty: entry.bountySats,
+        tagline: CHALLENGE_TAGLINES[entry.id as ChallengeIconId] ?? fallback.tagline,
+      };
+    })
+    .filter((c): c is Challenge => c !== null)
+    .sort((a, b) => a.rank - b.rank);
+}
 
 function getGateCopy(opts: { signedIn: boolean; payoutReady: boolean }): {
   eyebrow: string | null;
@@ -364,6 +404,55 @@ export const PracticeChallengesPanel = forwardRef<
   const nostrSession = useNostrSession();
   const { socket, connected } = useSocket();
 
+  const [challenges, setChallenges] = useState<Challenge[]>(DEFAULT_CHALLENGES);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onCatalog = (data: { ok?: boolean; challenges?: unknown[] }) => {
+      if (!data?.ok || !Array.isArray(data.challenges)) return;
+      const parsed: ServerCatalogEntry[] = [];
+      for (const item of data.challenges) {
+        if (!item || typeof item !== 'object') continue;
+        const row = item as Record<string, unknown>;
+        const id = String(row.id ?? '');
+        const rank = Number(row.rank);
+        const name = String(row.name ?? '');
+        const format = row.format;
+        const aiTier = row.aiTier;
+        const powerup = row.powerup;
+        const bountySats = Number(row.bountySats);
+        if (
+          !id ||
+          !Number.isFinite(rank) ||
+          (format !== '1v1' && format !== '4P FFA' && format !== '2v1') ||
+          (aiTier !== 'normie' &&
+            aiTier !== 'stacker' &&
+            aiTier !== 'noderunner' &&
+            aiTier !== 'sovereign') ||
+          typeof powerup !== 'boolean' ||
+          !Number.isFinite(bountySats)
+        ) {
+          continue;
+        }
+        parsed.push({
+          id,
+          rank,
+          name,
+          format,
+          aiTier,
+          powerup,
+          bountySats,
+        });
+      }
+      if (parsed.length > 0) setChallenges(mergeServerCatalog(parsed));
+    };
+    socket.on('resChallengeCatalog', onCatalog);
+    socket.emit('getChallengeCatalog');
+    return () => {
+      socket.off('resChallengeCatalog', onCatalog);
+    };
+  }, [socket, connected]);
+
   const [eligibility, setEligibility] =
     useState<ChallengeEligibilityResponse | null>(null);
   const [eligibilityLoading, setEligibilityLoading] = useState(false);
@@ -375,9 +464,9 @@ export const PracticeChallengesPanel = forwardRef<
   const [hoveredChallenge, setHoveredChallenge] = useState<number | null>(null);
   const [nostrProfilePicBroken, setNostrProfilePicBroken] = useState(false);
 
-  const [displayBounty, setDisplayBounty] = useState(CHALLENGES[0].bounty);
+  const [displayBounty, setDisplayBounty] = useState(DEFAULT_CHALLENGES[0].bounty);
   const [lockedBountyDisplays, setLockedBountyDisplays] = useState<number[]>(
-    () => CHALLENGES.map(() => 0)
+    () => DEFAULT_CHALLENGES.map(() => 0)
   );
   const [gateActionFocused, setGateActionFocused] = useState(false);
   const [gateSetupFocus, setGateSetupFocus] = useState<'config' | 'refresh' | null>(
@@ -415,7 +504,7 @@ export const PracticeChallengesPanel = forwardRef<
   const prevSelectedRef = useRef(selected);
   const bountyRafRef = useRef<number | null>(null);
   const lockedBountyRafRefs = useRef<(number | null)[]>(
-    CHALLENGES.map(() => null)
+    DEFAULT_CHALLENGES.map(() => null)
   );
   const prevChallengesActiveRef = useRef(false);
   const hasPickedChallengeRef = useRef(false);
@@ -752,7 +841,7 @@ export const PracticeChallengesPanel = forwardRef<
   }, [activeCheckAction, closeCheckOverlay, overlayKeyboardFocus, playSfx]);
 
   const animateLockedRowBounty = useCallback((rowIndex: number) => {
-    const target = CHALLENGES[rowIndex]?.bounty;
+    const target = challenges[rowIndex]?.bounty;
     if (target == null) return;
 
     const existing = lockedBountyRafRefs.current[rowIndex];
@@ -800,7 +889,7 @@ export const PracticeChallengesPanel = forwardRef<
       cancelAnimationFrame(bountyRafRef.current);
     if (!nostrSession.signedIn) return;
 
-    const target = CHALLENGES[selected].bounty;
+    const target = challenges[selected].bounty;
     const duration = 520;
     const start = performance.now();
 
@@ -834,7 +923,7 @@ export const PracticeChallengesPanel = forwardRef<
     }
 
     if (panelJustEntered) {
-      CHALLENGES.forEach((_, i) => animateLockedRowBounty(i));
+      challenges.forEach((_, i) => animateLockedRowBounty(i));
     }
 
     return cancelLockedBountyAnimations;
@@ -852,7 +941,7 @@ export const PracticeChallengesPanel = forwardRef<
 
   const launchChallenge = useCallback(
     async (idx?: number) => {
-      const challenge = CHALLENGES[idx ?? selected];
+      const challenge = challenges[idx ?? selected];
       if (!challenge) return;
       if (!socket) {
         setLaunchError('Not connected to server');
@@ -892,7 +981,8 @@ export const PracticeChallengesPanel = forwardRef<
       }
 
       const isFfa = challenge.format === '4P FFA';
-      const parts: string[] = ['PRACTICE', isFfa ? 'FFA' : '1v1'];
+      const is2v1 = challenge.format === '2v1';
+      const parts: string[] = ['PRACTICE', isFfa ? 'FFA' : is2v1 ? '2v1' : '1v1'];
       if (challenge.powerup) parts.push('PWR');
 
       const config: Record<string, unknown> = {
@@ -905,7 +995,7 @@ export const PracticeChallengesPanel = forwardRef<
         soloChallengeName: challenge.name,
         soloBounty: runResult.bountySats,
         practiceHudLabel: parts.join(' · '),
-        teamMode: isFfa ? 'ffa' : 'solo',
+        teamMode: isFfa ? 'ffa' : is2v1 ? '2v1' : 'solo',
         practiceMode: true,
         p1Human: true,
         p2Human: false,
@@ -921,13 +1011,14 @@ export const PracticeChallengesPanel = forwardRef<
         convergenceMode: false,
         powerupMode: challenge.powerup,
       };
-      if (isFfa) config.ffaAiTier = challenge.aiTier;
+      if (isFfa || is2v1) config.ffaAiTier = challenge.aiTier;
 
       savePracticeGameConfig(config);
       navigate('/game');
     },
     [
       selected,
+      challenges,
       playSfx,
       navigate,
       socket,
@@ -1067,7 +1158,7 @@ export const PracticeChallengesPanel = forwardRef<
       focusGateAction();
       return;
     }
-    const lastIdx = CHALLENGES.length - 1;
+    const lastIdx = challenges.length - 1;
     const idx = hasPickedChallengeRef.current ? selected : lastIdx;
     setSelected(idx);
     rowRefs.current[idx]?.focus({ preventScroll: true });
@@ -1185,7 +1276,7 @@ export const PracticeChallengesPanel = forwardRef<
         setSelected((prev) => {
           const from = onRow ? focusedRowIndex : prev;
           const next = from + CHALLENGE_GRID_COLS;
-          if (next < CHALLENGES.length) {
+          if (next < challenges.length) {
             playSfx(SFX.MENU_SELECT);
             hasPickedChallengeRef.current = true;
             return next;
@@ -1300,7 +1391,7 @@ export const PracticeChallengesPanel = forwardRef<
         playSfx(SFX.MENU_SELECT);
         hasPickedChallengeRef.current = true;
         if (from % CHALLENGE_GRID_COLS === 0) {
-          setSelected(CHALLENGES.length - 1);
+          setSelected(challenges.length - 1);
         } else {
           setSelected(from - 1);
         }
@@ -1348,7 +1439,7 @@ export const PracticeChallengesPanel = forwardRef<
         hasPickedChallengeRef.current = true;
         if (onRightCol) {
           const next = from + 1;
-          setSelected(next < CHALLENGES.length ? next : 0);
+          setSelected(next < challenges.length ? next : 0);
         } else {
           setSelected(from + 1);
         }
@@ -1933,7 +2024,7 @@ export const PracticeChallengesPanel = forwardRef<
             aria-disabled={challengesLocked}
             onMouseLeave={() => setHoveredChallenge(null)}
           >
-            {CHALLENGES.map((c, i) => {
+            {challenges.map((c, i) => {
               const isSelected = selected === i;
               const showSelectedStyle =
                 isSelected &&

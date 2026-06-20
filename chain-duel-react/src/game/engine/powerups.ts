@@ -6,7 +6,7 @@ import {
   POWERUP_RESPAWN_COOLDOWN_TICKS,
   POWERUP_SURGE_DURATION_TICKS,
 } from '@/game/engine/constants';
-import { isFfaMode } from '@/game/engine/ffa';
+import { isEliminationMode, isFfaPlayerAlive, isFfaMode, multiplayerPlayerCount } from '@/game/engine/ffa';
 import { gameRandom } from '@/game/engine/runRng';
 import type {
   ActivePowerUp,
@@ -27,7 +27,13 @@ export interface SnakePowerUpEffects {
 }
 
 export function activePlayerCount(state: GameState): number {
-  return isFfaMode(state) ? 4 : 2;
+  if (isEliminationMode(state)) return multiplayerPlayerCount(state);
+  return 2;
+}
+
+export function isPlayerActive(state: GameState, index: PowerUpPlayerIndex): boolean {
+  if (!isEliminationMode(state)) return true;
+  return isFfaPlayerAlive(state, index);
 }
 
 export function getSnakeByIndex(

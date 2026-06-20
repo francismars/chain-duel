@@ -691,7 +691,12 @@ export default function Game() {
         : 'Player 2';
 
     const rawTeamMode = (gameConfig.teamMode as string | undefined) ?? 'solo';
-    const teamMode = rawTeamMode === 'ffa' ? 'ffa' : 'solo';
+    const teamMode =
+      rawTeamMode === 'ffa'
+        ? 'ffa'
+        : rawTeamMode === '2v1'
+          ? '2v1'
+          : 'solo';
 
     const convergenceShrinkInterval =
       gameConfig.convergenceShrinkInterval != null
@@ -777,7 +782,7 @@ export default function Game() {
       setInitialP2Width(hud.initialWidthP2);
       setCurrentP1Width(hud.currentWidthP1);
       setCurrentP2Width(hud.currentWidthP2);
-      setIsFfa(teamMode === 'ffa');
+      setIsFfa(teamMode === 'ffa' || teamMode === '2v1');
       if (hud.ffa?.players) {
         setFfaPlayers(hud.ffa.players);
         ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
