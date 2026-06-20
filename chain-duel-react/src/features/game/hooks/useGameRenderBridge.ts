@@ -221,6 +221,7 @@ export function useGameRenderBridge({
 
         const prevP1Len = state.p1.body.length;
         const prevP2Len = state.p2.body.length;
+        const prevExtraLen = state.extraSnakes[0]?.body.length ?? 1;
         const prevP1Head = [...state.p1.head] as [number, number];
         const prevP2Head = [...state.p2.head] as [number, number];
         const prevStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
@@ -256,6 +257,9 @@ export function useGameRenderBridge({
           audio?.playCapture(state.p1.body.length);
         if (state.p2.body.length > prevP2Len)
           audio?.playCapture(state.p2.body.length);
+        const extraLen = state.extraSnakes[0]?.body.length ?? 1;
+        if (extraLen > prevExtraLen)
+          audio?.playCapture(extraLen);
 
         if (
           (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&

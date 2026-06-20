@@ -264,6 +264,26 @@ export function checkFfaGameEnd(state: GameState): void {
   else state.winnerPlayer = null;
 }
 
+export function get2v1AiTeamScore(state: GameState): number {
+  const scores = getFfaScores(state);
+  return scores[1] + scores[2];
+}
+
+export function get2v1AiTeamInitialScore(state: GameState): number {
+  const initial = state.ffaInitialScores ?? getFfaScores(state);
+  return initial[1] + initial[2];
+}
+
+/** Highest capture % among the two AI snakes — shown on the shared P2 HUD side. */
+export function get2v1AiTeamCaptureLabel(state: GameState): string {
+  const p2Len = state.p2.body.length;
+  const p3Len = state.extraSnakes[0]?.body?.length ?? 1;
+  const p2Pct = captureLabelForLength(p2Len).replace('%', '');
+  const p3Pct = captureLabelForLength(p3Len).replace('%', '');
+  const maxPct = Math.max(Number(p2Pct) || 2, Number(p3Pct) || 2);
+  return `${maxPct}%`;
+}
+
 export function buildFfaHud(state: GameState): FfaHudPlayer[] {
   const count = multiplayerPlayerCount(state);
   const initial = state.ffaInitialScores ?? getFfaScores(state);

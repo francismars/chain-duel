@@ -7,6 +7,7 @@ import {
 import {
   createGameState,
   getFfaScores,
+  getHudState,
   isFfaPlayerAlive,
   checkFfaEliminations,
   setFfaScores,
@@ -115,5 +116,29 @@ describe('2v1 format', () => {
     });
     expect(state.extraSnakes).toHaveLength(1);
     expect(state.totalPoints).toBe(3000);
+  });
+
+  it('aggregates both AI sats on the P2 HUD side', () => {
+    const state = createGameState({
+      p1Name: 'P1',
+      p2Name: 'P2',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: '2v1',
+      practiceMode: true,
+      teamMode: '2v1',
+      aiTier: 'sovereign',
+      ffaAiTier: 'sovereign',
+    });
+    state.score[0] = 900;
+    state.score[1] = 1050;
+    state.extraSnakes[0]!.score = 1050;
+    const hud = getHudState(state);
+    expect(hud.p1Points).toBe(900);
+    expect(hud.p2Points).toBe(2100);
+    expect(hud.currentWidthP1).toBeCloseTo(30, 5);
+    expect(hud.currentWidthP2).toBeCloseTo(70, 5);
+    expect(hud.initialWidthP1).toBeCloseTo(33.333, 2);
+    expect(hud.initialWidthP2).toBeCloseTo(66.667, 2);
   });
 });

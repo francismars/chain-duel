@@ -34,6 +34,9 @@ import {
   checkFfaGameEnd,
   checkFfaEliminations,
   ffaApplyCaptureAmount,
+  get2v1AiTeamCaptureLabel,
+  get2v1AiTeamInitialScore,
+  get2v1AiTeamScore,
   initFfaEconomy,
   is2v1Mode,
   isEliminationMode,
@@ -80,6 +83,9 @@ export {
   checkFfaEliminations,
   ffaConicGradient,
   ffaInitialConicGradient,
+  get2v1AiTeamCaptureLabel,
+  get2v1AiTeamInitialScore,
+  get2v1AiTeamScore,
   is2v1Mode,
   isEliminationMode,
   isFfaMode,
@@ -350,10 +356,31 @@ export function createGameState(args: CreateStateArgs): GameState {
 // ============================================================================
 
 export function getHudState(state: GameState): HudState {
-  const initialWidthP1 = (state.initialScore[0] * 100) / state.totalPoints;
-  const initialWidthP2 = (state.initialScore[1] * 100) / state.totalPoints;
-  const currentWidthP1 = (state.score[0] * 100) / state.totalPoints;
-  const currentWidthP2 = (state.score[1] * 100) / state.totalPoints;
+  const total = state.totalPoints || 1;
+
+  if (is2v1Mode(state)) {
+    const p1Score = state.score[0];
+    const aiScore = get2v1AiTeamScore(state);
+    const p1Initial = state.ffaInitialScores?.[0] ?? state.initialScore[0];
+    const aiInitial = get2v1AiTeamInitialScore(state);
+    const hud: HudState = {
+      p1Points: p1Score,
+      p2Points: aiScore,
+      captureP1: getCaptureLabel(state.p1.body.length),
+      captureP2: get2v1AiTeamCaptureLabel(state),
+      initialWidthP1: (p1Initial * 100) / total,
+      initialWidthP2: (aiInitial * 100) / total,
+      currentWidthP1: (p1Score * 100) / total,
+      currentWidthP2: (aiScore * 100) / total,
+      ffa: { players: buildFfaHud(state) },
+    };
+    return hud;
+  }
+
+  const initialWidthP1 = (state.initialScore[0] * 100) / total;
+  const initialWidthP2 = (state.initialScore[1] * 100) / total;
+  const currentWidthP1 = (state.score[0] * 100) / total;
+  const currentWidthP2 = (state.score[1] * 100) / total;
   const hud: HudState = {
     p1Points: state.score[0],
     p2Points: state.score[1],
@@ -364,7 +391,7 @@ export function getHudState(state: GameState): HudState {
     currentWidthP1,
     currentWidthP2,
   };
-  if (isFfaMode(state) || is2v1Mode(state)) {
+  if (isFfaMode(state)) {
     hud.ffa = { players: buildFfaHud(state) };
     const scores = hud.ffa.players.map((p) => p.score);
     hud.p1Points = scores[0] ?? hud.p1Points;
