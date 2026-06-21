@@ -32,11 +32,8 @@ import type {
 import {
   buildFfaHud,
   checkFfaGameEnd,
-  checkFfaEliminations,
   ffaApplyCaptureAmount,
   get2v1AiTeamCaptureLabel,
-  get2v1AiTeamInitialScore,
-  get2v1AiTeamScore,
   get2v1HudTeamScores,
   init2v1Economy,
   initFfaEconomy,
@@ -44,7 +41,6 @@ import {
   is2v1Mode,
   isEliminationMode,
   isFfaMode,
-  isFfaPlayerAlive,
   type FfaPlayerIndex,
 } from '@/game/engine/ffa';
 import {
@@ -1568,21 +1564,6 @@ function clearSovereignInterceptPlan(
   sovereignInterceptPlans.get(state)?.delete(botIndex);
 }
 
-function runSovereignForBot(
-  state: GameState,
-  botIndex: PowerUpPlayerIndex
-): void {
-  if (botIndex === 1) {
-    decideSovereign(state, botIndex);
-    return;
-  }
-  if (botIndex === 2 && state.extraSnakes[0]) {
-    swapP2WithExtra(state, 0);
-    decideSovereign(state, botIndex);
-    swapP2WithExtra(state, 0);
-  }
-}
-
 type Ai2v1BotIndex = 1 | 2;
 
 interface TeamSovereign2v1Plan {
@@ -1618,7 +1599,7 @@ function predictedNextHead(
 
 function wouldCollideWithTeammateAt(
   state: GameState,
-  playerIndex: PowerUpPlayerIndex,
+  _playerIndex: PowerUpPlayerIndex,
   cell: GridPos,
   teammateIndex: PowerUpPlayerIndex
 ): boolean {
@@ -2073,17 +2054,6 @@ function applyAiDirToSnake(
     snake.dirWanted = 'Left';
 }
 
-function blockedSetSelfOnlyForPlayer(
-  state: GameState,
-  playerIndex: PowerUpPlayerIndex
-): Set<string> {
-  const blocked = new Set<string>();
-  getSnakeByIndex(state, playerIndex).body.forEach((p) =>
-    blocked.add(posKey(p))
-  );
-  return blocked;
-}
-
 function nearestCoinbaseForPlayer(
   state: GameState,
   playerIndex: PowerUpPlayerIndex
@@ -2100,47 +2070,6 @@ function nearestCoinbaseForPlayer(
     }
   }
   return best;
-}
-
-function findStackerPathForPlayer(
-  state: GameState,
-  playerIndex: PowerUpPlayerIndex,
-  start: GridPos,
-  target: GridPos
-): GridPos[] {
-  const snake = getSnakeByIndex(state, playerIndex);
-  const facing = snake.dir || snake.dirWanted;
-  return findPathGeneric(
-    state,
-    start,
-    target,
-    blockedSetSelfOnlyForPlayer(state, playerIndex),
-    facing || undefined
-  );
-}
-
-/** Stacker applies one step; avoids rival tails but does not pre-route around their head. */
-function applyStackerPathToPlayer(
-  state: GameState,
-  playerIndex: PowerUpPlayerIndex,
-  path: GridPos[]
-): void {
-  if (path.length < 2) return;
-  const next = path[1];
-  const count = activePlayerCount(state);
-  for (let i = 0; i < count; i += 1) {
-    if (i === playerIndex) continue;
-    const s = getSnakeByIndex(state, i as PowerUpPlayerIndex);
-    if (s.body.some((p) => samePos(p, next))) return;
-  }
-  const snake = getSnakeByIndex(state, playerIndex);
-  const [x, y] = snake.head;
-  let dir: Exclude<Direction, ''> | null = null;
-  if (next[0] === x && next[1] > y) dir = 'Down';
-  else if (next[0] === x && next[1] < y) dir = 'Up';
-  else if (next[1] === y && next[0] > x) dir = 'Right';
-  else if (next[1] === y && next[0] < x) dir = 'Left';
-  if (dir) applyAiDirToSnake(snake, dir);
 }
 
 function blockedSetForPlayer(
@@ -3399,39 +3328,6 @@ function applyHoldAtBlockCell(state: GameState, blockCell: GridPos): void {
   if (safe.length > 0) applyAiDir(state, safe[0]);
 }
 
-/** Best coin + nearby power-ups, avoids P1 snake. Shared by Tactician and Sovereign fallback. */
-function decideEconomyChase(state: GameState): void {
-  const nearbyPowerUp = state.powerUpItems.find(
-    (p) =>
-      Math.hypot(p.pos[0] - state.p2.head[0], p.pos[1] - state.p2.head[1]) < 6
-  );
-  if (nearbyPowerUp) {
-    const path = findPath(
-      state,
-      state.p2.head,
-      nearbyPowerUp.pos,
-      'head-and-body'
-    );
-    if (path.length > 1) {
-      applyPathToAi(state, path);
-      return;
-    }
-  }
-
-  const bestCoinbase = chooseBestCoinbaseForAi(state);
-  if (bestCoinbase) {
-    const path = findPath(state, state.p2.head, bestCoinbase, 'head-and-body');
-    if (path.length > 1) {
-      applyPathToAi(state, path);
-      return;
-    }
-  }
-
-  const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
-  const safe = dirs.filter((d) => !wouldHitWall(state, state.p2, d));
-  if (safe.length > 0) applyAiDir(state, safe[0]);
-}
-
 /** Sovereign: food-first racer with light intercept and gated head-trades. */
 function decideSovereign(
   state: GameState,
@@ -3577,10 +3473,6 @@ function findLightSovereignBlockCell(
   if (p1Path.length <= 1) return null;
   const blockIdx = Math.min(6, Math.max(2, p1Path.length - 1));
   return p1Path[blockIdx] ?? null;
-}
-
-function chooseBestCoinbaseForAi(state: GameState): GridPos | null {
-  return chooseBestCoinbaseForPlayer(state, 1, true);
 }
 
 function applyPathToAi(state: GameState, path: GridPos[]): void {

@@ -1394,7 +1394,7 @@ export default function Game() {
                   {show2v1Ui ? (
                     <div className="game-2v1-ai-team">
                       {[aiHud1, aiHud2].map(
-                        (ai, idx) =>
+                        (ai) =>
                           ai && (
                             <div key={ai.index} className="game-2v1-ai-slot">
                               <div className="game-2v1-ai-name-row">

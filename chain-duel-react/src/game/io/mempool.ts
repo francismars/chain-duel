@@ -34,7 +34,7 @@ export const MEMPOOL_API_HOSTS = [
 
 export function resolveMempoolApiHosts(): string[] {
   const custom = import.meta.env.VITE_MEMPOOL_HOST?.trim();
-  const hosts = [...MEMPOOL_API_HOSTS];
+  const hosts: string[] = [...MEMPOOL_API_HOSTS];
   if (import.meta.env.DEV) {
     hosts.unshift('/mempool-proxy');
   }

@@ -183,8 +183,6 @@ type ServerCatalogEntry = {
   bountySats: number;
 };
 
-const CHALLENGE_TAGLINES = CHALLENGE_CLIENT_TAGLINES;
-
 function mergeServerCatalog(entries: ServerCatalogEntry[]): Challenge[] {
   const byId = new Map(DEFAULT_CHALLENGES.map((c) => [c.id, c]));
   return entries
