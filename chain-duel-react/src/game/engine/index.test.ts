@@ -180,6 +180,26 @@ describe('game engine parity behavior', () => {
     ).toBe(true);
   });
 
+  it('2v1 spawns human top-left and AI team on FFA right-side corners', () => {
+    const state = createGameState({
+      p1Name: 'Player',
+      p2Name: 'BigToshi 🌊',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: '2v1',
+      practiceMode: true,
+      teamMode: '2v1',
+      aiTier: 'sovereign',
+      ffaAiTier: 'sovereign',
+    });
+    expect(state.p1.head).toEqual([4, 4]);
+    expect(state.p2.head).toEqual([46, 4]);
+    const p3 = state.extraSnakes[0]!;
+    expect(p3.snake.head).toEqual([46, 20]);
+    expect(p3.spawnDir).toBe('Left');
+    expect(p3.snake.body[0]).toEqual([47, 20]);
+  });
+
   it('FFA extra snakes keep spawn facing on first tick', () => {
     const state = createGameState({
       p1Name: 'Alpha',

@@ -355,6 +355,10 @@ interface PracticeChallengesPanelProps {
   footerStartRef: RefObject<HTMLButtonElement | null>;
   onExitToPlayStyle?: () => void;
   onEnterFooter?: (which: 'back' | 'start') => void;
+  onLaunchStateChange?: (
+    launching: boolean,
+    phase?: 'checking' | 'server' | 'entering'
+  ) => void;
 }
 
 export const PracticeChallengesPanel = forwardRef<
@@ -368,6 +372,7 @@ export const PracticeChallengesPanel = forwardRef<
     footerStartRef,
     onExitToPlayStyle,
     onEnterFooter,
+    onLaunchStateChange,
   },
   ref
 ) {
@@ -429,6 +434,8 @@ export const PracticeChallengesPanel = forwardRef<
     useState<ChallengeEligibilityResponse | null>(null);
   const [eligibilityLoading, setEligibilityLoading] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const [launching, setLaunching] = useState(false);
+  const [launchPending, setLaunchPending] = useState(false);
 
   const [selected, setSelected] = useState(
     () => peekChallengeMenuFocus() ?? 0
@@ -596,8 +603,8 @@ export const PracticeChallengesPanel = forwardRef<
 
   useEffect(() => {
     if (!isActive || !nostrSession.signedIn) return;
-    const background = eligibilityRef.current != null;
-    loadEligibility({ refresh: true, background });
+    // Revisit after a match: keep showing cached checks; don't force-refresh Nostr gates.
+    loadEligibility({ background: eligibilityRef.current != null });
   }, [isActive, loadEligibility, nostrSession.signedIn]);
 
   const openConfigForNostr = useCallback(() => {
@@ -912,83 +919,110 @@ export const PracticeChallengesPanel = forwardRef<
   }, [selected, isActive, nostrSession.signedIn, animateLockedRowBounty]);
 
   const launchChallenge = useCallback(
-    async (idx?: number) => {
+    async (idx?: number, fromEligibilityResume = false) => {
+      if (!fromEligibilityResume && (launching || launchPending)) return;
       const challenge = challenges[idx ?? selected];
       if (!challenge) return;
+
+      const abortLaunch = () => {
+        setLaunchPending(false);
+        setLaunching(false);
+        onLaunchStateChange?.(false);
+      };
+
+      const beginLaunch = (phase: 'checking' | 'server' | 'entering') => {
+        setLaunchError(null);
+        setLaunching(true);
+        onLaunchStateChange?.(true, phase);
+      };
+
       if (!socket) {
+        onLaunchStateChange?.(false);
         setLaunchError('Not connected to server');
         return;
       }
       if (!nostrSession.signedIn || !nostrSession.pubkey) {
+        onLaunchStateChange?.(false);
         setLaunchError('Sign in with Nostr to start a bounty challenge');
         playSfx(SFX.MENU_SELECT);
         return;
       }
-      if (eligibilityLoading) {
-        setLaunchError('Checking eligibility — try again in a moment');
-        playSfx(SFX.MENU_SELECT);
+      if (eligibilityLoading && !fromEligibilityResume) {
+        setLaunchPending(true);
+        beginLaunch('checking');
+        playSfx(SFX.MENU_CONFIRM);
         return;
       }
       if (!payoutReady) {
+        onLaunchStateChange?.(false);
         setLaunchError('Complete all requirements before starting a challenge');
         playSfx(SFX.MENU_SELECT);
         return;
       }
-      setLaunchError(null);
+      setLaunchPending(false);
       clearPendingChallengeClaim();
       playSfx(SFX.MENU_CONFIRM);
+      beginLaunch('server');
 
-      const runResult = await requestChallengeRun(socket, challenge.id);
-      if (!runResult.ok) {
-        const runReasonMessages: Record<string, string> = {
-          not_eligible: 'Complete all requirements before starting a challenge',
-          nostr_sign_in_required: 'Sign in with Nostr to start a bounty challenge',
-          rate_limited: 'Too many attempts — wait a moment and try again',
+      try {
+        const runResult = await requestChallengeRun(socket, challenge.id);
+        if (!runResult.ok) {
+          const runReasonMessages: Record<string, string> = {
+            not_eligible: 'Complete all requirements before starting a challenge',
+            nostr_sign_in_required: 'Sign in with Nostr to start a bounty challenge',
+            rate_limited: 'Too many attempts — wait a moment and try again',
+          };
+          setLaunchError(
+            runReasonMessages[runResult.reason] ?? runResult.reason
+          );
+          playSfx(SFX.MENU_SELECT);
+          abortLaunch();
+          return;
+        }
+
+        const isFfa = challenge.format === '4P FFA';
+        const is2v1 = challenge.format === '2v1';
+        const parts: string[] = ['PRACTICE', isFfa ? 'FFA' : is2v1 ? '2v1' : '1v1'];
+        if (challenge.powerup) parts.push('PWR');
+
+        const config: Record<string, unknown> = {
+          mode: 'PRACTICE',
+          practiceChallenge: true,
+          challengeId: challenge.id,
+          challengeRank: challenge.rank,
+          challengeRunId: runResult.runId,
+          challengeRunSeed: runResult.seed,
+          soloChallengeName:
+            CHALLENGE_CLIENT_NAMES[challenge.id as ChallengeIconId] ??
+            challenge.name,
+          soloBounty: runResult.bountySats,
+          practiceHudLabel: parts.join(' · '),
+          teamMode: isFfa ? 'ffa' : is2v1 ? '2v1' : 'solo',
+          practiceMode: true,
+          p1Human: true,
+          p2Human: false,
+          p3Human: false,
+          p4Human: false,
+          p1Name: nostrSession.displayName?.trim() || 'Player 1',
+          ...(nostrSession.pubkey ? { p1NostrPubkey: nostrSession.pubkey } : {}),
+          ...(nostrProfilePic?.trim()
+            ? { p1Picture: nostrProfilePic.trim() }
+            : {}),
+          p2Name: 'BigToshi 🌊',
+          aiTier: challenge.aiTier,
+          convergenceMode: false,
+          powerupMode: challenge.powerup,
         };
-        setLaunchError(
-          runReasonMessages[runResult.reason] ?? runResult.reason
-        );
+        if (isFfa || is2v1) config.ffaAiTier = challenge.aiTier;
+
+        onLaunchStateChange?.(true, 'entering');
+        savePracticeGameConfig(config);
+        navigate('/game');
+      } catch {
+        setLaunchError('Could not start challenge — check connection and try again');
         playSfx(SFX.MENU_SELECT);
-        return;
+        abortLaunch();
       }
-
-      const isFfa = challenge.format === '4P FFA';
-      const is2v1 = challenge.format === '2v1';
-      const parts: string[] = ['PRACTICE', isFfa ? 'FFA' : is2v1 ? '2v1' : '1v1'];
-      if (challenge.powerup) parts.push('PWR');
-
-      const config: Record<string, unknown> = {
-        mode: 'PRACTICE',
-        practiceChallenge: true,
-        challengeId: challenge.id,
-        challengeRank: challenge.rank,
-        challengeRunId: runResult.runId,
-        challengeRunSeed: runResult.seed,
-        soloChallengeName:
-          CHALLENGE_CLIENT_NAMES[challenge.id as ChallengeIconId] ??
-          challenge.name,
-        soloBounty: runResult.bountySats,
-        practiceHudLabel: parts.join(' · '),
-        teamMode: isFfa ? 'ffa' : is2v1 ? '2v1' : 'solo',
-        practiceMode: true,
-        p1Human: true,
-        p2Human: false,
-        p3Human: false,
-        p4Human: false,
-        p1Name: nostrSession.displayName?.trim() || 'Player 1',
-        ...(nostrSession.pubkey ? { p1NostrPubkey: nostrSession.pubkey } : {}),
-        ...(nostrProfilePic?.trim()
-          ? { p1Picture: nostrProfilePic.trim() }
-          : {}),
-        p2Name: 'BigToshi 🌊',
-        aiTier: challenge.aiTier,
-        convergenceMode: false,
-        powerupMode: challenge.powerup,
-      };
-      if (isFfa || is2v1) config.ffaAiTier = challenge.aiTier;
-
-      savePracticeGameConfig(config);
-      navigate('/game');
     },
     [
       selected,
@@ -1002,8 +1036,31 @@ export const PracticeChallengesPanel = forwardRef<
       nostrSession.signedIn,
       payoutReady,
       eligibilityLoading,
+      launching,
+      launchPending,
+      onLaunchStateChange,
     ]
   );
+
+  useEffect(() => {
+    if (!launchPending || eligibilityLoading) return;
+    if (!payoutReady) {
+      setLaunchPending(false);
+      setLaunching(false);
+      onLaunchStateChange?.(false);
+      setLaunchError('Complete all requirements before starting a challenge');
+      playSfx(SFX.MENU_SELECT);
+      return;
+    }
+    void launchChallenge(undefined, true);
+  }, [
+    launchPending,
+    eligibilityLoading,
+    payoutReady,
+    launchChallenge,
+    onLaunchStateChange,
+    playSfx,
+  ]);
 
   const hasReturningChallengeFocus = useCallback(
     () =>

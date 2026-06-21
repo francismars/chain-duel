@@ -140,7 +140,10 @@ export function drawPowerUpIconPixi(
     for (let i = 0; i < segments; i += 1) {
       const start = (i / segments) * Math.PI * 2;
       const end = start + (Math.PI * 2 * dash) / segments;
+      const sx = mx + mr * Math.cos(start);
+      const sy = my + mr * Math.sin(start);
       gfx
+        .moveTo(sx, sy)
         .arc(mx, my, mr, start, end)
         .stroke({ width: strokeWidth, color, alpha, cap: 'round' });
     }

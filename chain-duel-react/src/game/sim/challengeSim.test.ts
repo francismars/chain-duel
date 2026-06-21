@@ -37,15 +37,26 @@ describe('challengeSim harness', () => {
     expect(stats.winRate).toBeLessThanOrEqual(1);
   });
 
-  it('measures baseline win rate for stacker preset', () => {
-    const stats = measureWinRate({
-      config: CHALLENGE_SIM_PRESETS[1]!.config,
-      runs: 2,
-      seedPrefix: 'stacker',
+  it('FFA passive human does not win on a fixed seed', () => {
+    const ffa = CHALLENGE_SIM_PRESETS.find((p) => p.id === 'ffa')!.config;
+    const result = runChallengeSim({
+      seed: 'ffa-passive-smoke',
+      config: ffa,
+      strategy: 'passive_ffa',
     });
-    expect(stats.runs).toBe(2);
-    expect(stats.avgSteps).toBeGreaterThan(0);
-  });
+    expect(result.p1Won).toBe(false);
+  }, 60_000);
+
+  it('sovereign gauntlet resists head-on bait better than free wins', () => {
+    const gauntlet = CHALLENGE_SIM_PRESETS.find((p) => p.id === 'gauntlet')!.config;
+    const bait = measureWinRate({
+      config: gauntlet,
+      strategy: 'head_on_bait',
+      runs: 3,
+      seedPrefix: 'gauntlet-bait',
+    });
+    expect(bait.winRate).toBeLessThan(0.85);
+  }, 30_000);
 });
 
 describe('FFA elimination at 0 sats', () => {
@@ -148,5 +159,32 @@ describe('2v1 format', () => {
     expect(hud.currentWidthP2).toBeCloseTo(60, 5);
     expect(hud.ffa?.players[1]?.name.length).toBeGreaterThan(0);
     expect(hud.ffa?.players[2]?.name.length).toBeGreaterThan(0);
+  });
+
+  it('uses combined AI team length for capture label', () => {
+    const state = createGameState({
+      p1Name: 'P1',
+      p2Name: 'P2',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: '2v1',
+      practiceMode: true,
+      teamMode: '2v1',
+      aiTier: 'sovereign',
+      ffaAiTier: 'sovereign',
+    });
+    state.p2.body = [
+      [1, 1],
+      [2, 2],
+      [3, 3],
+      [4, 4],
+    ];
+    state.extraSnakes[0]!.snake.body = [
+      [5, 5],
+      [6, 6],
+      [7, 7],
+      [8, 8],
+    ];
+    expect(getHudState(state).captureP2).toBe('16%');
   });
 });

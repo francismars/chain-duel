@@ -40,6 +40,7 @@ import {
   get2v1HudTeamScores,
   init2v1Economy,
   initFfaEconomy,
+  getFfaScores,
   is2v1Mode,
   isEliminationMode,
   isFfaMode,
@@ -331,7 +332,7 @@ export function createGameState(args: CreateStateArgs): GameState {
     state.p2Name = FFA_BOT_NAMES[1] ?? 'BigToshi 🌊';
     const h1: GridPos = [4, 4];
     const h2: GridPos = [46, 4];
-    const h3: GridPos = [25, 20];
+    const h3: GridPos = [46, 20];
     state.p1.head = h1;
     state.p1.body = [bodySegmentBehindHead(h1, 'Right')];
     state.p2.head = h2;
@@ -340,7 +341,7 @@ export function createGameState(args: CreateStateArgs): GameState {
     state.extraSnakes = [
       makeExtraSnake(
         h3,
-        'Up',
+        'Left',
         1,
         FFA_GHOST_COLOR,
         FFA_BOT_NAMES[2] ?? 'Nakamotor ⚡',
@@ -555,6 +556,32 @@ export function stepGame(state: GameState): TickResult {
         plan.capturer === 1 ? [1, 2] : [2, 1];
       for (const index of aiOrder) {
         if (!isPlayerActive(state, index)) continue;
+        if (!isPlayerHuman(state, index)) decideAiForPlayer(state, index);
+      }
+    } else if (isFfaMode(state)) {
+      const plan = getFfaEconomyPlan(state);
+      const aiOrder: PowerUpPlayerIndex[] = [];
+      if (plan.humanContester != null && isPlayerActive(state, plan.humanContester)) {
+        aiOrder.push(plan.humanContester);
+      }
+      if (
+        plan.humanFlanker != null &&
+        plan.humanFlanker !== plan.humanContester &&
+        isPlayerActive(state, plan.humanFlanker)
+      ) {
+        aiOrder.push(plan.humanFlanker);
+      }
+      for (const idx of [1, 2, 3] as FfaAiBotIndex[]) {
+        if (
+          idx === plan.humanContester ||
+          idx === plan.humanFlanker ||
+          !isPlayerActive(state, idx)
+        ) {
+          continue;
+        }
+        aiOrder.push(idx);
+      }
+      for (const index of aiOrder) {
         if (!isPlayerHuman(state, index)) decideAiForPlayer(state, index);
       }
     } else {
@@ -1111,7 +1138,7 @@ function resetSnake(state: GameState, player: PlayerId): void {
   const sb = state.shrinkBorder;
 
   if (player === 'P1') {
-    if (teamMode === 'ffa') {
+    if (teamMode === 'ffa' || teamMode === '2v1') {
       let head: GridPos = [4, 4];
       let body: GridPos[] = [bodySegmentBehindHead(head, 'Right')];
       if (conv && sb) {
@@ -1140,7 +1167,7 @@ function resetSnake(state: GameState, player: PlayerId): void {
     return;
   }
 
-  if (teamMode === 'ffa') {
+  if (teamMode === 'ffa' || teamMode === '2v1') {
     let head: GridPos = [46, 4];
     let body: GridPos[] = [bodySegmentBehindHead(head, 'Left')];
     if (conv && sb) {
@@ -1165,6 +1192,9 @@ function resetSnake(state: GameState, player: PlayerId): void {
   state.p2.dir = '';
   state.p2.dirWanted = 'Left';
   state.currentCaptureP2 = '2%';
+  if (getAiTierForPlayer(state, 1) === 'stacker') {
+    markStackerCaution(state, 1);
+  }
   if (!retainSpeed) {
     clearPowerUpsForPlayer(state, 1);
   }
@@ -1306,7 +1336,7 @@ function resetExtraSnake(extra: ExtraSnake, state: GameState): void {
   let head: GridPos;
   let dirWanted: Direction;
 
-  if (teamMode === 'ffa') {
+  if (teamMode === 'ffa' || teamMode === '2v1') {
     ({ head, dirWanted } = ffaExtraSpawnLayout(extra, state));
   } else {
     head = [extra.spawnHead[0], extra.spawnHead[1]];
@@ -2135,6 +2165,14 @@ function blockedSetForPlayer(
       add(predictedNextHead(state, teammate));
     }
   }
+  if (isFfaMode(state) && playerIndex !== 0) {
+    for (const idx of [1, 2, 3] as PowerUpPlayerIndex[]) {
+      if (idx === playerIndex || !isPlayerActive(state, idx)) continue;
+      const s = getSnakeByIndex(state, idx);
+      add(s.head);
+      s.body.forEach(add);
+    }
+  }
   return blocked;
 }
 
@@ -2176,6 +2214,14 @@ function applyPathToPlayer(
       if (samePos(predictedNextHead(state, teammate), next)) return;
     }
   }
+  if (isFfaMode(state) && playerIndex !== 0) {
+    for (const idx of [1, 2, 3] as PowerUpPlayerIndex[]) {
+      if (idx === playerIndex || !isPlayerActive(state, idx)) continue;
+      const s = getSnakeByIndex(state, idx);
+      if (s.body.some((p) => samePos(p, next))) return;
+      if (samePos(s.head, next)) return;
+    }
+  }
   const snake = getSnakeByIndex(state, playerIndex);
   const [x, y] = snake.head;
   let dir: Exclude<Direction, ''> | null = null;
@@ -2199,7 +2245,18 @@ function expectedSatsForFood(
   playerIndex: PowerUpPlayerIndex,
   _cb: Coinbase
 ): number {
-  const lenAfter = snakeLengthForPlayer(state, playerIndex) + 1;
+  let lenAfter = snakeLengthForPlayer(state, playerIndex) + 1;
+  if (
+    is2v1Mode(state) &&
+    (playerIndex === 1 || playerIndex === 2)
+  ) {
+    const p2Len = isPlayerActive(state, 1) ? state.p2.body.length : 0;
+    const p3Len =
+      isPlayerActive(state, 2) && state.extraSnakes[0]
+        ? state.extraSnakes[0].snake.body.length
+        : 0;
+    lenAfter = p2Len + p3Len + 1;
+  }
   const pct = capturePercentByLength(lenAfter);
   return Math.floor((state.totalPoints * pct) / 100);
 }
@@ -2296,14 +2353,587 @@ function decideStackerForPlayer(
   state: GameState,
   playerIndex: PowerUpPlayerIndex
 ): void {
-  const head = getPlayerHead(state, playerIndex);
-  const target = nearestCoinbaseForPlayer(state, playerIndex);
+  const target = getStackerCommittedCoin(state, playerIndex);
   if (!target) return;
-  applyStackerPathToPlayer(
-    state,
+  applyStackerGreedyStep(state, playerIndex, target);
+}
+
+const STACKER_COIN_LOCK_TICKS_MIN = 8;
+const STACKER_COIN_LOCK_TICKS_MAX = 12;
+const STACKER_CAUTION_TICKS = 5;
+
+const stackerCoinLock = new WeakMap<
+  GameState,
+  Map<PowerUpPlayerIndex, { coinKey: string; untilTick: number }>
+>();
+
+const stackerCautionUntil = new WeakMap<
+  GameState,
+  Map<PowerUpPlayerIndex, number>
+>();
+
+function markStackerCaution(state: GameState, playerIndex: PowerUpPlayerIndex): void {
+  let map = stackerCautionUntil.get(state);
+  if (!map) {
+    map = new Map();
+    stackerCautionUntil.set(state, map);
+  }
+  map.set(
     playerIndex,
-    findStackerPathForPlayer(state, playerIndex, head, target)
+    state.tickCount +
+      STACKER_CAUTION_TICKS +
+      Math.floor(gameRandom() * 2)
   );
+}
+
+function isStackerInCaution(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex
+): boolean {
+  const until = stackerCautionUntil.get(state)?.get(playerIndex);
+  return until != null && state.tickCount < until;
+}
+
+function getStackerCommittedCoin(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex
+): GridPos | null {
+  let map = stackerCoinLock.get(state);
+  if (!map) {
+    map = new Map();
+    stackerCoinLock.set(state, map);
+  }
+  const existing = map.get(playerIndex);
+  if (existing && state.tickCount < existing.untilTick) {
+    const stillThere = state.coinbases.some(
+      (cb) => !cb.isDecoy && posKey(cb.pos) === existing.coinKey
+    );
+    if (stillThere) {
+      const cb = state.coinbases.find(
+        (c) => !c.isDecoy && posKey(c.pos) === existing.coinKey
+      );
+      if (cb) return cb.pos;
+    }
+  }
+  const target = nearestCoinbaseForPlayer(state, playerIndex);
+  if (!target) return null;
+  const lockTicks =
+    STACKER_COIN_LOCK_TICKS_MIN +
+    Math.floor(
+      gameRandom() *
+        (STACKER_COIN_LOCK_TICKS_MAX - STACKER_COIN_LOCK_TICKS_MIN + 1)
+    );
+  map.set(playerIndex, {
+    coinKey: posKey(target),
+    untilTick: state.tickCount + lockTicks,
+  });
+  return target;
+}
+
+function headAfterDir(head: GridPos, dir: Exclude<Direction, ''>): GridPos {
+  if (dir === 'Up') return [head[0], head[1] - 1];
+  if (dir === 'Down') return [head[0], head[1] + 1];
+  if (dir === 'Left') return [head[0] - 1, head[1]];
+  return [head[0] + 1, head[1]];
+}
+
+function applyStackerGreedyStep(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  target: GridPos
+): void {
+  const snake = getSnakeByIndex(state, playerIndex);
+  const head = snake.head;
+  const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
+  let safe = dirs.filter((d) => !wouldHitWall(state, snake, d));
+
+  safe = safe.filter((d) => {
+    const next = headAfterDir(head, d);
+    const count = activePlayerCount(state);
+    for (let i = 0; i < count; i += 1) {
+      if (i === playerIndex) continue;
+      if (!isPlayerActive(state, i as PowerUpPlayerIndex)) continue;
+      const rival = getSnakeByIndex(state, i as PowerUpPlayerIndex);
+      if (rival.body.some((p) => samePos(p, next))) return false;
+    }
+    return true;
+  });
+
+  if (isStackerInCaution(state, playerIndex) && isPlayerActive(state, 0)) {
+    safe = safe.filter((d) => {
+      const next = headAfterDir(head, d);
+      if (samePos(next, state.p1.head)) return false;
+      if (state.p1.body.some((p) => samePos(p, next))) return false;
+      return true;
+    });
+  }
+
+  if (safe.length === 0) return;
+
+  if (gameRandom() < 0.2) {
+    applyAiDirToSnake(snake, safe[Math.floor(gameRandom() * safe.length)]!);
+    return;
+  }
+
+  const preferred = preferredDirToward(head, target);
+  if (safe.includes(preferred)) {
+    applyAiDirToSnake(snake, preferred);
+    return;
+  }
+
+  let bestDir = safe[0]!;
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (const d of safe) {
+    const next = headAfterDir(head, d);
+    const dist = gridDist(next, target);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestDir = d;
+    }
+  }
+  applyAiDirToSnake(snake, bestDir);
+}
+
+type FfaAiBotIndex = 1 | 2 | 3;
+
+interface FfaEconomyPlan {
+  coinByBot: Map<FfaAiBotIndex, GridPos | null>;
+  humanContester: FfaAiBotIndex | null;
+  humanFlanker: FfaAiBotIndex | null;
+  humanCoin: GridPos | null;
+  allContestHuman: boolean;
+}
+
+const ffaEconomyPlanCache = new WeakMap<
+  GameState,
+  { tick: number; plan: FfaEconomyPlan }
+>();
+
+const ffaContesterLock = new WeakMap<
+  GameState,
+  { contester: FfaAiBotIndex; coinKey: string }
+>();
+
+const ffaP1LeadTicks = new WeakMap<GameState, number>();
+const ffaP1ScoreSnapshot = new WeakMap<GameState, number>();
+
+function updateFfaSnowballBreaker(state: GameState): boolean {
+  const scores = getFfaScores(state);
+  const p1 = scores[0] ?? 0;
+  const maxAi = Math.max(scores[1] ?? 0, scores[2] ?? 0, scores[3] ?? 0);
+  const leading = p1 >= maxAi - 50;
+  const prev = ffaP1LeadTicks.get(state) ?? 0;
+  const next = leading ? prev + 1 : 0;
+  ffaP1LeadTicks.set(state, next);
+  return next >= 3;
+}
+
+function isP1ActivelyGainingScore(state: GameState): boolean {
+  const scores = getFfaScores(state);
+  const p1 = scores[0] ?? 0;
+  const snap = ffaP1ScoreSnapshot.get(state);
+  ffaP1ScoreSnapshot.set(state, p1);
+  return snap != null && p1 > snap;
+}
+
+function activeFfaAiBots(state: GameState): FfaAiBotIndex[] {
+  return ([1, 2, 3] as FfaAiBotIndex[]).filter((i) => isPlayerActive(state, i));
+}
+
+function wouldCollideWithFfaRivalAt(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  cell: GridPos
+): boolean {
+  for (const rival of [1, 2, 3] as PowerUpPlayerIndex[]) {
+    if (rival === playerIndex || !isPlayerActive(state, rival)) continue;
+    const snake = getSnakeByIndex(state, rival);
+    if (samePos(snake.head, cell)) return true;
+    if (snake.body.some((p) => samePos(p, cell))) return true;
+  }
+  return false;
+}
+
+function scoreCoinForFfaAssignment(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  coin: GridPos,
+  takenCoins: Set<string>
+): number {
+  const cb = state.coinbases.find((c) => !c.isDecoy && samePos(c.pos, coin));
+  if (!cb) return Number.NEGATIVE_INFINITY;
+  let score = scoreCoinForPlayer(state, playerIndex, cb, true);
+  if (takenCoins.has(posKey(coin))) score -= 10_000;
+  if (isPlayerActive(state, 0)) {
+    const dHuman = pathStepsToCoin(state, 0, coin);
+    const dSelf = pathStepsToCoin(state, playerIndex, coin);
+    if (dHuman <= dSelf + 1) score += 600;
+    if (dHuman + 4 < dSelf) score -= 900;
+    if (isP1ActivelyGainingScore(state)) {
+      const center = playableMapCenter(state);
+      const humanDist = gridDist(state.p1.head, center);
+      const coinDist = gridDist(coin, center);
+      if (coinDist > humanDist + 8) score -= 1200;
+    }
+  }
+  for (const other of [1, 2, 3] as PowerUpPlayerIndex[]) {
+    if (other === playerIndex || !isPlayerActive(state, other)) continue;
+    const dOther = pathStepsToCoin(state, other, coin);
+    const dSelf = pathStepsToCoin(state, playerIndex, coin);
+    if (dOther + 3 < dSelf) score -= 800;
+  }
+  return score;
+}
+
+function pickFfaHumanCoin(state: GameState): GridPos | null {
+  return (
+    chooseBestCoinbaseForPlayer(state, 0, true) ?? nearestCoinbaseTarget(state)
+  );
+}
+
+function pickFfaHumanContester(
+  state: GameState,
+  humanCoin: GridPos
+): FfaAiBotIndex | null {
+  const coinKey = posKey(humanCoin);
+  const lock = ffaContesterLock.get(state);
+  if (lock?.coinKey === coinKey && isPlayerActive(state, lock.contester)) {
+    return lock.contester;
+  }
+
+  const p1Path = findPlayerFoodPath(state, humanCoin);
+  const blockIdx = Math.min(
+    SOVEREIGN_PREDICT_STEPS + 1,
+    Math.max(2, p1Path.length - 1)
+  );
+  const blockCell = p1Path[blockIdx];
+  if (!blockCell) return null;
+
+  let best: FfaAiBotIndex | null = null;
+  let bestSteps = Number.POSITIVE_INFINITY;
+  for (const bot of activeFfaAiBots(state)) {
+    const steps = pathStepsToCoin(state, bot, blockCell);
+    if (steps < bestSteps) {
+      bestSteps = steps;
+      best = bot;
+    }
+  }
+  if (best) {
+    ffaContesterLock.set(state, { contester: best, coinKey });
+  }
+  return best;
+}
+
+function pickFfaHumanFlanker(
+  state: GameState,
+  humanContester: FfaAiBotIndex | null
+): FfaAiBotIndex | null {
+  let best: FfaAiBotIndex | null = null;
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (const bot of activeFfaAiBots(state)) {
+    if (bot === humanContester) continue;
+    const d = gridDist(getPlayerHead(state, bot), state.p1.head);
+    if (d < bestDist) {
+      bestDist = d;
+      best = bot;
+    }
+  }
+  return best;
+}
+
+function shouldAssignFfaHumanContester(state: GameState): boolean {
+  return isPlayerActive(state, 0) && activeFfaAiBots(state).length >= 1;
+}
+
+function assignFfaCoins(
+  state: GameState,
+  bots: FfaAiBotIndex[],
+  humanContester: FfaAiBotIndex | null,
+  humanFlanker: FfaAiBotIndex | null,
+  coins: GridPos[]
+): Map<FfaAiBotIndex, GridPos | null> {
+  const map = new Map<FfaAiBotIndex, GridPos | null>();
+  const taken = new Set<string>();
+  const capturers = bots.filter(
+    (b) => b !== humanContester && b !== humanFlanker
+  );
+
+  for (const bot of capturers) {
+    let best: GridPos | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    for (const coin of coins) {
+      const score = scoreCoinForFfaAssignment(state, bot, coin, taken);
+      if (score > bestScore) {
+        bestScore = score;
+        best = coin;
+      }
+    }
+    if (best) {
+      map.set(bot, best);
+      taken.add(posKey(best));
+    } else {
+      map.set(bot, null);
+    }
+  }
+  if (humanContester) map.set(humanContester, null);
+  if (humanFlanker) map.set(humanFlanker, null);
+  return map;
+}
+
+function computeFfaEconomyPlan(state: GameState): FfaEconomyPlan {
+  const bots = activeFfaAiBots(state);
+  const coins = state.coinbases
+    .filter((cb) => !cb.isDecoy)
+    .map((cb) => cb.pos);
+  const humanCoin = pickFfaHumanCoin(state);
+  const allContestHuman =
+    updateFfaSnowballBreaker(state) &&
+    isPlayerActive(state, 0) &&
+    humanCoin != null;
+
+  let humanContester: FfaAiBotIndex | null = null;
+  let humanFlanker: FfaAiBotIndex | null = null;
+  if (shouldAssignFfaHumanContester(state) && humanCoin) {
+    humanContester = pickFfaHumanContester(state, humanCoin);
+    humanFlanker = pickFfaHumanFlanker(state, humanContester);
+  } else {
+    ffaContesterLock.delete(state);
+  }
+
+  let coinByBot: Map<FfaAiBotIndex, GridPos | null>;
+  if (allContestHuman && humanCoin) {
+    coinByBot = new Map<FfaAiBotIndex, GridPos | null>();
+    for (const bot of bots) {
+      if (bot === humanContester || bot === humanFlanker) {
+        coinByBot.set(bot, null);
+      } else {
+        coinByBot.set(bot, humanCoin);
+      }
+    }
+  } else {
+    coinByBot =
+      coins.length > 0
+        ? assignFfaCoins(
+            state,
+            bots,
+            humanContester,
+            humanFlanker,
+            coins
+          )
+        : new Map<FfaAiBotIndex, GridPos | null>();
+  }
+
+  return {
+    coinByBot,
+    humanContester,
+    humanFlanker,
+    humanCoin,
+    allContestHuman,
+  };
+}
+
+function getFfaEconomyPlan(state: GameState): FfaEconomyPlan {
+  const cached = ffaEconomyPlanCache.get(state);
+  if (cached?.tick === state.tickCount) return cached.plan;
+  const plan = computeFfaEconomyPlan(state);
+  ffaEconomyPlanCache.set(state, { tick: state.tickCount, plan });
+  return plan;
+}
+
+function decideFfaHumanBlock(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  humanCoin: GridPos
+): boolean {
+  const p1Path = findPlayerFoodPath(state, humanCoin);
+  const blockIdx = Math.min(
+    SOVEREIGN_PREDICT_STEPS + 1,
+    Math.max(2, p1Path.length - 1)
+  );
+  const blockCell = p1Path[blockIdx];
+  if (!blockCell) return false;
+
+  const head = getPlayerHead(state, botIndex);
+  if (gridDist(head, blockCell) <= 1) return true;
+
+  const path = findPathForPlayer(state, botIndex, head, blockCell);
+  if (path.length > 1) {
+    const next = path[1]!;
+    if (!wouldCollideWithFfaRivalAt(state, botIndex, next)) {
+      applyPathToPlayer(state, botIndex, path);
+      return true;
+    }
+  }
+  return false;
+}
+
+function decideFfaFlankHuman(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  humanCoin: GridPos | null
+): void {
+  const snake = getSnakeByIndex(state, botIndex);
+  const head = snake.head;
+  let target: GridPos = playableMapCenter(state);
+  if (humanCoin && isPlayerActive(state, 0)) {
+    const p1Path = findPlayerFoodPath(state, humanCoin);
+    const idx = Math.min(SOVEREIGN_PREDICT_STEPS + 3, p1Path.length - 1);
+    if (idx >= 2) target = p1Path[idx]!;
+  }
+  if (gridDist(head, target) <= 1) return;
+  const path = findPathForPlayer(state, botIndex, head, target);
+  if (path.length > 1) {
+    const next = path[1]!;
+    if (!wouldCollideWithFfaRivalAt(state, botIndex, next)) {
+      applyPathToPlayer(state, botIndex, path);
+      return;
+    }
+  }
+  const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
+  let bestDir: Exclude<Direction, ''> | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  for (const d of dirs) {
+    if (wouldHitWall(state, snake, d)) continue;
+    const next: GridPos =
+      d === 'Up'
+        ? [head[0], head[1] - 1]
+        : d === 'Down'
+          ? [head[0], head[1] + 1]
+          : d === 'Left'
+            ? [head[0] - 1, head[1]]
+            : [head[0] + 1, head[1]];
+    if (wouldCollideWithFfaRivalAt(state, botIndex, next)) continue;
+    let score = gridDist(next, state.p1.head);
+    if (humanCoin) score += gridDist(next, humanCoin) * 0.25;
+    if (score > bestScore) {
+      bestScore = score;
+      bestDir = d;
+    }
+  }
+  if (bestDir) applyAiDirToSnake(snake, bestDir);
+}
+
+function decideFfaCoinChase(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex,
+  coinTarget: GridPos | null
+): void {
+  const head = getPlayerHead(state, botIndex);
+  if (!coinTarget) {
+    decideFfaFlankHuman(state, botIndex, pickFfaHumanCoin(state));
+    return;
+  }
+  const path = findPathForPlayer(state, botIndex, head, coinTarget);
+  if (path.length > 1) {
+    const next = path[1]!;
+    if (!wouldCollideWithFfaRivalAt(state, botIndex, next)) {
+      applyPathToPlayer(state, botIndex, path);
+      return;
+    }
+  }
+  const snake = getSnakeByIndex(state, botIndex);
+  const dirs: Exclude<Direction, ''>[] = ['Up', 'Down', 'Left', 'Right'];
+  let bestDir: Exclude<Direction, ''> | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  for (const d of dirs) {
+    if (wouldHitWall(state, snake, d)) continue;
+    const next: GridPos =
+      d === 'Up'
+        ? [head[0], head[1] - 1]
+        : d === 'Down'
+          ? [head[0], head[1] + 1]
+          : d === 'Left'
+            ? [head[0] - 1, head[1]]
+            : [head[0] + 1, head[1]];
+    if (wouldCollideWithFfaRivalAt(state, botIndex, next)) continue;
+    const score = -gridDist(next, coinTarget);
+    if (score > bestScore) {
+      bestScore = score;
+      bestDir = d;
+    }
+  }
+  if (bestDir) applyAiDirToSnake(snake, bestDir);
+}
+
+function decideFfaEconomyCoordinated(
+  state: GameState,
+  botIndex: PowerUpPlayerIndex
+): void {
+  if (botIndex === 0 || botIndex > 3) return;
+  const plan = getFfaEconomyPlan(state);
+  const aiBot = botIndex as FfaAiBotIndex;
+
+  if (
+    plan.allContestHuman &&
+    plan.humanCoin &&
+    isPlayerActive(state, 0)
+  ) {
+    if (aiBot === plan.humanContester) {
+      if (decideFfaHumanBlock(state, botIndex, plan.humanCoin)) return;
+      decideFfaFlankHuman(state, botIndex, plan.humanCoin);
+      return;
+    }
+    if (aiBot === plan.humanFlanker) {
+      decideFfaFlankHuman(state, botIndex, plan.humanCoin);
+      return;
+    }
+    decideFfaCoinChase(state, botIndex, plan.humanCoin);
+    return;
+  }
+
+  if (aiBot === plan.humanContester && plan.humanCoin) {
+    if (decideFfaHumanBlock(state, botIndex, plan.humanCoin)) return;
+    decideFfaFlankHuman(state, botIndex, plan.humanCoin);
+    return;
+  }
+
+  if (aiBot === plan.humanFlanker && plan.humanCoin) {
+    decideFfaFlankHuman(state, botIndex, plan.humanCoin);
+    return;
+  }
+
+  const assignedCoin = plan.coinByBot.get(aiBot) ?? null;
+  const humanCoin = plan.humanCoin;
+  const chaseCoin =
+    assignedCoin ??
+    (humanCoin && isPlayerActive(state, 0)
+      ? humanCoin
+      : chooseBestCoinbaseForPlayer(state, botIndex, true));
+  decideFfaCoinChase(state, botIndex, chaseCoin);
+}
+
+function tryNoderunnerLightDenial(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  coinTarget: GridPos
+): boolean {
+  if (
+    getAiTierForPlayer(state, playerIndex) !== 'noderunner' ||
+    activePlayerCount(state) !== 2 ||
+    !isPlayerActive(state, 0)
+  ) {
+    return false;
+  }
+  const p1Len = snakeLengthForPlayer(state, 0);
+  if (p1Len < 4) return false;
+
+  const p1Dist = gridDist(state.p1.head, coinTarget);
+  const botDist = gridDist(getPlayerHead(state, playerIndex), coinTarget);
+  if (p1Dist > 6 || p1Dist > botDist + 2) return false;
+
+  const p1Path = findPlayerFoodPath(state, coinTarget);
+  const blockIdx = Math.min(6, Math.max(4, p1Path.length - 1));
+  const blockCell = p1Path[blockIdx];
+  if (!blockCell) return false;
+
+  const head = getPlayerHead(state, playerIndex);
+  const path = findPathForPlayer(state, playerIndex, head, blockCell);
+  if (path.length <= 1) return false;
+  const coinPath = findPathForPlayer(state, playerIndex, head, coinTarget);
+  if (path.length > coinPath.length + 1) return false;
+
+  applyPathToPlayer(state, playerIndex, path);
+  return true;
 }
 
 function decideEconomyChaseForPlayer(
@@ -2312,6 +2942,11 @@ function decideEconomyChaseForPlayer(
   chasePowerUps: boolean,
   contestHuman = false
 ): void {
+  if (isFfaMode(state) && playerIndex !== 0) {
+    decideFfaEconomyCoordinated(state, playerIndex);
+    return;
+  }
+
   const head = getPlayerHead(state, playerIndex);
   const snake = getSnakeByIndex(state, playerIndex);
 
@@ -2345,6 +2980,13 @@ function decideEconomyChaseForPlayer(
     playerIndex,
     contest
   );
+  if (
+    bestCoinbase &&
+    getAiTierForPlayer(state, playerIndex) === 'noderunner' &&
+    tryNoderunnerLightDenial(state, playerIndex, bestCoinbase)
+  ) {
+    return;
+  }
   if (bestCoinbase) {
     const path = findPathForPlayer(state, playerIndex, head, bestCoinbase);
     if (path.length > 1) {
@@ -2368,7 +3010,7 @@ function decideSovereignDuelLegacy(
     return true;
   }
   if (isFfaMode(state)) {
-    decideEconomyChaseForPlayer(state, botIndex, true, true);
+    decideFfaEconomyCoordinated(state, botIndex);
     return true;
   }
   if (activePlayerCount(state) !== 2) return false;
@@ -2403,7 +3045,7 @@ export function decideAiForPlayer(
       decideStackerForPlayer(state, playerIndex);
       break;
     case 'noderunner':
-      decideEconomyChaseForPlayer(state, playerIndex, true);
+      decideEconomyChaseForPlayer(state, playerIndex, true, true);
       break;
     case 'sovereign':
       if (!decideSovereignDuelLegacy(state, playerIndex)) {
@@ -2417,10 +3059,15 @@ export function decideAiForPlayer(
 
 const SOVEREIGN_INTERCEPT_RANGE = 10;
 const SOVEREIGN_INTERCEPT_COMMIT_RANGE = 20;
-const SOVEREIGN_INTERCEPT_PATH_SLACK = 2;
+const SOVEREIGN_LIGHT_INTERCEPT_SLACK = 1;
 const SOVEREIGN_COIN_CONTEST_SLACK = 6;
 const SOVEREIGN_PREDICT_STEPS = 8;
+const SOVEREIGN_HEAD_TRADE_LEN_ADVANTAGE = 3;
+const SOVEREIGN_WALL_ESCAPE_TICKS = 8;
 const SOVEREIGN_TAIL_SIM_MAX_STEPS = 12;
+const SOVEREIGN_INTERCEPT_PATH_SLACK = 1;
+
+const sovereignWallEscapeUntil = new WeakMap<GameState, number>();
 
 interface SovereignIntercept {
   headTarget: GridPos;
@@ -2785,75 +3432,151 @@ function decideEconomyChase(state: GameState): void {
   if (safe.length > 0) applyAiDir(state, safe[0]);
 }
 
-/** Sovereign: economy play + intercept when racing P1 for the best coin. */
+/** Sovereign: food-first racer with light intercept and gated head-trades. */
 function decideSovereign(
   state: GameState,
   botIndex: PowerUpPlayerIndex = 1
 ): void {
+  const escapeUntil = sovereignWallEscapeUntil.get(state) ?? 0;
+  if (state.tickCount < escapeUntil) {
+    const center = playableMapCenter(state);
+    const path = findPath(state, state.p2.head, center, 'body-only');
+    if (path.length >= 2) {
+      applyPathToAi(state, path);
+      return;
+    }
+  }
+
+  if (isSovereignWallTrapped(state)) {
+    sovereignWallEscapeUntil.set(
+      state,
+      state.tickCount + SOVEREIGN_WALL_ESCAPE_TICKS
+    );
+    const center = playableMapCenter(state);
+    const path = findPath(state, state.p2.head, center, 'body-only');
+    if (path.length >= 2) {
+      applyPathToAi(state, path);
+      return;
+    }
+  }
+
   const coinTarget =
     chooseBestCoinbaseForPlayer(state, botIndex, true) ??
     nearestCoinbaseTarget(state);
-  const start: GridPos = [state.p2.head[0], state.p2.head[1]];
-  const coinPath = coinTarget
-    ? findPath(state, start, coinTarget, 'head-and-body')
-    : [start];
-
-  const existingPlan = getSovereignInterceptPlan(state, botIndex);
-  if (existingPlan?.mode === 'intercept' && coinTarget) {
-    const refreshed = findSovereignInterceptTarget(state, coinTarget);
-    const plan: SovereignInterceptPlan = refreshed
-      ? { mode: 'intercept', ...refreshed }
-      : existingPlan;
-    const moveTarget = sovereignInterceptMoveTarget(state, plan);
-    const avoidance = sovereignPathAvoidance(plan.strategy);
-    const interceptPath = findPath(state, start, moveTarget, avoidance);
-
-    if (
-      shouldContinueSovereignIntercept(state, plan, interceptPath, coinTarget)
-    ) {
-      if (interceptPath.length >= 2) {
-        applyPathToAi(state, interceptPath);
-      } else if (isHoldingBlockCell(state, plan.blockCell)) {
-        applyHoldAtBlockCell(state, plan.blockCell);
-      }
-      setSovereignInterceptPlan(state, botIndex, {
-        mode: 'intercept',
-        headTarget: plan.headTarget,
-        blockCell: plan.blockCell,
-        strategy: plan.strategy,
-      });
-      return;
-    }
-    clearSovereignInterceptPlan(state, botIndex);
+  if (!coinTarget) {
+    decideEconomyChaseForPlayer(state, botIndex, true, true);
+    return;
   }
 
-  const intercept = coinTarget
-    ? findSovereignInterceptTarget(state, coinTarget)
-    : null;
-  if (intercept && coinTarget) {
-    const avoidance = sovereignPathAvoidance(intercept.strategy);
-    const interceptPath = findPath(
-      state,
-      start,
-      intercept.headTarget,
-      avoidance
-    );
+  const start: GridPos = [state.p2.head[0], state.p2.head[1]];
+  const foodAvoidance: PlayerPathAvoidance = 'body-only';
+  const coinPath = findPath(state, start, coinTarget, foodAvoidance);
+
+  if (shouldCommitHeadTrade(state, coinTarget)) {
+    const p1Path = findPlayerFoodPath(state, coinTarget);
+    const tradeCell =
+      p1Path[Math.min(4, Math.max(1, p1Path.length - 1))] ?? coinTarget;
+    const tradePath = findPath(state, start, tradeCell, 'body-only');
     if (
-      shouldStartSovereignIntercept(state, coinTarget, coinPath, interceptPath)
+      tradePath.length >= 2 &&
+      tradePath.length <= coinPath.length + SOVEREIGN_LIGHT_INTERCEPT_SLACK
+    ) {
+      applyPathToAi(state, tradePath);
+      return;
+    }
+  }
+
+  const blockCell = findLightSovereignBlockCell(state, coinTarget);
+  if (
+    blockCell &&
+    playerStillContestingCoin(state, coinTarget) &&
+    botLengthVsP1(state) >= -2
+  ) {
+    const interceptPath = findPath(state, start, blockCell, foodAvoidance);
+    if (
+      interceptPath.length >= 2 &&
+      interceptPath.length <= coinPath.length + SOVEREIGN_LIGHT_INTERCEPT_SLACK
     ) {
       applyPathToAi(state, interceptPath);
-      setSovereignInterceptPlan(state, botIndex, {
-        mode: 'intercept',
-        headTarget: intercept.headTarget,
-        blockCell: intercept.blockCell,
-        strategy: intercept.strategy,
-      });
       return;
     }
   }
 
   clearSovereignInterceptPlan(state, botIndex);
+  if (coinPath.length >= 2) {
+    applyPathToAi(state, coinPath);
+    return;
+  }
   decideEconomyChaseForPlayer(state, botIndex, true, true);
+}
+
+function botLengthVsP1(state: GameState): number {
+  return state.p2.body.length - state.p1.body.length;
+}
+
+function countOpenNeighbors(state: GameState, head: GridPos): number {
+  const neighbors: GridPos[] = [
+    [head[0] + 1, head[1]],
+    [head[0] - 1, head[1]],
+    [head[0], head[1] + 1],
+    [head[0], head[1] - 1],
+  ];
+  let n = 0;
+  for (const cell of neighbors) {
+    if (outOfBounds(state, cell)) continue;
+    if (hitsObstacle(state, cell)) continue;
+    if (state.p2.body.some((p) => samePos(p, cell))) continue;
+    n += 1;
+  }
+  return n;
+}
+
+function isSovereignWallTrapped(state: GameState): boolean {
+  if (countOpenNeighbors(state, state.p2.head) > 2) return false;
+  const [x, y] = state.p2.head;
+  const sb = state.shrinkBorder;
+  const left = sb?.left ?? 0;
+  const right = sb?.right ?? state.cols - 1;
+  const top = sb?.top ?? 0;
+  const bottom = sb?.bottom ?? state.rows - 1;
+  const margin = 2;
+  return (
+    x <= left + margin ||
+    x >= right - margin ||
+    y <= top + margin ||
+    y >= bottom - margin
+  );
+}
+
+function shouldCommitHeadTrade(
+  state: GameState,
+  coinTarget: GridPos
+): boolean {
+  if (botLengthVsP1(state) < SOVEREIGN_HEAD_TRADE_LEN_ADVANTAGE) return false;
+  if (!playerStillContestingCoin(state, coinTarget)) return false;
+  const p1Path = findPlayerFoodPath(state, coinTarget);
+  if (p1Path.length <= 1) return false;
+  const tradeCell =
+    p1Path[Math.min(4, Math.max(1, p1Path.length - 1))]!;
+  const start = state.p2.head;
+  const tradePath = findPath(state, start, tradeCell, 'body-only');
+  const coinPath = findPath(state, start, coinTarget, 'body-only');
+  if (tradePath.length > coinPath.length + SOVEREIGN_LIGHT_INTERCEPT_SLACK) {
+    return false;
+  }
+  const botPct = capturePercentByLength(state.p2.body.length);
+  const p1Pct = capturePercentByLength(state.p1.body.length);
+  return botPct >= p1Pct;
+}
+
+function findLightSovereignBlockCell(
+  state: GameState,
+  coinTarget: GridPos
+): GridPos | null {
+  const p1Path = findPlayerFoodPath(state, coinTarget);
+  if (p1Path.length <= 1) return null;
+  const blockIdx = Math.min(6, Math.max(2, p1Path.length - 1));
+  return p1Path[blockIdx] ?? null;
 }
 
 function chooseBestCoinbaseForAi(state: GameState): GridPos | null {
@@ -2987,16 +3710,19 @@ function findPath(
       ) {
         continue;
       }
-      if (is2v1Mode(state)) {
-        let blockedByTeammateNext = false;
-        for (const idx of [1, 2] as PowerUpPlayerIndex[]) {
+      if (is2v1Mode(state) || isFfaMode(state)) {
+        let blockedByRivalNext = false;
+        const rivals: PowerUpPlayerIndex[] = isFfaMode(state)
+          ? [1, 2, 3]
+          : [1, 2];
+        for (const idx of rivals) {
           if (!isPlayerActive(state, idx)) continue;
           if (samePos(neighbor, predictedNextHead(state, idx))) {
-            blockedByTeammateNext = true;
+            blockedByRivalNext = true;
             break;
           }
         }
-        if (blockedByTeammateNext) continue;
+        if (blockedByRivalNext) continue;
       }
       if (
         playerAvoidance !== 'none' &&

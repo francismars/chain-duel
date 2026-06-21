@@ -8,6 +8,8 @@ export type PracticeFreePlayPanelHandle = {
   focusBeforeFooter: () => void;
 };
 
+export type ChallengeLaunchPhase = 'checking' | 'server' | 'entering';
+
 export type PracticeChallengesPanelHandle = {
   launchSelected: () => void;
   focusDefault: () => void;

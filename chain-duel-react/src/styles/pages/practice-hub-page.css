@@ -563,6 +563,96 @@
   animation: glowing 2s ease-in-out infinite;
 }
 
+.practice-hub-page
+  .practice-hub-panel-footer
+  .practice-start.button.practice-start--launching {
+  opacity: 0.72;
+  cursor: wait;
+  animation: practice-start-launch-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes practice-start-launch-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* Full-screen challenge launch feedback (portaled to body) */
+.practice-launch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: min(4vw, 24px);
+  box-sizing: border-box;
+}
+
+.practice-launch-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.practice-launch-overlay__card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: max(0.75rem, 1vw);
+  width: min(100%, 24rem);
+  padding: max(1.75rem, 2.2vw) max(1.75rem, 2.4vw);
+  text-align: center;
+  background: linear-gradient(
+    165deg,
+    rgba(22, 14, 28, 0.98) 0%,
+    rgba(8, 8, 10, 0.98) 100%
+  );
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.55);
+}
+
+.practice-launch-overlay__spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgb(255 255 255 / 0.12);
+  border-top-color: rgba(193, 126, 230, 0.9);
+  border-radius: 50%;
+  animation: practice-launch-spin 0.85s linear infinite;
+}
+
+@keyframes practice-launch-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.practice-launch-overlay__title {
+  margin: 0;
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(16px, 1.35vw, 22px);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.94);
+  line-height: 1.25;
+}
+
+.practice-launch-overlay__hint {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(12px, 0.95vw, 14px);
+  font-weight: 400;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.52);
+}
+
 .practice-free-play-panel {
   gap: 0;
   height: auto;

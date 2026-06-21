@@ -22,6 +22,7 @@ import {
   applyTerminalGameOutcome,
   createGameState,
   getHudState,
+  isEliminationMode,
 } from '@/game/engine';
 import { initRunRng, clearRunRng } from '@/game/engine/runRng';
 import type { GameState } from '@/game/engine/types';
@@ -841,10 +842,16 @@ export default function Game() {
 
     const poll = window.setInterval(() => {
       const state = stateRef.current;
-      if (!state?.gameEnded || !state.winnerPlayer) return;
+      if (!state?.gameEnded) return;
+      const hasWinner =
+        state.winnerPlayer !== null ||
+        (isEliminationMode(state) && state.winnerName.length > 0);
+      if (!hasWinner) return;
       window.clearInterval(poll);
 
-      const won = state.winnerPlayer === 'P1';
+      const won =
+        state.winnerPlayer === 'P1' ||
+        (state.winnerName.length > 0 && state.winnerName === state.p1Name);
       const name = String(cfg.soloChallengeName ?? 'CHALLENGE');
       const bounty = Number(cfg.soloBounty ?? 0);
       const runId = String(cfg.challengeRunId ?? '');
@@ -909,7 +916,7 @@ export default function Game() {
     return () => window.clearInterval(poll);
   }, [loading, stateRef, socket]);
 
-  blockChallengeContinueRef.current = Boolean(soloEndData);
+  blockChallengeContinueRef.current = Boolean(soloEndData?.validating);
   challengeContinueLabelRef.current = soloEndData?.validating
     ? 'VALIDATING WIN ON SERVER…'
     : null;
@@ -1073,19 +1080,21 @@ export default function Game() {
       setCurrentP2Width(hud.currentWidthP2);
       if (hud.ffa?.players) {
         setFfaPlayers(hud.ffa.players);
-        const prev = ffaCapturePrevRef.current;
-        const flashes = hud.ffa.players.map((p, i) => p.capture !== prev[i]);
-        if (flashes.some(Boolean)) {
-          setFfaCaptureHighlights(flashes);
-          window.setTimeout(
-            () => setFfaCaptureHighlights([false, false, false, false]),
-            100
-          );
+        if (!is2v1) {
+          const prev = ffaCapturePrevRef.current;
+          const flashes = hud.ffa.players.map((p, i) => p.capture !== prev[i]);
+          if (flashes.some(Boolean)) {
+            setFfaCaptureHighlights(flashes);
+            window.setTimeout(
+              () => setFfaCaptureHighlights([false, false, false, false]),
+              100
+            );
+          }
+          ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
         }
-        ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
       }
     },
-    []
+    [is2v1]
   );
 
   const handleCaptureChanged = useCallback((side: 'P1' | 'P2') => {
@@ -1119,11 +1128,12 @@ export default function Game() {
       }
       const configMode = String(gameConfig.mode ?? '').toUpperCase();
       if (isPracticeChallengeConfig(gameConfig)) {
-        if (!soloEndData || soloEndData.validating) return;
+        if (soloEndData?.validating) return;
         const challengeId =
-          soloEndData.challengeId ?? String(gameConfig.challengeId ?? '');
+          soloEndData?.challengeId ?? String(gameConfig.challengeId ?? '');
+        const challengeWon = soloEndData?.won ?? false;
         if (challengeId) {
-          saveChallengeMenuFocus(challengeId, soloEndData.won);
+          saveChallengeMenuFocus(challengeId, challengeWon);
         }
         navigate(practiceHubExitPath(gameConfig));
         return;
@@ -1456,35 +1466,13 @@ export default function Game() {
                     id="capturingP2"
                     className={show2v1Ui ? 'game-2v1-captures' : undefined}
                   >
-                    {show2v1Ui ? (
-                      <div className="game-2v1-ai-team">
-                        {[aiHud1, aiHud2].map(
-                          (ai) =>
-                            ai && (
-                              <div key={ai.index} className="game-2v1-ai-slot">
-                                <div
-                                  className={`game-2v1-capture-row ${ffaCaptureHighlights[ai.index] ? 'highlight' : ''}`}
-                                >
-                                  capture{' '}
-                                  <span className="capturingAmount">
-                                    {ai.capture}
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        capture{' '}
-                        <span
-                          id="capturingP2Amount"
-                          className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}
-                        >
-                          {captureP2}
-                        </span>
-                      </>
-                    )}
+                    capture{' '}
+                    <span
+                      id="capturingP2Amount"
+                      className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}
+                    >
+                      {captureP2}
+                    </span>
                   </div>
                 </div>
 

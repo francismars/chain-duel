@@ -12,11 +12,11 @@ export const CHALLENGE_CLIENT_NAMES: Record<ChallengeIconId, string> = {
 
 export const CHALLENGE_CLIENT_TAGLINES: Record<ChallengeIconId, string> = {
   normie: 'BigToshi on easy mode',
-  stacker: 'Shortest path to your sats',
-  noderunner: 'Best coin, power-ups, no handouts',
-  ffa: 'Four bots. One survivor.',
-  gauntlet: 'BigToshi cuts your food line',
-  'sovereign-stack': 'Sovereign team. Pure skill.',
+  stacker: 'Cut the rusher off',
+  noderunner: 'Best coin wins',
+  ffa: 'Four bots. No free lunch.',
+  gauntlet: 'Farm first. Cut second.',
+  'sovereign-stack': 'Two chains. One bite.',
 };
 
 export const CHALLENGE_CLIENT_RANK: Record<ChallengeIconId, number> = {

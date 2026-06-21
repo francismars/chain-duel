@@ -247,7 +247,8 @@
 
 #capturingP2.game-2v1-captures {
   width: 33.3333%;
-  height: auto;
+  height: 100%;
+  text-align: right;
 }
 
 .game-2v1-ai-team {

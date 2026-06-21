@@ -13,6 +13,7 @@ import {
 } from '@/game/engine';
 import { initRunRng, clearRunRng } from '@/game/engine/runRng';
 import { CHALLENGE_START_SATS_PER_PLAYER } from '@/game/engine/constants';
+import { CHALLENGE_SIM_PRESETS } from '@/game/sim/challengeSim';
 import type { AiTier } from '@/game/engine/types';
 
 type CatalogEntry = {
@@ -22,10 +23,12 @@ type CatalogEntry = {
   powerup: boolean;
 };
 
-const PRESETS: CatalogEntry[] = [
-  { id: 'normie', format: '1v1', aiTier: 'normie', powerup: false },
-  { id: 'stacker', format: '1v1', aiTier: 'stacker', powerup: false },
-];
+const PRESETS: CatalogEntry[] = CHALLENGE_SIM_PRESETS.map((p) => ({
+  id: p.id,
+  format: p.config.format,
+  aiTier: p.config.aiTier,
+  powerup: p.config.powerup,
+}));
 
 const MAX_SIM_STEPS = 60_000;
 
@@ -124,11 +127,9 @@ describe('client vs marspay replay parity', () => {
           expect(client.simSteps).toBe(server.simSteps);
           expect(client.p1Score).toBe(server.p1Score);
           expect(client.p2Score).toBe(server.p2Score);
-          if (client.gameEnded) {
-            expect(client.winnerPlayer).not.toBeNull();
-          }
         }
       }
-    }
+    },
+    180_000
   );
 });

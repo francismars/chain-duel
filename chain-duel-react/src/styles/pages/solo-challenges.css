@@ -2565,3 +2565,73 @@ button.sc-gate__check--fail:hover {
   background: rgba(0, 0, 0, 0.35);
   box-shadow: 0 0 0 1px rgba(193, 126, 230, 0.38);
 }
+
+/* ── Challenge launch loading overlay ── */
+.practice-challenges-panel.solo-challenges-panel {
+  position: relative;
+}
+
+.sc-launch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(1rem, 1.5vw);
+  box-sizing: border-box;
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(3px);
+  border-radius: inherit;
+}
+
+.sc-launch-overlay__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: max(0.65rem, 0.85vw);
+  max-width: 22rem;
+  padding: max(1.25rem, 1.6vw) max(1.5rem, 2vw);
+  text-align: center;
+  background: linear-gradient(
+    165deg,
+    rgba(22, 14, 28, 0.96) 0%,
+    rgba(8, 8, 10, 0.96) 100%
+  );
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.45);
+}
+
+.sc-launch-overlay__spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid rgb(255 255 255 / 0.12);
+  border-top-color: rgba(193, 126, 230, 0.85);
+  border-radius: 50%;
+  animation: sc-launch-spin 0.9s linear infinite;
+}
+
+@keyframes sc-launch-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sc-launch-overlay__title {
+  margin: 0;
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: clamp(14px, 1.1vw, 18px);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.25;
+}
+
+.sc-launch-overlay__hint {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 400;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.45);
+}

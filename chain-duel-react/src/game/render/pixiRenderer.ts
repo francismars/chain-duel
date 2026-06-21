@@ -3,6 +3,7 @@ import type { GameState, GridPos } from '@/game/engine/types';
 import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
 import {
   drawPowerUpIconPixi,
+  drawPowerUpIconCanvas,
   drawPowerUpTileCanvas,
 } from '@/game/engine/powerUpIcons';
 import { preStartControllerBobPx } from '@/game/controllerTest';
@@ -945,21 +946,17 @@ export class PixiGameRenderer {
     const cy = pos[1] * rowSize + rowSize / 2;
 
     if (opts.isDecoy) {
-      // Decoy: looks almost identical to real coinbase but has a faint irregular pulse
-      const tick = Date.now() / 700;
-      const pulse = 0.7 + 0.3 * Math.sin(tick * 1.7 + 1.2);
-      this.scene
-        .circle(cx, cy, radius * 2.05)
-        .fill({ color: 0xffffff, alpha: 0.04 * pulse });
-      this.scene
-        .circle(cx, cy, radius * 1.7)
-        .fill({ color: 0xffffff, alpha: 0.07 * pulse });
-      this.scene
-        .circle(cx, cy, radius * 1.35)
-        .fill({ color: 0xffffff, alpha: 0.12 * pulse });
-      this.scene
-        .circle(cx, cy, radius * 0.9)
-        .fill({ color: 0xffffff, alpha: 0.85 * pulse });
+      const iconSize = Math.min(colSize, rowSize) * 1.8 * coinReveal;
+      const pulse = 0.7 + 0.3 * Math.sin((Date.now() / 700) * 1.7 + 1.2);
+      drawPowerUpIconPixi(
+        this.scene,
+        cx,
+        cy,
+        iconSize,
+        'DECOY',
+        POWERUP_COLORS.DECOY,
+        0.95 * pulse
+      );
       return;
     }
 
@@ -1639,6 +1636,20 @@ export class PixiGameRenderer {
     for (const cb of state.coinbases ?? []) {
       const cx = cb.pos[0] * colSize + colSize / 2;
       const cy = cb.pos[1] * rowSize + rowSize / 2;
+      if (cb.isDecoy) {
+        const iconSize = Math.min(colSize, rowSize) * 1.8;
+        const pulse = 0.7 + 0.3 * Math.sin((Date.now() / 700) * 1.7 + 1.2);
+        drawPowerUpIconCanvas(
+          ctx,
+          cx,
+          cy,
+          iconSize,
+          'DECOY',
+          POWERUP_COLORS.DECOY,
+          0.95 * pulse
+        );
+        continue;
+      }
       const radius = rowSize / 2 - rowSize / 5.4;
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);

@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -13,6 +14,7 @@ import { useGamepad } from '@/hooks/useGamepad';
 import { PracticeFreePlayPanel } from '@/features/practice/PracticeFreePlayPanel';
 import { PracticeChallengesPanel } from '@/features/practice/PracticeChallengesPanel';
 import type {
+  ChallengeLaunchPhase,
   PracticeChallengesPanelHandle,
   PracticeFreePlayPanelHandle,
 } from '@/features/practice/practicePanelHandles';
@@ -45,6 +47,24 @@ function readInitialHubFocus(): PracticeHubFocus {
   return { zone: 'playStyle', idx: playStyleToIdx(play) };
 }
 
+const CHALLENGE_LAUNCH_COPY: Record<
+  ChallengeLaunchPhase,
+  { title: string; hint: string }
+> = {
+  checking: {
+    title: 'Checking requirements…',
+    hint: 'Verifying Nostr bounty eligibility',
+  },
+  server: {
+    title: 'Starting challenge…',
+    hint: 'Preparing your bounty run on the server',
+  },
+  entering: {
+    title: 'Loading game…',
+    hint: 'Setting up your challenge match',
+  },
+};
+
 export default function PracticeHub() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -56,6 +76,10 @@ export default function PracticeHub() {
 
   const [hubFocus, setHubFocus] = useState<PracticeHubFocus>(readInitialHubFocus);
   const [pickerRowRevealed, setPickerRowRevealed] = useState(false);
+  const [challengeLaunching, setChallengeLaunching] = useState(false);
+  const [challengeLaunchPhase, setChallengeLaunchPhase] =
+    useState<ChallengeLaunchPhase>('server');
+  const [challengeLaunchSlowHint, setChallengeLaunchSlowHint] = useState(false);
 
   const playStyleRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const footerBackRef = useRef<HTMLButtonElement | null>(null);
@@ -109,6 +133,37 @@ export default function PracticeHub() {
     },
     [playSfx, setPlayStyle]
   );
+
+  const handleChallengeLaunchStateChange = useCallback(
+    (active: boolean, phase?: ChallengeLaunchPhase) => {
+      setChallengeLaunching(active);
+      if (active && phase) setChallengeLaunchPhase(phase);
+      if (!active) {
+        setChallengeLaunchPhase('server');
+        setChallengeLaunchSlowHint(false);
+      }
+    },
+    []
+  );
+
+  const startFooterPrimary = useCallback(() => {
+    if (playStyle === 'challenges' && challengeLaunching) return;
+    playSfx(SFX.MENU_CONFIRM);
+    if (playStyle === 'free') {
+      freePlayPanelRef.current?.startPractice();
+      return;
+    }
+    setChallengeLaunchPhase('server');
+    setChallengeLaunchSlowHint(false);
+    setChallengeLaunching(true);
+    challengesPanelRef.current?.launchSelected();
+  }, [playStyle, challengeLaunching, playSfx]);
+
+  useEffect(() => {
+    if (!challengeLaunching) return;
+    const timer = window.setTimeout(() => setChallengeLaunchSlowHint(true), 2500);
+    return () => window.clearTimeout(timer);
+  }, [challengeLaunching]);
 
   const enterPanel = useCallback(() => {
     setHubFocus({ zone: 'panel' });
@@ -556,6 +611,7 @@ export default function PracticeHub() {
               footerStartRef={footerStartRef}
               onExitToPlayStyle={enterPlayStyle}
               onEnterFooter={enterFooter}
+              onLaunchStateChange={handleChallengeLaunchStateChange}
             />
           </div>
         </div>
@@ -578,26 +634,56 @@ export default function PracticeHub() {
           <Button
             ref={footerStartRef}
             tabIndex={footerStartFocused ? 0 : -1}
+            disabled={playStyle === 'challenges' && challengeLaunching}
             className={[
               'practice-start',
               footerStartFocused ? 'practice-start--focused' : '',
+              challengeLaunching ? 'practice-start--launching' : '',
             ]
               .filter(Boolean)
               .join(' ')}
             onFocus={() => enterFooter('start')}
-            onClick={() => {
-              playSfx(SFX.MENU_CONFIRM);
-              if (playStyle === 'free') {
-                freePlayPanelRef.current?.startPractice();
-              } else {
-                challengesPanelRef.current?.launchSelected();
-              }
-            }}
+            onClick={startFooterPrimary}
           >
-            {playStyle === 'free' ? 'START QUICK MATCH' : 'START CHALLENGE'}
+            {playStyle === 'free'
+              ? 'START QUICK MATCH'
+              : challengeLaunching
+                ? 'STARTING CHALLENGE…'
+                : 'START CHALLENGE'}
           </Button>
         </div>
       </div>
+
+      {challengeLaunching && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className="practice-launch-overlay"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <div
+                className="practice-launch-overlay__backdrop"
+                aria-hidden="true"
+              />
+              <div className="practice-launch-overlay__card">
+                <span
+                  className="practice-launch-overlay__spinner"
+                  aria-hidden="true"
+                />
+                <p className="practice-launch-overlay__title">
+                  {CHALLENGE_LAUNCH_COPY[challengeLaunchPhase].title}
+                </p>
+                <p className="practice-launch-overlay__hint">
+                  {challengeLaunchSlowHint
+                    ? 'Still working — this can take a few seconds'
+                    : CHALLENGE_LAUNCH_COPY[challengeLaunchPhase].hint}
+                </p>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </div>

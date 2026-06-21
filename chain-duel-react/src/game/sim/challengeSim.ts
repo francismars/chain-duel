@@ -16,7 +16,12 @@ export type ChallengeSimConfig = {
   powerup: boolean;
 };
 
-export type HumanStrategy = 'greedy_food' | 'passive_ffa' | 'contest_when_long';
+export type HumanStrategy =
+  | 'greedy_food'
+  | 'passive_ffa'
+  | 'contest_when_long'
+  | 'head_on_bait'
+  | 'wall_trap';
 
 export type ChallengeSimResult = {
   winnerPlayer: string | null;
@@ -78,6 +83,24 @@ function pickHumanDir(
   strategy: HumanStrategy
 ): 'Up' | 'Down' | 'Left' | 'Right' | null {
   if (strategy === 'passive_ffa') return null;
+
+  if (strategy === 'head_on_bait') {
+    const [hx, hy] = state.p1.head;
+    const [bx, by] = state.p2.head;
+    if (Math.hypot(bx - hx, by - hy) <= 8) {
+      const facing = state.p1.dir || state.p1.dirWanted || 'Right';
+      return nearestFoodDir(state.p1.head, state.p2.head, facing);
+    }
+  }
+
+  if (strategy === 'wall_trap') {
+    const [bx, by] = state.p2.head;
+    if (by >= 3 && by <= 6) {
+      const facing = state.p1.dir || state.p1.dirWanted || 'Right';
+      return nearestFoodDir(state.p1.head, [bx, 2], facing);
+    }
+  }
+
   const coin = state.coinbases.find((c) => !c.isDecoy);
   if (!coin) return null;
   const facing = state.p1.dir || state.p1.dirWanted || 'Right';

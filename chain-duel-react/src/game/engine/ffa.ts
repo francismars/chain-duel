@@ -221,7 +221,7 @@ function captureLabelForLength(length: number): string {
   return '32%';
 }
 
-/** Steal sats from all other alive players proportional to their holdings. */
+/** Steal capture % of the pot from each alive opponent (FFA: equal shares; 2v1: proportional). */
 export function ffaApplyCaptureAmount(
   state: GameState,
   winner: FfaPlayerIndex,
@@ -229,25 +229,46 @@ export function ffaApplyCaptureAmount(
 ): void {
   const scores = getFfaScores(state);
   const count = multiplayerPlayerCount(state);
-  let othersTotal = 0;
+  const opponents: FfaPlayerIndex[] = [];
   for (let i = 0; i < count; i += 1) {
-    if (i === winner) continue;
-    if (!isFfaPlayerAlive(state, i as FfaPlayerIndex)) continue;
-    othersTotal += scores[i];
+    const idx = i as FfaPlayerIndex;
+    if (idx === winner) continue;
+    if (!isFfaPlayerAlive(state, idx)) continue;
+    opponents.push(idx);
   }
-  if (othersTotal <= 0) return;
+  if (opponents.length === 0) return;
 
   let distributed = 0;
-  for (let i = 0; i < count; i += 1) {
-    if (i === winner) continue;
-    if (!isFfaPlayerAlive(state, i as FfaPlayerIndex)) continue;
-    const loss = Math.min(
-      scores[i],
-      Math.floor(safeChange * (scores[i] / othersTotal))
-    );
-    scores[i] -= loss;
-    distributed += loss;
+
+  if (isFfaMode(state)) {
+    const perOpponent = Math.floor(safeChange / opponents.length);
+    let remainder = safeChange - perOpponent * opponents.length;
+    for (const idx of opponents) {
+      let loss = perOpponent;
+      if (remainder > 0) {
+        loss += 1;
+        remainder -= 1;
+      }
+      loss = Math.min(scores[idx], loss);
+      scores[idx] -= loss;
+      distributed += loss;
+    }
+  } else {
+    let othersTotal = 0;
+    for (const idx of opponents) {
+      othersTotal += scores[idx];
+    }
+    if (othersTotal <= 0) return;
+    for (const idx of opponents) {
+      const loss = Math.min(
+        scores[idx],
+        Math.floor(safeChange * (scores[idx] / othersTotal))
+      );
+      scores[idx] -= loss;
+      distributed += loss;
+    }
   }
+
   scores[winner] = Math.min(state.totalPoints, scores[winner] + distributed);
   setFfaScores(state, scores);
 
@@ -310,14 +331,11 @@ export function get2v1HudTeamScores(state: GameState): {
   };
 }
 
-/** Highest capture % among the two AI snakes — shown on the shared P2 HUD side. */
+/** Combined AI team capture % for 2v1 HUD. */
 export function get2v1AiTeamCaptureLabel(state: GameState): string {
   const p2Len = state.p2.body.length;
-  const p3Len = state.extraSnakes[0]?.snake.body?.length ?? 1;
-  const p2Pct = captureLabelForLength(p2Len).replace('%', '');
-  const p3Pct = captureLabelForLength(p3Len).replace('%', '');
-  const maxPct = Math.max(Number(p2Pct) || 2, Number(p3Pct) || 2);
-  return `${maxPct}%`;
+  const p3Len = state.extraSnakes[0]?.snake.body?.length ?? 0;
+  return captureLabelForLength(p2Len + p3Len);
 }
 
 export function buildFfaHud(state: GameState): FfaHudPlayer[] {
