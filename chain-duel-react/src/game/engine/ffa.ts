@@ -213,12 +213,30 @@ function ffaSnakeBodyLength(state: GameState, index: FfaPlayerIndex): number {
 }
 
 function captureLabelForLength(length: number): string {
+  return `${capturePercentForLength(length)}%`;
+}
+
+/** Capture % tier for a single snake body length. */
+export function capturePercentForLength(length: number): number {
   for (const level of CAPTURE_LEVELS) {
     if (length >= level.minLength && length <= level.maxLength) {
-      return `${level.percent}%`;
+      return level.percent;
     }
   }
-  return '32%';
+  return 32;
+}
+
+/**
+ * 2v1 AI team: each chain contributes its own capture tier ("two chains, one bite").
+ * Capped at 32% — same max as a single snake.
+ */
+export function get2v1TeamCapturePercent(state: GameState): number {
+  const p2Len = state.p2.body.length;
+  const p3Len = state.extraSnakes[0]?.snake.body.length ?? 0;
+  return Math.min(
+    32,
+    capturePercentForLength(p2Len) + capturePercentForLength(p3Len)
+  );
 }
 
 function teamIdFor2v1Player(index: FfaPlayerIndex): 0 | 1 {
@@ -292,8 +310,46 @@ export function ffaApplyCaptureAmount(
   checkFfaEliminations(state);
 }
 
+function check2v1GameEnd(state: GameState): void {
+  const scores = getFfaScores(state);
+  const humanAlive = isFfaPlayerAlive(state, 0) && scores[0] > 0;
+  const aiAlive =
+    (isFfaPlayerAlive(state, 1) && scores[1] > 0) ||
+    (isFfaPlayerAlive(state, 2) && scores[2] > 0);
+
+  if (humanAlive && aiAlive) return;
+
+  state.gameEnded = true;
+  if (humanAlive) {
+    state.winnerPlayer = 'P1';
+    state.winnerName = state.p1Name;
+    return;
+  }
+  if (aiAlive) {
+    state.winnerPlayer = 'P2';
+    if (isFfaPlayerAlive(state, 1) && scores[1] > 0) {
+      state.winnerName = state.p2Name;
+    } else {
+      state.winnerName = state.extraSnakes[0]?.name ?? state.p2Name;
+    }
+    return;
+  }
+  const aiScore = scores[1] + scores[2];
+  if (scores[0] >= aiScore) {
+    state.winnerPlayer = 'P1';
+    state.winnerName = state.p1Name;
+  } else {
+    state.winnerPlayer = 'P2';
+    state.winnerName = state.p2Name;
+  }
+}
+
 export function checkFfaGameEnd(state: GameState): void {
   if (!isEliminationMode(state)) return;
+  if (is2v1Mode(state)) {
+    check2v1GameEnd(state);
+    return;
+  }
   const count = multiplayerPlayerCount(state);
   const scores = getFfaScores(state);
   const alive: FfaPlayerIndex[] = [];
@@ -339,9 +395,7 @@ export function get2v1HudTeamScores(state: GameState): {
 
 /** Combined AI team capture % for 2v1 HUD. */
 export function get2v1AiTeamCaptureLabel(state: GameState): string {
-  const p2Len = state.p2.body.length;
-  const p3Len = state.extraSnakes[0]?.snake.body?.length ?? 0;
-  return captureLabelForLength(p2Len + p3Len);
+  return `${get2v1TeamCapturePercent(state)}%`;
 }
 
 export function buildFfaHud(state: GameState): FfaHudPlayer[] {

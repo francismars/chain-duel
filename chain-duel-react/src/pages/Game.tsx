@@ -1405,6 +1405,10 @@ export default function Game() {
                                   aria-hidden
                                 />
                               </div>
+                              <div className="game-2v1-capture-row">
+                                <span className="capturingAmount">{ai.capture}</span>{' '}
+                                capture
+                              </div>
                             </div>
                           )
                       )}

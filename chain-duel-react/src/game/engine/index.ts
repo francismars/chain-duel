@@ -1044,7 +1044,8 @@ function captureCoinbase(state: GameState): void {
         return;
       }
       changeScore(state, 'P2', cb);
-      increaseBody(state.p2);
+      if (is2v1Mode(state)) grow2v1AiTeamOnCapture(state);
+      else increaseBody(state.p2);
       if (!cb.reward) createNewCoinbase(state);
       state.coinbases.splice(i, 1);
       state.currentCaptureP2 = is2v1Mode(state)
@@ -1052,6 +1053,14 @@ function captureCoinbase(state: GameState): void {
         : getCaptureLabel(state.p2.body.length);
       return;
     }
+  }
+}
+
+function grow2v1AiTeamOnCapture(state: GameState): void {
+  if (!is2v1Mode(state)) return;
+  if (isPlayerActive(state, 1)) increaseBody(state.p2);
+  if (state.extraSnakes[0] && isPlayerActive(state, 2)) {
+    increaseBody(state.extraSnakes[0].snake);
   }
 }
 
@@ -1441,7 +1450,8 @@ function captureExtraSnakeCoinbases(state: GameState): void {
         else
           state.score[1] = Math.min(state.totalPoints, state.score[1] + reward);
       }
-      increaseBody(extra.snake);
+      if (is2v1Mode(state)) grow2v1AiTeamOnCapture(state);
+      else increaseBody(extra.snake);
       if (!cb.reward) createNewCoinbase(state);
       state.coinbases.splice(i, 1);
       break;

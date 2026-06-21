@@ -6,7 +6,7 @@ import {
   POWERUP_RESPAWN_COOLDOWN_TICKS,
   POWERUP_SURGE_DURATION_TICKS,
 } from '@/game/engine/constants';
-import { isEliminationMode, isFfaPlayerAlive, isFfaMode, is2v1Mode, multiplayerPlayerCount } from '@/game/engine/ffa';
+import { isEliminationMode, isFfaPlayerAlive, isFfaMode, is2v1Mode, multiplayerPlayerCount, get2v1TeamCapturePercent } from '@/game/engine/ffa';
 import { gameRandom } from '@/game/engine/runRng';
 import type {
   ActivePowerUp,
@@ -259,16 +259,11 @@ export function computeCaptureChangeForIndex(
   totalPoints: number
 ): number {
   const snake = getSnakeByIndex(state, playerIndex);
-  let captureLen = snake.body.length;
-  if (
-    is2v1Mode(state) &&
-    (playerIndex === 1 || playerIndex === 2)
-  ) {
-    const p2Len = state.p2.body.length;
-    const p3Len = state.extraSnakes[0]?.snake.body.length ?? 0;
-    captureLen = p2Len + p3Len;
-  }
-  const basePercent = cb.reward ?? capturePercentByLength(captureLen);
+  const basePercent =
+    cb.reward ??
+    (is2v1Mode(state) && (playerIndex === 1 || playerIndex === 2)
+      ? get2v1TeamCapturePercent(state)
+      : capturePercentByLength(snake.body.length));
   const effects = getSnakeEffects(state, playerIndex);
   const finalPercent = effects.amped
     ? Math.min(32, basePercent * 2)

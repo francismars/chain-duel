@@ -12,7 +12,7 @@ import {
   setFfaScores,
   stepGame,
 } from '@/game/engine';
-import { ffaApplyCaptureAmount, getFfaScores } from '@/game/engine/ffa';
+import { ffaApplyCaptureAmount, getFfaScores, checkFfaGameEnd } from '@/game/engine/ffa';
 import { initRunRng, clearRunRng } from '@/game/engine/runRng';
 
 describe('challengeSim harness', () => {
@@ -187,6 +187,28 @@ describe('2v1 format', () => {
     expect(getHudState(state).captureP2).toBe('16%');
   });
 
+  it('2v1 team capture sums each bot tier (not length-tier of the sum)', () => {
+    const state = createGameState({
+      p1Name: 'P1',
+      p2Name: 'P2',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: '2v1',
+      practiceMode: true,
+      teamMode: '2v1',
+      aiTier: 'sovereign',
+      ffaAiTier: 'sovereign',
+    });
+    state.p2.body = [
+      [1, 1],
+      [2, 2],
+      [3, 3],
+      [4, 4],
+    ];
+    state.extraSnakes[0]!.snake.body = [[5, 5]];
+    expect(getHudState(state).captureP2).toBe('10%');
+  });
+
   it('2v1 AI captures steal only from the human, not the teammate bot', () => {
     const state = createGameState({
       p1Name: 'P1',
@@ -210,5 +232,25 @@ describe('2v1 format', () => {
     expect(scores[0]).toBe(680);
     expect(scores[1]).toBe(760);
     expect(scores[2]).toBe(560);
+  });
+
+  it('ends the game when the human hits 0 sats even if both AI bots survive', () => {
+    const state = createGameState({
+      p1Name: 'P1',
+      p2Name: 'P2',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: '2v1',
+      practiceMode: true,
+      teamMode: '2v1',
+      aiTier: 'sovereign',
+      ffaAiTier: 'sovereign',
+    });
+    state.gameStarted = true;
+    setFfaScores(state, [0, 600, 400, 0]);
+    checkFfaEliminations(state);
+    checkFfaGameEnd(state);
+    expect(state.gameEnded).toBe(true);
+    expect(state.winnerPlayer).toBe('P2');
   });
 });
