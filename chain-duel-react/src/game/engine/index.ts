@@ -1047,7 +1047,9 @@ function captureCoinbase(state: GameState): void {
       increaseBody(state.p2);
       if (!cb.reward) createNewCoinbase(state);
       state.coinbases.splice(i, 1);
-      state.currentCaptureP2 = getCaptureLabel(state.p2.body.length);
+      state.currentCaptureP2 = is2v1Mode(state)
+        ? get2v1AiTeamCaptureLabel(state)
+        : getCaptureLabel(state.p2.body.length);
       return;
     }
   }

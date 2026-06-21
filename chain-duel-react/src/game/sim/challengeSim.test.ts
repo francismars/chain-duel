@@ -6,14 +6,13 @@ import {
 } from '@/game/sim/challengeSim';
 import {
   createGameState,
-  getFfaScores,
   getHudState,
   isFfaPlayerAlive,
   checkFfaEliminations,
   setFfaScores,
-  startCountdown,
   stepGame,
 } from '@/game/engine';
+import { ffaApplyCaptureAmount, getFfaScores } from '@/game/engine/ffa';
 import { initRunRng, clearRunRng } from '@/game/engine/runRng';
 
 describe('challengeSim harness', () => {
@@ -186,5 +185,30 @@ describe('2v1 format', () => {
       [8, 8],
     ];
     expect(getHudState(state).captureP2).toBe('16%');
+  });
+
+  it('2v1 AI captures steal only from the human, not the teammate bot', () => {
+    const state = createGameState({
+      p1Name: 'P1',
+      p2Name: 'P2',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: '2v1',
+      practiceMode: true,
+      teamMode: '2v1',
+      aiTier: 'sovereign',
+      ffaAiTier: 'sovereign',
+    });
+    setFfaScores(state, [1000, 600, 400, 0]);
+    ffaApplyCaptureAmount(state, 2, 160);
+    let scores = getFfaScores(state);
+    expect(scores[0]).toBe(840);
+    expect(scores[1]).toBe(600);
+    expect(scores[2]).toBe(560);
+    ffaApplyCaptureAmount(state, 1, 160);
+    scores = getFfaScores(state);
+    expect(scores[0]).toBe(680);
+    expect(scores[1]).toBe(760);
+    expect(scores[2]).toBe(560);
   });
 });

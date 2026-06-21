@@ -221,7 +221,11 @@ function captureLabelForLength(length: number): string {
   return '32%';
 }
 
-/** Steal capture % of the pot from each alive opponent (FFA: equal shares; 2v1: proportional). */
+function teamIdFor2v1Player(index: FfaPlayerIndex): 0 | 1 {
+  return index === 0 ? 0 : 1;
+}
+
+/** Steal capture % of the pot from each alive opponent (FFA: equal shares; 2v1: proportional across opposing team only). */
 export function ffaApplyCaptureAmount(
   state: GameState,
   winner: FfaPlayerIndex,
@@ -229,11 +233,13 @@ export function ffaApplyCaptureAmount(
 ): void {
   const scores = getFfaScores(state);
   const count = multiplayerPlayerCount(state);
+  const winnerTeam = is2v1Mode(state) ? teamIdFor2v1Player(winner) : null;
   const opponents: FfaPlayerIndex[] = [];
   for (let i = 0; i < count; i += 1) {
     const idx = i as FfaPlayerIndex;
     if (idx === winner) continue;
     if (!isFfaPlayerAlive(state, idx)) continue;
+    if (winnerTeam !== null && teamIdFor2v1Player(idx) === winnerTeam) continue;
     opponents.push(idx);
   }
   if (opponents.length === 0) return;
