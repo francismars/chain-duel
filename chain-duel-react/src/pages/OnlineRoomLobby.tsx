@@ -617,7 +617,8 @@ export default function OnlineRoomLobby() {
         return;
       }
       const prev = sessionStorage.getItem('sessionID');
-      if (prev && prev !== payload.sessionID) {
+      const sessionChanged = Boolean(prev && prev !== payload.sessionID);
+      if (sessionChanged) {
         setNostrLinkExpiresAt(null);
         setNostrLinkedProfile(null);
         const storageKey = roomId ? `onlineLobbyNostrLink_${roomId}` : '';
@@ -627,6 +628,9 @@ export default function OnlineRoomLobby() {
       }
       setCurrentSessionID(payload.sessionID);
       sessionStorage.setItem('sessionID', payload.sessionID);
+      if (sessionChanged) {
+        syncRoomPresence();
+      }
     };
     const refreshLocalIdentity = () => {
       setCurrentSessionID(sessionStorage.getItem('sessionID') ?? '');
