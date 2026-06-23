@@ -53,6 +53,14 @@ const AI_TIER_PRESETS: Array<{
 type MatchFormat = 'solo' | 'ffa';
 type OpponentChoice = 'humans' | 'ai';
 
+/** FFA quick match default: P1 human, P2–P4 AI. */
+const FFA_DEFAULT_SLOTS: [boolean, boolean, boolean, boolean] = [
+  true,
+  false,
+  false,
+  false,
+];
+
 interface PracticeFreePlayPanelProps {
   isActive: boolean;
   menuZone: PracticeHubFocus['zone'];
@@ -81,7 +89,7 @@ export const PracticeFreePlayPanel = forwardRef<
 
   const [format, setFormat] = useState<MatchFormat>('solo');
   const [opponent, setOpponent] = useState<OpponentChoice>('ai');
-  const [slotHuman, setSlotHuman] = useState([true, true, true, true]);
+  const [slotHuman, setSlotHuman] = useState<boolean[]>([...FFA_DEFAULT_SLOTS]);
   const [aiTier, setAiTier] = useState<AiTier>('stacker');
   const [powerup, setPowerup] = useState(false);
 
@@ -109,6 +117,13 @@ export const PracticeFreePlayPanel = forwardRef<
     panelKeyboardFocus &&
     navFocus.kind === kind &&
     (idx === undefined || ('idx' in navFocus && navFocus.idx === idx));
+
+  const applyFormat = useCallback((next: MatchFormat) => {
+    setFormat(next);
+    if (next === 'ffa') {
+      setSlotHuman([...FFA_DEFAULT_SLOTS]);
+    }
+  }, []);
 
   const toggleSlot = useCallback(
     (idx: number) => {
@@ -196,7 +211,7 @@ export const PracticeFreePlayPanel = forwardRef<
     (f: PracticeNavFocus) => {
       switch (f.kind) {
         case 'format':
-          setFormat((['solo', 'ffa'] as const)[f.idx]);
+          applyFormat((['solo', 'ffa'] as const)[f.idx]);
           playSfx(SFX.MENU_SELECT);
           break;
         case 'slot':
@@ -228,7 +243,7 @@ export const PracticeFreePlayPanel = forwardRef<
           break;
       }
     },
-    [footerBackRef, footerStartRef, navigate, playSfx, toggleSlot]
+    [applyFormat, footerBackRef, footerStartRef, navigate, playSfx, toggleSlot]
   );
 
   useEffect(() => {
@@ -426,7 +441,7 @@ export const PracticeFreePlayPanel = forwardRef<
                   onClick={() => {
                     setNavFocus({ kind: 'format', idx: 0 });
                     playSfx(SFX.MENU_SELECT);
-                    setFormat('solo');
+                    applyFormat('solo');
                   }}
                 >
                   <svg
@@ -491,7 +506,7 @@ export const PracticeFreePlayPanel = forwardRef<
                   onClick={() => {
                     setNavFocus({ kind: 'format', idx: 1 });
                     playSfx(SFX.MENU_SELECT);
-                    setFormat('ffa');
+                    applyFormat('ffa');
                   }}
                 >
                   <svg
