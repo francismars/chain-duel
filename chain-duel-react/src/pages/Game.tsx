@@ -8,6 +8,8 @@ import { createFlowTrace } from '@/lib/nostr/nip46Trace';
 import { resolveSignerMode } from '@/lib/nostr/signerSession';
 import {
   claimChallengeBounty,
+  formatChallengeValidationError,
+  isRetryableChallengeWinError,
   retryChallengeZap,
   submitChallengeWin,
 } from '@/lib/challengeBounty';
@@ -101,11 +103,18 @@ type SoloEndData = {
   zapReason?: string;
 };
 
-type SoloZapFocusId = 'openPrimal' | 'retryZap' | 'signIn' | 'claim' | 'menu';
+type SoloZapFocusId =
+  | 'openPrimal'
+  | 'retryZap'
+  | 'retryValidation'
+  | 'signIn'
+  | 'claim'
+  | 'menu';
 
 const SOLO_ZAP_FOCUS_PRIORITY: SoloZapFocusId[] = [
   'claim',
   'signIn',
+  'retryValidation',
   'retryZap',
   'openPrimal',
   'menu',
@@ -219,6 +228,7 @@ export default function Game() {
   const [soloZapFocus, setSoloZapFocus] = useState<SoloZapFocusId | null>(null);
   const soloZapOpenPrimalRef = useRef<HTMLButtonElement>(null);
   const soloZapRetryRef = useRef<HTMLButtonElement>(null);
+  const soloZapRetryValidationRef = useRef<HTMLButtonElement>(null);
   const soloZapSignInRef = useRef<HTMLButtonElement>(null);
   const soloZapClaimRef = useRef<HTMLButtonElement>(null);
   const soloZapMenuRef = useRef<HTMLButtonElement>(null);
@@ -294,6 +304,80 @@ export default function Game() {
     }
   }, [soloEndData, socket]);
 
+  const applyChallengeWinValidation = useCallback(
+    async (base: {
+      name: string;
+      bounty: number;
+      challengeId: string;
+      runId: string;
+    }) => {
+      if (!socket || !base.runId) {
+        setSoloEndData({
+          won: true,
+          ...base,
+          validating: false,
+          validationError: !base.runId ? 'missing_run' : 'no_socket',
+        });
+        return;
+      }
+
+      setSoloEndData({
+        won: true,
+        ...base,
+        validating: true,
+        validationError: undefined,
+      });
+
+      try {
+        const result = await submitChallengeWin(socket, {
+          runId: base.runId,
+          inputLog: [...challengeInputLogRef.current],
+        });
+        if (!result.ok) {
+          setSoloEndData({
+            won: true,
+            ...base,
+            validating: false,
+            validationError: result.reason,
+          });
+          return;
+        }
+        setSoloEndData({
+          won: true,
+          bounty: result.bountySats,
+          challengeId: base.challengeId,
+          name: base.name,
+          claimToken: result.claimToken,
+          noteContent: result.noteContent,
+          noteTags: result.noteTags,
+          validating: false,
+        });
+      } catch (err) {
+        setSoloEndData({
+          won: true,
+          ...base,
+          validating: false,
+          validationError:
+            err instanceof Error ? err.message : 'validation_failed',
+        });
+      }
+    },
+    [socket]
+  );
+
+  const retryValidation = useCallback(() => {
+    if (!soloEndData?.won || soloEndData.validating) return;
+    const cfg = readSessionGameConfig();
+    if (!isPracticeChallengeConfig(cfg)) return;
+    const runId = String(cfg.challengeRunId ?? '');
+    void applyChallengeWinValidation({
+      name: soloEndData.name,
+      bounty: soloEndData.bounty,
+      challengeId: String(soloEndData.challengeId ?? cfg.challengeId ?? ''),
+      runId,
+    });
+  }, [applyChallengeWinValidation, soloEndData]);
+
   const exitSoloEndOverlay = useCallback(() => {
     if (!soloEndData || soloEndData.validating) return;
     if (soloEndData.challengeId) {
@@ -324,6 +408,13 @@ export default function Game() {
     }
     return 'RETURN TO CHALLENGES';
   }, [canForfeitUnclaimedPrize]);
+
+  const validationError = soloEndData?.validationError;
+  const soloZapRetryValidationVisible =
+    Boolean(soloEndData?.won) &&
+    !soloEndData?.validating &&
+    validationError != null &&
+    isRetryableChallengeWinError(validationError);
 
   const soloZapOpenPrimalVisible =
     Boolean(soloEndData?.won) &&
@@ -391,7 +482,11 @@ export default function Game() {
   const soloZapWinBadge = useMemo(() => {
     if (!soloEndData?.won) return null;
     if (soloEndData.validating) return 'VERIFYING YOUR WIN';
-    if (soloEndData.validationError) return 'ALMOST THERE';
+    if (soloEndData.validationError) {
+      return isRetryableChallengeWinError(soloEndData.validationError)
+        ? 'VERIFICATION TIMED OUT'
+        : 'ALMOST THERE';
+    }
     if (noteState === 'posted' && soloEndData.zapPaid) return 'ZAP DELIVERED';
     return null;
   }, [soloEndData, noteState]);
@@ -400,6 +495,7 @@ export default function Game() {
     const ids: SoloZapFocusId[] = [];
     if (soloZapOpenPrimalVisible) ids.push('openPrimal');
     if (soloZapRetryVisible) ids.push('retryZap');
+    if (soloZapRetryValidationVisible) ids.push('retryValidation');
     if (soloZapSignInVisible) ids.push('signIn');
     if (soloZapClaimVisible) ids.push('claim');
     if (soloZapMenuVisible) ids.push('menu');
@@ -407,6 +503,7 @@ export default function Game() {
   }, [
     soloZapOpenPrimalVisible,
     soloZapRetryVisible,
+    soloZapRetryValidationVisible,
     soloZapSignInVisible,
     soloZapClaimVisible,
     soloZapMenuVisible,
@@ -417,6 +514,7 @@ export default function Game() {
       ({
         openPrimal: soloZapOpenPrimalRef,
         retryZap: soloZapRetryRef,
+        retryValidation: soloZapRetryValidationRef,
         signIn: soloZapSignInRef,
         claim: soloZapClaimRef,
         menu: soloZapMenuRef,
@@ -865,56 +963,16 @@ export default function Game() {
 
       if (challengeWinSubmittedRef.current) return;
       challengeWinSubmittedRef.current = true;
-      setSoloEndData({ won: true, ...base, validating: true });
-
-      void (async () => {
-        if (!socket || !runId) {
-          setSoloEndData({
-            won: true,
-            ...base,
-            validating: false,
-            validationError: !runId ? 'missing_run' : 'no_socket',
-          });
-          return;
-        }
-        try {
-          const result = await submitChallengeWin(socket, {
-            runId,
-            inputLog: [...challengeInputLogRef.current],
-          });
-          if (!result.ok) {
-            setSoloEndData({
-              won: true,
-              ...base,
-              validating: false,
-              validationError: result.reason,
-            });
-            return;
-          }
-          setSoloEndData({
-            won: true,
-            bounty: result.bountySats,
-            challengeId,
-            name,
-            claimToken: result.claimToken,
-            noteContent: result.noteContent,
-            noteTags: result.noteTags,
-            validating: false,
-          });
-        } catch (err) {
-          setSoloEndData({
-            won: true,
-            ...base,
-            validating: false,
-            validationError:
-              err instanceof Error ? err.message : 'validation_failed',
-          });
-        }
-      })();
+      void applyChallengeWinValidation({
+        name,
+        bounty,
+        challengeId,
+        runId,
+      });
     }, 150);
 
     return () => window.clearInterval(poll);
-  }, [loading, stateRef, socket]);
+  }, [applyChallengeWinValidation, loading, stateRef, socket]);
 
   blockChallengeContinueRef.current = Boolean(soloEndData?.validating);
   challengeContinueLabelRef.current = soloEndData?.validating
@@ -1734,9 +1792,28 @@ export default function Game() {
                     CHECKING YOUR WIN ON THE SERVER…
                   </p>
                 ) : soloEndData.validationError ? (
-                  <p className="solo-zap-note-err">
-                    Validation failed: {soloEndData.validationError}
-                  </p>
+                  <>
+                    <p className="solo-zap-note-err">
+                      {formatChallengeValidationError(soloEndData.validationError)}
+                    </p>
+                    {soloZapRetryValidationVisible ? (
+                      <Button
+                        ref={soloZapRetryValidationRef}
+                        type="button"
+                        tabIndex={soloZapFocus === 'retryValidation' ? 0 : -1}
+                        className={soloZapButtonClass(
+                          'retryValidation',
+                          'practice-start solo-zap-post-btn'
+                        )}
+                        onFocus={() => setSoloZapFocus('retryValidation')}
+                        onClick={() => {
+                          retryValidation();
+                        }}
+                      >
+                        RETRY VERIFICATION
+                      </Button>
+                    ) : null}
+                  </>
                 ) : (
                   <div className="solo-zap-note-section">
                     <p

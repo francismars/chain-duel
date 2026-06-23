@@ -10,6 +10,15 @@ import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 const DEFAULT_TIMEOUT_MS = 30_000;
+const SUBMIT_WIN_TIMEOUT_MS = 90_000;
+const SUBMIT_WIN_RETRIES = 2;
+const SUBMIT_WIN_RETRY_DELAY_MS = 2_000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
 
 function waitFor<T>(
   socket: GameSocket,
@@ -26,7 +35,11 @@ function waitFor<T>(
 
     const handler = (payload: unknown) => {
       const parsed = parse(payload);
-      if (parsed == null) return;
+      if (parsed == null) {
+        cleanup();
+        reject(new Error(`${String(event)} invalid_response`));
+        return;
+      }
       cleanup();
       resolve(parsed);
     };
@@ -39,6 +52,32 @@ function waitFor<T>(
     socket.on(event, handler as (...args: unknown[]) => void);
     emit();
   });
+}
+
+export function isRetryableChallengeWinError(reason: string): boolean {
+  return (
+    reason.endsWith(' timeout') ||
+    reason.endsWith(' invalid_response') ||
+    reason === 'server_error' ||
+    reason === 'no_socket' ||
+    reason === 'rate_limited'
+  );
+}
+
+export function formatChallengeValidationError(reason: string): string {
+  if (reason.endsWith(' timeout') || reason.endsWith(' invalid_response')) {
+    return 'Server did not respond in time. Your win may still be valid — try again.';
+  }
+  if (reason === 'server_error') {
+    return 'Server error while verifying your win. Please try again.';
+  }
+  if (reason === 'no_socket') {
+    return 'Not connected to the server. Check your connection and try again.';
+  }
+  if (reason === 'rate_limited') {
+    return 'Too many verification attempts. Wait a moment and try again.';
+  }
+  return reason.replace(/_/g, ' ');
 }
 
 export type ChallengeEligibilityResponse = {
@@ -106,7 +145,7 @@ export type SubmitChallengeWinResponse =
     }
   | { ok: false; reason: string };
 
-export function submitChallengeWin(
+export async function submitChallengeWin(
   socket: GameSocket,
   payload: {
     runId: string;
@@ -114,13 +153,43 @@ export function submitChallengeWin(
     countdownStartTick?: number;
   }
 ): Promise<SubmitChallengeWinResponse> {
-  return waitFor(
-    socket,
-    'resSubmitChallengeWin',
-    () => socket.emit('submitChallengeWin', payload),
-    (p) => SocketBoundaryParsers.resSubmitChallengeWin(p),
-    45_000
-  );
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= SUBMIT_WIN_RETRIES; attempt += 1) {
+    try {
+      const result = await waitFor(
+        socket,
+        'resSubmitChallengeWin',
+        () => socket.emit('submitChallengeWin', payload),
+        (p) => SocketBoundaryParsers.resSubmitChallengeWin(p),
+        SUBMIT_WIN_TIMEOUT_MS
+      );
+
+      if (
+        !result.ok &&
+        isRetryableChallengeWinError(result.reason) &&
+        attempt < SUBMIT_WIN_RETRIES
+      ) {
+        await sleep(SUBMIT_WIN_RETRY_DELAY_MS);
+        continue;
+      }
+
+      return result;
+    } catch (error) {
+      lastError =
+        error instanceof Error ? error : new Error('validation_failed');
+      if (
+        attempt < SUBMIT_WIN_RETRIES &&
+        isRetryableChallengeWinError(lastError.message)
+      ) {
+        await sleep(SUBMIT_WIN_RETRY_DELAY_MS);
+        continue;
+      }
+      throw lastError;
+    }
+  }
+
+  throw lastError ?? new Error('validation_failed');
 }
 
 export type ClaimChallengeBountyResponse =

@@ -555,6 +555,7 @@ export const ResSubmitChallengeWinSchema = z.union([
   z.object({
     ok: z.literal(false),
     reason: z.string(),
+    debug: z.record(z.string(), z.unknown()).optional(),
   }),
 ]);
 
