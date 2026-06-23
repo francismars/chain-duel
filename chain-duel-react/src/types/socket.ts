@@ -363,6 +363,8 @@ export interface ClientToServerEvents {
   cancelOnlineSeatLightning: () => void;
   /** Round-trip probe; last arg is ack: `emit('pingLatency', () => { ... })` */
   pingLatency: (ack: () => void) => void;
+  /** Ask server to push the cached mempool tip (footer init / after reconnect). */
+  requestMempoolTip: () => void;
   /** After measuring RTT, send so server can broadcast both players' ping via `onlineRoomUpdated`. */
   reportOnlineRoomPing: (payload: {
     roomId: string;

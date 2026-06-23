@@ -47,6 +47,10 @@ export function useMempoolFeed(
   useEffect(() => {
     if (!socket || !enabled) return;
 
+    const requestTip = () => {
+      socket.emit('requestMempoolTip');
+    };
+
     const onMempoolTip = (data: {
       height: number;
       timestamp: number;
@@ -59,8 +63,28 @@ export function useMempoolFeed(
     };
 
     socket.on('mempoolTip', onMempoolTip);
+    socket.on('connect', requestTip);
+    if (socket.connected) {
+      requestTip();
+    }
+
+    let retries = 0;
+    const maxRetries = 10;
+    const retryId = window.setInterval(() => {
+      if (latestTimestampRef.current !== 0 || retries >= maxRetries) {
+        window.clearInterval(retryId);
+        return;
+      }
+      retries += 1;
+      if (socket.connected) {
+        requestTip();
+      }
+    }, 3000);
+
     return () => {
       socket.off('mempoolTip', onMempoolTip);
+      socket.off('connect', requestTip);
+      window.clearInterval(retryId);
     };
   }, [socket, enabled, applyTip]);
 

@@ -219,7 +219,6 @@ export default function Game() {
     [practiceSession.isChallenge]
   );
   const { bitcoin, footerHighlight } = useMempoolFeed({
-    enabled: !loading,
     onNewBlock: handleMempoolNewBlock,
   });
   const [noteState, setNoteState] = useState<
