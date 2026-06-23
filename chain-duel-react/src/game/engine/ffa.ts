@@ -227,20 +227,47 @@ export function capturePercentForLength(length: number): number {
 }
 
 /**
- * 2v1 AI team: each chain contributes its own capture tier ("two chains, one bite").
- * Capped at 32% — same max as a single snake.
+ * 2v1 AI team: longest living chain sets capture tier for the team.
  */
 export function get2v1TeamCapturePercent(state: GameState): number {
-  const p2Len = state.p2.body.length;
-  const p3Len = state.extraSnakes[0]?.snake.body.length ?? 0;
-  return Math.min(
-    32,
-    capturePercentForLength(p2Len) + capturePercentForLength(p3Len)
-  );
+  const lengths: number[] = [];
+  if (isFfaPlayerAlive(state, 1)) lengths.push(state.p2.body.length);
+  if (isFfaPlayerAlive(state, 2)) {
+    lengths.push(state.extraSnakes[0]?.snake.body.length ?? 0);
+  }
+  if (lengths.length === 0) return capturePercentForLength(1);
+  return capturePercentForLength(Math.max(...lengths));
 }
 
 function teamIdFor2v1Player(index: FfaPlayerIndex): 0 | 1 {
   return index === 0 ? 0 : 1;
+}
+
+function alive2v1AiIndices(state: GameState): (1 | 2)[] {
+  const indices: (1 | 2)[] = [];
+  if (isFfaPlayerAlive(state, 1)) indices.push(1);
+  if (isFfaPlayerAlive(state, 2)) indices.push(2);
+  return indices;
+}
+
+/** Split capture gains evenly across the living AI team (shared pool). */
+function add2v1AiTeamGain(
+  scores: [number, number, number, number],
+  state: GameState,
+  amount: number
+): void {
+  const teammates = alive2v1AiIndices(state);
+  if (teammates.length === 0 || amount <= 0) return;
+  const per = Math.floor(amount / teammates.length);
+  let remainder = amount - per * teammates.length;
+  for (const idx of teammates) {
+    let gain = per;
+    if (remainder > 0) {
+      gain += 1;
+      remainder -= 1;
+    }
+    scores[idx] = Math.min(state.totalPoints, scores[idx] + gain);
+  }
 }
 
 /** Steal capture % of the pot from each alive opponent (FFA: equal shares; 2v1: proportional across opposing team only). */
@@ -293,7 +320,11 @@ export function ffaApplyCaptureAmount(
     }
   }
 
-  scores[winner] = Math.min(state.totalPoints, scores[winner] + distributed);
+  if (is2v1Mode(state) && winnerTeam === 1) {
+    add2v1AiTeamGain(scores, state, distributed);
+  } else {
+    scores[winner] = Math.min(state.totalPoints, scores[winner] + distributed);
+  }
   setFfaScores(state, scores);
 
   const hudPlayer: PlayerId = winner === 0 ? 'P1' : winner === 1 ? 'P2' : 'P1';

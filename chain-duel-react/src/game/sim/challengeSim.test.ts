@@ -160,7 +160,7 @@ describe('2v1 format', () => {
     expect(hud.ffa?.players[2]?.name.length).toBeGreaterThan(0);
   });
 
-  it('uses combined AI team length for capture label', () => {
+  it('uses longest AI chain for team capture label', () => {
     const state = createGameState({
       p1Name: 'P1',
       p2Name: 'P2',
@@ -184,10 +184,10 @@ describe('2v1 format', () => {
       [7, 7],
       [8, 8],
     ];
-    expect(getHudState(state).captureP2).toBe('16%');
+    expect(getHudState(state).captureP2).toBe('8%');
   });
 
-  it('2v1 team capture sums each bot tier (not length-tier of the sum)', () => {
+  it('2v1 team capture uses longest chain tier (not sum of tiers)', () => {
     const state = createGameState({
       p1Name: 'P1',
       p2Name: 'P2',
@@ -206,10 +206,10 @@ describe('2v1 format', () => {
       [4, 4],
     ];
     state.extraSnakes[0]!.snake.body = [[5, 5]];
-    expect(getHudState(state).captureP2).toBe('10%');
+    expect(getHudState(state).captureP2).toBe('8%');
   });
 
-  it('2v1 AI captures steal only from the human, not the teammate bot', () => {
+  it('2v1 AI captures split gains across the team pool', () => {
     const state = createGameState({
       p1Name: 'P1',
       p2Name: 'P2',
@@ -225,8 +225,8 @@ describe('2v1 format', () => {
     ffaApplyCaptureAmount(state, 2, 160);
     let scores = getFfaScores(state);
     expect(scores[0]).toBe(840);
-    expect(scores[1]).toBe(600);
-    expect(scores[2]).toBe(560);
+    expect(scores[1]).toBe(680);
+    expect(scores[2]).toBe(480);
     ffaApplyCaptureAmount(state, 1, 160);
     scores = getFfaScores(state);
     expect(scores[0]).toBe(680);
