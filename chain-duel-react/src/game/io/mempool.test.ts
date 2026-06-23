@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  fetchLatestMempoolBlock,
+  isTimeAgoOnlyUpdate,
+  mergeBitcoinDetails,
   toDetails,
   type BlockInfo,
 } from './mempool';
@@ -16,57 +17,15 @@ const SAMPLE_BLOCK: BlockInfo = {
   },
 };
 
-describe('fetchLatestMempoolBlock', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('falls back to the next host when the first request fails', async () => {
-    const fetchMock = vi.fn(async (url: string) => {
-      if (url.startsWith('https://down.example')) {
-        throw new Error('network down');
-      }
-      if (url.endsWith('/api/blocks/tip/hash')) {
-        return {
-          ok: true,
-          text: async () => 'abc123',
-        };
-      }
-      return {
-        ok: true,
-        json: async () => SAMPLE_BLOCK,
-      };
+describe('mergeBitcoinDetails', () => {
+  it('updates only timeAgo for ticker refreshes', () => {
+    const prev = toDetails(SAMPLE_BLOCK, SAMPLE_BLOCK.timestamp);
+    const next = { timeAgo: '2 mins ago' };
+    expect(isTimeAgoOnlyUpdate(next)).toBe(true);
+    expect(mergeBitcoinDetails(prev, next)).toEqual({
+      ...prev,
+      timeAgo: '2 mins ago',
     });
-    vi.stubGlobal('fetch', fetchMock);
-
-    const block = await fetchLatestMempoolBlock([
-      'https://down.example',
-      'https://mirror.example',
-    ]);
-
-    expect(block).toEqual(SAMPLE_BLOCK);
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://mirror.example/api/blocks/tip/hash'
-    );
-  });
-
-  it('trims whitespace from the tip hash before loading block data', async () => {
-    const fetchMock = vi.fn(async (url: string) => {
-      if (url.endsWith('/api/blocks/tip/hash')) {
-        return {
-          ok: true,
-          text: async () => 'abc123\n',
-        };
-      }
-      expect(url).toBe('https://mirror.example/api/v1/block/abc123');
-      return {
-        ok: true,
-        json: async () => SAMPLE_BLOCK,
-      };
-    });
-    vi.stubGlobal('fetch', fetchMock);
-
-    await fetchLatestMempoolBlock(['https://mirror.example']);
   });
 });
 

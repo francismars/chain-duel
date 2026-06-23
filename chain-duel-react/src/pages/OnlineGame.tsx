@@ -27,7 +27,8 @@ import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
-import { startMempoolFeed, type BitcoinDetails } from '@/game/io/mempool';
+import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
+import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { withLocalOnlineControllerTest } from '@/game/controllerTest';
 import type { GameState } from '@/game/engine/types';
 import './game.css';
@@ -77,14 +78,7 @@ export default function OnlineGame() {
   const [hostEl, setHostEl] = useState<HTMLDivElement | null>(null);
   const pointAnimationsRef = useRef<OnlinePointAnim[]>([]);
   const prevPointCountByKeyRef = useRef<Map<string, number>>(new Map());
-  const [bitcoin, setBitcoin] = useState<BitcoinDetails>({
-    height: '000000',
-    timeAgo: '0 secs ago',
-    size: '0.00 Mb',
-    txCount: '0000',
-    miner: 'Miner',
-    medianFee: '00 sat/vb',
-  });
+  const { bitcoin, footerHighlight, setFooterHighlight } = useMempoolFeed();
   const [roomInfo, setRoomInfo] = useState<{
     hostSessionID?: string;
     roomCode?: string;
@@ -136,7 +130,6 @@ export default function OnlineGame() {
   const gameMusicStartedRef = useRef(false);
   const continueNavigatedRef = useRef(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
-  const [footerHighlight, setFooterHighlight] = useState(false);
   const keysHeldRef = useRef({
     up: false,
     down: false,
@@ -509,25 +502,6 @@ export default function OnlineGame() {
       window.clearTimeout(t2);
     };
   }, [replayBlockEvents, replayIndex, replayFrames.length, replayMode]);
-
-  useEffect(() => {
-    const stopFeed = startMempoolFeed({
-      onInit: (details) => {
-        setBitcoin((prev) => ({
-          height: details.height || prev.height,
-          timeAgo: details.timeAgo || prev.timeAgo,
-          size: details.size || prev.size,
-          txCount: details.txCount || prev.txCount,
-          miner: details.miner || prev.miner,
-          medianFee: details.medianFee || prev.medianFee,
-        }));
-      },
-      onNewBlock: (_block, details) => {
-        setBitcoin(details);
-      },
-    });
-    return () => stopFeed();
-  }, []);
 
   useEffect(() => {
     if (!socket || replayMode || !roomId) {
@@ -1149,31 +1123,7 @@ export default function OnlineGame() {
             </div>
           ) : null}
 
-          <div
-            id="bitcoinDetails"
-            className={footerHighlight ? 'highlight' : ''}
-          >
-            <div className="detail">
-              <div className="label">Latest Block</div>
-              <div className="value">{bitcoin.height}</div>
-            </div>
-            <div className="detail">
-              <div className="label">Found</div>
-              <div className="value">{bitcoin.timeAgo}</div>
-            </div>
-            <div className="detail">
-              <div className="label">Size</div>
-              <div className="value">{bitcoin.size}</div>
-            </div>
-            <div className="detail">
-              <div className="label">TX count</div>
-              <div className="value">{bitcoin.txCount}</div>
-            </div>
-            <div className="detail">
-              <div className="label">Median fee</div>
-              <div className="value">{bitcoin.medianFee}</div>
-            </div>
-          </div>
+          <MempoolFooter bitcoin={bitcoin} highlight={footerHighlight} />
         </div>
       </div>
 

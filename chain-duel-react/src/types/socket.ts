@@ -524,6 +524,18 @@ export interface ServerToClientEvents {
     blockHeight: number;
     medianFeeSatPerVb: number;
   }) => void;
+  /** Latest tip block from server mempool watcher (footer UI). */
+  mempoolTip: (data: {
+    height: number;
+    timestamp: number;
+    size: number;
+    tx_count: number;
+    extras?: {
+      medianFee?: number;
+      pool?: { name?: string };
+    };
+    isNewBlock: boolean;
+  }) => void;
   onlineSeatAssigned: (data: {
     roomId: string;
     playerRole: PlayerRole.Player1 | PlayerRole.Player2;

@@ -31,8 +31,10 @@ import type { GameState } from '@/game/engine/types';
 import { normalizeAiTier } from '@/game/engine/types';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
-import { startMempoolFeed, type BitcoinDetails } from '@/game/io/mempool';
+import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
+import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { createNewCoinbase } from '@/game/engine';
+import type { BlockInfo } from '@/game/io/mempool';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
 import { useAudio } from '@/contexts/AudioContext';
@@ -79,15 +81,6 @@ interface ZapMessage {
   scale: number;
   hidden: boolean;
 }
-
-const DEFAULT_BITCOIN_DETAILS: BitcoinDetails = {
-  height: '000000',
-  timeAgo: '0 secs ago',
-  size: '0.00 Mb',
-  txCount: '0000',
-  miner: 'Miner',
-  medianFee: '00 sat/vb',
-};
 
 type SoloEndData = {
   won: boolean;
@@ -199,10 +192,6 @@ export default function Game() {
     false,
   ]);
   const ffaCapturePrevRef = useRef(['2%', '2%', '2%', '2%']);
-  const [bitcoin, setBitcoin] = useState<BitcoinDetails>(
-    DEFAULT_BITCOIN_DETAILS
-  );
-  const [footerHighlight, setFooterHighlight] = useState(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
@@ -218,6 +207,21 @@ export default function Game() {
       isChallenge: isPracticeChallengeConfig(cfg),
     };
   }, []);
+  const handleMempoolNewBlock = useCallback(
+    (block: BlockInfo) => {
+      setCanvasHighlight(true);
+      window.setTimeout(() => setCanvasHighlight(false), 1000);
+      if (!practiceSession.isChallenge) {
+        createNewCoinbase(stateRef.current!, block.extras?.medianFee ?? -1);
+        audioRef.current?.playBlockFound();
+      }
+    },
+    [practiceSession.isChallenge]
+  );
+  const { bitcoin, footerHighlight } = useMempoolFeed({
+    enabled: !loading,
+    onNewBlock: handleMempoolNewBlock,
+  });
   const [noteState, setNoteState] = useState<
     'idle' | 'posting' | 'posted' | 'error' | 'zapping'
   >('idle');
@@ -1299,55 +1303,6 @@ export default function Game() {
   });
 
   useEffect(() => {
-    if (loading) return;
-    let cfg: Record<string, unknown> = {};
-    try {
-      const raw = sessionStorage.getItem('gameConfig');
-      if (raw) cfg = JSON.parse(raw);
-    } catch {
-      /* ignore */
-    }
-    const challengeRun = isPracticeChallengeConfig(cfg);
-
-    const stopFeed = startMempoolFeed({
-      onInit: (details) => {
-        setBitcoin((prev) => {
-          const timeAgoOnly =
-            !details.height &&
-            !details.size &&
-            !details.txCount &&
-            details.timeAgo &&
-            details.timeAgo !== prev.timeAgo;
-          if (timeAgoOnly) {
-            return { ...prev, timeAgo: details.timeAgo };
-          }
-          return {
-            height: details.height || prev.height,
-            timeAgo: details.timeAgo || prev.timeAgo,
-            size: details.size || prev.size,
-            txCount: details.txCount || prev.txCount,
-            miner: details.miner || prev.miner,
-            medianFee: details.medianFee || prev.medianFee,
-          };
-        });
-      },
-      onNewBlock: (block, details) => {
-        setBitcoin(details);
-        setCanvasHighlight(true);
-        setFooterHighlight(true);
-        window.setTimeout(() => setCanvasHighlight(false), 1000);
-        window.setTimeout(() => setFooterHighlight(false), 2000);
-        // Challenge runs use a seeded arena — no live mempool coinbase spawns.
-        if (!challengeRun) {
-          createNewCoinbase(stateRef.current!, block.extras?.medianFee ?? -1);
-          audioRef.current?.playBlockFound();
-        }
-      },
-    });
-    return () => stopFeed();
-  }, [loading]);
-
-  useEffect(() => {
     if (zapMessages.length === 0) return;
     const timer = window.setInterval(() => {
       setZapMessages((prev) => {
@@ -1602,47 +1557,11 @@ export default function Game() {
 
           {isPowerupMode && <PowerUpLegend />}
 
-          <div
-            id="bitcoinDetails"
-            className={footerHighlight ? 'highlight' : ''}
-          >
-            <div className="detail">
-              <div className="label">Latest Block</div>
-              <div className="value" id="bitcoinblockHeight">
-                {bitcoin.height}
-              </div>
-            </div>
-            <div className="detail">
-              <div className="label">Found</div>
-              <div className="value" id="bitcoinblockTimeAgo">
-                {bitcoin.timeAgo}
-              </div>
-            </div>
-            <div className="detail">
-              <div className="label">Size</div>
-              <div className="value" id="bitcoinblockSize">
-                {bitcoin.size}
-              </div>
-            </div>
-            <div className="detail">
-              <div className="label">TX count</div>
-              <div className="value" id="bitcoinblockTXcount">
-                {bitcoin.txCount}
-              </div>
-            </div>
-            <div className="detail hide">
-              <div className="label">Found by</div>
-              <div className="value" id="bitcoinblockMiner">
-                {bitcoin.miner}
-              </div>
-            </div>
-            <div className="detail">
-              <div className="label">Median fee</div>
-              <div className="value" id="bitcoinAvgFee">
-                {bitcoin.medianFee}
-              </div>
-            </div>
-          </div>
+          <MempoolFooter
+            bitcoin={bitcoin}
+            highlight={footerHighlight}
+            withGameElementIds
+          />
         </div>
       </div>
 

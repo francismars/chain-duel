@@ -27,12 +27,6 @@ export default defineConfig(({ mode }) => {
           target: proxyTarget,
           changeOrigin: true,
         },
-        // Dev fallback when mempool.space is unreachable from the browser
-        '/mempool-proxy': {
-          target: 'https://mempool.emzy.de',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/mempool-proxy/, ''),
-        },
       },
     },
   };

@@ -20,122 +20,57 @@ export interface BitcoinDetails {
   medianFee: string;
 }
 
-interface FeedCallbacks {
-  onInit: (details: BitcoinDetails) => void;
-  onNewBlock: (block: BlockInfo, details: BitcoinDetails) => void;
-}
+export const DEFAULT_BITCOIN_DETAILS: BitcoinDetails = {
+  height: '000000',
+  timeAgo: '0 secs ago',
+  size: '0.00 Mb',
+  txCount: '0000',
+  miner: 'Miner',
+  medianFee: '00 sat/vb',
+};
 
-/** Keep in sync with marspay `src/state/mempoolApi.ts` `MEMPOOL_API_HOSTS`. */
-export const MEMPOOL_API_HOSTS = [
-  'https://mempool.space',
-  'https://mempool.emzy.de',
-  'https://mempool.bitaroo.net',
-] as const;
-
-export function resolveMempoolApiHosts(): string[] {
-  const custom = import.meta.env.VITE_MEMPOOL_HOST?.trim();
-  const hosts: string[] = [...MEMPOOL_API_HOSTS];
-  if (import.meta.env.DEV) {
-    hosts.unshift('/mempool-proxy');
+export function mergeBitcoinDetails(
+  prev: BitcoinDetails,
+  details: Partial<BitcoinDetails>
+): BitcoinDetails {
+  if (isTimeAgoOnlyUpdate(details)) {
+    return { ...prev, timeAgo: details.timeAgo! };
   }
-  if (!custom) {
-    return hosts;
-  }
-  const normalized = custom.replace(/\/$/, '');
-  return [normalized, ...hosts.filter((host) => host !== normalized)];
-}
-
-export async function fetchLatestMempoolBlock(
-  hosts: readonly string[] = resolveMempoolApiHosts()
-): Promise<BlockInfo | null> {
-  for (const host of hosts) {
-    try {
-      const tipHash = (await fetchText(`${host}/api/blocks/tip/hash`)).trim();
-      if (!tipHash) {
-        continue;
-      }
-      const block = (await fetchJson(
-        `${host}/api/v1/block/${tipHash}`
-      )) as BlockInfo;
-      if (
-        typeof block?.height === 'number' &&
-        Number.isFinite(block.height) &&
-        typeof block.timestamp === 'number'
-      ) {
-        return block;
-      }
-    } catch {
-      // try next host
-    }
-  }
-  return null;
-}
-
-export function startMempoolFeed(callbacks: FeedCallbacks): () => void {
-  let disposed = false;
-  let latestHeight = -1;
-  let latestTimestamp = 0;
-  const hosts = resolveMempoolApiHosts();
-
-  const update = async () => {
-    try {
-      const block = await fetchLatestMempoolBlock(hosts);
-      if (!block || disposed) return;
-      latestTimestamp = block.timestamp;
-      const details = toDetails(block, latestTimestamp);
-      if (latestHeight === -1) {
-        latestHeight = block.height;
-        callbacks.onInit(details);
-      } else if (block.height > latestHeight) {
-        latestHeight = block.height;
-        callbacks.onNewBlock(block, details);
-      } else {
-        callbacks.onInit(details);
-      }
-    } catch {
-      // ignore transient mempool failures
-    }
-  };
-
-  const timer = window.setInterval(() => {
-    void update();
-  }, 5000);
-
-  const timeAgoTimer = window.setInterval(() => {
-    if (latestTimestamp === 0) return;
-    callbacks.onInit({
-      height: '',
-      timeAgo: formatTimeAgo(latestTimestamp),
-      size: '',
-      txCount: '',
-      miner: '',
-      medianFee: '',
-    });
-  }, 1000);
-
-  void update();
-
-  return () => {
-    disposed = true;
-    window.clearInterval(timer);
-    window.clearInterval(timeAgoTimer);
+  return {
+    height: details.height || prev.height,
+    timeAgo: details.timeAgo || prev.timeAgo,
+    size: details.size || prev.size,
+    txCount: details.txCount || prev.txCount,
+    miner: details.miner || prev.miner,
+    medianFee: details.medianFee || prev.medianFee,
   };
 }
 
-async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Request failed ${response.status}`);
-  }
-  return response.text();
+export function isTimeAgoOnlyUpdate(details: Partial<BitcoinDetails>): boolean {
+  return (
+    !details.height &&
+    !details.size &&
+    !details.txCount &&
+    !details.miner &&
+    !details.medianFee &&
+    !!details.timeAgo
+  );
 }
 
-async function fetchJson(url: string): Promise<unknown> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Request failed ${response.status}`);
-  }
-  return response.json();
+export function blockFromMempoolTip(data: {
+  height: number;
+  timestamp: number;
+  size: number;
+  tx_count: number;
+  extras?: BlockInfo['extras'];
+}): BlockInfo {
+  return {
+    height: data.height,
+    timestamp: data.timestamp,
+    size: data.size,
+    tx_count: data.tx_count,
+    extras: data.extras,
+  };
 }
 
 export function toDetails(block: BlockInfo, timestamp: number): BitcoinDetails {
@@ -160,7 +95,7 @@ function formatSize(bytes: number): string {
   return `${size.toFixed(size < 10 && idx > 0 ? 2 : 0)} ${units[idx]}`;
 }
 
-function formatTimeAgo(timestamp: number): string {
+export function formatTimeAgo(timestamp: number): string {
   const date = new Date(timestamp * 1000);
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
   const hours = Math.floor(seconds / 3600);
