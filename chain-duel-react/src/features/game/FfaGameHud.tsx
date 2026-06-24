@@ -5,6 +5,11 @@ import {
   GameInfoLabel,
   type ChallengeHudInfo,
 } from '@/features/game/GameInfoLabel';
+import { PlayerControlsHint } from '@/components/game/PlayerControlsHint';
+import {
+  PLAYER_SLOT_INDEX,
+  type PlayerControlSlot,
+} from '@/lib/controls/playerControls';
 import './ffa-game-hud.css';
 
 interface FfaHudProps {
@@ -12,6 +17,7 @@ interface FfaHudProps {
   gameInfo: string;
   challengeHud?: ChallengeHudInfo | null;
   captureHighlights?: readonly boolean[];
+  humanControlSlots?: readonly PlayerControlSlot[];
 }
 
 function CaptureLine({
@@ -88,11 +94,17 @@ function DistributionBar({
 function PlayerName({
   player,
   index,
+  controlSlot,
 }: {
   player: FfaHudPlayer;
   index: number;
+  controlSlot?: PlayerControlSlot;
 }) {
   const alignRight = index >= 2;
+  const hint = controlSlot ? (
+    <PlayerControlsHint slot={controlSlot} size="xs" />
+  ) : null;
+
   return (
     <div className={`ffa-hud-slot ffa-hud-slot-${index}`}>
       <div
@@ -101,6 +113,7 @@ function PlayerName({
       >
         {alignRight ? (
           <>
+            {hint}
             <span className="condensed">{player.name}</span>
             <span className="ffa-hud-swatch" aria-hidden />
           </>
@@ -108,6 +121,7 @@ function PlayerName({
           <>
             <span className="ffa-hud-swatch" aria-hidden />
             <span className="condensed">{player.name}</span>
+            {hint}
           </>
         )}
       </div>
@@ -160,13 +174,24 @@ export function FfaHud({
   gameInfo,
   challengeHud,
   captureHighlights = [],
+  humanControlSlots = [],
 }: FfaHudProps) {
+  const slotByIndex = new Map<number, PlayerControlSlot>();
+  for (const slot of humanControlSlots) {
+    slotByIndex.set(PLAYER_SLOT_INDEX[slot], slot);
+  }
+
   return (
     <div className="ffa-hud">
       <div className="ffa-hud-players">
         <div className="ffa-hud-names">
           {players.map((player, i) => (
-            <PlayerName key={player.index} player={player} index={i} />
+            <PlayerName
+              key={player.index}
+              player={player}
+              index={i}
+              controlSlot={slotByIndex.get(i)}
+            />
           ))}
           <GameInfoLabel
             id="gameInfo"

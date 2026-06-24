@@ -30,6 +30,11 @@ import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { withLocalOnlineControllerTest } from '@/game/controllerTest';
+import {
+  onlineSlotForLocalSeat,
+  resolveDirectionFromKeyboardEvent,
+} from '@/lib/controls/playerControls';
+import { PlayerControlsHint } from '@/components/game/PlayerControlsHint';
 import type { GameState } from '@/game/engine/types';
 import './game.css';
 import '@/styles/pages/onlineGame.css';
@@ -548,30 +553,20 @@ export default function OnlineGame() {
       return;
     }
 
-    const axisForKey = (
-      key: string
+    const axisForEvent = (
+      event: KeyboardEvent
     ): 'up' | 'down' | 'left' | 'right' | null => {
-      switch (key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          return 'up';
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          return 'down';
-        case 'ArrowLeft':
-        case 'a':
-        case 'A':
-          return 'left';
-        case 'ArrowRight':
-        case 'd':
-        case 'D':
-          return 'right';
-        default:
-          return null;
-      }
+      const fromP1 = resolveDirectionFromKeyboardEvent(event, 'p1');
+      if (fromP1) return fromP1;
+      return resolveDirectionFromKeyboardEvent(event, 'p2');
     };
+
+    const shouldPreventArrowDefault = (event: KeyboardEvent) =>
+      event.code.startsWith('Arrow') ||
+      event.code === 'KeyW' ||
+      event.code === 'KeyA' ||
+      event.code === 'KeyS' ||
+      event.code === 'KeyD';
 
     const emitHeldInput = (intent?: 'up' | 'down' | 'left' | 'right') => {
       const k = keysHeldRef.current;
@@ -605,16 +600,11 @@ export default function OnlineGame() {
         }, NAVIGATE_AFTER_FINISH_DELAY_MS);
         return;
       }
-      const axis = axisForKey(event.key);
+      const axis = axisForEvent(event);
       if (!axis) {
         return;
       }
-      if (
-        event.key === 'ArrowUp' ||
-        event.key === 'ArrowDown' ||
-        event.key === 'ArrowLeft' ||
-        event.key === 'ArrowRight'
-      ) {
+      if (shouldPreventArrowDefault(event)) {
         event.preventDefault();
       }
       keysHeldRef.current[axis] = true;
@@ -626,16 +616,11 @@ export default function OnlineGame() {
       if (replayMode) {
         return;
       }
-      const axis = axisForKey(event.key);
+      const axis = axisForEvent(event);
       if (!axis) {
         return;
       }
-      if (
-        event.key === 'ArrowUp' ||
-        event.key === 'ArrowDown' ||
-        event.key === 'ArrowLeft' ||
-        event.key === 'ArrowRight'
-      ) {
+      if (shouldPreventArrowDefault(event)) {
         event.preventDefault();
       }
       keysHeldRef.current[axis] = false;
@@ -856,6 +841,7 @@ export default function OnlineGame() {
     (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID)
   );
   localRoleRef.current = { isP1, isP2 };
+  const localControlSlot = onlineSlotForLocalSeat(isP1, isP2);
   const replayDurationSec =
     replayFrames.length > 0 ? (replayFrames.length * replayTickMs) / 1000 : 0;
   const replayPositionSec =
@@ -882,6 +868,9 @@ export default function OnlineGame() {
                 {roomInfo?.p1Name || 'Player 1'}
               </div>
               {isP1 ? <span className="online-game-you-tag">YOU</span> : null}
+              {isP1 && localControlSlot && !replayMode ? (
+                <PlayerControlsHint slot={localControlSlot} size="xs" />
+              ) : null}
             </div>
             <div id="gameInfo" className="outline condensed">
               MAINNET{roomInfo?.roomCode ? ` · ${roomInfo.roomCode}` : ''}
@@ -892,6 +881,9 @@ export default function OnlineGame() {
               <div className="inline" id="player2name">
                 {roomInfo?.p2Name || 'Player 2'}
               </div>
+              {isP2 && localControlSlot && !replayMode ? (
+                <PlayerControlsHint slot={localControlSlot} size="xs" />
+              ) : null}
               <img
                 className={`inline playerImg ${roomInfo?.p2Picture ? '' : 'hide'}`}
                 src={roomInfo?.p2Picture || '/images/loading.gif'}

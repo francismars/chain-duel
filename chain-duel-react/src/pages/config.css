@@ -1,5 +1,31 @@
 /* Config page styles - matching legacy exactly */
 
+header#brand:has(+ .config-page) {
+  position: fixed;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+header#brand:has(+ .config-page) #chain {
+  color: white;
+  margin-top: 0%;
+  margin-left: 1%;
+  text-align: left;
+  font-size: 2.5cqw;
+}
+
+header#brand:has(+ .config-page) #duel {
+  color: white;
+  margin-top: 0%;
+  text-align: right;
+  font-size: 2.5cqw;
+  margin-right: 1%;
+}
+
 .config-row {
   display: flex;
   width: min(90vw, 44rem);

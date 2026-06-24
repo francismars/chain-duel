@@ -84,9 +84,8 @@ export function GamepadTester({ active }: GamepadTesterProps) {
   return (
     <div className="config-gp-tester">
       <p className="config-gp-tester__lede">
-        Player 1 = <strong>WASD + Space</strong>, Player 2 ={' '}
-        <strong>arrows + Enter</strong>. Controller input is captured here only
-        — use the keyboard to change tabs.
+        Gamepad 1 maps to player 1 keys; gamepad 2 maps to player 2 keys.
+        Press buttons here to verify your controller is detected.
       </p>
 
       <div className="config-gp-tester__status" role="status">

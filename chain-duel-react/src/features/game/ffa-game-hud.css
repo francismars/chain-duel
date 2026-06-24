@@ -137,6 +137,21 @@
   text-align: right;
 }
 
+.ffa-hud-name .player-controls-hint {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.ffa-hud-slot-0 .ffa-hud-name .player-controls-hint,
+.ffa-hud-slot-1 .ffa-hud-name .player-controls-hint {
+  margin-left: 0.28vw;
+}
+
+.ffa-hud-slot-2 .ffa-hud-name .player-controls-hint,
+.ffa-hud-slot-3 .ffa-hud-name .player-controls-hint {
+  margin-right: 0.28vw;
+}
+
 .ffa-hud-name {
   display: inline-flex;
   align-items: center;

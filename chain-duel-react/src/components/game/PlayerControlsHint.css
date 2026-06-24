@@ -1,0 +1,138 @@
+.player-controls-hint {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+.player-controls-hint--xs {
+  gap: 0.1rem;
+  margin-top: 0.1rem;
+  vertical-align: middle;
+}
+
+.player-controls-hint--md {
+  gap: 0.45rem;
+}
+
+.player-controls-hint__pad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.player-controls-hint--xs .player-controls-hint__pad {
+  gap: 0.05rem;
+}
+
+.player-controls-hint__row--confirm {
+  margin-top: 0.02rem;
+}
+
+.player-controls-hint--xs .player-controls-hint__row--confirm {
+  margin-top: 0;
+}
+
+.player-controls-hint--xs .player-controls-hint__row--confirm .control-key-cap {
+  min-height: 0.72rem;
+  padding: 0.02rem 0.1rem;
+  font-size: 0.38rem;
+  opacity: 0.88;
+}
+
+.player-controls-hint--xs .control-key-cap--wide {
+  min-width: 1.55rem;
+  letter-spacing: 0.01em;
+}
+
+.player-controls-hint__row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
+.player-controls-hint--xs .player-controls-hint__row {
+  gap: 0.1rem;
+}
+
+.control-key-cap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.45rem;
+  min-height: 1.45rem;
+  padding: 0.1rem 0.28rem;
+  border-radius: 0.28rem;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 2px 4px rgba(0, 0, 0, 0.35);
+  color: #f4f4f4;
+  font-family: 'BureauGrotesque', system-ui, sans-serif;
+  font-size: 0.62rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.player-controls-hint--xs .control-key-cap {
+  min-width: 0.92rem;
+  min-height: 0.92rem;
+  padding: 0.04rem 0.14rem;
+  border-radius: 0.18rem;
+  font-size: 0.46rem;
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.player-controls-hint--md .control-key-cap {
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  font-size: 0.72rem;
+}
+
+.player-controls-hint__confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.player-controls-hint--md .player-controls-hint__confirm {
+  font-size: 0.64rem;
+}
+
+#player1info .player-controls-hint,
+#player2info .player-controls-hint {
+  display: inline-flex;
+  margin-top: 0;
+  vertical-align: middle;
+}
+
+#player1info .player-controls-hint {
+  margin-left: 0.2rem;
+}
+
+#player2info .player-controls-hint {
+  margin-left: 0.2rem;
+  margin-right: 0;
+}
+
+.online-game-you-tag + .player-controls-hint {
+  margin-left: 0.1rem;
+}

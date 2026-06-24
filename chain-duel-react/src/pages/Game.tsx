@@ -54,6 +54,10 @@ import {
   getChallengeTheme,
 } from '@/lib/challenges/challengeTheme';
 import { FfaHud } from '@/features/game/FfaGameHud';
+import { PlayerControlsHint } from '@/components/game/PlayerControlsHint';
+import {
+  humanControlSlotsFromConfig,
+} from '@/lib/controls/playerControls';
 import {
   GameInfoLabel,
   readChallengeHudFromConfig,
@@ -733,6 +737,15 @@ export default function Game() {
     []
   );
 
+  const humanControlSlots = useMemo(
+    () => humanControlSlotsFromConfig(readSessionGameConfig()),
+    []
+  );
+
+  const showP1Controls = humanControlSlots.includes('p1');
+  const showP2Controls =
+    humanControlSlots.includes('p2') && !show2v1Ui && !showFfaUi;
+
   const bootstrapLocalGame = useCallback(() => {
     // sessionStorage from practice hub (/practice); legacy POWERUP sessions may remain
     const gameConfig = readSessionGameConfig();
@@ -1357,6 +1370,7 @@ export default function Game() {
                 gameInfo={gameInfo}
                 challengeHud={challengeHud}
                 captureHighlights={ffaCaptureHighlights}
+                humanControlSlots={humanControlSlots}
               />
               <div id="zapMessages">
                 {zapMessages.map((zap) => (
@@ -1397,6 +1411,9 @@ export default function Game() {
                   <div className="inline" id="player1name">
                     {player1Name}
                   </div>
+                  {showP1Controls ? (
+                    <PlayerControlsHint slot="p1" size="xs" />
+                  ) : null}
                 </div>
                 <GameInfoLabel
                   id="gameInfo"
@@ -1434,6 +1451,9 @@ export default function Game() {
                       <div className="inline" id="player2name">
                         {player2Name}
                       </div>
+                      {showP2Controls ? (
+                        <PlayerControlsHint slot="p2" size="xs" />
+                      ) : null}
                       <img
                         className={`inline playerImg ${canShowP2Image ? '' : 'hide'}`}
                         id="player2Img"

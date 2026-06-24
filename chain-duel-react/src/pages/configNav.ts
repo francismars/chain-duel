@@ -1,4 +1,4 @@
-export type ConfigTab = 'signin' | 'nwc' | 'gamepad';
+export type ConfigTab = 'signin' | 'nwc' | 'keyboard' | 'gamepad';
 export type LoginTab = 'extension' | 'nip46' | 'nsec';
 
 export type ConfigFocus =
@@ -8,7 +8,7 @@ export type ConfigFocus =
   | { kind: 'action' }
   | { kind: 'mainMenu' };
 
-const SECTION_COUNT = 3;
+const SECTION_COUNT = 4;
 const LOGIN_COUNT = 3;
 const NIP46_INLINE_COUNT = 2;
 
@@ -24,7 +24,7 @@ function hasLoginRow(ctx: ConfigNavContext): boolean {
 }
 
 function hasActionRow(ctx: ConfigNavContext): boolean {
-  if (ctx.configTab === 'gamepad') return false;
+  if (ctx.configTab === 'gamepad' || ctx.configTab === 'keyboard') return false;
   if (ctx.configTab === 'signin' && ctx.signedIn) return true;
   if (ctx.configTab === 'signin' && !ctx.signedIn) return true;
   if (ctx.configTab === 'nwc') return true;
@@ -42,7 +42,8 @@ function hasNip46InlineRow(ctx: ConfigNavContext): boolean {
 
 export function sectionIndex(tab: ConfigTab): number {
   if (tab === 'nwc') return 1;
-  if (tab === 'gamepad') return 2;
+  if (tab === 'keyboard') return 2;
+  if (tab === 'gamepad') return 3;
   return 0;
 }
 
@@ -54,7 +55,8 @@ export function loginIndex(tab: LoginTab): number {
 
 export function tabFromSectionIndex(index: number): ConfigTab {
   if (index === 1) return 'nwc';
-  if (index === 2) return 'gamepad';
+  if (index === 2) return 'keyboard';
+  if (index === 3) return 'gamepad';
   return 'signin';
 }
 

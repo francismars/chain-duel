@@ -1,5 +1,10 @@
 import { useEffect, type MutableRefObject } from 'react';
 import {
+  resolveMovementForStateFromCode,
+  resolveMovementForStateFromKeyboardEvent,
+  isConfirmKeyForState,
+} from '@/lib/controls/playerControls';
+import {
   canContinueAfterGame,
   setControllerTestHeld,
   setExtraControllerTestHeld,
@@ -21,99 +26,52 @@ interface UseGameInputBindingsArgs {
   blockContinueAfterGameRef?: MutableRefObject<boolean>;
 }
 
-const P1_MOVE_KEYS = new Set(['A', 'W', 'S', 'D']);
-const P2_MOVE_KEYS = new Set([
-  'ARROWLEFT',
-  'ARROWRIGHT',
-  'ARROWUP',
-  'ARROWDOWN',
-]);
-const EXTRA0_MOVE_KEYS = new Set(['I', 'J', 'K', 'L']);
-const EXTRA1_MOVE_KEYS = new Set(['T', 'F', 'G', 'H']);
-
 function applyPreStartControllerTest(
   state: GameState,
-  key: string,
+  event: Pick<KeyboardEvent, 'code' | 'key'>,
   held: boolean
 ): void {
   if (state.gameStarted) return;
-  if (state.meta.p1Human && P1_MOVE_KEYS.has(key))
-    setControllerTestHeld(state, 'P1', held);
-  if (state.meta.p2Human && P2_MOVE_KEYS.has(key))
-    setControllerTestHeld(state, 'P2', held);
-  if (state.extraSnakes[0]?.humanControlled && EXTRA0_MOVE_KEYS.has(key)) {
-    setExtraControllerTestHeld(state, 0, held);
-  }
-  if (state.extraSnakes[1]?.humanControlled && EXTRA1_MOVE_KEYS.has(key)) {
-    setExtraControllerTestHeld(state, 1, held);
+  const movement = resolveMovementForStateFromKeyboardEvent(event, state);
+  if (!movement) return;
+
+  switch (movement.slot) {
+    case 'p1':
+      setControllerTestHeld(state, 'P1', held);
+      break;
+    case 'p2':
+      setControllerTestHeld(state, 'P2', held);
+      break;
+    case 'p3':
+      setExtraControllerTestHeld(state, 0, held);
+      break;
+    case 'p4':
+      setExtraControllerTestHeld(state, 1, held);
+      break;
+    default:
+      break;
   }
 }
 
-function applyGameplayDirection(state: GameState, key: string): void {
-  switch (key) {
-    case 'A':
-      if (state.meta.p1Human) setWantedDirection(state, 'P1', 'Left');
+function applyGameplayDirection(
+  state: GameState,
+  event: Pick<KeyboardEvent, 'code' | 'key'>
+): void {
+  const movement = resolveMovementForStateFromKeyboardEvent(event, state);
+  if (!movement) return;
+
+  switch (movement.slot) {
+    case 'p1':
+      setWantedDirection(state, 'P1', movement.direction);
       break;
-    case 'D':
-      if (state.meta.p1Human) setWantedDirection(state, 'P1', 'Right');
+    case 'p2':
+      setWantedDirection(state, 'P2', movement.direction);
       break;
-    case 'W':
-      if (state.meta.p1Human) setWantedDirection(state, 'P1', 'Up');
+    case 'p3':
+      setExtraSnakeWantedDirection(state, 0, movement.direction);
       break;
-    case 'S':
-      if (state.meta.p1Human) setWantedDirection(state, 'P1', 'Down');
-      break;
-    case 'ARROWLEFT':
-      if (state.meta.p2Human) setWantedDirection(state, 'P2', 'Left');
-      break;
-    case 'ARROWRIGHT':
-      if (state.meta.p2Human) setWantedDirection(state, 'P2', 'Right');
-      break;
-    case 'ARROWUP':
-      if (state.meta.p2Human) setWantedDirection(state, 'P2', 'Up');
-      break;
-    case 'ARROWDOWN':
-      if (state.meta.p2Human) setWantedDirection(state, 'P2', 'Down');
-      break;
-    case 'I':
-      if (state.extraSnakes[0]?.humanControlled) {
-        setExtraSnakeWantedDirection(state, 0, 'Up');
-      }
-      break;
-    case 'J':
-      if (state.extraSnakes[0]?.humanControlled) {
-        setExtraSnakeWantedDirection(state, 0, 'Left');
-      }
-      break;
-    case 'K':
-      if (state.extraSnakes[0]?.humanControlled) {
-        setExtraSnakeWantedDirection(state, 0, 'Down');
-      }
-      break;
-    case 'L':
-      if (state.extraSnakes[0]?.humanControlled) {
-        setExtraSnakeWantedDirection(state, 0, 'Right');
-      }
-      break;
-    case 'T':
-      if (state.extraSnakes[1]?.humanControlled) {
-        setExtraSnakeWantedDirection(state, 1, 'Up');
-      }
-      break;
-    case 'F':
-      if (state.extraSnakes[1]?.humanControlled) {
-        setExtraSnakeWantedDirection(state, 1, 'Left');
-      }
-      break;
-    case 'G':
-      if (state.extraSnakes[1]?.humanControlled) {
-        setExtraSnakeWantedDirection(state, 1, 'Down');
-      }
-      break;
-    case 'H':
-      if (state.extraSnakes[1]?.humanControlled) {
-        setExtraSnakeWantedDirection(state, 1, 'Right');
-      }
+    case 'p4':
+      setExtraSnakeWantedDirection(state, 1, movement.direction);
       break;
     default:
       break;
@@ -132,17 +90,7 @@ export function useGameInputBindings({
     const onKeyDown = (event: KeyboardEvent) => {
       const state = stateRef.current;
       if (!state) return;
-      const key = event.key.toUpperCase();
-      const isStartKey =
-        key === ' ' ||
-        key === 'ENTER' ||
-        key === 'SPACE' ||
-        key === 'SPACEBAR' ||
-        event.code === 'Space' ||
-        event.code === 'Enter' ||
-        event.code === 'NumpadEnter';
-
-      if (!state.gameStarted && isStartKey) {
+      if (!state.gameStarted && isConfirmKeyForState(event, state)) {
         event.preventDefault();
         if (!readyToStartRef || readyToStartRef.current) {
           startCountdown(state);
@@ -163,17 +111,18 @@ export function useGameInputBindings({
       }
 
       if (!state.gameStarted) {
-        applyPreStartControllerTest(state, key, true);
+        applyPreStartControllerTest(state, event, true);
         return;
       }
 
-      applyGameplayDirection(state, key);
+      applyGameplayDirection(state, event);
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
       const state = stateRef.current;
       if (!state || state.gameStarted) return;
-      applyPreStartControllerTest(state, event.key.toUpperCase(), false);
+      if (!resolveMovementForStateFromCode(event.code, state)) return;
+      applyPreStartControllerTest(state, event, false);
     };
 
     window.addEventListener('keydown', onKeyDown);

@@ -43,6 +43,7 @@ import {
   parseNwcUri,
 } from '@/lib/nostr/nwcPay';
 import { GamepadTester } from '@/features/config/GamepadTester';
+import { KeyboardControlsSettings } from '@/features/config/KeyboardControlsSettings';
 import {
   type ConfigFocus,
   type ConfigTab,
@@ -173,7 +174,7 @@ export default function Config() {
   const profileEntrancePlayedRef = useRef(false);
   playSfxRef.current = playSfx;
 
-  useGamepad(configTab !== 'gamepad');
+  useGamepad(configTab === 'gamepad');
 
   useEffect(() => {
     if (!ncQrModalOpen) return;
@@ -752,7 +753,13 @@ export default function Config() {
   }, [linkToServer, navigate, playSfx, returnTo]);
 
   return (
-    <div className="flex full flex-center config-page">
+    <>
+      <header id="brand">
+        <h2 id="chain">CHAIN</h2>
+        <h2 id="duel">DUEL</h2>
+      </header>
+
+      <div className="flex full flex-center config-page">
       <div className="config-shell">
         <p className="page-title label">Config</p>
 
@@ -788,11 +795,23 @@ export default function Config() {
         <button
           type="button"
           role="tab"
+          aria-selected={configTab === 'keyboard'}
+          className={`config-section-tab${configTab === 'keyboard' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 2)}`}
+          onClick={() => {
+            setConfigTab('keyboard');
+            setNavFocus({ kind: 'section', index: 2 });
+          }}
+        >
+          Keyboard
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={configTab === 'gamepad'}
-          className={`config-section-tab${configTab === 'gamepad' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 2)}`}
+          className={`config-section-tab${configTab === 'gamepad' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 3)}`}
           onClick={() => {
             setConfigTab('gamepad');
-            setNavFocus({ kind: 'section', index: 2 });
+            setNavFocus({ kind: 'section', index: 3 });
           }}
         >
           Gamepad
@@ -1499,9 +1518,9 @@ export default function Config() {
       </div>
       ) : null}
 
-      {configTab === 'gamepad' ? (
-        <GamepadTester active={configTab === 'gamepad'} />
-      ) : null}
+      {configTab === 'keyboard' ? <KeyboardControlsSettings /> : null}
+
+      {configTab === 'gamepad' ? <GamepadTester active={configTab === 'gamepad'} /> : null}
         </div>
         </div>
 
@@ -1569,6 +1588,7 @@ export default function Config() {
         src="/sound/chain_duel_produced_menu.m4a"
         autoplay={true}
       />
-    </div>
+      </div>
+    </>
   );
 }
