@@ -780,6 +780,8 @@
 .online-lobby-path-card {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
   gap: 0.35rem;
   padding: 0.75vw 0.9vw 0.8vw;
   border: 1px solid rgb(255 255 255 / 0.22);
@@ -1361,6 +1363,7 @@
   letter-spacing: 0.1rem;
   text-transform: uppercase;
   color: #fff;
+  margin: 0;
 }
 
 .online-lobby-pay-zone-main
@@ -1390,15 +1393,13 @@
   > .online-lobby-nostr-connected-top,
 .online-lobby-pay-zone-main
   .online-lobby-kind1-qr-col--panel
-  > .online-lobby-nostr-connected-prompt,
-.online-lobby-pay-zone-main
-  .online-lobby-kind1-qr-col--panel
-  > .online-lobby-nostr-signin-prompt {
+  > .online-lobby-nostr-connected-prompt {
   flex: 1;
   width: 100%;
   min-height: var(--online-lobby-qr-size);
   height: 100%;
   box-sizing: border-box;
+  align-self: flex-start;
 }
 
 /* Pin-steps: inherits the standard 2-column layout (1fr + 230px).
@@ -2818,49 +2819,7 @@
   background: rgb(57 208 169 / 0.12);
 }
 
-/* ── Nostr sign-in prompt ── */
-.online-lobby-nostr-signin-prompt {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  box-sizing: border-box;
-  overflow: visible;
-}
-
-.online-lobby-nostr-signin-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: rgb(255 255 255 / 0.3);
-  flex-shrink: 0;
-}
-
-.online-lobby-nostr-signin-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.online-lobby-nostr-signin-title {
-  margin: 0.2rem 0 0.15rem;
-  font-family: Inter, sans-serif;
-  font-size: var(--online-lobby-fs-hint);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #a5a5a5;
-}
-
-.online-lobby-nostr-signin-sub {
-  margin: 0;
-  font-family: Inter, sans-serif;
-  font-size: var(--online-lobby-fs-hint);
-  line-height: 1.4;
-  color: rgb(255 255 255 / 0.35);
-}
-
+/* ── Nostr sign-in prompt (uses qr-split--3col, same as Lightning) ── */
 .online-lobby-nostr-signin-btn {
   flex-shrink: 0;
 }

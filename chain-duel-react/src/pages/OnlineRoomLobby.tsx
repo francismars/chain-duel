@@ -2769,10 +2769,10 @@ export default function OnlineRoomLobby() {
                           <path d="M17 11l-3 5h4l-3 5" />
                         </svg>
                         <span className="online-lobby-path-card-title">
-                          Nostr sign in
+                          NOSTR SIGN IN
                         </span>
                         <span className="online-lobby-path-card-desc">
-                          Zap here, no PIN
+                          Sign in · zap here
                         </span>
                       </button>
                       <button
@@ -3013,23 +3013,33 @@ export default function OnlineRoomLobby() {
                       ) : paymentMode === 'nostr' ? (
                         <div className="online-lobby-kind1-qr-col online-lobby-kind1-qr-col--panel">
                           {!nostrSession.signedIn ? (
-                            <div className="online-lobby-nostr-signin-prompt">
-                              <div className="online-lobby-nostr-signin-text">
-                                <p className="online-lobby-nostr-signin-title">
-                                  LINK YOUR KEY IN SETTINGS
-                                </p>
-                                <p className="online-lobby-nostr-signin-sub">
-                                  Extension, Nostr Connect, or nsec — then zap
-                                  from this page (no PIN in comment).
-                                </p>
+                            <div className="online-lobby-qr-split online-lobby-qr-split--3col">
+                              <div className="online-lobby-qr-split-block-col online-lobby-qr-split-block-col--meta">
+                                <div className="online-lobby-anon-desc">
+                                  <p className="online-lobby-sublabel">
+                                    NOSTR SEAT
+                                  </p>
+                                  <p className="online-lobby-kind1-qr-hint">
+                                    Connect your key in Settings, then zap here
+                                    to pay for your seat.
+                                  </p>
+                                </div>
                               </div>
-                              <Button
-                                type="button"
-                                className="online-lobby-action online-lobby-nostr-signin-btn"
-                                onClick={openConfigForNostr}
-                              >
-                                Open Settings
-                              </Button>
+                              <div
+                                className="online-lobby-qr-split-block-col online-lobby-qr-split-block-col--uri online-lobby-qr-split-block-col--spacer"
+                                aria-hidden="true"
+                              />
+                              <div className="online-lobby-qr-split-block-col online-lobby-qr-split-block-col--qr">
+                                <div className="online-lobby-btn-pop-wrap">
+                                  <Button
+                                    type="button"
+                                    className="online-lobby-action online-lobby-nostr-signin-btn"
+                                    onClick={openConfigForNostr}
+                                  >
+                                    SIGN IN
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           ) : !(nostrLinkActive || seatZapInvoice) ? (
                             <div className="online-lobby-nostr-connected-prompt">
