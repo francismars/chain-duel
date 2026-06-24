@@ -37,7 +37,9 @@ socket.on("session", ({ sessionID, userID }) => {
   sessionStorage.setItem("sessionID", sessionID);
 });
 
-socket.emit("getDuelInfos");
+if (sessionStorage.getItem("socketDuelSession") === "1") {
+  socket.emit("getDuelInfos");
+}
 
 /*
 let titleCanvas = document.getElementById("titleCanvas");

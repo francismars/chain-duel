@@ -366,6 +366,11 @@ export interface ClientToServerEvents {
   /** Ask server to push the cached mempool tip (footer init / after reconnect). */
   requestMempoolTip: () => void;
   /** After measuring RTT, send so server can broadcast both players' ping via `onlineRoomUpdated`. */
+  reportClientEvent: (payload: {
+    event: string;
+    route?: string;
+    detail?: string;
+  }) => void;
   reportOnlineRoomPing: (payload: {
     roomId: string;
     latencyMs: number;

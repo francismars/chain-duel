@@ -6,6 +6,9 @@ export const GAME_CONFIG_STORAGE_KEY = 'gameConfig';
 /** Written by /practice when starting a match; cleared before paid/socket-backed /game. */
 export const PRACTICE_SESSION_ORIGIN = 'practice';
 
+/** Set when navigating to `/game` from P2P menu or tournament bracket. */
+export const SOCKET_DUEL_SESSION_KEY = 'socketDuelSession';
+
 /** Practice hub session modes (canonical `PRACTICE`; legacy aliases still accepted). */
 
 export const PRACTICE_HUB_BOOTSTRAP_MODES = [
@@ -78,6 +81,7 @@ export function sessionUsesPracticeHubConfig(): boolean {
 
 /** Persist practice setup immediately before navigating to `/game`. */
 export function savePracticeGameConfig(config: Record<string, unknown>): void {
+  clearSocketDuelSessionMarker();
   sessionStorage.setItem(
     GAME_CONFIG_STORAGE_KEY,
     JSON.stringify({ ...config, sessionOrigin: PRACTICE_SESSION_ORIGIN })
@@ -87,6 +91,18 @@ export function savePracticeGameConfig(config: Record<string, unknown>): void {
 /** Remove client practice blob so P2P/tournament socket bootstrap is authoritative. */
 export function clearClientGameConfig(): void {
   sessionStorage.removeItem(GAME_CONFIG_STORAGE_KEY);
+}
+
+export function markSocketDuelSession(): void {
+  sessionStorage.setItem(SOCKET_DUEL_SESSION_KEY, '1');
+}
+
+export function isSocketDuelSession(): boolean {
+  return sessionStorage.getItem(SOCKET_DUEL_SESSION_KEY) === '1';
+}
+
+export function clearSocketDuelSessionMarker(): void {
+  sessionStorage.removeItem(SOCKET_DUEL_SESSION_KEY);
 }
 
 /** Server duel modes that must win over any leftover practice `gameConfig`. */

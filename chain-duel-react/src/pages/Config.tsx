@@ -14,6 +14,7 @@ import { fetchProfileFromServer } from '@/lib/nostr/fetchProfileFromServer';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import {
   CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
   clearMenuNavigationState,
@@ -115,6 +116,23 @@ export default function Config() {
   const [nostrPubkeyHex, setNostrPubkeyHex] = useState<string | null>(null);
   const [nostrBusy, setNostrBusy] = useState(false);
   const [nostrError, setNostrError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!nostrError) return;
+    reportClientEvent(socket, 'client.ui.error', {
+      route: '/config',
+      detail: nostrError,
+    });
+  }, [nostrError, socket]);
+
+  useEffect(() => {
+    if (!serverLinkError) return;
+    reportClientEvent(socket, 'client.ui.error', {
+      route: '/config',
+      detail: serverLinkError,
+    });
+  }, [serverLinkError, socket]);
+
   const [profile, setProfile] = useState<Kind0Profile | null>(null);
   const [profileRecovering, setProfileRecovering] = useState(false);
   const [avatarBroken, setAvatarBroken] = useState(false);

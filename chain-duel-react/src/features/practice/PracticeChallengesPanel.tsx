@@ -19,6 +19,7 @@ import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { savePracticeGameConfig } from '@/pages/practiceHubModes';
 import type { PracticeHubFocus } from '@/pages/practiceHubPlayStyleNav';
 import { useSocket } from '@/hooks/useSocket';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import {
   fetchChallengeEligibility,
   requestChallengeRun,
@@ -434,6 +435,14 @@ export const PracticeChallengesPanel = forwardRef<
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [launchPending, setLaunchPending] = useState(false);
+
+  useEffect(() => {
+    if (eligibilityLoading || !eligibility || eligibility.eligible) return;
+    reportClientEvent(socket, 'client.ui.error', {
+      route: '/practice?play=challenges',
+      detail: 'challenge_eligibility_failed',
+    });
+  }, [eligibility, eligibilityLoading, socket]);
 
   const [selected, setSelected] = useState(
     () => peekChallengeMenuFocus() ?? 0

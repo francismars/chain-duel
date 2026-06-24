@@ -42,7 +42,7 @@ import {
   relayHintsFromNevent,
   relayUrlToDisplayHost,
 } from '@/lib/nostr/probeRelaysForEvent';
-import { clearClientGameConfig } from '@/pages/practiceHubModes';
+import { clearClientGameConfig, markSocketDuelSession } from '@/pages/practiceHubModes';
 import './gamemenu.css';
 
 type ButtonSelected =
@@ -188,6 +188,7 @@ export default function GameMenu() {
 
   const goToPaidGame = useCallback(() => {
     clearClientGameConfig();
+    markSocketDuelSession();
     navigate('/game');
   }, [navigate]);
 

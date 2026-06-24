@@ -65,6 +65,7 @@ import {
   isExplicitPracticeSession,
   isPracticeChallengeConfig,
   isPracticeHubGameMode,
+  isSocketDuelSession,
   practiceHubExitPath,
   readSessionGameConfig,
   sessionUsesPracticeHubConfig,
@@ -1000,6 +1001,9 @@ export default function Game() {
         }
       }, GAME_BOOTSTRAP_TIMEOUT_MS);
       return () => window.clearTimeout(noSocketTimer);
+    }
+    if (!isSocketDuelSession()) {
+      return;
     }
     socket.emit('getDuelInfos');
   }, [socket, connected, loading, bootstrapLocalGame]);

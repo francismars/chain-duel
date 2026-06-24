@@ -14,6 +14,7 @@ import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useMenuSfx } from '@/hooks/useMenuSfx';
 import { useSocket } from '@/hooks/useSocket';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import {
   ONLINE_HOME,
@@ -1051,6 +1052,26 @@ export default function OnlineRoomLobby() {
   const isPostgame = room?.phase === 'postgame';
   const isMatchEnded = isPostgame || isSessionClosed;
   const rematchPending = Boolean(room?.postGame?.rematchRequested);
+  const lobbyAbandonRef = useRef({ roomId: '', shouldReport: false });
+  useEffect(() => {
+    const unpaid = !mySeat || mySeat.status !== 'paid';
+    const paidNotReady = mySeat?.status === 'paid' && !myReady;
+    lobbyAbandonRef.current = {
+      roomId,
+      shouldReport: Boolean(
+        roomId && !isMatchEnded && !rematchPending && (unpaid || paidNotReady)
+      ),
+    };
+  }, [roomId, mySeat, myReady, isMatchEnded, rematchPending]);
+  useEffect(() => {
+    return () => {
+      const { roomId: rid, shouldReport } = lobbyAbandonRef.current;
+      if (!shouldReport || !rid) return;
+      reportClientEvent(socket, 'client.funnel.abandon', {
+        route: `/online/lobby?roomId=${rid}`,
+      });
+    };
+  }, [socket]);
   rematchPendingRef.current = rematchPending;
   const rematchAmount = room?.postGame?.rematchRequiredAmount ?? 0;
   const rematchWaitingForSessionID = room?.postGame?.rematchWaitingForSessionID;

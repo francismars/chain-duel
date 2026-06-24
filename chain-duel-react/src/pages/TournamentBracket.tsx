@@ -20,7 +20,7 @@ import {
   TOURNAMENT_MIN_PLAYERS,
 } from '@/shared/constants/payment';
 import { createLogger } from '@/shared/utils/logger';
-import { clearClientGameConfig } from '@/pages/practiceHubModes';
+import { clearClientGameConfig, markSocketDuelSession } from '@/pages/practiceHubModes';
 import { npubEncode } from 'nostr-tools/nip19';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
@@ -584,6 +584,7 @@ export default function TournamentBracket() {
       isNostrTournament ? 'tournamentnostr' : 'tournament'
     );
     clearClientGameConfig();
+    markSocketDuelSession();
     navigate('/game');
   }, [isNostrTournament, navigate, playConfirm, playersPaid]);
 
