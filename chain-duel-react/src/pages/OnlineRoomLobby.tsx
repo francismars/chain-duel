@@ -302,7 +302,7 @@ export default function OnlineRoomLobby() {
   const [paymentPanelFocusSlot, setPaymentPanelFocusSlot] =
     useState<PaymentPanelFocusSlot>('primary');
   const [inviteCopyFeedback, setInviteCopyFeedback] = useState<
-    'link' | 'text' | null
+    'link' | 'text' | 'share' | null
   >(null);
   const inviteCopyResetRef = useRef<WindowTimeout | null>(null);
   const [invitePostBusy, setInvitePostBusy] = useState(false);
@@ -959,7 +959,7 @@ export default function OnlineRoomLobby() {
     </p>
   );
 
-  const flashInviteCopy = (which: 'link' | 'text') => {
+  const flashInviteCopy = (which: 'link' | 'text' | 'share') => {
     if (inviteCopyResetRef.current) window.clearTimeout(inviteCopyResetRef.current);
     setInviteCopyFeedback(which);
     inviteCopyResetRef.current = window.setTimeout(() => {
@@ -975,8 +975,24 @@ export default function OnlineRoomLobby() {
       .then(() => flashInviteCopy('link'));
   };
 
-  const copyInviteText = () => {
-    if (!lobbyInviteText) return;
+  const shareLobbyInvite = async () => {
+    if (!lobbyInviteText || !lobbyInviteUrl) return;
+    if (typeof navigator.share === 'function') {
+      const payloads: ShareData[] = [
+        { title: 'Chain Duel', text: lobbyInviteText, url: lobbyInviteUrl },
+        { title: 'Chain Duel', text: lobbyInviteText },
+      ];
+      for (const data of payloads) {
+        if (navigator.canShare && !navigator.canShare(data)) continue;
+        try {
+          await navigator.share(data);
+          flashInviteCopy('share');
+          return;
+        } catch (e) {
+          if (e instanceof DOMException && e.name === 'AbortError') return;
+        }
+      }
+    }
     void navigator.clipboard
       .writeText(lobbyInviteText)
       .then(() => flashInviteCopy('text'));
@@ -2645,7 +2661,14 @@ export default function OnlineRoomLobby() {
                 </Button>
               </div>
             ) : kind1PostEvent || paymentMode ? (
-              <div className="online-lobby-pay-zone-inner">
+              <div
+                className={[
+                  'online-lobby-pay-zone-inner',
+                  showInviteFinder ? 'online-lobby-pay-zone-inner--invite' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
                 <div className="online-lobby-pay-zone-main">
                   {showSeatPaymentPaths ? (
                     <div
@@ -2804,7 +2827,16 @@ export default function OnlineRoomLobby() {
                     </div>
                   ) : null}
                   <div className="online-lobby-kind1-section online-lobby-kind1-section--nested">
-                    <div className="online-lobby-kind1-embedded">
+                    <div
+                      className={[
+                        'online-lobby-kind1-embedded',
+                        showInviteFinder
+                          ? 'online-lobby-kind1-embedded--invite'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
                       {/* ── Payment UI (status lives in the banner above) ── */}
                       {paymentMode === 'anon' ? (
                         /* Anonymous Lightning invoice */
@@ -3613,33 +3645,27 @@ export default function OnlineRoomLobby() {
                       ) : null}
 
                       {showInviteFinder ? (
-                        <div className="online-lobby-invite-panel online-lobby-kind1-embedded--invite-only">
-                          <p className="online-lobby-sublabel">FIND PLAYERS</p>
+                        <div className="online-lobby-invite-panel">
+                          <p className="online-lobby-sublabel">
+                            {seatsFull ? 'SHARE ROOM' : 'FIND PLAYERS'}
+                          </p>
                           <p className="online-lobby-invite-lede">
-                            {paidSeats < 2
-                              ? 'You’re in — share this room so someone can take the open seat or watch as a spectator.'
-                              : 'Both seats are filled. Share the link if you want spectators before the match starts.'}
+                            {seatsFull
+                              ? 'Invite spectators — room link is in the header if you only need the URL.'
+                              : 'Share to fill the open seat. Room link is in the header if you only need the URL.'}
                           </p>
                           <div className="online-lobby-invite-actions">
                             <Button
                               type="button"
-                              className="online-lobby-action"
-                              disabled={!lobbyInviteUrl}
-                              onClick={copyLobbyLink}
-                            >
-                              {inviteCopyFeedback === 'link'
-                                ? 'LINK COPIED'
-                                : 'COPY ROOM LINK'}
-                            </Button>
-                            <Button
-                              type="button"
-                              className="online-lobby-action"
+                              className="online-lobby-action online-lobby-invite-share-btn"
                               disabled={!lobbyInviteText}
-                              onClick={copyInviteText}
+                              onClick={() => void shareLobbyInvite()}
                             >
-                              {inviteCopyFeedback === 'text'
-                                ? 'TEXT COPIED'
-                                : 'COPY INVITE TEXT'}
+                              {inviteCopyFeedback === 'share'
+                                ? 'SHARED'
+                                : inviteCopyFeedback === 'text'
+                                  ? 'COPIED'
+                                  : 'SHARE'}
                             </Button>
                             {nostrSession.signedIn ? (
                               <Button
@@ -3660,16 +3686,16 @@ export default function OnlineRoomLobby() {
                                 className="online-lobby-action"
                                 onClick={openConfigForNostr}
                               >
-                                SIGN IN TO POST
+                                SIGN IN TO POST ON NOSTR
                               </Button>
                             )}
                           </div>
-                          <p className="online-lobby-invite-preview-label">
-                            Invite preview
-                          </p>
-                          <pre className="online-lobby-invite-preview">
-                            {lobbyInviteText}
-                          </pre>
+                          <details className="online-lobby-invite-preview-details">
+                            <summary>Invite preview</summary>
+                            <pre className="online-lobby-invite-preview">
+                              {lobbyInviteText}
+                            </pre>
+                          </details>
                           {invitePostError ? (
                             <p
                               className="online-lobby-invite-error"

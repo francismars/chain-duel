@@ -20,41 +20,41 @@
 }
 
 .online-rooms-page {
-  /* Fluid typography — same scale as /practice (practice-hub-page.css) */
-  --ph-fs-soon: calc(0.2rem + 0.58vw);
-  --ph-fs-gate-check: calc(0.18rem + 0.52vw);
-  --ph-fs-gate-meta: calc(0.16rem + 0.48vw);
-  --ph-fs-play-style-sub: calc(0.2rem + 0.65vw);
-  --ph-fs-caption: calc(0.24rem + 0.78vw);
-  --ph-fs-body-sm: calc(0.28rem + 0.86vw);
-  --ph-fs-tier: calc(0.3rem + 0.82vw);
-  --ph-fs-body: calc(0.36rem + 0.98vw);
-  --ph-fs-ui: calc(0.4rem + 1.08vw);
-  --ph-fs-heading-sm: calc(0.46rem + 1.2vw);
-  --ph-fs-heading: calc(0.5rem + 1.38vw);
-  --ph-fs-display-sm: calc(0.58rem + 1.9vw);
-  --ph-fs-display: calc(0.72rem + 2.85vw);
+  /* Fluid typography — scales with viewport, caps on large / fullscreen displays */
+  --ph-fs-soon: clamp(0.54rem, calc(0.2rem + 0.58vw), 0.66rem);
+  --ph-fs-gate-check: clamp(0.54rem, calc(0.18rem + 0.52vw), 0.64rem);
+  --ph-fs-gate-meta: clamp(0.52rem, calc(0.16rem + 0.48vw), 0.62rem);
+  --ph-fs-play-style-sub: clamp(0.55rem, calc(0.2rem + 0.65vw), 0.68rem);
+  --ph-fs-caption: clamp(0.58rem, calc(0.24rem + 0.78vw), 0.72rem);
+  --ph-fs-body-sm: clamp(0.65rem, calc(0.28rem + 0.86vw), 0.78rem);
+  --ph-fs-tier: clamp(0.62rem, calc(0.3rem + 0.82vw), 0.75rem);
+  --ph-fs-body: clamp(0.72rem, calc(0.36rem + 0.98vw), 0.88rem);
+  --ph-fs-ui: clamp(0.78rem, calc(0.4rem + 1.08vw), 0.95rem);
+  --ph-fs-heading-sm: clamp(0.82rem, calc(0.46rem + 1.2vw), 1.05rem);
+  --ph-fs-heading: clamp(0.9rem, calc(0.5rem + 1.38vw), 1.2rem);
+  --ph-fs-display-sm: clamp(1rem, calc(0.58rem + 1.9vw), 1.55rem);
+  --ph-fs-display: clamp(1.35rem, calc(0.72rem + 2.85vw), 2.35rem);
 
-  /* Layout + hit targets — proportional to viewport width */
-  --ph-page-max-width: 88vw;
+  /* Layout + hit targets — proportional but capped */
+  --ph-page-max-width: min(92vw, 68rem);
   --online-page-width: 100%;
-  --online-fs-button: calc(0.32rem + 0.64vw);
-  --online-hit-lg: 3vw;
-  --online-hit-md: 2.8vw;
-  --online-hit-sm: 2.2vw;
+  --online-fs-button: clamp(0.62rem, calc(0.32rem + 0.64vw), 0.75rem);
+  --online-hit-lg: clamp(2.35rem, 3vw, 2.85rem);
+  --online-hit-md: clamp(2.1rem, 2.8vw, 2.6rem);
+  --online-hit-sm: clamp(1.75rem, 2.2vw, 2.15rem);
   /* Match home .button (P2P / FREE PLAY — index menu-buttons @ 28vw) */
-  --online-rooms-btn-width: 28vw;
-  --online-rooms-btn-height: 3vw;
-  --online-rooms-btn-font: 0.8vw;
-  --online-avatar: 1.85vw;
-  --online-dot: 0.38vw;
-  --online-gap: 1.2vw;
-  --online-gap-sm: 0.6vw;
-  --online-gap-xs: 0.4vw;
+  --online-rooms-btn-width: clamp(11rem, 28vw, 20rem);
+  --online-rooms-btn-height: clamp(2.15rem, 3vw, 2.65rem);
+  --online-rooms-btn-font: clamp(0.62rem, 0.8vw, 0.78rem);
+  --online-avatar: clamp(1.35rem, 1.85vw, 1.75rem);
+  --online-dot: clamp(0.28rem, 0.38vw, 0.42rem);
+  --online-gap: clamp(0.45rem, 1.2vw, 0.85rem);
+  --online-gap-sm: clamp(0.35rem, 0.6vw, 0.55rem);
+  --online-gap-xs: clamp(0.25rem, 0.4vw, 0.45rem);
   --online-col-action: var(--online-rooms-btn-width);
-  --online-col-presets: minmax(7.5vw, 38%);
-  --online-list-height: clamp(16vw, 32dvh, 34vw);
-  --online-empty-icon: 6vw;
+  --online-col-presets: minmax(clamp(5.5rem, 7.5vw, 7rem), 38%);
+  --online-list-height: clamp(12rem, 32dvh, 22rem);
+  --online-empty-icon: clamp(3.5rem, 6vw, 4.5rem);
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -64,7 +64,7 @@
   min-width: 0;
   max-width: var(--ph-page-max-width);
   margin: 0 auto;
-  padding: 2vw 3vw;
+  padding: clamp(1rem, 2.5vh, 2rem) clamp(1rem, 3vw, 2.5rem);
   min-height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
@@ -106,13 +106,13 @@
 }
 
 .online-rooms-page .sponsored-by-label {
-  font-size: calc(0.24rem + 0.72vw);
+  font-size: clamp(0.58rem, calc(0.24rem + 0.72vw), 0.72rem);
 }
 
 .online-rooms-page .sponsored-img {
-  max-width: 16vw;
-  max-height: 2vw;
-  margin-bottom: 1vw;
+  max-width: min(9rem, 16vw);
+  max-height: clamp(1.1rem, 2vw, 1.35rem);
+  margin-bottom: clamp(0.35rem, 1vw, 0.65rem);
 }
 
 /* Staggered element reveals */
@@ -236,17 +236,17 @@
 .online-action-card {
   width: var(--online-page-width);
   margin: 0;
-  padding-top: 1.2vw;
+  padding-top: clamp(0.45rem, 1.2vw, 0.85rem);
 }
 
 .online-action-card-body {
   display: grid;
   grid-template-columns: 1fr var(--online-col-action);
   grid-template-rows: auto auto;
-  column-gap: 1vw;
-  row-gap: 0.3vw;
+  column-gap: clamp(0.45rem, 1vw, 0.85rem);
+  row-gap: clamp(0.2rem, 0.3vw, 0.4rem);
   align-items: stretch;
-  padding-bottom: 0.7vw;
+  padding-bottom: clamp(0.35rem, 0.7vw, 0.65rem);
 }
 
 .online-action-label {
@@ -874,9 +874,10 @@
 .online-room-card--history .online-postgame-round-row-inner {
   width: 100%;
   min-height: var(--online-hit-md);
-  padding: 0.55vw 0;
-  gap: 0.35vw 0.6vw;
-  grid-template-columns: minmax(12vw, 14vw) minmax(0, 1fr) auto;
+  padding: clamp(0.35rem, 0.55vw, 0.65rem) 0;
+  gap: clamp(0.2rem, 0.35vw, 0.45rem) clamp(0.35rem, 0.6vw, 0.65rem);
+  grid-template-columns: minmax(clamp(7rem, 12vw, 9rem), clamp(8rem, 14vw, 10rem))
+    minmax(0, 1fr) auto;
   align-items: center;
 }
 
@@ -1064,8 +1065,8 @@
 }
 
 .online-refresh {
-  width: 8.5vw;
-  min-width: 9vw;
+  width: clamp(6.5rem, 8.5vw, 7.5rem);
+  min-width: clamp(6.75rem, 9vw, 7.75rem);
   margin: 0;
 }
 
@@ -1101,12 +1102,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.6vw;
+  gap: clamp(0.35rem, 0.6vw, 0.65rem);
   border: none;
   border-bottom: 1px solid #ffffff1f;
   background: none;
   border-radius: 0;
-  padding: 0.8vw 0;
+  padding: clamp(0.45rem, 0.8vw, 0.75rem) 0;
   margin-bottom: 0;
   min-width: 0;
   max-width: 100%;
@@ -1381,32 +1382,32 @@
   }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   16:9 TV layout — 1920×1080 optimised
-   • 5 % side safe-zones (overscan)
-   • 2-column: room list left, action + back right
-   • Typography scales via --ph-fs-* (same as /practice)
-   ══════════════════════════════════════════════════════════════ */
-@media (min-width: 1400px) and (min-aspect-ratio: 16/9) {
+/* ─────────────────────────────────────────────────────────
+   Widescreen / fullscreen — keep proportions, avoid vw blow-up
+   ───────────────────────────────────────────────────────── */
+@media (min-aspect-ratio: 16/10) and (min-width: 1100px) {
   .online-rooms-page {
-    padding: 2.8vw 3vw 2vw;
-    gap: 1.8vw;
-    box-sizing: border-box;
-    --online-list-height: clamp(22vw, 48dvh, 36vw);
-    --online-hit-lg: 3.5vw;
-    --online-hit-md: 4vw;
-    --online-hit-sm: 3.2vw;
-    --online-empty-icon: 6.5vw;
+    grid-template-rows: minmax(0, 1fr) auto auto auto auto auto minmax(0, 1fr);
+    padding-top: clamp(1rem, 2.5vh, 2rem);
+    padding-bottom: clamp(1rem, 2.5vh, 2rem);
   }
 
-  /* Left column: keep stacked */
-  .online-rooms-left {
-    display: contents;
-  }
-
-  /* Room list: taller on TV */
   .online-room-list {
-    height: var(--online-list-height);
+    height: clamp(14rem, 38dvh, 24rem);
+  }
+}
+
+@media (min-width: 1600px) and (min-aspect-ratio: 16/9) {
+  .online-rooms-page {
+    padding-left: clamp(1.5rem, 5vw, 4rem);
+    padding-right: clamp(1.5rem, 5vw, 4rem);
+  }
+}
+
+@media (min-width: 1400px) and (min-aspect-ratio: 16/9) {
+  /* Room list: comfortable height on TV without vw blow-up */
+  .online-room-list {
+    height: clamp(15rem, 42dvh, 26rem);
   }
 
   .online-tab {
@@ -1414,24 +1415,23 @@
   }
 
   .online-room-meta {
-    gap: 1.1vw;
+    gap: clamp(0.45rem, 1.1vw, 0.85rem);
   }
 
   .online-room-card {
-    padding: 0.9vw 0;
+    padding: clamp(0.45rem, 0.9vw, 0.75rem) 0;
   }
 
   .online-room-card--history .online-postgame-round-row-inner {
     min-height: var(--online-hit-md);
-    padding: 0.65vw 0;
+    padding: clamp(0.35rem, 0.65vw, 0.7rem) 0;
   }
 
   .online-history-action-col .online-postgame-round-replay-btn.button {
     height: var(--online-rooms-btn-height);
-    padding: 0 1.4vw;
+    padding: 0 clamp(0.75rem, 1.4vw, 1.1rem);
   }
 
-  /* ── Action card — larger hit-targets only ── */
   .online-action-card-body {
     grid-template-rows: auto auto;
   }
@@ -1441,7 +1441,7 @@
   }
 
   .online-buyin-preset {
-    padding: 0.45vw 0;
+    padding: clamp(0.25rem, 0.45vw, 0.5rem) 0;
   }
 
   .online-buyin-btn {
@@ -1449,12 +1449,9 @@
     height: var(--online-hit-sm);
   }
 
-  /* ── Footer ── */
   .online-footer-controls {
     margin-top: 0;
   }
-
-  /* ── Empty state — stays centred via flex: 1 from base rule ── */
 
   .online-empty-icon {
     width: var(--online-empty-icon);

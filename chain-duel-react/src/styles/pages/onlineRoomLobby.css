@@ -32,37 +32,37 @@
 }
 
 .online-lobby-page {
-  /* Viewport-only typography — pure vw, no clamp/rem floors */
-  --online-lobby-fs-display: 2.85vw;
-  --online-lobby-fs-pin: 3.5vw;
-  --online-lobby-fs-display-sm: 1.9vw;
-  --online-lobby-fs-heading: 1.38vw;
-  --online-lobby-fs-heading-sm: 1.2vw;
-  --online-lobby-fs-ui: 1.08vw;
-  --online-lobby-fs-body: 0.98vw;
-  --online-lobby-fs-body-sm: 0.86vw;
-  --online-lobby-fs-label: 0.64vw;
-  --online-lobby-fs-meta: 0.65vw;
-  --online-lobby-fs-hint: 0.48vw;
-  --online-lobby-qr-size: 160px;
-  --online-lobby-pin-qr-size: 96px;
+  /* Fluid sizing — scales with viewport but caps on large / fullscreen displays */
+  --online-lobby-fs-display: clamp(1.35rem, 2.85vw, 2.35rem);
+  --online-lobby-fs-pin: clamp(1.5rem, 3.5vw, 2.75rem);
+  --online-lobby-fs-display-sm: clamp(1rem, 1.9vw, 1.55rem);
+  --online-lobby-fs-heading: clamp(0.9rem, 1.38vw, 1.2rem);
+  --online-lobby-fs-heading-sm: clamp(0.82rem, 1.2vw, 1.05rem);
+  --online-lobby-fs-ui: clamp(0.78rem, 1.08vw, 0.95rem);
+  --online-lobby-fs-body: clamp(0.72rem, 0.98vw, 0.88rem);
+  --online-lobby-fs-body-sm: clamp(0.65rem, 0.86vw, 0.78rem);
+  --online-lobby-fs-label: clamp(0.58rem, 0.64vw, 0.68rem);
+  --online-lobby-fs-meta: clamp(0.58rem, 0.65vw, 0.7rem);
+  --online-lobby-fs-hint: clamp(0.5rem, 0.48vw, 0.62rem);
+  --online-lobby-qr-size: clamp(148px, 11vw, 168px);
+  --online-lobby-pin-qr-size: clamp(88px, 7vw, 104px);
   --online-lobby-embedded-panel-height: calc(
     var(--online-lobby-qr-size) + 0.75rem + 0.8rem
   );
 
-  --ph-page-max-width: 88vw;
+  --ph-page-max-width: min(92vw, 68rem);
   --online-page-width: 100%;
-  --online-hit-lg: 3vw;
-  --online-hit-md: 2.8vw;
-  --online-hit-sm: 2.2vw;
+  --online-hit-lg: clamp(2.35rem, 3vw, 2.85rem);
+  --online-hit-md: clamp(2.1rem, 2.8vw, 2.6rem);
+  --online-hit-sm: clamp(1.75rem, 2.2vw, 2.15rem);
   /* Match home .button (FREE PLAY — index menu-buttons @ 28vw) */
-  --online-lobby-btn-width: 28vw;
-  --online-lobby-btn-height: 3vw;
-  --online-lobby-btn-font: 0.8vw;
+  --online-lobby-btn-width: clamp(11rem, 28vw, 20rem);
+  --online-lobby-btn-height: clamp(2.15rem, 3vw, 2.65rem);
+  --online-lobby-btn-font: clamp(0.62rem, 0.8vw, 0.78rem);
   --online-kind1-cta-width: var(--online-lobby-btn-width);
   --online-kind1-cta-width-sm: var(--online-lobby-btn-width);
-  --online-gap: 1.2vw;
-  --online-gap-sm: 0.6vw;
+  --online-gap: clamp(0.45rem, 1.2vw, 0.85rem);
+  --online-gap-sm: clamp(0.35rem, 0.6vw, 0.55rem);
 
   width: 100%;
   min-width: 0;
@@ -81,7 +81,7 @@
   flex-direction: column;
   justify-content: center;
   gap: var(--online-gap-sm);
-  padding: 2vw 3vw;
+  padding: clamp(1rem, 2.5vh, 2rem) clamp(1rem, 3vw, 2.5rem);
   width: 100%;
   box-sizing: border-box;
 }
@@ -375,14 +375,14 @@
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: 0.9vw;
+  gap: clamp(0.45rem, 0.9vw, 0.75rem);
   align-items: stretch;
 }
 
 .online-lobby-arena-seat {
   border: 1px solid rgb(255 255 255 / 0.18);
   background: rgb(0 0 0 / 28%);
-  padding: 0.9vw;
+  padding: clamp(0.45rem, 0.9vw, 0.75rem);
   display: flex;
   flex-direction: column;
   gap: 0.3vw;
@@ -716,7 +716,7 @@
 .online-lobby-payment-paths {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.6vw;
+  gap: clamp(0.35rem, 0.6vw, 0.65rem);
   width: 100%;
 }
 
@@ -1063,8 +1063,8 @@
 
 .online-lobby-pay-zone-inner {
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
-  gap: 0.5rem 0.6rem;
+  grid-template-columns: minmax(10.5rem, 13.75rem) minmax(0, 1fr);
+  gap: clamp(0.4rem, 0.6rem, 0.75rem) clamp(0.45rem, 0.6rem, 0.85rem);
   align-items: stretch;
   width: 100%;
 }
@@ -1099,7 +1099,8 @@
   margin: 0 auto;
   border: 1px solid rgb(255 255 255 / 0.15);
   background: rgb(0 0 0 / 25%);
-  padding: 0.75vw 1.2vw 1vw;
+  padding: clamp(0.55rem, 0.75vw, 0.85rem) clamp(0.7rem, 1.2vw, 1rem)
+    clamp(0.65rem, 1vw, 0.95rem);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -1451,6 +1452,10 @@
   border-color: rgb(120 180 255 / 0.35) !important;
 }
 
+.online-lobby-invite-share-btn {
+  border-color: rgb(180 255 200 / 0.28) !important;
+}
+
 .online-lobby-invite-preview-label {
   margin: 0.35rem 0 0;
   font-size: var(--online-lobby-fs-hint);
@@ -1462,8 +1467,6 @@
 .online-lobby-invite-preview {
   margin: 0;
   padding: 0.55rem 0.65rem;
-  max-height: 7.5rem;
-  overflow: auto;
   font-family: ui-monospace, monospace;
   font-size: var(--online-lobby-fs-hint);
   line-height: 1.45;
@@ -1472,6 +1475,89 @@
   border: 1px solid rgb(255 255 255 / 0.08);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* Seated / invite-only — drop fixed QR panel height so content cannot overflow */
+.online-lobby-pay-zone-main
+  .online-lobby-kind1-embedded.online-lobby-kind1-embedded--invite {
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.online-lobby-pay-zone-inner--invite {
+  align-items: start;
+}
+
+.online-lobby-pay-zone-inner--invite .online-lobby-pay-zone-note,
+.online-lobby-pay-zone-inner--invite .online-lobby-kind1-content-col {
+  flex: none;
+  height: auto;
+  align-self: start;
+}
+
+.online-lobby-pay-zone-inner--invite .online-lobby-invite-panel {
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem 0.6rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(0 0 0 / 0.22);
+}
+
+.online-lobby-pay-zone-inner--invite .online-lobby-invite-lede {
+  font-size: var(--online-lobby-fs-hint);
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.48);
+}
+
+.online-lobby-pay-zone-inner--invite .online-lobby-invite-actions {
+  gap: 0.35rem;
+}
+
+.online-lobby-pay-zone-inner--invite .online-lobby-invite-actions .online-lobby-action {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  min-height: var(--online-hit-sm);
+  padding: 0.4rem 0.45rem;
+  white-space: normal;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.online-lobby-invite-preview-details {
+  margin: 0;
+}
+
+.online-lobby-invite-preview-details summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--online-lobby-fs-hint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.35);
+  user-select: none;
+}
+
+.online-lobby-invite-preview-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.online-lobby-invite-preview-details summary::after {
+  content: ' ▾';
+  opacity: 0.7;
+}
+
+.online-lobby-invite-preview-details[open] summary::after {
+  content: ' ▴';
+}
+
+.online-lobby-invite-preview-details .online-lobby-invite-preview {
+  margin-top: 0.35rem;
+  max-height: none;
+  mask-image: none;
 }
 
 .online-lobby-invite-error {
@@ -3286,26 +3372,29 @@
 }
 
 /* ─────────────────────────────────────────────────────────
-   16:9 TV / widescreen layout
-   Switches the page to a 2-column grid so everything fits
-   on one screen without scrolling:
-     left  → header (full), don-banner, arena, action, leave
-     right → kind1 sidebar spanning all content rows
+   Widescreen / fullscreen — keep proportions, avoid vw blow-up
    ───────────────────────────────────────────────────────── */
-/* ══════════════════════════════════════════════════════════════
-   16:9 TV layout — safe-zone padding + larger type
-   Applied on top of the 16/10 widescreen rules above.
-   ══════════════════════════════════════════════════════════════ */
-@media (min-width: 1600px) and (min-aspect-ratio: 16/9) {
-  /* 5 % horizontal safe-zone */
-  .online-lobby-page {
-    --online-hit-lg: 3.5vw;
-    --online-hit-md: 4vw;
-    --online-hit-sm: 3.2vw;
+@media (min-aspect-ratio: 16/10) and (min-width: 1100px) {
+  .online-lobby-main {
+    justify-content: center;
+    padding-top: clamp(1rem, 2.5vh, 2rem);
+    padding-bottom: clamp(1rem, 2.5vh, 2rem);
   }
 
+  .online-lobby-arena-seat {
+    padding: clamp(0.45rem, 0.6vw, 0.75rem) clamp(0.55rem, 1vw, 0.9rem);
+  }
+
+  .online-lobby-kind1-section {
+    padding: clamp(0.55rem, 0.75vw, 0.85rem) clamp(0.7rem, 1.2vw, 1rem)
+      clamp(0.65rem, 1vw, 0.95rem);
+  }
+}
+
+@media (min-width: 1600px) and (min-aspect-ratio: 16/9) {
   .online-lobby-main {
-    padding: 0.6vw 5vw 1vw;
+    padding-left: clamp(1.5rem, 5vw, 4rem);
+    padding-right: clamp(1.5rem, 5vw, 4rem);
   }
 
   .online-lobby-action {
@@ -3315,22 +3404,8 @@
 }
 
 @media (min-width: 1400px) and (min-aspect-ratio: 16/10) {
-  .online-lobby-main {
-    padding: 0.4vw 2vw 0.8vw;
-  }
-
-  /* Arena seats: reduce vertical padding */
-  .online-lobby-arena-seat {
-    padding: 0.6vw 1vw;
-  }
-
   /* Payment paths: 3 equal columns in the widescreen action zone */
   .online-lobby-payment-paths {
     grid-template-columns: repeat(3, 1fr);
-  }
-
-  /* Kind1 section: compact padding */
-  .online-lobby-kind1-section {
-    padding: 0.8vw 1vw 1vw;
   }
 }

@@ -867,7 +867,6 @@ export default function OnlineGame() {
               <div className="inline" id="player1name">
                 {roomInfo?.p1Name || 'Player 1'}
               </div>
-              {isP1 ? <span className="online-game-you-tag">YOU</span> : null}
               {isP1 && localControlSlot && !replayMode ? (
                 <PlayerControlsHint slot={localControlSlot} size="xs" />
               ) : null}
@@ -877,13 +876,12 @@ export default function OnlineGame() {
               {replayMode ? ' · REPLAY MODE' : ''}
             </div>
             <div id="player2info" className="condensed">
-              {isP2 ? <span className="online-game-you-tag">YOU</span> : null}
-              <div className="inline" id="player2name">
-                {roomInfo?.p2Name || 'Player 2'}
-              </div>
               {isP2 && localControlSlot && !replayMode ? (
                 <PlayerControlsHint slot={localControlSlot} size="xs" />
               ) : null}
+              <div className="inline" id="player2name">
+                {roomInfo?.p2Name || 'Player 2'}
+              </div>
               <img
                 className={`inline playerImg ${roomInfo?.p2Picture ? '' : 'hide'}`}
                 src={roomInfo?.p2Picture || '/images/loading.gif'}
@@ -910,8 +908,18 @@ export default function OnlineGame() {
                     {roomInfo.p1PingMs}ms
                   </span>
                 ) : null}
+                {isP1 && !replayMode ? (
+                  <span className="online-game-you-tag online-game-you-tag--trail">
+                    YOU
+                  </span>
+                ) : null}
               </div>
               <div id="capturingP2">
+                {isP2 && !replayMode ? (
+                  <span className="online-game-you-tag online-game-you-tag--lead">
+                    YOU
+                  </span>
+                ) : null}
                 {!replayMode && roomInfo?.p2PingMs != null ? (
                   <span
                     className={`online-game-ping-badge online-game-ping-badge--mirror online-game-ping online-game-ping--${onlinePingAccent(
