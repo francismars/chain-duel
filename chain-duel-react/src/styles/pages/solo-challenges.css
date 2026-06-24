@@ -1746,17 +1746,28 @@
 }
 
 .sc-row:disabled,
-.sc-row--locked {
+.sc-row--locked,
+.sc-row--completed {
   cursor: not-allowed;
 }
 
 .sc-row:disabled:hover,
-.sc-row--locked:hover {
+.sc-row--locked:hover,
+.sc-row--completed:hover {
   border-color: rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.28);
   color: rgba(255, 255, 255, 0.45);
   box-shadow: none;
   animation: none;
+}
+
+.sc-row--completed {
+  opacity: 0.62;
+}
+
+.sc-row--completed.sc-row--selected {
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .sc-row--selected {

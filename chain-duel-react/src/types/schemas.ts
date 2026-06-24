@@ -523,6 +523,7 @@ export const ResChallengeEligibilitySchema = z.object({
   ok: z.boolean(),
   pubkey: z.string().nullable(),
   eligible: z.boolean(),
+  claimedChallengeIds: z.array(z.string()).optional(),
   checks: z.record(z.string(), EligibilityCheckSchema),
 });
 

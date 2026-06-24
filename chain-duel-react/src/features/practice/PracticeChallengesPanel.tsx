@@ -92,6 +92,10 @@ const DEFAULT_CHALLENGES: Challenge[] = (
               : 6900,
 }));
 
+const CHALLENGE_ALREADY_CLAIMED_MSG =
+  'You already completed this challenge and collected the bounty.';
+const LAUNCH_ATTEMPT_GAP_MS = 500;
+
 const TIER_LABELS: Record<AiTier, string> = {
   normie: 'NORMIE',
   stacker: 'STACKER',
@@ -435,6 +439,11 @@ export const PracticeChallengesPanel = forwardRef<
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [launchPending, setLaunchPending] = useState(false);
+  const [claimedChallengeIds, setClaimedChallengeIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const launchInFlightRef = useRef(false);
+  const lastLaunchAttemptAtRef = useRef(0);
 
   useEffect(() => {
     if (eligibilityLoading || !eligibility || eligibility.eligible) return;
@@ -607,6 +616,11 @@ export const PracticeChallengesPanel = forwardRef<
   useEffect(() => {
     loadEligibility();
   }, [loadEligibility]);
+
+  useEffect(() => {
+    if (!eligibility?.claimedChallengeIds?.length) return;
+    setClaimedChallengeIds(new Set(eligibility.claimedChallengeIds));
+  }, [eligibility?.claimedChallengeIds]);
 
   useEffect(() => {
     if (!isActive || !nostrSession.signedIn) return;
@@ -925,11 +939,30 @@ export const PracticeChallengesPanel = forwardRef<
     animateLockedRowBounty(selected);
   }, [selected, isActive, nostrSession.signedIn, animateLockedRowBounty]);
 
+  const markChallengeClaimed = useCallback((challengeId: string) => {
+    setClaimedChallengeIds((prev) => {
+      if (prev.has(challengeId)) return prev;
+      const next = new Set(prev);
+      next.add(challengeId);
+      return next;
+    });
+  }, []);
+
   const launchChallenge = useCallback(
     async (idx?: number, fromEligibilityResume = false) => {
+      if (launchInFlightRef.current) return;
       if (!fromEligibilityResume && (launching || launchPending)) return;
       const challenge = challenges[idx ?? selected];
       if (!challenge) return;
+
+      if (claimedChallengeIds.has(challenge.id)) {
+        setLaunchError(CHALLENGE_ALREADY_CLAIMED_MSG);
+        playSfx(SFX.MENU_SELECT);
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastLaunchAttemptAtRef.current < LAUNCH_ATTEMPT_GAP_MS) return;
 
       const abortLaunch = () => {
         setLaunchPending(false);
@@ -966,6 +999,10 @@ export const PracticeChallengesPanel = forwardRef<
         playSfx(SFX.MENU_SELECT);
         return;
       }
+
+      launchInFlightRef.current = true;
+      lastLaunchAttemptAtRef.current = now;
+
       setLaunchPending(false);
       clearPendingChallengeClaim();
       playSfx(SFX.MENU_CONFIRM);
@@ -974,10 +1011,14 @@ export const PracticeChallengesPanel = forwardRef<
       try {
         const runResult = await requestChallengeRun(socket, challenge.id);
         if (!runResult.ok) {
+          if (runResult.reason === 'already_claimed') {
+            markChallengeClaimed(challenge.id);
+          }
           const runReasonMessages: Record<string, string> = {
             not_eligible: 'Complete all requirements before starting a challenge',
             nostr_sign_in_required: 'Sign in with Nostr to start a bounty challenge',
             rate_limited: 'Too many attempts — wait a moment and try again',
+            already_claimed: CHALLENGE_ALREADY_CLAIMED_MSG,
           };
           setLaunchError(
             runReasonMessages[runResult.reason] ?? runResult.reason
@@ -1029,6 +1070,8 @@ export const PracticeChallengesPanel = forwardRef<
         setLaunchError('Could not start challenge — check connection and try again');
         playSfx(SFX.MENU_SELECT);
         abortLaunch();
+      } finally {
+        launchInFlightRef.current = false;
       }
     },
     [
@@ -1045,6 +1088,8 @@ export const PracticeChallengesPanel = forwardRef<
       eligibilityLoading,
       launching,
       launchPending,
+      claimedChallengeIds,
+      markChallengeClaimed,
       onLaunchStateChange,
     ]
   );
@@ -1486,6 +1531,7 @@ export const PracticeChallengesPanel = forwardRef<
 
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
+        if (e.repeat) return;
         if (onGateConfig) {
           gateActionRef.current?.click();
           return;
@@ -2064,6 +2110,7 @@ export const PracticeChallengesPanel = forwardRef<
           >
             {challenges.map((c, i) => {
               const isSelected = selected === i;
+              const isClaimed = claimedChallengeIds.has(c.id);
               const showSelectedStyle =
                 isSelected &&
                 (hoveredChallenge === null || hoveredChallenge === i);
@@ -2078,13 +2125,14 @@ export const PracticeChallengesPanel = forwardRef<
                     'sc-row',
                     showSelectedStyle ? 'sc-row--selected' : '',
                     challengesLocked ? 'sc-row--locked' : '',
+                    isClaimed ? 'sc-row--completed' : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
                   role="option"
                   aria-selected={isSelected}
-                  aria-disabled={challengesLocked}
-                  disabled={challengesLocked}
+                  aria-disabled={challengesLocked || isClaimed}
+                  disabled={challengesLocked || isClaimed}
                   tabIndex={
                     challengesLocked
                       ? -1
@@ -2096,7 +2144,13 @@ export const PracticeChallengesPanel = forwardRef<
                     if (!challengesLocked) setHoveredChallenge(i);
                   }}
                   onClick={() => {
-                    if (challengesLocked) return;
+                    if (challengesLocked || isClaimed) {
+                      if (isClaimed) {
+                        setLaunchError(CHALLENGE_ALREADY_CLAIMED_MSG);
+                        playSfx(SFX.MENU_SELECT);
+                      }
+                      return;
+                    }
                     hasPickedChallengeRef.current = true;
                     setSelected(i);
                     launchChallenge(i);
@@ -2205,7 +2259,12 @@ export const PracticeChallengesPanel = forwardRef<
                             : undefined
                         }
                       >
-                        {!showBountyViolator ? (
+                        {isClaimed ? (
+                          <>
+                            <span className="sc-row__unit-line">Bounty</span>
+                            <span className="sc-row__unit-line">claimed</span>
+                          </>
+                        ) : !showBountyViolator ? (
                           'SATS'
                         ) : !nostrSession.signedIn ? (
                           <>

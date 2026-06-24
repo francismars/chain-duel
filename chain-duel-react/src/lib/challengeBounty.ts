@@ -84,6 +84,7 @@ export type ChallengeEligibilityResponse = {
   ok: boolean;
   pubkey: string | null;
   eligible: boolean;
+  claimedChallengeIds?: string[];
   checks: Record<
     string,
     {

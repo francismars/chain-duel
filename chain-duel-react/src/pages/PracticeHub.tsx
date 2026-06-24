@@ -153,9 +153,6 @@ export default function PracticeHub() {
       freePlayPanelRef.current?.startPractice();
       return;
     }
-    setChallengeLaunchPhase('server');
-    setChallengeLaunchSlowHint(false);
-    setChallengeLaunching(true);
     challengesPanelRef.current?.launchSelected();
   }, [playStyle, challengeLaunching, playSfx]);
 
