@@ -1746,14 +1746,12 @@
 }
 
 .sc-row:disabled,
-.sc-row--locked,
-.sc-row--completed {
+.sc-row--locked {
   cursor: not-allowed;
 }
 
 .sc-row:disabled:hover,
-.sc-row--locked:hover,
-.sc-row--completed:hover {
+.sc-row--locked:hover {
   border-color: rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.28);
   color: rgba(255, 255, 255, 0.45);
@@ -1763,6 +1761,7 @@
 
 .sc-row--completed {
   opacity: 0.62;
+  cursor: default;
 }
 
 .sc-row--completed.sc-row--selected {

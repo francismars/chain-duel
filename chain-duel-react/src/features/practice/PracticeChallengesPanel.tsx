@@ -948,6 +948,19 @@ export const PracticeChallengesPanel = forwardRef<
     });
   }, []);
 
+  const isChallengeClaimed = useCallback(
+    (idx: number) => {
+      const challenge = challenges[idx];
+      return challenge ? claimedChallengeIds.has(challenge.id) : false;
+    },
+    [challenges, claimedChallengeIds]
+  );
+
+  const focusRowAt = useCallback((idx: number) => {
+    setSelected(idx);
+    rowRefs.current[idx]?.focus({ preventScroll: true });
+  }, []);
+
   const launchChallenge = useCallback(
     async (idx?: number, fromEligibilityResume = false) => {
       if (launchInFlightRef.current) return;
@@ -1157,9 +1170,8 @@ export const PracticeChallengesPanel = forwardRef<
       return;
     }
     const idx = hasPickedChallengeRef.current ? selected : 0;
-    setSelected(idx);
-    rowRefs.current[idx]?.focus({ preventScroll: true });
-  }, [challengesLocked, focusGateAction, hasReturningChallengeFocus, selected]);
+    focusRowAt(idx);
+  }, [challengesLocked, focusGateAction, focusRowAt, hasReturningChallengeFocus, selected]);
 
   useEffect(() => {
     const idx = peekChallengeMenuFocus();
@@ -1243,9 +1255,8 @@ export const PracticeChallengesPanel = forwardRef<
     }
     const lastIdx = challenges.length - 1;
     const idx = hasPickedChallengeRef.current ? selected : lastIdx;
-    setSelected(idx);
-    rowRefs.current[idx]?.focus({ preventScroll: true });
-  }, [challengesLocked, focusGateAction, selected]);
+    focusRowAt(idx);
+  }, [challengesLocked, focusGateAction, focusRowAt, selected]);
 
   useImperativeHandle(
     ref,
@@ -1552,11 +1563,24 @@ export const PracticeChallengesPanel = forwardRef<
           return;
         }
         if (onStart) {
-          if (!challengesLocked) launchChallenge();
+          if (!challengesLocked) {
+            if (isChallengeClaimed(selected)) {
+              setLaunchError(CHALLENGE_ALREADY_CLAIMED_MSG);
+              playSfx(SFX.MENU_SELECT);
+            } else {
+              launchChallenge();
+            }
+          }
           return;
         }
         if (challengesLocked) {
           focusGateAction();
+          return;
+        }
+        const launchIdx = onRow ? focusedRowIndex : selected;
+        if (isChallengeClaimed(launchIdx)) {
+          setLaunchError(CHALLENGE_ALREADY_CLAIMED_MSG);
+          playSfx(SFX.MENU_SELECT);
           return;
         }
         launchChallenge();
@@ -1588,6 +1612,7 @@ export const PracticeChallengesPanel = forwardRef<
     showSignedInSetup,
     challengesLocked,
     selected,
+    isChallengeClaimed,
   ]);
 
   useEffect(() => {
@@ -2132,7 +2157,7 @@ export const PracticeChallengesPanel = forwardRef<
                   role="option"
                   aria-selected={isSelected}
                   aria-disabled={challengesLocked || isClaimed}
-                  disabled={challengesLocked || isClaimed}
+                  disabled={challengesLocked}
                   tabIndex={
                     challengesLocked
                       ? -1
