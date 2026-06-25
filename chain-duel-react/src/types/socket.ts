@@ -260,6 +260,8 @@ export interface OnlineRoomListItem {
   playersPaid: number;
   seatsTotal: number;
   spectators: number;
+  /** Double-or-nothing rematch payment in progress (phase may still be postgame). */
+  rematchRequested?: boolean;
   /** From disk archive (vs in-memory finished). */
   archived?: boolean;
   matchRound?: number;

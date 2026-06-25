@@ -1221,7 +1221,7 @@
   align-items: center;
   align-self: center;
   padding: 0.18em 0.62em;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid rgb(255 255 255 / 0.18);
   background: rgb(255 255 255 / 0.06);
   color: rgb(255 255 255 / 0.62);
@@ -1254,6 +1254,13 @@
   border-color: rgb(142 197 255 / 0.45);
   background: rgb(142 197 255 / 0.12);
   color: #8ec5ff;
+}
+
+.online-phase-rematch {
+  border-color: rgb(255 175 85 / 0.65);
+  background: rgb(255 130 40 / 0.1);
+  color: rgb(255 175 85 / 0.95);
+  letter-spacing: 0.06em;
 }
 
 .online-phase-finished {

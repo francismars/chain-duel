@@ -202,6 +202,14 @@
   color: #c0c0c0;
 }
 
+.online-lobby-header-rematch-amount {
+  color: rgb(255 175 85 / 0.9);
+}
+
+.online-lobby-header-rematch-status {
+  color: rgb(255 255 255 / 0.58);
+}
+
 .online-lobby-header-loading {
   color: #888;
   font-size: var(--online-lobby-fs-label);
@@ -221,6 +229,11 @@
 .online-lobby-phase-playing {
   color: #4dff7a;
   border-color: #4dff7a;
+}
+
+.online-lobby-phase-rematch {
+  color: rgb(255 175 85 / 0.9);
+  border-color: rgb(255 175 85 / 0.65);
 }
 
 .online-lobby-phase-finished {

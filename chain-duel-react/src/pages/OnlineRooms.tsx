@@ -8,7 +8,6 @@ import { useMenuSfx } from '@/hooks/useMenuSfx';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import {
-  onlineReplayRoomUrl,
   onlineRoomUrl,
 } from '@/shared/constants/onlineRoutes';
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
@@ -267,8 +266,11 @@ export default function OnlineRooms() {
     return sortedHistoryRooms;
   }, [sortedHistoryRooms, onlineTab, sortedRooms]);
 
-  const formatPhase = (phase: OnlineRoomListItem['phase']) => {
-    switch (phase) {
+  const formatRoomPhase = (room: OnlineRoomListItem) => {
+    if (room.rematchRequested) {
+      return 'DOUBLE OR NOTHING';
+    }
+    switch (room.phase) {
       case 'playing':
         return 'LIVE';
       case 'postgame':
@@ -280,6 +282,13 @@ export default function OnlineRooms() {
       default:
         return 'LOBBY';
     }
+  };
+
+  const roomPhaseClass = (room: OnlineRoomListItem) => {
+    if (room.rematchRequested) {
+      return 'online-phase online-phase-rematch';
+    }
+    return `online-phase online-phase-${room.phase}`;
   };
 
   const parseBuyin = useCallback(() => {
@@ -331,10 +340,6 @@ export default function OnlineRooms() {
     },
     [navigate, playConfirm]
   );
-
-  const openHistoryReplay = (roomCode: string, matchRound?: number) => {
-    navigate(onlineReplayRoomUrl(roomCode.trim().toUpperCase(), matchRound));
-  };
 
   useEffect(() => {
     if (!socket) {
@@ -982,7 +987,7 @@ export default function OnlineRooms() {
                         <HistoryMatchupBlock result={room.result} />
                       ) : null}
 
-                      {/* Actions */}
+                      {/* Actions — session view has per-round replays when applicable */}
                       <div className="online-postgame-round-action-col online-history-action-col">
                         <Button
                           className={[
@@ -1002,22 +1007,7 @@ export default function OnlineRooms() {
                           }}
                         >
                           <span className="online-postgame-round-replay-label">
-                            RESULTS
-                          </span>
-                        </Button>
-                        <Button
-                          className="online-postgame-round-replay-btn"
-                          onClick={() =>
-                            openHistoryReplay(room.roomCode, room.matchRound)
-                          }
-                          disabled={!room.replay?.available}
-                        >
-                          <span
-                            className="online-postgame-round-replay-icon"
-                            aria-hidden="true"
-                          />
-                          <span className="online-postgame-round-replay-label">
-                            REPLAY
+                            VIEW SESSION
                           </span>
                         </Button>
                       </div>
@@ -1064,10 +1054,8 @@ export default function OnlineRooms() {
                                 : 'spectators'}
                             </span>
                           </span>
-                          <span
-                            className={`online-phase online-phase-${room.phase}`}
-                          >
-                            {formatPhase(room.phase)}
+                          <span className={roomPhaseClass(room)}>
+                            {formatRoomPhase(room)}
                           </span>
                         </p>
                       </div>

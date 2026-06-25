@@ -16,6 +16,11 @@ import { clearPreMatchKeyHighlight } from '@/game/render/preMatchKeyHighlight';
 import {
   computeCanvasObjectivesLayout,
   computeOnlineStartReadyPlacement,
+  fitStartPromptFontSize,
+  START_PROMPT_GAP_RATIO,
+  START_PROMPT_WORDS,
+  START_WORD_SHADOW_BLUR,
+  startPromptLineWidth,
   type CanvasObjectivesOpts,
 } from '@/game/render/matchObjectives';
 import {
@@ -65,7 +70,7 @@ export class PixiGameRenderer {
   private startReady = new OnlineStartReadyOverlay();
   private controls = new CanvasControlsOverlay();
   private startRevealTime = -1;
-  private startLayoutWidth = -1;
+  private startLayoutKey = '';
   private boardRevealTime = -1;
   private lastCountdownPhase: '3' | '2' | '1' | 'LFG' | null = null;
   private lastOverlayWidth = 0;
@@ -97,7 +102,7 @@ export class PixiGameRenderer {
         distance: 0,
       },
     });
-    for (const word of ['PRESS', 'BUTTON', 'TO', 'START']) {
+    for (const word of START_PROMPT_WORDS) {
       const t = new Text({ text: word, style: startWordStyle.clone() });
       t.anchor.set(0.5, 0.5);
       t.resolution = 2;
@@ -279,11 +284,46 @@ export class PixiGameRenderer {
     this.startReady.hide();
     this.controls.hide();
     this.startRevealTime = -1;
-    this.startLayoutWidth = -1;
+    this.startLayoutKey = '';
     for (const t of this.startWords) {
       t.alpha = 0;
       t.y = 0;
     }
+  }
+
+  /** Size and position start words so the full line fits; re-run when metrics change. */
+  private fitAndLayoutStartWords(width: number, height: number): number {
+    const measureLine = (fontSize: number) => {
+      const wordWidths = this.startWords.map((t) => {
+        t.style.fontSize = fontSize;
+        return Math.max(1, t.width);
+      });
+      return (
+        startPromptLineWidth(fontSize, wordWidths) + START_WORD_SHADOW_BLUR
+      );
+    };
+
+    const fontSize = fitStartPromptFontSize(width, height, measureLine);
+    const gap = fontSize * START_PROMPT_GAP_RATIO;
+    const wordWidths = this.startWords.map((t) => {
+      t.style.fontSize = fontSize;
+      return Math.max(1, t.width);
+    });
+    const widthSig = wordWidths.map((w) => Math.ceil(w)).join(',');
+    const layoutKey = `${width}x${height}:${Math.round(fontSize)}:${widthSig}`;
+    if (layoutKey === this.startLayoutKey) {
+      return fontSize;
+    }
+    this.startLayoutKey = layoutKey;
+    const totalW = startPromptLineWidth(fontSize, wordWidths);
+    let x = -totalW / 2;
+    for (let i = 0; i < this.startWords.length; i++) {
+      const w = wordWidths[i] ?? 0;
+      this.startWords[i].x = x + w / 2;
+      x += w + gap;
+    }
+
+    return fontSize;
   }
 
   render(state: GameState, opts?: PixiRenderOpts): void {
@@ -577,9 +617,6 @@ export class PixiGameRenderer {
       width / 2,
       height / 2 - winnerYOffset + continueGap
     );
-    const startFontSize = compactBoard
-      ? Math.max(12, (width / 14) * 1.05, height / 5.5)
-      : Math.max(10, (width / 17) * 1.12);
     this.endWinnerText.style.fontSize = overlayWinnerPx;
     this.endContinueText.style.fontSize = overlayContinuePx;
 
@@ -589,6 +626,7 @@ export class PixiGameRenderer {
       this.endContinueText.text = '';
       const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
+      const startFontSize = this.fitAndLayoutStartWords(width, height);
       const objLayout = this.objectives.render(
         width,
         height,
@@ -604,23 +642,6 @@ export class PixiGameRenderer {
         this.startRevealTime
       );
       // ── Staggered word-by-word reveal ─────────────────────────────────────
-      const gap = startFontSize * 0.38;
-      if (this.startLayoutWidth !== width) {
-        this.startLayoutWidth = width;
-        for (const t of this.startWords) t.style.fontSize = startFontSize;
-        // Layout words left-to-right inside the container, then centre it
-        let totalW = 0;
-        const widths = this.startWords.map((t) => {
-          totalW += t.width;
-          return t.width;
-        });
-        totalW += gap * (this.startWords.length - 1);
-        let x = -totalW / 2;
-        for (let i = 0; i < this.startWords.length; i++) {
-          this.startWords[i].x = x + widths[i] / 2;
-          x += widths[i] + gap;
-        }
-      }
       this.startWordsContainer.position.set(width / 2, objLayout.startY);
       const elapsed = Math.max(
         0,
@@ -1816,12 +1837,17 @@ export class PixiGameRenderer {
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#000000';
     if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
-      const fbCompact = width < 560 || height < 260;
-      const fbStartPx = fbCompact
-        ? Math.max(12, Math.floor(Math.max(width / 14, height / 5.5)))
-        : Math.max(10, Math.floor(width / 17));
       const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
+      const fbStartPx = fitStartPromptFontSize(width, height, (fontSize) => {
+        ctx.font = `${fontSize}px BureauGrotesque`;
+        const wordWidths = START_PROMPT_WORDS.map((word) =>
+          ctx.measureText(word).width
+        );
+        return (
+          startPromptLineWidth(fontSize, wordWidths) + START_WORD_SHADOW_BLUR
+        );
+      });
       const objLayout = computeCanvasObjectivesLayout(
         width,
         height,
@@ -1838,7 +1864,7 @@ export class PixiGameRenderer {
         0,
         performance.now() - this.startRevealTime - 1000
       );
-      const words = ['PRESS', 'BUTTON', 'TO', 'START'];
+      const words = [...START_PROMPT_WORDS];
       const STAGGER = 110;
       const visibleWords = words.filter((_, i) => fbElapsed > i * STAGGER);
       ctx.font = `${fbStartPx}px BureauGrotesque`;

@@ -210,6 +210,7 @@ export const OnlineRoomListItemSchema = z.object({
   playersPaid: z.number(),
   seatsTotal: z.number(),
   spectators: z.number(),
+  rematchRequested: z.boolean().optional(),
   archived: z.boolean().optional(),
   matchRound: z.number().optional(),
   archiveKind: z.enum(['match', 'session']).optional(),

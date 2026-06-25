@@ -24,6 +24,57 @@ export const INSTRUCTION_HIDE_FRAC = 0.16;
 export const START_WORD_SHADOW_PAD = 48;
 export const START_WORD_SHADOW_BLUR = 44;
 
+export const START_PROMPT_WORDS = [
+  'PRESS',
+  'BUTTON',
+  'TO',
+  'START',
+] as const;
+
+export const START_PROMPT_GAP_RATIO = 0.38;
+
+/** Conservative horizontal budget — drop shadow bleeds past glyph metrics. */
+export const START_PROMPT_MAX_WIDTH_FRAC = 0.86;
+
+export function baseStartPromptFontSize(width: number, height: number): number {
+  const compact = width < 560 || height < 260;
+  return compact
+    ? Math.max(12, (width / 14) * 1.05, height / 5.5)
+    : Math.max(10, (width / 17) * 1.12);
+}
+
+export function fitStartPromptFontSize(
+  width: number,
+  height: number,
+  measureLineWidth: (fontSize: number) => number
+): number {
+  const maxW = width * START_PROMPT_MAX_WIDTH_FRAC;
+  let fontSize = baseStartPromptFontSize(width, height);
+  for (let i = 0; i < 16 && fontSize > 10; i++) {
+    if (measureLineWidth(fontSize) <= maxW) {
+      return fontSize;
+    }
+    fontSize = Math.max(10, fontSize * 0.9);
+  }
+  return Math.max(10, fontSize);
+}
+
+export function startPromptLineWidth(
+  fontSize: number,
+  wordWidths: readonly number[],
+  gapRatio = START_PROMPT_GAP_RATIO
+): number {
+  const gap = fontSize * gapRatio;
+  let total = 0;
+  for (const w of wordWidths) {
+    total += w;
+  }
+  if (wordWidths.length > 1) {
+    total += gap * (wordWidths.length - 1);
+  }
+  return total;
+}
+
 export type OnlineStartReadyState = {
   p1Ready: boolean;
   p2Ready: boolean;

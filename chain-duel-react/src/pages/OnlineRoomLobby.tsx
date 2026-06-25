@@ -217,6 +217,8 @@ function formatZapPayError(reason: string): string {
       return 'Zap the rematch note (published after both players agreed), not the original room note.';
     case 'rematch_not_requested':
       return 'Double or nothing is no longer waiting for payment.';
+    case 'rematch_not_ready':
+      return 'Rematch note is still publishing. Wait a moment — payment will open automatically.';
     case 'room_not_finished':
       return 'The room is not in postgame — rematch payment cannot be applied.';
     case 'no_session':
@@ -561,7 +563,10 @@ export default function OnlineRoomLobby({
       const parsed = SocketBoundaryParsers.resOnlineSeatLightningError(payload);
       if (parsed) {
         setLightningBusy(false);
-        setError(parsed.reason);
+        if (parsed.reason === 'rematch_not_ready') {
+          return;
+        }
+        setError(formatZapPayError(parsed.reason));
       }
     };
     const onLightningCancelled = () => {
@@ -801,6 +806,9 @@ export default function OnlineRoomLobby({
       clearZapTimeout();
       setZapPayBusy(false);
       setPendingNostrAuthUrl(null);
+      if (parsed.reason === 'rematch_not_ready') {
+        return;
+      }
       const msg = formatZapPayError(parsed.reason);
       if (
         parsed.reason === 'nostr_not_linked' ||
@@ -873,6 +881,16 @@ export default function OnlineRoomLobby({
       }
       return;
     }
+    const rematchLoserPay =
+      Boolean(room?.postGame?.rematchRequested) &&
+      room?.postGame?.rematchWaitingForSessionID === currentSessionID;
+    const rematchReady =
+      (room?.postGame?.rematchRequiredAmount ?? 0) > 0 &&
+      Boolean(room?.postGame?.rematchEventId);
+    if (rematchLoserPay && !rematchReady) {
+      zapAutoPreparedRef.current = false;
+      return;
+    }
     if (zapAutoPreparedRef.current) {
       return;
     }
@@ -884,6 +902,11 @@ export default function OnlineRoomLobby({
     seatZapInvoice,
     zapPayBusy,
     nostrSession.signedIn,
+    room?.postGame?.rematchRequested,
+    room?.postGame?.rematchWaitingForSessionID,
+    room?.postGame?.rematchRequiredAmount,
+    room?.postGame?.rematchEventId,
+    currentSessionID,
   ]);
 
   const isNip46Signer = resolveSignerMode() === 'nip46';
@@ -1081,11 +1104,13 @@ export default function OnlineRoomLobby({
   const myReady = isOnlineSeatStartReady(mySeat, room?.phase);
   const isMyP1Seat = mySeat?.role === 'Player 1';
   const isMyP2Seat = mySeat?.role === 'Player 2';
-  const phaseLabel = (room?.phase ?? 'lobby').toUpperCase();
   const isSessionClosed = room?.phase === 'finished';
   const isPostgame = room?.phase === 'postgame';
   const isMatchEnded = isPostgame || isSessionClosed;
   const rematchPending = Boolean(room?.postGame?.rematchRequested);
+  const phaseLabel = rematchPending
+    ? 'DOUBLE OR NOTHING'
+    : (room?.phase ?? 'lobby').toUpperCase();
   const lobbyAbandonRef = useRef({
     roomId: '',
     roomCode: '',
@@ -1113,6 +1138,8 @@ export default function OnlineRoomLobby({
   }, [socket]);
   rematchPendingRef.current = rematchPending;
   const rematchAmount = room?.postGame?.rematchRequiredAmount ?? 0;
+  const rematchEventId = room?.postGame?.rematchEventId ?? '';
+  const rematchPaymentReady = rematchAmount > 0 && Boolean(rematchEventId);
   const rematchWaitingForSessionID = room?.postGame?.rematchWaitingForSessionID;
   const amILoserToPay = Boolean(
     rematchWaitingForSessionID &&
@@ -1253,6 +1280,8 @@ export default function OnlineRoomLobby({
 
   const hasPaidMySeat = Boolean(mySeat);
   const isRematchLoserPay = rematchPending && amILoserToPay;
+  const isRematchSpectator = rematchPending && !hasPaidMySeat;
+  const showDonBanner = rematchPending && !isRematchSpectator;
   const seatsFull = paidSeats >= 2;
   const isSpectatingFullRoom =
     !hasPaidMySeat &&
@@ -1542,7 +1571,15 @@ export default function OnlineRoomLobby({
       }
       return;
     }
-    const primeKey = `${roomId}:${rematchWaitingForSessionID}:${rematchPayMode}`;
+    if (!rematchPaymentReady) {
+      rematchPayPrimedRef.current = null;
+      setLightningBusy(false);
+      setZapPayBusy(false);
+      setError('');
+      setNostrPayError(null);
+      return;
+    }
+    const primeKey = `${roomId}:${rematchWaitingForSessionID}:${rematchPayMode}:${rematchEventId}`;
     if (rematchPayPrimedRef.current === primeKey) {
       return;
     }
@@ -1560,6 +1597,8 @@ export default function OnlineRoomLobby({
   }, [
     isRematchLoserPay,
     rematchPayMode,
+    rematchPaymentReady,
+    rematchEventId,
     socket,
     roomId,
     rematchWaitingForSessionID,
@@ -2085,6 +2124,9 @@ export default function OnlineRoomLobby({
     if (!socket || !roomId) {
       return;
     }
+    if (isRematchLoserPay && !rematchPaymentReady) {
+      return;
+    }
     setSeatZapInvoice(null);
     setError('');
     setLightningBusy(true);
@@ -2211,7 +2253,12 @@ export default function OnlineRoomLobby({
             <h1 className="online-lobby-title">ONLINE ROOM</h1>
             {room?.phase && room.phase !== 'lobby' ? (
               <div
-                className={`online-lobby-phase online-lobby-phase-${room.phase}`}
+                className={[
+                  'online-lobby-phase',
+                  rematchPending
+                    ? 'online-lobby-phase-rematch'
+                    : `online-lobby-phase-${room.phase}`,
+                ].join(' ')}
               >
                 {phaseLabel}
               </div>
@@ -2275,6 +2322,18 @@ export default function OnlineRoomLobby({
                     </span>
                   </>
                 ) : null}
+                {isRematchSpectator ? (
+                  <>
+                    <span className="online-lobby-header-sep">·</span>
+                    <span className="online-lobby-header-rematch-amount">
+                      {Math.floor(rematchAmount).toLocaleString()} sats rematch
+                    </span>
+                    <span className="online-lobby-header-sep">·</span>
+                    <span className="online-lobby-header-rematch-status">
+                      waiting for payment
+                    </span>
+                  </>
+                ) : null}
               </>
             ) : (
               <span className="online-lobby-header-loading">Connecting…</span>
@@ -2282,8 +2341,8 @@ export default function OnlineRoomLobby({
           </div>
         </div>
 
-        {/* DoN Banner */}
-        {rematchPending ? (
+        {/* DoN Banner — seated players only; spectators get rematch info in the header */}
+        {showDonBanner ? (
           <div
             className={[
               'online-lobby-don-banner',
@@ -2480,15 +2539,6 @@ export default function OnlineRoomLobby({
               </div>
               <p className="online-lobby-copy">{mySeatPinState.copy}</p>
             </div>
-          ) : null}
-
-          {isRematchLoserPay && (nostrPayError || error) ? (
-            <p
-              className="online-lobby-invite-error online-lobby-rematch-pay-error"
-              role="alert"
-            >
-              {nostrPayError || error}
-            </p>
           ) : null}
 
           {/* Spectator — room full, or registration closed after match */}
@@ -2816,9 +2866,11 @@ export default function OnlineRoomLobby({
                                       : 'LIGHTNING SEAT'}
                                   </p>
                                   <p className="online-lobby-kind1-qr-hint">
-                                    {isRematchLoserPay
-                                      ? 'Get an invoice for the rematch amount, then scan, open in another wallet, or pay with NWC.'
-                                      : 'Get an invoice, then scan, open in another wallet app, or pay with NWC from Settings.'}
+                                    {isRematchLoserPay && !rematchPaymentReady
+                                      ? 'Publishing the rematch note — your invoice will appear here in a moment.'
+                                      : isRematchLoserPay
+                                        ? 'Get an invoice for the rematch amount, then scan, open in another wallet, or pay with NWC.'
+                                        : 'Get an invoice, then scan, open in another wallet app, or pay with NWC from Settings.'}
                                   </p>
                                 </div>
                               </div>
@@ -2831,12 +2883,17 @@ export default function OnlineRoomLobby({
                                   <Button
                                     type="button"
                                     className="online-lobby-action online-lobby-nostr-zap-btn"
-                                    disabled={lightningBusy && !lightningPay}
+                                    disabled={
+                                      (lightningBusy && !lightningPay) ||
+                                      (isRematchLoserPay && !rematchPaymentReady)
+                                    }
                                     onClick={payAnonymouslyFromPost}
                                   >
-                                    {lightningBusy && !lightningPay
-                                      ? 'PREPARING…'
-                                      : 'GET INVOICE'}
+                                    {isRematchLoserPay && !rematchPaymentReady
+                                      ? 'PUBLISHING REMATCH NOTE…'
+                                      : lightningBusy && !lightningPay
+                                        ? 'PREPARING…'
+                                        : 'GET INVOICE'}
                                   </Button>
                                 </div>
                               </div>
@@ -3617,7 +3674,9 @@ export default function OnlineRoomLobby({
                             </p>
                             <p className="online-lobby-kind1-idle-cta">
                               {seatsFull
-                                ? 'Both seats are taken. The match starts when both players confirm on the arena.'
+                                ? rematchPending
+                                  ? `Waiting for the loser to pay ${Math.floor(rematchAmount).toLocaleString()} sats for double or nothing.`
+                                  : 'Both seats are taken. The match starts when both players confirm on the arena.'
                                 : 'Choose Lightning, Nostr sign-in, or your Nostr app above.'}
                             </p>
                             {!seatsFull ? (
@@ -3858,7 +3917,7 @@ export default function OnlineRoomLobby({
 
                         {error && paymentMode !== 'nostr' ? (
                           <p className="online-lobby-inline-pay-error">
-                            {error}
+                            {formatZapPayError(error)}
                           </p>
                         ) : null}
                       </>
