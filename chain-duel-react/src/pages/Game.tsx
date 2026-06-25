@@ -54,7 +54,7 @@ import {
   getChallengeTheme,
 } from '@/lib/challenges/challengeTheme';
 import { FfaHud } from '@/features/game/FfaGameHud';
-import { PlayerControlsHint } from '@/components/game/PlayerControlsHint';
+import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
 import {
   humanControlSlotsFromConfig,
 } from '@/lib/controls/playerControls';
@@ -170,6 +170,7 @@ export default function Game() {
   const soloZapSkipOverlayDelayRef = useRef(false);
   const blockChallengeContinueRef = useRef(false);
   const challengeContinueLabelRef = useRef<string | null>(null);
+  const canvasObjectivesRef = useRef<CanvasObjectivesOpts>({ controlSlots: [] });
 
   const [loading, setLoading] = useState(true);
   const [player1Name, setPlayer1Name] = useState('Player 1');
@@ -746,6 +747,16 @@ export default function Game() {
   const showP2Controls =
     humanControlSlots.includes('p2') && !show2v1Ui && !showFfaUi;
 
+  canvasObjectivesRef.current = {
+    controlSlots: showFfaUi
+      ? [...humanControlSlots]
+      : humanControlSlots.filter((slot) => {
+          if (slot === 'p1') return showP1Controls;
+          if (slot === 'p2') return showP2Controls;
+          return false;
+        }),
+  };
+
   const bootstrapLocalGame = useCallback(() => {
     // sessionStorage from practice hub (/practice); legacy POWERUP sessions may remain
     const gameConfig = readSessionGameConfig();
@@ -935,7 +946,10 @@ export default function Game() {
 
   // Gate start-key input until the reveal animations have settled (~1.2 s after load).
   useEffect(() => {
-    if (loading) return;
+    if (loading) {
+      readyToStartRef.current = false;
+      return;
+    }
     readyToStartRef.current = false;
     const timer = window.setTimeout(() => {
       readyToStartRef.current = true;
@@ -1172,7 +1186,7 @@ export default function Game() {
         }
       }
     },
-    [is2v1]
+    [is2v1, stateRef]
   );
 
   const handleCaptureChanged = useCallback((side: 'P1' | 'P2') => {
@@ -1316,6 +1330,7 @@ export default function Game() {
     challengeContinueLabelRef: isChallengeSession
       ? challengeContinueLabelRef
       : undefined,
+    canvasObjectivesRef,
   });
 
   useEffect(() => {
@@ -1370,7 +1385,6 @@ export default function Game() {
                 gameInfo={gameInfo}
                 challengeHud={challengeHud}
                 captureHighlights={ffaCaptureHighlights}
-                humanControlSlots={humanControlSlots}
               />
               <div id="zapMessages">
                 {zapMessages.map((zap) => (
@@ -1411,9 +1425,6 @@ export default function Game() {
                   <div className="inline" id="player1name">
                     {player1Name}
                   </div>
-                  {showP1Controls ? (
-                    <PlayerControlsHint slot="p1" size="xs" />
-                  ) : null}
                 </div>
                 <GameInfoLabel
                   id="gameInfo"
@@ -1451,9 +1462,6 @@ export default function Game() {
                       <div className="inline" id="player2name">
                         {player2Name}
                       </div>
-                      {showP2Controls ? (
-                        <PlayerControlsHint slot="p2" size="xs" />
-                      ) : null}
                       <img
                         className={`inline playerImg ${canShowP2Image ? '' : 'hide'}`}
                         id="player2Img"

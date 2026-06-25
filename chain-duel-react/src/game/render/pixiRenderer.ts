@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
-import type { GameState, GridPos } from '@/game/engine/types';
+import type { GameState, GridPos, PowerUpType } from '@/game/engine/types';
 import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
 import {
   drawPowerUpIconPixi,
@@ -12,7 +12,25 @@ import {
   getSnakeEffects,
   type PowerUpPlayerIndex,
 } from '@/game/engine/powerups';
-import type { PowerUpType } from '@/game/engine/types';
+import { clearPreMatchKeyHighlight } from '@/game/render/preMatchKeyHighlight';
+import {
+  computeCanvasObjectivesLayout,
+  type CanvasObjectivesOpts,
+} from '@/game/render/matchObjectives';
+import {
+  CanvasObjectivesOverlay,
+  drawCanvasObjectivesFallback,
+} from '@/game/render/canvasObjectivesOverlay';
+import {
+  CanvasControlsOverlay,
+  drawCanvasControlsFallback,
+} from '@/game/render/canvasControlsOverlay';
+
+export type PixiRenderOpts = {
+  replayView?: boolean;
+  challengeContinueLabel?: string;
+  canvasObjectives?: CanvasObjectivesOpts;
+};
 
 export class PixiGameRenderer {
   private app: Application | null = null;
@@ -38,6 +56,8 @@ export class PixiGameRenderer {
   private static readonly SURGE_TRAIL_FADE_MS = 480;
   private startWords: Text[] = [];
   private startWordsContainer: Container = new Container();
+  private objectives = new CanvasObjectivesOverlay();
+  private controls = new CanvasControlsOverlay();
   private startRevealTime = -1;
   private startLayoutWidth = -1;
   private boardRevealTime = -1;
@@ -164,6 +184,8 @@ export class PixiGameRenderer {
       this.root.addChild(this.scene);
       this.root.addChild(this.resolveBlocks);
       this.overlay.addChild(this.startWordsContainer);
+      this.overlay.addChild(this.controls.container);
+      this.overlay.addChild(this.objectives.container);
       this.overlay.addChild(this.endWinnerText);
       this.overlay.addChild(this.endContinueText);
       this.overlay.addChild(this.countdown3);
@@ -233,10 +255,28 @@ export class PixiGameRenderer {
     return false;
   }
 
-  render(
-    state: GameState,
-    opts?: { replayView?: boolean; challengeContinueLabel?: string }
-  ): void {
+  private preMatchOverlayVisible(): boolean {
+    return (
+      (this.objectives.container.visible &&
+        this.objectives.container.alpha > 0.02) ||
+      (this.controls.container.visible && this.controls.container.alpha > 0.02) ||
+      this.startWords.some((t) => t.alpha > 0.02)
+    );
+  }
+
+  private finishPreMatchDismiss(): void {
+    clearPreMatchKeyHighlight();
+    this.objectives.hide();
+    this.controls.hide();
+    this.startRevealTime = -1;
+    this.startLayoutWidth = -1;
+    for (const t of this.startWords) {
+      t.alpha = 0;
+      t.y = 0;
+    }
+  }
+
+  render(state: GameState, opts?: PixiRenderOpts): void {
     if (!this.app) {
       this.renderFallback(state, opts);
       return;
@@ -537,6 +577,22 @@ export class PixiGameRenderer {
       this.hideCountdownOverlay();
       this.endWinnerText.text = '';
       this.endContinueText.text = '';
+      const objOpts = opts?.canvasObjectives ?? {};
+      if (this.startRevealTime === -1) this.startRevealTime = performance.now();
+      const objLayout = this.objectives.render(
+        width,
+        height,
+        startFontSize,
+        objOpts,
+        this.startRevealTime
+      );
+      this.controls.render(
+        state,
+        width,
+        height,
+        objOpts.controlSlots ?? [],
+        this.startRevealTime
+      );
       // ── Staggered word-by-word reveal ─────────────────────────────────────
       const gap = startFontSize * 0.38;
       if (this.startLayoutWidth !== width) {
@@ -555,8 +611,7 @@ export class PixiGameRenderer {
           x += widths[i] + gap;
         }
       }
-      this.startWordsContainer.position.set(width / 2, height / 2);
-      if (this.startRevealTime === -1) this.startRevealTime = performance.now();
+      this.startWordsContainer.position.set(width / 2, objLayout.startY);
       const elapsed = Math.max(
         0,
         performance.now() - this.startRevealTime - 1000
@@ -570,13 +625,14 @@ export class PixiGameRenderer {
         this.startWords[i].y = (1 - eased) * 10;
       }
     } else {
-      // Hide words and reset state for next time
-      this.startRevealTime = -1;
-      this.startLayoutWidth = -1;
-      for (const t of this.startWords) {
-        t.alpha = 0;
-        t.y = 0;
+      if (
+        state.countdownStart &&
+        !state.gameStarted &&
+        this.preMatchOverlayVisible()
+      ) {
+        this.finishPreMatchDismiss();
       }
+
       if (state.countdownStart) {
         this.endWinnerText.text = '';
         this.endContinueText.text = '';
@@ -1184,10 +1240,7 @@ export class PixiGameRenderer {
     this.resize();
   }
 
-  private renderFallback(
-    state: GameState,
-    opts?: { replayView?: boolean }
-  ): void {
+  private renderFallback(state: GameState, opts?: PixiRenderOpts): void {
     if (!this.host || !this.fallbackCanvas || !this.fallbackCtx) return;
     const ctx = this.fallbackCtx;
     const width = this.fallbackCanvas.width;
@@ -1743,8 +1796,20 @@ export class PixiGameRenderer {
       const fbStartPx = fbCompact
         ? Math.max(12, Math.floor(Math.max(width / 14, height / 5.5)))
         : Math.max(10, Math.floor(width / 17));
-      ctx.font = `${fbStartPx}px BureauGrotesque`;
+      const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
+      const objLayout = computeCanvasObjectivesLayout(
+        width,
+        height,
+        fbStartPx,
+        objOpts
+      );
+      const elapsed = Math.max(
+        0,
+        performance.now() - this.startRevealTime - 900
+      );
+      const objAlpha = Math.min(1, elapsed / 420);
+      const eased = 1 - Math.pow(1 - objAlpha, 3);
       const fbElapsed = Math.max(
         0,
         performance.now() - this.startRevealTime - 1000
@@ -1752,9 +1817,28 @@ export class PixiGameRenderer {
       const words = ['PRESS', 'BUTTON', 'TO', 'START'];
       const STAGGER = 110;
       const visibleWords = words.filter((_, i) => fbElapsed > i * STAGGER);
-      ctx.fillText(visibleWords.join(' '), width / 2, height / 2);
+      ctx.font = `${fbStartPx}px BureauGrotesque`;
+      ctx.fillText(visibleWords.join(' '), width / 2, objLayout.startY);
+      drawCanvasObjectivesFallback(
+        ctx,
+        width,
+        objLayout,
+        objOpts,
+        eased,
+        Math.max(0, elapsed - 180)
+      );
+      drawCanvasControlsFallback(
+        ctx,
+        state,
+        width,
+        height,
+        objOpts.controlSlots ?? [],
+        eased
+      );
     } else if (state.countdownStart) {
-      this.startRevealTime = -1;
+      if (this.preMatchOverlayVisible()) {
+        this.finishPreMatchDismiss();
+      }
       const countdownText =
         state.countdownTicks <= 10
           ? '3'

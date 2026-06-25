@@ -17,17 +17,35 @@ export type UseGamepadOptions = {
 };
 
 const JOYSTICK_DEADZONE = 0.6;
-const ARCADE_CENTER_X = 0.003921627998352051;
-const ARCADE_CENTER_Y = -0.003921568393707275;
 /** Legacy menus polled gamepads at 10 Hz; delay before hold-repeat kicks in. */
 const MENU_REPEAT_DELAY_MS = 350;
 const MENU_REPEAT_INTERVAL_MS = 100;
+
+const KEY_TO_CODE: Record<string, string> = {
+  w: 'KeyW',
+  s: 'KeyS',
+  a: 'KeyA',
+  d: 'KeyD',
+  ' ': 'Space',
+  ArrowUp: 'ArrowUp',
+  ArrowDown: 'ArrowDown',
+  ArrowLeft: 'ArrowLeft',
+  ArrowRight: 'ArrowRight',
+  Enter: 'Enter',
+};
 
 function dispatchKey(
   type: 'keydown' | 'keyup',
   init: { key?: string; code?: string }
 ) {
-  window.dispatchEvent(new KeyboardEvent(type, { ...init, bubbles: true }));
+  const code = init.code ?? (init.key ? KEY_TO_CODE[init.key] : undefined);
+  window.dispatchEvent(
+    new KeyboardEvent(type, {
+      ...init,
+      ...(code ? { code } : {}),
+      bubbles: true,
+    })
+  );
 }
 
 /** Per-key press / hold-repeat (menu mode only). */
@@ -65,6 +83,9 @@ type PadPollState = {
   right: KeyRepeater;
   face: KeyRepeater;
   axis9: number | undefined;
+  /** Keys we synthesized via game-mode polling (edge-triggered keyup). */
+  synthHeld: Partial<Record<'up' | 'down' | 'left' | 'right', boolean>>;
+  synthFaceHeld: boolean;
 };
 
 function createPadPollState(): PadPollState {
@@ -75,6 +96,8 @@ function createPadPollState(): PadPollState {
     right: new KeyRepeater(),
     face: new KeyRepeater(),
     axis9: undefined,
+    synthHeld: {},
+    synthFaceHeld: false,
   };
 }
 
@@ -87,7 +110,14 @@ function fireDirection(
   key: string
 ) {
   if (mode === 'game') {
-    if (down) dispatchKey('keydown', { key });
+    const wasHeld = state.synthHeld[which] === true;
+    if (down && !wasHeld) {
+      dispatchKey('keydown', { key });
+      state.synthHeld[which] = true;
+    } else if (!down && wasHeld) {
+      dispatchKey('keyup', { key });
+      state.synthHeld[which] = false;
+    }
     return;
   }
   state[which].tick(down, now, () => dispatchKey('keydown', { key }));
@@ -101,10 +131,53 @@ function fireFace(
   key: string
 ) {
   if (mode === 'game') {
-    if (down) dispatchKey('keydown', { key });
+    if (down && !state.synthFaceHeld) {
+      dispatchKey('keydown', { key });
+      state.synthFaceHeld = true;
+    } else if (!down && state.synthFaceHeld) {
+      dispatchKey('keyup', { key });
+      state.synthFaceHeld = false;
+    }
     return;
   }
   state.face.tick(down, now, () => dispatchKey('keydown', { key }));
+}
+
+function axis9ActiveDirections(axis9: number): Set<keyof PlayerKeys> {
+  const active = new Set<keyof PlayerKeys>();
+  switch (axis9) {
+    case -1:
+      active.add('up');
+      break;
+    case 1:
+      active.add('up');
+      active.add('left');
+      break;
+    case 0.14285719394683838:
+      active.add('down');
+      break;
+    case -0.1428571343421936:
+      active.add('down');
+      active.add('right');
+      break;
+    case 0.7142857313156128:
+      active.add('left');
+      break;
+    case -0.7142857313156128:
+      active.add('up');
+      active.add('right');
+      break;
+    case -0.4285714030265808:
+      active.add('right');
+      break;
+    case 0.4285714626312256:
+      active.add('down');
+      active.add('left');
+      break;
+    default:
+      break;
+  }
+  return active;
 }
 
 function pollArcadeAxis9(
@@ -126,38 +199,6 @@ function pollArcadeAxis9(
   };
 
   if (mode === 'game') {
-    switch (axis9) {
-      case -1:
-        dispatchKey('keydown', { key: keys.up });
-        break;
-      case 1:
-        dispatchKey('keydown', { key: keys.up });
-        dispatchKey('keydown', { key: keys.left });
-        break;
-      case 0.14285719394683838:
-        dispatchKey('keydown', { key: keys.down });
-        break;
-      case -0.1428571343421936:
-        dispatchKey('keydown', { key: keys.down });
-        dispatchKey('keydown', { key: keys.right });
-        break;
-      case 0.7142857313156128:
-        dispatchKey('keydown', { key: keys.left });
-        break;
-      case -0.7142857313156128:
-        dispatchKey('keydown', { key: keys.up });
-        dispatchKey('keydown', { key: keys.right });
-        break;
-      case -0.4285714030265808:
-        dispatchKey('keydown', { key: keys.right });
-        break;
-      case 0.4285714626312256:
-        dispatchKey('keydown', { key: keys.down });
-        dispatchKey('keydown', { key: keys.left });
-        break;
-      default:
-        break;
-    }
     return;
   }
 
@@ -252,39 +293,59 @@ function pollPlayerPad(
   const rightDown =
     !!pad.buttons[15]?.pressed || pad.axes[0] > JOYSTICK_DEADZONE;
 
-  fireDirection(mode, state, now, 'up', upDown, keys.up);
-  fireDirection(mode, state, now, 'down', downDown, keys.down);
-  fireDirection(mode, state, now, 'left', leftDown, keys.left);
-  fireDirection(mode, state, now, 'right', rightDown, keys.right);
-
   if (mode === 'game') {
-    if (
-      pad.buttons[12] &&
-      pad.buttons[13] &&
-      pad.buttons[14] &&
-      pad.buttons[15]
-    ) {
-      if (
-        !pad.buttons[12].pressed &&
-        !pad.buttons[13].pressed &&
-        !pad.buttons[14].pressed &&
-        !pad.buttons[15].pressed
-      ) {
-        dispatchKey('keyup', { key: keys.up });
-      }
-    }
-    if (pad.axes[0] === ARCADE_CENTER_X && pad.axes[1] === ARCADE_CENTER_Y) {
-      dispatchKey('keyup', { key: keys.up });
-    }
-  } else if (!upDown && !downDown && !leftDown && !rightDown) {
-    state.up.tick(false, now, () => {});
-    state.down.tick(false, now, () => {});
-    state.left.tick(false, now, () => {});
-    state.right.tick(false, now, () => {});
-    state.axis9 = undefined;
-  }
+    const axisActive =
+      pad.axes[9] !== undefined
+        ? axis9ActiveDirections(pad.axes[9])
+        : new Set<keyof PlayerKeys>();
+    fireDirection(
+      mode,
+      state,
+      now,
+      'up',
+      upDown || axisActive.has('up'),
+      keys.up
+    );
+    fireDirection(
+      mode,
+      state,
+      now,
+      'down',
+      downDown || axisActive.has('down'),
+      keys.down
+    );
+    fireDirection(
+      mode,
+      state,
+      now,
+      'left',
+      leftDown || axisActive.has('left'),
+      keys.left
+    );
+    fireDirection(
+      mode,
+      state,
+      now,
+      'right',
+      rightDown || axisActive.has('right'),
+      keys.right
+    );
+  } else {
+    fireDirection(mode, state, now, 'up', upDown, keys.up);
+    fireDirection(mode, state, now, 'down', downDown, keys.down);
+    fireDirection(mode, state, now, 'left', leftDown, keys.left);
+    fireDirection(mode, state, now, 'right', rightDown, keys.right);
 
-  pollArcadeAxis9(mode, state, now, pad.axes[9], keys);
+    if (!upDown && !downDown && !leftDown && !rightDown) {
+      state.up.tick(false, now, () => {});
+      state.down.tick(false, now, () => {});
+      state.left.tick(false, now, () => {});
+      state.right.tick(false, now, () => {});
+      state.axis9 = undefined;
+    }
+
+    pollArcadeAxis9(mode, state, now, pad.axes[9], keys);
+  }
 
   if (pad.buttons[6]?.pressed || pad.buttons[7]?.pressed) {
     dispatchKey('keydown', { code: controlCode });

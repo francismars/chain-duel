@@ -1,6 +1,5 @@
 import { useEffect, type MutableRefObject } from 'react';
 import {
-  resolveMovementForStateFromCode,
   resolveMovementForStateFromKeyboardEvent,
   isConfirmKeyForState,
 } from '@/lib/controls/playerControls';
@@ -12,6 +11,7 @@ import {
   setWantedDirection,
   startCountdown,
 } from '@/game/engine';
+import { applyPreMatchKeyEvent } from '@/game/render/preMatchKeyHighlight';
 import type { GameState } from '@/game/engine/types';
 import { NAVIGATE_AFTER_FINISH_DELAY_MS } from '@/shared/constants/timeouts';
 
@@ -32,6 +32,7 @@ function applyPreStartControllerTest(
   held: boolean
 ): void {
   if (state.gameStarted) return;
+  applyPreMatchKeyEvent(event, state, held);
   const movement = resolveMovementForStateFromKeyboardEvent(event, state);
   if (!movement) return;
 
@@ -120,9 +121,11 @@ export function useGameInputBindings({
 
     const onKeyUp = (event: KeyboardEvent) => {
       const state = stateRef.current;
-      if (!state || state.gameStarted) return;
-      if (!resolveMovementForStateFromCode(event.code, state)) return;
-      applyPreStartControllerTest(state, event, false);
+      if (!state) return;
+      if (!state.gameStarted) {
+        applyPreStartControllerTest(state, event, false);
+        return;
+      }
     };
 
     window.addEventListener('keydown', onKeyDown);

@@ -2,7 +2,8 @@ import { useEffect, useRef, type MutableRefObject } from 'react';
 import { getHudState, stepGame } from '@/game/engine';
 import type { FfaHudPlayer, GameState } from '@/game/engine/types';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
-import type { PixiGameRenderer } from '@/game/render/pixiRenderer';
+import type { PixiGameRenderer, PixiRenderOpts } from '@/game/render/pixiRenderer';
+import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
 import type { GameAudioSystem } from '@/game/audio/gameAudio';
 
 interface HudSnapshot {
@@ -61,6 +62,8 @@ interface UseGameRenderBridgeArgs {
   challengeInputLogRef?: MutableRefObject<Array<{ tick: number; dir: string }>>;
   /** Optional canvas continue hint while challenge bounty is validating. */
   challengeContinueLabelRef?: MutableRefObject<string | null>;
+  /** Optional stakes / match hints drawn on the pre-start canvas overlay. */
+  canvasObjectivesRef?: MutableRefObject<CanvasObjectivesOpts>;
 }
 
 /** Wait until #gameContainer is visible and laid out (drops `display:none` hide class). */
@@ -101,6 +104,7 @@ export function useGameRenderBridge({
   simStepRef,
   challengeInputLogRef,
   challengeContinueLabelRef,
+  canvasObjectivesRef,
 }: UseGameRenderBridgeArgs) {
   const emitWinnerRef = useRef(emitWinner);
   const onHudTickRef = useRef(onHudTick);
@@ -138,9 +142,13 @@ export function useGameRenderBridge({
       challengeInputLogRef.current.push({ tick: simStepRef.current, dir });
     };
 
-    const renderOpts = () => {
+    const renderOpts = (): PixiRenderOpts => {
+      const opts: PixiRenderOpts = {
+        canvasObjectives: canvasObjectivesRef?.current ?? {},
+      };
       const label = challengeContinueLabelRef?.current;
-      return label ? { challengeContinueLabel: label } : undefined;
+      if (label) opts.challengeContinueLabel = label;
+      return opts;
     };
 
     void (async () => {
@@ -316,6 +324,7 @@ export function useGameRenderBridge({
     captureP2Ref,
     challengeInputLogRef,
     challengeContinueLabelRef,
+    canvasObjectivesRef,
     hostRef,
     rendererRef,
     simStepRef,

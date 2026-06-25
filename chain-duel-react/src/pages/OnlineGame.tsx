@@ -24,17 +24,18 @@ import { useGamepad } from '@/hooks/useGamepad';
 import { canContinueOnlineAfterGame } from '@/game/engine';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
+import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
 import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { withLocalOnlineControllerTest } from '@/game/controllerTest';
+import { applyPreMatchAxisHeld } from '@/game/render/preMatchKeyHighlight';
 import {
-  onlineSlotForLocalSeat,
   resolveDirectionFromKeyboardEvent,
 } from '@/lib/controls/playerControls';
-import { PlayerControlsHint } from '@/components/game/PlayerControlsHint';
+import type { PlayerControlSlot } from '@/lib/controls/playerControls';
 import type { GameState } from '@/game/engine/types';
 import './game.css';
 import '@/styles/pages/onlineGame.css';
@@ -80,6 +81,7 @@ export default function OnlineGame() {
   const [snapshot, setSnapshot] = useState<OnlineRoomSnapshot | null>(null);
   const snapshotRef = useRef<OnlineRoomSnapshot | null>(null);
   const rendererRef = useRef<PixiGameRenderer | null>(null);
+  const canvasObjectivesRef = useRef<CanvasObjectivesOpts>({});
   const [hostEl, setHostEl] = useState<HTMLDivElement | null>(null);
   const pointAnimationsRef = useRef<OnlinePointAnim[]>([]);
   const prevPointCountByKeyRef = useRef<Map<string, number>>(new Map());
@@ -145,7 +147,6 @@ export default function OnlineGame() {
   const localRoleRef = useRef({ isP1: false, isP2: false });
   const replayViewRef = useRef(replayMode);
   replayViewRef.current = replayMode;
-
   useGamepad(true, { inputMode: 'game' });
 
   useEffect(() => {
@@ -276,6 +277,7 @@ export default function OnlineGame() {
         if (snapshotChanged || animActive) {
           rendererRef.current.render(renderState, {
             replayView: replayViewRef.current,
+            canvasObjectives: canvasObjectivesRef.current,
           });
           lastPaintedSnapshot = snap;
         }
@@ -609,6 +611,17 @@ export default function OnlineGame() {
       }
       keysHeldRef.current[axis] = true;
       lastAxisRef.current = axis;
+      const role = localRoleRef.current;
+      const slot = role.isP1 ? 'p1' : role.isP2 ? 'p2' : null;
+      const preState = snapshotRef.current?.state as GameState | undefined;
+      if (
+        slot &&
+        preState &&
+        !preState.gameStarted &&
+        !preState.gameEnded
+      ) {
+        applyPreMatchAxisHeld(slot, keysHeldRef.current);
+      }
       emitHeldInput(axis);
     };
 
@@ -624,6 +637,17 @@ export default function OnlineGame() {
         event.preventDefault();
       }
       keysHeldRef.current[axis] = false;
+      const role = localRoleRef.current;
+      const slot = role.isP1 ? 'p1' : role.isP2 ? 'p2' : null;
+      const preState = snapshotRef.current?.state as GameState | undefined;
+      if (
+        slot &&
+        preState &&
+        !preState.gameStarted &&
+        !preState.gameEnded
+      ) {
+        applyPreMatchAxisHeld(slot, keysHeldRef.current);
+      }
       emitHeldInput();
     };
 
@@ -841,7 +865,19 @@ export default function OnlineGame() {
     (roomInfo?.p2SocketID && roomInfo.p2SocketID === currentSocketID)
   );
   localRoleRef.current = { isP1, isP2 };
-  const localControlSlot = onlineSlotForLocalSeat(isP1, isP2);
+  const onlineControlSlot: PlayerControlSlot | null = isP1
+    ? 'p1'
+    : isP2
+      ? 'p2'
+      : null;
+  canvasObjectivesRef.current = {
+    ...((roomInfo?.buyin ?? 0) > 0
+      ? { stakesHint: 'Staked pot — drain rival to 0 sats to win' }
+      : {}),
+    controlSlots:
+      onlineControlSlot && !replayMode ? [onlineControlSlot] : [],
+  };
+
   const replayDurationSec =
     replayFrames.length > 0 ? (replayFrames.length * replayTickMs) / 1000 : 0;
   const replayPositionSec =
@@ -867,18 +903,12 @@ export default function OnlineGame() {
               <div className="inline" id="player1name">
                 {roomInfo?.p1Name || 'Player 1'}
               </div>
-              {isP1 && localControlSlot && !replayMode ? (
-                <PlayerControlsHint slot={localControlSlot} size="xs" />
-              ) : null}
             </div>
             <div id="gameInfo" className="outline condensed">
               MAINNET{roomInfo?.roomCode ? ` · ${roomInfo.roomCode}` : ''}
               {replayMode ? ' · REPLAY MODE' : ''}
             </div>
             <div id="player2info" className="condensed">
-              {isP2 && localControlSlot && !replayMode ? (
-                <PlayerControlsHint slot={localControlSlot} size="xs" />
-              ) : null}
               <div className="inline" id="player2name">
                 {roomInfo?.p2Name || 'Player 2'}
               </div>
