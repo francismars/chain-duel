@@ -433,6 +433,8 @@ export const ResOnlinePostGameInfoSchema = z.object({
   p2Picture: z.string().optional(),
   p1SessionID: z.string().optional(),
   p2SessionID: z.string().optional(),
+  p1SocketID: z.string().optional(),
+  p2SocketID: z.string().optional(),
   p1Points: z.number(),
   p2Points: z.number(),
   winnerRole: z

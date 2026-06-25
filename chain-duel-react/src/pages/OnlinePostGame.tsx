@@ -13,6 +13,7 @@ import {
   onlineLobbyUrl,
   onlineReplayUrl,
 } from '@/shared/constants/onlineRoutes';
+import { isOnlineVictoryWinner } from '@/lib/online/isOnlineVictoryWinner';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
 
@@ -31,6 +32,8 @@ interface OnlinePostGameInfo {
   p2Picture?: string;
   p1SessionID?: string;
   p2SessionID?: string;
+  p1SocketID?: string;
+  p2SocketID?: string;
   p1Points: number;
   p2Points: number;
   winnerRole?: 'Player 1' | 'Player 2';
@@ -92,6 +95,7 @@ export default function OnlinePostGame() {
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );
+  const [currentSocketID, setCurrentSocketID] = useState('');
   const [info, setInfo] = useState<OnlinePostGameInfo | null>(null);
   const [votes, setVotes] = useState(0);
   const [requiredVotes, setRequiredVotes] = useState(2);
@@ -112,8 +116,12 @@ export default function OnlinePostGame() {
 
   useGamepad(true);
 
-  const isWinner = Boolean(
-    info?.winnerSessionID && info.winnerSessionID === currentSessionID
+  const effectiveSessionID =
+    currentSessionID || sessionStorage.getItem('sessionID') || '';
+  const isWinner = isOnlineVictoryWinner(
+    info,
+    effectiveSessionID,
+    currentSocketID
   );
   const donLocked = Boolean(
     lnurlw ||
@@ -354,15 +362,25 @@ export default function OnlinePostGame() {
     }
 
     const requestInfo = () => socket.emit('getOnlinePostGame', { roomId });
+    const refreshLocalIdentity = () => {
+      setCurrentSessionID(sessionStorage.getItem('sessionID') ?? '');
+      setCurrentSocketID(socket.id ?? '');
+    };
     const onSession = (payload: { sessionID: string }) => {
       if (!payload?.sessionID) {
         return;
       }
       setCurrentSessionID(payload.sessionID);
       sessionStorage.setItem('sessionID', payload.sessionID);
+      setCurrentSocketID(socket.id ?? '');
     };
+    refreshLocalIdentity();
     requestInfo();
-    socket.on('connect', requestInfo);
+    const onConnect = () => {
+      refreshLocalIdentity();
+      requestInfo();
+    };
+    socket.on('connect', onConnect);
     socket.on('session', onSession);
 
     const onInfo = (payload: unknown) => {
@@ -463,7 +481,7 @@ export default function OnlinePostGame() {
     socket.on('resCreateOnlineNostrPayout', onNostrPayout);
     socket.on('onlinePinInvalid', onInvalid);
     return () => {
-      socket.off('connect', requestInfo);
+      socket.off('connect', onConnect);
       socket.off('session', onSession);
       socket.off('resOnlinePostGameInfo', onInfo);
       socket.off('resCreateOnlineWithdrawal', onWithdrawal);
