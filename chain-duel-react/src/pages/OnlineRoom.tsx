@@ -54,6 +54,13 @@ export default function OnlineRoom() {
   const roomCode = (roomCodeParam ?? '').trim().toUpperCase();
   const replayMode = searchParams.get('replay') === '1';
   const bootstrapRoomId = (searchParams.get('roomId') ?? '').trim();
+  const bootstrapMatchRoundRaw = Number(
+    searchParams.get('round') ?? searchParams.get('matchRound') ?? ''
+  );
+  const bootstrapMatchRound =
+    Number.isFinite(bootstrapMatchRoundRaw) && bootstrapMatchRoundRaw >= 1
+      ? Math.floor(bootstrapMatchRoundRaw)
+      : undefined;
   const [roomId, setRoomId] = useState(bootstrapRoomId);
   const [room, setRoom] = useState<OnlineRoomState | null>(null);
   const [joinError, setJoinError] = useState('');
@@ -63,6 +70,7 @@ export default function OnlineRoom() {
   const shellViewRef = useRef<ShellView>('waiting');
   const handoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bootstrappedRef = useRef(false);
+  const bootstrapFallbackRef = useRef(false);
 
   const syncRoom = useCallback((next: OnlineRoomState) => {
     setRoom(next);
@@ -99,11 +107,14 @@ export default function OnlineRoom() {
       return;
     }
     if (bootstrapRoomId) {
-      socket.emit('getOnlineRoomState', { roomId: bootstrapRoomId });
+      socket.emit('getOnlineRoomState', {
+        roomId: bootstrapRoomId,
+        ...(bootstrapMatchRound != null ? { matchRound: bootstrapMatchRound } : {}),
+      });
       return;
     }
     emitJoin(false);
-  }, [bootstrapRoomId, emitJoin, roomCode, socket]);
+  }, [bootstrapMatchRound, bootstrapRoomId, emitJoin, roomCode, socket]);
 
   const targetView = useMemo(
     () => resolveTargetView(room, replayMode),
@@ -122,6 +133,7 @@ export default function OnlineRoom() {
     }
     joinedRef.current = false;
     bootstrappedRef.current = false;
+    bootstrapFallbackRef.current = false;
     if (bootstrapRoomId) {
       setRoomId(bootstrapRoomId);
     }
@@ -158,6 +170,15 @@ export default function OnlineRoom() {
       if (!parsed) {
         return;
       }
+      if (
+        parsed.reason === 'room_not_found' &&
+        bootstrapRoomId &&
+        !bootstrapFallbackRef.current
+      ) {
+        bootstrapFallbackRef.current = true;
+        emitJoin(false);
+        return;
+      }
       if (parsed.reason === 'room_not_found') {
         setJoinError('Room not found.');
       }
@@ -179,7 +200,16 @@ export default function OnlineRoom() {
       socket.off('onlineRoomUpdated', onUpdated);
       socket.off('onlinePinInvalid', onInvalid);
     };
-  }, [bootstrapRoomId, emitBootstrap, emitJoin, roomCode, shouldSpectateOnJoin, socket, syncRoom]);
+  }, [
+    bootstrapMatchRound,
+    bootstrapRoomId,
+    emitBootstrap,
+    emitJoin,
+    roomCode,
+    shouldSpectateOnJoin,
+    socket,
+    syncRoom,
+  ]);
 
   useEffect(() => {
     const clearHandoffTimer = () => {

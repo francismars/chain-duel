@@ -55,7 +55,7 @@ export function OnlineJoinErrorPage({
           <p className="online-lobby-room-error-title">{title}</p>
           {roomCode ? (
             <p className="online-lobby-join-error-code">
-              Room code <b>{roomCode}</b> is not active on this server.
+              Room code <b>{roomCode}</b> could not be loaded from this server.
             </p>
           ) : null}
           {detail ? (
