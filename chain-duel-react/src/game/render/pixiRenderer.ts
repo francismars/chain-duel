@@ -40,6 +40,7 @@ import {
 export type PixiRenderOpts = {
   replayView?: boolean;
   challengeContinueLabel?: string;
+  suppressVictoryOverlay?: boolean;
   canvasObjectives?: CanvasObjectivesOpts;
 };
 
@@ -688,11 +689,17 @@ export class PixiGameRenderer {
         this.hideCountdownOverlay();
         if (state.gameEnded) {
           // During the resolving-blocks animation, suppress the text until blocks cover the board
-          if (resolveProgress >= 1.0 || !state.convergenceWallClosed) {
+          if (
+            !opts?.suppressVictoryOverlay &&
+            (resolveProgress >= 1.0 || !state.convergenceWallClosed)
+          ) {
             this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
             this.endContinueText.text = opts?.replayView
               ? ''
               : opts?.challengeContinueLabel ?? 'PRESS ANY BUTTON TO CONTINUE';
+          } else if (opts?.suppressVictoryOverlay) {
+            this.endWinnerText.text = '';
+            this.endContinueText.text = '';
           }
         } else {
           this.endWinnerText.text = '';
@@ -1920,7 +1927,10 @@ export class PixiGameRenderer {
       ctx.fillText(countdownText, width / 2, height / 2);
     } else if (state.gameEnded) {
       this.startRevealTime = -1;
-      if (resolveProgressFb >= 1.0 || !state.convergenceWallClosed) {
+      if (
+        !opts?.suppressVictoryOverlay &&
+        (resolveProgressFb >= 1.0 || !state.convergenceWallClosed)
+      ) {
         const fbC = width < 560 || height < 260;
         const fbWinPx = fbC
           ? Math.max(14, Math.floor(Math.max(width / 14, height / 5.5)))

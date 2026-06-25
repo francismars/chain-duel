@@ -8,10 +8,13 @@ import OnlineRoomLobby from '@/pages/OnlineRoomLobby';
 import OnlineGame from '@/pages/OnlineGame';
 import OnlinePostGame from '@/pages/OnlinePostGame';
 import { OnlineJoinErrorPage } from '@/pages/OnlineJoinErrorPage';
+import { OnlineVictoryReveal } from '@/components/online/OnlineVictoryReveal';
 import './game.css';
 
 /** Brief lobby beat so the first seated player sees both-paid before the canvas. */
 const ARENA_HANDOFF_MS = 2400;
+/** Pause on the arena after match end before the victory screen. */
+const VICTORY_HANDOFF_MS = 2800;
 
 function countPaidSeats(room: OnlineRoomState | null): number {
   if (!room?.seats) {
@@ -73,6 +76,7 @@ export default function OnlineRoom() {
   const bootstrapFallbackRef = useRef(false);
 
   const [postGameReady, setPostGameReady] = useState(false);
+  const [victoryHandoff, setVictoryHandoff] = useState(false);
 
   const syncRoom = useCallback((next: OnlineRoomState) => {
     setRoom(next);
@@ -248,6 +252,22 @@ export default function OnlineRoom() {
       return clearHandoffTimer;
     }
 
+    if (targetView === 'results' && prev === 'arena') {
+      setVictoryHandoff(true);
+      clearHandoffTimer();
+      handoffTimerRef.current = setTimeout(() => {
+        handoffTimerRef.current = null;
+        shellViewRef.current = 'results';
+        setShellView('results');
+        setVictoryHandoff(false);
+      }, VICTORY_HANDOFF_MS);
+      return clearHandoffTimer;
+    }
+
+    if (targetView !== 'results') {
+      setVictoryHandoff(false);
+    }
+
     clearHandoffTimer();
     shellViewRef.current = targetView;
     setShellView(targetView);
@@ -271,6 +291,7 @@ export default function OnlineRoom() {
 
   const showLoadingOverlay =
     !roomId || !room || (shellView === 'results' && !postGameReady);
+  const prefetchPostGame = targetView === 'results' && Boolean(room);
 
   if (!roomCode) {
     return null;
@@ -310,15 +331,23 @@ export default function OnlineRoom() {
         ) : null}
         {!showLoadingOverlay &&
         (shellView === 'arena' || shellView === 'replay') ? (
-          <OnlineGame embedded roomCode={roomCode} roomId={roomId} />
-        ) : null}
-        {shellView === 'results' && room ? (
-          <OnlinePostGame
+          <OnlineGame
             embedded
             roomCode={roomCode}
             roomId={roomId}
-            onReadyChange={setPostGameReady}
+            victoryHandoff={victoryHandoff}
           />
+        ) : null}
+        {victoryHandoff && room ? <OnlineVictoryReveal room={room} /> : null}
+        {prefetchPostGame ? (
+          <div className={shellView === 'results' ? undefined : 'hide'}>
+            <OnlinePostGame
+              embedded
+              roomCode={roomCode}
+              roomId={roomId}
+              onReadyChange={setPostGameReady}
+            />
+          </div>
         ) : null}
       </div>
     </>

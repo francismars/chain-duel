@@ -64,12 +64,14 @@ export type OnlineGameProps = {
   embedded?: boolean;
   roomId?: string;
   roomCode?: string;
+  victoryHandoff?: boolean;
 };
 
 export default function OnlineGame({
   embedded: _embedded = false,
   roomId: roomIdProp,
   roomCode: _roomCodeProp,
+  victoryHandoff = false,
 }: OnlineGameProps = {}) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -157,6 +159,8 @@ export default function OnlineGame({
   const localRoleRef = useRef({ isP1: false, isP2: false });
   const replayViewRef = useRef(replayMode);
   replayViewRef.current = replayMode;
+  const victoryHandoffRef = useRef(victoryHandoff);
+  victoryHandoffRef.current = victoryHandoff;
   const replayLoadedRef = useRef(false);
   const replayFetchInFlightRef = useRef(false);
   useGamepad(true, { inputMode: 'game' });
@@ -289,6 +293,7 @@ export default function OnlineGame({
         if (snapshotChanged || animActive) {
           rendererRef.current.render(renderState, {
             replayView: replayViewRef.current,
+            suppressVictoryOverlay: victoryHandoffRef.current,
             canvasObjectives: canvasObjectivesRef.current,
           });
           lastPaintedSnapshot = snap;
