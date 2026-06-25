@@ -21,6 +21,35 @@ const FADE_DELAY_MS = 1000;
 const FADE_DURATION_MS = 420;
 const KEY_FONT = 'Inter, system-ui, sans-serif';
 
+type PreMatchKeyCapLayout = {
+  keyPx: number;
+  fontPx: number;
+  gap: number;
+};
+
+function preMatchKeyCapLayout(width: number, height: number): PreMatchKeyCapLayout {
+  const compact = width < 560 || height < 260;
+  const keyPx = compact
+    ? Math.max(14, width * 0.029)
+    : Math.max(17, width * 0.027);
+  const legacyCap = compact
+    ? Math.max(12, width * 0.024)
+    : Math.max(14, width * 0.021);
+  return {
+    keyPx,
+    fontPx: Math.max(9, legacyCap * 0.44),
+    gap: Math.max(5, keyPx * 0.2),
+  };
+}
+
+function keyCapCornerRadius(keyPx: number): number {
+  return Math.max(2, keyPx * 0.1);
+}
+
+function formatKeyCapLabel(label: string, dir: PreMatchKeyDir): string {
+  return dir === 'confirm' ? label.toUpperCase() : label;
+}
+
 type KeyCap = {
   root: Container;
   border: Graphics;
@@ -72,11 +101,11 @@ function padExtents(keyPx: number, gap: number): {
   aboveAnchor: number;
   belowAnchor: number;
 } {
-  const confirmOffset = keyPx + gap * 1.6;
   const step = keyPx + gap;
+  const reach = step + keyPx / 2;
   return {
-    aboveAnchor: step + keyPx / 2,
-    belowAnchor: confirmOffset + keyPx / 2,
+    aboveAnchor: reach,
+    belowAnchor: reach,
   };
 }
 
@@ -87,7 +116,6 @@ function buildDpadSpecs(
   gap: number
 ): DpadSpec[] {
   const step = keyPx + gap;
-  const confirmOffset = keyPx + gap * 1.6;
   return [
     { dir: 'up', label: labels.up, x: 0, y: -step },
     { dir: 'left', label: labels.left, x: -step, y: 0 },
@@ -97,7 +125,7 @@ function buildDpadSpecs(
       dir: 'confirm',
       label: confirm,
       x: 0,
-      y: confirmOffset,
+      y: step,
       wide: confirm.length > 2,
     },
   ];
@@ -108,16 +136,16 @@ function computePadAnchor(
   slot: PlayerControlSlot,
   width: number,
   height: number,
-  keyPx: number,
-  gap: number
+  layout: PreMatchKeyCapLayout
 ): { x: number; y: number } {
+  const { keyPx, gap } = layout;
   const head = snakeHeadForSlot(state, slot);
   const body = snakeBodyForSlot(state, slot);
   const colSize = width / state.cols;
   const rowSize = height / state.rows;
+  const step = keyPx + gap;
   const padH = keyPx * 3.2 + gap * 2.4;
   const { aboveAnchor, belowAnchor } = padExtents(keyPx, gap);
-  const confirmOffset = keyPx + gap * 1.6;
 
   const headCx = (head[0] + 0.5) * colSize;
   const bodyCx = body ? (body[0] + 0.5) * colSize : headCx;
@@ -132,16 +160,16 @@ function computePadAnchor(
   );
   const topY = Math.min(headCy, bodyCy) - rowSize * 0.5 + bob;
   const bottomY = Math.max(headCy, bodyCy) + rowSize * 0.5 + bob;
-  const step = keyPx + gap;
+  const stepY = step;
   const chainGap = rowSize * 1.9 - keyPx / 2;
   const avgRow = (head[1] + (body?.[1] ?? head[1])) / 2;
   const placeAbove = avgRow >= state.rows * 0.5;
 
   let y: number;
   if (placeAbove) {
-    y = topY - chainGap - confirmOffset - keyPx / 2;
+    y = topY - chainGap - belowAnchor;
   } else {
-    y = bottomY + chainGap + step + keyPx / 2;
+    y = bottomY + chainGap + stepY + keyPx / 2;
   }
 
   const margin = padH * 0.55 + 4;
@@ -260,12 +288,8 @@ export class CanvasControlsOverlay {
     slots: readonly PlayerControlSlot[],
     layout: ReturnType<typeof readKeyboardLayoutId>
   ): void {
-    const compact = width < 560 || height < 260;
-    const keyPx = compact
-      ? Math.max(14, width * 0.03)
-      : Math.max(16, width * 0.026);
-    const gap = Math.max(3, keyPx * 0.14);
-    const fontPx = Math.max(9, keyPx * 0.44);
+    const capLayout = preMatchKeyCapLayout(width, height);
+    const { keyPx, fontPx, gap } = capLayout;
     this.keyPx = keyPx;
 
     for (let i = 0; i < this.pads.length; i += 1) {
@@ -284,8 +308,7 @@ export class CanvasControlsOverlay {
         slot,
         width,
         height,
-        keyPx,
-        gap
+        capLayout
       );
 
       const dpad = buildDpadSpecs(labels, confirm, keyPx, gap);
@@ -306,7 +329,7 @@ export class CanvasControlsOverlay {
         const spec = dpad[c];
         cap.dir = spec.dir;
         cap.label.style = textStyle;
-        cap.label.text = spec.label;
+        cap.label.text = formatKeyCapLabel(spec.label, spec.dir);
         cap.root.position.set(spec.x, spec.y);
         this.paintCap(cap, slot);
       }
@@ -323,9 +346,11 @@ export class CanvasControlsOverlay {
     const borderWidth = active ? 1.6 : 1;
     const labelColor = active ? '#ffffff' : '#e8e8e8';
 
+    const cornerR = keyCapCornerRadius(keyPx);
+
     cap.border.clear();
     cap.border
-      .roundRect(-capW / 2, -capH / 2, capW, capH, keyPx * 0.16)
+      .roundRect(-capW / 2, -capH / 2, capW, capH, cornerR)
       .stroke({ width: borderWidth, color: 0xffffff, alpha: borderAlpha });
 
     cap.label.style.fill = labelColor;
@@ -343,13 +368,10 @@ export function drawCanvasControlsFallback(
   if (alpha < 0.02 || slots.length === 0) return;
 
   const layout = readKeyboardLayoutId();
-  const compact = width < 560;
-  const keyPx = compact
-    ? Math.max(14, width * 0.03)
-    : Math.max(16, width * 0.026);
-  const gap = Math.max(3, keyPx * 0.14);
-  const fontPx = Math.max(9, keyPx * 0.44);
+  const capLayout = preMatchKeyCapLayout(width, height);
+  const { keyPx, fontPx, gap } = capLayout;
   const now = performance.now();
+  const cornerR = keyCapCornerRadius(keyPx);
 
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -366,8 +388,7 @@ export function drawCanvasControlsFallback(
       slot,
       width,
       height,
-      keyPx,
-      gap
+      capLayout
     );
 
     const dpad = buildDpadSpecs(labels, confirm, keyPx, gap);
@@ -381,17 +402,24 @@ export function drawCanvasControlsFallback(
       const active = isPreMatchKeyHeld(slot, spec.dir);
       ctx.strokeStyle = active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.42)';
       ctx.lineWidth = active ? 1.6 : 1;
-      roundRect(ctx, x - capW / 2, y - capH / 2, capW, capH, keyPx * 0.16);
+      strokeRoundedRect(
+        ctx,
+        x - capW / 2,
+        y - capH / 2,
+        capW,
+        capH,
+        cornerR * scale
+      );
       ctx.stroke();
       ctx.fillStyle = active ? '#ffffff' : '#e8e8e8';
-      ctx.fillText(spec.label, x, y);
+      ctx.fillText(formatKeyCapLabel(spec.label, spec.dir), x, y);
     }
   }
 
   ctx.restore();
 }
 
-function roundRect(
+function strokeRoundedRect(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,

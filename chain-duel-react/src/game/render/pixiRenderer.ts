@@ -14,14 +14,19 @@ import {
 } from '@/game/engine/powerups';
 import { clearPreMatchKeyHighlight } from '@/game/render/preMatchKeyHighlight';
 import {
+  applyCanvasTextDropShadow,
+  clearCanvasTextDropShadow,
   computeCanvasObjectivesLayout,
   computeOnlineStartReadyPlacement,
+  computeStartPromptPulse,
   fitStartPromptFontSize,
   measureStartWordWidth,
   START_PROMPT_GAP_RATIO,
   START_PROMPT_WORDS,
   START_WORD_SHADOW_BLUR,
   startPromptLineWidth,
+  startPromptRevealElapsedMs,
+  startPromptWordRevealAlpha,
   type CanvasObjectivesOpts,
 } from '@/game/render/matchObjectives';
 import {
@@ -73,6 +78,7 @@ export class PixiGameRenderer {
   private controls = new CanvasControlsOverlay();
   private startRevealTime = -1;
   private startLayoutKey = '';
+  private startWordMeasureCtx: CanvasRenderingContext2D | null = null;
   private boardRevealTime = -1;
   private lastCountdownPhase: '3' | '2' | '1' | 'LFG' | null = null;
   private lastOverlayWidth = 0;
@@ -287,6 +293,7 @@ export class PixiGameRenderer {
     this.controls.hide();
     this.startRevealTime = -1;
     this.startLayoutKey = '';
+    this.startWordsContainer.scale.set(1);
     for (const t of this.startWords) {
       t.alpha = 0;
       t.y = 0;
@@ -294,15 +301,28 @@ export class PixiGameRenderer {
   }
 
   /** Size and position start words so the full line fits; re-run when metrics change. */
+  private measureStartWordGlyphWidth(word: string, fontSize: number): number {
+    if (!this.startWordMeasureCtx) {
+      const canvas = document.createElement('canvas');
+      this.startWordMeasureCtx = canvas.getContext('2d');
+    }
+    const ctx = this.startWordMeasureCtx;
+    if (!ctx) {
+      return measureStartWordWidth(word, fontSize, 0);
+    }
+    ctx.font = `500 ${fontSize}px BureauGrotesque`;
+    return measureStartWordWidth(
+      word,
+      fontSize,
+      ctx.measureText(word).width
+    );
+  }
+
   private fitAndLayoutStartWords(width: number, height: number): number {
     const wordWidthsForSize = (fontSize: number) =>
       this.startWords.map((t, i) => {
         t.style.fontSize = fontSize;
-        return measureStartWordWidth(
-          START_PROMPT_WORDS[i],
-          fontSize,
-          t.width
-        );
+        return this.measureStartWordGlyphWidth(START_PROMPT_WORDS[i], fontSize);
       });
 
     const measureLine = (fontSize: number) =>
@@ -644,21 +664,21 @@ export class PixiGameRenderer {
         objOpts.controlSlots ?? [],
         this.startRevealTime
       );
-      // ── Staggered word-by-word reveal ─────────────────────────────────────
+      // ── Staggered word-by-word reveal + idle pulse ─────────────────────────
       this.startWordsContainer.position.set(width / 2, objLayout.startY);
-      const elapsed = Math.max(
-        0,
-        performance.now() - this.startRevealTime - 1000
+      const revealElapsed = startPromptRevealElapsedMs(
+        performance.now(),
+        this.startRevealTime
       );
-      const STAGGER = 110; // ms between each word
-      const DURATION = 420; // ms each word takes to fade+rise in
+      const pulseAlpha = computeStartPromptPulse(revealElapsed);
+      let startWordAlpha = 0;
       for (let i = 0; i < this.startWords.length; i++) {
-        const t = Math.max(0, Math.min(1, (elapsed - i * STAGGER) / DURATION));
-        const eased = 1 - Math.pow(1 - t, 3); // cubic ease-out
-        this.startWords[i].alpha = eased;
-        this.startWords[i].y = (1 - eased) * 10;
+        const eased = startPromptWordRevealAlpha(revealElapsed, i);
+        const wordAlpha = eased * pulseAlpha;
+        this.startWords[i].alpha = wordAlpha;
+        this.startWords[i].y = (1 - eased) * 8;
+        startWordAlpha = Math.max(startWordAlpha, wordAlpha);
       }
-      const startWordAlpha = Math.max(0, ...this.startWords.map((w) => w.alpha));
       const readyPlacement = computeOnlineStartReadyPlacement(
         objLayout,
         startFontSize
@@ -1869,19 +1889,38 @@ export class PixiGameRenderer {
       );
       const objAlpha = Math.min(1, elapsed / 420);
       const eased = 1 - Math.pow(1 - objAlpha, 3);
-      const fbElapsed = Math.max(
-        0,
-        performance.now() - this.startRevealTime - 1000
+      const fbElapsed = startPromptRevealElapsedMs(
+        performance.now(),
+        this.startRevealTime
       );
-      const words = [...START_PROMPT_WORDS];
-      const STAGGER = 110;
-      const visibleWords = words.filter((_, i) => fbElapsed > i * STAGGER);
+      const pulseAlpha = computeStartPromptPulse(fbElapsed);
+      const fbGap = fbStartPx * START_PROMPT_GAP_RATIO;
       ctx.font = `${fbStartPx}px BureauGrotesque`;
-      ctx.fillText(visibleWords.join(' '), width / 2, objLayout.startY);
-      const startWordAlpha =
-        visibleWords.length >= 4
-          ? 1
-          : Math.max(0, (fbElapsed - 3 * STAGGER) / 420);
+      const fbWordWidths = START_PROMPT_WORDS.map((word) =>
+        measureStartWordWidth(word, fbStartPx, ctx.measureText(word).width)
+      );
+      const fbLineW = startPromptLineWidth(fbStartPx, fbWordWidths);
+      let fbX = -fbLineW / 2;
+      let startWordAlpha = 0;
+      ctx.save();
+      ctx.translate(width / 2, objLayout.startY);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      applyCanvasTextDropShadow(ctx);
+      for (let i = 0; i < START_PROMPT_WORDS.length; i++) {
+        const reveal = startPromptWordRevealAlpha(fbElapsed, i);
+        if (reveal <= 0.02) {
+          fbX += (fbWordWidths[i] ?? 0) + fbGap;
+          continue;
+        }
+        const wordAlpha = reveal * pulseAlpha;
+        startWordAlpha = Math.max(startWordAlpha, wordAlpha);
+        ctx.globalAlpha = wordAlpha;
+        ctx.fillText(START_PROMPT_WORDS[i], fbX + (fbWordWidths[i] ?? 0) / 2, 0);
+        fbX += (fbWordWidths[i] ?? 0) + fbGap;
+      }
+      clearCanvasTextDropShadow(ctx);
+      ctx.restore();
       const readyPlacement = computeOnlineStartReadyPlacement(
         objLayout,
         fbStartPx

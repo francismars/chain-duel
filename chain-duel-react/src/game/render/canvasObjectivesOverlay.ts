@@ -4,6 +4,13 @@ import {
   computeInstructionCycleFrame,
   instructionBlockHeight,
   MATCH_OBJECTIVES,
+  MATCH_OBJECTIVE_DROP_SHADOW,
+  OBJECTIVE_TITLE_FONT,
+  OBJECTIVE_TITLE_STROKE_ALIGNMENT,
+  START_WORD_SHADOW_PAD,
+  applyCanvasTextDropShadow,
+  clearCanvasTextDropShadow,
+  objectiveTitleStrokeWidth,
   type CanvasObjectivesLayout,
   type CanvasObjectivesOpts,
 } from '@/game/render/matchObjectives';
@@ -11,6 +18,29 @@ import {
 const FADE_DELAY_MS = 900;
 const FADE_DURATION_MS = 420;
 const INSTRUCTION_FONT = 'Inter, system-ui, sans-serif';
+
+/** Stroke-only Bureau title; Pixi skips fill pass only when `_fill` is undefined. */
+function createObjectiveTitleTextStyle(titlePx: number): TextStyle {
+  const titleStyle = new TextStyle({
+    fontFamily: OBJECTIVE_TITLE_FONT,
+    fontSize: titlePx,
+    fontWeight: '500',
+    letterSpacing: 1.2,
+    align: 'center',
+    padding: START_WORD_SHADOW_PAD,
+    dropShadow: { ...MATCH_OBJECTIVE_DROP_SHADOW },
+    stroke: {
+      color: '#ffffff',
+      width: objectiveTitleStrokeWidth(titlePx),
+      alignment: OBJECTIVE_TITLE_STROKE_ALIGNMENT,
+      join: 'round',
+      cap: 'round',
+    },
+  });
+  titleStyle.fill = null!;
+  (titleStyle as unknown as { _fill?: unknown })._fill = undefined;
+  return titleStyle;
+}
 
 type HintCard = {
   root: Container;
@@ -66,6 +96,10 @@ export class CanvasObjectivesOverlay {
     for (const card of this.cards) {
       card.root.visible = false;
       card.root.alpha = 0;
+      card.title.scale.set(1);
+      card.title.position.set(0, 0);
+      card.body.alpha = 1;
+      card.body.position.set(0, this.bodyY);
     }
     this.stakes.visible = false;
   }
@@ -111,6 +145,10 @@ export class CanvasObjectivesOverlay {
       card.root.visible = active;
       card.root.alpha = active ? cardAlpha : 0;
       card.root.position.set(width / 2, layout.instructionTop);
+      card.title.scale.set(frame.titleScale);
+      card.title.position.set(0, frame.titleOffsetY);
+      card.body.alpha = frame.bodyAlpha;
+      card.body.position.set(0, this.bodyY + frame.bodyOffsetY);
     }
 
     if (opts.stakesHint) {
@@ -138,14 +176,7 @@ export class CanvasObjectivesOverlay {
       (opts.stakesHint ? footerPx * 1.5 : 0) +
       titleBodyGap * 0.4;
 
-    const titleStyle = new TextStyle({
-      fontFamily: INSTRUCTION_FONT,
-      fill: '#ffffff',
-      fontSize: titlePx,
-      fontWeight: '700',
-      letterSpacing: 1.2,
-      align: 'center',
-    });
+    const titleStyle = createObjectiveTitleTextStyle(titlePx);
 
     const bodyStyle = new TextStyle({
       fontFamily: INSTRUCTION_FONT,
@@ -157,6 +188,8 @@ export class CanvasObjectivesOverlay {
       wordWrapWidth: instructionW,
       lineHeight: bodyPx * 1.45,
       breakWords: true,
+      padding: START_WORD_SHADOW_PAD,
+      dropShadow: { ...MATCH_OBJECTIVE_DROP_SHADOW },
     });
 
     for (const card of this.cards) {
@@ -209,27 +242,46 @@ export function drawCanvasObjectivesFallback(
   if (drawAlpha < 0.02) return;
 
   ctx.save();
-  ctx.globalAlpha = drawAlpha;
-  ctx.translate(cx, cy);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `700 ${Math.floor(titlePx)}px Inter, system-ui, sans-serif`;
-  ctx.fillText(item.title.toUpperCase(), 0, 0);
+  const titleFontPx = Math.floor(titlePx);
+  const titleStroke = objectiveTitleStrokeWidth(titleFontPx);
 
+  ctx.save();
+  ctx.globalAlpha = drawAlpha;
+  ctx.translate(cx, cy + frame.titleOffsetY);
+  ctx.scale(frame.titleScale, frame.titleScale);
+  applyCanvasTextDropShadow(ctx);
+  ctx.font = `500 ${titleFontPx}px ${OBJECTIVE_TITLE_FONT}`;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = titleStroke;
+  ctx.strokeStyle = '#ffffff';
+  ctx.strokeText(item.title.toUpperCase(), 0, 0);
+  clearCanvasTextDropShadow(ctx);
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = drawAlpha * frame.bodyAlpha;
+  ctx.translate(cx, cy + bodyY + frame.bodyOffsetY);
   ctx.fillStyle = 'rgba(255,255,255,0.88)';
   ctx.font = `400 ${Math.floor(bodyPx)}px Inter, system-ui, sans-serif`;
-  wrapFillText(ctx, item.body, 0, bodyY, instructionW, bodyPx * 1.45);
+  wrapFillText(ctx, item.body, 0, 0, instructionW, bodyPx * 1.45);
+  ctx.restore();
 
   if (opts.stakesHint) {
+    ctx.save();
+    ctx.globalAlpha = drawAlpha * frame.bodyAlpha;
+    ctx.translate(cx, cy);
     ctx.fillStyle = '#ffcc99';
     ctx.font = `500 ${Math.floor(footerPx)}px Inter, system-ui, sans-serif`;
     ctx.fillText(
       opts.stakesHint,
       0,
-      bodyY + bodyBlockH + titleBodyGap * 0.4
+      bodyY + bodyBlockH + titleBodyGap * 0.4 + frame.bodyOffsetY
     );
+    ctx.restore();
   }
 
   ctx.restore();

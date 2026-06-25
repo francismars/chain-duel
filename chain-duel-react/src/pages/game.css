@@ -300,11 +300,20 @@
 }
 
 .game-2v1-capture-row {
-  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
   font-size: 0.55vw;
   color: #9a9a9a;
-  text-align: right;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.game-2v1-capture-row .capturingAmount {
+  font-weight: 900;
+  font-size: 0.62vw;
+  transition: all 0.1s ease-out;
+  display: inline-block;
 }
 
 .game-2v1-capture-row.highlight .capturingAmount {

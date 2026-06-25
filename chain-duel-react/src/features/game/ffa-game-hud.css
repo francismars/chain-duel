@@ -172,8 +172,10 @@
 }
 
 .ffa-hud-capture {
+  font-family: 'Inter', sans-serif;
   font-size: 0.55vw;
   color: #9a9a9a;
+  letter-spacing: 0.05em;
   line-height: 1;
   white-space: nowrap;
 }

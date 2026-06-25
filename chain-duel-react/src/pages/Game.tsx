@@ -1450,8 +1450,8 @@ export default function Game() {
                                 />
                               </div>
                               <div className="game-2v1-capture-row">
-                                <span className="capturingAmount">{ai.capture}</span>{' '}
-                                capture
+                                capture{' '}
+                                <span className="capturingAmount">{ai.capture}</span>
                               </div>
                             </div>
                           )
