@@ -8,11 +8,15 @@ const MONO_FONT = 'Inter, system-ui, sans-serif';
 const DISPLAY_FONT = 'BureauGrotesque, sans-serif';
 
 function shortName(name: string | undefined, fallback: string): string {
-  const trimmed = (name ?? fallback).trim();
+  const trimmed = (name?.trim() || fallback).trim();
   if (trimmed.length <= 12) {
     return trimmed.toUpperCase();
   }
   return `${trimmed.slice(0, 11).toUpperCase()}…`;
+}
+
+function estimateNameWidth(name: string, namePx: number, measured: number): number {
+  return Math.max(measured, namePx * name.length * 0.52, namePx * 2);
 }
 
 type SeatLayout = {
@@ -91,15 +95,16 @@ function syncSeatContent(
       align: 'center',
     });
     seat.status.text = ready ? 'READY' : 'WAITING';
-
-    seat.identityW = chipSize + textGap + seat.name.width;
-    seat.chipX = -seat.identityW / 2 + chipSize / 2;
-    seat.chipY = topRowH / 2;
-    seat.nameX = -seat.identityW / 2 + chipSize + textGap;
-
-    seat.name.position.set(seat.nameX, seat.chipY);
-    seat.status.position.set(0, topRowH + statusGap);
   }
+
+  const nameW = estimateNameWidth(name, namePx, seat.name.width);
+  seat.identityW = chipSize + textGap + nameW;
+  seat.chipX = -seat.identityW / 2 + chipSize / 2;
+  seat.chipY = topRowH / 2;
+  seat.nameX = -seat.identityW / 2 + chipSize + textGap;
+
+  seat.name.position.set(seat.nameX, seat.chipY);
+  seat.status.position.set(0, topRowH + statusGap);
 
   return seat.identityW;
 }
@@ -216,6 +221,7 @@ export class OnlineStartReadyOverlay {
   hide(): void {
     this.container.visible = false;
     this.container.alpha = 0;
+    this.container.scale.set(1);
     this.metricsToken = '';
     this.p1.contentToken = '';
     this.p2.contentToken = '';
@@ -267,12 +273,15 @@ export class OnlineStartReadyOverlay {
 
     const slotW = Math.max(m.minSlotW, p1IdentityW, p2IdentityW);
     const totalW = slotW * 2 + m.rowGap;
+    const maxW = width * 0.9;
+    const scale = totalW > maxW ? maxW / totalW : 1;
     this.p1.root.position.set(-totalW / 2 + slotW / 2, 0);
     this.p2.root.position.set(totalW / 2 - slotW / 2, 0);
     this.p1.root.alpha = 1;
     this.p2.root.alpha = 1;
 
     this.container.position.set(centerX, panelTopY);
+    this.container.scale.set(scale);
     this.container.visible = true;
     this.container.alpha = alpha;
   }
@@ -280,6 +289,7 @@ export class OnlineStartReadyOverlay {
 
 export function drawOnlineStartReadyFallback(
   ctx: CanvasRenderingContext2D,
+  width: number,
   centerX: number,
   panelTopY: number,
   startFontSize: number,
@@ -300,10 +310,13 @@ export function drawOnlineStartReadyFallback(
   const p2IdentityW = measureIdentityWidth(ctx, m, p2Name);
   const slotW = Math.max(m.minSlotW, p1IdentityW, p2IdentityW);
   const totalW = slotW * 2 + m.rowGap;
+  const maxW = width * 0.9;
+  const scale = totalW > maxW ? maxW / totalW : 1;
 
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.translate(centerX, panelTopY);
+  ctx.scale(scale, scale);
 
   drawSeatFallback(
     ctx,
@@ -339,7 +352,11 @@ function measureIdentityWidth(
   name: string
 ): number {
   ctx.font = `600 ${Math.floor(metrics.namePx)}px Inter, system-ui, sans-serif`;
-  return metrics.chipSize + metrics.textGap + ctx.measureText(name).width;
+  return (
+    metrics.chipSize +
+    metrics.textGap +
+    estimateNameWidth(name, metrics.namePx, ctx.measureText(name).width)
+  );
 }
 
 function drawSeatFallback(

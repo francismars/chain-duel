@@ -334,9 +334,10 @@ export default function OnlineRooms() {
   );
 
   const openHistoryPostGame = useCallback(
-    (roomCode: string) => {
+    (room: Pick<OnlineRoomListItem, 'roomCode' | 'roomId'>) => {
       playConfirm();
-      navigate(onlineRoomUrl(roomCode.trim().toUpperCase()));
+      const code = room.roomCode.trim().toUpperCase();
+      navigate(onlineRoomUrl(code, { roomId: room.roomId }));
     },
     [navigate, playConfirm]
   );
@@ -654,7 +655,7 @@ export default function OnlineRooms() {
           const room = displayedRooms[navFocus.index];
           if (room) {
             if (onlineTab === 'history' || onlineTab === 'hof') {
-              if (room.roomCode) openHistoryPostGame(room.roomCode);
+              if (room.roomCode) openHistoryPostGame(room);
             } else activateRoom(room);
           }
           return;
@@ -1002,7 +1003,7 @@ export default function OnlineRooms() {
                             .join(' ')}
                           onClick={() => {
                             if (room.roomCode) {
-                              openHistoryPostGame(room.roomCode);
+                              openHistoryPostGame(room);
                             }
                           }}
                         >

@@ -75,6 +75,16 @@ export function startPromptLineWidth(
   return total;
 }
 
+/** Pixi/canvas may report 0 until BureauGrotesque metrics load — use a safe estimate. */
+export function measureStartWordWidth(
+  word: string,
+  fontSize: number,
+  measured = 0
+): number {
+  const estimate = fontSize * word.length * 0.48;
+  return Math.max(measured, estimate, fontSize * 0.35);
+}
+
 export type OnlineStartReadyState = {
   p1Ready: boolean;
   p2Ready: boolean;

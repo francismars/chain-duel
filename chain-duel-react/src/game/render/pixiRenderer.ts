@@ -17,6 +17,7 @@ import {
   computeCanvasObjectivesLayout,
   computeOnlineStartReadyPlacement,
   fitStartPromptFontSize,
+  measureStartWordWidth,
   START_PROMPT_GAP_RATIO,
   START_PROMPT_WORDS,
   START_WORD_SHADOW_BLUR,
@@ -293,22 +294,23 @@ export class PixiGameRenderer {
 
   /** Size and position start words so the full line fits; re-run when metrics change. */
   private fitAndLayoutStartWords(width: number, height: number): number {
-    const measureLine = (fontSize: number) => {
-      const wordWidths = this.startWords.map((t) => {
+    const wordWidthsForSize = (fontSize: number) =>
+      this.startWords.map((t, i) => {
         t.style.fontSize = fontSize;
-        return Math.max(1, t.width);
+        return measureStartWordWidth(
+          START_PROMPT_WORDS[i],
+          fontSize,
+          t.width
+        );
       });
-      return (
-        startPromptLineWidth(fontSize, wordWidths) + START_WORD_SHADOW_BLUR
-      );
-    };
+
+    const measureLine = (fontSize: number) =>
+      startPromptLineWidth(fontSize, wordWidthsForSize(fontSize)) +
+      START_WORD_SHADOW_BLUR;
 
     const fontSize = fitStartPromptFontSize(width, height, measureLine);
     const gap = fontSize * START_PROMPT_GAP_RATIO;
-    const wordWidths = this.startWords.map((t) => {
-      t.style.fontSize = fontSize;
-      return Math.max(1, t.width);
-    });
+    const wordWidths = wordWidthsForSize(fontSize);
     const widthSig = wordWidths.map((w) => Math.ceil(w)).join(',');
     const layoutKey = `${width}x${height}:${Math.round(fontSize)}:${widthSig}`;
     if (layoutKey === this.startLayoutKey) {
@@ -1842,7 +1844,7 @@ export class PixiGameRenderer {
       const fbStartPx = fitStartPromptFontSize(width, height, (fontSize) => {
         ctx.font = `${fontSize}px BureauGrotesque`;
         const wordWidths = START_PROMPT_WORDS.map((word) =>
-          ctx.measureText(word).width
+          measureStartWordWidth(word, fontSize, ctx.measureText(word).width)
         );
         return (
           startPromptLineWidth(fontSize, wordWidths) + START_WORD_SHADOW_BLUR
@@ -1879,6 +1881,7 @@ export class PixiGameRenderer {
       );
       drawOnlineStartReadyFallback(
         ctx,
+        width,
         width / 2,
         readyPlacement.panelTopY,
         fbStartPx,

@@ -7,6 +7,7 @@ import type { OnlineRoomState } from '@/types/socket';
 import OnlineRoomLobby from '@/pages/OnlineRoomLobby';
 import OnlineGame from '@/pages/OnlineGame';
 import OnlinePostGame from '@/pages/OnlinePostGame';
+import { OnlineJoinErrorPage } from '@/pages/OnlineJoinErrorPage';
 import './game.css';
 
 /** Brief lobby beat so the first seated player sees both-paid before the canvas. */
@@ -52,7 +53,8 @@ export default function OnlineRoom() {
   const { socket } = useSocket({ autoConnect: true });
   const roomCode = (roomCodeParam ?? '').trim().toUpperCase();
   const replayMode = searchParams.get('replay') === '1';
-  const [roomId, setRoomId] = useState('');
+  const bootstrapRoomId = (searchParams.get('roomId') ?? '').trim();
+  const [roomId, setRoomId] = useState(bootstrapRoomId);
   const [room, setRoom] = useState<OnlineRoomState | null>(null);
   const [joinError, setJoinError] = useState('');
   const joinedRef = useRef(false);
@@ -92,6 +94,17 @@ export default function OnlineRoom() {
     [roomCode, socket]
   );
 
+  const emitBootstrap = useCallback(() => {
+    if (!socket || !roomCode) {
+      return;
+    }
+    if (bootstrapRoomId) {
+      socket.emit('getOnlineRoomState', { roomId: bootstrapRoomId });
+      return;
+    }
+    emitJoin(false);
+  }, [bootstrapRoomId, emitJoin, roomCode, socket]);
+
   const targetView = useMemo(
     () => resolveTargetView(room, replayMode),
     [replayMode, room]
@@ -109,6 +122,9 @@ export default function OnlineRoom() {
     }
     joinedRef.current = false;
     bootstrappedRef.current = false;
+    if (bootstrapRoomId) {
+      setRoomId(bootstrapRoomId);
+    }
 
     const onJoin = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.joinOnlineRoom(payload);
@@ -148,10 +164,10 @@ export default function OnlineRoom() {
     };
 
     const onConnect = () => {
-      emitJoin(false);
+      emitBootstrap();
     };
 
-    emitJoin(false);
+    emitBootstrap();
     socket.on('connect', onConnect);
     socket.on('resJoinOnlineRoom', onJoin);
     socket.on('onlineRoomUpdated', onUpdated);
@@ -163,7 +179,7 @@ export default function OnlineRoom() {
       socket.off('onlineRoomUpdated', onUpdated);
       socket.off('onlinePinInvalid', onInvalid);
     };
-  }, [emitJoin, roomCode, shouldSpectateOnJoin, socket, syncRoom]);
+  }, [bootstrapRoomId, emitBootstrap, emitJoin, roomCode, shouldSpectateOnJoin, socket, syncRoom]);
 
   useEffect(() => {
     const clearHandoffTimer = () => {
@@ -219,12 +235,16 @@ export default function OnlineRoom() {
 
   if (joinError) {
     return (
-      <div className="online-room-shell-error">
-        <p>{joinError}</p>
-        <button type="button" onClick={() => navigate(ONLINE_HOME)}>
-          Back to rooms
-        </button>
-      </div>
+      <OnlineJoinErrorPage
+        title={
+          joinError.toLowerCase().includes('not found')
+            ? 'Room not found'
+            : 'Could not join room'
+        }
+        detail={joinError}
+        roomCode={roomCode}
+        onBack={() => navigate(ONLINE_HOME)}
+      />
     );
   }
 
