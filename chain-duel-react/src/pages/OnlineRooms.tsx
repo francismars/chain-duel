@@ -8,10 +8,8 @@ import { useMenuSfx } from '@/hooks/useMenuSfx';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import {
-  onlineGameUrl,
-  onlineLobbyUrl,
-  onlinePostGameUrl,
-  onlineReplayUrl,
+  onlineReplayRoomUrl,
+  onlineRoomUrl,
 } from '@/shared/constants/onlineRoutes';
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import { OnlineRoomListItem, PlayerRole } from '@/types/socket';
@@ -315,27 +313,27 @@ export default function OnlineRooms() {
   const activateRoom = useCallback(
     (room: OnlineRoomListItem) => {
       playConfirm();
-      if (room.phase === 'playing') {
-        socket?.emit('spectateOnlineRoom', { roomId: room.roomId });
-        navigate(onlineGameUrl(room.roomId));
-        return;
+      const code = room.roomCode.trim().toUpperCase();
+      if (room.phase === 'playing' || room.phase === 'postgame') {
+        socket?.emit('spectateOnlineRoomByCode', { roomCode: code });
+      } else {
+        socket?.emit('joinOnlineRoomByCode', { roomCode: code });
       }
-      socket?.emit('joinOnlineRoom', { roomId: room.roomId });
-      navigate(onlineLobbyUrl(room.roomId));
+      navigate(onlineRoomUrl(code));
     },
     [playConfirm, socket, navigate]
   );
 
   const openHistoryPostGame = useCallback(
-    (roomId: string) => {
+    (roomCode: string) => {
       playConfirm();
-      navigate(onlinePostGameUrl(roomId));
+      navigate(onlineRoomUrl(roomCode.trim().toUpperCase()));
     },
     [navigate, playConfirm]
   );
 
-  const openHistoryReplay = (roomId: string, matchRound?: number) => {
-    navigate(onlineReplayUrl(roomId, matchRound));
+  const openHistoryReplay = (roomCode: string, matchRound?: number) => {
+    navigate(onlineReplayRoomUrl(roomCode.trim().toUpperCase(), matchRound));
   };
 
   useEffect(() => {
@@ -363,7 +361,7 @@ export default function OnlineRooms() {
         setCreatingRoom(false);
         creatingRoomRef.current = false;
         pendingRoomIdRef.current = null;
-        navigate(onlineLobbyUrl(parsed.roomId));
+        navigate(onlineRoomUrl(parsed.roomCode));
         return;
       }
       pendingRoomIdRef.current = parsed.roomId;
@@ -374,7 +372,7 @@ export default function OnlineRooms() {
       if (!parsed) {
         return;
       }
-      navigate(onlineLobbyUrl(parsed.roomId));
+      navigate(onlineRoomUrl(parsed.roomCode));
     };
     const onInvalid = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlinePinInvalid(payload);
@@ -394,7 +392,7 @@ export default function OnlineRooms() {
       setCreatingRoom(false);
       creatingRoomRef.current = false;
       pendingRoomIdRef.current = null;
-      navigate(onlineLobbyUrl(parsed.roomId));
+      navigate(onlineRoomUrl(parsed.roomCode));
     };
 
     socket.on('resListOnlineRooms', onList);
@@ -650,9 +648,9 @@ export default function OnlineRooms() {
         if (navFocus.type === 'room') {
           const room = displayedRooms[navFocus.index];
           if (room) {
-            if (onlineTab === 'history' || onlineTab === 'hof')
-              openHistoryPostGame(room.roomId);
-            else activateRoom(room);
+            if (onlineTab === 'history' || onlineTab === 'hof') {
+              if (room.roomCode) openHistoryPostGame(room.roomCode);
+            } else activateRoom(room);
           }
           return;
         }
@@ -997,7 +995,11 @@ export default function OnlineRooms() {
                           ]
                             .filter(Boolean)
                             .join(' ')}
-                          onClick={() => openHistoryPostGame(room.roomId)}
+                          onClick={() => {
+                            if (room.roomCode) {
+                              openHistoryPostGame(room.roomCode);
+                            }
+                          }}
                         >
                           <span className="online-postgame-round-replay-label">
                             RESULTS
@@ -1006,7 +1008,7 @@ export default function OnlineRooms() {
                         <Button
                           className="online-postgame-round-replay-btn"
                           onClick={() =>
-                            openHistoryReplay(room.roomId, room.matchRound)
+                            openHistoryReplay(room.roomCode, room.matchRound)
                           }
                           disabled={!room.replay?.available}
                         >

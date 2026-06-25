@@ -24,10 +24,8 @@ import PostGame from './pages/PostGame';
 import Highscores from './pages/Highscores';
 import About from './pages/About';
 import Config from './pages/Config';
+import OnlineRoom from './pages/OnlineRoom';
 import OnlineRooms from './pages/OnlineRooms';
-import OnlineRoomLobby from './pages/OnlineRoomLobby';
-import OnlineGame from './pages/OnlineGame';
-import OnlinePostGame from './pages/OnlinePostGame';
 import './styles/index.css';
 
 function LegacyNetworkRedirect() {
@@ -78,9 +76,7 @@ function AppRoutes() {
 
         {/* Online (legacy /network/* redirects preserve query strings) */}
         <Route path="/online" element={<OnlineRooms />} />
-        <Route path="/online/lobby" element={<OnlineRoomLobby />} />
-        <Route path="/online/game" element={<OnlineGame />} />
-        <Route path="/online/postgame" element={<OnlinePostGame />} />
+        <Route path="/online/r/:roomCode" element={<OnlineRoom />} />
         <Route path="/network/*" element={<LegacyNetworkRedirect />} />
       </Route>
     </Routes>

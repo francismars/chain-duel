@@ -126,6 +126,7 @@ export const OnlineSeatStateSchema = z.object({
   paidAmount: z.number().optional(),
   paidAt: z.number().optional(),
   ready: z.boolean().optional(),
+  startConfirmed: z.boolean().optional(),
   disconnectedAt: z.number().optional(),
   name: z.string().optional(),
   picture: z.string().optional(),

@@ -1,4 +1,4 @@
-import { onlineLobbyUrl } from '@/shared/constants/onlineRoutes';
+import { onlineRoomUrl } from '@/shared/constants/onlineRoutes';
 
 const CHAINDUEL_GAME_ORIGIN = 'https://game.chainduel.net';
 const CHAINDUEL_SITE_URL = 'https://chainduel.net';
@@ -12,17 +12,18 @@ function isLocalDevOrigin(origin: string): boolean {
   );
 }
 
-/** Lobby URL for the current browser origin (dev-friendly). */
-export function buildOnlineRoomLobbyUrl(roomId: string): string {
+/** Room URL for the current browser origin (dev-friendly). */
+export function buildOnlineRoomUrl(roomCode: string): string {
+  const path = onlineRoomUrl(roomCode);
   if (typeof window !== 'undefined' && window.location?.origin) {
-    return `${window.location.origin}${onlineLobbyUrl(roomId)}`;
+    return `${window.location.origin}${path}`;
   }
-  return onlineLobbyUrl(roomId);
+  return path;
 }
 
-/** Lobby URL to paste or post — uses game.chainduel.net when sharing from local dev. */
-export function buildOnlineRoomLobbyShareUrl(roomId: string): string {
-  const path = onlineLobbyUrl(roomId);
+/** Room URL to paste or post — uses game.chainduel.net when sharing from local dev. */
+export function buildOnlineRoomShareUrl(roomCode: string): string {
+  const path = onlineRoomUrl(roomCode);
   if (typeof window !== 'undefined') {
     const origin = window.location?.origin ?? '';
     if (!isLocalDevOrigin(origin)) {
@@ -43,7 +44,7 @@ export function buildOnlineRoomInviteText(params: {
     `Chain Duel — you're challenged`,
     '',
     `${buyin} sats on the line · room ${code}`,
-    'Join me in the lobby and take the open seat:',
+    'Join the room and take the open seat:',
     params.lobbyUrl,
     '',
     'Spectators welcome — same link, watch without playing.',

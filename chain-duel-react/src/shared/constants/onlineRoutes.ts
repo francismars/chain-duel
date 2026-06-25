@@ -1,23 +1,24 @@
 /** Online multiplayer route prefix (was /network). */
 export const ONLINE_HOME = '/online';
-export const ONLINE_LOBBY = '/online/lobby';
-export const ONLINE_GAME = '/online/game';
-export const ONLINE_POSTGAME = '/online/postgame';
+export const ONLINE_ROOM = '/online/r';
 
-export function onlineLobbyUrl(roomId: string): string {
-  return `${ONLINE_LOBBY}?roomId=${encodeURIComponent(roomId)}`;
+/** Canonical shareable room URL (human room code). */
+export function onlineRoomUrl(
+  roomCode: string,
+  query?: Record<string, string>
+): string {
+  const base = `${ONLINE_ROOM}/${encodeURIComponent(roomCode.trim().toUpperCase())}`;
+  if (!query || Object.keys(query).length === 0) {
+    return base;
+  }
+  const params = new URLSearchParams(query);
+  return `${base}?${params.toString()}`;
 }
 
-export function onlineGameUrl(roomId: string): string {
-  return `${ONLINE_GAME}?roomId=${encodeURIComponent(roomId)}`;
-}
-
-export function onlinePostGameUrl(roomId: string): string {
-  return `${ONLINE_POSTGAME}?roomId=${encodeURIComponent(roomId)}`;
-}
-
-export function onlineReplayUrl(roomId: string, round?: number): string {
-  const roundQ =
-    round != null ? `&round=${encodeURIComponent(String(round))}` : '';
-  return `${ONLINE_GAME}?roomId=${encodeURIComponent(roomId)}&replay=1${roundQ}`;
+export function onlineReplayRoomUrl(roomCode: string, round?: number): string {
+  const query: Record<string, string> = { replay: '1' };
+  if (round != null) {
+    query.round = String(round);
+  }
+  return onlineRoomUrl(roomCode, query);
 }

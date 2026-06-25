@@ -146,9 +146,7 @@ The largest new feature in chain-duel-react. Game simulation runs **on marspay**
 | Route | Purpose |
 |-------|---------|
 | `/online` | Room browser — active rooms, match history, Hall of Fame (≥ 1,000 sats buy-in) |
-| `/online/lobby` | Two-seat lobby — ready state, ping, payment |
-| `/online/game` | Live match or replay viewer |
-| `/online/postgame` | Withdrawal, Nostr payout, rematch, double-or-nothing, multi-round history |
+| `/online/r/:roomCode` | Unified room — waiting, live match, results, and replay (`?replay=1`) on one URL |
 
 **Room lifecycle:** `lobby` → `playing` → `postgame` → `finished` / `cancelled`
 
@@ -276,9 +274,7 @@ marspay is a **reusable Lightning backend** — Chain Duel is the reference game
 | `/tournbracket` | Tournament bracket |
 | `/tournlobby` | Tournament waiting room |
 | `/online` | Online room browser |
-| `/online/lobby` | Online seat lobby |
-| `/online/game` | Online match or replay |
-| `/online/postgame` | Online results |
+| `/online/r/:roomCode` | Online room (lobby, match, postgame, replay) |
 | `/highscores` | Leaderboard |
 | `/about` | Info carousel |
 | `/config` | Nostr, NWC, settings |

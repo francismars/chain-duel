@@ -18,9 +18,8 @@ import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import {
   ONLINE_HOME,
-  onlineGameUrl,
-  onlinePostGameUrl,
-  onlineReplayUrl,
+  onlineReplayRoomUrl,
+  onlineRoomUrl,
 } from '@/shared/constants/onlineRoutes';
 import { OnlineRoomState } from '@/types/socket';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
@@ -44,7 +43,7 @@ import {
   storeLobbyPaymentMode,
 } from '@/lib/online/resolveLobbyPaymentMode';
 import {
-  buildOnlineRoomLobbyShareUrl,
+  buildOnlineRoomShareUrl,
   buildOnlineRoomInviteText,
 } from '@/lib/online/buildOnlineRoomInvite';
 import { publishSignedNostrEvent } from '@/lib/nostr/publishSignedNostrEvent';
@@ -221,7 +220,19 @@ function formatZapPayError(reason: string): string {
   }
 }
 
-export default function OnlineRoomLobby() {
+export type OnlineRoomLobbyProps = {
+  embedded?: boolean;
+  roomId?: string;
+  roomCode?: string;
+  externalRoom?: OnlineRoomState | null;
+};
+
+export default function OnlineRoomLobby({
+  embedded = false,
+  roomId: roomIdProp,
+  roomCode: _roomCodeProp,
+  externalRoom,
+}: OnlineRoomLobbyProps = {}) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -232,7 +243,7 @@ export default function OnlineRoomLobby() {
   const [room, setRoom] = useState<OnlineRoomState | null>(null);
   const [joinPin, setJoinPin] = useState<string>('');
   const [error, setError] = useState('');
-  const roomId = searchParams.get('roomId') ?? '';
+  const roomId = roomIdProp ?? searchParams.get('roomId') ?? '';
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );
@@ -321,7 +332,6 @@ export default function OnlineRoomLobby() {
   const pendingNostrLinkPubkeyRef = useRef<string | null>(null);
   const paymentModeRef = useRef(paymentMode);
   const rematchPendingRef = useRef(false);
-  const matchStartRetryRef = useRef(false);
   /** Cached kind1 post — avoids refetch when switching payment paths while note is already loaded. */
   const kind1PostCacheRef = useRef<{
     key: string;
@@ -391,6 +401,12 @@ export default function OnlineRoomLobby() {
     () => (roomId ? `onlineLobbyNostrLink_${roomId}` : ''),
     [roomId]
   );
+
+  useEffect(() => {
+    if (externalRoom && externalRoom.roomId === roomId) {
+      setRoom(externalRoom);
+    }
+  }, [externalRoom, roomId]);
 
   useEffect(() => {
     const ms = lightningPay || seatZapInvoice ? 1000 : 4000;
@@ -639,8 +655,13 @@ export default function OnlineRoomLobby() {
     };
     const syncRoomPresence = () => {
       refreshLocalIdentity();
+      if (!roomId) {
+        return;
+      }
       socket.emit('getOnlineRoomState', { roomId });
-      socket.emit('joinOnlineRoom', { roomId });
+      if (!embedded) {
+        socket.emit('joinOnlineRoom', { roomId });
+      }
     };
 
     const onKind1Post = (payload: unknown) => {
@@ -823,18 +844,6 @@ export default function OnlineRoomLobby() {
     return Object.values(room.seats).filter((seat) => seat.status === 'paid')
       .length;
   }, [room]);
-
-  const bothPlayersReady = useMemo(() => {
-    if (!room || paidSeats < 2) return false;
-    const s1 = room.seats['Player 1'];
-    const s2 = room.seats['Player 2'];
-    return (
-      s1?.status === 'paid' &&
-      s1.ready === true &&
-      s2?.status === 'paid' &&
-      s2.ready === true
-    );
-  }, [room, paidSeats]);
 
   const nostrLinkActive = useMemo(
     () => nostrLinkExpiresAt != null && nostrLinkExpiresAt > nowTick,
@@ -1068,23 +1077,28 @@ export default function OnlineRoomLobby() {
   const isPostgame = room?.phase === 'postgame';
   const isMatchEnded = isPostgame || isSessionClosed;
   const rematchPending = Boolean(room?.postGame?.rematchRequested);
-  const lobbyAbandonRef = useRef({ roomId: '', shouldReport: false });
+  const lobbyAbandonRef = useRef({
+    roomId: '',
+    roomCode: '',
+    shouldReport: false,
+  });
   useEffect(() => {
     const unpaid = !mySeat || mySeat.status !== 'paid';
     const paidNotReady = mySeat?.status === 'paid' && !myReady;
     lobbyAbandonRef.current = {
       roomId,
+      roomCode: room?.roomCode?.trim().toUpperCase() ?? '',
       shouldReport: Boolean(
         roomId && !isMatchEnded && !rematchPending && (unpaid || paidNotReady)
       ),
     };
-  }, [roomId, mySeat, myReady, isMatchEnded, rematchPending]);
+  }, [roomId, room?.roomCode, mySeat, myReady, isMatchEnded, rematchPending]);
   useEffect(() => {
     return () => {
-      const { roomId: rid, shouldReport } = lobbyAbandonRef.current;
+      const { roomId: rid, roomCode, shouldReport } = lobbyAbandonRef.current;
       if (!shouldReport || !rid) return;
       reportClientEvent(socket, 'client.funnel.abandon', {
-        route: `/online/lobby?roomId=${rid}`,
+        route: roomCode ? onlineRoomUrl(roomCode) : ONLINE_HOME,
       });
     };
   }, [socket]);
@@ -1116,41 +1130,24 @@ export default function OnlineRoomLobby() {
         cardMod: '',
         label: 'ROUND OVER',
         pin: 'MATCH ENDED',
-        copy: 'Head to the victory screen to claim your prize, vote for double or nothing, or watch the replay.',
-      };
-    }
-    if (!myReady) {
-      return {
-        cardMod: 'online-lobby-pin-card--ready',
-        label: 'SEAT PAID',
-        pin: 'READY UP',
-        copy: `Use Mark as Ready on your player card when you're set to play.`,
+        copy: embedded
+          ? 'Results appear here when the round ends.'
+          : 'Head to the victory screen to claim your prize, vote for double or nothing, or watch the replay.',
       };
     }
     if (paidSeats < 2) {
       return {
         cardMod: 'online-lobby-pin-card--ready',
         label: 'SEAT PAID',
-        pin: "YOU'RE READY",
-        copy: 'Waiting for the second player to pay and mark ready. Game starts when both are set.',
-      };
-    }
-    if (!bothPlayersReady) {
-      return {
-        cardMod: 'online-lobby-pin-card--ready',
-        label: 'SEAT PAID',
-        pin: "YOU'RE READY",
-        copy: 'Waiting for your opponent to mark ready. Game starts when both are set.',
+        pin: 'WAITING',
+        copy: 'Waiting for the second player to pay. The arena opens when both seats are filled.',
       };
     }
     return {
       cardMod: 'online-lobby-pin-card--go',
       label: 'SEAT PAID',
-      pin: 'BOTH READY',
-      copy:
-        room?.phase === 'lobby'
-          ? 'Both players are in. Syncing match start — if this lasts more than a few seconds, toggle UNREADY then MARK AS READY again.'
-          : 'Both players are in. The game is about to start.',
+      pin: 'ENTER ARENA',
+      copy: 'Both players are in. Press Space or Enter on the arena to start when you are ready.',
     };
   })();
   const snapshotP1Name =
@@ -1278,7 +1275,7 @@ export default function OnlineRoomLobby() {
   const showSeatPaymentPaths =
     !hasPaidMySeat && !isMatchEnded && !rematchPending && !seatsFull;
   const showLeaveButton = !mySeat && !isMatchEnded && !rematchPending;
-  const showReadyNav = Boolean(mySeat && !isMatchEnded && !rematchPending);
+  const showReadyNav = false;
   const showFinishedNav = room?.phase === 'finished';
 
   const leaveRoom = useCallback(() => {
@@ -1450,24 +1447,26 @@ export default function OnlineRoomLobby() {
 
   const triggerFinishedAction = useCallback(
     (index: number) => {
-      if (!roomId) {
+      const code = room?.roomCode?.trim().toUpperCase();
+      if (!code) {
         return;
       }
       playConfirm();
       if (index === 0) {
-        navigate(onlinePostGameUrl(roomId));
+        navigate(onlineRoomUrl(code));
       } else if (index === 1) {
-        navigate(onlineReplayUrl(roomId, room?.matchRound ?? 1));
+        navigate(onlineReplayRoomUrl(code, room?.matchRound ?? 1));
       } else {
         leaveRoom();
       }
     },
-    [leaveRoom, navigate, playConfirm, room?.matchRound, roomId]
+    [leaveRoom, navigate, playConfirm, room?.matchRound, room?.roomCode]
   );
 
-  const showInviteFinder =
-    hasPaidMySeat && !paymentMode && !rematchPending && !isMatchEnded;
-  const lobbyInviteUrl = roomId ? buildOnlineRoomLobbyShareUrl(roomId) : '';
+  const showInviteFinder = Boolean(room && !rematchPending && !isMatchEnded);
+  const lobbyInviteUrl = room?.roomCode
+    ? buildOnlineRoomShareUrl(room.roomCode)
+    : '';
   const lobbyInviteText = useMemo(() => {
     if (!room?.roomCode || !roomId) return '';
     return buildOnlineRoomInviteText({
@@ -1475,7 +1474,7 @@ export default function OnlineRoomLobby() {
       buyin: room.buyin,
       lobbyUrl: lobbyInviteUrl,
     });
-  }, [room?.roomCode, room?.buyin, roomId, lobbyInviteUrl]);
+  }, [room?.roomCode, room?.buyin, lobbyInviteUrl]);
 
   // Default keyboard focus: Leave room; pre-highlight Sign in when Nostr session exists
   useEffect(() => {
@@ -1852,8 +1851,6 @@ export default function OnlineRoomLobby() {
       e.preventDefault();
 
       if (lobbyNavFocus.type === 'ready') {
-        playConfirm();
-        socket?.emit('onlineSetReady', { roomId, ready: !myReady });
         return;
       }
       if (lobbyNavFocus.type === 'leave') {
@@ -2109,38 +2106,6 @@ export default function OnlineRoomLobby() {
     }
   };
 
-  useEffect(() => {
-    const phase = room?.phase ?? room?.snapshot?.phase;
-    if (!roomId || phase !== 'playing') {
-      return;
-    }
-    navigate(onlineGameUrl(roomId));
-  }, [navigate, room?.phase, room?.snapshot?.phase, roomId]);
-
-  useEffect(() => {
-    if (!socket || !roomId || !room || room.phase !== 'lobby') {
-      matchStartRetryRef.current = false;
-      return;
-    }
-    if (!bothPlayersReady || !mySeat) {
-      matchStartRetryRef.current = false;
-      return;
-    }
-    if (matchStartRetryRef.current) {
-      return;
-    }
-    const t = window.setTimeout(() => {
-      if (matchStartRetryRef.current) {
-        return;
-      }
-      matchStartRetryRef.current = true;
-      socket.emit('getOnlineRoomState', { roomId });
-      socket.emit('joinOnlineRoom', { roomId });
-      socket.emit('startOnlineGame', { roomId });
-    }, 2500);
-    return () => window.clearTimeout(t);
-  }, [socket, roomId, room, bothPlayersReady, mySeat, room?.phase]);
-
   const retryKind1PostLoad = () => {
     kind1PostCacheRef.current = null;
     setKind1PostRetry((n) => n + 1);
@@ -2204,7 +2169,6 @@ export default function OnlineRoomLobby() {
     if (isSessionClosed) return 'SESSION CLOSED';
     if (rematchPending) return 'DOUBLE OR NOTHING';
     if (isPostgame) return 'ROUND OVER';
-    if (paidSeats === 2 && bothPlayersReady) return 'BOTH READY';
     if (paidSeats === 2) return 'BOTH PAID';
     if (paidSeats === 1) return '1 OF 2 PAID';
     return 'AWAITING PLAYERS';
@@ -2357,17 +2321,6 @@ export default function OnlineRoomLobby() {
               .join(' ')}
           >
             <div className="online-lobby-arena-seat-header">
-              {isMyP1Seat && !isMatchEnded && !rematchPending ? (
-                <button
-                  type="button"
-                  className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
-                  onClick={() =>
-                    socket?.emit('onlineSetReady', { roomId, ready: !myReady })
-                  }
-                >
-                  {myReady ? 'UNREADY' : 'MARK AS READY'}
-                </button>
-              ) : null}
               <span className="online-lobby-label">
                 PLAYER 1
                 {isMyP1Seat ? (
@@ -2452,17 +2405,6 @@ export default function OnlineRoomLobby() {
                 >
                   {p2.pingMs}ms
                 </span>
-              ) : null}
-              {isMyP2Seat && !isMatchEnded && !rematchPending ? (
-                <button
-                  type="button"
-                  className={`online-lobby-seat-ready-btn${myReady ? ' online-lobby-seat-ready-btn--active' : ''}`}
-                  onClick={() =>
-                    socket?.emit('onlineSetReady', { roomId, ready: !myReady })
-                  }
-                >
-                  {myReady ? 'UNREADY' : 'MARK AS READY'}
-                </button>
               ) : null}
             </div>
             <div className="online-lobby-arena-seat-identity">
@@ -2577,16 +2519,22 @@ export default function OnlineRoomLobby() {
                 <Button
                   type="button"
                   className="online-lobby-action"
-                  onClick={() => navigate(onlinePostGameUrl(roomId))}
+                  onClick={() => {
+                    const code = room?.roomCode?.trim().toUpperCase();
+                    if (code) navigate(onlineRoomUrl(code));
+                  }}
                 >
                   VIEW POSTGAME DETAILS
                 </Button>
                 <Button
                   type="button"
                   className="online-lobby-action"
-                  onClick={() =>
-                    navigate(onlineReplayUrl(roomId, room?.matchRound ?? 1))
-                  }
+                  onClick={() => {
+                    const code = room?.roomCode?.trim().toUpperCase();
+                    if (code) {
+                      navigate(onlineReplayRoomUrl(code, room?.matchRound ?? 1));
+                    }
+                  }}
                 >
                   WATCH REPLAY
                 </Button>

@@ -11,11 +11,7 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { useAudio } from '@/contexts/AudioContext';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
-import {
-  ONLINE_HOME,
-  onlinePostGameUrl,
-} from '@/shared/constants/onlineRoutes';
-import { NAVIGATE_AFTER_FINISH_DELAY_MS } from '@/shared/constants/timeouts';
+import { ONLINE_HOME, onlineRoomUrl } from '@/shared/constants/onlineRoutes';
 import type {
   OnlineReplayBlockEvent,
   OnlineRoomSnapshot,
@@ -63,12 +59,22 @@ type ReplaySpeedPickerHandle = {
   open: () => void;
 };
 
-export default function OnlineGame() {
+export type OnlineGameProps = {
+  embedded?: boolean;
+  roomId?: string;
+  roomCode?: string;
+};
+
+export default function OnlineGame({
+  embedded: _embedded = false,
+  roomId: roomIdProp,
+  roomCode: _roomCodeProp,
+}: OnlineGameProps = {}) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { stop, isMuted, isMusicMuted } = useAudio();
   const { socket } = useSocket({ autoConnect: true });
-  const roomId = searchParams.get('roomId') ?? '';
+  const roomId = roomIdProp ?? searchParams.get('roomId') ?? '';
   const replayMode = searchParams.get('replay') === '1';
   const replayMatchRound = (() => {
     const r = searchParams.get('round');
@@ -597,9 +603,20 @@ export default function OnlineGame() {
           return;
         }
         continueNavigatedRef.current = true;
-        window.setTimeout(() => {
-          navigate(onlinePostGameUrl(roomId));
-        }, NAVIGATE_AFTER_FINISH_DELAY_MS);
+        return;
+      }
+      const isConfirm = event.key === 'Enter' || event.key === ' ';
+      const role = localRoleRef.current;
+      if (
+        isConfirm &&
+        (role.isP1 || role.isP2) &&
+        state &&
+        !state.gameStarted &&
+        !state.countdownStart &&
+        !state.gameEnded
+      ) {
+        event.preventDefault();
+        socket.emit('onlineConfirmStart', { roomId });
         return;
       }
       const axis = axisForEvent(event);
@@ -611,7 +628,6 @@ export default function OnlineGame() {
       }
       keysHeldRef.current[axis] = true;
       lastAxisRef.current = axis;
-      const role = localRoleRef.current;
       const slot = role.isP1 ? 'p1' : role.isP2 ? 'p2' : null;
       const preState = snapshotRef.current?.state as GameState | undefined;
       if (
@@ -683,8 +699,12 @@ export default function OnlineGame() {
 
   const goReplayVictoryScreen = useCallback(() => {
     setReplayPlaying(false);
-    navigate(onlinePostGameUrl(roomId));
-  }, [navigate, roomId]);
+    if (_roomCodeProp) {
+      navigate(onlineRoomUrl(_roomCodeProp), { replace: true });
+      return;
+    }
+    navigate(ONLINE_HOME);
+  }, [navigate, _roomCodeProp]);
 
   const exitReplayRoom = useCallback(() => {
     setReplayPlaying(false);

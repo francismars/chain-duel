@@ -184,6 +184,7 @@ export interface OnlineSeatState {
   paidAmount?: number;
   paidAt?: number;
   ready?: boolean;
+  startConfirmed?: boolean;
   disconnectedAt?: number;
   name?: string;
   picture?: string;
@@ -329,6 +330,7 @@ export interface ClientToServerEvents {
   joinOnlineRoom: (payload: { roomId: string }) => void;
   joinOnlineRoomByCode: (payload: { roomCode: string }) => void;
   spectateOnlineRoom: (payload: { roomId: string }) => void;
+  spectateOnlineRoomByCode: (payload: { roomCode: string }) => void;
   leaveOnlineRoom: (payload?: { roomId?: string }) => void;
   cancelOnlineRoom: (payload: { roomId: string }) => void;
   getOnlineRoomState: (payload: {
@@ -338,6 +340,7 @@ export interface ClientToServerEvents {
   roomInput: (payload: { roomId: string; input: OnlineInputState }) => void;
   startOnlineGame: (payload: { roomId: string }) => void;
   onlineSetReady: (payload: { roomId: string; ready: boolean }) => void;
+  onlineConfirmStart: (payload: { roomId: string }) => void;
   getOnlinePostGame: (payload: { roomId: string }) => void;
   createOnlineWithdrawal: (payload: { roomId: string }) => void;
   createOnlineNostrPayout: (payload: { roomId: string }) => void;

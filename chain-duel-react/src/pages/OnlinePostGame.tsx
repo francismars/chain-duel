@@ -10,8 +10,8 @@ import { useMenuSfx } from '@/hooks/useMenuSfx';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import {
   ONLINE_HOME,
-  onlineLobbyUrl,
-  onlineReplayUrl,
+  onlineReplayRoomUrl,
+  onlineRoomUrl,
 } from '@/shared/constants/onlineRoutes';
 import { isOnlineVictoryWinner } from '@/lib/online/isOnlineVictoryWinner';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
@@ -87,11 +87,21 @@ function roundWinningSide(
   return null;
 }
 
-export default function OnlinePostGame() {
+export type OnlinePostGameProps = {
+  embedded?: boolean;
+  roomId?: string;
+  roomCode?: string;
+};
+
+export default function OnlinePostGame({
+  embedded: _embedded = false,
+  roomId: roomIdProp,
+  roomCode,
+}: OnlinePostGameProps = {}) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
-  const roomId = searchParams.get('roomId') ?? '';
+  const roomId = roomIdProp ?? searchParams.get('roomId') ?? '';
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );
@@ -170,9 +180,12 @@ export default function OnlinePostGame() {
   const openSessionRoundReplay = useCallback(
     (matchRound: number) => {
       playConfirm();
-      navigate(onlineReplayUrl(roomId, matchRound));
+      if (!roomCode) {
+        return;
+      }
+      navigate(onlineReplayRoomUrl(roomCode, matchRound));
     },
-    [navigate, playConfirm, roomId]
+    [navigate, playConfirm, roomCode]
   );
 
   const exitRoom = useCallback(() => {
@@ -433,7 +446,9 @@ export default function OnlinePostGame() {
       setVotes(parsed.votes);
       setRequiredVotes(parsed.required);
       if (parsed.agreed) {
-        navigate(onlineLobbyUrl(roomId));
+        if (roomCode) {
+          navigate(onlineRoomUrl(roomCode));
+        }
       }
     };
 
@@ -458,8 +473,8 @@ export default function OnlinePostGame() {
             : prev
         );
       }
-      if (parsed.phase === 'lobby') {
-        navigate(onlineLobbyUrl(roomId));
+      if (parsed.phase === 'lobby' && roomCode) {
+        navigate(onlineRoomUrl(roomCode));
       }
     };
 
