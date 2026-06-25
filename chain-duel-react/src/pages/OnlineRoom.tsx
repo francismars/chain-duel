@@ -72,6 +72,8 @@ export default function OnlineRoom() {
   const bootstrappedRef = useRef(false);
   const bootstrapFallbackRef = useRef(false);
 
+  const [postGameReady, setPostGameReady] = useState(false);
+
   const syncRoom = useCallback((next: OnlineRoomState) => {
     setRoom(next);
     setRoomId(next.roomId);
@@ -157,7 +159,7 @@ export default function OnlineRoom() {
         return;
       }
       syncRoom(parsed);
-      if (!joinedRef.current) {
+      if (!joinedRef.current && !replayMode) {
         joinedRef.current = true;
         if (shouldSpectateOnJoin(parsed)) {
           emitJoin(true);
@@ -173,7 +175,8 @@ export default function OnlineRoom() {
       if (
         parsed.reason === 'room_not_found' &&
         bootstrapRoomId &&
-        !bootstrapFallbackRef.current
+        !bootstrapFallbackRef.current &&
+        !replayMode
       ) {
         bootstrapFallbackRef.current = true;
         emitJoin(false);
@@ -205,6 +208,7 @@ export default function OnlineRoom() {
     bootstrapRoomId,
     emitBootstrap,
     emitJoin,
+    replayMode,
     roomCode,
     shouldSpectateOnJoin,
     socket,
@@ -259,6 +263,15 @@ export default function OnlineRoom() {
     };
   }, [shellView]);
 
+  useEffect(() => {
+    if (shellView !== 'results') {
+      setPostGameReady(false);
+    }
+  }, [shellView]);
+
+  const showLoadingOverlay =
+    !roomId || !room || (shellView === 'results' && !postGameReady);
+
   if (!roomCode) {
     return null;
   }
@@ -278,31 +291,36 @@ export default function OnlineRoom() {
     );
   }
 
-  if (!roomId) {
-    return (
-      <div className="overlay" id="loading">
-        <img src="/images/loading.gif" alt="Loading" />
-      </div>
-    );
-  }
-
   return (
-    <div className="online-room-shell" data-view={shellView}>
-      {shellView === 'waiting' || arenaHandoff ? (
-        <OnlineRoomLobby
-          embedded
-          roomCode={roomCode}
-          roomId={roomId}
-          externalRoom={room}
-          arenaHandoff={arenaHandoff}
-        />
+    <>
+      {showLoadingOverlay ? (
+        <div className="overlay" id="loading">
+          <img src="/images/loading.gif" alt="Loading" />
+        </div>
       ) : null}
-      {shellView === 'arena' || shellView === 'replay' ? (
-        <OnlineGame embedded roomCode={roomCode} roomId={roomId} />
-      ) : null}
-      {shellView === 'results' ? (
-        <OnlinePostGame embedded roomCode={roomCode} roomId={roomId} />
-      ) : null}
-    </div>
+      <div className="online-room-shell" data-view={shellView}>
+        {!showLoadingOverlay && (shellView === 'waiting' || arenaHandoff) ? (
+          <OnlineRoomLobby
+            embedded
+            roomCode={roomCode}
+            roomId={roomId}
+            externalRoom={room}
+            arenaHandoff={arenaHandoff}
+          />
+        ) : null}
+        {!showLoadingOverlay &&
+        (shellView === 'arena' || shellView === 'replay') ? (
+          <OnlineGame embedded roomCode={roomCode} roomId={roomId} />
+        ) : null}
+        {shellView === 'results' && room ? (
+          <OnlinePostGame
+            embedded
+            roomCode={roomCode}
+            roomId={roomId}
+            onReadyChange={setPostGameReady}
+          />
+        ) : null}
+      </div>
+    </>
   );
 }

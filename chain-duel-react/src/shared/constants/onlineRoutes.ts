@@ -15,10 +15,17 @@ export function onlineRoomUrl(
   return `${base}?${params.toString()}`;
 }
 
-export function onlineReplayRoomUrl(roomCode: string, round?: number): string {
+export function onlineReplayRoomUrl(
+  roomCode: string,
+  round?: number,
+  roomId?: string
+): string {
   const query: Record<string, string> = { replay: '1' };
   if (round != null) {
     query.round = String(round);
+  }
+  if (roomId) {
+    query.roomId = roomId;
   }
   return onlineRoomUrl(roomCode, query);
 }

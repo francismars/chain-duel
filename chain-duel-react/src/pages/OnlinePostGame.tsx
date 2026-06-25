@@ -91,12 +91,14 @@ export type OnlinePostGameProps = {
   embedded?: boolean;
   roomId?: string;
   roomCode?: string;
+  onReadyChange?: (ready: boolean) => void;
 };
 
 export default function OnlinePostGame({
   embedded: _embedded = false,
   roomId: roomIdProp,
   roomCode,
+  onReadyChange,
 }: OnlinePostGameProps = {}) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -106,6 +108,7 @@ export default function OnlinePostGame({
     () => sessionStorage.getItem('sessionID') ?? ''
   );
   const [currentSocketID, setCurrentSocketID] = useState('');
+  const prevRoomIdRef = useRef(roomId);
   const [info, setInfo] = useState<OnlinePostGameInfo | null>(null);
   const [votes, setVotes] = useState(0);
   const [requiredVotes, setRequiredVotes] = useState(2);
@@ -163,7 +166,27 @@ export default function OnlinePostGame({
     mountedAtRef.current = Date.now();
     exitConfirmPendingRef.current = false;
     navFocusPrimedRef.current = false;
-  }, [roomId]);
+    onReadyChange?.(false);
+
+    if (prevRoomIdRef.current === roomId) {
+      return;
+    }
+    prevRoomIdRef.current = roomId;
+    setInfo(null);
+    setVotes(0);
+    setLnurlw('');
+    setLoading(true);
+    setError('');
+    setMyVoted(false);
+    setCreatingWithdrawal(false);
+    setCreatingNostrPayout(false);
+  }, [onReadyChange, roomId]);
+
+  useEffect(() => {
+    return () => {
+      onReadyChange?.(false);
+    };
+  }, [onReadyChange]);
 
   useEffect(() => {
     if (!info || navFocusPrimedRef.current) {
@@ -195,9 +218,9 @@ export default function OnlinePostGame({
       if (!roomCode) {
         return;
       }
-      navigate(onlineReplayRoomUrl(roomCode, matchRound));
+      navigate(onlineReplayRoomUrl(roomCode, matchRound, roomId));
     },
-    [navigate, playConfirm, roomCode]
+    [navigate, playConfirm, roomCode, roomId]
   );
 
   const exitRoom = useCallback(() => {
@@ -421,6 +444,7 @@ export default function OnlinePostGame({
         setLnurlw(parsed.lnurlw);
       }
       setLoading(false);
+      onReadyChange?.(true);
     };
 
     const onWithdrawal = (payload: unknown) => {
@@ -502,6 +526,7 @@ export default function OnlinePostGame({
       }
       setError(parsed.reason);
       setLoading(false);
+      onReadyChange?.(true);
     };
 
     socket.on('resOnlinePostGameInfo', onInfo);
@@ -520,7 +545,7 @@ export default function OnlinePostGame({
       socket.off('resCreateOnlineNostrPayout', onNostrPayout);
       socket.off('onlinePinInvalid', onInvalid);
     };
-  }, [navigate, roomId, socket]);
+  }, [navigate, onReadyChange, roomId, socket]);
 
   const withdrawalValue = useMemo(() => {
     if (lnurlw) {
@@ -535,6 +560,26 @@ export default function OnlinePostGame({
   const netPayoutAmount = Math.floor(grossWinnerAmount * ONLINE_FEE_MULTIPLIER);
   const feeAmount = Math.max(0, grossWinnerAmount - netPayoutAmount);
 
+  if (loading || !info) {
+    if (!loading && error) {
+      return (
+        <div className="online-postgame-page">
+          <Sponsorship id="sponsorship-online-postgame" />
+          <header id="brand">
+            <h2 id="chain">CHAIN</h2>
+            <h2 id="duel">DUEL</h2>
+          </header>
+          <div className="online-postgame-card">
+            <p className="online-postgame-error">
+              {error || 'Could not load victory screen.'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
+
   return (
     <div className="online-postgame-page">
       <Sponsorship id="sponsorship-online-postgame" />
@@ -548,7 +593,7 @@ export default function OnlinePostGame({
           <p className="online-postgame-kicker">ONLINE · VICTORY SCREEN</p>
         </div>
 
-        {info && (info.matchRounds?.length ?? 0) > 0 ? (
+        {(info.matchRounds?.length ?? 0) > 0 ? (
           <section
             className="online-postgame-round-history"
             aria-label="Session game history"
@@ -770,15 +815,17 @@ export default function OnlinePostGame({
 
         <div className="online-postgame-result">
           <div className="online-postgame-winner">
-            <img
-              className={`online-postgame-avatar ${info?.winnerPicture ? '' : 'hide'}`}
-              src={info?.winnerPicture || '/images/loading.gif'}
-              alt={info?.winnerName || 'Winner'}
-            />
+            {info.winnerPicture ? (
+              <img
+                className="online-postgame-avatar"
+                src={info.winnerPicture}
+                alt={info.winnerName}
+              />
+            ) : null}
             <div className="online-postgame-winner-text">
               <p className="online-postgame-winner-label">WINNER</p>
               <h2 className="online-postgame-winner-name">
-                {(info?.winnerName || 'WINNER').toUpperCase()}
+                {info.winnerName.toUpperCase()}
               </h2>
             </div>
           </div>
@@ -1044,10 +1091,6 @@ export default function OnlinePostGame({
             Payout sent to Nostr lightning address: {info.payoutTarget}
           </p>
         ) : null}
-      </div>
-
-      <div className={`overlay ${loading ? '' : 'hide'}`} id="loading">
-        <img src="/images/loading.gif" alt="Loading" />
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />

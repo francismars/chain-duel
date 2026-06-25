@@ -157,6 +157,8 @@ export default function OnlineGame({
   const localRoleRef = useRef({ isP1: false, isP2: false });
   const replayViewRef = useRef(replayMode);
   replayViewRef.current = replayMode;
+  const replayLoadedRef = useRef(false);
+  const replayFetchInFlightRef = useRef(false);
   useGamepad(true, { inputMode: 'game' });
 
   useEffect(() => {
@@ -304,9 +306,21 @@ export default function OnlineGame({
   }, [hostEl]);
 
   useEffect(() => {
+    replayLoadedRef.current = replayLoaded;
+  }, [replayLoaded]);
+
+  useEffect(() => {
     if (!socket || !roomId) {
       return;
     }
+    replayLoadedRef.current = false;
+    replayFetchInFlightRef.current = false;
+    setReplayLoaded(false);
+    setReplayFrames([]);
+    setReplayError('');
+    setReplayIndex(0);
+    setReplayPlaying(false);
+
     const refreshLocalIdentity = () => {
       setCurrentSessionID(sessionStorage.getItem('sessionID') ?? '');
       setCurrentSocketID(socket.id ?? '');
@@ -320,21 +334,27 @@ export default function OnlineGame({
       setCurrentSocketID(socket.id ?? '');
     };
     const requestRoomSync = () => {
-      socket.emit('joinOnlineRoom', { roomId });
-      socket.emit(
-        'getOnlineRoomState',
-        replayMode && replayMatchRound != null
-          ? { roomId, matchRound: replayMatchRound }
-          : { roomId }
-      );
       if (replayMode) {
+        if (replayLoadedRef.current || replayFetchInFlightRef.current) {
+          return;
+        }
+        replayFetchInFlightRef.current = true;
         socket.emit(
           'getOnlineReplay',
           replayMatchRound != null
             ? { roomId, matchRound: replayMatchRound }
             : { roomId }
         );
+        socket.emit(
+          'getOnlineRoomState',
+          replayMatchRound != null
+            ? { roomId, matchRound: replayMatchRound }
+            : { roomId }
+        );
+        return;
       }
+      socket.emit('joinOnlineRoom', { roomId });
+      socket.emit('getOnlineRoomState', { roomId });
     };
     const onSnapshot = (payload: unknown) => {
       if (replayMode) {
@@ -409,29 +429,40 @@ export default function OnlineGame({
       }
     };
     const onReplay = (payload: unknown) => {
-      if (!replayMode) {
+      if (!replayMode || replayLoadedRef.current) {
         return;
       }
       const parsed = SocketBoundaryParsers.onlineReplay(payload);
       if (!parsed || parsed.roomId !== roomId) {
+        replayFetchInFlightRef.current = false;
         return;
       }
       void (async () => {
         try {
           const frames = await expandOnlineReplayWire(parsed);
+          if (replayLoadedRef.current) {
+            return;
+          }
           setReplayTickMs(Math.max(10, parsed.tickMs));
           setReplayFrames(frames);
           setReplayBlockEvents(parsed.blockEvents ?? []);
           setReplayIndex(0);
           setReplayPlaying(false);
           setReplayLoaded(true);
+          replayLoadedRef.current = true;
+          replayFetchInFlightRef.current = false;
           setReplayError(frames.length === 0 ? 'Replay has no frames.' : '');
           const first = frames[0] ?? null;
           if (first) {
             setSnapshot(first);
           }
         } catch {
+          if (replayLoadedRef.current) {
+            return;
+          }
           setReplayLoaded(true);
+          replayLoadedRef.current = true;
+          replayFetchInFlightRef.current = false;
           setReplayBlockEvents([]);
           setReplayError('Failed to decode replay.');
         }
@@ -439,11 +470,13 @@ export default function OnlineGame({
     };
     const onInvalid = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.onlinePinInvalid(payload);
-      if (!parsed || !replayMode) {
+      if (!parsed || !replayMode || replayLoadedRef.current) {
         return;
       }
       if (parsed.reason === 'replay_unavailable') {
         setReplayLoaded(true);
+        replayLoadedRef.current = true;
+        replayFetchInFlightRef.current = false;
         setReplayError('Replay not available for this room yet.');
       }
     };
@@ -459,9 +492,9 @@ export default function OnlineGame({
     // Recovery for late socket readiness: keep requesting until first snapshot lands.
     const resyncInterval = window.setInterval(() => {
       if (replayMode) {
-        if (replayLoaded) {
+        if (replayLoadedRef.current) {
           window.clearInterval(resyncInterval);
-        } else {
+        } else if (!replayFetchInFlightRef.current) {
           requestRoomSync();
         }
         return;
@@ -482,7 +515,7 @@ export default function OnlineGame({
       socket.off('connect', refreshLocalIdentity);
       socket.off('connect', requestRoomSync);
     };
-  }, [replayLoaded, replayMatchRound, replayMode, roomId, socket]);
+  }, [replayMatchRound, replayMode, roomId, socket]);
 
   useEffect(() => {
     if (!replayMode || !replayPlaying || replayFrames.length === 0) {

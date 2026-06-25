@@ -1483,7 +1483,7 @@ export default function OnlineRoomLobby({
       if (index === 0) {
         navigate(onlineRoomUrl(code));
       } else if (index === 1) {
-        navigate(onlineReplayRoomUrl(code, room?.matchRound ?? 1));
+        navigate(onlineReplayRoomUrl(code, room?.matchRound ?? 1, roomId));
       } else {
         leaveRoom();
       }
@@ -2599,7 +2599,7 @@ export default function OnlineRoomLobby({
                   onClick={() => {
                     const code = room?.roomCode?.trim().toUpperCase();
                     if (code) {
-                      navigate(onlineReplayRoomUrl(code, room?.matchRound ?? 1));
+                      navigate(onlineReplayRoomUrl(code, room?.matchRound ?? 1, roomId));
                     }
                   }}
                 >
