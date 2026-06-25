@@ -38,7 +38,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.05vw 0.35vw;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid rgb(255 255 255 / 0.84);
   color: #fff;
   font-size: 0.58cqw;
@@ -61,7 +61,7 @@
   align-items: center;
   margin-left: 0.45vw;
   padding: 0.06vw 0.4vw;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid rgb(255 255 255 / 0.35);
   font-variant-numeric: tabular-nums;
   font-size: 0.58cqw;

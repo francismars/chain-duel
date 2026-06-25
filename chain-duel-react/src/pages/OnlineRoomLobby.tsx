@@ -53,6 +53,7 @@ import {
 import { publishSignedNostrEvent } from '@/lib/nostr/publishSignedNostrEvent';
 import { verifyNip05 } from '@/lib/nostr/fetchKind0Profile';
 import { decodeBolt11ExpiresAt } from '@/lib/lightning/decodeBolt11ExpiresAt';
+import { lightningUriHref } from '@/lib/lightning/lightningUriHref';
 import '@/styles/pages/onlineRoomLobby.css';
 
 const PAYMENT_MODES = ['anon', 'nostr', 'pin-zap'] as const;
@@ -229,6 +230,8 @@ export type OnlineRoomLobbyProps = {
   roomId?: string;
   roomCode?: string;
   externalRoom?: OnlineRoomState | null;
+  /** Parent shell is pausing before the arena canvas opens. */
+  arenaHandoff?: boolean;
 };
 
 export default function OnlineRoomLobby({
@@ -236,6 +239,7 @@ export default function OnlineRoomLobby({
   roomId: roomIdProp,
   roomCode: _roomCodeProp,
   externalRoom,
+  arenaHandoff = false,
 }: OnlineRoomLobbyProps = {}) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -1145,6 +1149,14 @@ export default function OnlineRoomLobby({
         label: 'SEAT PAID',
         pin: 'WAITING',
         copy: 'Waiting for the second player to pay. The arena opens when both seats are filled.',
+      };
+    }
+    if (arenaHandoff) {
+      return {
+        cardMod: 'online-lobby-pin-card--go',
+        label: 'BOTH PLAYERS IN',
+        pin: 'ENTERING ARENA',
+        copy: 'Opening the match board. Press Space or Enter when you are ready to start.',
       };
     }
     return {
@@ -2157,6 +2169,7 @@ export default function OnlineRoomLobby({
   }, [nostrUriQrOpen]);
 
   const arenaCenterText = (() => {
+    if (arenaHandoff) return 'ENTERING ARENA';
     if (isSessionClosed) return 'SESSION CLOSED';
     if (rematchPending) return 'DOUBLE OR NOTHING';
     if (isPostgame) return 'ROUND OVER';
@@ -2369,6 +2382,11 @@ export default function OnlineRoomLobby({
               VS
             </span>
             <span className="online-lobby-arena-state">{arenaCenterText}</span>
+            {arenaHandoff ? (
+              <span className="online-lobby-arena-handoff">
+                Both seats filled — match board opens in a moment.
+              </span>
+            ) : null}
             {(room?.spectators.length ?? 0) > 0 ? (
               <span className="online-lobby-arena-spectators">
                 {room?.spectators.length} watching
@@ -2945,12 +2963,22 @@ export default function OnlineRoomLobby({
                               </div>
                               <div className="online-lobby-qr-split-block-col online-lobby-qr-split-block-col--qr">
                                 <div className="online-lobby-qr-frame online-lobby-qr-frame--ready">
-                                  <QRCodeSVG
-                                    value={lightningPay.lightningUri}
-                                    size={LOBBY_INVOICE_QR_SIZE}
-                                    className="online-lobby-qr online-lobby-qr--flush"
-                                    aria-label="Anonymous Lightning invoice QR code"
-                                  />
+                                  <a
+                                    className="online-lobby-qr-lnurl-anchor"
+                                    href={lightningUriHref(
+                                      lightningPay.lightningUri
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Open Lightning invoice in wallet"
+                                  >
+                                    <QRCodeSVG
+                                      value={lightningPay.lightningUri}
+                                      size={LOBBY_INVOICE_QR_SIZE}
+                                      className="online-lobby-qr online-lobby-qr--flush"
+                                      aria-label="Anonymous Lightning invoice QR code"
+                                    />
+                                  </a>
                                 </div>
                               </div>
                             </div>
@@ -3321,12 +3349,22 @@ export default function OnlineRoomLobby({
                                   ].join(' ')}
                                 >
                                   {seatZapInvoice ? (
-                                    <QRCodeSVG
-                                      value={seatZapInvoice.lightningUri}
-                                      size={LOBBY_INVOICE_QR_SIZE}
-                                      className="online-lobby-qr online-lobby-qr--flush"
-                                      aria-label="Zap invoice QR code"
-                                    />
+                                    <a
+                                      className="online-lobby-qr-lnurl-anchor"
+                                      href={lightningUriHref(
+                                        seatZapInvoice.lightningUri
+                                      )}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title="Open zap invoice in wallet"
+                                    >
+                                      <QRCodeSVG
+                                        value={seatZapInvoice.lightningUri}
+                                        size={LOBBY_INVOICE_QR_SIZE}
+                                        className="online-lobby-qr online-lobby-qr--flush"
+                                        aria-label="Zap invoice QR code"
+                                      />
+                                    </a>
                                   ) : (
                                     <div
                                       className="online-lobby-qr-skeleton"

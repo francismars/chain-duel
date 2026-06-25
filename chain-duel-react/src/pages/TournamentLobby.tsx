@@ -12,6 +12,7 @@ import {
   TOURNAMENT_MIN_PLAYERS,
 } from '@/shared/constants/payment';
 import { computeFinalPrize } from '@/features/tournament/bracketModel';
+import { lightningUriHref } from '@/lib/lightning/lightningUriHref';
 import '@/components/ui/Button.css';
 import './tournlobby.css';
 
@@ -186,14 +187,22 @@ export default function TournamentLobby() {
 
             <div className="tournlobby-qr-wrap" id="qrCodeDiv">
               {qrValue ? (
-                <QRCodeSVG
-                  id="qrTournament"
-                  value={qrValue}
-                  size={220}
-                  level="M"
-                  includeMargin={false}
-                  className="tournlobby-qr"
-                />
+                <a
+                  className="tournlobby-qr-link"
+                  href={lightningUriHref(qrValue)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open tournament buy-in in Lightning wallet"
+                >
+                  <QRCodeSVG
+                    id="qrTournament"
+                    value={qrValue}
+                    size={220}
+                    level="M"
+                    includeMargin={false}
+                    className="tournlobby-qr"
+                  />
+                </a>
               ) : (
                 <div id="qrTournament" className="tournlobby-qr-placeholder" />
               )}

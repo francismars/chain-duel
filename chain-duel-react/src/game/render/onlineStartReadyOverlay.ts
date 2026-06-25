@@ -9,18 +9,22 @@ const DISPLAY_FONT = 'BureauGrotesque, sans-serif';
 
 function shortName(name: string | undefined, fallback: string): string {
   const trimmed = (name ?? fallback).trim();
-  if (trimmed.length <= 11) {
+  if (trimmed.length <= 12) {
     return trimmed.toUpperCase();
   }
-  return `${trimmed.slice(0, 10).toUpperCase()}…`;
+  return `${trimmed.slice(0, 11).toUpperCase()}…`;
 }
 
 type SeatLayout = {
   root: Container;
-  bg: Graphics;
   chip: Graphics;
-  status: Text;
   name: Text;
+  status: Text;
+  contentToken: string;
+  identityW: number;
+  chipX: number;
+  chipY: number;
+  nameX: number;
 };
 
 type SeatMetrics = ReturnType<typeof measureOnlineStartReadyPanel> & {
@@ -28,99 +32,138 @@ type SeatMetrics = ReturnType<typeof measureOnlineStartReadyPanel> & {
   chipSize: number;
   statusPx: number;
   namePx: number;
-  seatH: number;
-  padY: number;
+  textGap: number;
+  statusGap: number;
+  topRowH: number;
+  rowH: number;
+  minSlotW: number;
 };
 
 function seatMetrics(startFontSize: number, compact: boolean): SeatMetrics {
   const base = measureOnlineStartReadyPanel(startFontSize, compact);
-  const chipSize = Math.max(compact ? 16 : 18, startFontSize * 0.26);
-  const statusPx = Math.max(compact ? 13 : 15, startFontSize * 0.24);
-  const namePx = Math.max(compact ? 8 : 9, startFontSize * 0.13);
-  const padY = 12;
-  const seatH = padY + chipSize + 10 + statusPx * 1.15 + 8 + namePx * 1.35 + padY;
+  const chipSize = Math.max(compact ? 18 : 22, startFontSize * 0.28);
+  const namePx = chipSize * 0.92;
+  const statusPx = Math.max(compact ? 12 : 14, startFontSize * 0.2);
+  const textGap = Math.max(8, chipSize * 0.14);
+  const statusGap = Math.max(7, chipSize * 0.18);
+  const topRowH = chipSize;
+  const rowH = topRowH + statusGap + statusPx * 1.12;
   return {
     ...base,
     compact,
     chipSize,
     statusPx,
     namePx,
-    seatH,
-    padY,
+    textGap,
+    statusGap,
+    topRowH,
+    rowH,
+    minSlotW: base.minSlotW,
   };
 }
 
-function layoutSeat(
+function syncSeatContent(
   seat: SeatLayout,
-  x: number,
-  y: number,
+  metrics: SeatMetrics,
+  ready: boolean,
+  name: string
+): number {
+  const { chipSize, statusPx, namePx, textGap, statusGap, topRowH } = metrics;
+  const token = `${name}:${namePx}:${statusPx}:${ready}:${chipSize}:${textGap}:${statusGap}`;
+
+  if (seat.contentToken !== token) {
+    seat.contentToken = token;
+    seat.name.style = new TextStyle({
+      fontFamily: MONO_FONT,
+      fill: ready ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.62)',
+      fontSize: namePx,
+      fontWeight: '600',
+      letterSpacing: 0.03,
+    });
+    seat.name.text = name;
+
+    seat.status.style = new TextStyle({
+      fontFamily: DISPLAY_FONT,
+      fill: ready ? '#ffffff' : 'rgba(255,255,255,0.62)',
+      fontSize: statusPx,
+      fontWeight: '500',
+      letterSpacing: 1,
+      align: 'center',
+    });
+    seat.status.text = ready ? 'READY' : 'WAITING';
+
+    seat.identityW = chipSize + textGap + seat.name.width;
+    seat.chipX = -seat.identityW / 2 + chipSize / 2;
+    seat.chipY = topRowH / 2;
+    seat.nameX = -seat.identityW / 2 + chipSize + textGap;
+
+    seat.name.position.set(seat.nameX, seat.chipY);
+    seat.status.position.set(0, topRowH + statusGap);
+  }
+
+  return seat.identityW;
+}
+
+function paintSeatChip(
+  seat: SeatLayout,
   metrics: SeatMetrics,
   isP1: boolean,
   ready: boolean,
   pulse: number,
-  name: string
+  waitingCue: boolean
 ): void {
-  const { colW, chipSize, statusPx, namePx, seatH, padY } = metrics;
-  seat.root.position.set(x, y);
-
-  seat.bg.clear();
-  seat.bg.roundRect(-colW / 2, 0, colW, seatH, 8);
-  if (ready) {
-    seat.bg.fill({ color: 0xffffff, alpha: 0.97 });
-    seat.bg.stroke({ width: 1, color: 0xffffff, alpha: 0.45 });
-  } else {
-    seat.bg.fill({ color: 0x000000, alpha: 0.42 });
-    seat.bg.stroke({
-      width: 1,
-      color: 0xffffff,
-      alpha: 0.28 + pulse * 0.08,
-    });
-  }
-
-  const chipY = padY + chipSize / 2;
-  seat.chip.clear();
+  const { chipSize } = metrics;
   const half = chipSize / 2;
-  seat.chip.roundRect(-half, -half, chipSize, chipSize, chipSize * 0.12);
+
+  seat.chip.clear();
+  seat.chip.rect(-half, -half, chipSize, chipSize);
   if (isP1) {
-    seat.chip.fill({ color: ready ? 0x0a0a0a : 0xffffff, alpha: ready ? 1 : 0.94 });
-    if (!ready) {
-      seat.chip.stroke({ width: 1.2, color: 0xffffff, alpha: 0.75 });
+    if (ready) {
+      seat.chip.fill({ color: 0xffffff, alpha: 1 });
+    } else {
+      seat.chip.fill({ color: 0xffffff, alpha: 0.94 });
+      if (waitingCue) {
+        seat.chip.stroke({
+          width: 1.4,
+          color: 0xffffff,
+          alpha: 0.55 + pulse * 0.2,
+        });
+      }
     }
+  } else if (ready) {
+    seat.chip.fill({ color: 0xffffff, alpha: 1 });
+    seat.chip.stroke({ width: 1, color: 0xffffff, alpha: 0.35 });
   } else {
-    seat.chip.fill({ color: ready ? 0x0a0a0a : 0x101010, alpha: 0.98 });
-    seat.chip.stroke({
-      width: ready ? 1 : 1.4,
-      color: ready ? 0x0a0a0a : 0xffffff,
-      alpha: ready ? 1 : 0.82,
+    seat.chip.fill({
+      color: 0x101010,
+      alpha: waitingCue ? 0.72 + pulse * 0.23 : 0.95,
     });
   }
-  seat.chip.position.set(0, chipY);
+  if (ready) {
+    const inset = Math.max(3, chipSize * 0.22);
+    seat.chip.rect(
+      -half + inset,
+      -half + inset,
+      chipSize - inset * 2,
+      chipSize - inset * 2
+    );
+    seat.chip.fill({ color: 0x0a0a0a, alpha: 1 });
+  }
+  seat.chip.position.set(seat.chipX, seat.chipY);
+}
 
-  const statusY = padY + chipSize + 10 + statusPx * 0.55;
-  seat.status.style = new TextStyle({
-    fontFamily: DISPLAY_FONT,
-    fill: ready ? '#0a0a0a' : '#ffffff',
-    fontSize: statusPx,
-    fontWeight: '500',
-    letterSpacing: 1.2,
-    align: 'center',
-  });
-  seat.status.text = ready ? 'READY' : 'WAITING';
-  seat.status.anchor.set(0.5, 0);
-  seat.status.position.set(0, statusY);
-
-  const nameY = statusY + statusPx * 1.15 + 6;
-  seat.name.style = new TextStyle({
-    fontFamily: MONO_FONT,
-    fill: ready ? 'rgba(10,10,10,0.62)' : 'rgba(255,255,255,0.55)',
-    fontSize: namePx,
-    fontWeight: '500',
-    letterSpacing: 0.08,
-    align: 'center',
-  });
-  seat.name.text = name;
-  seat.name.anchor.set(0.5, 0);
-  seat.name.position.set(0, nameY);
+function layoutSeat(
+  seat: SeatLayout,
+  metrics: SeatMetrics,
+  isP1: boolean,
+  ready: boolean,
+  pulse: number,
+  name: string,
+  waitingCue: boolean
+): number {
+  const identityW = syncSeatContent(seat, metrics, ready, name);
+  paintSeatChip(seat, metrics, isP1, ready, pulse, waitingCue);
+  return identityW;
 }
 
 export class OnlineStartReadyOverlay {
@@ -128,7 +171,7 @@ export class OnlineStartReadyOverlay {
 
   private p1: SeatLayout;
   private p2: SeatLayout;
-  private layoutKey = '';
+  private metricsToken = '';
 
   constructor() {
     this.container.cullable = false;
@@ -137,18 +180,31 @@ export class OnlineStartReadyOverlay {
     const makeSeat = (): SeatLayout => {
       const root = new Container();
       root.cullable = false;
-      const bg = new Graphics();
       const chip = new Graphics();
-      const status = new Text({ text: '', style: new TextStyle() });
+      chip.cullable = false;
       const name = new Text({ text: '', style: new TextStyle() });
-      for (const t of [status, name]) {
+      const status = new Text({ text: '', style: new TextStyle() });
+      for (const t of [name, status]) {
         t.resolution = 2;
+        t.cullable = false;
+        t.roundPixels = true;
       }
-      root.addChild(bg);
+      name.anchor.set(0, 0.5);
+      status.anchor.set(0.5, 0);
       root.addChild(chip);
-      root.addChild(status);
       root.addChild(name);
-      return { root, bg, chip, status, name };
+      root.addChild(status);
+      return {
+        root,
+        chip,
+        name,
+        status,
+        contentToken: '',
+        identityW: 0,
+        chipX: 0,
+        chipY: 0,
+        nameX: 0,
+      };
     };
 
     this.p1 = makeSeat();
@@ -160,7 +216,9 @@ export class OnlineStartReadyOverlay {
   hide(): void {
     this.container.visible = false;
     this.container.alpha = 0;
-    this.layoutKey = '';
+    this.metricsToken = '';
+    this.p1.contentToken = '';
+    this.p2.contentToken = '';
   }
 
   render(
@@ -178,43 +236,41 @@ export class OnlineStartReadyOverlay {
 
     const compact = width < 560;
     const m = seatMetrics(startFontSize, compact);
-    const token = `${m.colW}:${state.p1Ready}:${state.p2Ready}:${state.p1Label}:${state.p2Label}`;
-    if (token !== this.layoutKey) {
-      this.layoutKey = token;
+    const metricsToken = `${m.chipSize}:${m.namePx}:${m.statusPx}`;
+    if (metricsToken !== this.metricsToken) {
+      this.metricsToken = metricsToken;
+      this.p1.contentToken = '';
+      this.p2.contentToken = '';
     }
 
     const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 520);
-    const seatCenterX = m.colW / 2 + m.colGap / 2;
-
-    layoutSeat(
+    const p1WaitingCue = state.localSlot === 'p1' && !state.p1Ready;
+    const p2WaitingCue = state.localSlot === 'p2' && !state.p2Ready;
+    const p1IdentityW = layoutSeat(
       this.p1,
-      -seatCenterX,
-      0,
       m,
       true,
       state.p1Ready,
       pulse,
-      shortName(state.p1Label, 'Player 1')
+      shortName(state.p1Label, 'Player 1'),
+      p1WaitingCue
     );
-    layoutSeat(
+    const p2IdentityW = layoutSeat(
       this.p2,
-      seatCenterX,
-      0,
       m,
       false,
       state.p2Ready,
       pulse,
-      shortName(state.p2Label, 'Player 2')
+      shortName(state.p2Label, 'Player 2'),
+      p2WaitingCue
     );
 
-    if (state.localSlot === 'p1' && !state.p1Ready) {
-      this.p1.root.scale.set(1 + pulse * 0.015);
-    } else if (state.localSlot === 'p2' && !state.p2Ready) {
-      this.p2.root.scale.set(1 + pulse * 0.015);
-    } else {
-      this.p1.root.scale.set(1);
-      this.p2.root.scale.set(1);
-    }
+    const slotW = Math.max(m.minSlotW, p1IdentityW, p2IdentityW);
+    const totalW = slotW * 2 + m.rowGap;
+    this.p1.root.position.set(-totalW / 2 + slotW / 2, 0);
+    this.p2.root.position.set(totalW / 2 - slotW / 2, 0);
+    this.p1.root.alpha = 1;
+    this.p2.root.alpha = 1;
 
     this.container.position.set(centerX, panelTopY);
     this.container.visible = true;
@@ -237,7 +293,13 @@ export function drawOnlineStartReadyFallback(
   const compact = startFontSize < 28;
   const m = seatMetrics(startFontSize, compact);
   const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 520);
-  const seatCenterX = m.colW / 2 + m.colGap / 2;
+
+  const p1Name = shortName(state.p1Label, 'Player 1');
+  const p2Name = shortName(state.p2Label, 'Player 2');
+  const p1IdentityW = measureIdentityWidth(ctx, m, p1Name);
+  const p2IdentityW = measureIdentityWidth(ctx, m, p2Name);
+  const slotW = Math.max(m.minSlotW, p1IdentityW, p2IdentityW);
+  const totalW = slotW * 2 + m.rowGap;
 
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -245,26 +307,39 @@ export function drawOnlineStartReadyFallback(
 
   drawSeatFallback(
     ctx,
-    -seatCenterX,
+    -totalW / 2 + slotW / 2,
     0,
     m,
     true,
     state.p1Ready,
     pulse,
-    shortName(state.p1Label, 'Player 1')
+    p1Name,
+    p1IdentityW,
+    state.localSlot === 'p1' && !state.p1Ready
   );
   drawSeatFallback(
     ctx,
-    seatCenterX,
+    totalW / 2 - slotW / 2,
     0,
     m,
     false,
     state.p2Ready,
     pulse,
-    shortName(state.p2Label, 'Player 2')
+    p2Name,
+    p2IdentityW,
+    state.localSlot === 'p2' && !state.p2Ready
   );
 
   ctx.restore();
+}
+
+function measureIdentityWidth(
+  ctx: CanvasRenderingContext2D,
+  metrics: SeatMetrics,
+  name: string
+): number {
+  ctx.font = `600 ${Math.floor(metrics.namePx)}px Inter, system-ui, sans-serif`;
+  return metrics.chipSize + metrics.textGap + ctx.measureText(name).width;
 }
 
 function drawSeatFallback(
@@ -275,74 +350,59 @@ function drawSeatFallback(
   isP1: boolean,
   ready: boolean,
   pulse: number,
-  name: string
+  name: string,
+  identityW: number,
+  waitingCue: boolean
 ): void {
-  const { colW, chipSize, statusPx, namePx, seatH, padY } = metrics;
-  roundRect(ctx, x - colW / 2, y, colW, seatH, 8);
-  if (ready) {
-    ctx.fillStyle = 'rgba(255,255,255,0.97)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  } else {
-    ctx.fillStyle = 'rgba(0,0,0,0.42)';
-    ctx.fill();
-    ctx.strokeStyle = `rgba(255,255,255,${0.28 + pulse * 0.08})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-
-  const chipY = y + padY + chipSize / 2;
+  const { chipSize, statusPx, namePx, textGap, statusGap, topRowH } = metrics;
+  const chipX = x - identityW / 2 + chipSize / 2;
+  const chipY = y + topRowH / 2;
+  const nameX = x - identityW / 2 + chipSize + textGap;
   const half = chipSize / 2;
-  roundRect(ctx, x - half, chipY - half, chipSize, chipSize, chipSize * 0.12);
-  if (isP1) {
-    ctx.fillStyle = ready ? '#0a0a0a' : 'rgba(255,255,255,0.94)';
-    ctx.fill();
-    if (!ready) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
-    }
-  } else {
-    ctx.fillStyle = ready ? '#0a0a0a' : '#101010';
-    ctx.fill();
-    ctx.strokeStyle = ready ? '#0a0a0a' : 'rgba(255,255,255,0.82)';
-    ctx.lineWidth = ready ? 1 : 1.4;
-    ctx.stroke();
+
+  ctx.fillStyle = isP1
+    ? ready
+      ? '#ffffff'
+      : 'rgba(255,255,255,0.94)'
+    : ready
+      ? '#ffffff'
+      : '#101010';
+  if (!isP1 && !ready && waitingCue) {
+    ctx.globalAlpha *= 0.72 + pulse * 0.23;
+  }
+  ctx.fillRect(chipX - half, chipY - half, chipSize, chipSize);
+  if (!isP1 && !ready && waitingCue) {
+    ctx.globalAlpha /= 0.72 + pulse * 0.23;
+  }
+  if (isP1 && !ready && waitingCue) {
+    ctx.strokeStyle = `rgba(255,255,255,${0.55 + pulse * 0.2})`;
+    ctx.lineWidth = 1.4;
+    ctx.strokeRect(chipX - half, chipY - half, chipSize, chipSize);
+  } else if (ready && !isP1) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(chipX - half, chipY - half, chipSize, chipSize);
+  }
+  if (ready) {
+    const inset = Math.max(3, chipSize * 0.22);
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(
+      chipX - half + inset,
+      chipY - half + inset,
+      chipSize - inset * 2,
+      chipSize - inset * 2
+    );
   }
 
-  const statusY = y + padY + chipSize + 10;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = ready ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.62)';
+  ctx.font = `600 ${Math.floor(namePx)}px Inter, system-ui, sans-serif`;
+  ctx.fillText(name, nameX, chipY);
+
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillStyle = ready ? '#0a0a0a' : '#ffffff';
+  ctx.fillStyle = ready ? '#ffffff' : 'rgba(255,255,255,0.62)';
   ctx.font = `500 ${Math.floor(statusPx)}px BureauGrotesque, sans-serif`;
-  ctx.fillText(ready ? 'READY' : 'WAITING', x, statusY);
-
-  const nameY = statusY + statusPx * 1.15 + 6;
-  ctx.fillStyle = ready ? 'rgba(10,10,10,0.62)' : 'rgba(255,255,255,0.55)';
-  ctx.font = `500 ${Math.floor(namePx)}px Inter, system-ui, sans-serif`;
-  ctx.fillText(name, x, nameY);
-}
-
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-): void {
-  const rad = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rad, y);
-  ctx.lineTo(x + w - rad, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
-  ctx.lineTo(x + w, y + h - rad);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
-  ctx.lineTo(x + rad, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
-  ctx.lineTo(x, y + rad);
-  ctx.quadraticCurveTo(x, y, x + rad, y);
-  ctx.closePath();
+  ctx.fillText(ready ? 'READY' : 'WAITING', x, y + topRowH + statusGap);
 }

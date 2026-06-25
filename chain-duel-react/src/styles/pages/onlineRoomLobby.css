@@ -238,7 +238,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.05vw 0.35vw;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid rgb(255 255 255 / 0.35);
   font-variant-numeric: tabular-nums;
   font-size: var(--online-lobby-fs-hint);
@@ -574,6 +574,16 @@
   color: #fff;
   text-align: center;
   line-height: 1.35;
+}
+
+.online-lobby-arena-handoff {
+  max-width: 16rem;
+  font-family: Inter, sans-serif;
+  font-size: var(--online-lobby-fs-hint);
+  letter-spacing: 0.04em;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.62);
+  text-align: center;
 }
 
 .online-lobby-arena-spectators {
@@ -1253,6 +1263,7 @@
   align-items: center;
   margin-left: 0.28vw;
   padding: 0.05vw 0.35vw;
+  border-radius: 0;
   border: 1px solid rgb(255 255 255 / 0.82);
   color: #fff;
   font-size: var(--online-lobby-fs-hint);
@@ -1633,6 +1644,21 @@
 
 .online-lobby-qr-frame--ready {
   animation: online-lobby-qr-fadein 0.35s ease both;
+}
+
+.online-lobby-qr-lnurl-anchor {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+  line-height: 0;
+}
+
+.online-lobby-qr-lnurl-anchor:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.55);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 @keyframes online-lobby-qr-fadein {

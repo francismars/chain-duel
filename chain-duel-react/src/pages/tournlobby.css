@@ -137,6 +137,19 @@
   display: block;
 }
 
+.tournlobby-page .tournlobby-qr-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  line-height: 0;
+}
+
+.tournlobby-page .tournlobby-qr-link:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .tournlobby-page .tournlobby-qr-placeholder {
   width: 220px;
   height: 220px;

@@ -90,19 +90,18 @@ export function computeOnlineStartReadyPlacement(
 export function measureOnlineStartReadyPanel(
   startFontSize: number,
   compact: boolean
-): { panelW: number; panelH: number; colW: number; colGap: number } {
-  const chipSize = Math.max(compact ? 16 : 18, startFontSize * 0.26);
-  const colW = Math.max(compact ? 108 : 124, startFontSize * 1.35);
-  const colGap = Math.max(compact ? 14 : 18, startFontSize * 0.24);
-  const statusPx = Math.max(compact ? 13 : 15, startFontSize * 0.24);
-  const namePx = Math.max(compact ? 8 : 9, startFontSize * 0.13);
-  const padY = 12;
-  const seatH = padY + chipSize + 10 + statusPx * 1.15 + 8 + namePx * 1.35 + padY;
+): { panelW: number; panelH: number; rowGap: number; minSlotW: number } {
+  const chipSize = Math.max(compact ? 18 : 22, startFontSize * 0.28);
+  const statusPx = Math.max(compact ? 12 : 14, startFontSize * 0.2);
+  const statusGap = Math.max(7, chipSize * 0.18);
+  const rowH = chipSize + statusGap + statusPx * 1.12;
+  const minSlotW = Math.max(compact ? 132 : 148, startFontSize * 1.55);
+  const rowGap = Math.max(compact ? 28 : 40, startFontSize * 0.42);
   return {
-    colW,
-    colGap,
-    panelW: colW * 2 + colGap,
-    panelH: seatH,
+    minSlotW,
+    rowGap,
+    panelW: minSlotW * 2 + rowGap,
+    panelH: rowH,
   };
 }
 

@@ -459,10 +459,8 @@ export default function OnlinePostGame({
       }
       setVotes(parsed.votes);
       setRequiredVotes(parsed.required);
-      if (parsed.agreed) {
-        if (roomCode) {
-          navigate(onlineRoomUrl(roomCode));
-        }
+      if (parsed.agreed && !_embedded && roomCode) {
+        navigate(onlineRoomUrl(roomCode));
       }
     };
 
