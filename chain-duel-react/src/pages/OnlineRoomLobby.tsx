@@ -55,6 +55,7 @@ import { verifyNip05 } from '@/lib/nostr/fetchKind0Profile';
 import { decodeBolt11ExpiresAt } from '@/lib/lightning/decodeBolt11ExpiresAt';
 import { lightningUriHref } from '@/lib/lightning/lightningUriHref';
 import '@/styles/pages/onlineRoomLobby.css';
+import './game.css';
 
 const PAYMENT_MODES = ['anon', 'nostr', 'pin-zap'] as const;
 const FINISHED_ACTION_COUNT = 3;
@@ -2187,8 +2188,8 @@ export default function OnlineRoomLobby({
 
   if (!roomId) {
     return (
-      <div className="online-lobby-page online-lobby-page-missing">
-        <p className="online-lobby-error">Missing room id.</p>
+      <div className="overlay" id="loading">
+        <img src="/images/loading.gif" alt="Loading" />
       </div>
     );
   }

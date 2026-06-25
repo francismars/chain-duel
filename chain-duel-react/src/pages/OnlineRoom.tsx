@@ -7,6 +7,7 @@ import type { OnlineRoomState } from '@/types/socket';
 import OnlineRoomLobby from '@/pages/OnlineRoomLobby';
 import OnlineGame from '@/pages/OnlineGame';
 import OnlinePostGame from '@/pages/OnlinePostGame';
+import './game.css';
 
 /** Brief lobby beat so the first seated player sees both-paid before the canvas. */
 const ARENA_HANDOFF_MS = 2400;
@@ -223,6 +224,14 @@ export default function OnlineRoom() {
         <button type="button" onClick={() => navigate(ONLINE_HOME)}>
           Back to rooms
         </button>
+      </div>
+    );
+  }
+
+  if (!roomId) {
+    return (
+      <div className="overlay" id="loading">
+        <img src="/images/loading.gif" alt="Loading" />
       </div>
     );
   }
