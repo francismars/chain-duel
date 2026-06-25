@@ -1082,6 +1082,25 @@
   width: 100%;
 }
 
+/* Unpaid seat flow: one panel wrapping path cards + payment UI */
+.online-lobby-pay-zone-inner:not(.online-lobby-pay-zone-inner--invite)
+  .online-lobby-pay-zone-main {
+  border: 1px solid rgb(255 255 255 / 0.15);
+  background: rgb(0 0 0 / 25%);
+  padding: 0.75rem 1rem 0.8rem;
+  box-sizing: border-box;
+}
+
+.online-lobby-pay-zone-inner:not(.online-lobby-pay-zone-inner--invite)
+  .online-lobby-pay-zone-main
+  .online-lobby-kind1-embedded {
+  border: none;
+  background: transparent;
+  padding: 0;
+  min-height: 0;
+  height: auto;
+}
+
 .online-lobby-pay-zone-note {
   min-width: 0;
   order: -1;
@@ -2742,6 +2761,10 @@
 @media (max-width: 680px) {
   .online-lobby-pay-zone-inner {
     grid-template-columns: 1fr;
+  }
+
+  .online-lobby-pay-zone-note {
+    order: 1;
   }
 
   .online-lobby-pay-zone-note,

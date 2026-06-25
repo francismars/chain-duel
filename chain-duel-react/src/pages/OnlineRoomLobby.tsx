@@ -24,6 +24,10 @@ import {
 import { OnlineRoomState } from '@/types/socket';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import {
+  isOnlineSeatStartReady,
+  onlineSeatStartMeta,
+} from '@/lib/online/isOnlineSeatStartReady';
+import {
   signNostrEvent,
   signOnlineSeatLinkChallenge,
 } from '@/lib/nostr/signOnlineSeatLink';
@@ -1069,7 +1073,7 @@ export default function OnlineRoomLobby({
     );
     return matchesSession || matchesSocket;
   });
-  const myReady = mySeat?.ready === true;
+  const myReady = isOnlineSeatStartReady(mySeat, room?.phase);
   const isMyP1Seat = mySeat?.role === 'Player 1';
   const isMyP2Seat = mySeat?.role === 'Player 2';
   const phaseLabel = (room?.phase ?? 'lobby').toUpperCase();
@@ -1216,41 +1220,23 @@ export default function OnlineRoomLobby({
       ? p2?.name || snapshotP2Name
       : lobbySeatName(p2, 'Open seat');
   const p1IsReady =
-    !isMatchEnded &&
-    !rematchPending &&
-    p1?.status === 'paid' &&
-    p1.ready === true;
+    !isMatchEnded && !rematchPending && isOnlineSeatStartReady(p1, room?.phase);
   const p1MetaDisplay = isMatchEnded
     ? room?.postGame?.winnerRole === 'Player 1'
       ? 'Winner'
       : 'Played'
     : rematchPending
       ? 'Locked for rematch'
-      : p1?.status === 'paid'
-        ? p1.ready
-          ? 'Paid · Ready'
-          : p1.disconnectedAt
-            ? 'Paid · Offline'
-            : 'Paid · Not ready'
-        : 'Waiting payment';
+      : onlineSeatStartMeta(p1, room?.phase);
   const p2IsReady =
-    !isMatchEnded &&
-    !rematchPending &&
-    p2?.status === 'paid' &&
-    p2.ready === true;
+    !isMatchEnded && !rematchPending && isOnlineSeatStartReady(p2, room?.phase);
   const p2MetaDisplay = isMatchEnded
     ? room?.postGame?.winnerRole === 'Player 2'
       ? 'Winner'
       : 'Played'
     : rematchPending
       ? 'Locked for rematch'
-      : p2?.status === 'paid'
-        ? p2.ready
-          ? 'Paid · Ready'
-          : p2.disconnectedAt
-            ? 'Paid · Offline'
-            : 'Paid · Not ready'
-        : 'Waiting payment';
+      : onlineSeatStartMeta(p2, room?.phase);
 
   const hasPaidMySeat = Boolean(mySeat);
   const isRematchLoserPay = rematchPending && amILoserToPay;
@@ -1463,7 +1449,12 @@ export default function OnlineRoomLobby({
     [leaveRoom, navigate, playConfirm, room?.matchRound, room?.roomCode]
   );
 
-  const showInviteFinder = Boolean(room && !rematchPending && !isMatchEnded);
+  const showInviteFinder = Boolean(
+    room &&
+      !rematchPending &&
+      !isMatchEnded &&
+      ((hasPaidMySeat && paidSeats < 2) || isSpectatingFullRoom)
+  );
   const lobbyInviteUrl = room?.roomCode
     ? buildOnlineRoomShareUrl(room.roomCode)
     : '';
@@ -2169,6 +2160,13 @@ export default function OnlineRoomLobby({
     if (isSessionClosed) return 'SESSION CLOSED';
     if (rematchPending) return 'DOUBLE OR NOTHING';
     if (isPostgame) return 'ROUND OVER';
+    if (room?.phase === 'playing' && paidSeats === 2) {
+      const readyCount =
+        (p1IsReady ? 1 : 0) + (p2IsReady ? 1 : 0);
+      if (readyCount === 2) return 'BOTH READY';
+      if (readyCount === 1) return '1 OF 2 READY';
+      return 'CONFIRM START';
+    }
     if (paidSeats === 2) return 'BOTH PAID';
     if (paidSeats === 1) return '1 OF 2 PAID';
     return 'AWAITING PLAYERS';
@@ -2481,7 +2479,7 @@ export default function OnlineRoomLobby({
               <p className="online-lobby-pin">ROOM FULL</p>
               <p className="online-lobby-copy">
                 Both seats are taken. Watch here — the match starts when both
-                players mark ready.
+                players confirm on the arena.
               </p>
             </div>
           ) : null}
@@ -3580,7 +3578,7 @@ export default function OnlineRoomLobby({
                             </p>
                             <p className="online-lobby-kind1-idle-cta">
                               {seatsFull
-                                ? 'Both seats are taken. The match starts when both players mark ready.'
+                                ? 'Both seats are taken. The match starts when both players confirm on the arena.'
                                 : 'Choose Lightning, Nostr sign-in, or your Nostr app above.'}
                             </p>
                             {!seatsFull ? (

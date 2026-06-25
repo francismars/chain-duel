@@ -13,7 +13,7 @@ import {
   onlineReplayRoomUrl,
   onlineRoomUrl,
 } from '@/shared/constants/onlineRoutes';
-import { isOnlineVictoryWinner } from '@/lib/online/isOnlineVictoryWinner';
+import { isOnlineMatchPlayer, isOnlineVictoryWinner } from '@/lib/online/isOnlineVictoryWinner';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
 
@@ -133,6 +133,11 @@ export default function OnlinePostGame({
     effectiveSessionID,
     currentSocketID
   );
+  const isMatchPlayer = isOnlineMatchPlayer(
+    info,
+    effectiveSessionID,
+    currentSocketID
+  );
   const donLocked = Boolean(
     lnurlw ||
     info?.payoutMethod === 'withdraw_qr' ||
@@ -140,6 +145,7 @@ export default function OnlinePostGame({
     info?.rematchRequested
   );
   const effectiveVotes = myVoted ? Math.max(votes, 1) : votes;
+  const donVoteDisabled = donLocked || myVoted || !isMatchPlayer;
   const winnerHasNostrLn = Boolean(info?.winnerLnAddress);
   const payoutChosen =
     info?.payoutMethod === 'withdraw_qr' || info?.payoutMethod === 'nostr_zap';
@@ -168,14 +174,20 @@ export default function OnlinePostGame({
     const roundCount = info.matchRounds?.length ?? 0;
     if (showPayoutUi) {
       setNavFocus(
-        isWinner ? { type: 'payout', slot: 'withdraw' } : { type: 'don' }
+        isWinner
+          ? { type: 'payout', slot: 'withdraw' }
+          : isMatchPlayer
+            ? { type: 'don' }
+            : roundCount > 0
+              ? { type: 'replay', index: roundCount - 1 }
+              : { type: 'exit' }
       );
     } else if (roundCount > 0) {
       setNavFocus({ type: 'replay', index: roundCount - 1 });
     } else {
       setNavFocus({ type: 'don' });
     }
-  }, [info, showPayoutUi, isWinner]);
+  }, [info, showPayoutUi, isWinner, isMatchPlayer]);
 
   const openSessionRoundReplay = useCallback(
     (matchRound: number) => {
@@ -287,7 +299,7 @@ export default function OnlinePostGame({
           return;
         }
         if (navFocus.type === 'don') {
-          if (!socket || !roomId || donLocked || myVoted) return;
+          if (!socket || !roomId || donVoteDisabled) return;
           playConfirm();
           setError('');
           setMyVoted(true);
@@ -342,8 +354,10 @@ export default function OnlinePostGame({
     };
   }, [
     donLocked,
+    donVoteDisabled,
     exitRoom,
     info,
+    isMatchPlayer,
     isWinner,
     myVoted,
     navFocus,
@@ -485,6 +499,9 @@ export default function OnlinePostGame({
       }
       setCreatingWithdrawal(false);
       setCreatingNostrPayout(false);
+      if (parsed.reason === 'not_player') {
+        setMyVoted(false);
+      }
       setError(parsed.reason);
       setLoading(false);
     };
@@ -796,7 +813,9 @@ export default function OnlinePostGame({
               <p className="online-postgame-don-desc">
                 {donLocked
                   ? 'Locked — a payout has been initiated.'
-                  : 'Both players must agree to double the stakes and play another round.'}
+                  : !isMatchPlayer
+                    ? 'Only the two seated players can vote on a rematch.'
+                    : 'Both players must agree to double the stakes and play another round.'}
               </p>
             </div>
 
@@ -835,14 +854,14 @@ export default function OnlinePostGame({
                 className={[
                   'online-postgame-btn',
                   'online-postgame-btn-don',
-                  donLocked || myVoted ? 'disabled' : '',
+                  donVoteDisabled ? 'disabled' : '',
                   navFocus.type === 'don' ? 'online-selected' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                disabled={donLocked || myVoted}
+                disabled={donVoteDisabled}
                 onClick={() => {
-                  if (!socket || !roomId || donLocked || myVoted) {
+                  if (!socket || !roomId || donVoteDisabled) {
                     return;
                   }
                   playConfirm();
@@ -853,9 +872,11 @@ export default function OnlinePostGame({
               >
                 {donLocked
                   ? 'LOCKED'
-                  : myVoted
-                    ? `VOTED — WAITING (${effectiveVotes}/${requiredVotes})`
-                    : 'DOUBLE OR NOTHING'}
+                  : !isMatchPlayer
+                    ? 'PLAYERS ONLY'
+                    : myVoted
+                      ? `VOTED — WAITING (${effectiveVotes}/${requiredVotes})`
+                      : 'DOUBLE OR NOTHING'}
               </Button>
             </div>
           </div>

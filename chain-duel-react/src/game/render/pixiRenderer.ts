@@ -15,6 +15,7 @@ import {
 import { clearPreMatchKeyHighlight } from '@/game/render/preMatchKeyHighlight';
 import {
   computeCanvasObjectivesLayout,
+  computeOnlineStartReadyPlacement,
   type CanvasObjectivesOpts,
 } from '@/game/render/matchObjectives';
 import {
@@ -25,6 +26,10 @@ import {
   CanvasControlsOverlay,
   drawCanvasControlsFallback,
 } from '@/game/render/canvasControlsOverlay';
+import {
+  OnlineStartReadyOverlay,
+  drawOnlineStartReadyFallback,
+} from '@/game/render/onlineStartReadyOverlay';
 
 export type PixiRenderOpts = {
   replayView?: boolean;
@@ -57,6 +62,7 @@ export class PixiGameRenderer {
   private startWords: Text[] = [];
   private startWordsContainer: Container = new Container();
   private objectives = new CanvasObjectivesOverlay();
+  private startReady = new OnlineStartReadyOverlay();
   private controls = new CanvasControlsOverlay();
   private startRevealTime = -1;
   private startLayoutWidth = -1;
@@ -184,6 +190,7 @@ export class PixiGameRenderer {
       this.root.addChild(this.scene);
       this.root.addChild(this.resolveBlocks);
       this.overlay.addChild(this.startWordsContainer);
+      this.overlay.addChild(this.startReady.container);
       this.overlay.addChild(this.controls.container);
       this.overlay.addChild(this.objectives.container);
       this.overlay.addChild(this.endWinnerText);
@@ -260,6 +267,8 @@ export class PixiGameRenderer {
       (this.objectives.container.visible &&
         this.objectives.container.alpha > 0.02) ||
       (this.controls.container.visible && this.controls.container.alpha > 0.02) ||
+      (this.startReady.container.visible &&
+        this.startReady.container.alpha > 0.02) ||
       this.startWords.some((t) => t.alpha > 0.02)
     );
   }
@@ -267,6 +276,7 @@ export class PixiGameRenderer {
   private finishPreMatchDismiss(): void {
     clearPreMatchKeyHighlight();
     this.objectives.hide();
+    this.startReady.hide();
     this.controls.hide();
     this.startRevealTime = -1;
     this.startLayoutWidth = -1;
@@ -624,7 +634,21 @@ export class PixiGameRenderer {
         this.startWords[i].alpha = eased;
         this.startWords[i].y = (1 - eased) * 10;
       }
+      const startWordAlpha = Math.max(0, ...this.startWords.map((w) => w.alpha));
+      const readyPlacement = computeOnlineStartReadyPlacement(
+        objLayout,
+        startFontSize
+      );
+      this.startReady.render(
+        width,
+        width / 2,
+        readyPlacement.panelTopY,
+        startFontSize,
+        objOpts.onlineStartReady,
+        startWordAlpha
+      );
     } else {
+      this.startReady.hide();
       if (
         state.countdownStart &&
         !state.gameStarted &&
@@ -1819,6 +1843,22 @@ export class PixiGameRenderer {
       const visibleWords = words.filter((_, i) => fbElapsed > i * STAGGER);
       ctx.font = `${fbStartPx}px BureauGrotesque`;
       ctx.fillText(visibleWords.join(' '), width / 2, objLayout.startY);
+      const startWordAlpha =
+        visibleWords.length >= 4
+          ? 1
+          : Math.max(0, (fbElapsed - 3 * STAGGER) / 420);
+      const readyPlacement = computeOnlineStartReadyPlacement(
+        objLayout,
+        fbStartPx
+      );
+      drawOnlineStartReadyFallback(
+        ctx,
+        width / 2,
+        readyPlacement.panelTopY,
+        fbStartPx,
+        objOpts.onlineStartReady,
+        startWordAlpha * eased
+      );
       drawCanvasObjectivesFallback(
         ctx,
         width,

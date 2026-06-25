@@ -24,9 +24,18 @@ export const INSTRUCTION_HIDE_FRAC = 0.16;
 export const START_WORD_SHADOW_PAD = 48;
 export const START_WORD_SHADOW_BLUR = 44;
 
+export type OnlineStartReadyState = {
+  p1Ready: boolean;
+  p2Ready: boolean;
+  p1Label?: string;
+  p2Label?: string;
+  localSlot?: 'p1' | 'p2' | null;
+};
+
 export type CanvasObjectivesOpts = {
   stakesHint?: string;
   controlSlots?: readonly PlayerControlSlot[];
+  onlineStartReady?: OnlineStartReadyState;
 };
 
 export type CanvasObjectivesLayout = {
@@ -63,6 +72,38 @@ export function startPromptVisualReach(startFontSize: number): number {
     START_WORD_SHADOW_BLUR +
     20
   );
+}
+
+/** Tight gap below the start prompt — cards only, no outer panel. */
+export function computeOnlineStartReadyPlacement(
+  layout: CanvasObjectivesLayout,
+  startFontSize: number
+): { panelTopY: number; sectionGap: number } {
+  const startPromptBottom = layout.startY + startFontSize * 0.48 + 10;
+  const sectionGap = Math.max(10, startFontSize * 0.2);
+  return {
+    sectionGap,
+    panelTopY: startPromptBottom + sectionGap,
+  };
+}
+
+export function measureOnlineStartReadyPanel(
+  startFontSize: number,
+  compact: boolean
+): { panelW: number; panelH: number; colW: number; colGap: number } {
+  const chipSize = Math.max(compact ? 16 : 18, startFontSize * 0.26);
+  const colW = Math.max(compact ? 108 : 124, startFontSize * 1.35);
+  const colGap = Math.max(compact ? 14 : 18, startFontSize * 0.24);
+  const statusPx = Math.max(compact ? 13 : 15, startFontSize * 0.24);
+  const namePx = Math.max(compact ? 8 : 9, startFontSize * 0.13);
+  const padY = 12;
+  const seatH = padY + chipSize + 10 + statusPx * 1.15 + 8 + namePx * 1.35 + padY;
+  return {
+    colW,
+    colGap,
+    panelW: colW * 2 + colGap,
+    panelH: seatH,
+  };
 }
 
 export function computeCanvasObjectivesLayout(

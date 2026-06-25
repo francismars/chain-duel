@@ -12,6 +12,7 @@ import { useAudio } from '@/contexts/AudioContext';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { ONLINE_HOME, onlineRoomUrl } from '@/shared/constants/onlineRoutes';
+import { isOnlineSeatStartReady } from '@/lib/online/isOnlineSeatStartReady';
 import type {
   OnlineReplayBlockEvent,
   OnlineRoomSnapshot,
@@ -109,7 +110,10 @@ export default function OnlineGame({
     p2SocketID?: string;
     p1PingMs?: number;
     p2PingMs?: number;
+    p1StartConfirmed?: boolean;
+    p2StartConfirmed?: boolean;
   } | null>(null);
+  const [localStartConfirmed, setLocalStartConfirmed] = useState(false);
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );
@@ -388,7 +392,20 @@ export default function OnlineGame({
           p2SocketID: p2?.socketID,
           p1PingMs: typeof p1?.pingMs === 'number' ? p1.pingMs : undefined,
           p2PingMs: typeof p2?.pingMs === 'number' ? p2.pingMs : undefined,
+          p1StartConfirmed: isOnlineSeatStartReady(p1, parsed.phase),
+          p2StartConfirmed: isOnlineSeatStartReady(p2, parsed.phase),
         });
+        const sessionID = sessionStorage.getItem('sessionID') ?? '';
+        const socketID = socket.id ?? '';
+        const mySeat =
+          p1?.sessionID === sessionID || p1?.socketID === socketID
+            ? p1
+            : p2?.sessionID === sessionID || p2?.socketID === socketID
+              ? p2
+              : null;
+        if (isOnlineSeatStartReady(mySeat, parsed.phase)) {
+          setLocalStartConfirmed(true);
+        }
       }
     };
     const onReplay = (payload: unknown) => {
@@ -616,6 +633,7 @@ export default function OnlineGame({
         !state.gameEnded
       ) {
         event.preventDefault();
+        setLocalStartConfirmed(true);
         socket.emit('onlineConfirmStart', { roomId });
         return;
       }
@@ -890,18 +908,36 @@ export default function OnlineGame({
     : isP2
       ? 'p2'
       : null;
-  canvasObjectivesRef.current = {
-    ...((roomInfo?.buyin ?? 0) > 0
-      ? { stakesHint: 'Staked pot — drain rival to 0 sats to win' }
-      : {}),
-    controlSlots:
-      onlineControlSlot && !replayMode ? [onlineControlSlot] : [],
-  };
-
+  const gameState = snapshot?.state as GameState | undefined;
+  const preMatchStart =
+    !replayMode &&
+    Boolean(gameState) &&
+    !gameState!.gameStarted &&
+    !gameState!.countdownStart &&
+    !gameState!.gameEnded;
+  const p1StartReady =
+    Boolean(roomInfo?.p1StartConfirmed) || (isP1 && localStartConfirmed);
+  const p2StartReady =
+    Boolean(roomInfo?.p2StartConfirmed) || (isP2 && localStartConfirmed);
   const replayDurationSec =
     replayFrames.length > 0 ? (replayFrames.length * replayTickMs) / 1000 : 0;
   const replayPositionSec =
     replayFrames.length > 0 ? (replayIndex * replayTickMs) / 1000 : 0;
+  canvasObjectivesRef.current = {
+    controlSlots:
+      onlineControlSlot && !replayMode ? [onlineControlSlot] : [],
+    ...(preMatchStart
+      ? {
+          onlineStartReady: {
+            p1Ready: p1StartReady,
+            p2Ready: p2StartReady,
+            p1Label: roomInfo?.p1Name,
+            p2Label: roomInfo?.p2Name,
+            localSlot: isP1 ? ('p1' as const) : isP2 ? ('p2' as const) : null,
+          },
+        }
+      : {}),
+  };
 
   return (
     <>
@@ -1222,6 +1258,9 @@ function coerceOnlineRoomUpdated(payload: unknown): {
       sessionID?: string;
       socketID?: string;
       pingMs?: number;
+      status?: 'open' | 'paid';
+      ready?: boolean;
+      startConfirmed?: boolean;
     }
   >;
 } | null {
@@ -1254,6 +1293,9 @@ function coerceOnlineRoomUpdated(payload: unknown): {
             sessionID?: string;
             socketID?: string;
             pingMs?: number;
+            status?: 'open' | 'paid';
+            ready?: boolean;
+            startConfirmed?: boolean;
           }
         >)
       : {};
