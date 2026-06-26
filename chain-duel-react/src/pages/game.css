@@ -63,7 +63,7 @@
 }
 
 .flex.points {
-  padding-top: 0.5vw;
+  padding-top: 0;
   padding-bottom: 0.1vw;
 }
 
@@ -394,15 +394,17 @@
   text-align: center;
   font-size: 0.7vw;
   letter-spacing: 0.05em;
-  height: 3.25vw;
+  height: auto;
+  --distribution-bar-gap: 0.65vw;
 }
 
 #capturing {
   width: 100%;
   display: flex;
   justify-content: space-between;
-  margin-bottom: -0.8vw;
-  height: 1.2vw;
+  margin-bottom: var(--distribution-bar-gap);
+  height: auto;
+  min-height: 1.2vw;
 }
 
 .capturingAmount {
@@ -437,7 +439,14 @@
 
 .distributionBarOutter {
   width: 100%;
-  margin-bottom: 1.2vw;
+  margin-bottom: 0;
+}
+
+#currentDistribution.distributionBarOutter {
+  position: relative;
+  min-height: 1.7vw;
+  margin-top: 0;
+  margin-bottom: var(--distribution-bar-gap);
 }
 
 #initialDistribution .distributionBar {
@@ -1585,9 +1594,9 @@
   }
 
   .flex.points {
-    margin-top: 0.45rem;
+    margin-top: 0;
     margin-bottom: 0.9rem;
-    padding-top: 0.3vw;
+    padding-top: 0;
     padding-bottom: 0.3vw;
   }
 
@@ -1642,12 +1651,14 @@
     margin: 0.3rem 4% 0.55rem;
     font-size: clamp(0.58rem, 2.1vmax, 0.82rem);
     height: auto;
-    min-height: 2.65rem;
+    min-height: 0;
+    --distribution-bar-gap: 0.45rem;
   }
 
   #capturing {
-    margin-bottom: 0.35rem;
+    margin-bottom: var(--distribution-bar-gap);
     height: auto;
+    min-height: 0;
   }
 
   .capturingAmount {
@@ -1681,6 +1692,12 @@
 
   #currentDistribution .distributionBar {
     height: clamp(12px, 2.4vmax, 22px);
+  }
+
+  #currentDistribution.distributionBarOutter {
+    margin-top: 0;
+    margin-bottom: var(--distribution-bar-gap);
+    min-height: clamp(12px, 2.4vmax, 22px);
   }
 
   #gameCanvas {

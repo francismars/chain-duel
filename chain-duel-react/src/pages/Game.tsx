@@ -184,8 +184,6 @@ export default function Game() {
   const [captureP2, setCaptureP2] = useState('2%');
   const [captureP1Highlight, setCaptureP1Highlight] = useState(false);
   const [captureP2Highlight, setCaptureP2Highlight] = useState(false);
-  const [initialP1Width, setInitialP1Width] = useState(50);
-  const [initialP2Width, setInitialP2Width] = useState(50);
   const [currentP1Width, setCurrentP1Width] = useState(50);
   const [currentP2Width, setCurrentP2Width] = useState(50);
   const [isFfa, setIsFfa] = useState(false);
@@ -909,8 +907,6 @@ export default function Game() {
       setCaptureP2(hud.captureP2);
       captureP1Ref.current = hud.captureP1;
       captureP2Ref.current = hud.captureP2;
-      setInitialP1Width(hud.initialWidthP1);
-      setInitialP2Width(hud.initialWidthP2);
       setCurrentP1Width(hud.currentWidthP1);
       setCurrentP2Width(hud.currentWidthP2);
       setIsFfa(teamMode === 'ffa' || teamMode === '2v1');
@@ -1081,8 +1077,6 @@ export default function Game() {
       setCaptureP2(hud.captureP2);
       captureP1Ref.current = hud.captureP1;
       captureP2Ref.current = hud.captureP2;
-      setInitialP1Width(hud.initialWidthP1);
-      setInitialP2Width(hud.initialWidthP2);
       setCurrentP1Width(hud.currentWidthP1);
       setCurrentP2Width(hud.currentWidthP2);
     },
@@ -1526,30 +1520,9 @@ export default function Game() {
 
                 <div id="distributions">
                   <div
-                    id="initialDistribution"
-                    className="distributionBarOutter"
-                  >
-                    <div className="distributionTitle">
-                      Initial Distribution
-                    </div>
-                    <div
-                      id="initialDistributionP1"
-                      className="distributionBar"
-                      style={{ width: `${initialP1Width}%` }}
-                    />
-                    <div
-                      id="initialDistributionP2"
-                      className="distributionBar"
-                      style={{ width: `${initialP2Width}%` }}
-                    />
-                  </div>
-                  <div
                     id="currentDistribution"
                     className="distributionBarOutter"
                   >
-                    <div className="distributionTitle">
-                      Current Distribution
-                    </div>
                     <div
                       id="currentDistributionP1"
                       className="distributionBar"

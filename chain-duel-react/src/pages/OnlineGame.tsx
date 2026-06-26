@@ -1062,21 +1062,7 @@ export default function OnlineGame({
             </div>
 
             <div id="distributions">
-              <div id="initialDistribution" className="distributionBarOutter">
-                <div className="distributionTitle">Initial Distribution</div>
-                <div
-                  id="initialDistributionP1"
-                  className="distributionBar"
-                  style={{ width: `${snapshot?.hud.initialWidthP1 ?? 50}%` }}
-                />
-                <div
-                  id="initialDistributionP2"
-                  className="distributionBar"
-                  style={{ width: `${snapshot?.hud.initialWidthP2 ?? 50}%` }}
-                />
-              </div>
               <div id="currentDistribution" className="distributionBarOutter">
-                <div className="distributionTitle">Current Distribution</div>
                 <div
                   id="currentDistributionP1"
                   className="distributionBar"

@@ -40,13 +40,11 @@ function CaptureLine({
 
 function DistributionBar({
   id,
-  title,
   players,
   shareKey,
   live,
 }: {
   id: string;
-  title: string;
   players: FfaHudPlayer[];
   shareKey: 'initialShare' | 'currentShare';
   live?: boolean;
@@ -57,13 +55,7 @@ function DistributionBar({
       id={id}
       className={`distributionBarOutter ffa-distribution ${live ? 'ffa-distribution-live' : ''}`}
     >
-      {!live ? <div className="distributionTitle">{title}</div> : null}
       <div className="ffa-distribution-track" aria-hidden>
-        {live ? (
-          <div className="distributionTitle ffa-distribution-title-in-bar">
-            {title}
-          </div>
-        ) : null}
         {players.map((player) => {
           const width = player[shareKey];
           const segment = (
@@ -190,14 +182,7 @@ export function FfaHud({
 
       <div id="distributions" className="ffa-hud-bars">
         <DistributionBar
-          id="initialDistribution"
-          title="Initial Distribution"
-          players={players}
-          shareKey="initialShare"
-        />
-        <DistributionBar
           id="currentDistribution"
-          title="Current Distribution"
           players={players}
           shareKey="currentShare"
           live
@@ -226,14 +211,7 @@ export function FfaGameHud({ players }: { players: FfaHudPlayer[] }) {
   return (
     <div className="ffa-hud-bars-only">
       <DistributionBar
-        id="initialDistribution"
-        title="Initial Distribution"
-        players={players}
-        shareKey="initialShare"
-      />
-      <DistributionBar
         id="currentDistribution"
-        title="Current Distribution"
         players={players}
         shareKey="currentShare"
         live

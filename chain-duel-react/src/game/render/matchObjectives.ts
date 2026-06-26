@@ -66,7 +66,7 @@ export const START_PROMPT_WORDS = [
 export const START_PROMPT_GAP_RATIO = 0.22;
 
 /** Extra space below objective hints — nudges start prompt down without moving hints. */
-export const START_PROMPT_Y_OFFSET_RATIO = 0.06;
+export const START_PROMPT_Y_OFFSET_RATIO = 0.14;
 
 /** BureauGrotesque avg glyph width as a fraction of font size (fallback only). */
 export const START_PROMPT_CHAR_WIDTH_RATIO = 0.38;
@@ -245,7 +245,7 @@ export function computeCanvasObjectivesLayout(
   const stackTop = Math.max(8, (height - stackHeight) / 2);
   const instructionTop = stackTop + stackTopInset;
   const startPromptYOffset = Math.max(
-    10,
+    20,
     startFontSize * START_PROMPT_Y_OFFSET_RATIO
   );
   const startY =
