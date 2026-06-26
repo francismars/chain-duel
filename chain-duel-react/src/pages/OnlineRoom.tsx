@@ -13,8 +13,8 @@ import './game.css';
 
 /** Brief lobby beat so the first seated player sees both-paid before the canvas. */
 const ARENA_HANDOFF_MS = 2400;
-/** Pause on the arena after match end before the victory screen. */
-const VICTORY_HANDOFF_MS = 2800;
+/** Pause on the arena after match end before post-game (reveal anim ~2.5s + read time). */
+const VICTORY_HANDOFF_MS = 5000;
 
 function countPaidSeats(room: OnlineRoomState | null): number {
   if (!room?.seats) {

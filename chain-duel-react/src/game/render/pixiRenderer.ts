@@ -17,10 +17,10 @@ import {
   applyCanvasTextDropShadow,
   clearCanvasTextDropShadow,
   computeCanvasObjectivesLayout,
-  computeOnlineStartReadyPlacement,
   computeStartPromptPulse,
   fitStartPromptFontSize,
   measureStartWordWidth,
+  resolveStartPromptWords,
   START_PROMPT_GAP_RATIO,
   START_PROMPT_WORDS,
   START_WORD_SHADOW_BLUR,
@@ -40,7 +40,12 @@ import {
 import {
   OnlineStartReadyOverlay,
   drawOnlineStartReadyFallback,
+  onlineStartReadyAlpha,
 } from '@/game/render/onlineStartReadyOverlay';
+import {
+  drawPointChangesCanvas,
+  PointChangeOverlay,
+} from '@/game/render/pointChangeOverlay';
 
 export type PixiRenderOpts = {
   replayView?: boolean;
@@ -73,9 +78,13 @@ export class PixiGameRenderer {
   private static readonly SURGE_TRAIL_FADE_MS = 480;
   private startWords: Text[] = [];
   private startWordsContainer: Container = new Container();
+  private startPromptSubtext: Text;
+  private startWordBaseStyle: TextStyle;
+  private activeStartPromptWords: readonly string[] = START_PROMPT_WORDS;
   private objectives = new CanvasObjectivesOverlay();
   private startReady = new OnlineStartReadyOverlay();
   private controls = new CanvasControlsOverlay();
+  private pointChangesOverlay = new PointChangeOverlay();
   private startRevealTime = -1;
   private startLayoutKey = '';
   private startWordMeasureCtx: CanvasRenderingContext2D | null = null;
@@ -110,6 +119,7 @@ export class PixiGameRenderer {
         distance: 0,
       },
     });
+    this.startWordBaseStyle = startWordStyle;
     for (const word of START_PROMPT_WORDS) {
       const t = new Text({ text: word, style: startWordStyle.clone() });
       t.anchor.set(0.5, 0.5);
@@ -118,6 +128,19 @@ export class PixiGameRenderer {
       this.startWords.push(t);
       this.startWordsContainer.addChild(t);
     }
+    this.startPromptSubtext = new Text({
+      text: '',
+      style: new TextStyle({
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fill: 'rgba(255,255,255,0.62)',
+        fontSize: 14,
+        fontWeight: '500',
+        align: 'center',
+      }),
+    });
+    this.startPromptSubtext.anchor.set(0.5, 0);
+    this.startPromptSubtext.resolution = 2;
+    this.startPromptSubtext.visible = false;
     this.endWinnerText = new Text({
       text: '',
       style: new TextStyle({
@@ -203,6 +226,7 @@ export class PixiGameRenderer {
       this.root.addChild(this.scene);
       this.root.addChild(this.resolveBlocks);
       this.overlay.addChild(this.startWordsContainer);
+      this.overlay.addChild(this.startPromptSubtext);
       this.overlay.addChild(this.startReady.container);
       this.overlay.addChild(this.controls.container);
       this.overlay.addChild(this.objectives.container);
@@ -212,6 +236,7 @@ export class PixiGameRenderer {
       this.overlay.addChild(this.countdown2);
       this.overlay.addChild(this.countdown1);
       this.overlay.addChild(this.countdownLfg);
+      this.overlay.addChild(this.pointChangesOverlay.container);
       this.root.addChild(this.overlay);
       app.stage.addChild(this.root);
       this.resize();
@@ -282,7 +307,8 @@ export class PixiGameRenderer {
       (this.controls.container.visible && this.controls.container.alpha > 0.02) ||
       (this.startReady.container.visible &&
         this.startReady.container.alpha > 0.02) ||
-      this.startWords.some((t) => t.alpha > 0.02)
+      this.startWords.some((t) => t.alpha > 0.02) ||
+      (this.startPromptSubtext.visible && this.startPromptSubtext.alpha > 0.02)
     );
   }
 
@@ -297,6 +323,44 @@ export class PixiGameRenderer {
     for (const t of this.startWords) {
       t.alpha = 0;
       t.y = 0;
+    }
+    this.startPromptSubtext.visible = false;
+    this.startPromptSubtext.alpha = 0;
+  }
+
+  private syncStartPromptWords(words: readonly string[]): void {
+    if (
+      words.length === this.activeStartPromptWords.length &&
+      words.every((word, i) => word === this.activeStartPromptWords[i])
+    ) {
+      return;
+    }
+
+    this.activeStartPromptWords = words;
+    this.startLayoutKey = '';
+
+    while (this.startWords.length < words.length) {
+      const t = new Text({
+        text: '',
+        style: this.startWordBaseStyle.clone(),
+      });
+      t.anchor.set(0.5, 0.5);
+      t.resolution = 2;
+      t.alpha = 0;
+      this.startWords.push(t);
+      this.startWordsContainer.addChild(t);
+    }
+
+    for (let i = 0; i < this.startWords.length; i += 1) {
+      const t = this.startWords[i];
+      if (i < words.length) {
+        t.text = words[i]!;
+        t.visible = true;
+      } else {
+        t.visible = false;
+        t.alpha = 0;
+        t.y = 0;
+      }
     }
   }
 
@@ -318,12 +382,13 @@ export class PixiGameRenderer {
     );
   }
 
-  private fitAndLayoutStartWords(width: number, height: number): number {
+  private fitAndLayoutStartWords(
+    width: number,
+    height: number,
+    words: readonly string[]
+  ): number {
     const wordWidthsForSize = (fontSize: number) =>
-      this.startWords.map((t, i) => {
-        t.style.fontSize = fontSize;
-        return this.measureStartWordGlyphWidth(START_PROMPT_WORDS[i], fontSize);
-      });
+      words.map((word) => this.measureStartWordGlyphWidth(word, fontSize));
 
     const measureLine = (fontSize: number) =>
       startPromptLineWidth(fontSize, wordWidthsForSize(fontSize)) +
@@ -333,16 +398,21 @@ export class PixiGameRenderer {
     const gap = fontSize * START_PROMPT_GAP_RATIO;
     const wordWidths = wordWidthsForSize(fontSize);
     const widthSig = wordWidths.map((w) => Math.ceil(w)).join(',');
-    const layoutKey = `${width}x${height}:${Math.round(fontSize)}:${widthSig}`;
+    const layoutKey = `${words.join('|')}:${width}x${height}:${Math.round(fontSize)}:${widthSig}`;
     if (layoutKey === this.startLayoutKey) {
+      for (let i = 0; i < words.length; i += 1) {
+        this.startWords[i].style.fontSize = fontSize;
+      }
       return fontSize;
     }
     this.startLayoutKey = layoutKey;
     const totalW = startPromptLineWidth(fontSize, wordWidths);
     let x = -totalW / 2;
-    for (let i = 0; i < this.startWords.length; i++) {
+    for (let i = 0; i < words.length; i += 1) {
+      const t = this.startWords[i];
       const w = wordWidths[i] ?? 0;
-      this.startWords[i].x = x + w / 2;
+      t.style.fontSize = fontSize;
+      t.x = x + w / 2;
       x += w + gap;
     }
 
@@ -599,19 +669,11 @@ export class PixiGameRenderer {
     }
 
     // Point pop-ups
-    for (const change of state.pointChanges ?? []) {
-      const x1 = change.p1Pos[0] * colSize + colSize / 2;
-      const y1 = change.p1Pos[1] * rowSize + rowSize / 2 + change.p1YOffsetPx;
-      const x2 = change.p2Pos[0] * colSize + colSize / 2;
-      const y2 = change.p2Pos[1] * rowSize + rowSize / 2 + change.p2YOffsetPx;
-      if (change.player === 'P1') {
-        this.drawPointText(`+${change.value}`, x1, y1, 0x42a345, change.alpha);
-        this.drawPointText(`-${change.value}`, x2, y2, 0xf13838, change.alpha);
-      } else {
-        this.drawPointText(`-${change.value}`, x1, y1, 0xf13838, change.alpha);
-        this.drawPointText(`+${change.value}`, x2, y2, 0x42a345, change.alpha);
-      }
-    }
+    this.pointChangesOverlay.render(
+      state.pointChanges ?? [],
+      colSize,
+      rowSize
+    );
 
     if (state.meta?.modeLabel !== 'ONLINE') {
       state.pointChanges = (state.pointChanges ?? [])
@@ -649,7 +711,13 @@ export class PixiGameRenderer {
       this.endContinueText.text = '';
       const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
-      const startFontSize = this.fitAndLayoutStartWords(width, height);
+      const promptWords = resolveStartPromptWords(objOpts);
+      this.syncStartPromptWords(promptWords);
+      const startFontSize = this.fitAndLayoutStartWords(
+        width,
+        height,
+        promptWords
+      );
       const objLayout = this.objectives.render(
         width,
         height,
@@ -670,26 +738,45 @@ export class PixiGameRenderer {
         performance.now(),
         this.startRevealTime
       );
-      const pulseAlpha = computeStartPromptPulse(revealElapsed);
+      const pulseAlpha = computeStartPromptPulse(
+        revealElapsed,
+        promptWords.length
+      );
       let startWordAlpha = 0;
-      for (let i = 0; i < this.startWords.length; i++) {
+      for (let i = 0; i < promptWords.length; i++) {
         const eased = startPromptWordRevealAlpha(revealElapsed, i);
         const wordAlpha = eased * pulseAlpha;
         this.startWords[i].alpha = wordAlpha;
-        this.startWords[i].y = (1 - eased) * 8;
+        this.startWords[i].y = (1 - eased) * 6;
         startWordAlpha = Math.max(startWordAlpha, wordAlpha);
       }
-      const readyPlacement = computeOnlineStartReadyPlacement(
-        objLayout,
-        startFontSize
-      );
-      this.startReady.render(
-        width,
-        width / 2,
-        readyPlacement.panelTopY,
-        startFontSize,
-        objOpts.onlineStartReady,
+      const readyAlpha = onlineStartReadyAlpha(
+        Boolean(objOpts.onlineStartReady),
         startWordAlpha
+      );
+      const subtext = objOpts.startPromptSubtext?.trim();
+      if (subtext) {
+        const subtextPx = Math.max(10, startFontSize * 0.26);
+        this.startPromptSubtext.text = subtext;
+        this.startPromptSubtext.style.fontSize = subtextPx;
+        this.startPromptSubtext.position.set(
+          width / 2,
+          objLayout.startY + startFontSize * 0.52
+        );
+        this.startPromptSubtext.alpha = readyAlpha;
+        this.startPromptSubtext.visible = readyAlpha > 0.02;
+      } else {
+        this.startPromptSubtext.visible = false;
+      }
+      this.startReady.render(
+        colSize,
+        rowSize,
+        state.p1,
+        state.p2,
+        p1Bob,
+        p2Bob,
+        objOpts.onlineStartReady,
+        readyAlpha
       );
     } else {
       this.startReady.hide();
@@ -1170,8 +1257,6 @@ export class PixiGameRenderer {
     );
   }
 
-  // ── Point text ─────────────────────────────────────────────────────────────
-
   destroy(): void {
     this.mountGeneration += 1;
     this.gridCacheKey = '';
@@ -1189,31 +1274,6 @@ export class PixiGameRenderer {
     }
     this.fallbackCanvas = null;
     this.fallbackCtx = null;
-  }
-
-  private drawPointText(
-    text: string,
-    x: number,
-    y: number,
-    color: number,
-    alpha: number
-  ): void {
-    const pointText = new Text({
-      text,
-      style: new TextStyle({
-        fontFamily: 'Inter',
-        fontSize: 16,
-        fill: color,
-      }),
-    });
-    pointText.anchor.set(0.5);
-    pointText.position.set(x, y);
-    pointText.alpha = alpha;
-    this.overlay.addChild(pointText);
-    setTimeout(() => {
-      this.overlay.removeChild(pointText);
-      pointText.destroy();
-    }, 0);
   }
 
   private createCountdownText(label: string): Text {
@@ -1828,6 +1888,8 @@ export class PixiGameRenderer {
       );
     }
 
+    drawPointChangesCanvas(ctx, state.pointChanges ?? [], colSize, rowSize);
+
     // Resolving blocks (Canvas2D fallback)
     const resolveProgressFb = this.getResolveProgress(state);
     if (resolveProgressFb > 0) {
@@ -1868,9 +1930,10 @@ export class PixiGameRenderer {
     if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
       const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
+      const promptWords = resolveStartPromptWords(objOpts);
       const fbStartPx = fitStartPromptFontSize(width, height, (fontSize) => {
         ctx.font = `${fontSize}px BureauGrotesque`;
-        const wordWidths = START_PROMPT_WORDS.map((word) =>
+        const wordWidths = promptWords.map((word) =>
           measureStartWordWidth(word, fontSize, ctx.measureText(word).width)
         );
         return (
@@ -1893,10 +1956,9 @@ export class PixiGameRenderer {
         performance.now(),
         this.startRevealTime
       );
-      const pulseAlpha = computeStartPromptPulse(fbElapsed);
       const fbGap = fbStartPx * START_PROMPT_GAP_RATIO;
       ctx.font = `${fbStartPx}px BureauGrotesque`;
-      const fbWordWidths = START_PROMPT_WORDS.map((word) =>
+      const fbWordWidths = promptWords.map((word) =>
         measureStartWordWidth(word, fbStartPx, ctx.measureText(word).width)
       );
       const fbLineW = startPromptLineWidth(fbStartPx, fbWordWidths);
@@ -1907,7 +1969,11 @@ export class PixiGameRenderer {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       applyCanvasTextDropShadow(ctx);
-      for (let i = 0; i < START_PROMPT_WORDS.length; i++) {
+      const pulseAlpha = computeStartPromptPulse(
+        fbElapsed,
+        promptWords.length
+      );
+      for (let i = 0; i < promptWords.length; i++) {
         const reveal = startPromptWordRevealAlpha(fbElapsed, i);
         if (reveal <= 0.02) {
           fbX += (fbWordWidths[i] ?? 0) + fbGap;
@@ -1916,23 +1982,40 @@ export class PixiGameRenderer {
         const wordAlpha = reveal * pulseAlpha;
         startWordAlpha = Math.max(startWordAlpha, wordAlpha);
         ctx.globalAlpha = wordAlpha;
-        ctx.fillText(START_PROMPT_WORDS[i], fbX + (fbWordWidths[i] ?? 0) / 2, 0);
+        ctx.fillText(promptWords[i]!, fbX + (fbWordWidths[i] ?? 0) / 2, 0);
         fbX += (fbWordWidths[i] ?? 0) + fbGap;
       }
       clearCanvasTextDropShadow(ctx);
       ctx.restore();
-      const readyPlacement = computeOnlineStartReadyPlacement(
-        objLayout,
-        fbStartPx
-      );
+      const subtext = objOpts.startPromptSubtext?.trim();
+      if (subtext) {
+        const subtextPx = Math.max(10, fbStartPx * 0.26);
+        const subAlpha = onlineStartReadyAlpha(
+          Boolean(objOpts.onlineStartReady),
+          startWordAlpha * eased
+        );
+        ctx.save();
+        ctx.globalAlpha = subAlpha * eased;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.font = `500 ${Math.floor(subtextPx)}px Inter, system-ui, sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.62)';
+        ctx.fillText(subtext, width / 2, objLayout.startY + fbStartPx * 0.52);
+        ctx.restore();
+      }
       drawOnlineStartReadyFallback(
         ctx,
-        width,
-        width / 2,
-        readyPlacement.panelTopY,
-        fbStartPx,
+        colSize,
+        rowSize,
+        state.p1,
+        state.p2,
+        p1Bob,
+        p2Bob,
         objOpts.onlineStartReady,
-        startWordAlpha * eased
+        onlineStartReadyAlpha(
+          Boolean(objOpts.onlineStartReady),
+          startWordAlpha * eased
+        )
       );
       drawCanvasObjectivesFallback(
         ctx,

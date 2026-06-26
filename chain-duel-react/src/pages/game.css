@@ -111,10 +111,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55vw;
+  gap: 0.28vw;
   min-width: 0;
   max-width: 100%;
-  padding: 0.28vw 0.75vw;
+  padding: 0.28vw 0.55vw;
   border: 1px solid rgba(155, 89, 182, 0.24);
   background: linear-gradient(
     135deg,
@@ -312,12 +312,15 @@
 .game-2v1-capture-row .capturingAmount {
   font-weight: 900;
   font-size: 0.62vw;
-  transition: all 0.1s ease-out;
   display: inline-block;
+  transform: scale(1);
+  transform-origin: right center;
 }
 
-.game-2v1-capture-row.highlight .capturingAmount {
-  font-size: 0.82vw;
+.game-2v1-capture-row.highlight .capturingAmount,
+.game-2v1-capture-row .capturingAmount.highlight {
+  animation: capture-pop-compact var(--stakes-pop-ms, 720ms)
+    cubic-bezier(0.18, 1.35, 0.32, 1) both;
 }
 
 #p1Points {
@@ -388,6 +391,17 @@
   vertical-align: unset;
 }
 
+.game-hud-stakes {
+  --stakes-pressure: 0;
+  --stakes-effect: 0.1;
+  --capture-p1-intensity: 0.02;
+  --capture-p2-intensity: 0.02;
+  --capture-p1-effect: 0.118;
+  --capture-p2-effect: 0.118;
+  --stakes-pop-ms: 720ms;
+  --stakes-surge-ms: 900ms;
+}
+
 .gameState {
   margin: 0vw 15% 0.65vw 15%;
   text-transform: uppercase;
@@ -410,13 +424,93 @@
 .capturingAmount {
   font-weight: 900;
   font-size: 1vw;
-  transition: all 0.1s ease-out;
   display: inline-block;
+  transform: scale(1);
+  transform-origin: center center;
 }
 
-.capturingAmount.highlight {
-  font-size: 1.4vw;
-  padding: 0.05vw;
+#capturingP1 .capturingAmount {
+  transform-origin: left center;
+}
+
+#capturingP2 .capturingAmount {
+  transform-origin: right center;
+}
+
+#capturingP1 .capturingAmount.highlight {
+  animation: capture-pop-main
+    calc(480ms + var(--capture-p1-intensity, 0.02) * 320ms)
+    cubic-bezier(0.18, 1.35, 0.32, 1) both;
+}
+
+#capturingP2 .capturingAmount.highlight {
+  animation: capture-pop-main
+    calc(480ms + var(--capture-p2-intensity, 0.02) * 320ms)
+    cubic-bezier(0.18, 1.35, 0.32, 1) both;
+}
+
+@keyframes capture-pop-main {
+  0% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(calc(1.02 + var(--stakes-effect, 0.1) * 0.1));
+  }
+  26% {
+    transform: scale(calc(1.04 + var(--stakes-effect, 0.1) * 0.74));
+  }
+  42% {
+    transform: scale(calc(1.02 + var(--stakes-effect, 0.1) * 0.4));
+  }
+  62% {
+    transform: scale(calc(1.01 + var(--stakes-effect, 0.1) * 0.14));
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes capture-pop-compact {
+  0% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(calc(1.02 + var(--stakes-effect, 0.1) * 0.08));
+  }
+  26% {
+    transform: scale(calc(1.03 + var(--stakes-effect, 0.1) * 0.55));
+  }
+  42% {
+    transform: scale(calc(1.02 + var(--stakes-effect, 0.1) * 0.28));
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes capture-row-flash {
+  0%,
+  100% {
+    letter-spacing: 0.05em;
+  }
+  22% {
+    letter-spacing: calc(0.05em + var(--stakes-effect, 0.1) * 0.1em);
+  }
+  48% {
+    letter-spacing: calc(0.05em + var(--stakes-effect, 0.1) * 0.035em);
+  }
+}
+
+#capturingP1.capture-row--flash {
+  animation: capture-row-flash
+    calc(480ms + var(--capture-p1-intensity, 0.02) * 320ms)
+    cubic-bezier(0.22, 1.1, 0.36, 1) both;
+}
+
+#capturingP2.capture-row--flash {
+  animation: capture-row-flash
+    calc(480ms + var(--capture-p2-intensity, 0.02) * 320ms)
+    cubic-bezier(0.22, 1.1, 0.36, 1) both;
 }
 
 #distributions {
@@ -447,6 +541,20 @@
   min-height: 1.7vw;
   margin-top: 0;
   margin-bottom: var(--distribution-bar-gap);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.52);
+  border: 1px solid
+    rgba(255, 255, 255, calc(0.12 + var(--stakes-pressure, 0) * 0.32));
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, calc(0.05 + var(--stakes-pressure, 0) * 0.1)),
+    0 0 calc(18px + var(--stakes-pressure, 0) * 28px)
+      rgba(255, 255, 255, calc(0.1 + var(--stakes-pressure, 0) * 0.22)),
+    0 2px calc(8px + var(--stakes-pressure, 0) * 12px)
+      rgba(255, 255, 255, calc(0.06 + var(--stakes-pressure, 0) * 0.14));
+  transition:
+    border-color 0.45s ease,
+    box-shadow 0.45s ease;
 }
 
 #initialDistribution .distributionBar {
@@ -457,24 +565,266 @@
 
 #currentDistribution .distributionBar {
   height: 1.7vw;
-  width: 50%;
   position: absolute;
-  box-shadow: #ffffff36 0 0 24px;
-  transition: width 0.15s ease-out;
+  top: 0;
 }
 
-#initialDistributionP1,
+@keyframes player-sats-surge {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+    text-shadow: none;
+  }
+  20% {
+    transform: scale(calc(1 + var(--stakes-effect, 0.1) * 0.16));
+    filter: brightness(calc(1 + var(--stakes-effect, 0.1) * 1.2));
+    text-shadow:
+      0 0 calc(4px + var(--stakes-effect, 0.1) * 10px)
+        rgba(255, 255, 255, calc(0.12 + var(--stakes-effect, 0.1) * 0.68)),
+      0 0 calc(10px + var(--stakes-effect, 0.1) * 20px)
+        rgba(255, 255, 255, calc(0.05 + var(--stakes-effect, 0.1) * 0.35));
+  }
+  42% {
+    transform: scale(calc(1 + var(--stakes-effect, 0.1) * 0.08));
+    filter: brightness(calc(1 + var(--stakes-effect, 0.1) * 0.55));
+  }
+}
+
+.player-sats--surge {
+  display: inline-block;
+  transform-origin: center center;
+  animation: player-sats-surge var(--stakes-surge-ms, 900ms)
+    cubic-bezier(0.18, 1.25, 0.32, 1) both;
+}
+
+.player-sats-p1.player-sats--surge {
+  transform-origin: left center;
+}
+
+.player-sats-p2.player-sats--surge {
+  transform-origin: right center;
+}
+
+#initialDistributionP1 {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #e2e2e2 42%,
+    #b8b8b8 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset -1px 0 0 rgba(255, 255, 255, 0.35),
+    0 0 22px rgba(255, 255, 255, 0.18);
+}
+
 #currentDistributionP1 {
-  background: #fff;
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #e2e2e2 42%,
+    #b8b8b8 100%
+  );
+  left: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset -1px 0 0 rgba(255, 255, 255, 0.35),
+    0 0 calc(12px + var(--capture-p1-intensity, 0) * 32px)
+      rgba(255, 255, 255, calc(0.1 + var(--capture-p1-intensity, 0) * 0.38)),
+    calc(2px + var(--capture-p1-intensity, 0) * 8px) 0
+      calc(8px + var(--capture-p1-intensity, 0) * 22px)
+      rgba(255, 255, 255, calc(0.06 + var(--capture-p1-intensity, 0) * 0.42));
+  filter: brightness(calc(1 + var(--capture-p1-intensity, 0) * 0.22));
+  transition:
+    width
+      calc(0.34s - var(--capture-p1-intensity, 0) * 0.22s)
+      cubic-bezier(
+        calc(0.3 - var(--capture-p1-intensity, 0) * 0.16),
+        calc(1 + var(--capture-p1-intensity, 0) * 0.55),
+        0.34,
+        1
+      );
 }
 
-#initialDistributionP2,
-#currentDistributionP2 {
-  background: #000;
+#initialDistributionP2 {
+  background: linear-gradient(
+    180deg,
+    #141414 0%,
+    #0a0a0a 100%
+  );
   right: 0;
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 1px 0 0 rgba(0, 0, 0, 0.45),
+    -6px 0 14px rgba(255, 255, 255, 0.2),
+    0 0 10px rgba(255, 255, 255, 0.1);
 }
 
-/* ── Bitcoin details ─────────────────────────────────────────────────────── */
+#currentDistributionP2 {
+  background: linear-gradient(
+    180deg,
+    #141414 0%,
+    #0a0a0a 100%
+  );
+  right: 0;
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, calc(0.06 + var(--capture-p2-intensity, 0) * 0.12)),
+    inset 1px 0 0 rgba(0, 0, 0, 0.45),
+    calc(-4px - var(--capture-p2-intensity, 0) * 12px) 0
+      calc(10px + var(--capture-p2-intensity, 0) * 24px)
+      rgba(255, 255, 255, calc(0.1 + var(--capture-p2-intensity, 0) * 0.42)),
+    0 0 calc(6px + var(--capture-p2-intensity, 0) * 26px)
+      rgba(255, 255, 255, calc(0.06 + var(--capture-p2-intensity, 0) * 0.32));
+  filter: brightness(calc(1 + var(--capture-p2-intensity, 0) * 0.28));
+  transition:
+    width
+      calc(0.34s - var(--capture-p2-intensity, 0) * 0.22s)
+      cubic-bezier(
+        calc(0.3 - var(--capture-p2-intensity, 0) * 0.16),
+        calc(1 + var(--capture-p2-intensity, 0) * 0.55),
+        0.34,
+        1
+      );
+}
+
+#currentDistribution.distribution-track--p1-outer-glow {
+  overflow: visible;
+}
+
+#currentDistributionP1.distribution-bar--capture-hit {
+  overflow: visible;
+  z-index: 2;
+  animation: distribution-segment-outer-glow-p1 var(--capture-hit-flash-ms, 380ms)
+    cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+#currentDistributionP2.distribution-bar--capture-hit {
+  overflow: hidden;
+  z-index: 1;
+  animation: distribution-segment-edge-glow-p2 var(--capture-hit-flash-ms, 380ms)
+    cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes distribution-segment-outer-glow-p1 {
+  0%,
+  38%,
+  100% {
+    filter: brightness(calc(1 + var(--capture-p1-intensity, 0) * 0.22));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      inset -1px 0 0 rgba(255, 255, 255, 0.35);
+  }
+  16% {
+    filter: brightness(calc(1 + var(--capture-hit-intensity, 0.2) * 0.22));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 1),
+      inset -1px 0 0 rgba(255, 255, 255, 0.55),
+      0 0 calc(10px + var(--capture-hit-intensity, 0.2) * 26px)
+        rgba(255, 255, 255, calc(0.1 + var(--capture-hit-intensity, 0.2) * 0.32)),
+      calc(2px + var(--capture-hit-intensity, 0.2) * 10px) 0
+        calc(8px + var(--capture-hit-intensity, 0.2) * 22px)
+        rgba(255, 255, 255, calc(0.16 + var(--capture-hit-intensity, 0.2) * 0.36)),
+      calc(4px + var(--capture-hit-intensity, 0.2) * 16px) 0
+        calc(12px + var(--capture-hit-intensity, 0.2) * 34px)
+        rgba(255, 255, 255, calc(0.08 + var(--capture-hit-intensity, 0.2) * 0.22)),
+      0 1px calc(5px + var(--capture-hit-intensity, 0.2) * 10px)
+        rgba(255, 255, 255, calc(0.06 + var(--capture-hit-intensity, 0.2) * 0.18));
+  }
+}
+
+@keyframes distribution-segment-edge-glow-p2 {
+  0%,
+  38%,
+  100% {
+    filter: brightness(calc(1 + var(--capture-p2-intensity, 0) * 0.28));
+    box-shadow:
+      inset 0 -1px 0 rgba(255, 255, 255, calc(0.06 + var(--capture-p2-intensity, 0) * 0.12)),
+      inset 1px 0 0 rgba(0, 0, 0, 0.45);
+  }
+  16% {
+    filter: brightness(calc(1 + var(--capture-hit-intensity, 0.2) * 0.3));
+    box-shadow:
+      inset 0 -1px 0 rgba(255, 255, 255, calc(0.08 + var(--capture-hit-intensity, 0.2) * 0.1)),
+      inset 1px 0 0 rgba(255, 255, 255, calc(0.14 + var(--capture-hit-intensity, 0.2) * 0.22)),
+      inset 7px 0 calc(14px + var(--capture-hit-intensity, 0.2) * 22px)
+        rgba(255, 255, 255, calc(0.14 + var(--capture-hit-intensity, 0.2) * 0.34)),
+      inset 0 0 calc(10px + var(--capture-hit-intensity, 0.2) * 18px)
+        rgba(255, 255, 255, calc(0.08 + var(--capture-hit-intensity, 0.2) * 0.2));
+  }
+}
+
+.player-sats-p1 {
+  transform: scale(calc(1 + var(--capture-p1-intensity, 0.02) * 0.06));
+  filter: brightness(calc(1 + var(--capture-p1-intensity, 0.02) * 0.35));
+  text-shadow: 0 0 calc(2px + var(--capture-p1-intensity, 0.02) * 14px)
+    rgba(255, 255, 255, calc(0.03 + var(--capture-p1-intensity, 0.02) * 0.38));
+  transition:
+    transform 0.4s ease,
+    filter 0.4s ease,
+    text-shadow 0.4s ease;
+}
+
+.player-sats-p2 {
+  transform: scale(calc(1 + var(--capture-p2-intensity, 0.02) * 0.06));
+  filter: brightness(calc(1 + var(--capture-p2-intensity, 0.02) * 0.35));
+  text-shadow: 0 0 calc(2px + var(--capture-p2-intensity, 0.02) * 14px)
+    rgba(255, 255, 255, calc(0.03 + var(--capture-p2-intensity, 0.02) * 0.38));
+  transition:
+    transform 0.4s ease,
+    filter 0.4s ease,
+    text-shadow 0.4s ease;
+}
+
+.player-sats-p1,
+.player-sats-p2 {
+  display: inline-block;
+  transform-origin: center center;
+}
+
+.player-sats-p1 {
+  transform-origin: left center;
+}
+
+.player-sats-p2 {
+  transform-origin: right center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capturingAmount.highlight,
+  .game-2v1-capture-row .capturingAmount.highlight,
+  .ffa-hud-capture.highlight .capturingAmount {
+    animation: capture-pop-reduced 320ms ease-out both;
+  }
+
+  #currentDistributionP1,
+  #currentDistributionP2,
+  .player-sats--surge,
+  #capturingP1.capture-row--flash,
+  #capturingP2.capture-row--flash,
+  #currentDistributionP1.distribution-bar--capture-hit,
+  #currentDistributionP2.distribution-bar--capture-hit {
+    animation: none !important;
+  }
+
+  #currentDistributionP1,
+  #currentDistributionP2 {
+    transition: width 0.22s ease-out;
+  }
+}
+
+@keyframes capture-pop-reduced {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 
 #bitcoinDetails {
   display: flex;
@@ -1663,10 +2013,11 @@
 
   .capturingAmount {
     font-size: clamp(0.68rem, 2.5vmax, 1rem);
+    transform: scale(1);
   }
 
   .capturingAmount.highlight {
-    font-size: clamp(0.82rem, 2.9vmax, 1.12rem);
+    animation: capture-pop-compact 720ms cubic-bezier(0.18, 1.35, 0.32, 1) both;
   }
 
   #initialDistribution .distributionTitle {

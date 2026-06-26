@@ -42,6 +42,13 @@ import { PlayerRole } from '@/types/socket';
 import { formatHudPlayerName } from '@/features/game/gameSession';
 import { useGameSocketEvents } from '@/features/game/hooks/useGameSocketEvents';
 import { useGameRenderBridge } from '@/features/game/hooks/useGameRenderBridge';
+import { useHudCaptureFeedback } from '@/features/game/hooks/useHudCaptureFeedback';
+import {
+  CAPTURE_POP_MS,
+  captureFeedbackStyleFromCtx,
+  captureHitStyleVars,
+  distributionTrackFeedbackStyle,
+} from '@/features/game/hudCaptureFeedback';
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
 import { PowerUpLegend } from '@/features/game/PowerUpLegend';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
@@ -182,8 +189,18 @@ export default function Game() {
   const [gameInfo, setGameInfo] = useState('');
   const [captureP1, setCaptureP1] = useState('2%');
   const [captureP2, setCaptureP2] = useState('2%');
-  const [captureP1Highlight, setCaptureP1Highlight] = useState(false);
-  const [captureP2Highlight, setCaptureP2Highlight] = useState(false);
+  const {
+    captureP1Highlight,
+    captureP2Highlight,
+    captureRowFlash,
+    satsSurge,
+    barCaptureHit,
+    ffaBarCaptureHit,
+    ffaSatsSurge,
+    handleCaptureTierChanged,
+    handleSatsCaptured,
+    handleFfaSatsCaptured,
+  } = useHudCaptureFeedback();
   const [currentP1Width, setCurrentP1Width] = useState(50);
   const [currentP2Width, setCurrentP2Width] = useState(50);
   const [isFfa, setIsFfa] = useState(false);
@@ -196,6 +213,7 @@ export default function Game() {
     false,
   ]);
   const ffaCapturePrevRef = useRef(['2%', '2%', '2%', '2%']);
+  const ffaScorePrevRef = useRef([0, 0, 0, 0]);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
@@ -914,6 +932,7 @@ export default function Game() {
       if (hud.ffa?.players) {
         setFfaPlayers(hud.ffa.players);
         ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
+        ffaScorePrevRef.current = hud.ffa.players.map((p) => p.score);
       }
     }
 
@@ -1173,25 +1192,23 @@ export default function Game() {
             setFfaCaptureHighlights(flashes);
             window.setTimeout(
               () => setFfaCaptureHighlights([false, false, false, false]),
-              100
+              CAPTURE_POP_MS
             );
           }
           ffaCapturePrevRef.current = hud.ffa.players.map((p) => p.capture);
+
+          const prevScores = ffaScorePrevRef.current;
+          hud.ffa.players.forEach((p, i) => {
+            if (p.score > (prevScores[i] ?? 0)) {
+              handleFfaSatsCaptured(p.index, p.capture, p.color);
+            }
+          });
+          ffaScorePrevRef.current = hud.ffa.players.map((p) => p.score);
         }
       }
     },
-    [is2v1, stateRef]
+    [is2v1, handleFfaSatsCaptured]
   );
-
-  const handleCaptureChanged = useCallback((side: 'P1' | 'P2') => {
-    if (side === 'P1') {
-      setCaptureP1Highlight(true);
-      window.setTimeout(() => setCaptureP1Highlight(false), 100);
-      return;
-    }
-    setCaptureP2Highlight(true);
-    window.setTimeout(() => setCaptureP2Highlight(false), 100);
-  }, []);
 
   const handleNavigateAfterFinish = useCallback(
     (isTourn: boolean) => {
@@ -1318,7 +1335,8 @@ export default function Game() {
     createRenderer,
     emitWinner,
     onHudTick: handleHudTick,
-    onCaptureChanged: handleCaptureChanged,
+    onCaptureChanged: handleCaptureTierChanged,
+    onSatsCaptured: handleSatsCaptured,
     simStepRef: isChallengeSession ? simStepRef : undefined,
     challengeInputLogRef: isChallengeSession ? challengeInputLogRef : undefined,
     challengeContinueLabelRef: isChallengeSession
@@ -1379,6 +1397,8 @@ export default function Game() {
                 gameInfo={gameInfo}
                 challengeHud={challengeHud}
                 captureHighlights={ffaCaptureHighlights}
+                barCaptureHit={ffaBarCaptureHit}
+                satsSurge={ffaSatsSurge}
               />
               <div id="zapMessages">
                 {zapMessages.map((zap) => (
@@ -1493,9 +1513,18 @@ export default function Game() {
                 </div>
               </div>
 
+              <div
+                className="game-hud-stakes"
+                style={captureFeedbackStyleFromCtx({ captureP1, captureP2 })}
+              >
               <div className="gameState">
                 <div id="capturing">
-                  <div id="capturingP1">
+                  <div
+                    id="capturingP1"
+                    className={
+                      captureRowFlash === 'P1' ? 'capture-row--flash' : undefined
+                    }
+                  >
                     <span
                       id="capturingP1Amount"
                       className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}
@@ -1506,7 +1535,13 @@ export default function Game() {
                   </div>
                   <div
                     id="capturingP2"
-                    className={show2v1Ui ? 'game-2v1-captures' : undefined}
+                    className={
+                      captureRowFlash === 'P2'
+                        ? 'capture-row--flash'
+                        : show2v1Ui
+                          ? 'game-2v1-captures'
+                          : undefined
+                    }
                   >
                     capture{' '}
                     <span
@@ -1521,36 +1556,71 @@ export default function Game() {
                 <div id="distributions">
                   <div
                     id="currentDistribution"
-                    className="distributionBarOutter"
+                    className={`distributionBarOutter${
+                      barCaptureHit?.side === 'P1'
+                        ? ' distribution-track--p1-outer-glow'
+                        : ''
+                    }`}
+                    style={distributionTrackFeedbackStyle(
+                      { captureP1, captureP2 },
+                      currentP1Width
+                    )}
                   >
                     <div
                       id="currentDistributionP1"
-                      className="distributionBar"
-                      style={{ width: `${currentP1Width}%` }}
+                      className={`distributionBar${
+                        barCaptureHit?.side === 'P1'
+                          ? ' distribution-bar--capture-hit'
+                          : ''
+                      }`}
+                      style={{
+                        width: `${currentP1Width}%`,
+                        ...(barCaptureHit?.side === 'P1'
+                          ? captureHitStyleVars(barCaptureHit.intensity)
+                          : {}),
+                      }}
                     />
                     <div
                       id="currentDistributionP2"
-                      className="distributionBar"
-                      style={{ width: `${currentP2Width}%` }}
+                      className={`distributionBar${
+                        barCaptureHit?.side === 'P2'
+                          ? ' distribution-bar--capture-hit'
+                          : ''
+                      }`}
+                      style={{
+                        width: `${currentP2Width}%`,
+                        ...(barCaptureHit?.side === 'P2'
+                          ? captureHitStyleVars(barCaptureHit.intensity)
+                          : {}),
+                      }}
                     />
                   </div>
                 </div>
               </div>
 
               <div className="flex points">
-                <div className="player-sats player-sats-p1">
+                <div
+                  className={`player-sats player-sats-p1${
+                    satsSurge === 'P1' ? ' player-sats--surge' : ''
+                  }`}
+                >
                   <span id="p1Points" className="condensed">
                     {p1Points.toLocaleString()}
                   </span>{' '}
                   <span className="grey">sats</span>
                 </div>
                 <Sponsorship id="sponsorshipGame" showLabel={false} />
-                <div className="player-sats player-sats-p2">
+                <div
+                  className={`player-sats player-sats-p2${
+                    satsSurge === 'P2' ? ' player-sats--surge' : ''
+                  }`}
+                >
                   <span className="grey">sats</span>{' '}
                   <span id="p2Points" className="condensed">
                     {p2Points.toLocaleString()}
                   </span>
                 </div>
+              </div>
               </div>
             </>
           )}

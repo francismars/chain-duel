@@ -1,5 +1,9 @@
 export const GAME_COLS = 51;
 export const GAME_ROWS = 25;
+
+/** Team Sovereign (2v1): human spawns mid-left, not the FFA top-left corner. */
+export const TEAM_2V1_P1_SPAWN_X = 4;
+export const TEAM_2V1_P1_SPAWN_Y = Math.floor(GAME_ROWS / 2);
 export const STEP_SPEED_MS = 100;
 export const COUNTDOWN_END_TICK = 40;
 

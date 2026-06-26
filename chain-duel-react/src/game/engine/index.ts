@@ -10,6 +10,8 @@ import {
   POWERUP_FIRST_SPAWN_TICKS,
   POWERUP_SPAWN_WEIGHTS,
   STEP_SPEED_MS,
+  TEAM_2V1_P1_SPAWN_X,
+  TEAM_2V1_P1_SPAWN_Y,
   FFA_GHOST_COLOR,
   FFA_SPECTER_COLOR,
   FFA_BOT_NAMES,
@@ -49,6 +51,7 @@ import {
   clearPowerUpsForPlayer,
   clearSurgeForPlayer,
   computeCaptureChangeForIndex,
+  capturePercentForCoinbase,
   getPlayerHead,
   getSnakeByIndex,
   hasPowerUp,
@@ -326,7 +329,7 @@ export function createGameState(args: CreateStateArgs): GameState {
     const fTier = args.ffaAiTier ?? args.aiTier ?? 'sovereign';
     state.p1Name = p1HumanMeta ? args.p1Name : FFA_BOT_NAMES[0];
     state.p2Name = FFA_BOT_NAMES[1] ?? 'BigToshi 🌊';
-    const h1: GridPos = [4, 4];
+    const h1: GridPos = [TEAM_2V1_P1_SPAWN_X, TEAM_2V1_P1_SPAWN_Y];
     const h2: GridPos = [46, 4];
     const h3: GridPos = [46, 20];
     state.p1.head = h1;
@@ -1094,19 +1097,25 @@ function computeCaptureChange(
 }
 
 function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
+  const index = (player === 'P1' ? 0 : 1) as PowerUpPlayerIndex;
   const safeChange = computeCaptureChange(state, player, cb);
+  const capturePercent = capturePercentForCoinbase(state, index, cb);
 
   if (isEliminationMode(state)) {
-    const winner = (player === 'P1' ? 0 : 1) as FfaPlayerIndex;
-    ffaApplyCaptureAmount(state, winner, safeChange);
+    ffaApplyCaptureAmount(state, index as FfaPlayerIndex, safeChange, capturePercent);
     return;
   }
 
+  const p1Pos: [number, number] = [state.p1.head[0], state.p1.head[1]];
+  const p2Pos: [number, number] = [state.p2.head[0], state.p2.head[1]];
   state.pointChanges.push({
     player,
     value: safeChange,
-    p1Pos: [state.p1.head[0], state.p1.head[1]],
-    p2Pos: [state.p2.head[0], state.p2.head[1]],
+    p1Pos,
+    p2Pos,
+    gainPos: player === 'P1' ? p1Pos : p2Pos,
+    lossPos: player === 'P1' ? p2Pos : p1Pos,
+    capturePercent,
     p1YOffsetPx: 0,
     p2YOffsetPx: 0,
     alpha: 1,
@@ -1145,7 +1154,22 @@ function resetSnake(state: GameState, player: PlayerId): void {
   const sb = state.shrinkBorder;
 
   if (player === 'P1') {
-    if (teamMode === 'ffa' || teamMode === '2v1') {
+    if (teamMode === '2v1') {
+      let head: GridPos = [TEAM_2V1_P1_SPAWN_X, TEAM_2V1_P1_SPAWN_Y];
+      let body: GridPos[] = [bodySegmentBehindHead(head, 'Right')];
+      if (conv && sb) {
+        const spawnX = Math.max(TEAM_2V1_P1_SPAWN_X, sb.left + 2);
+        const centerY = Math.floor((sb.top + sb.bottom) / 2);
+        const spawnY = Math.max(
+          sb.top + 2,
+          Math.min(sb.bottom - 2, centerY)
+        );
+        head = [spawnX, spawnY];
+        body = [[Math.max(sb.left + 1, spawnX - 1), spawnY]];
+      }
+      state.p1.head = head;
+      state.p1.body = body;
+    } else if (teamMode === 'ffa') {
       let head: GridPos = [4, 4];
       let body: GridPos[] = [bodySegmentBehindHead(head, 'Right')];
       if (conv && sb) {
@@ -1442,7 +1466,12 @@ function captureExtraSnakeCoinbases(state: GameState): void {
           cb,
           state.totalPoints
         );
-        ffaApplyCaptureAmount(state, extraIndex, safeChange);
+        const capturePercent = capturePercentForCoinbase(
+          state,
+          extraIndex as PowerUpPlayerIndex,
+          cb
+        );
+        ffaApplyCaptureAmount(state, extraIndex, safeChange, capturePercent);
       } else {
         const reward = cb.reward ?? 2;
         if (extra.teamId === 0)

@@ -63,6 +63,13 @@ export const START_PROMPT_WORDS = [
   'START',
 ] as const;
 
+/** Online arena: both players confirm before countdown. */
+export const ONLINE_START_PROMPT_WORDS = [
+  'WAITING',
+  'BOTH',
+  'PLAYERS',
+] as const;
+
 export const START_PROMPT_GAP_RATIO = 0.22;
 
 /** Extra space below objective hints — nudges start prompt down without moving hints. */
@@ -140,7 +147,17 @@ export type CanvasObjectivesOpts = {
   stakesHint?: string;
   controlSlots?: readonly PlayerControlSlot[];
   onlineStartReady?: OnlineStartReadyState;
+  /** Override default "PRESS BUTTON TO START" (e.g. online confirm flow). */
+  startPromptWords?: readonly string[];
+  /** Smaller Inter line under the start prompt (online confirm hint). */
+  startPromptSubtext?: string;
 };
+
+export function resolveStartPromptWords(
+  opts?: Pick<CanvasObjectivesOpts, 'startPromptWords'>
+): readonly string[] {
+  return opts?.startPromptWords ?? START_PROMPT_WORDS;
+}
 
 export type CanvasObjectivesLayout = {
   startY: number;
@@ -176,37 +193,6 @@ export function startPromptVisualReach(startFontSize: number): number {
     START_WORD_SHADOW_BLUR +
     20
   );
-}
-
-/** Tight gap below the start prompt — cards only, no outer panel. */
-export function computeOnlineStartReadyPlacement(
-  layout: CanvasObjectivesLayout,
-  startFontSize: number
-): { panelTopY: number; sectionGap: number } {
-  const startPromptBottom = layout.startY + startFontSize * 0.48 + 10;
-  const sectionGap = Math.max(10, startFontSize * 0.2);
-  return {
-    sectionGap,
-    panelTopY: startPromptBottom + sectionGap,
-  };
-}
-
-export function measureOnlineStartReadyPanel(
-  startFontSize: number,
-  compact: boolean
-): { panelW: number; panelH: number; rowGap: number; minSlotW: number } {
-  const chipSize = Math.max(compact ? 18 : 22, startFontSize * 0.28);
-  const statusPx = Math.max(compact ? 12 : 14, startFontSize * 0.2);
-  const statusGap = Math.max(7, chipSize * 0.18);
-  const rowH = chipSize + statusGap + statusPx * 1.12;
-  const minSlotW = Math.max(compact ? 132 : 148, startFontSize * 1.55);
-  const rowGap = Math.max(compact ? 28 : 40, startFontSize * 0.42);
-  return {
-    minSlotW,
-    rowGap,
-    panelW: minSlotW * 2 + rowGap,
-    panelH: rowH,
-  };
 }
 
 export function computeCanvasObjectivesLayout(
@@ -273,11 +259,11 @@ export type InstructionCycleFrame = {
   bodyOffsetY: number;
 };
 
-export const START_PROMPT_WORD_STAGGER_MS = 110;
+export const START_PROMPT_WORD_STAGGER_MS = 105;
 export const START_PROMPT_WORD_DURATION_MS = 420;
 export const START_PROMPT_STAGGER_DELAY_MS = 1000;
-export const START_PROMPT_PULSE_PERIOD_MS = 2600;
-export const START_PROMPT_PULSE_ALPHA_FLOOR = 0.58;
+export const START_PROMPT_PULSE_PERIOD_MS = 3000;
+export const START_PROMPT_PULSE_ALPHA_FLOOR = 0.66;
 
 function smoothstep(t: number): number {
   const x = Math.max(0, Math.min(1, t));
@@ -318,9 +304,11 @@ export function startPromptWordRevealAlpha(revealElapsedMs: number, wordIndex: n
   return easeOutCubic(t);
 }
 
-export function computeStartPromptPulse(revealElapsedMs: number): number {
-  const lastWordStart =
-    (START_PROMPT_WORDS.length - 1) * START_PROMPT_WORD_STAGGER_MS;
+export function computeStartPromptPulse(
+  revealElapsedMs: number,
+  wordCount: number = START_PROMPT_WORDS.length
+): number {
+  const lastWordStart = Math.max(0, wordCount - 1) * START_PROMPT_WORD_STAGGER_MS;
   const revealCompleteAt = lastWordStart + START_PROMPT_WORD_DURATION_MS;
   if (revealElapsedMs < revealCompleteAt) {
     return 1;
@@ -329,8 +317,8 @@ export function computeStartPromptPulse(revealElapsedMs: number): number {
   const pulseElapsed = revealElapsedMs - revealCompleteAt;
   const phase =
     (pulseElapsed % START_PROMPT_PULSE_PERIOD_MS) / START_PROMPT_PULSE_PERIOD_MS;
-  // Two smooth peaks per cycle — synced across the whole line.
-  const raw = (1 - Math.cos(phase * Math.PI * 4)) / 2;
+  // Single smooth breath per cycle — synced across the whole line.
+  const raw = (1 - Math.cos(phase * Math.PI * 2)) / 2;
   const beat = smoothstep(raw);
   return (
     START_PROMPT_PULSE_ALPHA_FLOOR + beat * (1 - START_PROMPT_PULSE_ALPHA_FLOOR)

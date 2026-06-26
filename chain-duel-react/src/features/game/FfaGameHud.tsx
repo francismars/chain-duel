@@ -5,13 +5,27 @@ import {
   GameInfoLabel,
   type ChallengeHudInfo,
 } from '@/features/game/GameInfoLabel';
+import {
+  captureHitStyleVars,
+  distributionSurgeDurationMs,
+  type FfaPlayerIndex,
+} from '@/features/game/hudCaptureFeedback';
 import './ffa-game-hud.css';
+
+interface FfaBarCaptureHit {
+  playerIndex: FfaPlayerIndex;
+  intensity: number;
+  generation: number;
+  glow: 'light' | 'dark';
+}
 
 interface FfaHudProps {
   players: FfaHudPlayer[];
   gameInfo: string;
   challengeHud?: ChallengeHudInfo | null;
   captureHighlights?: readonly boolean[];
+  barCaptureHit?: FfaBarCaptureHit | null;
+  satsSurge?: { playerIndex: FfaPlayerIndex; intensity: number } | null;
 }
 
 function CaptureLine({
@@ -43,29 +57,48 @@ function DistributionBar({
   players,
   shareKey,
   live,
+  barCaptureHit,
 }: {
   id: string;
   players: FfaHudPlayer[];
   shareKey: 'initialShare' | 'currentShare';
   live?: boolean;
+  barCaptureHit?: FfaBarCaptureHit | null;
 }) {
   let offset = 0;
+  const hasLightHit =
+    live &&
+    barCaptureHit?.glow === 'light' &&
+    players.some((p) => p.index === barCaptureHit.playerIndex);
   return (
     <div
       id={id}
       className={`distributionBarOutter ffa-distribution ${live ? 'ffa-distribution-live' : ''}`}
     >
-      <div className="ffa-distribution-track" aria-hidden>
+      <div
+        className={`ffa-distribution-track${hasLightHit ? ' ffa-distribution-track--outer-glow' : ''}`}
+        aria-hidden
+      >
         {players.map((player) => {
           const width = player[shareKey];
+          const isHit =
+            live &&
+            barCaptureHit?.playerIndex === player.index;
           const segment = (
             <div
-              key={player.index}
-              className="distributionBar ffa-distribution-segment"
+              key={`${player.index}-${isHit ? barCaptureHit!.generation : 'idle'}`}
+              className={`distributionBar ffa-distribution-segment${
+                isHit
+                  ? barCaptureHit!.glow === 'light'
+                    ? ' ffa-distribution-segment--capture-hit-light'
+                    : ' ffa-distribution-segment--capture-hit-dark'
+                  : ''
+              }`}
               style={{
                 left: `${offset}%`,
                 width: `${width}%`,
                 background: player.color,
+                ...(isHit ? captureHitStyleVars(barCaptureHit!.intensity) : {}),
               }}
             />
           );
@@ -128,10 +161,31 @@ function PlayerCapture({
   );
 }
 
-function SatsSlot({ player, index }: { player: FfaHudPlayer; index: number }) {
+function SatsSlot({
+  player,
+  index,
+  surgeIntensity,
+}: {
+  player: FfaHudPlayer;
+  index: number;
+  surgeIntensity?: number;
+}) {
   const alignRight = index >= 2;
+  const surging = surgeIntensity !== undefined;
   return (
-    <div className={`ffa-hud-sats-slot ffa-hud-sats-slot-${index}`}>
+    <div
+      className={`ffa-hud-sats-slot ffa-hud-sats-slot-${index}${
+        surging ? ' ffa-hud-sats-slot--surge' : ''
+      }`}
+      style={
+        surging
+          ? ({
+              ...captureHitStyleVars(surgeIntensity),
+              '--stakes-surge-ms': `${distributionSurgeDurationMs(surgeIntensity)}ms`,
+            } as CSSProperties)
+          : undefined
+      }
+    >
       {alignRight ? (
         <>
           <span className="grey">sats </span>
@@ -153,6 +207,8 @@ export function FfaHud({
   gameInfo,
   challengeHud,
   captureHighlights = [],
+  barCaptureHit = null,
+  satsSurge = null,
 }: FfaHudProps) {
   return (
     <div className="ffa-hud">
@@ -186,12 +242,22 @@ export function FfaHud({
           players={players}
           shareKey="currentShare"
           live
+          barCaptureHit={barCaptureHit}
         />
       </div>
 
       <div className="ffa-hud-sats-row">
         {players.map((player, i) => (
-          <SatsSlot key={player.index} player={player} index={i} />
+          <SatsSlot
+            key={player.index}
+            player={player}
+            index={i}
+            surgeIntensity={
+              satsSurge?.playerIndex === player.index
+                ? satsSurge.intensity
+                : undefined
+            }
+          />
         ))}
         <div className="ffa-hud-sponsor">
           <Sponsorship id="sponsorshipGame" showLabel={false} />

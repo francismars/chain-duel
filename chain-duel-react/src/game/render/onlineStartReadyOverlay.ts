@@ -1,174 +1,181 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
-import {
-  measureOnlineStartReadyPanel,
-  type OnlineStartReadyState,
-} from '@/game/render/matchObjectives';
+import { CanvasTextMetrics, Container, Graphics, Text, TextStyle } from 'pixi.js';
+import type { GridPos, SnakeState } from '@/game/engine/types';
+import type { OnlineStartReadyState } from '@/game/render/matchObjectives';
 
-const MONO_FONT = 'Inter, system-ui, sans-serif';
-const DISPLAY_FONT = 'BureauGrotesque, sans-serif';
+const STATUS_FONT = 'Inter, system-ui, sans-serif';
+const READY_CHECK_GREEN = 0x6fd4a8;
 
-function shortName(name: string | undefined, fallback: string): string {
-  const trimmed = (name?.trim() || fallback).trim();
-  if (trimmed.length <= 12) {
-    return trimmed.toUpperCase();
-  }
-  return `${trimmed.slice(0, 11).toUpperCase()}…`;
+export type ChainHeadLabelMetrics = {
+  statusPx: number;
+  gapPx: number;
+};
+
+/** Full opacity once the start prompt has begun — don't dim with its idle pulse. */
+export function onlineStartReadyAlpha(
+  hasReadyState: boolean,
+  startWordAlpha: number
+): number {
+  if (!hasReadyState) return 0;
+  if (startWordAlpha >= 0.12) return 1;
+  return startWordAlpha / 0.12;
 }
 
-function estimateNameWidth(name: string, namePx: number, measured: number): number {
-  return Math.max(measured, namePx * name.length * 0.52, namePx * 2);
+export function chainHeadLabelMetrics(
+  colSize: number,
+  rowSize: number
+): ChainHeadLabelMetrics {
+  const cell = Math.min(colSize, rowSize);
+  const statusPx = Math.max(13, Math.min(20, cell * 0.46));
+  return {
+    statusPx,
+    gapPx: Math.max(8, cell * 0.26),
+  };
+}
+
+function snakeSegments(snake: SnakeState): GridPos[] {
+  return [snake.head, ...snake.body];
+}
+
+/** Horizontally centered on full chain; sits above the topmost segment. */
+export function chainBodyLabelScreenPos(
+  segments: GridPos[],
+  colSize: number,
+  rowSize: number,
+  metrics: ChainHeadLabelMetrics,
+  bobPx = 0
+): { x: number; y: number } {
+  if (segments.length === 0) {
+    return { x: 0, y: 0 };
+  }
+
+  let minX = segments[0][0];
+  let maxX = segments[0][0];
+  let minY = segments[0][1];
+  for (let i = 1; i < segments.length; i += 1) {
+    const [x, y] = segments[i];
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+  }
+
+  const bodyTop = minY * rowSize - bobPx;
+  return {
+    x: ((minX + maxX + 1) / 2) * colSize,
+    y: bodyTop - metrics.gapPx,
+  };
+}
+
+type SeatCopy = {
+  main: string;
+  showCheckbox: boolean;
+};
+
+function seatCopy(ready: boolean, isLocal: boolean): SeatCopy {
+  if (ready) {
+    return { main: 'READY', showCheckbox: true };
+  }
+  if (isLocal) {
+    return { main: 'PRESS START', showCheckbox: false };
+  }
+  return { main: 'WAITING', showCheckbox: false };
+}
+
+function statusFill(ready: boolean): string {
+  if (ready) return 'rgba(255,255,255,0.95)';
+  return 'rgba(255,255,255,0.78)';
+}
+
+function makeStatusStyle(
+  fontSize: number,
+  fill: string,
+  weight: '600' | '500' = '600'
+): TextStyle {
+  return new TextStyle({
+    fontFamily: STATUS_FONT,
+    fill,
+    fontSize,
+    fontWeight: weight,
+    letterSpacing: 0.06,
+    align: 'center',
+  });
+}
+
+function measureLabelWidth(text: string, style: TextStyle): number {
+  return CanvasTextMetrics.measureText(text, style).width;
+}
+
+function checkboxSize(statusPx: number): number {
+  return Math.max(11, statusPx * 0.78);
+}
+
+function paintCheckbox(g: Graphics, size: number, checked: boolean): void {
+  const half = size / 2;
+  g.clear();
+  g.roundRect(-half, -half, size, size, 2);
+  if (checked) {
+    g.fill({ color: 0xffffff, alpha: 0.96 });
+    g.stroke({ width: 1.2, color: READY_CHECK_GREEN, alpha: 0.85 });
+    g.moveTo(-half * 0.42, -half * 0.02);
+    g.lineTo(-half * 0.1, half * 0.34);
+    g.lineTo(half * 0.46, -half * 0.4);
+    g.stroke({
+      width: Math.max(1.4, size * 0.13),
+      color: 0x101010,
+      alpha: 1,
+      cap: 'round',
+      join: 'round',
+    });
+    return;
+  }
+  g.stroke({ width: 1.4, color: 0xffffff, alpha: 0.35 });
 }
 
 type SeatLayout = {
   root: Container;
-  chip: Graphics;
-  name: Text;
+  row: Container;
+  checkbox: Graphics;
   status: Text;
-  contentToken: string;
-  identityW: number;
-  chipX: number;
-  chipY: number;
-  nameX: number;
+  hint: Text;
+  styleToken: string;
 };
-
-type SeatMetrics = ReturnType<typeof measureOnlineStartReadyPanel> & {
-  compact: boolean;
-  chipSize: number;
-  statusPx: number;
-  namePx: number;
-  textGap: number;
-  statusGap: number;
-  topRowH: number;
-  rowH: number;
-  minSlotW: number;
-};
-
-function seatMetrics(startFontSize: number, compact: boolean): SeatMetrics {
-  const base = measureOnlineStartReadyPanel(startFontSize, compact);
-  const chipSize = Math.max(compact ? 18 : 22, startFontSize * 0.28);
-  const namePx = chipSize * 0.92;
-  const statusPx = Math.max(compact ? 12 : 14, startFontSize * 0.2);
-  const textGap = Math.max(8, chipSize * 0.14);
-  const statusGap = Math.max(7, chipSize * 0.18);
-  const topRowH = chipSize;
-  const rowH = topRowH + statusGap + statusPx * 1.12;
-  return {
-    ...base,
-    compact,
-    chipSize,
-    statusPx,
-    namePx,
-    textGap,
-    statusGap,
-    topRowH,
-    rowH,
-    minSlotW: base.minSlotW,
-  };
-}
-
-function syncSeatContent(
-  seat: SeatLayout,
-  metrics: SeatMetrics,
-  ready: boolean,
-  name: string
-): number {
-  const { chipSize, statusPx, namePx, textGap, statusGap, topRowH } = metrics;
-  const token = `${name}:${namePx}:${statusPx}:${ready}:${chipSize}:${textGap}:${statusGap}`;
-
-  if (seat.contentToken !== token) {
-    seat.contentToken = token;
-    seat.name.style = new TextStyle({
-      fontFamily: MONO_FONT,
-      fill: ready ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.62)',
-      fontSize: namePx,
-      fontWeight: '600',
-      letterSpacing: 0.03,
-    });
-    seat.name.text = name;
-
-    seat.status.style = new TextStyle({
-      fontFamily: DISPLAY_FONT,
-      fill: ready ? '#ffffff' : 'rgba(255,255,255,0.62)',
-      fontSize: statusPx,
-      fontWeight: '500',
-      letterSpacing: 1,
-      align: 'center',
-    });
-    seat.status.text = ready ? 'READY' : 'WAITING';
-  }
-
-  const nameW = estimateNameWidth(name, namePx, seat.name.width);
-  seat.identityW = chipSize + textGap + nameW;
-  seat.chipX = -seat.identityW / 2 + chipSize / 2;
-  seat.chipY = topRowH / 2;
-  seat.nameX = -seat.identityW / 2 + chipSize + textGap;
-
-  seat.name.position.set(seat.nameX, seat.chipY);
-  seat.status.position.set(0, topRowH + statusGap);
-
-  return seat.identityW;
-}
-
-function paintSeatChip(
-  seat: SeatLayout,
-  metrics: SeatMetrics,
-  isP1: boolean,
-  ready: boolean,
-  pulse: number,
-  waitingCue: boolean
-): void {
-  const { chipSize } = metrics;
-  const half = chipSize / 2;
-
-  seat.chip.clear();
-  seat.chip.rect(-half, -half, chipSize, chipSize);
-  if (isP1) {
-    if (ready) {
-      seat.chip.fill({ color: 0xffffff, alpha: 1 });
-    } else {
-      seat.chip.fill({ color: 0xffffff, alpha: 0.94 });
-      if (waitingCue) {
-        seat.chip.stroke({
-          width: 1.4,
-          color: 0xffffff,
-          alpha: 0.55 + pulse * 0.2,
-        });
-      }
-    }
-  } else if (ready) {
-    seat.chip.fill({ color: 0xffffff, alpha: 1 });
-    seat.chip.stroke({ width: 1, color: 0xffffff, alpha: 0.35 });
-  } else {
-    seat.chip.fill({
-      color: 0x101010,
-      alpha: waitingCue ? 0.72 + pulse * 0.23 : 0.95,
-    });
-  }
-  if (ready) {
-    const inset = Math.max(3, chipSize * 0.22);
-    seat.chip.rect(
-      -half + inset,
-      -half + inset,
-      chipSize - inset * 2,
-      chipSize - inset * 2
-    );
-    seat.chip.fill({ color: 0x0a0a0a, alpha: 1 });
-  }
-  seat.chip.position.set(seat.chipX, seat.chipY);
-}
 
 function layoutSeat(
   seat: SeatLayout,
-  metrics: SeatMetrics,
-  isP1: boolean,
+  metrics: ChainHeadLabelMetrics,
   ready: boolean,
-  pulse: number,
-  name: string,
-  waitingCue: boolean
-): number {
-  const identityW = syncSeatContent(seat, metrics, ready, name);
-  paintSeatChip(seat, metrics, isP1, ready, pulse, waitingCue);
-  return identityW;
+  isLocal: boolean
+): void {
+  const copy = seatCopy(ready, isLocal);
+  const fill = statusFill(ready);
+  const token = `${copy.main}:${copy.showCheckbox}:${metrics.statusPx}:${ready}`;
+
+  if (seat.styleToken !== token) {
+    seat.styleToken = token;
+    seat.status.style = makeStatusStyle(metrics.statusPx, fill);
+    seat.status.text = copy.main;
+    seat.hint.visible = false;
+  }
+
+  const mainStyle = seat.status.style;
+
+  const box = checkboxSize(metrics.statusPx);
+  const mainW = measureLabelWidth(copy.main, mainStyle);
+  const rowGap = copy.showCheckbox ? metrics.statusPx * 0.2 : 0;
+  const rowW = copy.showCheckbox ? box + rowGap + mainW : mainW;
+
+  seat.checkbox.visible = copy.showCheckbox;
+  if (copy.showCheckbox) {
+    paintCheckbox(seat.checkbox, box, true);
+    const midY = -metrics.statusPx / 2;
+    seat.checkbox.position.set(-rowW / 2 + box / 2, midY);
+    seat.status.anchor.set(0, 0.5);
+    seat.status.position.set(-rowW / 2 + box + rowGap, midY);
+  } else {
+    seat.status.anchor.set(0.5, 1);
+    seat.status.position.set(0, 0);
+  }
+
+  seat.row.position.set(0, 0);
 }
 
 export class OnlineStartReadyOverlay {
@@ -176,7 +183,6 @@ export class OnlineStartReadyOverlay {
 
   private p1: SeatLayout;
   private p2: SeatLayout;
-  private metricsToken = '';
 
   constructor() {
     this.container.cullable = false;
@@ -185,31 +191,22 @@ export class OnlineStartReadyOverlay {
     const makeSeat = (): SeatLayout => {
       const root = new Container();
       root.cullable = false;
-      const chip = new Graphics();
-      chip.cullable = false;
-      const name = new Text({ text: '', style: new TextStyle() });
+      const row = new Container();
+      row.cullable = false;
+      const checkbox = new Graphics();
+      checkbox.cullable = false;
       const status = new Text({ text: '', style: new TextStyle() });
-      for (const t of [name, status]) {
+      const hint = new Text({ text: '', style: new TextStyle() });
+      for (const t of [status, hint]) {
         t.resolution = 2;
         t.cullable = false;
         t.roundPixels = true;
       }
-      name.anchor.set(0, 0.5);
-      status.anchor.set(0.5, 0);
-      root.addChild(chip);
-      root.addChild(name);
-      root.addChild(status);
-      return {
-        root,
-        chip,
-        name,
-        status,
-        contentToken: '',
-        identityW: 0,
-        chipX: 0,
-        chipY: 0,
-        nameX: 0,
-      };
+      row.addChild(checkbox);
+      row.addChild(status);
+      row.addChild(hint);
+      root.addChild(row);
+      return { root, row, checkbox, status, hint, styleToken: '' };
     };
 
     this.p1 = makeSeat();
@@ -221,17 +218,17 @@ export class OnlineStartReadyOverlay {
   hide(): void {
     this.container.visible = false;
     this.container.alpha = 0;
-    this.container.scale.set(1);
-    this.metricsToken = '';
-    this.p1.contentToken = '';
-    this.p2.contentToken = '';
+    this.p1.styleToken = '';
+    this.p2.styleToken = '';
   }
 
   render(
-    width: number,
-    centerX: number,
-    panelTopY: number,
-    startFontSize: number,
+    colSize: number,
+    rowSize: number,
+    p1Snake: SnakeState,
+    p2Snake: SnakeState,
+    p1BobPx: number,
+    p2BobPx: number,
     state: OnlineStartReadyState | undefined,
     alpha: number
   ): void {
@@ -240,59 +237,86 @@ export class OnlineStartReadyOverlay {
       return;
     }
 
-    const compact = width < 560;
-    const m = seatMetrics(startFontSize, compact);
-    const metricsToken = `${m.chipSize}:${m.namePx}:${m.statusPx}`;
-    if (metricsToken !== this.metricsToken) {
-      this.metricsToken = metricsToken;
-      this.p1.contentToken = '';
-      this.p2.contentToken = '';
-    }
+    const metrics = chainHeadLabelMetrics(colSize, rowSize);
 
-    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 520);
-    const p1WaitingCue = state.localSlot === 'p1' && !state.p1Ready;
-    const p2WaitingCue = state.localSlot === 'p2' && !state.p2Ready;
-    const p1IdentityW = layoutSeat(
+    layoutSeat(
       this.p1,
-      m,
-      true,
+      metrics,
       state.p1Ready,
-      pulse,
-      shortName(state.p1Label, 'Player 1'),
-      p1WaitingCue
+      state.localSlot === 'p1'
     );
-    const p2IdentityW = layoutSeat(
+    layoutSeat(
       this.p2,
-      m,
-      false,
+      metrics,
       state.p2Ready,
-      pulse,
-      shortName(state.p2Label, 'Player 2'),
-      p2WaitingCue
+      state.localSlot === 'p2'
     );
 
-    const slotW = Math.max(m.minSlotW, p1IdentityW, p2IdentityW);
-    const totalW = slotW * 2 + m.rowGap;
-    const maxW = width * 0.9;
-    const scale = totalW > maxW ? maxW / totalW : 1;
-    this.p1.root.position.set(-totalW / 2 + slotW / 2, 0);
-    this.p2.root.position.set(totalW / 2 - slotW / 2, 0);
-    this.p1.root.alpha = 1;
-    this.p2.root.alpha = 1;
+    const p1Pos = chainBodyLabelScreenPos(
+      snakeSegments(p1Snake),
+      colSize,
+      rowSize,
+      metrics,
+      p1BobPx
+    );
+    const p2Pos = chainBodyLabelScreenPos(
+      snakeSegments(p2Snake),
+      colSize,
+      rowSize,
+      metrics,
+      p2BobPx
+    );
 
-    this.container.position.set(centerX, panelTopY);
-    this.container.scale.set(scale);
+    this.container.position.set(0, 0);
+    this.p1.root.position.set(Math.round(p1Pos.x), Math.round(p1Pos.y));
+    this.p2.root.position.set(Math.round(p2Pos.x), Math.round(p2Pos.y));
     this.container.visible = true;
     this.container.alpha = alpha;
   }
 }
 
+function drawCheckboxFallback(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  checked: boolean
+): void {
+  const half = size / 2;
+  const left = x - half;
+  const top = y - half;
+  ctx.beginPath();
+  ctx.roundRect(left, top, size, size, 2);
+  if (checked) {
+    ctx.fillStyle = 'rgba(255,255,255,0.96)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(111,212,168,0.85)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.strokeStyle = '#101010';
+    ctx.lineWidth = Math.max(1.4, size * 0.13);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.moveTo(x - half * 0.42, y - half * 0.02);
+    ctx.lineTo(x - half * 0.1, y + half * 0.34);
+    ctx.lineTo(x + half * 0.46, y - half * 0.4);
+    ctx.stroke();
+    return;
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+}
+
 export function drawOnlineStartReadyFallback(
   ctx: CanvasRenderingContext2D,
-  width: number,
-  centerX: number,
-  panelTopY: number,
-  startFontSize: number,
+  colSize: number,
+  rowSize: number,
+  p1Snake: SnakeState,
+  p2Snake: SnakeState,
+  p1BobPx: number,
+  p2BobPx: number,
   state: OnlineStartReadyState | undefined,
   alpha: number
 ): void {
@@ -300,126 +324,60 @@ export function drawOnlineStartReadyFallback(
     return;
   }
 
-  const compact = startFontSize < 28;
-  const m = seatMetrics(startFontSize, compact);
-  const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 520);
-
-  const p1Name = shortName(state.p1Label, 'Player 1');
-  const p2Name = shortName(state.p2Label, 'Player 2');
-  const p1IdentityW = measureIdentityWidth(ctx, m, p1Name);
-  const p2IdentityW = measureIdentityWidth(ctx, m, p2Name);
-  const slotW = Math.max(m.minSlotW, p1IdentityW, p2IdentityW);
-  const totalW = slotW * 2 + m.rowGap;
-  const maxW = width * 0.9;
-  const scale = totalW > maxW ? maxW / totalW : 1;
+  const metrics = chainHeadLabelMetrics(colSize, rowSize);
 
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.translate(centerX, panelTopY);
-  ctx.scale(scale, scale);
 
-  drawSeatFallback(
-    ctx,
-    -totalW / 2 + slotW / 2,
-    0,
-    m,
-    true,
-    state.p1Ready,
-    pulse,
-    p1Name,
-    p1IdentityW,
-    state.localSlot === 'p1' && !state.p1Ready
-  );
-  drawSeatFallback(
-    ctx,
-    totalW / 2 - slotW / 2,
-    0,
-    m,
-    false,
-    state.p2Ready,
-    pulse,
-    p2Name,
-    p2IdentityW,
-    state.localSlot === 'p2' && !state.p2Ready
-  );
+  const drawSeat = (
+    snake: SnakeState,
+    bobPx: number,
+    ready: boolean,
+    isLocal: boolean
+  ): void => {
+    const copy = seatCopy(ready, isLocal);
+    const fill = statusFill(ready);
+    const pos = chainBodyLabelScreenPos(
+      snakeSegments(snake),
+      colSize,
+      rowSize,
+      metrics,
+      bobPx
+    );
+    const mainStyle = makeStatusStyle(metrics.statusPx, fill);
+    const mainW = measureLabelWidth(copy.main, mainStyle);
+    const box = checkboxSize(metrics.statusPx);
+    const rowGap = copy.showCheckbox ? metrics.statusPx * 0.2 : 0;
+    const rowW = copy.showCheckbox ? box + rowGap + mainW : mainW;
+
+    if (copy.showCheckbox) {
+      drawCheckboxFallback(
+        ctx,
+        pos.x - rowW / 2 + box / 2,
+        pos.y - metrics.statusPx / 2,
+        box,
+        true
+      );
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.font = `600 ${Math.floor(metrics.statusPx)}px Inter, system-ui, sans-serif`;
+      ctx.fillStyle = fill;
+      ctx.fillText(
+        copy.main,
+        pos.x - rowW / 2 + box + rowGap,
+        pos.y - metrics.statusPx / 2
+      );
+    } else {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.font = `600 ${Math.floor(metrics.statusPx)}px Inter, system-ui, sans-serif`;
+      ctx.fillStyle = fill;
+      ctx.fillText(copy.main, pos.x, pos.y);
+    }
+  };
+
+  drawSeat(p1Snake, p1BobPx, state.p1Ready, state.localSlot === 'p1');
+  drawSeat(p2Snake, p2BobPx, state.p2Ready, state.localSlot === 'p2');
 
   ctx.restore();
-}
-
-function measureIdentityWidth(
-  ctx: CanvasRenderingContext2D,
-  metrics: SeatMetrics,
-  name: string
-): number {
-  ctx.font = `600 ${Math.floor(metrics.namePx)}px Inter, system-ui, sans-serif`;
-  return (
-    metrics.chipSize +
-    metrics.textGap +
-    estimateNameWidth(name, metrics.namePx, ctx.measureText(name).width)
-  );
-}
-
-function drawSeatFallback(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  metrics: SeatMetrics,
-  isP1: boolean,
-  ready: boolean,
-  pulse: number,
-  name: string,
-  identityW: number,
-  waitingCue: boolean
-): void {
-  const { chipSize, statusPx, namePx, textGap, statusGap, topRowH } = metrics;
-  const chipX = x - identityW / 2 + chipSize / 2;
-  const chipY = y + topRowH / 2;
-  const nameX = x - identityW / 2 + chipSize + textGap;
-  const half = chipSize / 2;
-
-  ctx.fillStyle = isP1
-    ? ready
-      ? '#ffffff'
-      : 'rgba(255,255,255,0.94)'
-    : ready
-      ? '#ffffff'
-      : '#101010';
-  if (!isP1 && !ready && waitingCue) {
-    ctx.globalAlpha *= 0.72 + pulse * 0.23;
-  }
-  ctx.fillRect(chipX - half, chipY - half, chipSize, chipSize);
-  if (!isP1 && !ready && waitingCue) {
-    ctx.globalAlpha /= 0.72 + pulse * 0.23;
-  }
-  if (isP1 && !ready && waitingCue) {
-    ctx.strokeStyle = `rgba(255,255,255,${0.55 + pulse * 0.2})`;
-    ctx.lineWidth = 1.4;
-    ctx.strokeRect(chipX - half, chipY - half, chipSize, chipSize);
-  } else if (ready && !isP1) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(chipX - half, chipY - half, chipSize, chipSize);
-  }
-  if (ready) {
-    const inset = Math.max(3, chipSize * 0.22);
-    ctx.fillStyle = '#0a0a0a';
-    ctx.fillRect(
-      chipX - half + inset,
-      chipY - half + inset,
-      chipSize - inset * 2,
-      chipSize - inset * 2
-    );
-  }
-
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = ready ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.62)';
-  ctx.font = `600 ${Math.floor(namePx)}px Inter, system-ui, sans-serif`;
-  ctx.fillText(name, nameX, chipY);
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = ready ? '#ffffff' : 'rgba(255,255,255,0.62)';
-  ctx.font = `500 ${Math.floor(statusPx)}px BureauGrotesque, sans-serif`;
-  ctx.fillText(ready ? 'READY' : 'WAITING', x, y + topRowH + statusGap);
 }

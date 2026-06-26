@@ -21,11 +21,16 @@ import { useGamepad } from '@/hooks/useGamepad';
 import { canContinueOnlineAfterGame } from '@/game/engine';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
-import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
+import {
+  ONLINE_START_PROMPT_WORDS,
+  type CanvasObjectivesOpts,
+} from '@/game/render/matchObjectives';
 import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
+import { useHudCaptureFeedback } from '@/features/game/hooks/useHudCaptureFeedback';
+import { captureFeedbackStyleFromCtx, captureHitStyleVars, distributionTrackFeedbackStyle } from '@/features/game/hudCaptureFeedback';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { withLocalOnlineControllerTest } from '@/game/controllerTest';
 import { applyPreMatchAxisHeld } from '@/game/render/preMatchKeyHighlight';
@@ -44,14 +49,12 @@ type ReplayNavFocus =
   | 'play'
   | 'restart'
   | 'victory'
-  | 'exit'
   | 'speed';
 
 const REPLAY_BTN_ORDER: ReplayNavFocus[] = [
   'play',
   'restart',
   'victory',
-  'exit',
   'speed',
 ];
 
@@ -139,7 +142,6 @@ export default function OnlineGame({
   const replayPlayBtnRef = useRef<HTMLButtonElement>(null);
   const replayRestartBtnRef = useRef<HTMLButtonElement>(null);
   const replayVictoryBtnRef = useRef<HTMLButtonElement>(null);
-  const replayExitBtnRef = useRef<HTMLButtonElement>(null);
   const replaySpeedPickerRef = useRef<ReplaySpeedPickerHandle>(null);
   const audioRef = useRef<GameAudioSystem | null>(null);
   if (!audioRef.current) {
@@ -149,6 +151,18 @@ export default function OnlineGame({
   const gameMusicStartedRef = useRef(false);
   const continueNavigatedRef = useRef(false);
   const [canvasHighlight, setCanvasHighlight] = useState(false);
+  const {
+    captureP1Highlight,
+    captureP2Highlight,
+    captureRowFlash,
+    satsSurge,
+    barCaptureHit,
+    handleCaptureTierChanged,
+    handleSatsCaptured,
+  } = useHudCaptureFeedback();
+  const handleSatsCapturedRef = useRef(handleSatsCaptured);
+  handleSatsCapturedRef.current = handleSatsCaptured;
+  const prevCaptureRef = useRef({ p1: '', p2: '' });
   const keysHeldRef = useRef({
     up: false,
     down: false,
@@ -172,6 +186,30 @@ export default function OnlineGame({
   useEffect(() => {
     audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
   }, [isMuted, isMusicMuted]);
+
+  useEffect(() => {
+    const hud = snapshot?.hud;
+    if (!hud) return;
+
+    const prev = prevCaptureRef.current;
+    if (prev.p1 && hud.captureP1 !== prev.p1) {
+      handleCaptureTierChanged('P1', {
+        captureP1: hud.captureP1,
+        captureP2: hud.captureP2,
+      });
+    }
+    if (prev.p2 && hud.captureP2 !== prev.p2) {
+      handleCaptureTierChanged('P2', {
+        captureP1: hud.captureP1,
+        captureP2: hud.captureP2,
+      });
+    }
+    prevCaptureRef.current = { p1: hud.captureP1, p2: hud.captureP2 };
+  }, [
+    snapshot?.hud?.captureP1,
+    snapshot?.hud?.captureP2,
+    handleCaptureTierChanged,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -372,11 +410,18 @@ export default function OnlineGame({
         setSnapshot((prev) => {
           const snap = normalizeOnlineRoomSnapshot(parsed.snapshot);
           const merged = mergeOnlineSnapshot(prev, snap);
-          ingestOnlinePointChanges(
+          const capturedSides = ingestOnlinePointChanges(
             merged,
             pointAnimationsRef.current,
             prevPointCountByKeyRef.current
           );
+          const captureCtx = {
+            captureP1: merged.hud?.captureP1 ?? '2%',
+            captureP2: merged.hud?.captureP2 ?? '2%',
+          };
+          for (const side of capturedSides) {
+            handleSatsCapturedRef.current(side, captureCtx);
+          }
           return merged;
         });
       }
@@ -390,11 +435,18 @@ export default function OnlineGame({
           setSnapshot((prev) => {
             const snap = normalizeOnlineRoomSnapshot(parsed.snapshot);
             const merged = mergeOnlineSnapshot(prev, snap);
-            ingestOnlinePointChanges(
+            const capturedSides = ingestOnlinePointChanges(
               merged,
               pointAnimationsRef.current,
               prevPointCountByKeyRef.current
             );
+            const captureCtx = {
+              captureP1: merged.hud?.captureP1 ?? '2%',
+              captureP2: merged.hud?.captureP2 ?? '2%',
+            };
+            for (const side of capturedSides) {
+              handleSatsCapturedRef.current(side, captureCtx);
+            }
             return merged;
           });
         }
@@ -762,11 +814,6 @@ export default function OnlineGame({
     navigate(ONLINE_HOME);
   }, [navigate, _roomCodeProp]);
 
-  const exitReplayRoom = useCallback(() => {
-    setReplayPlaying(false);
-    navigate(ONLINE_HOME);
-  }, [navigate]);
-
   const activateReplayControl = useCallback(
     (target: ReplayNavFocus) => {
       switch (target) {
@@ -779,9 +826,6 @@ export default function OnlineGame({
         case 'victory':
           goReplayVictoryScreen();
           break;
-        case 'exit':
-          exitReplayRoom();
-          break;
         case 'speed':
           replaySpeedPickerRef.current?.open();
           break;
@@ -789,7 +833,7 @@ export default function OnlineGame({
           break;
       }
     },
-    [exitReplayRoom, goReplayVictoryScreen, restartReplay, toggleReplayPlay]
+    [goReplayVictoryScreen, restartReplay, toggleReplayPlay]
   );
 
   useEffect(() => {
@@ -811,9 +855,6 @@ export default function OnlineGame({
         break;
       case 'victory':
         replayVictoryBtnRef.current?.focus();
-        break;
-      case 'exit':
-        replayExitBtnRef.current?.focus();
         break;
       case 'speed':
         replaySpeedPickerRef.current?.focus();
@@ -910,7 +951,8 @@ export default function OnlineGame({
           break;
         }
         case 'Escape': {
-          exitReplayRoom();
+          event.preventDefault();
+          goReplayVictoryScreen();
           break;
         }
       }
@@ -920,7 +962,6 @@ export default function OnlineGame({
     return () => window.removeEventListener('keydown', onKey);
   }, [
     activateReplayControl,
-    exitReplayRoom,
     goReplayVictoryScreen,
     replayFrames,
     replayIndex,
@@ -966,6 +1007,7 @@ export default function OnlineGame({
       onlineControlSlot && !replayMode ? [onlineControlSlot] : [],
     ...(preMatchStart
       ? {
+          startPromptWords: ONLINE_START_PROMPT_WORDS,
           onlineStartReady: {
             p1Ready: p1StartReady,
             p2Ready: p2StartReady,
@@ -1015,10 +1057,24 @@ export default function OnlineGame({
             </div>
           </div>
 
+          <div
+            className="game-hud-stakes"
+            style={captureFeedbackStyleFromCtx({
+              captureP1: snapshot?.hud.captureP1 ?? '2%',
+              captureP2: snapshot?.hud.captureP2 ?? '2%',
+            })}
+          >
           <div className="gameState">
             <div id="capturing">
-              <div id="capturingP1">
-                <span className="capturingAmount">
+              <div
+                id="capturingP1"
+                className={
+                  captureRowFlash === 'P1' ? 'capture-row--flash' : undefined
+                }
+              >
+                <span
+                  className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}
+                >
                   {snapshot?.hud.captureP1 ?? '2%'}
                 </span>{' '}
                 capture
@@ -1038,7 +1094,12 @@ export default function OnlineGame({
                   </span>
                 ) : null}
               </div>
-              <div id="capturingP2">
+              <div
+                id="capturingP2"
+                className={
+                  captureRowFlash === 'P2' ? 'capture-row--flash' : undefined
+                }
+              >
                 {isP2 && !replayMode ? (
                   <span className="online-game-you-tag online-game-you-tag--lead">
                     YOU
@@ -1055,30 +1116,68 @@ export default function OnlineGame({
                   </span>
                 ) : null}
                 capture{' '}
-                <span className="capturingAmount">
+                <span
+                  className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}
+                >
                   {snapshot?.hud.captureP2 ?? '2%'}
                 </span>
               </div>
             </div>
 
             <div id="distributions">
-              <div id="currentDistribution" className="distributionBarOutter">
+              <div
+                id="currentDistribution"
+                className={`distributionBarOutter${
+                  barCaptureHit?.side === 'P1'
+                    ? ' distribution-track--p1-outer-glow'
+                    : ''
+                }`}
+                style={distributionTrackFeedbackStyle(
+                  {
+                    captureP1: snapshot?.hud.captureP1 ?? '2%',
+                    captureP2: snapshot?.hud.captureP2 ?? '2%',
+                  },
+                  snapshot?.hud.currentWidthP1 ?? 50
+                )}
+              >
                 <div
                   id="currentDistributionP1"
-                  className="distributionBar"
-                  style={{ width: `${snapshot?.hud.currentWidthP1 ?? 50}%` }}
+                  className={`distributionBar${
+                    barCaptureHit?.side === 'P1'
+                      ? ' distribution-bar--capture-hit'
+                      : ''
+                  }`}
+                  style={{
+                    width: `${snapshot?.hud.currentWidthP1 ?? 50}%`,
+                    ...(barCaptureHit?.side === 'P1'
+                      ? captureHitStyleVars(barCaptureHit.intensity)
+                      : {}),
+                  }}
                 />
                 <div
                   id="currentDistributionP2"
-                  className="distributionBar"
-                  style={{ width: `${snapshot?.hud.currentWidthP2 ?? 50}%` }}
+                  className={`distributionBar${
+                    barCaptureHit?.side === 'P2'
+                      ? ' distribution-bar--capture-hit'
+                      : ''
+                  }`}
+                  style={{
+                    width: `${snapshot?.hud.currentWidthP2 ?? 50}%`,
+                    ...(barCaptureHit?.side === 'P2'
+                      ? captureHitStyleVars(barCaptureHit.intensity)
+                      : {}),
+                  }}
                 />
               </div>
             </div>
           </div>
 
           <div className="flex points">
-            <div className="player-sats player-sats-p1">
+            <div
+              className={`player-sats player-sats-p1${
+                satsSurge === 'P1' ? ' player-sats--surge' : ''
+              }`}
+            >
               <span id="p1Points" className="condensed">
                 {Math.floor(
                   snapshot?.hud.p1Points ??
@@ -1090,7 +1189,11 @@ export default function OnlineGame({
               <span className="grey">sats</span>
             </div>
             <Sponsorship id="sponsorshipGame" showLabel={false} />
-            <div className="player-sats player-sats-p2">
+            <div
+              className={`player-sats player-sats-p2${
+                satsSurge === 'P2' ? ' player-sats--surge' : ''
+              }`}
+            >
               <span className="grey">sats</span>{' '}
               <span id="p2Points" className="condensed">
                 {Math.floor(
@@ -1101,6 +1204,7 @@ export default function OnlineGame({
                 ).toLocaleString()}
               </span>
             </div>
+          </div>
           </div>
 
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
@@ -1190,22 +1294,6 @@ export default function OnlineGame({
                   <span className="online-replay-btn__label">
                     VICTORY SCREEN
                   </span>
-                </button>
-                <button
-                  ref={replayExitBtnRef}
-                  type="button"
-                  className={`online-replay-btn${replayNavFocus === 'exit' ? ' online-replay-btn--focused' : ''}`}
-                  tabIndex={-1}
-                  onFocus={() => setReplayNavFocus('exit')}
-                  onClick={() => {
-                    setReplayNavFocus('exit');
-                    exitReplayRoom();
-                  }}
-                >
-                  <span className="online-replay-btn__icon" aria-hidden>
-                    <ReplayIconExitRoom />
-                  </span>
-                  <span className="online-replay-btn__label">EXIT ROOM</span>
                 </button>
                 <div className="online-replay-trailing">
                   <ReplaySpeedPicker
@@ -1411,6 +1499,9 @@ type OnlinePointAnim = {
   value: number;
   p1Pos: [number, number];
   p2Pos: [number, number];
+  gainPos?: [number, number];
+  lossPos?: [number, number];
+  capturePercent?: number;
   startedAtMs: number;
 };
 
@@ -1421,12 +1512,12 @@ function ingestOnlinePointChanges(
   snapshot: OnlineRoomSnapshot,
   pointAnimations: OnlinePointAnim[],
   prevPointCountByKey: Map<string, number>
-) {
+): Array<'P1' | 'P2'> {
   const state = snapshot.state as Record<string, unknown> | null;
   const modeLabel = (state?.meta as { modeLabel?: string } | undefined)
     ?.modeLabel;
   if (modeLabel !== 'ONLINE') {
-    return;
+    return [];
   }
   const incoming = getPointChanges(snapshot.state);
   const nextCountByKey = new Map<string, number>();
@@ -1435,6 +1526,7 @@ function ingestOnlinePointChanges(
     nextCountByKey.set(key, (nextCountByKey.get(key) ?? 0) + 1);
   }
 
+  const capturedSides: Array<'P1' | 'P2'> = [];
   for (const [key, nextCount] of nextCountByKey.entries()) {
     const prevCount = prevPointCountByKey.get(key) ?? 0;
     const toSpawn = Math.max(0, nextCount - prevCount);
@@ -1452,14 +1544,19 @@ function ingestOnlinePointChanges(
         value: source.value,
         p1Pos: source.p1Pos,
         p2Pos: source.p2Pos,
+        gainPos: source.gainPos,
+        lossPos: source.lossPos,
+        capturePercent: source.capturePercent,
         startedAtMs: performance.now(),
       });
+      capturedSides.push(source.player);
     }
   }
   prevPointCountByKey.clear();
   for (const [key, count] of nextCountByKey.entries()) {
     prevPointCountByKey.set(key, count);
   }
+  return capturedSides;
 }
 
 type PointChangeLike = {
@@ -1467,6 +1564,9 @@ type PointChangeLike = {
   value: number;
   p1Pos: [number, number];
   p2Pos: [number, number];
+  gainPos?: [number, number];
+  lossPos?: [number, number];
+  capturePercent?: number;
   p1YOffsetPx?: number;
   p2YOffsetPx?: number;
   alpha?: number;
@@ -1509,6 +1609,9 @@ function withOnlinePointAnimations(
         value: anim.value,
         p1Pos: anim.p1Pos,
         p2Pos: anim.p2Pos,
+        gainPos: anim.gainPos,
+        lossPos: anim.lossPos,
+        capturePercent: anim.capturePercent,
         p1YOffsetPx: yOffset,
         p2YOffsetPx: yOffset,
         alpha: 1 - t,
@@ -1524,6 +1627,9 @@ function withOnlinePointAnimations(
       value: anim.value,
       p1Pos: anim.p1Pos,
       p2Pos: anim.p2Pos,
+      gainPos: anim.gainPos,
+      lossPos: anim.lossPos,
+      capturePercent: anim.capturePercent,
       startedAtMs: now - (1 - anim.alpha) * ONLINE_POINT_ANIM_MS,
     }))
   );
@@ -1571,18 +1677,6 @@ function ReplayIconBackToRoom() {
       aria-hidden
     >
       <path d="M19 12H5M12 19l-7-7 7-7" />
-    </svg>
-  );
-}
-
-function ReplayIconExitRoom() {
-  return (
-    <svg
-      className="online-replay-btn__svg online-replay-btn__svg--stroke"
-      viewBox="0 0 24 24"
-      aria-hidden
-    >
-      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
     </svg>
   );
 }

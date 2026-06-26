@@ -190,12 +190,23 @@
 .ffa-hud-capture .capturingAmount {
   font-weight: 900;
   font-size: 0.62vw;
-  transition: all 0.1s ease-out;
   display: inline-block;
+  transform: scale(1);
+}
+
+.ffa-hud-slot-0 .capturingAmount,
+.ffa-hud-slot-1 .capturingAmount {
+  transform-origin: left center;
+}
+
+.ffa-hud-slot-2 .capturingAmount,
+.ffa-hud-slot-3 .capturingAmount {
+  transform-origin: right center;
 }
 
 .ffa-hud-capture.highlight .capturingAmount {
-  font-size: 0.82vw;
+  animation: capture-pop-compact var(--stakes-pop-ms, 720ms)
+    cubic-bezier(0.18, 1.35, 0.32, 1) both;
 }
 
 .ffa-hud-sats-slot {
@@ -237,6 +248,12 @@
   position: relative;
   width: 100%;
   height: 0.3vw;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .ffa-hud-bars #initialDistribution .ffa-distribution-track {
@@ -245,7 +262,11 @@
 
 .ffa-hud-bars #currentDistribution .ffa-distribution-track {
   height: 1.7vw;
-  box-shadow: none;
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 24px rgba(255, 255, 255, 0.14),
+    0 2px 10px rgba(255, 255, 255, 0.08);
 }
 
 /* Override 1v1 #currentDistribution .distributionBar (50% width, glow, fixed height) */
@@ -256,10 +277,19 @@
   right: auto;
   height: 100%;
   width: auto;
-  box-shadow: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35);
   transition:
-    left 0.15s ease-out,
-    width 0.15s ease-out;
+    left 0.28s cubic-bezier(0.33, 1, 0.38, 1),
+    width 0.28s cubic-bezier(0.33, 1, 0.38, 1);
+}
+
+.ffa-hud-bars #currentDistribution .distributionBar.ffa-distribution-segment:first-of-type {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px 0 0 rgba(255, 255, 255, 0.22),
+    0 0 16px rgba(255, 255, 255, 0.1);
 }
 
 .ffa-distribution-segment {
@@ -267,8 +297,90 @@
   top: 0;
   height: 100%;
   transition:
-    left 0.15s ease-out,
-    width 0.15s ease-out;
+    left 0.28s cubic-bezier(0.33, 1, 0.38, 1),
+    width 0.28s cubic-bezier(0.33, 1, 0.38, 1);
+}
+
+.ffa-distribution-track--outer-glow {
+  overflow: visible;
+}
+
+.ffa-distribution-segment--capture-hit-light {
+  overflow: visible;
+  z-index: 2;
+  animation: ffa-segment-outer-glow var(--capture-hit-flash-ms, 380ms)
+    cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ffa-distribution-segment--capture-hit-dark {
+  overflow: hidden;
+  z-index: 1;
+  animation: ffa-segment-edge-glow var(--capture-hit-flash-ms, 380ms)
+    cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes ffa-segment-outer-glow {
+  0%,
+  38%,
+  100% {
+    filter: brightness(1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+  }
+  16% {
+    filter: brightness(calc(1 + var(--capture-hit-intensity, 0.2) * 0.22));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      inset -1px 0 0 rgba(255, 255, 255, 0.55),
+      0 0 calc(10px + var(--capture-hit-intensity, 0.2) * 26px)
+        rgba(255, 255, 255, calc(0.1 + var(--capture-hit-intensity, 0.2) * 0.32)),
+      calc(2px + var(--capture-hit-intensity, 0.2) * 10px) 0
+        calc(8px + var(--capture-hit-intensity, 0.2) * 22px)
+        rgba(255, 255, 255, calc(0.16 + var(--capture-hit-intensity, 0.2) * 0.36)),
+      calc(4px + var(--capture-hit-intensity, 0.2) * 16px) 0
+        calc(12px + var(--capture-hit-intensity, 0.2) * 34px)
+        rgba(255, 255, 255, calc(0.08 + var(--capture-hit-intensity, 0.2) * 0.22)),
+      0 1px calc(5px + var(--capture-hit-intensity, 0.2) * 10px)
+        rgba(255, 255, 255, calc(0.06 + var(--capture-hit-intensity, 0.2) * 0.18));
+  }
+}
+
+@keyframes ffa-segment-edge-glow {
+  0%,
+  38%,
+  100% {
+    filter: brightness(1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+  }
+  16% {
+    filter: brightness(calc(1 + var(--capture-hit-intensity, 0.2) * 0.3));
+    box-shadow:
+      inset 0 -1px 0 rgba(255, 255, 255, calc(0.08 + var(--capture-hit-intensity, 0.2) * 0.1)),
+      inset 1px 0 0 rgba(255, 255, 255, calc(0.14 + var(--capture-hit-intensity, 0.2) * 0.22)),
+      inset 7px 0 calc(14px + var(--capture-hit-intensity, 0.2) * 22px)
+        rgba(255, 255, 255, calc(0.14 + var(--capture-hit-intensity, 0.2) * 0.34)),
+      inset 0 0 calc(10px + var(--capture-hit-intensity, 0.2) * 18px)
+        rgba(255, 255, 255, calc(0.08 + var(--capture-hit-intensity, 0.2) * 0.2));
+  }
+}
+
+.ffa-hud-sats-slot--surge {
+  display: inline-block;
+  animation: player-sats-surge var(--stakes-surge-ms, 900ms)
+    cubic-bezier(0.18, 1.25, 0.32, 1) both;
+}
+
+.ffa-hud-sats-slot-0.ffa-hud-sats-slot--surge,
+.ffa-hud-sats-slot-1.ffa-hud-sats-slot--surge {
+  transform-origin: left center;
+}
+
+.ffa-hud-sats-slot-2.ffa-hud-sats-slot--surge,
+.ffa-hud-sats-slot-3.ffa-hud-sats-slot--surge {
+  transform-origin: right center;
 }
 
 @media (max-width: 900px), (max-height: 700px) {
@@ -299,10 +411,12 @@
 
   .ffa-hud-capture .capturingAmount {
     font-size: 10px;
+    transform: scale(1);
   }
 
   .ffa-hud-capture.highlight .capturingAmount {
-    font-size: 12px;
+    animation: capture-pop-compact var(--stakes-pop-ms, 720ms)
+      cubic-bezier(0.18, 1.35, 0.32, 1) both;
   }
 
   .ffa-hud-sats-slot .condensed {

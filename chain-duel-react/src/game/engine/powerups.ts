@@ -252,11 +252,10 @@ export function checkPowerUpPickup(state: GameState): void {
   }
 }
 
-export function computeCaptureChangeForIndex(
+export function capturePercentForCoinbase(
   state: GameState,
   playerIndex: PowerUpPlayerIndex,
-  cb: Coinbase,
-  totalPoints: number
+  cb: Coinbase
 ): number {
   const snake = getSnakeByIndex(state, playerIndex);
   const basePercent =
@@ -265,9 +264,17 @@ export function computeCaptureChangeForIndex(
       ? get2v1TeamCapturePercent(state)
       : capturePercentByLength(snake.body.length));
   const effects = getSnakeEffects(state, playerIndex);
-  const finalPercent = effects.amped
-    ? Math.min(32, basePercent * 2)
-    : basePercent;
+  return effects.amped ? Math.min(32, basePercent * 2) : basePercent;
+}
+
+export function computeCaptureChangeForIndex(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  cb: Coinbase,
+  totalPoints: number
+): number {
+  const finalPercent = capturePercentForCoinbase(state, playerIndex, cb);
+  const effects = getSnakeEffects(state, playerIndex);
 
   if (effects.amped) {
     const amp = state.activePowerUps.find(

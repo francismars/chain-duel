@@ -1,5 +1,6 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { getHudState, stepGame } from '@/game/engine';
+import { isFfaMode } from '@/game/engine/ffa';
 import type { FfaHudPlayer, GameState } from '@/game/engine/types';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
 import type { PixiGameRenderer, PixiRenderOpts } from '@/game/render/pixiRenderer';
@@ -55,7 +56,14 @@ interface UseGameRenderBridgeArgs {
   createRenderer: () => PixiGameRenderer;
   emitWinner: (winner: 'P1' | 'P2') => void;
   onHudTick: (hud: HudSnapshot) => void;
-  onCaptureChanged: (side: 'P1' | 'P2') => void;
+  onCaptureChanged: (
+    side: 'P1' | 'P2',
+    ctx: { captureP1: string; captureP2: string }
+  ) => void;
+  onSatsCaptured: (
+    side: 'P1' | 'P2',
+    ctx: { captureP1: string; captureP2: string }
+  ) => void;
   onSpeedChanged?: (stepMs: number) => void;
   simStepRef?: MutableRefObject<number>;
   /** When set, record P1 direction changes at sim step boundaries (challenge replay). */
@@ -100,6 +108,7 @@ export function useGameRenderBridge({
   emitWinner,
   onHudTick,
   onCaptureChanged,
+  onSatsCaptured,
   onSpeedChanged,
   simStepRef,
   challengeInputLogRef,
@@ -109,10 +118,12 @@ export function useGameRenderBridge({
   const emitWinnerRef = useRef(emitWinner);
   const onHudTickRef = useRef(onHudTick);
   const onCaptureChangedRef = useRef(onCaptureChanged);
+  const onSatsCapturedRef = useRef(onSatsCaptured);
   const onSpeedChangedRef = useRef(onSpeedChanged);
   emitWinnerRef.current = emitWinner;
   onHudTickRef.current = onHudTick;
   onCaptureChangedRef.current = onCaptureChanged;
+  onSatsCapturedRef.current = onSatsCaptured;
   onSpeedChangedRef.current = onSpeedChanged;
 
   useEffect(() => {
@@ -183,10 +194,16 @@ export function useGameRenderBridge({
       lastHud = hud;
       onHudTickRef.current(hud);
       if (hud.captureP1 !== captureP1Ref.current) {
-        onCaptureChangedRef.current('P1');
+        onCaptureChangedRef.current('P1', {
+          captureP1: hud.captureP1,
+          captureP2: hud.captureP2,
+        });
       }
       if (hud.captureP2 !== captureP2Ref.current) {
-        onCaptureChangedRef.current('P2');
+        onCaptureChangedRef.current('P2', {
+          captureP1: hud.captureP1,
+          captureP2: hud.captureP2,
+        });
       }
       captureP1Ref.current = hud.captureP1;
       captureP2Ref.current = hud.captureP2;
@@ -235,6 +252,8 @@ export function useGameRenderBridge({
         const prevStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
         const prevPowerUpItems = state.powerUpItems.length;
 
+        const prevPointChangeCount = state.pointChanges?.length ?? 0;
+
         recordChallengeInput(state);
         stepGame(state);
         if (simStepRef) simStepRef.current += 1;
@@ -244,6 +263,24 @@ export function useGameRenderBridge({
         }
 
         const hud = getHudState(state);
+        const captureCtx = {
+          captureP1: hud.captureP1,
+          captureP2: hud.captureP2,
+        };
+        for (
+          let i = prevPointChangeCount;
+          i < (state.pointChanges?.length ?? 0);
+          i += 1
+        ) {
+          const change = state.pointChanges[i];
+          if (
+            !isFfaMode(state) &&
+            (change?.player === 'P1' || change?.player === 'P2')
+          ) {
+            onSatsCapturedRef.current(change.player, captureCtx);
+          }
+        }
+
         applyHud({
           p1Points: hud.p1Points,
           p2Points: hud.p2Points,

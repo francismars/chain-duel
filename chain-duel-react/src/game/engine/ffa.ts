@@ -3,7 +3,7 @@ import {
   FFA_HUD_COLORS,
   FFA_START_SATS_PER_PLAYER,
 } from '@/game/engine/constants';
-import type { GameState, PlayerId } from '@/game/engine/types';
+import type { GameState, GridPos, PlayerId } from '@/game/engine/types';
 import type { FfaHudPlayer } from '@/game/engine/types';
 
 export type FfaPlayerIndex = 0 | 1 | 2 | 3;
@@ -198,6 +198,19 @@ export function ffaPlayerName(state: GameState, index: FfaPlayerIndex): string {
   }
 }
 
+export function ffaSnakeHead(state: GameState, index: FfaPlayerIndex): GridPos {
+  switch (index) {
+    case 0:
+      return [state.p1.head[0], state.p1.head[1]];
+    case 1:
+      return [state.p2.head[0], state.p2.head[1]];
+    case 2:
+      return state.extraSnakes[0]?.snake.head ?? [-1, -1];
+    case 3:
+      return state.extraSnakes[1]?.snake.head ?? [-1, -1];
+  }
+}
+
 function ffaSnakeBodyLength(state: GameState, index: FfaPlayerIndex): number {
   if (!isFfaPlayerAlive(state, index)) return 0;
   switch (index) {
@@ -274,7 +287,8 @@ function add2v1AiTeamGain(
 export function ffaApplyCaptureAmount(
   state: GameState,
   winner: FfaPlayerIndex,
-  safeChange: number
+  safeChange: number,
+  capturePercent?: number
 ): void {
   const scores = getFfaScores(state);
   const count = multiplayerPlayerCount(state);
@@ -327,12 +341,17 @@ export function ffaApplyCaptureAmount(
   }
   setFfaScores(state, scores);
 
-  const hudPlayer: PlayerId = winner === 0 ? 'P1' : winner === 1 ? 'P2' : 'P1';
+  const hudPlayer: PlayerId = winner === 1 ? 'P2' : 'P1';
+  const gainPos = ffaSnakeHead(state, winner);
+  const lossPos = ffaSnakeHead(state, opponents[0]!);
   state.pointChanges.push({
     player: hudPlayer,
     value: distributed,
     p1Pos: [state.p1.head[0], state.p1.head[1]],
     p2Pos: [state.p2.head[0], state.p2.head[1]],
+    gainPos,
+    lossPos,
+    capturePercent,
     p1YOffsetPx: 0,
     p2YOffsetPx: 0,
     alpha: 1,

@@ -342,13 +342,18 @@ export class CanvasControlsOverlay {
     const capW = wide ? keyPx * 1.65 : keyPx;
     const capH = keyPx;
     const active = isPreMatchKeyHeld(slot, cap.dir);
-    const borderAlpha = active ? 0.95 : 0.42;
-    const borderWidth = active ? 1.6 : 1;
-    const labelColor = active ? '#ffffff' : '#e8e8e8';
+    const borderAlpha = active ? 0.48 : 0.42;
+    const borderWidth = active ? 1.2 : 1;
+    const labelColor = active ? 'rgba(255,255,255,0.55)' : '#e8e8e8';
 
     const cornerR = keyCapCornerRadius(keyPx);
 
     cap.border.clear();
+    if (active) {
+      cap.border
+        .roundRect(-capW / 2, -capH / 2, capW, capH, cornerR)
+        .fill({ color: 0xffffff, alpha: 0.05 });
+    }
     cap.border
       .roundRect(-capW / 2, -capH / 2, capW, capH, cornerR)
       .stroke({ width: borderWidth, color: 0xffffff, alpha: borderAlpha });
@@ -400,8 +405,20 @@ export function drawCanvasControlsFallback(
       const x = anchorX + spec.x;
       const y = anchorY + spec.y;
       const active = isPreMatchKeyHeld(slot, spec.dir);
-      ctx.strokeStyle = active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.42)';
-      ctx.lineWidth = active ? 1.6 : 1;
+      ctx.strokeStyle = active ? 'rgba(255,255,255,0.48)' : 'rgba(255,255,255,0.42)';
+      ctx.lineWidth = active ? 1.2 : 1;
+      if (active) {
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        fillRoundedRect(
+          ctx,
+          x - capW / 2,
+          y - capH / 2,
+          capW,
+          capH,
+          cornerR * scale
+        );
+        ctx.fill();
+      }
       strokeRoundedRect(
         ctx,
         x - capW / 2,
@@ -411,12 +428,23 @@ export function drawCanvasControlsFallback(
         cornerR * scale
       );
       ctx.stroke();
-      ctx.fillStyle = active ? '#ffffff' : '#e8e8e8';
+      ctx.fillStyle = active ? 'rgba(255,255,255,0.55)' : '#e8e8e8';
       ctx.fillText(formatKeyCapLabel(spec.label, spec.dir), x, y);
     }
   }
 
   ctx.restore();
+}
+
+function fillRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+): void {
+  strokeRoundedRect(ctx, x, y, w, h, r);
 }
 
 function strokeRoundedRect(

@@ -106,6 +106,6 @@ export function preMatchKeyCapScale(
   const elapsed = now - started;
   const popIn = Math.min(1, elapsed / 110);
   const popEase = 1 - Math.pow(1 - popIn, 3);
-  const pulse = 1 + 0.08 * Math.sin((elapsed / 160) * Math.PI);
-  return 1 + 0.14 * popEase * pulse;
+  const pulse = 1 + 0.04 * Math.sin((elapsed / 220) * Math.PI);
+  return 1 + 0.09 * popEase * pulse;
 }

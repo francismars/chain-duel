@@ -43,6 +43,12 @@ export interface PointChange {
   value: number;
   p1Pos: GridPos;
   p2Pos: GridPos;
+  /** When set, +value renders above this head (FFA / explicit gain). */
+  gainPos?: GridPos;
+  /** When set, -value renders above this head (FFA / explicit loss). */
+  lossPos?: GridPos;
+  /** Capture tier used for this steal (shown on + pop). */
+  capturePercent?: number;
   p1YOffsetPx: number;
   p2YOffsetPx: number;
   alpha: number;

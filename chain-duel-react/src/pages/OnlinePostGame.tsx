@@ -197,20 +197,18 @@ export default function OnlinePostGame({
     const roundCount = info.matchRounds?.length ?? 0;
     if (showPayoutUi) {
       setNavFocus(
-        isWinner
-          ? { type: 'payout', slot: 'withdraw' }
-          : isMatchPlayer
-            ? { type: 'don' }
-            : roundCount > 0
-              ? { type: 'replay', index: roundCount - 1 }
-              : { type: 'exit' }
+        isMatchPlayer
+          ? { type: 'don' }
+          : roundCount > 0
+            ? { type: 'replay', index: roundCount - 1 }
+            : { type: 'exit' }
       );
     } else if (roundCount > 0) {
       setNavFocus({ type: 'replay', index: roundCount - 1 });
     } else {
       setNavFocus({ type: 'don' });
     }
-  }, [info, showPayoutUi, isWinner, isMatchPlayer]);
+  }, [info, showPayoutUi, isMatchPlayer]);
 
   const openSessionRoundReplay = useCallback(
     (matchRound: number) => {
