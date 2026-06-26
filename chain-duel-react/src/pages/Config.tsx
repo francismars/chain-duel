@@ -172,6 +172,7 @@ export default function Config() {
   const nip46ShowQrRef = useRef<HTMLButtonElement | null>(null);
   const nip46SignerRef = useRef<HTMLAnchorElement | null>(null);
   const profileEntrancePlayedRef = useRef(false);
+  const keyboardBindListeningRef = useRef(false);
   playSfxRef.current = playSfx;
 
   useGamepad(configTab === 'gamepad');
@@ -652,6 +653,7 @@ export default function Config() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
+      if (keyboardBindListeningRef.current) return;
 
       const isConfirm =
         e.key === 'Enter' || e.key === ' ' || e.code === 'NumpadEnter';
@@ -1520,7 +1522,9 @@ export default function Config() {
       </div>
       ) : null}
 
-      {configTab === 'keyboard' ? <KeyboardControlsSettings /> : null}
+      {configTab === 'keyboard' ? (
+        <KeyboardControlsSettings bindListeningRef={keyboardBindListeningRef} />
+      ) : null}
 
       {configTab === 'gamepad' ? <GamepadTester active={configTab === 'gamepad'} /> : null}
         </div>

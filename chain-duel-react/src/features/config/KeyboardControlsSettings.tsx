@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type MutableRefObject } from 'react';
 import {
   autodetectAndApplyLayout,
   confirmKeyLabel,
@@ -124,7 +124,14 @@ function BindingPad({
   );
 }
 
-export function KeyboardControlsSettings() {
+type KeyboardControlsSettingsProps = {
+  /** When set, parent Config nav skips keys while a bind is in progress. */
+  bindListeningRef?: MutableRefObject<boolean>;
+};
+
+export function KeyboardControlsSettings({
+  bindListeningRef,
+}: KeyboardControlsSettingsProps = {}) {
   const layout = useKeyboardLayout();
   usePlayerBindingsRevision();
   useKeyboardLayoutAutodetect();
@@ -134,6 +141,14 @@ export function KeyboardControlsSettings() {
   const layoutSource = readLayoutSource();
 
   const cancelListening = useCallback(() => setListening(null), []);
+
+  useEffect(() => {
+    if (!bindListeningRef) return;
+    bindListeningRef.current = listening != null;
+    return () => {
+      bindListeningRef.current = false;
+    };
+  }, [listening, bindListeningRef]);
 
   useEffect(() => {
     if (!listening) return;
