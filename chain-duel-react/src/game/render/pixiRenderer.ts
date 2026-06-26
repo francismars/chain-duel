@@ -1,5 +1,6 @@
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { GameState, GridPos, PowerUpType } from '@/game/engine/types';
+import { advancePointChanges } from '@/game/engine';
 import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
 import {
   drawPowerUpIconPixi,
@@ -668,22 +669,15 @@ export class PixiGameRenderer {
       this.drawPowerUpItem(item.pos, item.type, colSize, rowSize, now);
     }
 
-    // Point pop-ups
+    // Point pop-ups (decay runs in useGameRenderBridge / online client anims)
     this.pointChangesOverlay.render(
       state.pointChanges ?? [],
       colSize,
       rowSize
     );
 
-    if (state.meta?.modeLabel !== 'ONLINE') {
-      state.pointChanges = (state.pointChanges ?? [])
-        .map((change) => ({
-          ...change,
-          p1YOffsetPx: change.p1YOffsetPx - 1,
-          p2YOffsetPx: change.p2YOffsetPx - 1,
-          alpha: change.alpha - 0.1 / 6,
-        }))
-        .filter((change) => change.alpha >= 0);
+    if (opts?.replayView) {
+      advancePointChanges(state);
     }
 
     // ── Text overlays ─────────────────────────────────────────────────────────

@@ -96,6 +96,7 @@ export default function OnlineGame({
   const canvasObjectivesRef = useRef<CanvasObjectivesOpts>({});
   const [hostEl, setHostEl] = useState<HTMLDivElement | null>(null);
   const pointAnimationsRef = useRef<OnlinePointAnim[]>([]);
+  const prevPointPopCountRef = useRef(0);
   const prevPointCountByKeyRef = useRef<Map<string, number>>(new Map());
   const { bitcoin, footerHighlight, setFooterHighlight } = useMempoolFeed();
   const [roomInfo, setRoomInfo] = useState<{
@@ -322,13 +323,18 @@ export default function OnlineGame({
             keysHeldRef.current
           );
         }
-        const renderState =
-          raw.meta?.modeLabel === 'ONLINE'
-            ? withOnlinePointAnimations(raw, pointAnimationsRef.current)
-            : raw;
+        const useOnlinePointAnims =
+          raw.meta?.modeLabel === 'ONLINE' && !replayViewRef.current;
+        const renderState = useOnlinePointAnims
+          ? withOnlinePointAnimations(raw, pointAnimationsRef.current)
+          : raw;
+        const popCount = renderState.pointChanges?.length ?? 0;
+        const pointPopTail =
+          popCount > 0 || prevPointPopCountRef.current > 0;
+        prevPointPopCountRef.current = popCount;
         const snapshotChanged = snap !== lastPaintedSnapshot;
         const animActive = rendererRef.current.needsPaint(renderState);
-        if (snapshotChanged || animActive) {
+        if (snapshotChanged || animActive || pointPopTail) {
           rendererRef.current.render(renderState, {
             replayView: replayViewRef.current,
             suppressVictoryOverlay: victoryHandoffRef.current,
@@ -1457,6 +1463,8 @@ function mergeOnlineSnapshot(
     if (!previous) {
       return incoming;
     }
+    const incomingAlpha =
+      typeof incoming.alpha === 'number' ? incoming.alpha : previous.alpha;
     return {
       ...incoming,
       // Never move a popup backwards between snapshots.
@@ -1468,7 +1476,7 @@ function mergeOnlineSnapshot(
         incoming.p2YOffsetPx ?? 0,
         previous.p2YOffsetPx ?? 0
       ),
-      alpha: Math.min(incoming.alpha ?? 1, previous.alpha ?? 1),
+      alpha: Math.min(incomingAlpha ?? 1, previous.alpha ?? 1),
     };
   });
 

@@ -50,6 +50,7 @@ import {
   distributionTrackFeedbackStyle,
 } from '@/features/game/hudCaptureFeedback';
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
+import { createEmptyHeldInputState } from '@/lib/controls/heldDirectionSteering';
 import { PowerUpLegend } from '@/features/game/PowerUpLegend';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 import {
@@ -178,6 +179,7 @@ export default function Game() {
   const blockChallengeContinueRef = useRef(false);
   const challengeContinueLabelRef = useRef<string | null>(null);
   const canvasObjectivesRef = useRef<CanvasObjectivesOpts>({ controlSlots: [] });
+  const heldInputRef = useRef(createEmptyHeldInputState());
 
   const [loading, setLoading] = useState(true);
   const [player1Name, setPlayer1Name] = useState('Player 1');
@@ -1343,6 +1345,7 @@ export default function Game() {
       ? challengeContinueLabelRef
       : undefined,
     canvasObjectivesRef,
+    heldInputRef,
   });
 
   useEffect(() => {
@@ -1371,6 +1374,7 @@ export default function Game() {
     blockContinueAfterGameRef: isChallengeSession
       ? blockChallengeContinueRef
       : undefined,
+    heldInputRef,
   });
 
   return (

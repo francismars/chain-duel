@@ -638,6 +638,18 @@ export function stepGame(state: GameState): TickResult {
   };
 }
 
+/** Fade and rise floating +/- sats popups (local / practice / challenge sim). */
+export function advancePointChanges(state: GameState): void {
+  state.pointChanges = state.pointChanges
+    .map((change) => ({
+      ...change,
+      p1YOffsetPx: change.p1YOffsetPx - 1,
+      p2YOffsetPx: change.p2YOffsetPx - 1,
+      alpha: change.alpha - 0.1 / 6,
+    }))
+    .filter((change) => change.alpha >= 0);
+}
+
 // ============================================================================
 // Convergence
 // ============================================================================

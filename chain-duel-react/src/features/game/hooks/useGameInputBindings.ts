@@ -3,6 +3,12 @@ import {
   resolveMovementForStateFromKeyboardEvent,
   isConfirmKeyForState,
 } from '@/lib/controls/playerControls';
+import { engineDirectionToHeldAxis } from '@/lib/controls/applyHeldInputSteering';
+import {
+  createEmptyHeldInputState,
+  type HeldAxis,
+  type HeldInputState,
+} from '@/lib/controls/heldDirectionSteering';
 import {
   canContinueAfterGame,
   setControllerTestHeld,
@@ -24,6 +30,8 @@ interface UseGameInputBindingsArgs {
   readyToStartRef?: MutableRefObject<boolean>;
   /** When true, ignore continue keys (e.g. challenge win validating on server). */
   blockContinueAfterGameRef?: MutableRefObject<boolean>;
+  /** Tracks keys held for diagonal steering (applied each sim tick). */
+  heldInputRef?: MutableRefObject<HeldInputState>;
 }
 
 function applyPreStartControllerTest(
@@ -79,6 +87,31 @@ function applyGameplayDirection(
   }
 }
 
+function setHeldAxis(
+  heldInput: HeldInputState,
+  slot: keyof HeldInputState,
+  axis: HeldAxis,
+  isDown: boolean,
+  trackLastAxis: boolean
+): void {
+  heldInput[slot].axes[axis] = isDown;
+  if (isDown && trackLastAxis) {
+    heldInput[slot].lastAxis = axis;
+  }
+}
+
+function syncHeldFromMovement(
+  heldInput: HeldInputState,
+  event: Pick<KeyboardEvent, 'code' | 'key'>,
+  state: GameState,
+  isDown: boolean
+): void {
+  const movement = resolveMovementForStateFromKeyboardEvent(event, state);
+  if (!movement) return;
+  const axis = engineDirectionToHeldAxis(movement.direction);
+  setHeldAxis(heldInput, movement.slot, axis, isDown, isDown);
+}
+
 export function useGameInputBindings({
   stateRef,
   winnerSentRef,
@@ -86,6 +119,7 @@ export function useGameInputBindings({
   onNavigateAfterFinish,
   readyToStartRef,
   blockContinueAfterGameRef,
+  heldInputRef,
 }: UseGameInputBindingsArgs) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -116,6 +150,9 @@ export function useGameInputBindings({
         return;
       }
 
+      if (heldInputRef) {
+        syncHeldFromMovement(heldInputRef.current, event, state, true);
+      }
       applyGameplayDirection(state, event);
     };
 
@@ -125,6 +162,9 @@ export function useGameInputBindings({
       if (!state.gameStarted) {
         applyPreStartControllerTest(state, event, false);
         return;
+      }
+      if (heldInputRef) {
+        syncHeldFromMovement(heldInputRef.current, event, state, false);
       }
     };
 
@@ -141,5 +181,8 @@ export function useGameInputBindings({
     winnerSentRef,
     readyToStartRef,
     blockContinueAfterGameRef,
+    heldInputRef,
   ]);
 }
+
+export { createEmptyHeldInputState };

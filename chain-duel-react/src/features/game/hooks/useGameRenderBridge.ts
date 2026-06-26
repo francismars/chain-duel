@@ -1,5 +1,7 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
-import { getHudState, stepGame } from '@/game/engine';
+import { advancePointChanges, getHudState, stepGame } from '@/game/engine';
+import { applyHeldInputSteering } from '@/lib/controls/applyHeldInputSteering';
+import type { HeldInputState } from '@/lib/controls/heldDirectionSteering';
 import { isFfaMode } from '@/game/engine/ffa';
 import type { FfaHudPlayer, GameState } from '@/game/engine/types';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
@@ -72,6 +74,8 @@ interface UseGameRenderBridgeArgs {
   challengeContinueLabelRef?: MutableRefObject<string | null>;
   /** Optional stakes / match hints drawn on the pre-start canvas overlay. */
   canvasObjectivesRef?: MutableRefObject<CanvasObjectivesOpts>;
+  /** Held direction keys — diagonal steering runs once per sim tick. */
+  heldInputRef?: MutableRefObject<HeldInputState>;
 }
 
 /** Wait until #gameContainer is visible and laid out (drops `display:none` hide class). */
@@ -114,6 +118,7 @@ export function useGameRenderBridge({
   challengeInputLogRef,
   challengeContinueLabelRef,
   canvasObjectivesRef,
+  heldInputRef,
 }: UseGameRenderBridgeArgs) {
   const emitWinnerRef = useRef(emitWinner);
   const onHudTickRef = useRef(onHudTick);
@@ -254,6 +259,9 @@ export function useGameRenderBridge({
 
         const prevPointChangeCount = state.pointChanges?.length ?? 0;
 
+        if (heldInputRef) {
+          applyHeldInputSteering(state, heldInputRef.current);
+        }
         recordChallengeInput(state);
         stepGame(state);
         if (simStepRef) simStepRef.current += 1;
@@ -337,6 +345,9 @@ export function useGameRenderBridge({
 
       if (mountReady && state) {
         runSimulation(state, deltaMs);
+        if (state.meta?.modeLabel !== 'ONLINE') {
+          advancePointChanges(state);
+        }
         renderer.render(state, renderOpts());
       }
 
@@ -362,6 +373,7 @@ export function useGameRenderBridge({
     challengeInputLogRef,
     challengeContinueLabelRef,
     canvasObjectivesRef,
+    heldInputRef,
     hostRef,
     rendererRef,
     simStepRef,
