@@ -11,7 +11,7 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { useAudio } from '@/contexts/AudioContext';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
-import { ONLINE_HOME, onlineRoomUrl } from '@/shared/constants/onlineRoutes';
+import { ONLINE_HOME } from '@/shared/constants/onlineRoutes';
 import { isOnlineSeatStartReady } from '@/lib/online/isOnlineSeatStartReady';
 import type {
   OnlineReplayBlockEvent,
