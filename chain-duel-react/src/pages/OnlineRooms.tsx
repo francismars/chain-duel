@@ -334,14 +334,13 @@ export default function OnlineRooms() {
   );
 
   const openHistoryPostGame = useCallback(
-    (room: Pick<OnlineRoomListItem, 'roomCode' | 'roomId' | 'matchRound'>) => {
+    (room: Pick<OnlineRoomListItem, 'roomCode'>) => {
       playConfirm();
       const code = room.roomCode.trim().toUpperCase();
-      const query: Record<string, string> = { roomId: room.roomId };
-      if (room.matchRound != null && room.matchRound >= 1) {
-        query.round = String(room.matchRound);
+      if (!code) {
+        return;
       }
-      navigate(onlineRoomUrl(code, query));
+      navigate(onlineRoomUrl(code));
     },
     [navigate, playConfirm]
   );

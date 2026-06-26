@@ -55,7 +55,7 @@ export default function OnlineRoom() {
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
   const roomCode = (roomCodeParam ?? '').trim().toUpperCase();
-  const replayMode = searchParams.get('replay') === '1';
+  const replayMode = searchParams.has('replay');
   const bootstrapRoomId = (searchParams.get('roomId') ?? '').trim();
   const bootstrapMatchRoundRaw = Number(
     searchParams.get('round') ?? searchParams.get('matchRound') ?? ''
@@ -77,6 +77,8 @@ export default function OnlineRoom() {
 
   const [postGameReady, setPostGameReady] = useState(false);
   const [victoryHandoff, setVictoryHandoff] = useState(false);
+  const roomRef = useRef(room);
+  roomRef.current = room;
 
   const syncRoom = useCallback((next: OnlineRoomState) => {
     setRoom(next);
@@ -137,12 +139,36 @@ export default function OnlineRoom() {
     if (!socket || !roomCode) {
       return;
     }
-    joinedRef.current = false;
-    bootstrappedRef.current = false;
-    bootstrapFallbackRef.current = false;
-    if (bootstrapRoomId) {
-      setRoomId(bootstrapRoomId);
+
+    const cachedRoom = roomRef.current;
+    const haveFinishedRoomForCode =
+      !replayMode &&
+      cachedRoom != null &&
+      cachedRoom.roomCode.toUpperCase() === roomCode &&
+      (cachedRoom.phase === 'postgame' || cachedRoom.phase === 'finished');
+
+    if (!haveFinishedRoomForCode) {
+      joinedRef.current = false;
+      bootstrappedRef.current = false;
+      bootstrapFallbackRef.current = false;
+      if (bootstrapRoomId) {
+        setRoomId(bootstrapRoomId);
+      }
+    } else {
+      joinedRef.current = true;
+      setJoinError('');
     }
+
+    const refreshCachedRoom = () => {
+      const live = roomRef.current;
+      if (
+        live?.roomId &&
+        live.roomCode.toUpperCase() === roomCode &&
+        (live.phase === 'postgame' || live.phase === 'finished')
+      ) {
+        socket.emit('getOnlineRoomState', { roomId: live.roomId });
+      }
+    };
 
     const onJoin = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.joinOnlineRoom(payload);
@@ -187,15 +213,31 @@ export default function OnlineRoom() {
         return;
       }
       if (parsed.reason === 'room_not_found') {
+        const live = roomRef.current;
+        if (
+          live &&
+          live.roomCode.toUpperCase() === roomCode &&
+          (live.phase === 'postgame' || live.phase === 'finished')
+        ) {
+          return;
+        }
         setJoinError('Room not found.');
       }
     };
 
     const onConnect = () => {
+      if (haveFinishedRoomForCode) {
+        refreshCachedRoom();
+        return;
+      }
       emitBootstrap();
     };
 
-    emitBootstrap();
+    if (!haveFinishedRoomForCode) {
+      emitBootstrap();
+    } else {
+      refreshCachedRoom();
+    }
     socket.on('connect', onConnect);
     socket.on('resJoinOnlineRoom', onJoin);
     socket.on('onlineRoomUpdated', onUpdated);

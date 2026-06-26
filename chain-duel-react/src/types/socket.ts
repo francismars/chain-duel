@@ -655,6 +655,7 @@ export interface ServerToClientEvents {
       p2Score: number;
       netPrize: number;
       winnerRole?: PlayerRole.Player1 | PlayerRole.Player2;
+      replayAvailable?: boolean;
     }>;
   }) => void;
   resCreateOnlineWithdrawal: (data: { roomId: string; lnurlw: string }) => void;

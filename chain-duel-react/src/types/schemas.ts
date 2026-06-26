@@ -424,6 +424,7 @@ export const OnlineMatchRoundSummarySchema = z.object({
   winnerRole: z
     .union([z.literal(PlayerRole.Player1), z.literal(PlayerRole.Player2)])
     .optional(),
+  replayAvailable: z.boolean().optional(),
 });
 
 export const ResOnlinePostGameInfoSchema = z.object({

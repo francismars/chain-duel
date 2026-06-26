@@ -51,22 +51,35 @@ interface OnlinePostGameInfo {
   rematchNote1?: string;
   rematchWaitingForSessionID?: string;
   doubleOrNothingVotes: number;
-  matchRounds?: Array<{
-    matchRound: number;
-    finishedAt: number;
-    winnerName: string;
-    p1Name: string;
-    p2Name: string;
-    p1Score: number;
-    p2Score: number;
-    netPrize: number;
-    winnerRole?: 'Player 1' | 'Player 2';
-  }>;
+    matchRounds?: Array<{
+      matchRound: number;
+      finishedAt: number;
+      winnerName: string;
+      p1Name: string;
+      p2Name: string;
+      p1Score: number;
+      p2Score: number;
+      netPrize: number;
+      winnerRole?: 'Player 1' | 'Player 2';
+      replayAvailable?: boolean;
+    }>;
 }
 
 const PLACEHOLDER_LNURL =
   'MARSURL1DP68GURN8GHJ7MRWVF5HGUEWV3HK5MEWWP6Z7AMFW35XGUNPWUHKZURF9AMRZTMVDE6HYMP0V438Y7NKXUE5S5TFG9X9GE2509N5VMN0G46S0WQJQ4';
 const ONLINE_FEE_MULTIPLIER = 0.95;
+
+function lastReplayableRoundIndex(
+  rounds: NonNullable<OnlinePostGameInfo['matchRounds']>
+): number | null {
+  for (let i = rounds.length - 1; i >= 0; i -= 1) {
+    const round = rounds[i];
+    if (round && round.replayAvailable !== false) {
+      return i;
+    }
+  }
+  return null;
+}
 
 function roundWinningSide(
   round: NonNullable<OnlinePostGameInfo['matchRounds']>[number]
@@ -189,36 +202,49 @@ export default function OnlinePostGame({
   }, [onReadyChange]);
 
   useEffect(() => {
+    const flash = sessionStorage.getItem('onlineReplayUnavailableFlash');
+    if (!flash) {
+      return;
+    }
+    sessionStorage.removeItem('onlineReplayUnavailableFlash');
+    setError('Replay is not available for this match.');
+  }, []);
+
+  useEffect(() => {
     if (!info || navFocusPrimedRef.current) {
       return;
     }
     navFocusPrimedRef.current = true;
     exitConfirmPendingRef.current = false;
-    const roundCount = info.matchRounds?.length ?? 0;
+    const rounds = info.matchRounds ?? [];
+    const replayIdx = lastReplayableRoundIndex(rounds);
     if (showPayoutUi) {
       setNavFocus(
         isMatchPlayer
           ? { type: 'don' }
-          : roundCount > 0
-            ? { type: 'replay', index: roundCount - 1 }
+          : replayIdx != null
+            ? { type: 'replay', index: replayIdx }
             : { type: 'exit' }
       );
-    } else if (roundCount > 0) {
-      setNavFocus({ type: 'replay', index: roundCount - 1 });
+    } else if (replayIdx != null) {
+      setNavFocus({ type: 'replay', index: replayIdx });
     } else {
       setNavFocus({ type: 'don' });
     }
   }, [info, showPayoutUi, isMatchPlayer]);
 
   const openSessionRoundReplay = useCallback(
-    (matchRound: number) => {
+    (matchRound: number, replayAvailable?: boolean) => {
+      if (replayAvailable === false) {
+        return;
+      }
       playConfirm();
       if (!roomCode) {
         return;
       }
-      navigate(onlineReplayRoomUrl(roomCode, matchRound, roomId));
+      navigate(onlineReplayRoomUrl(roomCode, matchRound));
     },
-    [navigate, playConfirm, roomCode, roomId]
+    [navigate, playConfirm, roomCode]
   );
 
   const exitRoom = useCallback(() => {
@@ -316,7 +342,9 @@ export default function OnlinePostGame({
       if (isEnter) {
         if (navFocus.type === 'replay') {
           const round = rounds[navFocus.index];
-          if (round) openSessionRoundReplay(round.matchRound);
+          if (round && round.replayAvailable !== false) {
+            openSessionRoundReplay(round.matchRound, round.replayAvailable);
+          }
           return;
         }
         if (navFocus.type === 'don') {
@@ -782,26 +810,35 @@ export default function OnlinePostGame({
                       </div>
 
                       <div className="online-postgame-round-action-col">
-                        <Button
-                          type="button"
-                          ref={(el) => {
-                            if (el) replayBtnRefs.current.set(index, el);
-                            else replayBtnRefs.current.delete(index);
-                          }}
-                          className={`online-postgame-round-replay-btn${navFocus.type === 'replay' && navFocus.index === index ? ' online-selected' : ''}`}
-                          onClick={() =>
-                            openSessionRoundReplay(round.matchRound)
-                          }
-                          aria-label={`Replay game ${round.matchRound}`}
-                        >
-                          <span
-                            className="online-postgame-round-replay-icon"
-                            aria-hidden="true"
-                          />
-                          <span className="online-postgame-round-replay-label">
-                            Replay
+                        {round.replayAvailable === false ? (
+                          <span className="online-postgame-round-replay-muted">
+                            No replay recorded
                           </span>
-                        </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            ref={(el) => {
+                              if (el) replayBtnRefs.current.set(index, el);
+                              else replayBtnRefs.current.delete(index);
+                            }}
+                            className={`online-postgame-round-replay-btn${navFocus.type === 'replay' && navFocus.index === index ? ' online-selected' : ''}`}
+                            onClick={() =>
+                              openSessionRoundReplay(
+                                round.matchRound,
+                                round.replayAvailable
+                              )
+                            }
+                            aria-label={`Replay game ${round.matchRound}`}
+                          >
+                            <span
+                              className="online-postgame-round-replay-icon"
+                              aria-hidden="true"
+                            />
+                            <span className="online-postgame-round-replay-label">
+                              Replay
+                            </span>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </li>

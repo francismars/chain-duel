@@ -76,12 +76,12 @@ export default function OnlineGame({
   roomCode: _roomCodeProp,
   victoryHandoff = false,
 }: OnlineGameProps = {}) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { stop, isMuted, isMusicMuted } = useAudio();
   const { socket } = useSocket({ autoConnect: true });
   const roomId = roomIdProp ?? searchParams.get('roomId') ?? '';
-  const replayMode = searchParams.get('replay') === '1';
+  const replayMode = searchParams.has('replay');
   const replayMatchRound = (() => {
     const r = searchParams.get('round');
     if (!r) {
@@ -537,10 +537,10 @@ export default function OnlineGame({
         return;
       }
       if (parsed.reason === 'replay_unavailable') {
-        setReplayLoaded(true);
-        replayLoadedRef.current = true;
         replayFetchInFlightRef.current = false;
-        setReplayError('Replay not available for this room yet.');
+        replayLoadedRef.current = true;
+        sessionStorage.setItem('onlineReplayUnavailableFlash', '1');
+        setSearchParams({}, { replace: true });
       }
     };
     socket.on('onlineRoomSnapshot', onSnapshot);
@@ -814,11 +814,11 @@ export default function OnlineGame({
   const goReplayVictoryScreen = useCallback(() => {
     setReplayPlaying(false);
     if (_roomCodeProp) {
-      navigate(onlineRoomUrl(_roomCodeProp), { replace: true });
+      setSearchParams({}, { replace: true });
       return;
     }
     navigate(ONLINE_HOME);
-  }, [navigate, _roomCodeProp]);
+  }, [navigate, _roomCodeProp, setSearchParams]);
 
   const activateReplayControl = useCallback(
     (target: ReplayNavFocus) => {

@@ -436,6 +436,13 @@
   top: 0;
 }
 
+.online-postgame-round-replay-muted {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.42);
+}
+
 @media (max-width: 720px) {
   .online-postgame-round-row-inner {
     grid-template-columns: 1fr;
