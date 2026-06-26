@@ -408,7 +408,7 @@ export default function Config() {
       let p: Kind0Profile = sessionProfile;
 
       if (socket?.connected) {
-        const appP = await fetchProfileFromServer(socket, pubkey);
+        const appP = await fetchProfileFromServer(socket, pubkey, { refresh: true });
         if (!cancelled && appP) {
           p = appProfileToKind0(appP);
           setProfile(p);
@@ -428,7 +428,9 @@ export default function Config() {
         if (recovered && !cancelled) {
           pubkey = recovered;
           if (socket?.connected) {
-            const appP2 = await fetchProfileFromServer(socket, recovered);
+            const appP2 = await fetchProfileFromServer(socket, recovered, {
+              refresh: true,
+            });
             if (appP2) {
               p = appProfileToKind0(appP2);
               setProfile(p);

@@ -11,7 +11,8 @@ type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 /** Kind-0 profile via marspay (no client relay reads). */
 export function fetchProfileFromServer(
   socket: GameSocket,
-  pubkey: string
+  pubkey: string,
+  options?: { refresh?: boolean }
 ): Promise<AppNostrProfile | null> {
   return new Promise((resolve) => {
     const timeout = window.setTimeout(() => {
@@ -34,6 +35,9 @@ export function fetchProfileFromServer(
     };
 
     socket.on('resNostrProfile', onProfile);
-    socket.emit('getNostrProfile', { pubkey });
+    socket.emit('getNostrProfile', {
+      pubkey,
+      refresh: options?.refresh === true,
+    });
   });
 }

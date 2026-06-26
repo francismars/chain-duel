@@ -389,7 +389,7 @@ export interface ClientToServerEvents {
   }) => void;
   getAppNostrSession: () => void;
   clearAppNostrSession: () => void;
-  getNostrProfile: (payload?: { pubkey?: string }) => void;
+  getNostrProfile: (payload?: { pubkey?: string; refresh?: boolean }) => void;
   publishSignedNostrEvent: (payload: {
     event: Record<string, unknown>;
   }) => void;
