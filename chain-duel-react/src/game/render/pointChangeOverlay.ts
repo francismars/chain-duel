@@ -1,5 +1,6 @@
 import { CanvasTextMetrics, Container, Text, TextStyle } from 'pixi.js';
 import type { GridPos, PointChange } from '@/game/engine/types';
+import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 
 const GAIN_FILL = 0x6fd4a8;
 const LOSS_FILL = 0xe85a4a;
@@ -408,7 +409,7 @@ export class PointChangeOverlay {
     });
     for (const text of [main, label]) {
       text.anchor.set(0, 0.5);
-      text.resolution = 2;
+      text.resolution = pixiTextResolution();
       text.roundPixels = true;
     }
     root.addChild(main);

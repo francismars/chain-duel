@@ -1,4 +1,5 @@
 import { Container, Text, TextStyle } from 'pixi.js';
+import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 import {
   computeCanvasObjectivesLayout,
   computeInstructionCycleFrame,
@@ -69,8 +70,8 @@ export class CanvasObjectivesOverlay {
       const body = new Text({ text: item.body, style: new TextStyle() });
       title.anchor.set(0.5, 0);
       body.anchor.set(0.5, 0);
-      title.resolution = 2;
-      body.resolution = 2;
+      title.resolution = pixiTextResolution();
+      body.resolution = pixiTextResolution();
       title.cullable = false;
       body.cullable = false;
       root.addChild(title);
@@ -81,7 +82,7 @@ export class CanvasObjectivesOverlay {
       this.cards.push({ root, title, body });
     }
     this.stakes.anchor.set(0.5, 0);
-    this.stakes.resolution = 2;
+    this.stakes.resolution = pixiTextResolution();
     this.stakes.cullable = false;
     this.stakes.visible = false;
     this.container.addChild(this.stakes);

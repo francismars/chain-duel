@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { Button } from '@/components/ui/Button';
@@ -90,9 +90,7 @@ interface ZapMessage {
   content: string;
   amount: number;
   profile: string;
-  top: number;
   scale: number;
-  hidden: boolean;
 }
 
 type SoloEndData = {
@@ -1159,13 +1157,15 @@ export default function Game() {
         {
           ...data,
           id: `zap-${Date.now()}-${prev.length}`,
-          top: 18,
-          hidden: true,
         },
       ]);
     },
     []
   );
+
+  const dismissZapMessage = useCallback((id: string) => {
+    setZapMessages((prev) => prev.filter((zap) => zap.id !== id));
+  }, []);
 
   const createRenderer = useCallback(() => new PixiGameRenderer(), []);
 
@@ -1348,23 +1348,6 @@ export default function Game() {
     heldInputRef,
   });
 
-  useEffect(() => {
-    if (zapMessages.length === 0) return;
-    const timer = window.setInterval(() => {
-      setZapMessages((prev) => {
-        const next = prev
-          .map((zap) => ({
-            ...zap,
-            hidden: zap.top > 17.5 ? false : zap.hidden,
-            top: zap.top - 0.04,
-          }))
-          .filter((zap) => zap.top > -1);
-        return next;
-      });
-    }, 16);
-    return () => window.clearInterval(timer);
-  }, [zapMessages.length]);
-
   useGameInputBindings({
     stateRef,
     winnerSentRef,
@@ -1408,11 +1391,13 @@ export default function Game() {
                 {zapMessages.map((zap) => (
                   <div
                     key={zap.id}
-                    className={`zapMessage ${zap.hidden ? 'hidden' : ''}`}
-                    style={{
-                      top: `${zap.top}vw`,
-                      transform: `scale(${zap.scale})`,
-                    }}
+                    className="zapMessage"
+                    style={
+                      {
+                        '--zap-scale': zap.scale,
+                      } as CSSProperties
+                    }
+                    onAnimationEnd={() => dismissZapMessage(zap.id)}
                   >
                     <div className="zapMessageInner">
                       <img src={zap.profile} alt="" />
@@ -1494,11 +1479,13 @@ export default function Game() {
                   {zapMessages.map((zap) => (
                     <div
                       key={zap.id}
-                      className={`zapMessage ${zap.hidden ? 'hidden' : ''}`}
-                      style={{
-                        top: `${zap.top}vw`,
-                        transform: `scale(${zap.scale})`,
-                      }}
+                      className="zapMessage"
+                      style={
+                        {
+                          '--zap-scale': zap.scale,
+                        } as CSSProperties
+                      }
+                      onAnimationEnd={() => dismissZapMessage(zap.id)}
                     >
                       <div className="zapMessageInner">
                         <img src={zap.profile} alt="" />

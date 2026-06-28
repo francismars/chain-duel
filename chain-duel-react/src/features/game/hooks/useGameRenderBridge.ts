@@ -214,7 +214,7 @@ export function useGameRenderBridge({
       captureP2Ref.current = hud.captureP2;
     };
 
-    const runSimulation = (state: GameState, deltaMs: number): void => {
+    const runSimulation = (state: GameState, deltaMs: number): number => {
       if (state.countdownStart && !state.gameStarted) {
         countdownAccum += deltaMs;
         let steps = 0;
@@ -232,13 +232,13 @@ export function useGameRenderBridge({
             audio?.playCountdownTick(state.countdownTicks);
           }
         }
-        return;
+        return steps;
       }
 
       if (!state.gameStarted || state.gameEnded) {
         countdownAccum = 0;
         gameplayAccum = 0;
-        return;
+        return 0;
       }
 
       countdownAccum = 0;
@@ -289,16 +289,6 @@ export function useGameRenderBridge({
           }
         }
 
-        applyHud({
-          p1Points: hud.p1Points,
-          p2Points: hud.p2Points,
-          captureP1: hud.captureP1,
-          captureP2: hud.captureP2,
-          currentWidthP1: hud.currentWidthP1,
-          currentWidthP2: hud.currentWidthP2,
-          ffa: hud.ffa,
-        });
-
         const newStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
         if (newStepMs !== prevStepMs && newStepMs !== lastReportedStepMs) {
           lastReportedStepMs = newStepMs;
@@ -334,6 +324,21 @@ export function useGameRenderBridge({
           winnerSentRef.current = true;
         }
       }
+
+      if (steps > 0) {
+        const hud = getHudState(state);
+        applyHud({
+          p1Points: hud.p1Points,
+          p2Points: hud.p2Points,
+          captureP1: hud.captureP1,
+          captureP2: hud.captureP2,
+          currentWidthP1: hud.currentWidthP1,
+          currentWidthP2: hud.currentWidthP2,
+          ffa: hud.ffa,
+        });
+      }
+
+      return steps;
     };
 
     let frameRef = 0;
@@ -344,11 +349,13 @@ export function useGameRenderBridge({
       lastFrameMs = now;
 
       if (mountReady && state) {
-        runSimulation(state, deltaMs);
+        const simSteps = runSimulation(state, deltaMs);
         if (state.meta?.modeLabel !== 'ONLINE') {
           advancePointChanges(state);
         }
-        renderer.render(state, renderOpts());
+        if (simSteps > 0 || renderer.needsPaint(state)) {
+          renderer.render(state, renderOpts());
+        }
       }
 
       frameRef = window.requestAnimationFrame(frame);

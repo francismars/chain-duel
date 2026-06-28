@@ -1,4 +1,5 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 import type { GameState, GridPos } from '@/game/engine/types';
 import {
   confirmKeyLabel,
@@ -199,7 +200,7 @@ export class CanvasControlsOverlay {
         const border = new Graphics();
         const label = new Text({ text: '', style: new TextStyle() });
         label.anchor.set(0.5);
-        label.resolution = 2;
+        label.resolution = pixiTextResolution();
         capRoot.addChild(border);
         capRoot.addChild(label);
         root.addChild(capRoot);

@@ -1,6 +1,7 @@
 import { CanvasTextMetrics, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { GridPos, SnakeState } from '@/game/engine/types';
 import type { OnlineStartReadyState } from '@/game/render/matchObjectives';
+import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 
 const STATUS_FONT = 'Inter, system-ui, sans-serif';
 const READY_CHECK_GREEN = 0x6fd4a8;
@@ -198,7 +199,7 @@ export class OnlineStartReadyOverlay {
       const status = new Text({ text: '', style: new TextStyle() });
       const hint = new Text({ text: '', style: new TextStyle() });
       for (const t of [status, hint]) {
-        t.resolution = 2;
+        t.resolution = pixiTextResolution();
         t.cullable = false;
         t.roundPixels = true;
       }

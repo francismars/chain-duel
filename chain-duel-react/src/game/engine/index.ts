@@ -16,6 +16,7 @@ import {
   FFA_SPECTER_COLOR,
   FFA_BOT_NAMES,
 } from '@/game/engine/constants';
+import { runAStar } from '@/game/engine/astar';
 import { gameRandom } from '@/game/engine/runRng';
 import type {
   AiTier,
@@ -1408,54 +1409,32 @@ function findPathGeneric(
   /** First-step facing for this snake (omit when unknown / no reverse constraint). */
   facing?: Direction
 ): GridPos[] {
-  const openSet: GridPos[] = [start];
-  const cameFrom = new Map<string, string>();
-  const gScore = new Map<string, number>([[posKey(start), 0]]);
-  const fScore = new Map<string, number>([
-    [posKey(start), heuristic(start, target)],
-  ]);
-
-  while (openSet.length > 0) {
-    let current = openSet[0];
-    let currentF = fScore.get(posKey(current)) ?? Number.POSITIVE_INFINITY;
-    for (const node of openSet) {
-      const f = fScore.get(posKey(node)) ?? Number.POSITIVE_INFINITY;
-      if (f < currentF) {
-        current = node;
-        currentF = f;
+  return runAStar({
+    start,
+    target,
+    heuristic,
+    samePos,
+    neighbors(current) {
+      const candidates: GridPos[] = [
+        [current[0] + 1, current[1]],
+        [current[0] - 1, current[1]],
+        [current[0], current[1] + 1],
+        [current[0], current[1] - 1],
+      ];
+      const out: GridPos[] = [];
+      for (const nb of candidates) {
+        if (outOfBounds(state, nb)) continue;
+        if (hitsObstacle(state, nb)) continue;
+        if (extraBlocked.has(posKey(nb))) continue;
+        if (samePos(current, start) && facing) {
+          const step = stepDirFromTo(current, nb);
+          if (step && dirsAreOpposite(facing, step)) continue;
+        }
+        out.push(nb);
       }
-    }
-    if (samePos(current, target)) return reconstructPath(cameFrom, current);
-    openSet.splice(
-      openSet.findIndex((n) => posKey(n) === posKey(current)),
-      1
-    );
-
-    const neighbors: GridPos[] = [
-      [current[0] + 1, current[1]],
-      [current[0] - 1, current[1]],
-      [current[0], current[1] + 1],
-      [current[0], current[1] - 1],
-    ];
-    for (const nb of neighbors) {
-      if (outOfBounds(state, nb)) continue;
-      if (hitsObstacle(state, nb)) continue;
-      if (extraBlocked.has(posKey(nb))) continue;
-      if (samePos(current, start) && facing) {
-        const step = stepDirFromTo(current, nb);
-        if (step && dirsAreOpposite(facing, step)) continue;
-      }
-      const tentative =
-        (gScore.get(posKey(current)) ?? Number.POSITIVE_INFINITY) + 1;
-      if (tentative < (gScore.get(posKey(nb)) ?? Number.POSITIVE_INFINITY)) {
-        cameFrom.set(posKey(nb), posKey(current));
-        gScore.set(posKey(nb), tentative);
-        fScore.set(posKey(nb), tentative + heuristic(nb, target));
-        if (!openSet.some((n) => posKey(n) === posKey(nb))) openSet.push(nb);
-      }
-    }
-  }
-  return [start];
+      return out;
+    },
+  });
 }
 
 function captureExtraSnakeCoinbases(state: GameState): void {
@@ -3609,96 +3588,69 @@ function findPath(
   target: GridPos,
   playerAvoidance: PlayerPathAvoidance = 'none'
 ): GridPos[] {
-  const openSet: GridPos[] = [start];
-  const cameFrom = new Map<string, string>();
-  const gScore = new Map<string, number>([[posKey(start), 0]]);
-  const fScore = new Map<string, number>([
-    [posKey(start), heuristic(start, target)],
-  ]);
-
-  while (openSet.length > 0) {
-    let current = openSet[0];
-    let currentF = fScore.get(posKey(current)) ?? Number.POSITIVE_INFINITY;
-    for (const node of openSet) {
-      const score = fScore.get(posKey(node)) ?? Number.POSITIVE_INFINITY;
-      if (score < currentF) {
-        current = node;
-        currentF = score;
-      }
-    }
-
-    if (samePos(current, target)) return reconstructPath(cameFrom, current);
-
-    openSet.splice(
-      openSet.findIndex((n) => posKey(n) === posKey(current)),
-      1
-    );
-
-    const neighbors: GridPos[] = [
-      [current[0] + 1, current[1]],
-      [current[0] - 1, current[1]],
-      [current[0], current[1] + 1],
-      [current[0], current[1] - 1],
-    ];
-
-    for (const neighbor of neighbors) {
-      if (outOfBounds(state, neighbor)) continue;
-      if (hitsObstacle(state, neighbor)) continue;
-      if (state.p2.body.some((p) => samePos(p, neighbor))) continue;
-      if (
-        isEliminationMode(state) &&
-        state.extraSnakes.some(
-          (extra) =>
-            extra.snake.body.some((p) => samePos(p, neighbor)) ||
-            samePos(extra.snake.head, neighbor)
-        )
-      ) {
-        continue;
-      }
-      if (is2v1Mode(state) || isFfaMode(state)) {
-        let blockedByRivalNext = false;
-        const rivals: PowerUpPlayerIndex[] = isFfaMode(state)
-          ? [1, 2, 3]
-          : [1, 2];
-        for (const idx of rivals) {
-          if (!isPlayerActive(state, idx)) continue;
-          if (samePos(neighbor, predictedNextHead(state, idx))) {
-            blockedByRivalNext = true;
-            break;
-          }
+  return runAStar({
+    start,
+    target,
+    heuristic,
+    samePos,
+    neighbors(current) {
+      const candidates: GridPos[] = [
+        [current[0] + 1, current[1]],
+        [current[0] - 1, current[1]],
+        [current[0], current[1] + 1],
+        [current[0], current[1] - 1],
+      ];
+      const out: GridPos[] = [];
+      for (const neighbor of candidates) {
+        if (outOfBounds(state, neighbor)) continue;
+        if (hitsObstacle(state, neighbor)) continue;
+        if (state.p2.body.some((p) => samePos(p, neighbor))) continue;
+        if (
+          isEliminationMode(state) &&
+          state.extraSnakes.some(
+            (extra) =>
+              extra.snake.body.some((p) => samePos(p, neighbor)) ||
+              samePos(extra.snake.head, neighbor)
+          )
+        ) {
+          continue;
         }
-        if (blockedByRivalNext) continue;
+        if (is2v1Mode(state) || isFfaMode(state)) {
+          let blockedByRivalNext = false;
+          const rivals: PowerUpPlayerIndex[] = isFfaMode(state)
+            ? [1, 2, 3]
+            : [1, 2];
+          for (const idx of rivals) {
+            if (!isPlayerActive(state, idx)) continue;
+            if (samePos(neighbor, predictedNextHead(state, idx))) {
+              blockedByRivalNext = true;
+              break;
+            }
+          }
+          if (blockedByRivalNext) continue;
+        }
+        if (
+          playerAvoidance !== 'none' &&
+          state.p1.body.some((p) => samePos(p, neighbor))
+        ) {
+          continue;
+        }
+        if (
+          playerAvoidance === 'head-and-body' &&
+          samePos(state.p1.head, neighbor)
+        ) {
+          continue;
+        }
+        if (samePos(current, start) && samePos(start, state.p2.head)) {
+          const facing = state.p2.dir || state.p2.dirWanted;
+          const step = stepDirFromTo(current, neighbor);
+          if (facing && step && dirsAreOpposite(facing, step)) continue;
+        }
+        out.push(neighbor);
       }
-      if (
-        playerAvoidance !== 'none' &&
-        state.p1.body.some((p) => samePos(p, neighbor))
-      )
-        continue;
-      if (
-        playerAvoidance === 'head-and-body' &&
-        samePos(state.p1.head, neighbor)
-      )
-        continue;
-      if (samePos(current, start) && samePos(start, state.p2.head)) {
-        const facing = state.p2.dir || state.p2.dirWanted;
-        const step = stepDirFromTo(current, neighbor);
-        if (facing && step && dirsAreOpposite(facing, step)) continue;
-      }
-
-      const tentative =
-        (gScore.get(posKey(current)) ?? Number.POSITIVE_INFINITY) + 1;
-      if (
-        tentative < (gScore.get(posKey(neighbor)) ?? Number.POSITIVE_INFINITY)
-      ) {
-        cameFrom.set(posKey(neighbor), posKey(current));
-        gScore.set(posKey(neighbor), tentative);
-        fScore.set(posKey(neighbor), tentative + heuristic(neighbor, target));
-        if (!openSet.some((n) => posKey(n) === posKey(neighbor)))
-          openSet.push(neighbor);
-      }
-    }
-  }
-  return [start];
+      return out;
+    },
+  });
 }
 
 function heuristic(a: GridPos, b: GridPos): number {
@@ -3707,21 +3659,6 @@ function heuristic(a: GridPos, b: GridPos): number {
 
 function posKey(pos: GridPos): string {
   return `${pos[0]}:${pos[1]}`;
-}
-
-function reconstructPath(
-  cameFrom: Map<string, string>,
-  current: GridPos
-): GridPos[] {
-  const path: GridPos[] = [[current[0], current[1]]];
-  let cursor = posKey(current);
-  while (cameFrom.has(cursor)) {
-    const prev = cameFrom.get(cursor)!;
-    const [x, y] = prev.split(':').map((n) => Number.parseInt(n, 10));
-    path.unshift([x, y]);
-    cursor = prev;
-  }
-  return path;
 }
 
 // ============================================================================

@@ -47,6 +47,7 @@ import {
   drawPointChangesCanvas,
   PointChangeOverlay,
 } from '@/game/render/pointChangeOverlay';
+import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 
 export type PixiRenderOpts = {
   replayView?: boolean;
@@ -104,6 +105,7 @@ export class PixiGameRenderer {
   private lastResizeHeight = 0;
   /** Bumped on destroy / remount so in-flight async init cannot attach a stale canvas. */
   private mountGeneration = 0;
+  private readonly textResolution = pixiTextResolution();
 
   constructor() {
     const startWordStyle = new TextStyle({
@@ -124,7 +126,7 @@ export class PixiGameRenderer {
     for (const word of START_PROMPT_WORDS) {
       const t = new Text({ text: word, style: startWordStyle.clone() });
       t.anchor.set(0.5, 0.5);
-      t.resolution = 2;
+      t.resolution = this.textResolution;
       t.alpha = 0;
       this.startWords.push(t);
       this.startWordsContainer.addChild(t);
@@ -140,7 +142,7 @@ export class PixiGameRenderer {
       }),
     });
     this.startPromptSubtext.anchor.set(0.5, 0);
-    this.startPromptSubtext.resolution = 2;
+    this.startPromptSubtext.resolution = this.textResolution;
     this.startPromptSubtext.visible = false;
     this.endWinnerText = new Text({
       text: '',
@@ -161,7 +163,7 @@ export class PixiGameRenderer {
       }),
     });
     this.endWinnerText.anchor.set(0.5);
-    this.endWinnerText.resolution = 2;
+    this.endWinnerText.resolution = this.textResolution;
     this.endContinueText = new Text({
       text: '',
       style: new TextStyle({
@@ -181,7 +183,7 @@ export class PixiGameRenderer {
       }),
     });
     this.endContinueText.anchor.set(0.5);
-    this.endContinueText.resolution = 2;
+    this.endContinueText.resolution = this.textResolution;
     this.countdown3 = this.createCountdownText('3');
     this.countdown2 = this.createCountdownText('2');
     this.countdown1 = this.createCountdownText('1');
@@ -272,6 +274,9 @@ export class PixiGameRenderer {
     const preStart =
       !state.gameStarted && !state.countdownStart && !state.gameEnded;
     if (preStart) {
+      if (this.shouldThrottleIdlePreStartPaint(state)) {
+        return false;
+      }
       // Keep painting until the player starts — otherwise the loop stops after
       // reveal animations and the board stays blank (transparent canvas + CSS bg).
       return true;
@@ -299,6 +304,27 @@ export class PixiGameRenderer {
       return resolve > 0 && resolve < 1;
     }
     return false;
+  }
+
+  /** After board reveal settles and pre-match overlays are gone, idle paints may be skipped. */
+  shouldThrottleIdlePreStartPaint(state: GameState): boolean {
+    if (this.boardRevealTime === -1) {
+      return false;
+    }
+    const boardElapsed = Math.max(
+      0,
+      performance.now() - this.boardRevealTime - 800
+    );
+    if (boardElapsed < 700) {
+      return false;
+    }
+    if (this.preMatchOverlayVisible()) {
+      return false;
+    }
+    if (state.countdownStart || state.gameStarted || state.gameEnded) {
+      return false;
+    }
+    return true;
   }
 
   private preMatchOverlayVisible(): boolean {
@@ -346,7 +372,7 @@ export class PixiGameRenderer {
         style: this.startWordBaseStyle.clone(),
       });
       t.anchor.set(0.5, 0.5);
-      t.resolution = 2;
+      t.resolution = this.textResolution;
       t.alpha = 0;
       this.startWords.push(t);
       this.startWordsContainer.addChild(t);
@@ -1291,7 +1317,7 @@ export class PixiGameRenderer {
       }),
     });
     text.anchor.set(0.5);
-    text.resolution = 2;
+    text.resolution = this.textResolution;
     text.visible = false;
     text.alpha = 0;
     return text;

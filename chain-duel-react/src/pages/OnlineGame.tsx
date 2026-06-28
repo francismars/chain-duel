@@ -5,6 +5,9 @@ import {
   useImperativeHandle,
   useRef,
   useState,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
 } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Sponsorship } from '@/components/ui/Sponsorship';
@@ -91,6 +94,16 @@ export default function OnlineGame({
     return Number.isFinite(n) && n > 0 ? n : undefined;
   })();
   const [snapshot, setSnapshot] = useState<OnlineRoomSnapshot | null>(null);
+  const [displayHud, setDisplayHud] = useState<OnlineRoomSnapshot['hud']>({
+    p1Points: 0,
+    p2Points: 0,
+    captureP1: '2%',
+    captureP2: '2%',
+    initialWidthP1: 50,
+    initialWidthP2: 50,
+    currentWidthP1: 50,
+    currentWidthP2: 50,
+  });
   const snapshotRef = useRef<OnlineRoomSnapshot | null>(null);
   const rendererRef = useRef<PixiGameRenderer | null>(null);
   const canvasObjectivesRef = useRef<CanvasObjectivesOpts>({});
@@ -163,6 +176,8 @@ export default function OnlineGame({
   } = useHudCaptureFeedback();
   const handleSatsCapturedRef = useRef(handleSatsCaptured);
   handleSatsCapturedRef.current = handleSatsCaptured;
+  const handleCaptureTierChangedRef = useRef(handleCaptureTierChanged);
+  handleCaptureTierChangedRef.current = handleCaptureTierChanged;
   const prevCaptureRef = useRef({ p1: '', p2: '' });
   const keysHeldRef = useRef({
     up: false,
@@ -189,8 +204,34 @@ export default function OnlineGame({
   }, [isMuted, isMusicMuted]);
 
   useEffect(() => {
+    return () => {
+      audioRef.current?.stopAll();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (roomId) return;
+    navigate(ONLINE_HOME);
+  }, [navigate, roomId]);
+
+  useEffect(() => {
+    if (!replayMode) {
+      return;
+    }
+    snapshotRef.current = snapshot;
+    if (snapshot?.hud) {
+      setDisplayHud(snapshot.hud);
+    }
+  }, [replayMode, snapshot]);
+
+  useEffect(() => {
+    if (!replayMode) {
+      return;
+    }
     const hud = snapshot?.hud;
-    if (!hud) return;
+    if (!hud) {
+      return;
+    }
 
     const prev = prevCaptureRef.current;
     if (prev.p1 && hud.captureP1 !== prev.p1) {
@@ -207,28 +248,14 @@ export default function OnlineGame({
     }
     prevCaptureRef.current = { p1: hud.captureP1, p2: hud.captureP2 };
   }, [
+    replayMode,
     snapshot?.hud?.captureP1,
     snapshot?.hud?.captureP2,
     handleCaptureTierChanged,
   ]);
 
   useEffect(() => {
-    return () => {
-      audioRef.current?.stopAll();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (roomId) return;
-    navigate(ONLINE_HOME);
-  }, [navigate, roomId]);
-
-  useEffect(() => {
-    snapshotRef.current = snapshot;
-  }, [snapshot]);
-
-  useEffect(() => {
-    if (!snapshot?.state) {
+    if (!replayMode || !snapshot?.state) {
       return;
     }
     if (!gameMusicStartedRef.current) {
@@ -239,60 +266,19 @@ export default function OnlineGame({
     const state = snapshot.state as GameState;
     const prev = prevGameStateRef.current;
     if (prev) {
-      if (
-        state.countdownStart &&
-        !state.gameStarted &&
-        state.countdownTicks !== prev.countdownTicks
-      ) {
-        audioRef.current?.playCountdownTick(state.countdownTicks);
-      }
-      if (state.gameStarted && !state.gameEnded) {
-        if (state.p1.body.length > prev.p1.body.length) {
-          audioRef.current?.playCapture(state.p1.body.length);
-        }
-        if (state.p2.body.length > prev.p2.body.length) {
-          audioRef.current?.playCapture(state.p2.body.length);
-        }
-        if (
-          state.powerUpItems.length < (prev.powerUpItems?.length ?? 0)
-        ) {
-          audioRef.current?.playPowerUp();
-        }
-        const prevP1Head = prev.p1.head;
-        const prevP2Head = prev.p2.head;
-        if (
-          (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
-          state.p1.head[0] === 6 &&
-          state.p1.head[1] === 12
-        ) {
-          audioRef.current?.playReset('P1');
-        }
-        if (
-          (prevP2Head[0] !== 44 || prevP2Head[1] !== 12) &&
-          state.p2.head[0] === 44 &&
-          state.p2.head[1] === 12
-        ) {
-          audioRef.current?.playReset('P2');
-        }
-        const prevStepMs = prev.meta?.currentStepMs;
-        const newStepMs = state.meta?.currentStepMs;
-        if (
-          prevStepMs != null &&
-          newStepMs != null &&
-          newStepMs !== prevStepMs
-        ) {
-          audioRef.current?.playBlockFound();
-        }
-      }
+      playOnlineAudioFromStateTransition(prev, state, audioRef.current);
     }
     prevGameStateRef.current = state;
-  }, [snapshot]);
+  }, [replayMode, snapshot]);
 
   useEffect(() => {
+    if (!replayMode) {
+      return;
+    }
     if (!snapshot?.state?.gameEnded) {
       continueNavigatedRef.current = false;
     }
-  }, [snapshot?.state?.gameEnded]);
+  }, [replayMode, snapshot?.state?.gameEnded]);
 
   useEffect(() => {
     if (!hostEl) return;
@@ -413,22 +399,19 @@ export default function OnlineGame({
         SocketBoundaryParsers.onlineRoomSnapshot(payload) ??
         coerceOnlineRoomSnapshotEvent(payload);
       if (parsed && parsed.roomId === roomId) {
-        setSnapshot((prev) => {
-          const snap = normalizeOnlineRoomSnapshot(parsed.snapshot);
-          const merged = mergeOnlineSnapshot(prev, snap);
-          const capturedSides = ingestOnlinePointChanges(
-            merged,
-            pointAnimationsRef.current,
-            prevPointCountByKeyRef.current
-          );
-          const captureCtx = {
-            captureP1: merged.hud?.captureP1 ?? '2%',
-            captureP2: merged.hud?.captureP2 ?? '2%',
-          };
-          for (const side of capturedSides) {
-            handleSatsCapturedRef.current(side, captureCtx);
-          }
-          return merged;
+        applyLiveOnlineSnapshot(parsed.snapshot, {
+          snapshotRef,
+          pointAnimationsRef,
+          prevPointCountByKeyRef,
+          handleSatsCapturedRef,
+          handleCaptureTierChangedRef,
+          prevCaptureRef,
+          prevGameStateRef,
+          gameMusicStartedRef,
+          continueNavigatedRef,
+          audioRef,
+          setDisplayHud,
+          setSnapshot,
         });
       }
     };
@@ -438,22 +421,19 @@ export default function OnlineGame({
         coerceOnlineRoomUpdated(payload);
       if (parsed && parsed.roomId === roomId) {
         if (!replayMode) {
-          setSnapshot((prev) => {
-            const snap = normalizeOnlineRoomSnapshot(parsed.snapshot);
-            const merged = mergeOnlineSnapshot(prev, snap);
-            const capturedSides = ingestOnlinePointChanges(
-              merged,
-              pointAnimationsRef.current,
-              prevPointCountByKeyRef.current
-            );
-            const captureCtx = {
-              captureP1: merged.hud?.captureP1 ?? '2%',
-              captureP2: merged.hud?.captureP2 ?? '2%',
-            };
-            for (const side of capturedSides) {
-              handleSatsCapturedRef.current(side, captureCtx);
-            }
-            return merged;
+          applyLiveOnlineSnapshot(parsed.snapshot, {
+            snapshotRef,
+            pointAnimationsRef,
+            prevPointCountByKeyRef,
+            handleSatsCapturedRef,
+            handleCaptureTierChangedRef,
+            prevCaptureRef,
+            prevGameStateRef,
+            gameMusicStartedRef,
+            continueNavigatedRef,
+            audioRef,
+            setDisplayHud,
+            setSnapshot,
           });
         }
         const p1 = parsed.seats['Player 1'];
@@ -994,6 +974,7 @@ export default function OnlineGame({
       ? 'p2'
       : null;
   const gameState = snapshot?.state as GameState | undefined;
+  const hud = replayMode ? snapshot?.hud : displayHud;
   const preMatchStart =
     !replayMode &&
     Boolean(gameState) &&
@@ -1066,8 +1047,8 @@ export default function OnlineGame({
           <div
             className="game-hud-stakes"
             style={captureFeedbackStyleFromCtx({
-              captureP1: snapshot?.hud.captureP1 ?? '2%',
-              captureP2: snapshot?.hud.captureP2 ?? '2%',
+              captureP1: hud?.captureP1 ?? '2%',
+              captureP2: hud?.captureP2 ?? '2%',
             })}
           >
           <div className="gameState">
@@ -1081,7 +1062,7 @@ export default function OnlineGame({
                 <span
                   className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}
                 >
-                  {snapshot?.hud.captureP1 ?? '2%'}
+                  {hud?.captureP1 ?? '2%'}
                 </span>{' '}
                 capture
                 {!replayMode && roomInfo?.p1PingMs != null ? (
@@ -1125,7 +1106,7 @@ export default function OnlineGame({
                 <span
                   className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}
                 >
-                  {snapshot?.hud.captureP2 ?? '2%'}
+                  {hud?.captureP2 ?? '2%'}
                 </span>
               </div>
             </div>
@@ -1140,10 +1121,10 @@ export default function OnlineGame({
                 }`}
                 style={distributionTrackFeedbackStyle(
                   {
-                    captureP1: snapshot?.hud.captureP1 ?? '2%',
-                    captureP2: snapshot?.hud.captureP2 ?? '2%',
+                    captureP1: hud?.captureP1 ?? '2%',
+                    captureP2: hud?.captureP2 ?? '2%',
                   },
-                  snapshot?.hud.currentWidthP1 ?? 50
+                  hud?.currentWidthP1 ?? 50
                 )}
               >
                 <div
@@ -1154,7 +1135,7 @@ export default function OnlineGame({
                       : ''
                   }`}
                   style={{
-                    width: `${snapshot?.hud.currentWidthP1 ?? 50}%`,
+                    width: `${hud?.currentWidthP1 ?? 50}%`,
                     ...(barCaptureHit?.side === 'P1'
                       ? captureHitStyleVars(barCaptureHit.intensity)
                       : {}),
@@ -1168,7 +1149,7 @@ export default function OnlineGame({
                       : ''
                   }`}
                   style={{
-                    width: `${snapshot?.hud.currentWidthP2 ?? 50}%`,
+                    width: `${hud?.currentWidthP2 ?? 50}%`,
                     ...(barCaptureHit?.side === 'P2'
                       ? captureHitStyleVars(barCaptureHit.intensity)
                       : {}),
@@ -1186,7 +1167,7 @@ export default function OnlineGame({
             >
               <span id="p1Points" className="condensed">
                 {Math.floor(
-                  snapshot?.hud.p1Points ??
+                  hud?.p1Points ??
                     roomInfo?.p1Paid ??
                     roomInfo?.buyin ??
                     0
@@ -1203,7 +1184,7 @@ export default function OnlineGame({
               <span className="grey">sats</span>{' '}
               <span id="p2Points" className="condensed">
                 {Math.floor(
-                  snapshot?.hud.p2Points ??
+                  hud?.p2Points ??
                     roomInfo?.p2Paid ??
                     roomInfo?.buyin ??
                     0
@@ -1565,6 +1546,200 @@ function ingestOnlinePointChanges(
     prevPointCountByKey.set(key, count);
   }
   return capturedSides;
+}
+
+const DEFAULT_ONLINE_DISPLAY_HUD: OnlineRoomSnapshot['hud'] = {
+  p1Points: 0,
+  p2Points: 0,
+  captureP1: '2%',
+  captureP2: '2%',
+  initialWidthP1: 50,
+  initialWidthP2: 50,
+  currentWidthP1: 50,
+  currentWidthP2: 50,
+};
+
+function onlineHudFromSnapshot(
+  snap: OnlineRoomSnapshot
+): OnlineRoomSnapshot['hud'] {
+  return snap.hud ?? DEFAULT_ONLINE_DISPLAY_HUD;
+}
+
+function onlineDisplayHudEqual(
+  a: OnlineRoomSnapshot['hud'],
+  b: OnlineRoomSnapshot['hud']
+): boolean {
+  return (
+    a.p1Points === b.p1Points &&
+    a.p2Points === b.p2Points &&
+    a.captureP1 === b.captureP1 &&
+    a.captureP2 === b.captureP2 &&
+    a.currentWidthP1 === b.currentWidthP1 &&
+    a.currentWidthP2 === b.currentWidthP2
+  );
+}
+
+function shouldCommitOnlineSnapshotReact(
+  prev: OnlineRoomSnapshot | null,
+  merged: OnlineRoomSnapshot
+): boolean {
+  if (!prev) {
+    return true;
+  }
+  if (prev.phase !== merged.phase) {
+    return true;
+  }
+  const prevGs = prev.state as GameState | null | undefined;
+  const nextGs = merged.state as GameState | null | undefined;
+  if (!prevGs || !nextGs) {
+    return true;
+  }
+  if (prevGs.gameEnded !== nextGs.gameEnded) {
+    return true;
+  }
+  if (prevGs.gameStarted !== nextGs.gameStarted) {
+    return true;
+  }
+  if (Boolean(prevGs.countdownStart) !== Boolean(nextGs.countdownStart)) {
+    return true;
+  }
+  return false;
+}
+
+function playOnlineAudioFromStateTransition(
+  prev: GameState,
+  state: GameState,
+  audio: GameAudioSystem | null
+): void {
+  if (!audio) {
+    return;
+  }
+  if (
+    state.countdownStart &&
+    !state.gameStarted &&
+    state.countdownTicks !== prev.countdownTicks
+  ) {
+    audio.playCountdownTick(state.countdownTicks);
+  }
+  if (!state.gameStarted || state.gameEnded) {
+    return;
+  }
+  if (state.p1.body.length > prev.p1.body.length) {
+    audio.playCapture(state.p1.body.length);
+  }
+  if (state.p2.body.length > prev.p2.body.length) {
+    audio.playCapture(state.p2.body.length);
+  }
+  if (state.powerUpItems.length < (prev.powerUpItems?.length ?? 0)) {
+    audio.playPowerUp();
+  }
+  const prevP1Head = prev.p1.head;
+  const prevP2Head = prev.p2.head;
+  if (
+    (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
+    state.p1.head[0] === 6 &&
+    state.p1.head[1] === 12
+  ) {
+    audio.playReset('P1');
+  }
+  if (
+    (prevP2Head[0] !== 44 || prevP2Head[1] !== 12) &&
+    state.p2.head[0] === 44 &&
+    state.p2.head[1] === 12
+  ) {
+    audio.playReset('P2');
+  }
+  const prevStepMs = prev.meta?.currentStepMs;
+  const newStepMs = state.meta?.currentStepMs;
+  if (prevStepMs != null && newStepMs != null && newStepMs !== prevStepMs) {
+    audio.playBlockFound();
+  }
+}
+
+type LiveOnlineSnapshotCtx = {
+  snapshotRef: MutableRefObject<OnlineRoomSnapshot | null>;
+  pointAnimationsRef: MutableRefObject<OnlinePointAnim[]>;
+  prevPointCountByKeyRef: MutableRefObject<Map<string, number>>;
+  handleSatsCapturedRef: MutableRefObject<
+    (
+      side: 'P1' | 'P2',
+      ctx: { captureP1: string; captureP2: string }
+    ) => void
+  >;
+  handleCaptureTierChangedRef: MutableRefObject<
+    (
+      side: 'P1' | 'P2',
+      ctx: { captureP1: string; captureP2: string }
+    ) => void
+  >;
+  prevCaptureRef: MutableRefObject<{ p1: string; p2: string }>;
+  prevGameStateRef: MutableRefObject<GameState | null>;
+  gameMusicStartedRef: MutableRefObject<boolean>;
+  continueNavigatedRef: MutableRefObject<boolean>;
+  audioRef: MutableRefObject<GameAudioSystem | null>;
+  setDisplayHud: Dispatch<SetStateAction<OnlineRoomSnapshot['hud']>>;
+  setSnapshot: Dispatch<SetStateAction<OnlineRoomSnapshot | null>>;
+};
+
+function applyLiveOnlineSnapshot(
+  incoming: OnlineRoomSnapshot,
+  ctx: LiveOnlineSnapshotCtx
+): void {
+  const snap = normalizeOnlineRoomSnapshot(incoming);
+  const prev = ctx.snapshotRef.current;
+  const merged = mergeOnlineSnapshot(prev, snap);
+  const capturedSides = ingestOnlinePointChanges(
+    merged,
+    ctx.pointAnimationsRef.current,
+    ctx.prevPointCountByKeyRef.current
+  );
+  const hud = onlineHudFromSnapshot(merged);
+  const captureCtx = {
+    captureP1: hud.captureP1,
+    captureP2: hud.captureP2,
+  };
+  for (const side of capturedSides) {
+    ctx.handleSatsCapturedRef.current(side, captureCtx);
+  }
+
+  ctx.snapshotRef.current = merged;
+
+  const state = merged.state as GameState | null;
+  if (state) {
+    if (!ctx.gameMusicStartedRef.current) {
+      ctx.gameMusicStartedRef.current = true;
+      ctx.audioRef.current?.startMusic();
+    }
+    if (ctx.prevGameStateRef.current) {
+      playOnlineAudioFromStateTransition(
+        ctx.prevGameStateRef.current,
+        state,
+        ctx.audioRef.current
+      );
+    }
+    ctx.prevGameStateRef.current = state;
+  }
+
+  const prevCap = ctx.prevCaptureRef.current;
+  if (prevCap.p1 && hud.captureP1 !== prevCap.p1) {
+    ctx.handleCaptureTierChangedRef.current('P1', captureCtx);
+  }
+  if (prevCap.p2 && hud.captureP2 !== prevCap.p2) {
+    ctx.handleCaptureTierChangedRef.current('P2', captureCtx);
+  }
+  ctx.prevCaptureRef.current = { p1: hud.captureP1, p2: hud.captureP2 };
+
+  ctx.setDisplayHud((current) =>
+    onlineDisplayHudEqual(current, hud) ? current : hud
+  );
+
+  if (!state?.gameEnded) {
+    ctx.continueNavigatedRef.current = false;
+  }
+
+  if (shouldCommitOnlineSnapshotReact(prev, merged)) {
+    ctx.setSnapshot(merged);
+  }
 }
 
 type PointChangeLike = {

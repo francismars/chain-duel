@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    build: {
+      sourcemap: true,
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
