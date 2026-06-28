@@ -9,6 +9,8 @@ import {
 import { GameModifiersSection } from '@/components/paidEntry/GameModifiersSection';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useAudio, SFX } from '@/contexts/AudioContext';
+import { useSocket } from '@/hooks/useSocket';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import {
   CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
   navigateToMainMenu,
@@ -32,6 +34,7 @@ type PaymentKind = 'lightning' | 'nostr';
 export default function P2pEntry() {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
+  const { socket } = useSocket();
   useGamepad(true);
 
   const [navFocus, setNavFocus] = useState<P2pNavFocus>({
@@ -67,6 +70,12 @@ export default function P2pEntry() {
   const start = useCallback(() => {
     playSfx(SFX.MENU_CONFIRM);
     const nostr = payment === 'nostr';
+    reportClientEvent(socket, 'client.p2p.configured', {
+      mode: nostr ? 'nostr' : 'lightning',
+      buyinSats: deposit,
+      bracketSize: sessionKind === 'tournament' ? playersNumber : undefined,
+      detail: sessionKind,
+    });
     if (sessionKind === 'duel') {
       navigate(
         { pathname: '/gamemenu', search: nostr ? '?nostr=true' : '' },
@@ -86,6 +95,7 @@ export default function P2pEntry() {
     navigate,
     playSfx,
     keyboardNavState,
+    socket,
   ]);
 
   useEffect(() => {

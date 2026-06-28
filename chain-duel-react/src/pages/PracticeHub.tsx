@@ -36,6 +36,8 @@ import {
   type PracticePlayStyle,
 } from '@/pages/practiceHubPlayStyleNav';
 import { hasChallengeMenuFocus } from '@/lib/challengeMenuFocus';
+import { useSocket } from '@/hooks/useSocket';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 
 function readInitialHubFocus(): PracticeHubFocus {
   if (hasChallengeMenuFocus()) {
@@ -67,6 +69,7 @@ const CHALLENGE_LAUNCH_COPY: Record<
 
 export default function PracticeHub() {
   const navigate = useNavigate();
+  const { socket } = useSocket();
   const [searchParams, setSearchParams] = useSearchParams();
   const { playSfx } = useAudio();
   useGamepad(true);
@@ -96,13 +99,14 @@ export default function PracticeHub() {
       if (searchParams.get('play') !== value) {
         setSearchParams({ play: value }, { replace: true });
       }
+      reportClientEvent(socket, 'client.practice.tab', { mode: value });
       setHubFocus((prev) =>
         prev.zone === 'playStyle'
           ? { zone: 'playStyle', idx: playStyleToIdx(next) }
           : prev
       );
     },
-    [searchParams, setSearchParams]
+    [searchParams, setSearchParams, socket]
   );
 
   useEffect(() => {

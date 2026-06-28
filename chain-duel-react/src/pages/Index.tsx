@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
@@ -17,6 +17,8 @@ import {
 import { ONLINE_HOME } from '@/shared/constants/onlineRoutes';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
+import { useSocket } from '@/hooks/useSocket';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 
 /** Vertical menu focus — 5 rows: FREE PLAY, P2P, ONLINE, LEDGER, ABOUT+CONFIG */
 type MenuState = 1 | 2 | 3 | 4 | 5;
@@ -41,6 +43,13 @@ function menuStepUp(prev: MenuState): MenuState {
 export default function Index() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { socket } = useSocket();
+  const reportMenuSelected = useCallback(
+    (mode: string) => {
+      reportClientEvent(socket, 'client.menu.selected', { mode });
+    },
+    [socket]
+  );
   const confirmSuppressUntilRef = useRef(0);
   const { playSfx } = useAudio();
   const [menu, setMenu] = useState<MenuState>(2);
@@ -167,17 +176,23 @@ export default function Index() {
         playSfx(SFX.MENU_CONFIRM);
         const row = menuRef.current;
         if (row === 1) {
+          reportMenuSelected('free_play');
           navigate('/practice', { state: keyboardNavState });
         } else if (row === 2) {
+          reportMenuSelected('p2p');
           navigate('/p2p', { state: keyboardNavState });
         } else if (row === 3) {
+          reportMenuSelected('online');
           navigate(ONLINE_HOME, { state: keyboardNavState });
         } else if (row === 4) {
+          reportMenuSelected('ledger');
           navigate('/highscores', { state: keyboardNavState });
         } else if (row === 5) {
           if (row6Focus === 'about') {
+            reportMenuSelected('about');
             navigate('/about', { state: keyboardNavState });
           } else {
+            reportMenuSelected('config');
             navigate('/config', { state: keyboardNavState });
           }
         }
@@ -257,6 +272,7 @@ export default function Index() {
     playSfx,
     keyboardNavState,
     row6Focus,
+    reportMenuSelected,
   ]);
 
   return (
@@ -280,6 +296,7 @@ export default function Index() {
                 id="startpractice"
                 onClick={() => {
                   playSfx(SFX.MENU_CONFIRM);
+                  reportMenuSelected('free_play');
                   navigate('/practice');
                 }}
               >
@@ -295,6 +312,7 @@ export default function Index() {
                 id="startp2p"
                 onClick={() => {
                   playSfx(SFX.MENU_CONFIRM);
+                  reportMenuSelected('p2p');
                   navigate('/p2p');
                 }}
               >
@@ -310,6 +328,7 @@ export default function Index() {
                 id="startmainnet"
                 onClick={() => {
                   playSfx(SFX.MENU_CONFIRM);
+                  reportMenuSelected('online');
                   navigate(ONLINE_HOME);
                 }}
               >
@@ -325,6 +344,7 @@ export default function Index() {
                 id="highscoresbutton"
                 onClick={() => {
                   playSfx(SFX.MENU_CONFIRM);
+                  reportMenuSelected('ledger');
                   navigate('/highscores');
                 }}
               >
@@ -344,6 +364,7 @@ export default function Index() {
                   id="aboutbutton"
                   onClick={() => {
                     playSfx(SFX.MENU_CONFIRM);
+                    reportMenuSelected('about');
                     navigate('/about');
                   }}
                 >
@@ -358,6 +379,7 @@ export default function Index() {
                   ref={configRef}
                   onClick={() => {
                     playSfx(SFX.MENU_CONFIRM);
+                    reportMenuSelected('config');
                     navigate('/config');
                   }}
                   id="configbuttonhome"

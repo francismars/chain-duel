@@ -29,6 +29,7 @@ import {
   type CanvasObjectivesOpts,
 } from '@/game/render/matchObjectives';
 import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
@@ -150,6 +151,9 @@ export default function OnlineGame({
   >([]);
   /** Set to true while the speed picker dropdown is open so the global key handler yields to it. */
   const replaySpeedOpenRef = useRef(false);
+  const replayStartedAtRef = useRef<number | null>(null);
+  const replayStartedReportedRef = useRef(false);
+  const prevReplaySpeedRef = useRef(1);
   const [replayNavFocus, setReplayNavFocus] =
     useState<ReplayNavFocus>('slider');
   const replaySliderRef = useRef<HTMLInputElement>(null);
@@ -826,6 +830,47 @@ export default function OnlineGame({
     if (!replayMode || !replayLoaded) return;
     setReplayNavFocus('slider');
   }, [replayLoaded, replayMode]);
+
+  useEffect(() => {
+    if (!replayMode || !replayLoaded || replayStartedReportedRef.current) return;
+    if (replayFrames.length === 0) return;
+    replayStartedReportedRef.current = true;
+    replayStartedAtRef.current = Date.now();
+    const code = roomInfo?.roomCode ?? _roomCodeProp;
+    reportClientEvent(socket, 'client.online.replay_started', { roomCode: code });
+  }, [
+    replayMode,
+    replayLoaded,
+    replayFrames.length,
+    socket,
+    roomInfo?.roomCode,
+    _roomCodeProp,
+  ]);
+
+  useEffect(() => {
+    if (!replayMode) return;
+    return () => {
+      if (!replayStartedReportedRef.current) return;
+      const startedAt = replayStartedAtRef.current;
+      if (startedAt == null) return;
+      const code = roomInfo?.roomCode ?? _roomCodeProp;
+      reportClientEvent(socket, 'client.online.replay_ended', {
+        roomCode: code,
+        durationMs: Date.now() - startedAt,
+      });
+    };
+  }, [replayMode, socket, roomInfo?.roomCode, _roomCodeProp]);
+
+  useEffect(() => {
+    if (!replayMode || prevReplaySpeedRef.current === replaySpeed) return;
+    prevReplaySpeedRef.current = replaySpeed;
+    if (!replayStartedReportedRef.current) return;
+    const code = roomInfo?.roomCode ?? _roomCodeProp;
+    reportClientEvent(socket, 'client.online.replay_speed_changed', {
+      roomCode: code,
+      replaySpeed,
+    });
+  }, [replayMode, replaySpeed, socket, roomInfo?.roomCode, _roomCodeProp]);
 
   useEffect(() => {
     if (!replayMode) return;

@@ -375,6 +375,21 @@ export interface ClientToServerEvents {
     event: string;
     route?: string;
     detail?: string;
+    mode?: string;
+    challengeId?: string;
+    roomCode?: string;
+    outcome?: string;
+    durationMs?: number;
+    opponentType?: string;
+    payMethod?: string;
+    replaySpeed?: number;
+    signerMode?: string;
+    platform?: string;
+    referrer?: string;
+    buyinSats?: number;
+    bracketSize?: number;
+    powerups?: boolean;
+    convergence?: boolean;
   }) => void;
   reportOnlineRoomPing: (payload: {
     roomId: string;

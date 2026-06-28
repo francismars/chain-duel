@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +16,7 @@ import {
 import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';
 import { createLogger } from '@/shared/utils/logger';
 import '@/components/ui/Button.css';
@@ -65,6 +66,8 @@ export default function PostGame() {
   const [prizeClaimed, setPrizeClaimed] = useState(false);
   const [creatingWithdrawal, setCreatingWithdrawal] = useState(false);
   const [qrRevealed, setQrRevealed] = useState(false);
+  const postGameReportedRef = useRef(false);
+  const withdrawalReportedRef = useRef(false);
 
   useGamepad(true);
   const { playSelect, playConfirm } = useMenuSfx();
@@ -168,6 +171,7 @@ export default function PostGame() {
       mode: gameMode,
     });
     socket.emit('doubleornothing');
+    reportClientEvent(socket, 'client.p2p.double_or_nothing', {});
     // Keep legacy full-page navigation, but allow one frame for websocket frame flush.
     window.setTimeout(() => {
       if (gameMode === 'PRACTICE') {
@@ -251,6 +255,20 @@ export default function PostGame() {
         setCreatingWithdrawal(false);
         setQrRevealed(true);
         setMenu(2);
+        if (!withdrawalReportedRef.current) {
+          withdrawalReportedRef.current = true;
+          reportClientEvent(socket, 'client.p2p.withdrawal_created', {
+            payMethod: /nostr/i.test(info.mode ?? '') ? 'nostr' : 'lightning',
+          });
+        }
+      }
+
+      if (!postGameReportedRef.current && info.mode !== 'PRACTICE') {
+        postGameReportedRef.current = true;
+        reportClientEvent(socket, 'client.p2p.game_completed', {
+          mode: info.mode,
+          outcome: 'win',
+        });
       }
 
       setLoading(false);
@@ -272,6 +290,12 @@ export default function PostGame() {
         setCreatingWithdrawal(false);
         setQrRevealed(true);
         setMenu(2);
+        if (!withdrawalReportedRef.current) {
+          withdrawalReportedRef.current = true;
+          reportClientEvent(socket, 'client.p2p.withdrawal_created', {
+            payMethod: /nostr/i.test(gameMode) ? 'nostr' : 'lightning',
+          });
+        }
       }
     };
 

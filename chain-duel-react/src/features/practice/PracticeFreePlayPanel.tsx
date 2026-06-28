@@ -28,6 +28,8 @@ import type { PracticeFreePlayPanelHandle } from '@/features/practice/practicePa
 import { GameModifiersSection } from '@/components/paidEntry/GameModifiersSection';
 import { savePracticeGameConfig } from '@/pages/practiceHubModes';
 import type { PracticeHubFocus } from '@/pages/practiceHubPlayStyleNav';
+import { useSocket } from '@/hooks/useSocket';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 
 // ── Convergence: fixed Soldier preset ──────────────────────────────────────
 
@@ -86,6 +88,7 @@ export const PracticeFreePlayPanel = forwardRef<
 ) {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
+  const { socket } = useSocket();
 
   const [format, setFormat] = useState<MatchFormat>('solo');
   const [opponent, setOpponent] = useState<OpponentChoice>('ai');
@@ -185,9 +188,25 @@ export const PracticeFreePlayPanel = forwardRef<
     };
     if (format === 'ffa') config.ffaAiTier = aiTier;
 
+    const modeLabel = format === 'ffa' ? 'ffa' : 'solo';
+    const opponentType =
+      format === 'solo'
+        ? opponent === 'ai'
+          ? aiTier
+          : 'human'
+        : aiTier;
+
+    reportClientEvent(socket, 'client.quickmatch.configured', {
+      mode: modeLabel,
+      opponentType,
+      powerups: powerup,
+      convergence: true,
+    });
+    reportClientEvent(socket, 'client.quickmatch.started', {});
+
     savePracticeGameConfig(config);
     navigate('/game');
-  }, [playSfx, navigate, format, opponent, slotHuman, aiTier, powerup]);
+  }, [playSfx, navigate, format, opponent, slotHuman, aiTier, powerup, socket]);
 
   const focusDefault = useCallback(() => {
     setNavFocus({ kind: 'format', idx: 0 });

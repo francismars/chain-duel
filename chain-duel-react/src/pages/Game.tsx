@@ -76,12 +76,14 @@ import {
   challengeStartSatsPerPlayer,
   isExplicitPracticeSession,
   isPracticeChallengeConfig,
+  isPracticeFreePlayConfig,
   isPracticeHubGameMode,
   isSocketDuelSession,
   practiceHubExitPath,
   readSessionGameConfig,
   sessionUsesPracticeHubConfig,
 } from '@/pages/practiceHubModes';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './game.css';
 
 interface ZapMessage {
@@ -166,6 +168,9 @@ export default function Game() {
   }
   const hostRef = useRef<HTMLDivElement | null>(null);
   const winnerSentRef = useRef(false);
+  const quickMatchStartedAtRef = useRef<number | null>(null);
+  const quickMatchCompletedRef = useRef(false);
+  const challengeCompletedReportedRef = useRef(false);
   const localBootRef = useRef(false);
   const readyToStartRef = useRef(false);
   const captureP1Ref = useRef('2%');
@@ -919,6 +924,10 @@ export default function Game() {
       });
       stateRef.current = state;
       winnerSentRef.current = false;
+      if (isPracticeFreePlayConfig(gameConfig)) {
+        quickMatchStartedAtRef.current = Date.now();
+        quickMatchCompletedRef.current = false;
+      }
 
       const hud = getHudState(state);
       setCaptureP1(hud.captureP1);
@@ -1019,6 +1028,44 @@ export default function Game() {
 
     return () => window.clearInterval(poll);
   }, [applyChallengeWinValidation, loading, stateRef, socket]);
+
+  useEffect(() => {
+    if (!soloEndData || challengeCompletedReportedRef.current) return;
+    challengeCompletedReportedRef.current = true;
+    reportClientEvent(socket, 'client.challenge.completed', {
+      challengeId: String(soloEndData.challengeId ?? ''),
+      outcome: soloEndData.won ? 'win' : 'loss',
+    });
+  }, [soloEndData, socket]);
+
+  useEffect(() => {
+    const cfg = readSessionGameConfig();
+    if (!isPracticeFreePlayConfig(cfg) || loading) return;
+
+    const poll = window.setInterval(() => {
+      const state = stateRef.current;
+      if (!state?.gameEnded || quickMatchCompletedRef.current) return;
+      const hasWinner =
+        state.winnerPlayer !== null ||
+        (isEliminationMode(state) && state.winnerName.length > 0);
+      if (!hasWinner) return;
+      quickMatchCompletedRef.current = true;
+      window.clearInterval(poll);
+
+      const won =
+        state.winnerPlayer === 'P1' ||
+        (state.winnerName.length > 0 && state.winnerName === state.p1Name);
+      const startedAt = quickMatchStartedAtRef.current ?? Date.now();
+      reportClientEvent(socket, 'client.quickmatch.completed', {
+        outcome: won ? 'win' : 'loss',
+        durationMs: Date.now() - startedAt,
+        mode: String(cfg.teamMode ?? 'solo'),
+        opponentType: String(cfg.aiTier ?? 'unknown'),
+      });
+    }, 150);
+
+    return () => window.clearInterval(poll);
+  }, [loading, socket, stateRef]);
 
   blockChallengeContinueRef.current = Boolean(soloEndData?.validating);
   challengeContinueLabelRef.current = soloEndData?.validating

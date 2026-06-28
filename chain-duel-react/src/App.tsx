@@ -11,6 +11,7 @@ import { SocketProvider } from './contexts/SocketContext';
 import { CornerControls } from './components/ui/CornerControls';
 import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import { useClientTelemetry } from './hooks/useClientTelemetry';
+import { useSessionTelemetry } from './hooks/useSessionTelemetry';
 import { useKeyboardLayoutAutodetect } from './hooks/useKeyboardLayoutAutodetect';
 import Index from './pages/Index';
 import GameMenu from './pages/GameMenu';
@@ -40,6 +41,7 @@ function LegacyNetworkRedirect() {
 
 function AppRoutes() {
   useClientTelemetry();
+  useSessionTelemetry();
   useKeyboardLayoutAutodetect();
   return (
     <Routes>

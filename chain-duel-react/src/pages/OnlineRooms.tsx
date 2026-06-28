@@ -13,6 +13,7 @@ import {
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import { OnlineRoomListItem, PlayerRole } from '@/types/socket';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import '@/styles/pages/onlineRooms.css';
 import '@/styles/pages/onlinePostGame.css'; // shared card structure for history rows
 
@@ -324,6 +325,9 @@ export default function OnlineRooms() {
       playConfirm();
       const code = room.roomCode.trim().toUpperCase();
       if (room.phase === 'playing' || room.phase === 'postgame') {
+        reportClientEvent(socket, 'client.online.spectate_started', {
+          roomCode: code,
+        });
         socket?.emit('spectateOnlineRoomByCode', { roomCode: code });
       } else {
         socket?.emit('joinOnlineRoomByCode', { roomCode: code });

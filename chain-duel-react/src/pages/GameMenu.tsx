@@ -43,6 +43,7 @@ import {
   relayUrlToDisplayHost,
 } from '@/lib/nostr/probeRelaysForEvent';
 import { clearClientGameConfig, markSocketDuelSession } from '@/pages/practiceHubModes';
+import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './gamemenu.css';
 
 type ButtonSelected =
@@ -189,8 +190,11 @@ export default function GameMenu() {
   const goToPaidGame = useCallback(() => {
     clearClientGameConfig();
     markSocketDuelSession();
+    reportClientEvent(socket, 'client.p2p.game_started', {
+      mode: useNostrFromQuery ? 'nostr' : 'lightning',
+    });
     navigate('/game');
-  }, [navigate]);
+  }, [navigate, socket, useNostrFromQuery]);
 
   useEffect(() => {
     if (!socket) return;

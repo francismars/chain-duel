@@ -589,6 +589,13 @@ export const PracticeChallengesPanel = forwardRef<
     return () => window.clearTimeout(timer);
   }, [isActive]);
 
+  const catalogReportedRef = useRef(false);
+  useEffect(() => {
+    if (!isActive || catalogReportedRef.current) return;
+    catalogReportedRef.current = true;
+    reportClientEvent(socket, 'client.challenge.catalog_viewed', {});
+  }, [isActive, socket]);
+
   const loadEligibility = useCallback(
     (options?: { refresh?: boolean; background?: boolean }) => {
       const refresh = options?.refresh === true;
@@ -991,8 +998,14 @@ export const PracticeChallengesPanel = forwardRef<
 
   const focusRowAt = useCallback((idx: number) => {
     setSelected(idx);
+    const challenge = challenges[idx];
+    if (challenge) {
+      reportClientEvent(socket, 'client.challenge.card_clicked', {
+        challengeId: challenge.id,
+      });
+    }
     rowRefs.current[idx]?.focus({ preventScroll: true });
-  }, []);
+  }, [challenges, socket]);
 
   const launchChallenge = useCallback(
     async (idx?: number, fromEligibilityResume = false) => {
