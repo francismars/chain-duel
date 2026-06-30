@@ -55,7 +55,7 @@ type QueuedPayload = {
 } & ClientEventDetail;
 
 const pendingQueue: QueuedPayload[] = [];
-let flushHookInstalled = false;
+const wiredSockets = new WeakSet<ClientTelemetrySocket>();
 
 function buildPayload(
   event: string,
@@ -88,16 +88,21 @@ function emitPayload(socket: ClientTelemetrySocket, payload: QueuedPayload): voi
 }
 
 function flushQueue(socket: ClientTelemetrySocket): void {
+  if (!socket.connected) return;
   while (pendingQueue.length > 0) {
     const payload = pendingQueue.shift();
     if (payload) emitPayload(socket, payload);
   }
 }
 
-function ensureFlushOnConnect(socket: ClientTelemetrySocket): void {
-  if (flushHookInstalled) return;
-  flushHookInstalled = true;
+function wireSocketFlush(socket: ClientTelemetrySocket): void {
+  if (wiredSockets.has(socket)) {
+    flushQueue(socket);
+    return;
+  }
+  wiredSockets.add(socket);
   socket.on('connect', () => flushQueue(socket));
+  flushQueue(socket);
 }
 
 export function reportClientEvent(
@@ -106,15 +111,7 @@ export function reportClientEvent(
   detail?: ClientEventDetail
 ): void {
   if (!ALLOWED_EVENTS.has(event)) return;
-  const payload = buildPayload(event, detail);
-  if (!socket) {
-    pendingQueue.push(payload);
-    return;
-  }
-  ensureFlushOnConnect(socket);
-  if (!socket.connected) {
-    pendingQueue.push(payload);
-    return;
-  }
-  emitPayload(socket, payload);
+  pendingQueue.push(buildPayload(event, detail));
+  if (!socket) return;
+  wireSocketFlush(socket);
 }
