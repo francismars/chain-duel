@@ -114,6 +114,7 @@ export function OnlineMatchIntroReveal({
       aria-live="polite"
       aria-label={ariaLabel}
     >
+      <div className="online-match-intro__scrim" aria-hidden="true" />
       <div className="online-match-intro__vignette" aria-hidden="true" />
       <div className="online-match-intro__pulse" aria-hidden="true" />
 

@@ -129,9 +129,15 @@ export default function OnlineRoom() {
     () => resolveTargetView(room, replayMode),
     [replayMode, room]
   );
+  const targetViewRef = useRef(targetView);
+  targetViewRef.current = targetView;
 
   const handleMatchIntroComplete = useCallback(() => {
     setMatchIntroActive(false);
+    if (targetViewRef.current === 'arena') {
+      shellViewRef.current = 'arena';
+      setShellView('arena');
+    }
   }, []);
 
   useEffect(() => {
@@ -302,16 +308,37 @@ export default function OnlineRoom() {
       }
     };
 
+    const introPendingForRoom = (liveRoom: OnlineRoomState | null) =>
+      Boolean(
+        liveRoom &&
+          !replayMode &&
+          shouldShowMatchIntro({
+            room: liveRoom,
+            replayMode,
+            alreadyShownKeys: introShownKeysRef.current,
+          })
+      );
+
     if (!bootstrappedRef.current) {
       bootstrappedRef.current = true;
-      shellViewRef.current = targetView;
-      setShellView(targetView);
+      const initialView =
+        targetView === 'arena' && introPendingForRoom(roomRef.current)
+          ? 'waiting'
+          : targetView;
+      shellViewRef.current = initialView;
+      setShellView(initialView);
       return clearHandoffTimer;
     }
 
     const prev = shellViewRef.current;
     if (targetView === prev) {
       return clearHandoffTimer;
+    }
+
+    if (targetView === 'arena' && prev === 'waiting') {
+      if (introPendingForRoom(roomRef.current)) {
+        return clearHandoffTimer;
+      }
     }
 
     if (targetView === 'results' && prev === 'arena') {
@@ -334,7 +361,7 @@ export default function OnlineRoom() {
     shellViewRef.current = targetView;
     setShellView(targetView);
     return clearHandoffTimer;
-  }, [targetView]);
+  }, [replayMode, targetView]);
 
   useEffect(() => {
     if (!room || replayMode) {
@@ -357,15 +384,15 @@ export default function OnlineRoom() {
     const key = matchIntroDedupKey(room);
     introShownKeysRef.current.add(key);
     setMatchIntroActive(true);
-    if (shellViewRef.current !== 'arena' && targetView === 'arena') {
-      shellViewRef.current = 'arena';
-      setShellView('arena');
+    if (shellViewRef.current !== 'waiting' && targetView === 'arena') {
+      shellViewRef.current = 'waiting';
+      setShellView('waiting');
     }
   }, [room, replayMode, targetView]);
 
   useEffect(() => {
     const gameplay =
-      shellView === 'arena' || shellView === 'replay' || matchIntroActive;
+      (shellView === 'arena' || shellView === 'replay') && !matchIntroActive;
     document.body.classList.toggle('game-page', gameplay);
     return () => {
       document.body.classList.remove('game-page');
@@ -381,6 +408,13 @@ export default function OnlineRoom() {
   const showLoadingOverlay =
     !roomId || !room || (shellView === 'results' && !postGameReady);
   const prefetchPostGame = targetView === 'results' && Boolean(room);
+  const showLobby =
+    !showLoadingOverlay && (shellView === 'waiting' || matchIntroActive);
+  const showArena =
+    !showLoadingOverlay &&
+    (shellView === 'arena' || shellView === 'replay') &&
+    !matchIntroActive;
+  const prefetchArena = matchIntroActive && targetView === 'arena' && Boolean(roomId);
 
   if (!roomCode) {
     return null;
@@ -409,7 +443,7 @@ export default function OnlineRoom() {
         </div>
       ) : null}
       <div className="online-room-shell" data-view={shellView}>
-        {!showLoadingOverlay && shellView === 'waiting' ? (
+        {showLobby ? (
           <OnlineRoomLobby
             embedded
             roomCode={roomCode}
@@ -417,15 +451,24 @@ export default function OnlineRoom() {
             externalRoom={room}
           />
         ) : null}
-        {!showLoadingOverlay &&
-        (shellView === 'arena' || shellView === 'replay') ? (
+        {showArena ? (
           <OnlineGame
             embedded
             roomCode={roomCode}
             roomId={roomId}
             victoryHandoff={victoryHandoff}
-            matchIntroActive={matchIntroActive}
+            matchIntroActive={false}
           />
+        ) : null}
+        {prefetchArena ? (
+          <div className="hide">
+            <OnlineGame
+              embedded
+              roomCode={roomCode}
+              roomId={roomId}
+              matchIntroActive
+            />
+          </div>
         ) : null}
         {matchIntroActive && room ? (
           <OnlineMatchIntroReveal
