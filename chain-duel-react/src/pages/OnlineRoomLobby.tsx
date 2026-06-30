@@ -233,8 +233,6 @@ export type OnlineRoomLobbyProps = {
   roomId?: string;
   roomCode?: string;
   externalRoom?: OnlineRoomState | null;
-  /** Parent shell is pausing before the arena canvas opens. */
-  arenaHandoff?: boolean;
 };
 
 export default function OnlineRoomLobby({
@@ -242,7 +240,6 @@ export default function OnlineRoomLobby({
   roomId: roomIdProp,
   roomCode: _roomCodeProp,
   externalRoom,
-  arenaHandoff = false,
 }: OnlineRoomLobbyProps = {}) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -1179,19 +1176,11 @@ export default function OnlineRoomLobby({
         copy: 'Waiting for the second player to pay. The arena opens when both seats are filled.',
       };
     }
-    if (arenaHandoff) {
-      return {
-        cardMod: 'online-lobby-pin-card--go',
-        label: 'BOTH PLAYERS IN',
-        pin: 'ENTERING ARENA',
-        copy: 'Opening the match board. Press Space or Enter when you are ready to start.',
-      };
-    }
     return {
       cardMod: 'online-lobby-pin-card--go',
-      label: 'SEAT PAID',
-      pin: 'ENTER ARENA',
-      copy: 'Both players are in. Press Space or Enter on the arena to start when you are ready.',
+      label: 'BOTH PLAYERS IN',
+      pin: 'DUEL READY',
+      copy: 'Both players are in. The match intro opens on the arena in a moment.',
     };
   })();
   const snapshotP1Name =
@@ -2212,7 +2201,6 @@ export default function OnlineRoomLobby({
   }, [nostrUriQrOpen]);
 
   const arenaCenterText = (() => {
-    if (arenaHandoff) return 'ENTERING ARENA';
     if (isSessionClosed) return 'SESSION CLOSED';
     if (rematchPending) return 'DOUBLE OR NOTHING';
     if (isPostgame) return 'ROUND OVER';
@@ -2442,11 +2430,6 @@ export default function OnlineRoomLobby({
               VS
             </span>
             <span className="online-lobby-arena-state">{arenaCenterText}</span>
-            {arenaHandoff ? (
-              <span className="online-lobby-arena-handoff">
-                Both seats filled — match board opens in a moment.
-              </span>
-            ) : null}
             {(room?.spectators.length ?? 0) > 0 ? (
               <span className="online-lobby-arena-spectators">
                 {room?.spectators.length} watching

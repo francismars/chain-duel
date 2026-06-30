@@ -9,20 +9,16 @@ import OnlineGame from '@/pages/OnlineGame';
 import OnlinePostGame from '@/pages/OnlinePostGame';
 import { OnlineJoinErrorPage } from '@/pages/OnlineJoinErrorPage';
 import { OnlineVictoryReveal } from '@/components/online/OnlineVictoryReveal';
+import { OnlineMatchIntroReveal } from '@/components/online/OnlineMatchIntroReveal';
+import {
+  countPaidSeats,
+  matchIntroDedupKey,
+  shouldShowMatchIntro,
+} from '@/lib/online/shouldShowMatchIntro';
 import './game.css';
 
-/** Brief lobby beat so the first seated player sees both-paid before the canvas. */
-const ARENA_HANDOFF_MS = 2400;
 /** Pause on the arena after match end before post-game (reveal anim ~2.5s + read time). */
 const VICTORY_HANDOFF_MS = 5000;
-
-function countPaidSeats(room: OnlineRoomState | null): number {
-  if (!room?.seats) {
-    return 0;
-  }
-  return Object.values(room.seats).filter((seat) => seat.status === 'paid')
-    .length;
-}
 
 type ShellView = 'waiting' | 'arena' | 'replay' | 'results';
 
@@ -69,11 +65,16 @@ export default function OnlineRoom() {
   const [joinError, setJoinError] = useState('');
   const joinedRef = useRef(false);
   const [shellView, setShellView] = useState<ShellView>('waiting');
-  const [arenaHandoff, setArenaHandoff] = useState(false);
+  const [matchIntroActive, setMatchIntroActive] = useState(false);
   const shellViewRef = useRef<ShellView>('waiting');
   const handoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bootstrappedRef = useRef(false);
   const bootstrapFallbackRef = useRef(false);
+  const introShownKeysRef = useRef(new Set<string>());
+  const [viewerSessionID, setViewerSessionID] = useState(
+    () => sessionStorage.getItem('sessionID') ?? ''
+  );
+  const [viewerSocketID, setViewerSocketID] = useState('');
 
   const [postGameReady, setPostGameReady] = useState(false);
   const [victoryHandoff, setVictoryHandoff] = useState(false);
@@ -129,11 +130,43 @@ export default function OnlineRoom() {
     [replayMode, room]
   );
 
+  const handleMatchIntroComplete = useCallback(() => {
+    setMatchIntroActive(false);
+  }, []);
+
   useEffect(() => {
     if (!roomCode) {
       navigate(ONLINE_HOME, { replace: true });
     }
   }, [navigate, roomCode]);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+    const refreshIdentity = () => {
+      setViewerSocketID(socket.id ?? '');
+      const stored = sessionStorage.getItem('sessionID');
+      if (stored) {
+        setViewerSessionID(stored);
+      }
+    };
+    const onSession = (payload: { sessionID: string }) => {
+      if (!payload?.sessionID) {
+        return;
+      }
+      sessionStorage.setItem('sessionID', payload.sessionID);
+      setViewerSessionID(payload.sessionID);
+      setViewerSocketID(socket.id ?? '');
+    };
+    refreshIdentity();
+    socket.on('connect', refreshIdentity);
+    socket.on('session', onSession);
+    return () => {
+      socket.off('connect', refreshIdentity);
+      socket.off('session', onSession);
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (!socket || !roomCode) {
@@ -273,24 +306,11 @@ export default function OnlineRoom() {
       bootstrappedRef.current = true;
       shellViewRef.current = targetView;
       setShellView(targetView);
-      setArenaHandoff(false);
       return clearHandoffTimer;
     }
 
     const prev = shellViewRef.current;
     if (targetView === prev) {
-      return clearHandoffTimer;
-    }
-
-    if (targetView === 'arena' && prev === 'waiting') {
-      setArenaHandoff(true);
-      clearHandoffTimer();
-      handoffTimerRef.current = setTimeout(() => {
-        handoffTimerRef.current = null;
-        shellViewRef.current = 'arena';
-        setShellView('arena');
-        setArenaHandoff(false);
-      }, ARENA_HANDOFF_MS);
       return clearHandoffTimer;
     }
 
@@ -313,17 +333,44 @@ export default function OnlineRoom() {
     clearHandoffTimer();
     shellViewRef.current = targetView;
     setShellView(targetView);
-    setArenaHandoff(false);
     return clearHandoffTimer;
   }, [targetView]);
 
   useEffect(() => {
-    const gameplay = shellView === 'arena' || shellView === 'replay';
+    if (!room || replayMode) {
+      setMatchIntroActive(false);
+      return;
+    }
+    if (countPaidSeats(room) < 2) {
+      setMatchIntroActive(false);
+      return;
+    }
+    if (
+      !shouldShowMatchIntro({
+        room,
+        replayMode,
+        alreadyShownKeys: introShownKeysRef.current,
+      })
+    ) {
+      return;
+    }
+    const key = matchIntroDedupKey(room);
+    introShownKeysRef.current.add(key);
+    setMatchIntroActive(true);
+    if (shellViewRef.current !== 'arena' && targetView === 'arena') {
+      shellViewRef.current = 'arena';
+      setShellView('arena');
+    }
+  }, [room, replayMode, targetView]);
+
+  useEffect(() => {
+    const gameplay =
+      shellView === 'arena' || shellView === 'replay' || matchIntroActive;
     document.body.classList.toggle('game-page', gameplay);
     return () => {
       document.body.classList.remove('game-page');
     };
-  }, [shellView]);
+  }, [matchIntroActive, shellView]);
 
   useEffect(() => {
     if (shellView !== 'results') {
@@ -362,13 +409,12 @@ export default function OnlineRoom() {
         </div>
       ) : null}
       <div className="online-room-shell" data-view={shellView}>
-        {!showLoadingOverlay && (shellView === 'waiting' || arenaHandoff) ? (
+        {!showLoadingOverlay && shellView === 'waiting' ? (
           <OnlineRoomLobby
             embedded
             roomCode={roomCode}
             roomId={roomId}
             externalRoom={room}
-            arenaHandoff={arenaHandoff}
           />
         ) : null}
         {!showLoadingOverlay &&
@@ -378,6 +424,15 @@ export default function OnlineRoom() {
             roomCode={roomCode}
             roomId={roomId}
             victoryHandoff={victoryHandoff}
+            matchIntroActive={matchIntroActive}
+          />
+        ) : null}
+        {matchIntroActive && room ? (
+          <OnlineMatchIntroReveal
+            room={room}
+            sessionID={viewerSessionID}
+            socketID={viewerSocketID}
+            onComplete={handleMatchIntroComplete}
           />
         ) : null}
         {victoryHandoff && room ? <OnlineVictoryReveal room={room} /> : null}

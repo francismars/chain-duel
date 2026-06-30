@@ -72,6 +72,7 @@ export type OnlineGameProps = {
   roomId?: string;
   roomCode?: string;
   victoryHandoff?: boolean;
+  matchIntroActive?: boolean;
 };
 
 export default function OnlineGame({
@@ -79,6 +80,7 @@ export default function OnlineGame({
   roomId: roomIdProp,
   roomCode: _roomCodeProp,
   victoryHandoff = false,
+  matchIntroActive = false,
 }: OnlineGameProps = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -168,6 +170,8 @@ export default function OnlineGame({
   const prevGameStateRef = useRef<GameState | null>(null);
   const gameMusicStartedRef = useRef(false);
   const continueNavigatedRef = useRef(false);
+  const matchIntroActiveRef = useRef(matchIntroActive);
+  matchIntroActiveRef.current = matchIntroActive;
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const {
     captureP1Highlight,
@@ -689,7 +693,7 @@ export default function OnlineGame({
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (replayMode) {
+      if (replayMode || matchIntroActiveRef.current) {
         return;
       }
       const state = snapshotRef.current?.state as GameState | undefined;
@@ -740,7 +744,7 @@ export default function OnlineGame({
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      if (replayMode) {
+      if (replayMode || matchIntroActiveRef.current) {
         return;
       }
       const axis = axisForEvent(event);
