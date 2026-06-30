@@ -8,11 +8,15 @@ import {
 } from 'react';
 import type { OnlineRoomState } from '@/types/socket';
 import { buildMatchIntroData } from '@/lib/online/buildMatchIntroData';
+import {
+  MATCH_REVEAL_EXIT_MS,
+  MATCH_REVEAL_MS,
+  MATCH_REVEAL_SKIP_AFTER_MS,
+} from '@/lib/online/matchRevealTiming';
 import '@/styles/components/onlineMatchIntroReveal.css';
 
-export const MATCH_INTRO_MS = 5500;
-export const MATCH_INTRO_SKIP_AFTER_MS = 3000;
-const EXIT_PHASE_MS = 1500;
+export { MATCH_REVEAL_MS as MATCH_INTRO_MS };
+export { MATCH_REVEAL_SKIP_AFTER_MS as MATCH_INTRO_SKIP_AFTER_MS };
 
 export type OnlineMatchIntroRevealProps = {
   room: OnlineRoomState;
@@ -52,15 +56,15 @@ export function OnlineMatchIntroReveal({
 
     const skipTimer = window.setTimeout(() => {
       setSkippable(true);
-    }, MATCH_INTRO_SKIP_AFTER_MS);
+    }, MATCH_REVEAL_SKIP_AFTER_MS);
 
     const exitTimer = window.setTimeout(() => {
       setShowExit(true);
-    }, MATCH_INTRO_MS - EXIT_PHASE_MS);
+    }, MATCH_REVEAL_MS - MATCH_REVEAL_EXIT_MS);
 
     const completeTimer = window.setTimeout(() => {
       finish();
-    }, MATCH_INTRO_MS);
+    }, MATCH_REVEAL_MS);
 
     return () => {
       window.clearTimeout(skipTimer);
@@ -105,8 +109,9 @@ export function OnlineMatchIntroReveal({
   return (
     <div
       className={[
-        'online-match-intro',
-        skippable ? 'online-match-intro--skippable' : '',
+        'online-reveal',
+        'online-reveal--intro',
+        skippable ? 'online-reveal--skippable' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -114,89 +119,86 @@ export function OnlineMatchIntroReveal({
       aria-live="polite"
       aria-label={ariaLabel}
     >
-      <div className="online-match-intro__scrim" aria-hidden="true" />
-      <div className="online-match-intro__vignette" aria-hidden="true" />
-      <div className="online-match-intro__pulse" aria-hidden="true" />
+      <div className="online-reveal__scrim" aria-hidden="true" />
+      <div className="online-reveal__vignette" aria-hidden="true" />
+      <div className="online-reveal__pulse" aria-hidden="true" />
 
-      <p className="online-match-intro__kicker">{data.kicker}</p>
+      <p className="online-reveal__kicker">{data.kicker}</p>
 
-      <div className="online-match-intro__matchup">
+      <div className="online-reveal__matchup">
         <article
           className={[
-            'online-match-intro__player',
-            'online-match-intro__player--p1',
-            'online-match-intro__player--white',
+            'online-reveal__player',
+            'online-reveal__player--left',
+            'online-reveal__player--white',
           ].join(' ')}
         >
-          <p className="online-match-intro__role">Player 1</p>
+          <p className="online-reveal__role">Player 1</p>
           {data.p1.picture ? (
             <img
-              className="online-match-intro__avatar"
+              className="online-reveal__avatar"
               src={data.p1.picture}
               alt=""
             />
           ) : (
-            <div className="online-match-intro__avatar online-match-intro__avatar--empty" />
+            <div className="online-reveal__avatar online-reveal__avatar--empty" />
           )}
-          <h2 className="online-match-intro__name">{data.p1.name}</h2>
+          <h2 className="online-reveal__name">{data.p1.name}</h2>
         </article>
 
-        <div className="online-match-intro__vs" aria-hidden="true">
+        <div className="online-reveal__vs" aria-hidden="true">
           <span>VS</span>
         </div>
 
         <article
           className={[
-            'online-match-intro__player',
-            'online-match-intro__player--p2',
-            'online-match-intro__player--black',
+            'online-reveal__player',
+            'online-reveal__player--right',
+            'online-reveal__player--black',
           ].join(' ')}
         >
-          <p className="online-match-intro__role">Player 2</p>
+          <p className="online-reveal__role">Player 2</p>
           {data.p2.picture ? (
             <img
-              className="online-match-intro__avatar"
+              className="online-reveal__avatar"
               src={data.p2.picture}
               alt=""
             />
           ) : (
-            <div className="online-match-intro__avatar online-match-intro__avatar--empty" />
+            <div className="online-reveal__avatar online-reveal__avatar--empty" />
           )}
-          <h2 className="online-match-intro__name">{data.p2.name}</h2>
+          <h2 className="online-reveal__name">{data.p2.name}</h2>
         </article>
       </div>
 
-      <p className="online-match-intro__stakes">
+      <p className="online-reveal__stakes">
         {data.buyinEach.toLocaleString()}
-        <span className="online-match-intro__stakes-denom"> sats each</span>
+        <span className="online-reveal__stakes-denom"> sats each</span>
         {' · '}
         {data.netPrize.toLocaleString()}
-        <span className="online-match-intro__stakes-denom"> sats to winner</span>
+        <span className="online-reveal__stakes-denom"> sats to winner</span>
       </p>
 
-      <p className="online-match-intro__footer">{footerCopy}</p>
+      <p className="online-reveal__footer">{footerCopy}</p>
 
       {showExit ? (
         <div
-          className="online-match-intro__exit"
+          className="online-reveal__exit"
           style={
             {
-              '--intro-exit-ms': `${EXIT_PHASE_MS}ms`,
-              animationDelay: '0s',
+              '--reveal-exit-ms': `${MATCH_REVEAL_EXIT_MS}ms`,
             } as CSSProperties
           }
         >
-          <p className="online-match-intro__exit-label">Entering arena</p>
-          <div className="online-match-intro__progress" aria-hidden="true">
-            <div className="online-match-intro__progress-fill" />
+          <p className="online-reveal__exit-label">Entering arena</p>
+          <div className="online-reveal__progress" aria-hidden="true">
+            <div className="online-reveal__progress-fill" />
           </div>
         </div>
       ) : null}
 
       {skippable ? (
-        <p className="online-match-intro__skip" style={{ animationDelay: '0s' }}>
-          Press any key to continue
-        </p>
+        <p className="online-reveal__skip">Press any key to continue</p>
       ) : null}
     </div>
   );

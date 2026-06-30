@@ -17,9 +17,6 @@ import {
 } from '@/lib/online/shouldShowMatchIntro';
 import './game.css';
 
-/** Pause on the arena after match end before post-game (reveal anim ~2.5s + read time). */
-const VICTORY_HANDOFF_MS = 5000;
-
 type ShellView = 'waiting' | 'arena' | 'replay' | 'results';
 
 function resolveTargetView(
@@ -67,7 +64,6 @@ export default function OnlineRoom() {
   const [shellView, setShellView] = useState<ShellView>('waiting');
   const [matchIntroActive, setMatchIntroActive] = useState(false);
   const shellViewRef = useRef<ShellView>('waiting');
-  const handoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bootstrappedRef = useRef(false);
   const bootstrapFallbackRef = useRef(false);
   const introShownKeysRef = useRef(new Set<string>());
@@ -137,6 +133,14 @@ export default function OnlineRoom() {
     if (targetViewRef.current === 'arena') {
       shellViewRef.current = 'arena';
       setShellView('arena');
+    }
+  }, []);
+
+  const handleVictoryHandoffComplete = useCallback(() => {
+    setVictoryHandoff(false);
+    if (targetViewRef.current === 'results') {
+      shellViewRef.current = 'results';
+      setShellView('results');
     }
   }, []);
 
@@ -301,13 +305,6 @@ export default function OnlineRoom() {
   ]);
 
   useEffect(() => {
-    const clearHandoffTimer = () => {
-      if (handoffTimerRef.current) {
-        clearTimeout(handoffTimerRef.current);
-        handoffTimerRef.current = null;
-      }
-    };
-
     const introPendingForRoom = (liveRoom: OnlineRoomState | null) =>
       Boolean(
         liveRoom &&
@@ -327,40 +324,31 @@ export default function OnlineRoom() {
           : targetView;
       shellViewRef.current = initialView;
       setShellView(initialView);
-      return clearHandoffTimer;
+      return;
     }
 
     const prev = shellViewRef.current;
     if (targetView === prev) {
-      return clearHandoffTimer;
+      return;
     }
 
     if (targetView === 'arena' && prev === 'waiting') {
       if (introPendingForRoom(roomRef.current)) {
-        return clearHandoffTimer;
+        return;
       }
     }
 
     if (targetView === 'results' && prev === 'arena') {
       setVictoryHandoff(true);
-      clearHandoffTimer();
-      handoffTimerRef.current = setTimeout(() => {
-        handoffTimerRef.current = null;
-        shellViewRef.current = 'results';
-        setShellView('results');
-        setVictoryHandoff(false);
-      }, VICTORY_HANDOFF_MS);
-      return clearHandoffTimer;
+      return;
     }
 
     if (targetView !== 'results') {
       setVictoryHandoff(false);
     }
 
-    clearHandoffTimer();
     shellViewRef.current = targetView;
     setShellView(targetView);
-    return clearHandoffTimer;
   }, [replayMode, targetView]);
 
   useEffect(() => {
@@ -414,7 +402,6 @@ export default function OnlineRoom() {
     !showLoadingOverlay &&
     (shellView === 'arena' || shellView === 'replay') &&
     !matchIntroActive;
-  const prefetchArena = matchIntroActive && targetView === 'arena' && Boolean(roomId);
 
   if (!roomCode) {
     return null;
@@ -457,18 +444,7 @@ export default function OnlineRoom() {
             roomCode={roomCode}
             roomId={roomId}
             victoryHandoff={victoryHandoff}
-            matchIntroActive={false}
           />
-        ) : null}
-        {prefetchArena ? (
-          <div className="hide">
-            <OnlineGame
-              embedded
-              roomCode={roomCode}
-              roomId={roomId}
-              matchIntroActive
-            />
-          </div>
         ) : null}
         {matchIntroActive && room ? (
           <OnlineMatchIntroReveal
@@ -478,7 +454,14 @@ export default function OnlineRoom() {
             onComplete={handleMatchIntroComplete}
           />
         ) : null}
-        {victoryHandoff && room ? <OnlineVictoryReveal room={room} /> : null}
+        {victoryHandoff && room ? (
+          <OnlineVictoryReveal
+            room={room}
+            sessionID={viewerSessionID}
+            socketID={viewerSocketID}
+            onComplete={handleVictoryHandoffComplete}
+          />
+        ) : null}
         {prefetchPostGame ? (
           <div className={shellView === 'results' ? undefined : 'hide'}>
             <OnlinePostGame

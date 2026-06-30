@@ -328,14 +328,19 @@ export default function OnlineGame({
         prevPointPopCountRef.current = popCount;
         const snapshotChanged = snap !== lastPaintedSnapshot;
         const animActive = rendererRef.current.needsPaint(renderState);
-        if (snapshotChanged || animActive || pointPopTail) {
+      if (snapshotChanged || animActive || pointPopTail) {
+        try {
           rendererRef.current.render(renderState, {
             replayView: replayViewRef.current,
             suppressVictoryOverlay: victoryHandoffRef.current,
             canvasObjectives: canvasObjectivesRef.current,
           });
           lastPaintedSnapshot = snap;
+        } catch {
+          rendererRef.current?.destroy();
+          rendererRef.current = null;
         }
+      }
       }
       raf = window.requestAnimationFrame(frame);
     };

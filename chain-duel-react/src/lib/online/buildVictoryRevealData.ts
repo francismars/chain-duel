@@ -1,6 +1,10 @@
 import type { GameState } from '@/game/engine/types';
 import type { OnlineRoomState } from '@/types/socket';
 import { PlayerRole } from '@/types/socket';
+import {
+  isOnlineMatchPlayer,
+  isOnlineVictoryWinner,
+} from '@/lib/online/isOnlineVictoryWinner';
 
 const ONLINE_FEE_MULTIPLIER = 0.95;
 
@@ -11,13 +15,53 @@ export type VictoryRevealPlayer = {
   side: 'p1' | 'p2';
 };
 
+export type VictoryRevealViewerRole = 'winner' | 'loser' | 'spectator';
+
 export type VictoryRevealData = {
   winner: VictoryRevealPlayer;
   loser: VictoryRevealPlayer;
   teaseHeadline: string;
   teaseSubline: string;
   netPrize: number;
+  viewerRole: VictoryRevealViewerRole;
+  footerCopy: string;
 };
+
+function resolveViewerRole(
+  room: OnlineRoomState,
+  sessionID: string,
+  socketID: string
+): VictoryRevealViewerRole {
+  const pg = room.postGame;
+  const p1 = room.seats[PlayerRole.Player1];
+  const p2 = room.seats[PlayerRole.Player2];
+  const winnerInfo = {
+    winnerRole: pg?.winnerRole,
+    winnerSessionID: pg?.winnerSessionID,
+    p1SessionID: p1?.sessionID,
+    p2SessionID: p2?.sessionID,
+    p1SocketID: p1?.socketID,
+    p2SocketID: p2?.socketID,
+  };
+  if (isOnlineVictoryWinner(winnerInfo, sessionID, socketID)) {
+    return 'winner';
+  }
+  if (isOnlineMatchPlayer(winnerInfo, sessionID, socketID)) {
+    return 'loser';
+  }
+  return 'spectator';
+}
+
+function footerForRole(role: VictoryRevealViewerRole): string {
+  switch (role) {
+    case 'winner':
+      return 'You won · Claim your prize, watch the replay, or vote double or nothing on the next screen';
+    case 'loser':
+      return 'Match over · View results, rematch options, and replay on the next screen';
+    default:
+      return 'Match settled · Opening results — prize claim and replay available next';
+  }
+}
 
 function pickTease(scoreDiff: number): { headline: string; subline: string } {
   if (scoreDiff >= 2500) {
@@ -45,7 +89,8 @@ function pickTease(scoreDiff: number): { headline: string; subline: string } {
 }
 
 export function buildVictoryRevealData(
-  room: OnlineRoomState
+  room: OnlineRoomState,
+  viewer: { sessionID?: string; socketID?: string } = {}
 ): VictoryRevealData | null {
   const pg = room.postGame;
   if (!pg) {
@@ -104,12 +149,18 @@ export function buildVictoryRevealData(
   };
 
   const tease = pickTease(Math.abs(winner.score - loser.score));
+  const netPrize = Math.floor(pg.winnerPoints * ONLINE_FEE_MULTIPLIER);
+  const sessionID = viewer.sessionID ?? '';
+  const socketID = viewer.socketID ?? '';
+  const viewerRole = resolveViewerRole(room, sessionID, socketID);
 
   return {
     winner,
     loser,
     teaseHeadline: tease.headline,
     teaseSubline: tease.subline,
-    netPrize: Math.floor(pg.winnerPoints * ONLINE_FEE_MULTIPLIER),
+    netPrize,
+    viewerRole,
+    footerCopy: footerForRole(viewerRole),
   };
 }

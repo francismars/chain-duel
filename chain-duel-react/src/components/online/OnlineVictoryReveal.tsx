@@ -1,6 +1,18 @@
-import { useMemo, type CSSProperties } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import type { OnlineRoomState } from '@/types/socket';
 import { buildVictoryRevealData } from '@/lib/online/buildVictoryRevealData';
+import {
+  MATCH_REVEAL_EXIT_MS,
+  MATCH_REVEAL_MS,
+  MATCH_REVEAL_SKIP_AFTER_MS,
+} from '@/lib/online/matchRevealTiming';
 import '@/styles/components/onlineVictoryReveal.css';
 
 const CONFETTI_COUNT = 18;
@@ -15,7 +27,7 @@ function VictoryCrown() {
       strokeWidth="1.25"
       strokeLinejoin="round"
       strokeLinecap="round"
-      className="online-victory-reveal__crown-svg"
+      className="online-reveal__crown-svg"
       aria-hidden="true"
     >
       <path d="M1 15h18V9L15 12L10 2L5 12L1 9Z" />
@@ -28,10 +40,21 @@ function VictoryCrown() {
 
 export type OnlineVictoryRevealProps = {
   room: OnlineRoomState;
+  sessionID?: string;
+  socketID?: string;
+  onComplete: () => void;
 };
 
-export function OnlineVictoryReveal({ room }: OnlineVictoryRevealProps) {
-  const data = useMemo(() => buildVictoryRevealData(room), [room]);
+export function OnlineVictoryReveal({
+  room,
+  sessionID = '',
+  socketID = '',
+  onComplete,
+}: OnlineVictoryRevealProps) {
+  const data = useMemo(
+    () => buildVictoryRevealData(room, { sessionID, socketID }),
+    [room, sessionID, socketID]
+  );
   const confetti = useMemo(
     () =>
       Array.from({ length: CONFETTI_COUNT }, (_, index) => ({
@@ -43,28 +66,101 @@ export function OnlineVictoryReveal({ room }: OnlineVictoryRevealProps) {
       })),
     []
   );
+  const completedRef = useRef(false);
+  const [skippable, setSkippable] = useState(false);
+  const [showExit, setShowExit] = useState(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  const finish = useCallback(() => {
+    if (completedRef.current) {
+      return;
+    }
+    completedRef.current = true;
+    onCompleteRef.current();
+  }, []);
+
+  useEffect(() => {
+    completedRef.current = false;
+    setSkippable(false);
+    setShowExit(false);
+
+    const skipTimer = window.setTimeout(() => {
+      setSkippable(true);
+    }, MATCH_REVEAL_SKIP_AFTER_MS);
+
+    const exitTimer = window.setTimeout(() => {
+      setShowExit(true);
+    }, MATCH_REVEAL_MS - MATCH_REVEAL_EXIT_MS);
+
+    const completeTimer = window.setTimeout(() => {
+      finish();
+    }, MATCH_REVEAL_MS);
+
+    return () => {
+      window.clearTimeout(skipTimer);
+      window.clearTimeout(exitTimer);
+      window.clearTimeout(completeTimer);
+    };
+  }, [finish, room.roomId, room.matchRound]);
+
+  useEffect(() => {
+    if (!skippable) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      finish();
+    };
+    const onPointerDown = () => {
+      finish();
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('pointerdown', onPointerDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, [finish, skippable]);
+
+  useEffect(() => {
+    if (!data) {
+      finish();
+    }
+  }, [data, finish]);
 
   if (!data) {
     return null;
   }
 
-  const { winner, loser, teaseHeadline, teaseSubline, netPrize } = data;
+  const { winner, loser, teaseHeadline, teaseSubline, netPrize, footerCopy } =
+    data;
+
+  const ariaLabel = `${winner.name} wins. ${netPrize.toLocaleString()} sats net prize.`;
 
   return (
     <div
-      className="online-victory-reveal"
+      className={[
+        'online-reveal',
+        'online-reveal--victory',
+        skippable ? 'online-reveal--skippable' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       role="status"
       aria-live="polite"
-      aria-label={`${winner.name} wins`}
+      aria-label={ariaLabel}
     >
-      <div className="online-victory-reveal__vignette" aria-hidden="true" />
-      <div className="online-victory-reveal__burst" aria-hidden="true" />
+      <div className="online-reveal__scrim" aria-hidden="true" />
+      <div className="online-reveal__vignette" aria-hidden="true" />
+      <div className="online-reveal__burst" aria-hidden="true" />
 
-      <div className="online-victory-reveal__confetti" aria-hidden="true">
+      <div className="online-reveal__confetti" aria-hidden="true">
         {confetti.map((piece) => (
           <span
             key={piece.id}
-            className="online-victory-reveal__confetti-piece"
+            className="online-reveal__confetti-piece"
             style={
               {
                 left: piece.left,
@@ -77,77 +173,107 @@ export function OnlineVictoryReveal({ room }: OnlineVictoryRevealProps) {
         ))}
       </div>
 
-      <p className="online-victory-reveal__kicker">Match settled</p>
+      <p className="online-reveal__kicker">Match settled</p>
 
-      <div className="online-victory-reveal__matchup">
+      <div className="online-reveal__matchup">
         <article
           className={[
-            'online-victory-reveal__player',
-            'online-victory-reveal__player--loser',
+            'online-reveal__player',
+            'online-reveal__player--left',
+            'online-reveal__player--loser',
             loser.side === 'p1'
-              ? 'online-victory-reveal__player--white'
-              : 'online-victory-reveal__player--black',
+              ? 'online-reveal__player--white'
+              : 'online-reveal__player--black',
           ].join(' ')}
         >
-          <p className="online-victory-reveal__role">Defeated</p>
+          <p className="online-reveal__role online-reveal__role--defeated">
+            Defeated
+          </p>
           {loser.picture ? (
             <img
-              className="online-victory-reveal__avatar"
+              className="online-reveal__avatar"
               src={loser.picture}
               alt=""
             />
           ) : (
-            <div className="online-victory-reveal__avatar online-victory-reveal__avatar--empty" />
+            <div className="online-reveal__avatar online-reveal__avatar--empty" />
           )}
-          <h3 className="online-victory-reveal__name">{loser.name}</h3>
-          <p className="online-victory-reveal__score">
+          <h3 className="online-reveal__name">{loser.name}</h3>
+          <p className="online-reveal__score">
             {loser.score.toLocaleString()}
-            <span className="online-victory-reveal__score-denom"> sats</span>
+            <span className="online-reveal__score-denom"> sats</span>
           </p>
-          <p className="online-victory-reveal__tease-headline">{teaseHeadline}</p>
-          <p className="online-victory-reveal__tease-subline">{teaseSubline}</p>
+          <p className="online-reveal__tease-headline">{teaseHeadline}</p>
+          <p className="online-reveal__tease-subline">{teaseSubline}</p>
         </article>
 
-        <div className="online-victory-reveal__vs" aria-hidden="true">
+        <div className="online-reveal__vs" aria-hidden="true">
           <span>VS</span>
         </div>
 
         <article
           className={[
-            'online-victory-reveal__player',
-            'online-victory-reveal__player--winner',
+            'online-reveal__player',
+            'online-reveal__player--right',
+            'online-reveal__player--winner',
             winner.side === 'p1'
-              ? 'online-victory-reveal__player--white'
-              : 'online-victory-reveal__player--black',
+              ? 'online-reveal__player--white'
+              : 'online-reveal__player--black',
           ].join(' ')}
         >
-          <div className="online-victory-reveal__crown-wrap" aria-hidden="true">
+          <div className="online-reveal__crown-wrap" aria-hidden="true">
             <VictoryCrown />
           </div>
-          <p className="online-victory-reveal__role online-victory-reveal__role--winner">
+          <p className="online-reveal__role online-reveal__role--victor">
             Victor
           </p>
           {winner.picture ? (
             <img
-              className="online-victory-reveal__avatar online-victory-reveal__avatar--winner"
+              className="online-reveal__avatar online-reveal__avatar--winner"
               src={winner.picture}
               alt=""
             />
           ) : (
-            <div className="online-victory-reveal__avatar online-victory-reveal__avatar--empty online-victory-reveal__avatar--winner" />
+            <div className="online-reveal__avatar online-reveal__avatar--empty online-reveal__avatar--winner" />
           )}
-          <h2 className="online-victory-reveal__name online-victory-reveal__name--winner">
+          <h2 className="online-reveal__name online-reveal__name--winner">
             {winner.name}
           </h2>
-          <p className="online-victory-reveal__score online-victory-reveal__score--winner">
+          <p className="online-reveal__score online-reveal__score--winner">
             {winner.score.toLocaleString()}
-            <span className="online-victory-reveal__score-denom"> sats</span>
-          </p>
-          <p className="online-victory-reveal__prize">
-            +{netPrize.toLocaleString()} net
+            <span className="online-reveal__score-denom"> sats</span>
           </p>
         </article>
       </div>
+
+      <p className="online-reveal__stakes">
+        +{netPrize.toLocaleString()}
+        <span className="online-reveal__stakes-denom"> sats net</span>
+        {' · '}
+        {winner.name} wins
+      </p>
+
+      <p className="online-reveal__footer">{footerCopy}</p>
+
+      {showExit ? (
+        <div
+          className="online-reveal__exit"
+          style={
+            {
+              '--reveal-exit-ms': `${MATCH_REVEAL_EXIT_MS}ms`,
+            } as CSSProperties
+          }
+        >
+          <p className="online-reveal__exit-label">Opening results</p>
+          <div className="online-reveal__progress" aria-hidden="true">
+            <div className="online-reveal__progress-fill" />
+          </div>
+        </div>
+      ) : null}
+
+      {skippable ? (
+        <p className="online-reveal__skip">Press any key to continue</p>
+      ) : null}
     </div>
   );
 }

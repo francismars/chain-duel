@@ -856,7 +856,11 @@ export class PixiGameRenderer {
       this.lastResizeHeight = height;
       this.gridCacheKey = '';
     }
-    this.app.render();
+    try {
+      this.app.render();
+    } catch {
+      this.destroy();
+    }
   }
 
   // ── Resolving blocks animation ─────────────────────────────────────────────
