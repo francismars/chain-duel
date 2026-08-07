@@ -73,7 +73,6 @@ export function PowerUpLegend() {
               style={{ '--pu-color': color } as CSSProperties}
               title={tooltip}
             >
-              <span className="powerUpLegend__swatch" aria-hidden="true" />
               <div className="powerUpLegend__header">
                 <div className="powerUpLegend__icon" style={{ color }}>
                   {icon}

@@ -15,7 +15,6 @@
   --pu-font-name: clamp(8px, 0.78vw, 12px);
   --pu-font-desc: clamp(7px, 0.68vw, 10.5px);
   --pu-icon-size: clamp(12px, 1vw, 20px);
-  --pu-swatch-h: clamp(1px, 0.12vw, 2px);
 
   width: var(--game-board-width, 70vw);
   max-width: 100%;
@@ -38,35 +37,14 @@
 
 .powerUpLegend__card {
   --pu-color: #fff;
-  --pu-border: color-mix(in srgb, var(--pu-color) 45%, transparent);
   --pu-desc: color-mix(in srgb, var(--pu-color) 40%, transparent);
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--pu-gap-card);
   min-width: 0;
-  padding: var(--pu-pad-card-y) var(--pu-pad-card-x) var(--pu-pad-card-y);
-  border-radius: 0;
-  border: 1px solid var(--pu-border);
-  border-top: none;
+  padding: var(--pu-pad-card-y) var(--pu-pad-card-x);
   text-align: center;
-  background: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--pu-color) 12%, transparent) 0%,
-    rgba(255, 255, 255, 0.02) 55%
-  );
-  overflow: hidden;
-}
-
-.powerUpLegend__swatch {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--pu-border);
-  opacity: 1;
 }
 
 .powerUpLegend__header {
