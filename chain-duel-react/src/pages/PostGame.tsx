@@ -172,15 +172,14 @@ export default function PostGame() {
     });
     socket.emit('doubleornothing');
     reportClientEvent(socket, 'client.p2p.double_or_nothing', {});
-    // Keep legacy full-page navigation, but allow one frame for websocket frame flush.
-    window.setTimeout(() => {
-      if (gameMode === 'PRACTICE') {
-        window.location.href = '/practice';
-        return;
-      }
-      window.location.href =
-        gameMode === 'P2PNOSTR' ? '/gamemenu?nostr=true' : '/gamemenu';
-    }, 120);
+    if (gameMode === 'PRACTICE') {
+      navigate('/practice');
+      return;
+    }
+    navigate({
+      pathname: '/gamemenu',
+      search: gameMode === 'P2PNOSTR' ? '?nostr=true' : '',
+    });
   }, [
     socket,
     qrRevealed,
@@ -191,6 +190,7 @@ export default function PostGame() {
     gameMode,
     logger,
     playConfirm,
+    navigate,
   ]);
 
   useEffect(() => {

@@ -68,7 +68,7 @@ export default function GameMenu() {
   const useNostrFromQuery = searchParams.get('nostr') === 'true';
   /** URL is the source of truth so /gamemenu (no query) never stays stuck in Nostr UI after leaving ?nostr=true. */
   const isNostrMode = useNostrFromQuery;
-  const { socket } = useSocket();
+  const { socket, connected } = useSocket();
   const { playSfx } = useAudio();
   const [loading, setLoading] = useState(true);
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
@@ -207,6 +207,82 @@ export default function GameMenu() {
     };
   }, [logger, socket]);
 
+  const applySerializedPlayers = useCallback(
+    (
+      body: {
+        winners?: string[] | null;
+        players?: Record<
+          string,
+          { name?: string; value?: number; picture?: string }
+        >;
+      },
+      opts?: { flashHighlights?: boolean }
+    ) => {
+      const flashHighlights = opts?.flashHighlights ?? false;
+      const players = body.players ?? {};
+      const latestWinner = body.winners?.length
+        ? body.winners[body.winners.length - 1]
+        : null;
+      if (body.winners && body.winners.length > 0) {
+        prevWinnerRef.current = latestWinner ?? null;
+        setPrevWinner(latestWinner ?? null);
+        setGameMenuTitle(`P2P*${2 ** body.winners.length}`);
+      }
+      const p1 = players['Player 1'];
+      const p2 = players['Player 2'];
+      if (p1) {
+        setP1Name((prev) => resolvePlayerName(p1, prev || 'Player 1'));
+        if (typeof p1.picture === 'string' && p1.picture.trim() !== '') {
+          setPlayer1Image(p1.picture);
+        }
+        if (p1.value !== undefined) {
+          const nextP1Sats = Number(p1.value);
+          const didP1Change = nextP1Sats !== lastKnownP1SatsRef.current;
+          setPlayer1Sats(nextP1Sats);
+          lastKnownP1SatsRef.current = nextP1Sats;
+          if (flashHighlights && didP1Change) {
+            if (highlightTimeoutP1Ref.current)
+              clearTimeout(highlightTimeoutP1Ref.current);
+            setHighlightP1(true);
+            highlightTimeoutP1Ref.current = window.setTimeout(
+              () => setHighlightP1(false),
+              HIGHLIGHT_FLASH_TIMEOUT_MS
+            );
+          }
+        }
+      }
+      if (p2) {
+        setP2Name((prev) => resolvePlayerName(p2, prev || 'Player 2'));
+        if (typeof p2.picture === 'string' && p2.picture.trim() !== '') {
+          setPlayer2Image(p2.picture);
+        }
+        if (p2.value !== undefined) {
+          const nextP2Sats = Number(p2.value);
+          const didP2Change = nextP2Sats !== lastKnownP2SatsRef.current;
+          setPlayer2Sats(nextP2Sats);
+          lastKnownP2SatsRef.current = nextP2Sats;
+          if (flashHighlights && didP2Change) {
+            if (highlightTimeoutP2Ref.current)
+              clearTimeout(highlightTimeoutP2Ref.current);
+            setHighlightP2(true);
+            highlightTimeoutP2Ref.current = window.setTimeout(
+              () => setHighlightP2(false),
+              HIGHLIGHT_FLASH_TIMEOUT_MS
+            );
+          }
+        }
+      }
+
+      const effectiveWinner = latestWinner ?? prevWinnerRef.current;
+      if (effectiveWinner) {
+        const loser = effectiveWinner === 'Player 1' ? 'Player 2' : 'Player 1';
+        setWinnerSats(players[effectiveWinner]?.value ?? 0);
+        setLoserSats(players[loser]?.value ?? 0);
+      }
+    },
+    []
+  );
+
   const handleMenuParsed = useCallback(
     (parsed: MenuParseResult) => {
       if (parsed.hasLnurlw) {
@@ -215,20 +291,25 @@ export default function GameMenu() {
       }
       const links = parsed.payLinks;
       setPayLinks(links.length > 0 ? links : null);
-      if (parsed.modeMeta?.mode) {
+      if (parsed.modeMeta?.winners?.length || parsed.modeMeta?.players) {
+        applySerializedPlayers({
+          winners: parsed.modeMeta.winners,
+          players: parsed.modeMeta.players,
+        });
+      } else if (parsed.modeMeta?.mode) {
         const mode = parsed.modeMeta.mode;
         const isNostrModeMeta = /nostr/i.test(mode);
-        const winnersCount = parsed.modeMeta.winnersCount ?? 0;
-        const donMultiple = winnersCount > 0 ? `*${2 ** winnersCount}` : '';
         // Legacy keeps P2P label even when the panel switches to Nostr mode.
-        setGameMenuTitle(`${isNostrModeMeta ? 'P2P' : mode}${donMultiple}`);
+        setGameMenuTitle(isNostrModeMeta ? 'P2P' : mode);
       }
       if (parsed.nostrMeta && useNostrFromQuery) {
         setNostrCode(parsed.nostrMeta.emojis);
         nostrNote1Ref.current = parsed.nostrMeta.note1;
         setNostrNote1(parsed.nostrMeta.note1);
-        setNostrMinP1(parsed.nostrMeta.min);
-        setNostrMinP2(parsed.nostrMeta.min);
+        const rematchMin = parsed.nostrMeta.min;
+        const winner = parsed.modeMeta?.winners?.slice(-1)[0];
+        setNostrMinP1(winner === 'Player 1' ? 1 : rematchMin);
+        setNostrMinP2(winner === 'Player 2' ? 1 : rematchMin);
       }
       const isNostrPayload =
         useNostrFromQuery &&
@@ -245,7 +326,7 @@ export default function GameMenu() {
       );
       setLoading(false);
     },
-    [navigate, useNostrFromQuery]
+    [applySerializedPlayers, navigate, useNostrFromQuery]
   );
 
   const handleMenuLoadingTimeout = useCallback(() => {
@@ -254,7 +335,7 @@ export default function GameMenu() {
 
   useMenuSocketInfo({
     socket,
-    connected: true,
+    connected,
     requestEvent: useNostrFromQuery
       ? 'getGameMenuInfosNostr'
       : 'getGameMenuInfos',
@@ -295,69 +376,7 @@ export default function GameMenu() {
           else socket.emit('getGameMenuInfosNostr');
         }
       }
-      const latestWinner = body.winners?.length
-        ? body.winners.slice(-1)[0]
-        : null;
-      if (body.winners && body.winners.length > 0) {
-        prevWinnerRef.current = latestWinner;
-        setPrevWinner(latestWinner);
-        const donMultiple = 2 ** body.winners.length;
-        setGameMenuTitle(`P2P*${donMultiple}`);
-      }
-      const players = body.players ?? {};
-      const p1 = players['Player 1'];
-      const p2 = players['Player 2'];
-      if (p1) {
-        setP1Name((prev) => resolvePlayerName(p1, prev || 'Player 1'));
-        if (typeof p1.picture === 'string' && p1.picture.trim() !== '') {
-          setPlayer1Image(p1.picture);
-        }
-        if (p1.value !== undefined) {
-          const nextP1Sats = Number(p1.value);
-          const didP1Change = nextP1Sats !== lastKnownP1SatsRef.current;
-          setPlayer1Sats(nextP1Sats);
-          if (didP1Change) {
-            lastKnownP1SatsRef.current = nextP1Sats;
-            if (highlightTimeoutP1Ref.current)
-              clearTimeout(highlightTimeoutP1Ref.current);
-            setHighlightP1(true);
-            highlightTimeoutP1Ref.current = window.setTimeout(
-              () => setHighlightP1(false),
-              HIGHLIGHT_FLASH_TIMEOUT_MS
-            );
-          }
-        }
-      }
-      if (p2) {
-        setP2Name((prev) => resolvePlayerName(p2, prev || 'Player 2'));
-        if (typeof p2.picture === 'string' && p2.picture.trim() !== '') {
-          setPlayer2Image(p2.picture);
-        }
-        if (p2.value !== undefined) {
-          const nextP2Sats = Number(p2.value);
-          const didP2Change = nextP2Sats !== lastKnownP2SatsRef.current;
-          setPlayer2Sats(nextP2Sats);
-          if (didP2Change) {
-            lastKnownP2SatsRef.current = nextP2Sats;
-            if (highlightTimeoutP2Ref.current)
-              clearTimeout(highlightTimeoutP2Ref.current);
-            setHighlightP2(true);
-            highlightTimeoutP2Ref.current = window.setTimeout(
-              () => setHighlightP2(false),
-              HIGHLIGHT_FLASH_TIMEOUT_MS
-            );
-          }
-        }
-      }
-
-      const effectiveWinner = latestWinner ?? prevWinnerRef.current;
-      if (effectiveWinner) {
-        const loser = effectiveWinner === 'Player 1' ? 'Player 2' : 'Player 1';
-        const winnerValue = players[effectiveWinner]?.value ?? 0;
-        const loserValue = players[loser]?.value ?? 0;
-        setWinnerSats(winnerValue);
-        setLoserSats(loserValue);
-      }
+      applySerializedPlayers(body, { flashHighlights: true });
     };
     socket.on('updatePayments', handler);
     return () => {
@@ -373,7 +392,7 @@ export default function GameMenu() {
     };
     // Stable subscription: prevWinner/nostrNote1 must not be deps — updating them used to
     // re-run cleanup and cancel the highlight timeout while highlight state stayed true.
-  }, [socket, logger, useNostrFromQuery]);
+  }, [applySerializedPlayers, socket, logger, useNostrFromQuery]);
 
   useSessionPersistence(socket);
 
@@ -1073,7 +1092,10 @@ function getStartBlockedMessage(
 }
 
 function resolvePlayerName(
-  player: SerializedGameInfo['players'][string] | undefined,
+  player:
+    | SerializedGameInfo['players'][string]
+    | { name?: string; value?: number; picture?: string }
+    | undefined,
   fallback: string
 ): string {
   if (!player) return fallback;
