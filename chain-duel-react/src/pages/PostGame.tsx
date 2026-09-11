@@ -19,6 +19,7 @@ import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';
 import { createLogger } from '@/shared/utils/logger';
+import { postGameWinnerAllowsKey } from '@/pages/postGameWinnerControl';
 import '@/components/ui/Button.css';
 import './postgame.css';
 
@@ -347,6 +348,11 @@ export default function PostGame() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      const winnerAllows = postGameWinnerAllowsKey(winnerPlayer, event.key, {
+        practiceMode,
+        menu,
+      });
+
       if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
         if (menu === 3) {
           if (activeButtonMenu3 !== 0) playSelect();
@@ -364,18 +370,21 @@ export default function PostGame() {
         }
       }
       if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
+        if (!winnerAllows) return;
         if (menu === 1) {
           if (activeButtonMenu1 !== 0) playSelect();
           setActiveButtonMenu1(0);
         }
       }
       if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
+        if (!winnerAllows) return;
         if (menu === 1 && !tournamentMode && !qrRevealed) {
           if (activeButtonMenu1 !== 1) playSelect();
           setActiveButtonMenu1(1);
         }
       }
       if (event.key === 'Enter' || event.key === ' ') {
+        if (!winnerAllows) return;
         event.preventDefault();
         if (menu === 1) {
           if (activeButtonMenu1 === 0) onClaim();
@@ -398,6 +407,8 @@ export default function PostGame() {
     activeButtonMenu1,
     activeButtonMenu3,
     tournamentMode,
+    practiceMode,
+    winnerPlayer,
     qrRevealed,
     navigate,
     onClaim,
@@ -405,7 +416,6 @@ export default function PostGame() {
     onMainMenu,
     playConfirm,
     playSelect,
-    qrRevealed,
   ]);
 
   useEffect(() => {
