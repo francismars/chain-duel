@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
-import { useGamepad } from '@/hooks/useGamepad';
+import { isGamepadFaceHeld, useGamepad } from '@/hooks/useGamepad';
 import { useMenuSfx } from '@/hooks/useMenuSfx';
 import type { SerializedGameInfo } from '@/types/socket';
 import {
@@ -14,12 +14,20 @@ import {
   PAYOUT_POOL_RATIO,
 } from '@/shared/constants/payment';
 import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
-import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
+import {
+  CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
+  clearMenuNavigationState,
+  navigateToMainMenu,
+  type MenuNavigationState,
+} from '@/shared/constants/menuNavigation';
 import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';
 import { createLogger } from '@/shared/utils/logger';
-import { postGameWinnerAllowsKey } from '@/pages/postGameWinnerControl';
+import {
+  postGameConfirmGate,
+  postGameWinnerAllowsKey,
+} from '@/pages/postGameWinnerControl';
 import '@/components/ui/Button.css';
 import './postgame.css';
 
@@ -43,6 +51,14 @@ const PLACEHOLDER_WITHDRAWAL_URL =
 export default function PostGame() {
   const logger = useMemo(() => createLogger('PostGame'), []);
   const navigate = useNavigate();
+  const location = useLocation();
+  const suppressNextMenuConfirmRef = useRef(
+    Boolean(
+      (location.state as MenuNavigationState | null)?.[
+        CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM
+      ]
+    )
+  );
   const { socket } = useSocket();
   const [loading, setLoading] = useState(true);
   const [menu, setMenu] = useState<MenuState>(1);
@@ -384,6 +400,24 @@ export default function PostGame() {
         }
       }
       if (event.key === 'Enter' || event.key === ' ') {
+        const gate = postGameConfirmGate(event.key, {
+          repeat: event.repeat,
+          faceHeld: isGamepadFaceHeld(),
+          suppressNext: suppressNextMenuConfirmRef.current,
+        });
+        if (gate === 'ignore' || gate === 'ignore-held') {
+          if (gate === 'ignore-held') {
+            suppressNextMenuConfirmRef.current = false;
+          }
+          event.preventDefault();
+          return;
+        }
+        if (gate === 'consume-suppress') {
+          suppressNextMenuConfirmRef.current = false;
+          event.preventDefault();
+          clearMenuNavigationState(navigate, location);
+          return;
+        }
         if (!winnerAllows) return;
         event.preventDefault();
         if (menu === 1) {
@@ -411,6 +445,7 @@ export default function PostGame() {
     winnerPlayer,
     qrRevealed,
     navigate,
+    location,
     onClaim,
     onDoubleOrNothing,
     onMainMenu,

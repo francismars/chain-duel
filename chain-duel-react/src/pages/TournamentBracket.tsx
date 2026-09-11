@@ -20,6 +20,7 @@ import {
   TOURNAMENT_MIN_PLAYERS,
 } from '@/shared/constants/payment';
 import { createLogger } from '@/shared/utils/logger';
+import { navigateToPostGame } from '@/shared/constants/menuNavigation';
 import { clearClientGameConfig, markSocketDuelSession } from '@/pages/practiceHubModes';
 import { npubEncode } from 'nostr-tools/nip19';
 import '@/components/ui/Button.css';
@@ -628,7 +629,7 @@ export default function TournamentBracket() {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           playConfirm();
-          navigate('/postgame');
+          navigateToPostGame(navigate);
         }
         return;
       }
@@ -1006,7 +1007,7 @@ export default function TournamentBracket() {
             type="button"
             onClick={() => {
               playConfirm();
-              navigate('/postgame');
+              navigateToPostGame(navigate);
             }}
           >
             Claim Sats

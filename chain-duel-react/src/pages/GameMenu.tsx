@@ -33,6 +33,7 @@ import { QR_CODE_CARD_SIZE } from '@/shared/constants/ui';
 import {
   CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
   clearMenuNavigationState,
+  navigateToPostGame,
   type MenuNavigationState,
 } from '@/shared/constants/menuNavigation';
 import { neventFromNote1, trimNip19Identifier } from '@/lib/nostr/nip19Display';
@@ -286,7 +287,7 @@ export default function GameMenu() {
   const handleMenuParsed = useCallback(
     (parsed: MenuParseResult) => {
       if (parsed.hasLnurlw) {
-        navigate('/postgame', { replace: true });
+        navigateToPostGame(navigate, { replace: true });
         return;
       }
       const links = parsed.payLinks;
@@ -460,7 +461,7 @@ export default function GameMenu() {
   const confirmExit = useCallback(() => {
     playSfx(SFX.MENU_CONFIRM);
     if (prevWinner) {
-      navigate('/postgame', { replace: true });
+      navigateToPostGame(navigate, { replace: true });
       return;
     }
     socket?.emit('cancelp2p');

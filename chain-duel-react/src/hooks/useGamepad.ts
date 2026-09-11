@@ -405,6 +405,23 @@ export function pollGamepads(
   }
 }
 
+/** True while any connected pad has a face button held (A/B/X/Y). */
+export function isGamepadFaceHeld(): boolean {
+  if (typeof navigator === 'undefined' || !navigator.getGamepads) return false;
+  for (const pad of navigator.getGamepads()) {
+    if (!pad) continue;
+    if (
+      pad.buttons[0]?.pressed ||
+      pad.buttons[1]?.pressed ||
+      pad.buttons[2]?.pressed ||
+      pad.buttons[3]?.pressed
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Hook for gamepad support.
  * Polls on requestAnimationFrame (game) or the same loop with menu-friendly repeat rules.

@@ -72,6 +72,7 @@ import {
 } from '@/features/game/GameInfoLabel';
 import type { FfaHudPlayer } from '@/game/engine/types';
 import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
+import { navigateToPostGame } from '@/shared/constants/menuNavigation';
 import {
   challengeStartSatsPerPlayer,
   isExplicitPracticeSession,
@@ -1294,7 +1295,7 @@ export default function Game() {
         navigate(practiceHubExitPath(gameConfig));
         return;
       }
-      navigate('/postgame');
+      navigateToPostGame(navigate);
     },
     [navigate, soloEndData]
   );
@@ -1367,7 +1368,7 @@ export default function Game() {
     onHudSync: handleHudSync,
     onLoadingResolved: handleLoadingResolved,
     onBootstrapFallback: bootstrapLocalGame,
-    onRedirectToPostGame: () => navigate('/postgame', { replace: true }),
+    onRedirectToPostGame: () => navigateToPostGame(navigate, { replace: true }),
     onPointsUpdated: handlePointsUpdated,
     onZapReceived: handleZapReceived,
   });
