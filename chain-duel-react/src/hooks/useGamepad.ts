@@ -86,6 +86,7 @@ type PadPollState = {
   /** Keys we synthesized via game-mode polling (edge-triggered keyup). */
   synthHeld: Partial<Record<'up' | 'down' | 'left' | 'right', boolean>>;
   synthFaceHeld: boolean;
+  synthControlHeld: boolean;
 };
 
 function createPadPollState(): PadPollState {
@@ -98,6 +99,7 @@ function createPadPollState(): PadPollState {
     axis9: undefined,
     synthHeld: {},
     synthFaceHeld: false,
+    synthControlHeld: false,
   };
 }
 
@@ -347,10 +349,13 @@ function pollPlayerPad(
     pollArcadeAxis9(mode, state, now, pad.axes[9], keys);
   }
 
-  if (pad.buttons[6]?.pressed || pad.buttons[7]?.pressed) {
-    dispatchKey('keydown', { code: controlCode });
-  } else {
-    dispatchKey('keyup', { code: controlCode });
+  const controlDown = !!pad.buttons[6]?.pressed || !!pad.buttons[7]?.pressed;
+  if (controlDown && !state.synthControlHeld) {
+    dispatchKey('keydown', { key: 'Control', code: controlCode });
+    state.synthControlHeld = true;
+  } else if (!controlDown && state.synthControlHeld) {
+    dispatchKey('keyup', { key: 'Control', code: controlCode });
+    state.synthControlHeld = false;
   }
 }
 

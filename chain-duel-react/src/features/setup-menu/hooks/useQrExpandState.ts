@@ -21,40 +21,60 @@ export function useQrExpandState({
 }: UseQrExpandStateArgs) {
   const expandKeyUpTimeRef = useRef<Partial<Record<ExpandSide, number>>>({});
   const backdropTimeoutRef = useRef<WindowTimeout | null>(null);
+  const expandedRef = useRef({ left: false, right: false });
+  const onExpandedChangeRef = useRef(onExpandedChange);
+  const onBackdropVisibleChangeRef = useRef(onBackdropVisibleChange);
+  onExpandedChangeRef.current = onExpandedChange;
+  onBackdropVisibleChangeRef.current = onBackdropVisibleChange;
+
+  const clearBackdropTimer = useCallback(() => {
+    if (backdropTimeoutRef.current) {
+      window.clearTimeout(backdropTimeoutRef.current);
+      backdropTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleBackdropOff = useCallback(() => {
+    clearBackdropTimer();
+    backdropTimeoutRef.current = window.setTimeout(() => {
+      backdropTimeoutRef.current = null;
+      if (!expandedRef.current.left && !expandedRef.current.right) {
+        onBackdropVisibleChangeRef.current(false);
+      }
+    }, EXPAND_SCALE_DOWN_MS);
+  }, [clearBackdropTimer]);
 
   const show = useCallback(
     (side: ExpandSide) => {
       const now = Date.now();
       if (now - (expandKeyUpTimeRef.current[side] ?? 0) < EXPAND_DEBOUNCE_MS)
         return;
-      if (backdropTimeoutRef.current)
-        window.clearTimeout(backdropTimeoutRef.current);
-      onExpandedChange({ [side]: true });
-      onBackdropVisibleChange(true);
+      expandedRef.current[side] = true;
+      clearBackdropTimer();
+      onExpandedChangeRef.current({ [side]: true });
+      onBackdropVisibleChangeRef.current(true);
     },
-    [onBackdropVisibleChange, onExpandedChange]
+    [clearBackdropTimer]
   );
 
   const hide = useCallback(
     (side: ExpandSide) => {
       expandKeyUpTimeRef.current[side] = Date.now();
-      onExpandedChange({ [side]: false });
-      if (backdropTimeoutRef.current)
-        window.clearTimeout(backdropTimeoutRef.current);
-      backdropTimeoutRef.current = window.setTimeout(
-        () => onBackdropVisibleChange(false),
-        EXPAND_SCALE_DOWN_MS
-      );
+      expandedRef.current[side] = false;
+      onExpandedChangeRef.current({ [side]: false });
+      if (!expandedRef.current.left && !expandedRef.current.right) {
+        scheduleBackdropOff();
+      }
     },
-    [onBackdropVisibleChange, onExpandedChange]
+    [scheduleBackdropOff]
   );
 
   useEffect(() => {
     const resetAll = () => {
-      onExpandedChange({ left: false, right: false });
-      if (backdropTimeoutRef.current)
-        window.clearTimeout(backdropTimeoutRef.current);
-      onBackdropVisibleChange(false);
+      expandedRef.current = { left: false, right: false };
+      onExpandedChangeRef.current({ left: false, right: false });
+      clearBackdropTimer();
+      onBackdropVisibleChangeRef.current(false);
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -64,12 +84,8 @@ export function useQrExpandState({
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'ControlLeft') hide('left');
       if (dualControls && e.code === 'ControlRight') hide('right');
-      if (e.key === 'Control' || !e.ctrlKey) {
-        resetAll();
-      }
     };
     const onWindowBlur = () => {
-      // Prevent sticky expanded state when keyup is lost after focus changes.
       resetAll();
     };
     const onVisibilityChange = () => {
@@ -87,8 +103,7 @@ export function useQrExpandState({
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onWindowBlur);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      if (backdropTimeoutRef.current)
-        window.clearTimeout(backdropTimeoutRef.current);
+      clearBackdropTimer();
     };
-  }, [dualControls, hide, onBackdropVisibleChange, onExpandedChange, show]);
+  }, [clearBackdropTimer, dualControls, hide, show]);
 }
