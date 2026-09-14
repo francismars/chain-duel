@@ -58,33 +58,21 @@ describe('postGameWinnerAllowsKey', () => {
 });
 
 describe('postGameConfirmGate', () => {
-  it('ignores held face-button confirms so GAME OVER does not reveal the QR', () => {
+  it('ignores confirms until the GAME OVER hold is released', () => {
     expect(
-      postGameConfirmGate(' ', {
-        repeat: false,
-        faceHeld: true,
-        suppressNext: true,
-      })
-    ).toBe('ignore-held');
+      postGameConfirmGate(' ', { repeat: false, armed: false })
+    ).toBe('ignore');
   });
 
-  it('swallows one leftover confirm after a tap continue', () => {
+  it('ignores key-repeat while Space is still held from GAME OVER', () => {
     expect(
-      postGameConfirmGate('Enter', {
-        repeat: false,
-        faceHeld: false,
-        suppressNext: true,
-      })
-    ).toBe('consume-suppress');
+      postGameConfirmGate('Enter', { repeat: true, armed: true })
+    ).toBe('ignore');
   });
 
-  it('accepts a real claim once the pad is released and suppress is cleared', () => {
+  it('accepts a new claim press after the continue button is released', () => {
     expect(
-      postGameConfirmGate(' ', {
-        repeat: false,
-        faceHeld: false,
-        suppressNext: false,
-      })
+      postGameConfirmGate(' ', { repeat: false, armed: true })
     ).toBe('accept');
   });
 });

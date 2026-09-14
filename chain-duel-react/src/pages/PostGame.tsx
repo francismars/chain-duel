@@ -59,6 +59,7 @@ export default function PostGame() {
       ]
     )
   );
+  const confirmArmedRef = useRef(false);
   const { socket } = useSocket();
   const [loading, setLoading] = useState(true);
   const [menu, setMenu] = useState<MenuState>(1);
@@ -88,6 +89,24 @@ export default function PostGame() {
 
   useGamepad(true);
   const { playSelect, playConfirm } = useMenuSfx();
+
+  useEffect(() => {
+    if (confirmArmedRef.current) return;
+    let raf = 0;
+    const tick = () => {
+      if (!isGamepadFaceHeld()) {
+        confirmArmedRef.current = true;
+        if (suppressNextMenuConfirmRef.current) {
+          suppressNextMenuConfirmRef.current = false;
+          clearMenuNavigationState(navigate, location);
+        }
+        return;
+      }
+      raf = window.requestAnimationFrame(tick);
+    };
+    raf = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(raf);
+  }, [location, navigate]);
 
   useEffect(() => {
     if (!socket) return;
@@ -402,20 +421,10 @@ export default function PostGame() {
       if (event.key === 'Enter' || event.key === ' ') {
         const gate = postGameConfirmGate(event.key, {
           repeat: event.repeat,
-          faceHeld: isGamepadFaceHeld(),
-          suppressNext: suppressNextMenuConfirmRef.current,
+          armed: confirmArmedRef.current,
         });
-        if (gate === 'ignore' || gate === 'ignore-held') {
-          if (gate === 'ignore-held') {
-            suppressNextMenuConfirmRef.current = false;
-          }
+        if (gate === 'ignore') {
           event.preventDefault();
-          return;
-        }
-        if (gate === 'consume-suppress') {
-          suppressNextMenuConfirmRef.current = false;
-          event.preventDefault();
-          clearMenuNavigationState(navigate, location);
           return;
         }
         if (!winnerAllows) return;

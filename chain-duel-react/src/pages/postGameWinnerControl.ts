@@ -37,24 +37,18 @@ function isPlayer2ControlKey(key: string): boolean {
   return key === 'Enter' || key === 'ArrowUp' || key === 'ArrowDown';
 }
 
-export type PostGameConfirmGate =
-  | 'ignore'
-  | 'ignore-held'
-  | 'consume-suppress'
-  | 'accept';
+export type PostGameConfirmGate = 'ignore' | 'accept';
 
 /**
- * Ghost confirms from GAME OVER: the winner's face button is often still
- * held when `/postgame` mounts, and menu-mode gamepad polling fires a fresh
- * Space/Enter that would reveal the claim QR.
+ * GAME OVER leftover: ignore confirms until the continue hold has been
+ * released (`armed`). Do not treat "face down on this keydown" as leftover —
+ * claiming on a pad always holds a face button.
  */
 export function postGameConfirmGate(
   key: string,
-  opts: { repeat: boolean; faceHeld: boolean; suppressNext: boolean }
+  opts: { repeat: boolean; armed: boolean }
 ): PostGameConfirmGate {
   if (key !== 'Enter' && key !== ' ') return 'accept';
-  if (opts.repeat) return 'ignore';
-  if (opts.faceHeld) return 'ignore-held';
-  if (opts.suppressNext) return 'consume-suppress';
+  if (opts.repeat || !opts.armed) return 'ignore';
   return 'accept';
 }
