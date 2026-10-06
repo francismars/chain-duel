@@ -3,6 +3,11 @@ import type { LNURLP } from '@/types/socket';
 interface MenuModeMeta {
   mode?: string;
   winnersCount?: number;
+  winners?: string[];
+  players?: Record<
+    string,
+    { name?: string; value?: number; picture?: string }
+  >;
 }
 
 interface NostrMeta {
@@ -83,23 +88,36 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
     })
     .filter((entry): entry is LNURLP => entry !== null);
 
-  const modeMetaItem = items.find(
+  const modeMetaItem = (items.find(
     (item) =>
       item !== null &&
       typeof item === 'object' &&
       'mode' in item &&
-      typeof (item as { mode?: unknown }).mode === 'string'
-  ) as { mode?: string; winners?: unknown[] } | undefined;
+      typeof (item as { mode?: unknown }).mode === 'string' &&
+      Array.isArray((item as { winners?: unknown }).winners)
+  ) ??
+    items.find(
+      (item) =>
+        item !== null &&
+        typeof item === 'object' &&
+        'mode' in item &&
+        typeof (item as { mode?: unknown }).mode === 'string'
+    )) as
+    | {
+        mode?: string;
+        winners?: unknown[];
+        players?: Record<string, { name?: string; value?: number; picture?: string }>;
+      }
+    | undefined;
 
-  const nostrMetaItem = items.find(
+  const nostrCandidates = items.filter(
     (item) =>
       item !== null &&
       typeof item === 'object' &&
       'note1' in item &&
       'emojis' in item
-  ) as
-    | { note1?: string; emojis?: string; min?: number; mode?: string }
-    | undefined;
+  ) as Array<{ note1?: string; emojis?: string; min?: number; mode?: string }>;
+  const nostrMetaItem = nostrCandidates[nostrCandidates.length - 1];
 
   return {
     payLinks,
@@ -107,9 +125,18 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
     modeMeta: modeMetaItem
       ? {
           mode: modeMetaItem.mode,
+          winners: Array.isArray(modeMetaItem.winners)
+            ? modeMetaItem.winners.filter(
+                (winner): winner is string => typeof winner === 'string'
+              )
+            : undefined,
           winnersCount: Array.isArray(modeMetaItem.winners)
             ? modeMetaItem.winners.length
             : undefined,
+          players:
+            modeMetaItem.players && typeof modeMetaItem.players === 'object'
+              ? modeMetaItem.players
+              : undefined,
         }
       : null,
     nostrMeta:

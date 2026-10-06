@@ -46,7 +46,12 @@ export function useMenuSocketInfo({
       const parsed = parseMenuResponse(body);
       onParsed(parsed);
 
-      if (parsed.payLinks.length > 0) {
+      if (
+        parsed.payLinks.length > 0 ||
+        parsed.nostrMeta ||
+        parsed.hasLnurlw ||
+        (parsed.modeMeta?.winnersCount ?? 0) > 0
+      ) {
         retryCountRef.current = 0;
         return;
       }

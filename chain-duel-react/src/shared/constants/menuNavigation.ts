@@ -27,6 +27,17 @@ export function navigateToMainMenu(navigate: NavigateFunction): void {
   navigate('/', { state: mainMenuReturnState() });
 }
 
+/** Navigate to local post-game and swallow the GAME OVER confirm still held on the pad. */
+export function navigateToPostGame(
+  navigate: NavigateFunction,
+  opts?: { replace?: boolean }
+): void {
+  navigate('/postgame', {
+    replace: opts?.replace,
+    state: mainMenuReturnState(),
+  });
+}
+
 /** Ms to ignore confirm on Index after any mount (keyboard/gamepad timing). */
 export function indexConfirmSuppressMs(fromMainMenuButton: boolean): number {
   return fromMainMenuButton

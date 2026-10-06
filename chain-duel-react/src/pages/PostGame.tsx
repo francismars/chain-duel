@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useSocket } from '@/hooks/useSocket';
-import { useGamepad } from '@/hooks/useGamepad';
+import { isGamepadFaceHeld, useGamepad } from '@/hooks/useGamepad';
 import { useMenuSfx } from '@/hooks/useMenuSfx';
 import type { SerializedGameInfo } from '@/types/socket';
 import {
@@ -14,11 +14,20 @@ import {
   PAYOUT_POOL_RATIO,
 } from '@/shared/constants/payment';
 import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
-import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
+import {
+  CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
+  clearMenuNavigationState,
+  navigateToMainMenu,
+  type MenuNavigationState,
+} from '@/shared/constants/menuNavigation';
 import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';
 import { createLogger } from '@/shared/utils/logger';
+import {
+  postGameConfirmGate,
+  postGameWinnerAllowsKey,
+} from '@/pages/postGameWinnerControl';
 import '@/components/ui/Button.css';
 import './postgame.css';
 
@@ -42,6 +51,15 @@ const PLACEHOLDER_WITHDRAWAL_URL =
 export default function PostGame() {
   const logger = useMemo(() => createLogger('PostGame'), []);
   const navigate = useNavigate();
+  const location = useLocation();
+  const suppressNextMenuConfirmRef = useRef(
+    Boolean(
+      (location.state as MenuNavigationState | null)?.[
+        CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM
+      ]
+    )
+  );
+  const confirmArmedRef = useRef(false);
   const { socket } = useSocket();
   const [loading, setLoading] = useState(true);
   const [menu, setMenu] = useState<MenuState>(1);
@@ -71,6 +89,24 @@ export default function PostGame() {
 
   useGamepad(true);
   const { playSelect, playConfirm } = useMenuSfx();
+
+  useEffect(() => {
+    if (confirmArmedRef.current) return;
+    let raf = 0;
+    const tick = () => {
+      if (!isGamepadFaceHeld()) {
+        confirmArmedRef.current = true;
+        if (suppressNextMenuConfirmRef.current) {
+          suppressNextMenuConfirmRef.current = false;
+          clearMenuNavigationState(navigate, location);
+        }
+        return;
+      }
+      raf = window.requestAnimationFrame(tick);
+    };
+    raf = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(raf);
+  }, [location, navigate]);
 
   useEffect(() => {
     if (!socket) return;
@@ -172,15 +208,14 @@ export default function PostGame() {
     });
     socket.emit('doubleornothing');
     reportClientEvent(socket, 'client.p2p.double_or_nothing', {});
-    // Keep legacy full-page navigation, but allow one frame for websocket frame flush.
-    window.setTimeout(() => {
-      if (gameMode === 'PRACTICE') {
-        window.location.href = '/practice';
-        return;
-      }
-      window.location.href =
-        gameMode === 'P2PNOSTR' ? '/gamemenu?nostr=true' : '/gamemenu';
-    }, 120);
+    if (gameMode === 'PRACTICE') {
+      navigate('/practice');
+      return;
+    }
+    navigate({
+      pathname: '/gamemenu',
+      search: gameMode === 'P2PNOSTR' ? '?nostr=true' : '',
+    });
   }, [
     socket,
     qrRevealed,
@@ -191,6 +226,7 @@ export default function PostGame() {
     gameMode,
     logger,
     playConfirm,
+    navigate,
   ]);
 
   useEffect(() => {
@@ -347,6 +383,11 @@ export default function PostGame() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      const winnerAllows = postGameWinnerAllowsKey(winnerPlayer, event.key, {
+        practiceMode,
+        menu,
+      });
+
       if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
         if (menu === 3) {
           if (activeButtonMenu3 !== 0) playSelect();
@@ -364,18 +405,29 @@ export default function PostGame() {
         }
       }
       if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
+        if (!winnerAllows) return;
         if (menu === 1) {
           if (activeButtonMenu1 !== 0) playSelect();
           setActiveButtonMenu1(0);
         }
       }
       if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
+        if (!winnerAllows) return;
         if (menu === 1 && !tournamentMode && !qrRevealed) {
           if (activeButtonMenu1 !== 1) playSelect();
           setActiveButtonMenu1(1);
         }
       }
       if (event.key === 'Enter' || event.key === ' ') {
+        const gate = postGameConfirmGate(event.key, {
+          repeat: event.repeat,
+          armed: confirmArmedRef.current,
+        });
+        if (gate === 'ignore') {
+          event.preventDefault();
+          return;
+        }
+        if (!winnerAllows) return;
         event.preventDefault();
         if (menu === 1) {
           if (activeButtonMenu1 === 0) onClaim();
@@ -398,14 +450,16 @@ export default function PostGame() {
     activeButtonMenu1,
     activeButtonMenu3,
     tournamentMode,
+    practiceMode,
+    winnerPlayer,
     qrRevealed,
     navigate,
+    location,
     onClaim,
     onDoubleOrNothing,
     onMainMenu,
     playConfirm,
     playSelect,
-    qrRevealed,
   ]);
 
   useEffect(() => {
