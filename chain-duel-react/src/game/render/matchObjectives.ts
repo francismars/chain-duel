@@ -146,10 +146,15 @@ export type OnlineStartReadyState = {
 export type CanvasObjectivesOpts = {
   stakesHint?: string;
   controlSlots?: readonly PlayerControlSlot[];
+  /**
+   * Parallel to controlSlots: which binding cluster labels to show on each pad.
+   * Used when solo seat switch keeps WASD bindings on the black snake.
+   */
+  controlLabelSlots?: readonly PlayerControlSlot[];
   onlineStartReady?: OnlineStartReadyState;
   /** Override default "PRESS BUTTON TO START" (e.g. online confirm flow). */
   startPromptWords?: readonly string[];
-  /** Smaller Inter line under the start prompt (online confirm hint). */
+  /** Smaller Inter line under the start prompt (seat switch / online hints). */
   startPromptSubtext?: string;
 };
 

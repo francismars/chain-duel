@@ -177,6 +177,8 @@ interface CreateStateArgs {
   p2Human?: boolean;
   p3Human?: boolean;
   p4Human?: boolean;
+  /** Solo vs AI: allow pressing X to swap white/black before start. */
+  allowSoloSeatSwitch?: boolean;
 }
 
 /** One unique bot name per AI slot (P1 → P2 → P3 → P4). */
@@ -213,6 +215,18 @@ export function createGameState(args: CreateStateArgs): GameState {
   const p1HumanMeta = args.p1Human !== undefined ? Boolean(args.p1Human) : true;
   const p2HumanMeta =
     args.p2Human !== undefined ? Boolean(args.p2Human) : defaultP2Human;
+  const teamMode = (args.teamMode ?? 'solo') as TeamMode;
+  const soloSeatSwitchEnabled =
+    args.allowSoloSeatSwitch === true &&
+    teamMode === 'solo' &&
+    p1HumanMeta !== p2HumanMeta &&
+    args.p3Human !== true &&
+    args.p4Human !== true;
+  const soloInputSlot = soloSeatSwitchEnabled
+    ? p1HumanMeta
+      ? ('p1' as const)
+      : ('p2' as const)
+    : undefined;
 
   const state: GameState = {
     cols: GAME_COLS,
@@ -250,6 +264,7 @@ export function createGameState(args: CreateStateArgs): GameState {
       practiceMode: args.practiceMode ?? false,
       p1Human: p1HumanMeta,
       p2Human: p2HumanMeta,
+      ...(soloInputSlot ? { soloInputSlot } : {}),
       isTournament: args.isTournament ?? false,
       aiTier: args.aiTier ?? 'stacker',
       convergenceMode: args.convergenceMode ?? false,
@@ -258,7 +273,7 @@ export function createGameState(args: CreateStateArgs): GameState {
       convergenceMinCols: args.convergenceMinCols ?? CONVERGENCE_MIN_COLS,
       convergenceMinRows: args.convergenceMinRows ?? CONVERGENCE_MIN_ROWS,
       powerupMode: args.powerupMode ?? false,
-      teamMode: (args.teamMode ?? 'solo') as TeamMode,
+      teamMode,
       currentStepMs: args.convergenceStepMs ?? STEP_SPEED_MS,
     },
     tickCount: 0,
@@ -282,7 +297,6 @@ export function createGameState(args: CreateStateArgs): GameState {
     controllerTestExtra: [],
   };
 
-  const teamMode = args.teamMode ?? 'solo';
   const p3Human = args.p3Human === true;
   const p4Human = args.p4Human === true;
   if (teamMode === 'ffa') {

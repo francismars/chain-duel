@@ -232,7 +232,8 @@ export class CanvasControlsOverlay {
     width: number,
     height: number,
     slots: readonly PlayerControlSlot[],
-    startRevealTime: number
+    startRevealTime: number,
+    labelSlots?: readonly PlayerControlSlot[]
   ): void {
     if (slots.length === 0) {
       this.hide();
@@ -247,16 +248,17 @@ export class CanvasControlsOverlay {
       })
       .join('|');
     const bindingsKey = slots
-      .map((slot) => {
-        const labels = slotBindingLabels(slot, layout);
-        const confirm = confirmKeyLabel(slot, layout);
-        return `${labels.up}${labels.down}${labels.left}${labels.right}${confirm}`;
+      .map((slot, i) => {
+        const labelSlot = labelSlots?.[i] ?? slot;
+        const labels = slotBindingLabels(labelSlot, layout);
+        const confirm = confirmKeyLabel(labelSlot, layout);
+        return `${labelSlot}:${labels.up}${labels.down}${labels.left}${labels.right}${confirm}`;
       })
       .join('|');
     const token = `${width}x${height}:${state.cols}x${state.rows}:${headsKey}:${bindingsKey}`;
     if (token !== this.layoutKey) {
       this.layoutKey = token;
-      this.applyLayout(state, width, height, slots, layout);
+      this.applyLayout(state, width, height, slots, layout, labelSlots);
     }
 
     const now = performance.now();
@@ -287,7 +289,8 @@ export class CanvasControlsOverlay {
     width: number,
     height: number,
     slots: readonly PlayerControlSlot[],
-    layout: ReturnType<typeof readKeyboardLayoutId>
+    layout: ReturnType<typeof readKeyboardLayoutId>,
+    labelSlots?: readonly PlayerControlSlot[]
   ): void {
     const capLayout = preMatchKeyCapLayout(width, height);
     const { keyPx, fontPx, gap } = capLayout;
@@ -302,8 +305,9 @@ export class CanvasControlsOverlay {
       }
       pad.slot = slot;
 
-      const labels = slotBindingLabels(slot, layout);
-      const confirm = confirmKeyLabel(slot, layout);
+      const labelSlot = labelSlots?.[i] ?? slot;
+      const labels = slotBindingLabels(labelSlot, layout);
+      const confirm = confirmKeyLabel(labelSlot, layout);
       const { x: anchorX, y: anchorY } = computePadAnchor(
         state,
         slot,
@@ -369,7 +373,8 @@ export function drawCanvasControlsFallback(
   width: number,
   height: number,
   slots: readonly PlayerControlSlot[],
-  alpha: number
+  alpha: number,
+  labelSlots?: readonly PlayerControlSlot[]
 ): void {
   if (alpha < 0.02 || slots.length === 0) return;
 
@@ -386,9 +391,11 @@ export function drawCanvasControlsFallback(
   ctx.font = `600 ${Math.floor(fontPx)}px Inter, system-ui, sans-serif`;
   ctx.lineWidth = 1;
 
-  for (const slot of slots) {
-    const labels = slotBindingLabels(slot, layout);
-    const confirm = confirmKeyLabel(slot, layout);
+  for (let i = 0; i < slots.length; i += 1) {
+    const slot = slots[i]!;
+    const labelSlot = labelSlots?.[i] ?? slot;
+    const labels = slotBindingLabels(labelSlot, layout);
+    const confirm = confirmKeyLabel(labelSlot, layout);
     const { x: anchorX, y: anchorY } = computePadAnchor(
       state,
       slot,

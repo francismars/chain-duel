@@ -309,11 +309,21 @@ export function confirmKeyLabel(
   return labelForKeyCode(confirmKeyCode(slot), layout);
 }
 
+function soloHumanControlSlot(state: GameState): PlayerControlSlot | null {
+  if (!state.meta.soloInputSlot) return null;
+  if (state.meta.p1Human === state.meta.p2Human) return null;
+  return state.meta.p1Human ? 'p1' : 'p2';
+}
+
 export function isConfirmKeyForState(
   event: Pick<KeyboardEvent, 'code'>,
   state: GameState
 ): boolean {
   const code = event.code;
+  const soloTarget = soloHumanControlSlot(state);
+  if (soloTarget && state.meta.soloInputSlot) {
+    if (code === confirmKeyCode(state.meta.soloInputSlot)) return true;
+  }
   if (state.meta.p1Human && code === confirmKeyCode('p1')) return true;
   if (state.meta.p2Human && code === confirmKeyCode('p2')) return true;
   if (state.extraSnakes[0]?.humanControlled && code === confirmKeyCode('p3')) {
@@ -394,6 +404,13 @@ export function resolveMovementForStateFromCode(
   code: string,
   state: GameState
 ): { slot: PlayerControlSlot; direction: EngineDirection } | null {
+  const soloTarget = soloHumanControlSlot(state);
+  if (soloTarget && state.meta.soloInputSlot) {
+    const direction = resolveDirectionForCode(code, state.meta.soloInputSlot);
+    if (direction) {
+      return { slot: soloTarget, direction: toEngineDirection(direction) };
+    }
+  }
   if (state.meta.p1Human) {
     const direction = resolveDirectionForCode(code, 'p1');
     if (direction) return { slot: 'p1', direction: toEngineDirection(direction) };
@@ -421,6 +438,13 @@ export function resolveMovementForStateFromKeyboardEvent(
   if (fromCode) return fromCode;
 
   const key = event.key.length === 1 ? event.key.toUpperCase() : event.key;
+  const soloTarget = soloHumanControlSlot(state);
+  if (soloTarget && state.meta.soloInputSlot) {
+    const direction = resolveDirectionForLegacyKey(key, state.meta.soloInputSlot);
+    if (direction) {
+      return { slot: soloTarget, direction: toEngineDirection(direction) };
+    }
+  }
   if (state.meta.p1Human) {
     const direction = resolveDirectionForLegacyKey(key, 'p1');
     if (direction) return { slot: 'p1', direction: toEngineDirection(direction) };
@@ -438,6 +462,18 @@ export function resolveMovementForStateFromKeyboardEvent(
     if (direction) return { slot: 'p4', direction: toEngineDirection(direction) };
   }
   return null;
+}
+
+/** Human control pads from live state (after solo seat switch). */
+export function humanControlSlotsFromState(
+  state: GameState
+): PlayerControlSlot[] {
+  const slots: PlayerControlSlot[] = [];
+  if (state.meta.p1Human) slots.push('p1');
+  if (state.meta.p2Human) slots.push('p2');
+  if (state.extraSnakes[0]?.humanControlled) slots.push('p3');
+  if (state.extraSnakes[1]?.humanControlled) slots.push('p4');
+  return slots;
 }
 
 export function humanControlSlotsFromConfig(
