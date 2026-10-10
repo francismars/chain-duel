@@ -2326,3 +2326,14 @@
       both;
   }
 }
+
+/* The board stays crisp while the rest of the interface recedes into black. */
+#gameCanvas.game-result-active {
+  z-index: 9999;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 85%);
+}
+
+/* Hide the live player labels and scores once the result repeats them centrally. */
+#gameContainer:has(#gameCanvas.game-result-active) :is(.players, .points, .ffa-hud-names, .ffa-hud-sats-row) {
+  visibility: hidden;
+}

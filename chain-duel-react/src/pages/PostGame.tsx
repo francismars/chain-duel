@@ -31,6 +31,8 @@ import {
 import '@/components/ui/Button.css';
 import './postgame.css';
 
+import '@/styles/components/matchResults.css';
+
 type MenuState = 1 | 2 | 3;
 type ActiveButtonMenu1 = 0 | 1;
 type ActiveButtonMenu3 = 0 | 1;
@@ -480,8 +482,8 @@ export default function PostGame() {
         className={`flex full flex-center animateIn ${loading ? 'empty' : ''}`}
       >
         {practiceMode ? null : <Sponsorship id="sponsorship-postgame" />}
-        <div className="flex">
-          <h2 id="gameOver">GAME OVER</h2>
+        <div className="flex match-result-heading">
+          <h2 id="gameOver">MATCH COMPLETE</h2>
           <div className="playerInfoGroup">
             <img
               className={`playerImg ${winnerPicture ? '' : 'hide'}`}

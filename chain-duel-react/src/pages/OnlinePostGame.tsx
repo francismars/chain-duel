@@ -16,6 +16,8 @@ import {
 import { isOnlineMatchPlayer, isOnlineVictoryWinner } from '@/lib/online/isOnlineVictoryWinner';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
+import '@/styles/components/matchResults.css';
+
 
 type PostGameNav =
   | { type: 'replay'; index: number } // round replay buttons
@@ -616,7 +618,35 @@ export default function OnlinePostGame({
 
       <div className="online-postgame-card">
         <div className="online-postgame-headline">
-          <p className="online-postgame-kicker">ONLINE · VICTORY SCREEN</p>
+          <p className="online-postgame-kicker">ONLINE / MATCH COMPLETE</p>
+        </div>
+
+        <div className="online-postgame-result">
+          <div className="online-postgame-winner">
+            {info.winnerPicture ? (
+              <img
+                className="online-postgame-avatar"
+                src={info.winnerPicture}
+                alt={info.winnerName}
+              />
+            ) : null}
+            <div className="online-postgame-winner-text">
+              <p className="online-postgame-winner-label">WINNER</p>
+              <h2 className="online-postgame-winner-name">
+                {info.winnerName.toUpperCase()}
+              </h2>
+            </div>
+          </div>
+
+          <div className="online-postgame-prize-block">
+            <p className="online-postgame-prize">
+              {netPayoutAmount.toLocaleString()} SATS
+            </p>
+            <p className="online-postgame-sub">
+              Net · gross {grossWinnerAmount.toLocaleString()} · fee{' '}
+              {feeAmount.toLocaleString()} sats
+            </p>
+          </div>
         </div>
 
         {(info.matchRounds?.length ?? 0) > 0 ? (
@@ -847,34 +877,6 @@ export default function OnlinePostGame({
             </ul>
           </section>
         ) : null}
-
-        <div className="online-postgame-result">
-          <div className="online-postgame-winner">
-            {info.winnerPicture ? (
-              <img
-                className="online-postgame-avatar"
-                src={info.winnerPicture}
-                alt={info.winnerName}
-              />
-            ) : null}
-            <div className="online-postgame-winner-text">
-              <p className="online-postgame-winner-label">WINNER</p>
-              <h2 className="online-postgame-winner-name">
-                {info.winnerName.toUpperCase()}
-              </h2>
-            </div>
-          </div>
-
-          <div className="online-postgame-prize-block">
-            <p className="online-postgame-prize">
-              {netPayoutAmount.toLocaleString()} SATS
-            </p>
-            <p className="online-postgame-sub">
-              Net · gross {grossWinnerAmount.toLocaleString()} · fee{' '}
-              {feeAmount.toLocaleString()} sats
-            </p>
-          </div>
-        </div>
 
         {showPayoutUi ? (
           <div

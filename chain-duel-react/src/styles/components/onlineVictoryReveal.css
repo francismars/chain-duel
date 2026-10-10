@@ -1,185 +1,251 @@
-@import './onlineMatchRevealShared.css';
-
-.online-reveal--victory {
-  pointer-events: auto;
-}
-
-.online-reveal--victory .online-reveal__burst {
-  position: absolute;
-  top: 42%;
-  left: 50%;
-  width: min(48vw, 380px);
-  height: min(48vw, 380px);
-  margin: calc(min(48vw, 380px) / -2) 0 0 calc(min(48vw, 380px) / -2);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgb(255 210 120 / 0.35) 0%,
-    rgb(255 170 60 / 0.1) 42%,
-    transparent 68%
-  );
-  opacity: 0;
-  transform: scale(0.35);
-  animation: online-reveal-victory-burst 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards;
-}
-
-.online-reveal__confetti {
-  position: absolute;
+.duel-finish {
+  position: fixed;
   inset: 0;
-  overflow: hidden;
-  pointer-events: none;
+  z-index: 10000;
+  display: grid;
+  align-items: center;
+  overflow: auto;
+  padding: clamp(20px, 5vw, 80px);
+  color: #fff;
+  background: rgb(3 3 3 / 97%);
 }
-
-.online-reveal__confetti-piece {
-  position: absolute;
-  top: -8%;
-  width: 8px;
-  height: 14px;
-  border-radius: 2px;
-  background: hsl(var(--confetti-hue, 42) 90% 62%);
-  opacity: 0;
-  transform: rotate(var(--confetti-rotate, 0deg));
-  animation: online-reveal-confetti 1.35s ease-out forwards;
+.duel-finish__sheet {
+  width: min(100%, 1080px);
+  margin: auto;
 }
-
-.online-reveal__player--loser {
-  animation:
-    online-reveal-player-in 0.55s cubic-bezier(0.34, 1.12, 0.64, 1) 0.1s forwards,
-    online-reveal-loser-dim 0.65s ease 1.05s forwards;
+.duel-finish__masthead,
+.duel-finish__navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  font:
+    500 11px/1.4 Inter,
+    sans-serif;
+  letter-spacing: 0.12em;
 }
-
-.online-reveal__player--winner {
-  animation-delay: 0.2s;
-  box-shadow:
-    0 0 0 1px rgb(255 210 120 / 0.35),
-    0 0 42px rgb(255 190 80 / 0.22),
-    inset 0 0 28px rgb(255 210 120 / 0.08);
-  background: linear-gradient(
-    180deg,
-    rgb(255 210 120 / 0.1) 0%,
-    rgb(0 0 0 / 0.35) 100%
-  );
+.duel-finish__masthead {
+  border-bottom: 1px solid #555;
+  padding-bottom: 18px;
 }
-
-.online-reveal__role--defeated {
-  color: rgb(255 140 120 / 0.85);
+.duel-finish__masthead > :first-child {
+  font:
+    24px/1 BureauGrotesque,
+    sans-serif;
+  letter-spacing: 0;
 }
-
-.online-reveal__role--victor {
-  color: rgb(255 220 140 / 0.95);
+.duel-finish__masthead > :last-child {
+  color: #aaa;
 }
-
-.online-reveal__avatar--winner {
-  border-color: rgb(255 210 120 / 0.75);
-  box-shadow: 0 0 28px rgb(255 190 80 / 0.45);
+.duel-finish__hero {
+  position: relative;
+  padding: clamp(24px, 4vw, 60px) 0 28px;
 }
-
-.online-reveal__name--winner {
-  color: rgb(255 250 235 / 0.98);
-  text-shadow: 0 0 24px rgb(255 200 90 / 0.45);
+.duel-finish__eyebrow {
+  margin: 0 0 22px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: #aaa;
 }
-
-.online-reveal__score--winner {
-  color: rgb(255 230 180 / 0.9);
+.duel-finish__identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-right: 0;
 }
-
-.online-reveal__crown-wrap {
-  margin-bottom: 0.35rem;
-  color: rgb(255 210 130 / 0.95);
-  opacity: 0;
-  transform: translateY(-12px) scale(0.85);
-  animation: online-reveal-crown-in 0.45s cubic-bezier(0.34, 1.12, 0.64, 1) 0.55s forwards;
+.duel-finish__identity img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 0;
 }
-
-.online-reveal__crown-svg {
-  width: clamp(1.4rem, 2.8vw, 2rem);
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 0 10px rgb(255 200 80 / 0.55));
-}
-
-.online-reveal__tease-headline {
-  margin: 0.75rem 0 0.2rem;
-  font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(0.72rem, 1.5vw, 0.95rem);
-  letter-spacing: 0.14em;
+.duel-finish__identity h2 {
+  font:
+    400 clamp(26px, 4vw, 56px)/1.05 BureauGrotesque,
+    sans-serif;
+  overflow-wrap: anywhere;
   text-transform: uppercase;
-  color: rgb(255 110 95 / 0.95);
 }
-
-.online-reveal__tease-subline {
-  margin: 0;
-  font-size: clamp(0.72rem, 1.2vw, 0.85rem);
-  color: rgb(255 255 255 / 0.42);
+.duel-finish__wins {
+  font:
+    400 clamp(100px, 19vw, 250px)/0.87 BureauGrotesque,
+    sans-serif;
+  letter-spacing: -0.045em;
+  margin: 8px 0 0 -0.035em;
 }
-
-@keyframes online-reveal-victory-burst {
-  0% {
-    opacity: 0;
-    transform: scale(0.35);
-  }
-
-  45% {
-    opacity: 0.85;
-  }
-
-  100% {
-    opacity: 0;
-    transform: scale(1.2);
-  }
+.duel-finish__ledger {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid #fff;
+  border-bottom: 1px solid #444;
 }
-
-@keyframes online-reveal-confetti {
-  0% {
-    opacity: 0;
-    transform: translateY(0) rotate(var(--confetti-rotate, 0deg));
-  }
-
-  12% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateY(105vh) rotate(calc(var(--confetti-rotate, 0deg) + 280deg));
-  }
+.duel-finish__ledger > div {
+  min-width: 0;
+  padding: 20px 22px;
+  border-left: 1px solid #444;
 }
-
-@keyframes online-reveal-loser-dim {
+.duel-finish__ledger > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.duel-finish__ledger > div > span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #aaa;
+  margin-bottom: 12px;
+}
+.duel-finish__ledger strong {
+  display: block;
+  font:
+    400 clamp(24px, 3.2vw, 46px)/1 BureauGrotesque,
+    sans-serif;
+  overflow-wrap: anywhere;
+}
+.duel-finish__ledger small {
+  font:
+    500 11px/1.5 Inter,
+    sans-serif;
+  color: #aaa;
+  white-space: nowrap;
+}
+.duel-finish__ledger .duel-finish__opponent {
+  font-size: clamp(20px, 2.4vw, 32px);
+  text-transform: uppercase;
+}
+.duel-finish__footer {
+  color: #aaa;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 18px 0 26px;
+  max-width: 65ch;
+}
+.duel-finish__navigation {
+  min-height: 44px;
+  color: #888;
+}
+.duel-finish__navigation button {
+  min-height: 44px;
+  border: 1px solid #fff;
+  background: #fff;
+  color: #000;
+  padding: 10px 20px;
+  font:
+    600 11px Inter,
+    sans-serif;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+.duel-finish__navigation button span {
+  margin-left: 24px;
+}
+.duel-finish__navigation button:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 4px;
+}
+.duel-finish__progress {
+  height: 2px;
+  background: white;
+  transform-origin: left;
+  animation: duel-finish-progress var(--reveal-exit-ms) linear both;
+  margin-top: 12px;
+}
+@keyframes duel-finish-progress {
+  from {
+    transform: scaleX(0);
+  }
   to {
-    opacity: 0.55;
-    transform: scale(0.94);
-    filter: grayscale(0.85) brightness(0.7);
+    transform: scaleX(1);
   }
 }
-
-@keyframes online-reveal-crown-in {
+@keyframes duel-finish-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
   to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (max-width: 720px) {
-  .online-reveal__player--loser {
-    animation:
-      online-reveal-player-in 0.55s cubic-bezier(0.34, 1.12, 0.64, 1) 0.1s forwards,
-      online-reveal-loser-dim 0.65s ease 1.05s forwards;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .online-reveal--victory .online-reveal__burst,
-  .online-reveal__confetti-piece,
-  .online-reveal__crown-wrap {
-    animation: none;
     opacity: 1;
     transform: none;
   }
-
-  .online-reveal__player--loser {
+}
+@media (prefers-reduced-motion: no-preference) {
+  .duel-finish__hero {
+    animation: duel-finish-enter 360ms ease-out both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .duel-finish__progress {
     animation: none;
-    opacity: 0.55;
-    filter: grayscale(0.85) brightness(0.7);
+  }
+}
+@media (max-width: 560px) {
+  .duel-finish {
+    padding: 24px 20px;
+  }
+  .duel-finish__ledger {
+    grid-template-columns: 1fr 1fr;
+  }
+  .duel-finish__ledger > div {
+    padding: 18px 12px;
+  }
+  .duel-finish__ledger > div:last-child {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid #444;
+    padding-left: 0;
+  }
+  .duel-finish__identity {
+    padding-right: 0;
+  }
+  }
+@media (max-height: 600px) and (min-width: 561px) {
+  .duel-finish {
+    padding-block: 20px;
+  }
+  .duel-finish__hero {
+    padding-block: 16px;
+  }
+  .duel-finish__wins {
+    font-size: 110px;
+  }
+  .duel-finish__eyebrow {
+    margin-bottom: 8px;
+  }
+  .duel-finish__footer {
+    margin-block: 10px;
+  }
+  .duel-finish__ledger > div {
+    padding-block: 12px;
+  }
+}
+
+.duel-finish__winning-line {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(20px, 4vw, 56px);
+  flex-wrap: wrap;
+}
+.duel-finish__amount {
+  margin: 0;
+  font:
+    400 clamp(44px, 7vw, 96px)/1 BureauGrotesque,
+    sans-serif;
+}
+.duel-finish__amount span {
+  font:
+    500 11px/1.4 Inter,
+    sans-serif;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .duel-finish__winning-line {
+    gap: 12px 24px;
+  }
+  .duel-finish__wins {
+    font-size: 100px;
+  }
+  .duel-finish__amount {
+    font-size: 44px;
   }
 }

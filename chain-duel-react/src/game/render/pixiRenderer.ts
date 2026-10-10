@@ -47,6 +47,12 @@ import {
   drawPointChangesCanvas,
   PointChangeOverlay,
 } from '@/game/render/pointChangeOverlay';
+import {
+  EndGameOverlay,
+  END_OVERLAY_DELAY_MS,
+  drawEndGameCanvas,
+  winnerSats,
+} from './endGameOverlay';
 import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 
 export type PixiRenderOpts = {
@@ -55,6 +61,24 @@ export type PixiRenderOpts = {
   suppressVictoryOverlay?: boolean;
   canvasObjectives?: CanvasObjectivesOpts;
 };
+
+/**
+ * 0 at the rim, 1 on the last center cells. The hash jitter is inside the
+ * divisor so progress 1 always covers the whole board.
+ */
+function resolveCellThreshold(
+  x: number,
+  y: number,
+  cols: number,
+  rows: number
+): number {
+  const maxDist = Math.min(Math.floor(cols / 2), Math.floor(rows / 2));
+  const distFromEdge = Math.min(x, cols - 1 - x, y, rows - 1 - y);
+  const hash = (((x * 2654435761 + y * 2246822519) >>> 0) % 1000) / 1000;
+  const maxRaw = maxDist + 0.6;
+  if (maxRaw <= 0) return 0;
+  return (distFromEdge + hash * 0.6) / maxRaw;
+}
 
 export class PixiGameRenderer {
   private app: Application | null = null;
@@ -68,6 +92,8 @@ export class PixiGameRenderer {
   private resolveBlocks: Graphics = new Graphics();
   private overlay: Container = new Container();
   private resolveAnimStartMs: number | null = null;
+  /** When the end overlay first became eligible; delay starts from this. */
+  private endOverlayEligibleAtMs: number | null = null;
   // Coinbase capture pulse tracking
   private prevScoreP1 = -1;
   private prevScoreP2 = -1;
@@ -94,8 +120,7 @@ export class PixiGameRenderer {
   private lastCountdownPhase: '3' | '2' | '1' | 'LFG' | null = null;
   private lastOverlayWidth = 0;
   private lastOverlayHeight = 0;
-  private endWinnerText: Text;
-  private endContinueText: Text;
+  private endOverlay = new EndGameOverlay();
   private countdown3: Text;
   private countdown2: Text;
   private countdown1: Text;
@@ -144,46 +169,6 @@ export class PixiGameRenderer {
     this.startPromptSubtext.anchor.set(0.5, 0);
     this.startPromptSubtext.resolution = this.textResolution;
     this.startPromptSubtext.visible = false;
-    this.endWinnerText = new Text({
-      text: '',
-      style: new TextStyle({
-        fontFamily: 'BureauGrotesque',
-        fill: '#ffffff',
-        fontSize: 34,
-        fontWeight: '500',
-        align: 'center',
-        padding: 48,
-        dropShadow: {
-          color: '#000000',
-          alpha: 0.95,
-          blur: 44,
-          angle: 0,
-          distance: 0,
-        },
-      }),
-    });
-    this.endWinnerText.anchor.set(0.5);
-    this.endWinnerText.resolution = this.textResolution;
-    this.endContinueText = new Text({
-      text: '',
-      style: new TextStyle({
-        fontFamily: 'BureauGrotesque',
-        fill: '#ffffff',
-        fontSize: 20,
-        fontWeight: '500',
-        align: 'center',
-        padding: 48,
-        dropShadow: {
-          color: '#000000',
-          alpha: 0.95,
-          blur: 44,
-          angle: 0,
-          distance: 0,
-        },
-      }),
-    });
-    this.endContinueText.anchor.set(0.5);
-    this.endContinueText.resolution = this.textResolution;
     this.countdown3 = this.createCountdownText('3');
     this.countdown2 = this.createCountdownText('2');
     this.countdown1 = this.createCountdownText('1');
@@ -207,6 +192,14 @@ export class PixiGameRenderer {
     this.host = host;
     host.innerHTML = '';
     await PixiGameRenderer.waitForHostLayout(host);
+    // Load the brand faces before Pixi caches text metrics (also on direct game links).
+    if (document.fonts) {
+      await Promise.allSettled([
+        document.fonts.load('16px BureauGrotesque'),
+        document.fonts.load('16px Inter'),
+      ]);
+    }
+    if (generation !== this.mountGeneration || this.host !== host) return;
     const initWidth = Math.max(1, host.clientWidth);
     const initHeight = Math.max(1, host.clientHeight);
     try {
@@ -233,13 +226,13 @@ export class PixiGameRenderer {
       this.overlay.addChild(this.startReady.container);
       this.overlay.addChild(this.controls.container);
       this.overlay.addChild(this.objectives.container);
-      this.overlay.addChild(this.endWinnerText);
-      this.overlay.addChild(this.endContinueText);
       this.overlay.addChild(this.countdown3);
       this.overlay.addChild(this.countdown2);
       this.overlay.addChild(this.countdown1);
       this.overlay.addChild(this.countdownLfg);
       this.overlay.addChild(this.pointChangesOverlay.container);
+      // Results cover the last capture's green/red amount popups.
+      this.overlay.addChild(this.endOverlay.container);
       this.root.addChild(this.overlay);
       app.stage.addChild(this.root);
       this.resize();
@@ -301,7 +294,9 @@ export class PixiGameRenderer {
     }
     if (state.gameEnded) {
       const resolve = this.getResolveProgress(state);
-      return resolve > 0 && resolve < 1;
+      if (resolve > 0 && resolve < 1) return true;
+      // Keep painting through the post-settle beat before the winner overlay.
+      return this.isEndOverlayPending(state, resolve);
     }
     return false;
   }
@@ -447,6 +442,7 @@ export class PixiGameRenderer {
   }
 
   render(state: GameState, opts?: PixiRenderOpts): void {
+    this.host?.closest('#gameCanvas')?.classList.toggle('game-result-active', state.gameEnded);
     if (!this.app) {
       this.renderFallback(state, opts);
       return;
@@ -707,28 +703,13 @@ export class PixiGameRenderer {
     }
 
     // ── Text overlays ─────────────────────────────────────────────────────────
-    /* Small boards (narrow viewports / portrait): height in px is tight — blend in height so win / continue copy stays readable */
-    const compactBoard = width < 560 || height < 260;
-    const overlayWinnerPx = compactBoard
-      ? Math.max(14, (width / 14) * 1.05, height / 5.5)
-      : Math.max(10, (width / 17) * 1.12);
-    const overlayContinuePx = compactBoard
-      ? Math.max(12, (width / 30) * 1.05, height / 11)
-      : Math.max(10, (width / 39) * 1.1);
-    const winnerYOffset = Math.min(22, height * 0.09);
-    const continueGap = Math.max(28, overlayWinnerPx * 0.85);
-    this.endWinnerText.position.set(width / 2, height / 2 - winnerYOffset);
-    this.endContinueText.position.set(
-      width / 2,
-      height / 2 - winnerYOffset + continueGap
-    );
-    this.endWinnerText.style.fontSize = overlayWinnerPx;
-    this.endContinueText.style.fontSize = overlayContinuePx;
+    this.endOverlay.hide();
+    if (!state.gameEnded) {
+      this.endOverlayEligibleAtMs = null;
+    }
 
     if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
       this.hideCountdownOverlay();
-      this.endWinnerText.text = '';
-      this.endContinueText.text = '';
       const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
       const promptWords = resolveStartPromptWords(objOpts);
@@ -750,7 +731,8 @@ export class PixiGameRenderer {
         width,
         height,
         objOpts.controlSlots ?? [],
-        this.startRevealTime
+        this.startRevealTime,
+        objOpts.controlLabelSlots
       );
       // ── Staggered word-by-word reveal + idle pulse ─────────────────────────
       this.startWordsContainer.position.set(width / 2, objLayout.startY);
@@ -777,14 +759,17 @@ export class PixiGameRenderer {
       const subtext = objOpts.startPromptSubtext?.trim();
       if (subtext) {
         const subtextPx = Math.max(10, startFontSize * 0.26);
+        const subAlpha = objOpts.onlineStartReady
+          ? readyAlpha
+          : startWordAlpha;
         this.startPromptSubtext.text = subtext;
         this.startPromptSubtext.style.fontSize = subtextPx;
         this.startPromptSubtext.position.set(
           width / 2,
           objLayout.startY + startFontSize * 0.52
         );
-        this.startPromptSubtext.alpha = readyAlpha;
-        this.startPromptSubtext.visible = readyAlpha > 0.02;
+        this.startPromptSubtext.alpha = subAlpha;
+        this.startPromptSubtext.visible = subAlpha > 0.02;
       } else {
         this.startPromptSubtext.visible = false;
       }
@@ -809,8 +794,6 @@ export class PixiGameRenderer {
       }
 
       if (state.countdownStart) {
-        this.endWinnerText.text = '';
-        this.endContinueText.text = '';
         this.renderCountdownOverlay(state, width, height);
       } else {
         this.hideCountdownOverlay();
@@ -818,19 +801,18 @@ export class PixiGameRenderer {
           // During the resolving-blocks animation, suppress the text until blocks cover the board
           if (
             !opts?.suppressVictoryOverlay &&
-            (resolveProgress >= 1.0 || !state.convergenceWallClosed)
+            this.shouldShowEndOverlay(state, resolveProgress)
           ) {
-            this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
-            this.endContinueText.text = opts?.replayView
-              ? ''
-              : opts?.challengeContinueLabel ?? 'PRESS ANY BUTTON TO CONTINUE';
-          } else if (opts?.suppressVictoryOverlay) {
-            this.endWinnerText.text = '';
-            this.endContinueText.text = '';
+            this.endOverlay.render(
+              width,
+              height,
+              state.winnerName,
+              opts?.replayView
+                ? ''
+                : opts?.challengeContinueLabel ?? 'PRESS ANY BUTTON TO CONTINUE',
+              winnerSats(state)
+            );
           }
-        } else {
-          this.endWinnerText.text = '';
-          this.endContinueText.text = '';
         }
       }
     }
@@ -882,6 +864,45 @@ export class PixiGameRenderer {
     );
   }
 
+  /** Board settled enough for the winner overlay (blocks done, or no resolve anim). */
+  private isEndOverlayEligible(
+    state: GameState,
+    resolveProgress: number
+  ): boolean {
+    if (!state.gameEnded) {
+      this.endOverlayEligibleAtMs = null;
+      return false;
+    }
+    return resolveProgress >= 1.0 || !state.convergenceWallClosed;
+  }
+
+  /** Eligible but still in the short post-settle hold. */
+  private isEndOverlayPending(
+    state: GameState,
+    resolveProgress: number
+  ): boolean {
+    if (!this.isEndOverlayEligible(state, resolveProgress)) return false;
+    if (this.endOverlayEligibleAtMs === null) {
+      this.endOverlayEligibleAtMs = performance.now();
+    }
+    return (
+      performance.now() - this.endOverlayEligibleAtMs < END_OVERLAY_DELAY_MS
+    );
+  }
+
+  private shouldShowEndOverlay(
+    state: GameState,
+    resolveProgress: number
+  ): boolean {
+    if (!this.isEndOverlayEligible(state, resolveProgress)) return false;
+    if (this.endOverlayEligibleAtMs === null) {
+      this.endOverlayEligibleAtMs = performance.now();
+    }
+    return (
+      performance.now() - this.endOverlayEligibleAtMs >= END_OVERLAY_DELAY_MS
+    );
+  }
+
   private renderResolveBlocks(
     state: GameState,
     _width: number,
@@ -892,15 +913,10 @@ export class PixiGameRenderer {
   ): void {
     const cols = state.cols;
     const rows = state.rows;
-    const maxDist = Math.min(Math.floor(cols / 2), Math.floor(rows / 2));
-    // Pseudo-random per-cell offset so blocks don't appear in a perfect geometric ring
-    const hashOffset = (x: number, y: number) =>
-      (((x * 2654435761 + y * 2246822519) >>> 0) % 1000) / 1000;
 
     for (let x = 0; x < cols; x++) {
       for (let y = 0; y < rows; y++) {
-        const distFromEdge = Math.min(x, cols - 1 - x, y, rows - 1 - y);
-        const threshold = (distFromEdge + hashOffset(x, y) * 0.6) / maxDist;
+        const threshold = resolveCellThreshold(x, y, cols, rows);
         if (progress < threshold) continue;
 
         const px = x * colSize;
@@ -1282,6 +1298,7 @@ export class PixiGameRenderer {
   }
 
   destroy(): void {
+    this.host?.closest('#gameCanvas')?.classList.remove('game-result-active');
     this.mountGeneration += 1;
     this.gridCacheKey = '';
     this.lastResizeWidth = 0;
@@ -1919,13 +1936,9 @@ export class PixiGameRenderer {
     if (resolveProgressFb > 0) {
       const cols2 = state.cols;
       const rows2 = state.rows;
-      const maxDist2 = Math.min(Math.floor(cols2 / 2), Math.floor(rows2 / 2));
       for (let x = 0; x < cols2; x++) {
         for (let y = 0; y < rows2; y++) {
-          const distFromEdge = Math.min(x, cols2 - 1 - x, y, rows2 - 1 - y);
-          const hashOff =
-            (((x * 2654435761 + y * 2246822519) >>> 0) % 1000) / 1000;
-          const threshold = (distFromEdge + hashOff * 0.6) / maxDist2;
+          const threshold = resolveCellThreshold(x, y, cols2, rows2);
           if (resolveProgressFb < threshold) continue;
           const px = x * colSize;
           const py = y * rowSize;
@@ -2014,12 +2027,11 @@ export class PixiGameRenderer {
       const subtext = objOpts.startPromptSubtext?.trim();
       if (subtext) {
         const subtextPx = Math.max(10, fbStartPx * 0.26);
-        const subAlpha = onlineStartReadyAlpha(
-          Boolean(objOpts.onlineStartReady),
-          startWordAlpha * eased
-        );
+        const subAlpha = objOpts.onlineStartReady
+          ? onlineStartReadyAlpha(true, startWordAlpha * eased)
+          : startWordAlpha * eased;
         ctx.save();
-        ctx.globalAlpha = subAlpha * eased;
+        ctx.globalAlpha = subAlpha;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.font = `500 ${Math.floor(subtextPx)}px Inter, system-ui, sans-serif`;
@@ -2055,7 +2067,8 @@ export class PixiGameRenderer {
         width,
         height,
         objOpts.controlSlots ?? [],
-        eased
+        eased,
+        objOpts.controlLabelSlots
       );
     } else if (state.countdownStart) {
       if (this.preMatchOverlayVisible()) {
@@ -2075,31 +2088,18 @@ export class PixiGameRenderer {
       this.startRevealTime = -1;
       if (
         !opts?.suppressVictoryOverlay &&
-        (resolveProgressFb >= 1.0 || !state.convergenceWallClosed)
+        this.shouldShowEndOverlay(state, resolveProgressFb)
       ) {
-        const fbC = width < 560 || height < 260;
-        const fbWinPx = fbC
-          ? Math.max(14, Math.floor(Math.max(width / 14, height / 5.5)))
-          : Math.max(10, Math.floor(width / 17));
-        const fbContPx = fbC
-          ? Math.max(12, Math.floor(Math.max(width / 30, height / 11)))
-          : Math.max(10, Math.floor(width / 39));
-        const fbY0 = Math.min(22, height * 0.09);
-        const fbGap = Math.max(28, fbWinPx * 0.85);
-        ctx.font = `${fbWinPx}px BureauGrotesque`;
-        ctx.fillText(
-          `${state.winnerName.toUpperCase()} WINS!`,
-          width / 2,
-          height / 2 - fbY0
+        drawEndGameCanvas(
+          ctx,
+          width,
+          height,
+          state.winnerName,
+          opts?.replayView
+            ? ''
+            : opts?.challengeContinueLabel ?? 'PRESS ANY BUTTON TO CONTINUE',
+              winnerSats(state)
         );
-        if (!opts?.replayView) {
-          ctx.font = `${fbContPx}px BureauGrotesque`;
-          ctx.fillText(
-            'PRESS ANY BUTTON TO CONTINUE',
-            width / 2,
-            height / 2 - fbY0 + fbGap
-          );
-        }
       }
     }
   }
