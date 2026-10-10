@@ -72,6 +72,8 @@ interface UseGameRenderBridgeArgs {
   challengeInputLogRef?: MutableRefObject<Array<{ tick: number; dir: string }>>;
   /** Optional canvas continue hint while challenge bounty is validating. */
   challengeContinueLabelRef?: MutableRefObject<string | null>;
+  /** Hide the canvas match-complete card when an HTML end screen owns the result. */
+  suppressVictoryOverlayRef?: MutableRefObject<boolean>;
   /** Optional stakes / match hints drawn on the pre-start canvas overlay. */
   canvasObjectivesRef?: MutableRefObject<CanvasObjectivesOpts>;
   /** Held direction keys — diagonal steering runs once per sim tick. */
@@ -117,6 +119,7 @@ export function useGameRenderBridge({
   simStepRef,
   challengeInputLogRef,
   challengeContinueLabelRef,
+  suppressVictoryOverlayRef,
   canvasObjectivesRef,
   heldInputRef,
 }: UseGameRenderBridgeArgs) {
@@ -164,6 +167,7 @@ export function useGameRenderBridge({
       };
       const label = challengeContinueLabelRef?.current;
       if (label) opts.challengeContinueLabel = label;
+      if (suppressVictoryOverlayRef?.current) opts.suppressVictoryOverlay = true;
       return opts;
     };
 
@@ -350,6 +354,7 @@ export function useGameRenderBridge({
 
       if (mountReady && state) {
         const simSteps = runSimulation(state, deltaMs);
+        audio?.updateGameState(state);
         if (state.meta?.modeLabel !== 'ONLINE') {
           advancePointChanges(state);
         }
@@ -379,6 +384,7 @@ export function useGameRenderBridge({
     captureP2Ref,
     challengeInputLogRef,
     challengeContinueLabelRef,
+    suppressVictoryOverlayRef,
     canvasObjectivesRef,
     heldInputRef,
     hostRef,

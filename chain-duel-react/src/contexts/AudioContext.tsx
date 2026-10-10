@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from 'react';
 
+import { resumeMenuMusicPosition } from '@/game/audio/resultMusicHandoff';
+
 /** One-shot sound effect paths for menu UI */
 export const SFX = {
   /** Play when moving focus between buttons (e.g. arrow keys) */
@@ -140,6 +142,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     const attemptPlay = () => {
       // Respect mute state — don't play if music or all audio is muted
       if (isMusicMutedRef.current || isMutedRef.current) return;
+      resumeMenuMusicPosition(audio);
       audio.play().catch((error) => {
         console.warn('Audio autoplay prevented:', error.message);
       });
@@ -203,11 +206,19 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (src) {
       audio.loop = true;
       setCurrentSrc(src);
-      audio.addEventListener('canplay', () => audio.play().catch(() => {}), {
-        once: true,
-      });
+      audio.addEventListener(
+        'canplay',
+        () => {
+          resumeMenuMusicPosition(audio);
+          void audio.play().catch(() => {});
+        },
+        {
+          once: true,
+        }
+      );
       audio.src = src;
       if (audio.readyState >= 3) {
+        resumeMenuMusicPosition(audio);
         audio.play().catch(() => {});
       }
     } else {

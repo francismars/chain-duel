@@ -272,6 +272,7 @@ export default function OnlineGame({
     }
 
     const state = snapshot.state as GameState;
+    audioRef.current?.updateGameState(state);
     const prev = prevGameStateRef.current;
     if (prev) {
       playOnlineAudioFromStateTransition(prev, state, audioRef.current);
@@ -1764,6 +1765,7 @@ function applyLiveOnlineSnapshot(
       ctx.gameMusicStartedRef.current = true;
       ctx.audioRef.current?.startMusic();
     }
+    ctx.audioRef.current?.updateGameState(state);
     if (ctx.prevGameStateRef.current) {
       playOnlineAudioFromStateTransition(
         ctx.prevGameStateRef.current,
