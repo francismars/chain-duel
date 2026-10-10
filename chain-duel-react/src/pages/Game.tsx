@@ -52,7 +52,6 @@ import {
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
 import { createEmptyHeldInputState } from '@/lib/controls/heldDirectionSteering';
 import { PowerUpLegend } from '@/features/game/PowerUpLegend';
-import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 import {
   ChallengeRowIcon,
   isChallengeIconId,
@@ -65,7 +64,14 @@ import { FfaHud } from '@/features/game/FfaGameHud';
 import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
 import {
   humanControlSlotsFromConfig,
+  humanControlSlotsFromState,
+  type PlayerControlSlot,
 } from '@/lib/controls/playerControls';
+import {
+  canSwapSoloHumanSeat,
+  soloSeatSwitchHint,
+  type SoloSeatSwapResult,
+} from '@/game/soloSeatSwitch';
 import {
   GameInfoLabel,
   readChallengeHudFromConfig,
@@ -86,6 +92,7 @@ import {
 } from '@/pages/practiceHubModes';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './game.css';
+import '@/styles/components/matchResults.css';
 
 interface ZapMessage {
   id: string;
@@ -109,6 +116,16 @@ type SoloEndData = {
   zapPaid?: boolean;
   zapReason?: string;
 };
+
+type FreePlayEnd = {
+  winnerName: string;
+  p1Name: string;
+  p2Name: string;
+  p1Score: number;
+  p2Score: number;
+};
+
+type FreePlayEndFocus = 'again' | 'menu';
 
 type SoloZapFocusId =
   | 'openPrimal'
@@ -223,6 +240,11 @@ export default function Game() {
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
+  const [freePlayEnd, setFreePlayEnd] = useState<FreePlayEnd | null>(null);
+  const [freePlayEndFocus, setFreePlayEndFocus] =
+    useState<FreePlayEndFocus>('again');
+  const freePlayEndPendingRef = useRef(false);
+  const suppressVictoryOverlayRef = useRef(false);
   const [soloZapOverlayVisible, setSoloZapOverlayVisible] = useState(false);
   const [showExitOverlay, setShowExitOverlay] = useState(false);
   const [exitOverlayFocus, setExitOverlayFocus] = useState<'abort' | 'confirm'>(
@@ -760,23 +782,41 @@ export default function Game() {
     []
   );
 
-  const humanControlSlots = useMemo(
+  const configHumanControlSlots = useMemo(
     () => humanControlSlotsFromConfig(readSessionGameConfig()),
     []
   );
+
+  const liveState = stateRef.current;
+  const humanControlSlots: PlayerControlSlot[] = liveState
+    ? humanControlSlotsFromState(liveState)
+    : configHumanControlSlots;
 
   const showP1Controls = humanControlSlots.includes('p1');
   const showP2Controls =
     humanControlSlots.includes('p2') && !show2v1Ui && !showFfaUi;
 
+  const filteredControlSlots = showFfaUi
+    ? [...humanControlSlots]
+    : humanControlSlots.filter((slot) => {
+        if (slot === 'p1') return showP1Controls;
+        if (slot === 'p2') return showP2Controls;
+        return false;
+      });
+
+  const soloSeatHint =
+    liveState && canSwapSoloHumanSeat(liveState)
+      ? soloSeatSwitchHint(liveState)
+      : undefined;
+  const soloLabelSlots =
+    liveState?.meta.soloInputSlot && filteredControlSlots.length === 1
+      ? ([liveState.meta.soloInputSlot] as const)
+      : undefined;
+
   canvasObjectivesRef.current = {
-    controlSlots: showFfaUi
-      ? [...humanControlSlots]
-      : humanControlSlots.filter((slot) => {
-          if (slot === 'p1') return showP1Controls;
-          if (slot === 'p2') return showP2Controls;
-          return false;
-        }),
+    controlSlots: filteredControlSlots,
+    ...(soloLabelSlots ? { controlLabelSlots: soloLabelSlots } : {}),
+    ...(soloSeatHint ? { startPromptSubtext: soloSeatHint } : {}),
   };
 
   const bootstrapLocalGame = useCallback(() => {
@@ -922,12 +962,20 @@ export default function Game() {
         convergenceStepMs,
         powerupMode: isPowerup,
         teamMode,
+        allowSoloSeatSwitch:
+          !isPracticeChallengeConfig(gameConfig) &&
+          teamMode === 'solo' &&
+          p1Human !== p2Human &&
+          !p3Human &&
+          !p4Human,
       });
       stateRef.current = state;
       winnerSentRef.current = false;
       if (isPracticeFreePlayConfig(gameConfig)) {
         quickMatchStartedAtRef.current = Date.now();
         quickMatchCompletedRef.current = false;
+        freePlayEndPendingRef.current = false;
+        suppressVictoryOverlayRef.current = false;
       }
 
       const hud = getHudState(state);
@@ -1043,6 +1091,7 @@ export default function Game() {
     const cfg = readSessionGameConfig();
     if (!isPracticeFreePlayConfig(cfg) || loading) return;
 
+    let endTimer = 0;
     const poll = window.setInterval(() => {
       const state = stateRef.current;
       if (!state?.gameEnded || quickMatchCompletedRef.current) return;
@@ -1052,6 +1101,23 @@ export default function Game() {
       if (!hasWinner) return;
       quickMatchCompletedRef.current = true;
       window.clearInterval(poll);
+
+      if (state.convergenceWallClosed) {
+        freePlayEndPendingRef.current = true;
+        blockChallengeContinueRef.current = true;
+        suppressVictoryOverlayRef.current = true;
+        const snapshot: FreePlayEnd = {
+          winnerName: state.winnerName,
+          p1Name: state.p1Name,
+          p2Name: state.p2Name,
+          p1Score: state.score[0],
+          p2Score: state.score[1],
+        };
+        endTimer = window.setTimeout(() => {
+          setFreePlayEndFocus('again');
+          setFreePlayEnd(snapshot);
+        }, 1500);
+      }
 
       const won =
         state.winnerPlayer === 'P1' ||
@@ -1065,10 +1131,16 @@ export default function Game() {
       });
     }, 150);
 
-    return () => window.clearInterval(poll);
+    return () => {
+      window.clearInterval(poll);
+      window.clearTimeout(endTimer);
+    };
   }, [loading, socket, stateRef]);
 
-  blockChallengeContinueRef.current = Boolean(soloEndData?.validating);
+  blockChallengeContinueRef.current =
+    Boolean(soloEndData?.validating) ||
+    freePlayEndPendingRef.current ||
+    Boolean(freePlayEnd);
   challengeContinueLabelRef.current = soloEndData?.validating
     ? 'VALIDATING WIN ON SERVER…'
     : null;
@@ -1304,6 +1376,49 @@ export default function Game() {
     navigate(practiceHubExitPath(readSessionGameConfig()));
   }, [navigate]);
 
+  const replayFreePlay = useCallback(() => {
+    freePlayEndPendingRef.current = false;
+    suppressVictoryOverlayRef.current = false;
+    blockChallengeContinueRef.current = false;
+    setFreePlayEnd(null);
+    localBootRef.current = false;
+    bootstrapLocalGame();
+  }, [bootstrapLocalGame]);
+
+  useEffect(() => {
+    if (!freePlayEnd) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key === 'ArrowLeft' ||
+        event.key === 'ArrowUp' ||
+        event.key === 'a' ||
+        event.key === 'A'
+      ) {
+        event.preventDefault();
+        setFreePlayEndFocus('again');
+        return;
+      }
+      if (
+        event.key === 'ArrowRight' ||
+        event.key === 'ArrowDown' ||
+        event.key === 'd' ||
+        event.key === 'D'
+      ) {
+        event.preventDefault();
+        setFreePlayEndFocus('menu');
+        return;
+      }
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (freePlayEndFocus === 'menu') confirmExitToMenu();
+        else replayFreePlay();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [confirmExitToMenu, freePlayEnd, freePlayEndFocus, replayFreePlay]);
+
   useEffect(() => {
     if (!practiceSession.active || loading || soloEndData) return;
 
@@ -1392,9 +1507,26 @@ export default function Game() {
     challengeContinueLabelRef: isChallengeSession
       ? challengeContinueLabelRef
       : undefined,
+    suppressVictoryOverlayRef,
     canvasObjectivesRef,
     heldInputRef,
   });
+
+  const handleSoloSeatSwapped = useCallback((result: SoloSeatSwapResult) => {
+    setPlayer1Name(result.p1Name);
+    setPlayer2Name(result.p2Name);
+    const state = stateRef.current;
+    if (!state) return;
+    const humanSlot = state.meta.p1Human ? 'p1' : 'p2';
+    const hint = soloSeatSwitchHint(state);
+    canvasObjectivesRef.current = {
+      controlSlots: [humanSlot],
+      ...(state.meta.soloInputSlot
+        ? { controlLabelSlots: [state.meta.soloInputSlot] }
+        : {}),
+      ...(hint ? { startPromptSubtext: hint } : {}),
+    };
+  }, []);
 
   useGameInputBindings({
     stateRef,
@@ -1402,10 +1534,12 @@ export default function Game() {
     onEmitWinner: emitWinner,
     onNavigateAfterFinish: handleNavigateAfterFinish,
     readyToStartRef,
-    blockContinueAfterGameRef: isChallengeSession
-      ? blockChallengeContinueRef
-      : undefined,
+    blockContinueAfterGameRef:
+      isChallengeSession || practiceSession.active
+        ? blockChallengeContinueRef
+        : undefined,
     heldInputRef,
+    onSoloSeatSwapped: handleSoloSeatSwapped,
   });
 
   return (
@@ -1744,6 +1878,57 @@ export default function Game() {
         </div>
       ) : null}
 
+      {freePlayEnd ? (
+        <div
+          className="overlay free-play-end"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Free play complete"
+        >
+          <div className="free-play-end__card">
+            <header className="match-result-masthead">
+              <span>CHAIN DUEL / BOARD CLOSED</span>
+            </header>
+            <p className="free-play-end__kicker">The arena reached its limit</p>
+            <h2 className="free-play-end__winner">
+              {(freePlayEnd.winnerName || 'Winner').toUpperCase()}
+            </h2>
+            <p className="free-play-end__result">WINS</p>
+            <p className="free-play-end__note">
+              Highest score when the board stops shrinking.
+            </p>
+            <div className="free-play-end__scores">
+              <div>
+                <span>{freePlayEnd.p1Name}</span>
+                <strong>{freePlayEnd.p1Score.toLocaleString()}</strong>
+              </div>
+              <div>
+                <span>{freePlayEnd.p2Name}</span>
+                <strong>{freePlayEnd.p2Score.toLocaleString()}</strong>
+              </div>
+            </div>
+            <div className="free-play-end__actions">
+              <Button
+                type="button"
+                className="button"
+                glowing={freePlayEndFocus === 'again'}
+                onClick={replayFreePlay}
+              >
+                Play again
+              </Button>
+              <Button
+                type="button"
+                className="button"
+                glowing={freePlayEndFocus === 'menu'}
+                onClick={confirmExitToMenu}
+              >
+                Practice menu
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {soloEndData && soloZapOverlayVisible && (
         <div
           className={`solo-zap-overlay${
@@ -1756,19 +1941,15 @@ export default function Game() {
           aria-modal="true"
           aria-label={soloEndData.won ? 'Challenge complete' : 'Game over'}
         >
-          {soloEndData.won ? (
-            <SoloZapRadiatingLines
-              className="solo-zap-overlay__radiating-lines"
-              accent={soloChallengeTheme.accent}
-              accentStrong={soloChallengeTheme.accentStrong}
-            />
-          ) : null}
           <div
             className="solo-zap-card"
             data-challenge={soloEndData.challengeId}
             data-rank={soloChallengeTheme.rank}
             style={soloZapThemeVars}
           >
+            <header className="match-result-masthead">
+              <span>CHAIN DUEL / {soloEndData.won ? 'CHALLENGE COMPLETE' : 'GAME OVER'}</span>
+            </header>
             <div className="solo-zap-card__content">
             <div className="solo-zap-profile">
               <img
