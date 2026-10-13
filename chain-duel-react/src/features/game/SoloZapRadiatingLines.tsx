@@ -1,11 +1,17 @@
 import { useEffect, useRef } from 'react';
-import { RadiatingField, type Rgb } from '@/features/game/radiatingLines';
+import {
+  RadiatingField,
+  type RadiatingTone,
+  type Rgb,
+} from '@/features/game/radiatingLines';
 import '@/features/game/endScreenRays.css';
 
 type SoloZapRadiatingLinesProps = {
   className?: string;
   accent?: Rgb;
   accentStrong?: Rgb;
+  /** Burst sits under the board. Calm is the faint set behind the end card. */
+  tone?: RadiatingTone;
 };
 
 const DEFAULT_ACCENT: Rgb = [255, 255, 255];
@@ -15,6 +21,7 @@ export function SoloZapRadiatingLines({
   className = '',
   accent = DEFAULT_ACCENT,
   accentStrong = DEFAULT_ACCENT_STRONG,
+  tone = 'full',
 }: SoloZapRadiatingLinesProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const accentRef = useRef(accent);
@@ -29,7 +36,7 @@ export function SoloZapRadiatingLines({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const field = new RadiatingField();
+    const field = new RadiatingField(tone);
     let raf = 0;
 
     const resize = () => {
@@ -44,6 +51,14 @@ export function SoloZapRadiatingLines({
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       field.resize(width, height);
+      if (tone === 'burst') {
+        const board = document.getElementById('gameCanvas');
+        if (board) {
+          const rect = board.getBoundingClientRect();
+          field.setOrigin(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          field.setHole(rect.left, rect.top, rect.width, rect.height);
+        }
+      }
     };
 
     const draw = (now: number) => {
@@ -60,7 +75,7 @@ export function SoloZapRadiatingLines({
       window.cancelAnimationFrame(raf);
       ro?.disconnect();
     };
-  }, []);
+  }, [tone]);
 
   return <canvas ref={canvasRef} className={className} aria-hidden />;
 }

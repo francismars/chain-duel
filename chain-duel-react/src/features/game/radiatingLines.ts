@@ -21,6 +21,8 @@ function rgba([r, g, b]: Rgb, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+export type RadiatingTone = 'full' | 'burst' | 'calm';
+
 /** Full-screen rays used on the solo challenge result. */
 export class RadiatingField {
   private lines: RadiateLine[] = [];
@@ -29,13 +31,32 @@ export class RadiatingField {
   private maxRadius = 0;
   private startedAt = 0;
   private seeded = false;
+  private originX = 0;
+  private originY = 0;
+  private originSet = false;
+  private hole: [number, number, number, number] | null = null;
+
+  constructor(private readonly tone: RadiatingTone = 'full') {}
+
+  /** Burst origin in canvas pixels. Defaults to the viewport center. */
+  setOrigin(x: number, y: number): void {
+    this.originX = x;
+    this.originY = y;
+    this.originSet = true;
+  }
+
+  /** Keep the playfield clear so the burst reads as coming from behind it. */
+  setHole(x: number, y: number, width: number, height: number): void {
+    this.hole = [x, y, width, height];
+  }
 
   resize(width: number, height: number): void {
     if (width === this.width && height === this.height && this.lines.length) return;
     this.width = width;
     this.height = height;
     this.maxRadius = Math.hypot(width, height) * 0.54;
-    const count = Math.max(48, Math.floor((width + height) / 16));
+    const divisor = this.tone === 'calm' ? 42 : 16;
+    const count = Math.max(this.tone === 'calm' ? 22 : 48, Math.floor((width + height) / divisor));
     this.lines = Array.from({ length: count }, () => ({
       angle: Math.random() * Math.PI * 2,
       progress: Math.random(),
@@ -45,7 +66,8 @@ export class RadiatingField {
       baseAlpha: 0.14 + Math.random() * 0.16,
     }));
     if (!this.seeded) {
-      this.seedIntro();
+      if (this.tone !== 'calm') this.seedIntro();
+      else this.seedCalm();
       this.seeded = true;
       this.startedAt = performance.now();
     }
@@ -58,14 +80,21 @@ export class RadiatingField {
     accentStrong: Rgb = [255, 255, 255]
   ): void {
     if (!this.lines.length) return;
-    const intro = introIntensity(now - this.startedAt);
+    const intro = this.tone === 'calm' ? 0 : introIntensity(now - this.startedAt);
     const speedMul = 1 + intro * 4.5;
-    const alphaMul = 1 + intro * 2.2;
+    const alphaMul = (1 + intro * 2.2) * (this.tone === 'calm' ? 0.42 : 1);
     const segMul = 1 + intro * 0.75;
-    const cx = this.width * 0.5;
-    const cy = this.height * 0.5;
+    const cx = this.originSet ? this.originX : this.width * 0.5;
+    const cy = this.originSet ? this.originY : this.height * 0.5;
 
     ctx.save();
+    if (this.hole) {
+      const [hx, hy, hw, hh] = this.hole;
+      ctx.beginPath();
+      ctx.rect(0, 0, this.width, this.height);
+      ctx.rect(hx, hy, hw, hh);
+      ctx.clip('evenodd');
+    }
     ctx.globalCompositeOperation = 'destination-out';
     ctx.fillStyle = `rgba(0, 0, 0, ${0.045 + (1 - intro) * 0.04})`;
     ctx.fillRect(0, 0, this.width, this.height);
@@ -114,6 +143,14 @@ export class RadiatingField {
 
   private calmSpeed(): number {
     return 0.0022 + Math.random() * 0.0038;
+  }
+
+  private seedCalm(): void {
+    for (const line of this.lines) {
+      line.baseAlpha = 0.08 + Math.random() * 0.08;
+      line.width = 0.6 + Math.random() * 0.7;
+      line.segLen = 28 + Math.random() * 50;
+    }
   }
 
   private seedIntro(): void {

@@ -2,8 +2,11 @@ import { Container, Graphics, Text } from 'pixi.js';
 import type { GameState } from '@/game/engine/types';
 import { pixiTextResolution } from './pixiTextResolution';
 
-/** Beat after the board settles before the winner overlay appears. */
-export const END_OVERLAY_DELAY_MS = 500;
+/**
+ * Hold on the finished board and the line burst before the scrim.
+ * Matches the CSS delay on `.match-end-card`.
+ */
+export const END_OVERLAY_DELAY_MS = 1050;
 export const END_OVERLAY_STAGGER_MS = 95;
 export const END_OVERLAY_ITEM_DURATION_MS = 400;
 /** Must match resolve-block cover duration in the renderer. */
@@ -21,13 +24,10 @@ export function endOverlayRevealDurationMs(): number {
 }
 
 /** Delay from game end until free-play action buttons should appear. */
-export function endOverlayActionsDelayMs(convergenceWallClosed: boolean): number {
-  const resolveMs = convergenceWallClosed ? END_RESOLVE_DURATION_MS : 0;
-  return (
-    resolveMs +
-    END_OVERLAY_DELAY_MS +
-    END_OVERLAY_ACTIONS_INDEX * END_OVERLAY_STAGGER_MS
-  );
+export function endOverlayActionsDelayMs(
+  _convergenceWallClosed: boolean
+): number {
+  return 2850;
 }
 
 function easeOutCubic(t: number): number {

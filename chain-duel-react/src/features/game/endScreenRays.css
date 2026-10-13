@@ -7,6 +7,27 @@
   pointer-events: none;
 }
 
+/* First burst paints under the board so the field stays readable. */
+.end-screen-rays--burst {
+  z-index: 10001;
+  animation: match-end-burst-out 0.7s ease 1.05s forwards;
+}
+
+body:has(.end-screen-rays--burst) :is(#gameCanvas, .players, .points, .game-hud-ffa-wrap, .game-hud-2v1-wrap, #powerUpKey) {
+  z-index: 10002;
+}
+
+.match-end-layer__rays {
+  opacity: 0;
+  animation: match-end-fade 0.9s ease 1.05s forwards;
+}
+
+@keyframes match-end-burst-out {
+  to {
+    opacity: 0;
+  }
+}
+
 .game-end-rays {
   z-index: 10002;
 }
@@ -31,10 +52,72 @@ body:has(.match-end-layer) header#brand {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgb(5 5 5 / 88%);
+  background-color: rgb(5 5 5 / 0);
   color: #fff;
   text-align: center;
   padding: 8vh 6vw;
+  animation: match-end-scrim 0.9s ease 1.05s forwards;
+}
+
+@keyframes match-end-scrim {
+  to {
+    background-color: rgb(5 5 5 / 88%);
+  }
+}
+
+@keyframes match-end-line {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes match-end-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.match-end-card__kicker,
+.match-end-card__name,
+.match-end-card__wins,
+.match-end-card__sats,
+.match-end-card__note,
+.match-end-card__prompt {
+  animation: match-end-line 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.match-end-card__kicker {
+  animation-delay: 1.55s;
+}
+
+.match-end-card__name {
+  animation-delay: 1.74s;
+}
+
+.match-end-card__wins {
+  animation-delay: 1.93s;
+}
+
+.match-end-card__sats {
+  animation-delay: 2.14s;
+}
+
+.match-end-card__note {
+  animation-delay: 2.32s;
+}
+
+.match-end-card__prompt {
+  animation-delay: 2.55s;
 }
 
 .match-end-card__kicker,
@@ -84,6 +167,7 @@ body:has(.match-end-layer) header#brand {
   top: max(18px, 4.5vh);
   left: 50%;
   transform: translateX(-50%);
+  animation: match-end-fade 0.55s ease 1.55s both;
 }
 
 .match-end-card #sponsorship-match-end .sponsored-img {
@@ -149,16 +233,30 @@ body:has(.match-end-layer) header#brand {
   left: 50%;
   z-index: 2;
   display: flex;
-  gap: 8px;
-  width: min(420px, 92vw);
+  gap: 2%;
+  width: 28vw;
+  min-width: min(16rem, 88vw);
+  height: 3vw;
   transform: translateX(-50%);
-  pointer-events: auto;
+  pointer-events: none;
+  animation: match-end-fade 0.5s ease 2.85s both;
 }
 
 .match-end-preview__actions .button {
+  pointer-events: auto;
   flex: 1;
-  min-height: 44px;
-  height: auto;
+  width: auto;
+  height: 3vw;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 #postGame > :not(.end-screen-rays),
@@ -179,4 +277,35 @@ body:has(.match-end-layer) header#brand {
 
 #postGame > #buttonsDiv {
   z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .end-screen-rays--burst,
+  .match-end-layer__rays,
+  .match-end-card,
+  .match-end-card__kicker,
+  .match-end-card__name,
+  .match-end-card__wins,
+  .match-end-card__sats,
+  .match-end-card__note,
+  .match-end-card__prompt,
+  .match-end-card #sponsorship-match-end,
+  .match-end-preview__actions {
+    animation: none;
+    opacity: 1;
+    filter: none;
+  }
+
+  .match-end-card {
+    background-color: rgb(5 5 5 / 88%);
+  }
+
+  .match-end-card__kicker,
+  .match-end-card__name,
+  .match-end-card__wins,
+  .match-end-card__sats,
+  .match-end-card__note,
+  .match-end-card__prompt {
+    transform: none;
+  }
 }

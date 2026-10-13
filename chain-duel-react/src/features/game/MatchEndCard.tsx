@@ -97,9 +97,21 @@ export function MatchEndCard({
 
   if (!copy) return null;
 
-  return createPortal(
+  return (
+    <>
+      {createPortal(
+        <SoloZapRadiatingLines
+          className="end-screen-rays end-screen-rays--burst"
+          tone="burst"
+        />,
+        document.body
+      )}
+      {createPortal(
     <div className="match-end-layer">
-      <SoloZapRadiatingLines className="end-screen-rays match-end-layer__rays" />
+      <SoloZapRadiatingLines
+        className="end-screen-rays match-end-layer__rays"
+        tone="calm"
+      />
       <div className="match-end-card">
         <Sponsorship id="sponsorship-match-end" />
         <p className="match-end-card__kicker">{copy.kicker}</p>
@@ -118,6 +130,8 @@ export function MatchEndCard({
         ) : null}
       </div>
     </div>,
-    document.body
+        document.body
+      )}
+    </>
   );
 }

@@ -54,24 +54,6 @@ export type PixiRenderOpts = {
   canvasObjectives?: CanvasObjectivesOpts;
 };
 
-/**
- * 0 at the rim, 1 on the last center cells. The hash jitter is inside the
- * divisor so progress 1 always covers the whole board.
- */
-function resolveCellThreshold(
-  x: number,
-  y: number,
-  cols: number,
-  rows: number
-): number {
-  const maxDist = Math.min(Math.floor(cols / 2), Math.floor(rows / 2));
-  const distFromEdge = Math.min(x, cols - 1 - x, y, rows - 1 - y);
-  const hash = (((x * 2654435761 + y * 2246822519) >>> 0) % 1000) / 1000;
-  const maxRaw = maxDist + 0.6;
-  if (maxRaw <= 0) return 0;
-  return (distFromEdge + hash * 0.6) / maxRaw;
-}
-
 export class PixiGameRenderer {
   private app: Application | null = null;
   private fallbackCanvas: HTMLCanvasElement | null = null;
@@ -81,7 +63,6 @@ export class PixiGameRenderer {
   private deadZone: Graphics = new Graphics();
   private grid: Graphics = new Graphics();
   private scene: Graphics = new Graphics();
-  private resolveBlocks: Graphics = new Graphics();
   private overlay: Container = new Container();
   private resolveAnimStartMs: number | null = null;
   /** When the end overlay first became eligible; delay starts from this. */
@@ -216,7 +197,6 @@ export class PixiGameRenderer {
       this.root.addChild(this.deadZone);
       this.root.addChild(this.grid);
       this.root.addChild(this.scene);
-      this.root.addChild(this.resolveBlocks);
       this.overlay.addChild(this.startWordsContainer);
       this.overlay.addChild(this.startPromptSubtext);
       this.overlay.addChild(this.startReady.container);
@@ -474,8 +454,6 @@ export class PixiGameRenderer {
       this.renderDeadZone(state, width, height, colSize, rowSize);
     }
 
-    // ── Resolving blocks (convergence wall-close finale) ─────────────────────
-    this.resolveBlocks.clear();
     const resolveProgress = this.getResolveProgress(state);
 
     // ── Grid (cached; rebuild only on size change) ──
@@ -770,18 +748,6 @@ export class PixiGameRenderer {
       }
     }
 
-    // Draw resolving blocks on top of scene (but behind text overlay)
-    if (resolveProgress > 0) {
-      this.renderResolveBlocks(
-        state,
-        width,
-        height,
-        colSize,
-        rowSize,
-        resolveProgress
-      );
-    }
-
     // Keep WebGL buffer in sync with layout (avoids stretched / nested-frame artifacts).
     const rw = this.app.renderer.width;
     const rh = this.app.renderer.height;
@@ -884,39 +850,6 @@ export class PixiGameRenderer {
       this.endOverlayRevealDone = true;
     }
     return elapsed;
-  }
-
-  private renderResolveBlocks(
-    state: GameState,
-    _width: number,
-    _height: number,
-    colSize: number,
-    rowSize: number,
-    progress: number
-  ): void {
-    const cols = state.cols;
-    const rows = state.rows;
-
-    for (let x = 0; x < cols; x++) {
-      for (let y = 0; y < rows; y++) {
-        const threshold = resolveCellThreshold(x, y, cols, rows);
-        if (progress < threshold) continue;
-
-        const px = x * colSize;
-        const py = y * rowSize;
-        // Layered block: outer amber, inner dark-amber, innermost near-black
-        const blockAlpha = Math.min(1, (progress - threshold) * 6 + 0.6);
-        this.resolveBlocks
-          .rect(px, py, colSize, rowSize)
-          .fill({ color: 0xc88820, alpha: blockAlpha * 0.9 });
-        this.resolveBlocks
-          .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
-          .fill({ color: 0x7a5010, alpha: blockAlpha * 0.75 });
-        this.resolveBlocks
-          .rect(px + 2, py + 2, colSize - 4, rowSize - 4)
-          .fill({ color: 0x1a0e00, alpha: blockAlpha * 0.6 });
-      }
-    }
   }
 
   // ── Dead zone / convergence overlay ───────────────────────────────────────
@@ -1914,35 +1847,6 @@ export class PixiGameRenderer {
 
     drawPointChangesCanvas(ctx, state.pointChanges ?? [], colSize, rowSize);
 
-    // Resolving blocks (Canvas2D fallback)
-    const resolveProgressFb = this.getResolveProgress(state);
-    if (resolveProgressFb > 0) {
-      const cols2 = state.cols;
-      const rows2 = state.rows;
-      for (let x = 0; x < cols2; x++) {
-        for (let y = 0; y < rows2; y++) {
-          const threshold = resolveCellThreshold(x, y, cols2, rows2);
-          if (resolveProgressFb < threshold) continue;
-          const px = x * colSize;
-          const py = y * rowSize;
-          const blockAlpha = Math.min(
-            1,
-            (resolveProgressFb - threshold) * 6 + 0.6
-          );
-          ctx.globalAlpha = blockAlpha * 0.9;
-          ctx.fillStyle = '#C88820';
-          ctx.fillRect(px, py, colSize, rowSize);
-          ctx.globalAlpha = blockAlpha * 0.75;
-          ctx.fillStyle = '#7A5010';
-          ctx.fillRect(px + 1, py + 1, colSize - 2, rowSize - 2);
-          ctx.globalAlpha = blockAlpha * 0.6;
-          ctx.fillStyle = '#1A0E00';
-          ctx.fillRect(px + 2, py + 2, colSize - 4, rowSize - 4);
-        }
-      }
-      ctx.globalAlpha = 1;
-    }
-
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
@@ -1991,6 +1895,7 @@ export class PixiGameRenderer {
       ctx.fillText(countdownText, width / 2, height / 2);
     } else if (state.gameEnded) {
       this.startRevealTime = -1;
+      const resolveProgressFb = this.getResolveProgress(state);
       const elapsed = this.beginEndOverlayReveal(
         state,
         resolveProgressFb,
