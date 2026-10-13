@@ -511,6 +511,7 @@ export default function PostGame() {
         <SoloZapRadiatingLines className="end-screen-rays" />
         <div className="postgame-scrim" aria-hidden />
         {practiceMode ? null : <Sponsorship id="sponsorship-postgame" />}
+        <div className="postgame-stage">
         <div className="flex match-result-heading">
           <h2 id="gameOver">MATCH COMPLETE</h2>
           <div className="playerInfoGroup">
@@ -532,69 +533,82 @@ export default function PostGame() {
         <h1 id="prize">
           {totalPrize.toLocaleString()} SATS{prizeClaimed ? ' CLAIMED' : ''}
         </h1>
-        {practiceMode ? null : (
-          <div id="fees">
-            <span id="split1">
-              2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span> to
-              the Sponsor (@piratehash)
-            </span>{' '}
-            ·{' '}
-            <span id="split2">
-              2%{' '}
-              <span id="developerFee">
-                ({developerFee.toLocaleString()} sats)
-              </span>{' '}
-              to the developer (@francismars)
-            </span>{' '}
-            ·{' '}
-            <span id="split3">
-              1%{' '}
-              <span id="designerFee">
-                ({designerFee.toLocaleString()} sats)
-              </span>{' '}
-              to the designer (@bitcoinanatomy)
-            </span>
-          </div>
-        )}
-        <p
-          id="claimText"
-          style={{ display: menu === 3 || practiceMode ? 'none' : undefined }}
-        >
-          CLAIM YOUR WINNINGS
-        </p>
-        <a
-          id="qrcodeLink"
-          href={qrHref}
-          className={qrcodeLinkClassName || undefined}
-        >
-          {menu === 3 ? null : qrValue ? (
-            <QRCodeCanvas
-              className={`qrcode ${menu === 1 ? 'blur' : ''}`}
-              id="qrCode1"
-              value={qrValue}
-              size={800}
-            />
-          ) : (
-            <img
-              className={menu === 1 ? 'blur' : ''}
-              id="qrCode1"
-              src="/images/loading.gif"
-              alt=""
-            />
-          )}
-        </a>
-        <p id="claimReq1" style={{ display: menu === 3 ? 'none' : undefined }}>
-          Requires compatible wallet.
-        </p>
+        </div>
         <div
-          id="buttonsDiv"
-          style={{
-            flexDirection: menu === 3 ? 'row' : 'column',
-            justifyContent: menu === 3 ? 'center' : undefined,
-            gap: menu === 3 ? '21px' : undefined,
-            marginTop: menu === 3 ? '16cqw' : undefined,
-          }}
+          className={`postgame-claim-row${menu === 3 ? ' postgame-claim-row--menu3' : ''}`}
         >
+          <div className="postgame-claim-copy">
+            <p
+              id="claimText"
+              style={{
+                display: menu === 3 || practiceMode ? 'none' : undefined,
+              }}
+            >
+              CLAIM YOUR WINNINGS
+            </p>
+            {practiceMode ? null : (
+              <div id="fees">
+                <span id="split1">
+                  2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span>{' '}
+                  to the Sponsor (@piratehash)
+                </span>{' '}
+                ·{' '}
+                <span id="split2">
+                  2%{' '}
+                  <span id="developerFee">
+                    ({developerFee.toLocaleString()} sats)
+                  </span>{' '}
+                  to the developer (@francismars)
+                </span>{' '}
+                ·{' '}
+                <span id="split3">
+                  1%{' '}
+                  <span id="designerFee">
+                    ({designerFee.toLocaleString()} sats)
+                  </span>{' '}
+                  to the designer (@bitcoinanatomy)
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="postgame-claim-qr">
+            <a
+              id="qrcodeLink"
+              href={qrHref}
+              className={qrcodeLinkClassName || undefined}
+            >
+              {menu === 3 ? null : qrValue ? (
+                <QRCodeCanvas
+                  className={`qrcode ${menu === 1 ? 'blur' : ''}`}
+                  id="qrCode1"
+                  value={qrValue}
+                  size={800}
+                />
+              ) : (
+                <img
+                  className={menu === 1 ? 'blur' : ''}
+                  id="qrCode1"
+                  src="/images/loading.gif"
+                  alt=""
+                />
+              )}
+            </a>
+            <p
+              id="claimReq1"
+              style={{ display: menu === 3 ? 'none' : undefined }}
+            >
+              Requires compatible wallet.
+            </p>
+          </div>
+          <div
+            id="buttonsDiv"
+            style={{
+              flexDirection: menu === 3 ? 'row' : 'column',
+              justifyContent: menu === 3 ? 'center' : undefined,
+              gap: menu === 3 ? '21px' : undefined,
+              marginTop: menu === 3 ? '16cqw' : undefined,
+            }}
+          >
           <Button
             id="claimbutton"
             style={{
@@ -654,6 +668,7 @@ export default function PostGame() {
               RETURN TO MAIN MENU
             </Button>
           )}
+          </div>
         </div>
         <div id="socialFollow">
           Follow{' '}
