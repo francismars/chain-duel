@@ -53,10 +53,9 @@ export function pointChangeFontSize(value: number, cellSize: number): number {
   return base * (1 + tier * 0.38) * POP_FONT_SCALE;
 }
 
-/** Drift away from center so gain/loss feel directional. */
-export function pointChangeDriftX(alpha: number, outward: -1 | 1): number {
-  const life = pointChangeLifeProgress(alpha);
-  return outward * life * life * 11;
+/** Horizontal drift is disabled — pops only rise. */
+export function pointChangeDriftX(_alpha: number, _outward: -1 | 1): number {
+  return 0;
 }
 
 function glowTier(value: number): GlowTier {

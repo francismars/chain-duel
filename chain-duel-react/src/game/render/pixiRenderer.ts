@@ -1,6 +1,5 @@
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { GameState, GridPos, PowerUpType } from '@/game/engine/types';
-import { advancePointChanges } from '@/game/engine';
 import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
 import {
   drawPowerUpIconPixi,
@@ -672,10 +671,6 @@ export class PixiGameRenderer {
       colSize,
       rowSize
     );
-
-    if (opts?.replayView) {
-      advancePointChanges(state);
-    }
 
     // ── Text overlays ─────────────────────────────────────────────────────────
     this.endOverlay.hide();

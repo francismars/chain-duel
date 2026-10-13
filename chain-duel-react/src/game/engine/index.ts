@@ -658,9 +658,9 @@ export function advancePointChanges(state: GameState): void {
   state.pointChanges = state.pointChanges
     .map((change) => ({
       ...change,
-      p1YOffsetPx: change.p1YOffsetPx - 1,
-      p2YOffsetPx: change.p2YOffsetPx - 1,
-      alpha: change.alpha - 0.1 / 6,
+      p1YOffsetPx: change.p1YOffsetPx - 0.25,
+      p2YOffsetPx: change.p2YOffsetPx - 0.25,
+      alpha: change.alpha - 0.1 / 24,
     }))
     .filter((change) => change.alpha >= 0);
 }
