@@ -480,7 +480,7 @@
 
 .match-start__word {
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(1.55rem, 8.2cqi, 3.3rem);
+  font-size: clamp(1.28rem, 6.6cqi, 2.65rem);
   font-weight: 500;
   line-height: 0.9;
   color: #fff;
