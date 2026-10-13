@@ -120,13 +120,16 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 }
 
 #buttonsDiv .button {
-  width: 25%;
+  width: 28vw;
+  min-width: min(16rem, 88vw);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   box-sizing: border-box;
   line-height: 1;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
 }
 
 #startnewbutton {

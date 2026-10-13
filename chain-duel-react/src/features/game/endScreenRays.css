@@ -234,8 +234,8 @@ body:has(.match-end-layer) header#brand {
   z-index: 2;
   display: flex;
   gap: 2%;
-  width: 28vw;
-  min-width: min(16rem, 88vw);
+  width: min(52vw, 720px);
+  min-width: min(22rem, 92vw);
   height: 3vw;
   transform: translateX(-50%);
   pointer-events: none;

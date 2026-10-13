@@ -208,8 +208,8 @@
 #postGame .postgame-claim-row--menu3 {
   display: flex;
   justify-content: center;
-  width: 28vw;
-  min-width: min(16rem, 88vw);
+  width: min(52vw, 720px);
+  min-width: min(22rem, 92vw);
 }
 #postGame .postgame-claim-row--menu3 #buttonsDiv {
   width: 100%;
@@ -220,6 +220,7 @@
 #postGame .postgame-claim-row--menu3 #buttonsDiv .button {
   flex: 1;
   width: auto;
+  min-width: 0;
   height: 100%;
   margin: 0;
   padding: 0;
