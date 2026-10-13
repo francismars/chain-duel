@@ -605,7 +605,6 @@ export default function PostGame() {
             style={{
               flexDirection: menu === 3 ? 'row' : 'column',
               justifyContent: menu === 3 ? 'center' : undefined,
-              gap: menu === 3 ? '21px' : undefined,
               marginTop: menu === 3 ? '16cqw' : undefined,
             }}
           >
