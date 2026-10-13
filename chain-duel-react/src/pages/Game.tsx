@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { Button } from '@/components/ui/Button';
 import { useNoteContentDisplay } from '@/lib/nostr/formatNoteContentForDisplay';
@@ -31,7 +32,10 @@ import type { GameState } from '@/game/engine/types';
 import { normalizeAiTier } from '@/game/engine/types';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
+import { endOverlayActionsDelayMs } from '@/game/render/endGameOverlay';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
+import { MatchEndCard } from '@/features/game/MatchEndCard';
+import { MatchStartPrompt } from '@/features/game/MatchStartPrompt';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { createNewCoinbase } from '@/game/engine';
 import type { BlockInfo } from '@/game/io/mempool';
@@ -117,14 +121,6 @@ type SoloEndData = {
   zapReason?: string;
 };
 
-type FreePlayEnd = {
-  winnerName: string;
-  p1Name: string;
-  p2Name: string;
-  p1Score: number;
-  p2Score: number;
-};
-
 type FreePlayEndFocus = 'again' | 'menu';
 
 type SoloZapFocusId =
@@ -172,6 +168,7 @@ function soloZapNavDirection(
 }
 
 export default function Game() {
+  const endPreview = new URLSearchParams(window.location.search).get('preview');
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
   const nostrSession = useNostrSession();
@@ -240,7 +237,7 @@ export default function Game() {
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
-  const [freePlayEnd, setFreePlayEnd] = useState<FreePlayEnd | null>(null);
+  const [freePlayEnd, setFreePlayEnd] = useState(false);
   const [freePlayEndFocus, setFreePlayEndFocus] =
     useState<FreePlayEndFocus>('again');
   const freePlayEndPendingRef = useRef(false);
@@ -820,6 +817,17 @@ export default function Game() {
   };
 
   const bootstrapLocalGame = useCallback(() => {
+    const endPreviewNow = new URLSearchParams(window.location.search).get(
+      'preview'
+    );
+    if (
+      endPreviewNow === 'local' ||
+      endPreviewNow === 'freeplay' ||
+      endPreviewNow === 'h2h'
+    ) {
+      setLoading(false);
+      return;
+    }
     // sessionStorage from practice hub (/practice); legacy POWERUP sessions may remain
     const gameConfig = readSessionGameConfig();
 
@@ -970,12 +978,23 @@ export default function Game() {
           !p4Human,
       });
       stateRef.current = state;
+      const endPreview = new URLSearchParams(window.location.search).get(
+        'preview'
+      );
+      if (endPreview === 'local' || endPreview === 'freeplay') {
+        state.gameStarted = true;
+        state.gameEnded = true;
+        state.winnerPlayer = 'P1';
+        state.winnerName = state.p1Name || 'PLAYER 1';
+      }
       winnerSentRef.current = false;
       if (isPracticeFreePlayConfig(gameConfig)) {
         quickMatchStartedAtRef.current = Date.now();
         quickMatchCompletedRef.current = false;
         freePlayEndPendingRef.current = false;
         suppressVictoryOverlayRef.current = false;
+        setFreePlayEnd(false);
+        setFreePlayEndFocus('again');
       }
 
       const hud = getHudState(state);
@@ -1016,6 +1035,26 @@ export default function Game() {
     // Ensure menu background music is stopped when entering gameplay.
     stop();
   }, [stop]);
+
+  useEffect(() => {
+    const endPreview = new URLSearchParams(window.location.search).get(
+      'preview'
+    );
+    if (endPreview === 'freeplay') {
+      setFreePlayEndFocus('again');
+      setFreePlayEnd(true);
+    }
+    if (endPreview === 'solo') {
+      setLoading(false);
+      setSoloEndData({
+        won: true,
+        name: 'MEMPOOL SPRINT',
+        bounty: 21000,
+        challengeId: 'preview',
+      });
+      setSoloZapOverlayVisible(true);
+    }
+  }, []);
 
   // Gate start-key input until the reveal animations have settled (~1.2 s after load).
   useEffect(() => {
@@ -1102,22 +1141,13 @@ export default function Game() {
       quickMatchCompletedRef.current = true;
       window.clearInterval(poll);
 
-      if (state.convergenceWallClosed) {
-        freePlayEndPendingRef.current = true;
-        blockChallengeContinueRef.current = true;
-        suppressVictoryOverlayRef.current = true;
-        const snapshot: FreePlayEnd = {
-          winnerName: state.winnerName,
-          p1Name: state.p1Name,
-          p2Name: state.p2Name,
-          p1Score: state.score[0],
-          p2Score: state.score[1],
-        };
-        endTimer = window.setTimeout(() => {
-          setFreePlayEndFocus('again');
-          setFreePlayEnd(snapshot);
-        }, 1500);
-      }
+      freePlayEndPendingRef.current = true;
+      blockChallengeContinueRef.current = true;
+      suppressVictoryOverlayRef.current = false;
+      endTimer = window.setTimeout(() => {
+        setFreePlayEndFocus('again');
+        setFreePlayEnd(true);
+      }, endOverlayActionsDelayMs(state.convergenceWallClosed));
 
       const won =
         state.winnerPlayer === 'P1' ||
@@ -1140,10 +1170,12 @@ export default function Game() {
   blockChallengeContinueRef.current =
     Boolean(soloEndData?.validating) ||
     freePlayEndPendingRef.current ||
-    Boolean(freePlayEnd);
+    freePlayEnd;
   challengeContinueLabelRef.current = soloEndData?.validating
     ? 'VALIDATING WIN ON SERVER…'
-    : null;
+    : practiceSession.active && !practiceSession.isChallenge
+      ? ''
+      : null;
 
   useEffect(() => {
     audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
@@ -1380,7 +1412,7 @@ export default function Game() {
     freePlayEndPendingRef.current = false;
     suppressVictoryOverlayRef.current = false;
     blockChallengeContinueRef.current = false;
-    setFreePlayEnd(null);
+    setFreePlayEnd(false);
     localBootRef.current = false;
     bootstrapLocalGame();
   }, [bootstrapLocalGame]);
@@ -1504,9 +1536,11 @@ export default function Game() {
     onSatsCaptured: handleSatsCaptured,
     simStepRef: isChallengeSession ? simStepRef : undefined,
     challengeInputLogRef: isChallengeSession ? challengeInputLogRef : undefined,
-    challengeContinueLabelRef: isChallengeSession
-      ? challengeContinueLabelRef
-      : undefined,
+    challengeContinueLabelRef:
+      isChallengeSession ||
+      (practiceSession.active && !practiceSession.isChallenge)
+        ? challengeContinueLabelRef
+        : undefined,
     suppressVictoryOverlayRef,
     canvasObjectivesRef,
     heldInputRef,
@@ -1541,6 +1575,62 @@ export default function Game() {
     heldInputRef,
     onSoloSeatSwapped: handleSoloSeatSwapped,
   });
+
+  if (
+    endPreview === 'local' ||
+    endPreview === 'freeplay' ||
+    endPreview === 'h2h'
+  ) {
+    const h2h = endPreview === 'h2h';
+    return (
+      <div className="match-end-layer">
+        <SoloZapRadiatingLines className="end-screen-rays match-end-layer__rays" />
+        <header id="brand">
+          <h2 id="chain">CHAIN</h2>
+          <h2 id="duel">DUEL</h2>
+        </header>
+        <div className="match-end-card">
+          <Sponsorship id="sponsorship-match-end" />
+          <p className="match-end-card__kicker">
+            {h2h
+              ? 'CHAIN DUEL / HUMAN VS HUMAN'
+              : 'CHAIN DUEL / MATCH COMPLETE'}
+          </p>
+          <p className="match-end-card__name">PLAYER 1</p>
+          <p className="match-end-card__wins">WINS</p>
+          {endPreview === 'freeplay' ? (
+            <div className="match-end-card__free">
+              <p className="match-end-card__sats">FREE GAME</p>
+              <p className="match-end-card__note">NO SATS WON</p>
+            </div>
+          ) : (
+            <p className="match-end-card__sats">
+              {h2h ? '200,000 SATS' : '2,000 SATS'}
+            </p>
+          )}
+          {endPreview !== 'freeplay' ? (
+            <p className="match-end-card__prompt">
+              PRESS ANY BUTTON TO CONTINUE
+            </p>
+          ) : null}
+        </div>
+        {endPreview === 'freeplay' ? (
+          <div className="match-end-preview__actions">
+            <Button type="button" className="button" glowing>
+              Play again
+            </Button>
+            <Button
+              type="button"
+              className="button"
+              onClick={() => navigate('/practice')}
+            >
+              Freeplay menu
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -1800,6 +1890,16 @@ export default function Game() {
 
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
             <div id="gameCanvasHost" ref={hostRef} />
+            <MatchStartPrompt
+              getState={() => stateRef.current}
+              optsRef={canvasObjectivesRef}
+            />
+            <MatchEndCard
+              getState={() => stateRef.current}
+              suppressedRef={suppressVictoryOverlayRef}
+              continueLabelRef={challengeContinueLabelRef}
+              hidden={soloZapOverlayVisible}
+            />
           </div>
 
           {isPowerupMode && <PowerUpLegend />}
@@ -1880,51 +1980,28 @@ export default function Game() {
 
       {freePlayEnd ? (
         <div
-          className="overlay free-play-end"
+          className="overlay free-play-end free-play-end--actions"
           role="dialog"
           aria-modal="true"
           aria-label="Free play complete"
         >
-          <div className="free-play-end__card">
-            <header className="match-result-masthead">
-              <span>CHAIN DUEL / BOARD CLOSED</span>
-            </header>
-            <p className="free-play-end__kicker">The arena reached its limit</p>
-            <h2 className="free-play-end__winner">
-              {(freePlayEnd.winnerName || 'Winner').toUpperCase()}
-            </h2>
-            <p className="free-play-end__result">WINS</p>
-            <p className="free-play-end__note">
-              Highest score when the board stops shrinking.
-            </p>
-            <div className="free-play-end__scores">
-              <div>
-                <span>{freePlayEnd.p1Name}</span>
-                <strong>{freePlayEnd.p1Score.toLocaleString()}</strong>
-              </div>
-              <div>
-                <span>{freePlayEnd.p2Name}</span>
-                <strong>{freePlayEnd.p2Score.toLocaleString()}</strong>
-              </div>
-            </div>
-            <div className="free-play-end__actions">
-              <Button
-                type="button"
-                className="button"
-                glowing={freePlayEndFocus === 'again'}
-                onClick={replayFreePlay}
-              >
-                Play again
-              </Button>
-              <Button
-                type="button"
-                className="button"
-                glowing={freePlayEndFocus === 'menu'}
-                onClick={confirmExitToMenu}
-              >
-                Practice menu
-              </Button>
-            </div>
+          <div className="free-play-end__actions">
+            <Button
+              type="button"
+              className="button"
+              glowing={freePlayEndFocus === 'again'}
+              onClick={replayFreePlay}
+            >
+              Play again
+            </Button>
+            <Button
+              type="button"
+              className="button"
+              glowing={freePlayEndFocus === 'menu'}
+              onClick={confirmExitToMenu}
+            >
+              Freeplay menu
+            </Button>
           </div>
         </div>
       ) : null}
@@ -1941,6 +2018,7 @@ export default function Game() {
           aria-modal="true"
           aria-label={soloEndData.won ? 'Challenge complete' : 'Game over'}
         >
+          <SoloZapRadiatingLines className="solo-zap-overlay__radiating-lines" />
           <div
             className="solo-zap-card"
             data-challenge={soloEndData.challengeId}

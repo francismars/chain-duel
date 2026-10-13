@@ -32,6 +32,8 @@ import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
+import { MatchEndCard } from '@/features/game/MatchEndCard';
+import { MatchStartPrompt } from '@/features/game/MatchStartPrompt';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
 import { useHudCaptureFeedback } from '@/features/game/hooks/useHudCaptureFeedback';
 import { captureFeedbackStyleFromCtx, captureHitStyleVars, distributionTrackFeedbackStyle } from '@/features/game/hudCaptureFeedback';
@@ -1251,6 +1253,18 @@ export default function OnlineGame({
 
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
             <div id="gameCanvasHost" ref={setHostEl} />
+            <MatchStartPrompt
+              getState={() =>
+                (snapshotRef.current?.state as GameState | undefined) ?? null
+              }
+              optsRef={canvasObjectivesRef}
+            />
+            <MatchEndCard
+              getState={() =>
+                (snapshotRef.current?.state as GameState | undefined) ?? null
+              }
+              suppressedRef={victoryHandoffRef}
+            />
           </div>
           {replayMode ? (
             <div className="online-replay-controls">
