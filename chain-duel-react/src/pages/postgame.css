@@ -134,12 +134,10 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 
 #startnewbutton {
   display: none;
-  animation: glowing 0ms infinite;
 }
 
 #claimbutton {
   margin-bottom: 1%;
-  animation: glowing 2000ms infinite;
   border-color: #ffffff;
   border-width: 1.2px;
 }
@@ -155,7 +153,11 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 #doubleornotthingbutton {
   margin-top: 0;
   margin-bottom: 0;
-  animation: glowing 0ms infinite;
+  --button-glow-bg-low: rgb(255 130 40 / 0.16);
+  --button-glow-bg-peak: rgb(255 130 40 / 0.32);
+  --button-glow-shadow-low: 0 0 15px rgb(255 140 40 / 0.45);
+  --button-glow-shadow-peak: 0 0 35px rgb(255 140 40 / 0.7);
+  --button-glow-border: rgb(255 175 85 / 0.95);
   border-color: rgb(255 175 85 / 0.75);
   border-width: 1.2px;
   color: rgb(255 210 140 / 0.97);

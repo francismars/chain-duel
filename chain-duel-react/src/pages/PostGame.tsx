@@ -24,6 +24,7 @@ import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';
 import { createLogger } from '@/shared/utils/logger';
+import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import {
   postGameConfirmGate,
   postGameWinnerAllowsKey,
@@ -87,6 +88,9 @@ export default function PostGame() {
   const [creatingWithdrawal, setCreatingWithdrawal] = useState(false);
   const [qrRevealed, setQrRevealed] = useState(false);
   const postGameReportedRef = useRef(false);
+  const claimButtonRef = useRef<HTMLButtonElement>(null);
+  const doubleOrNothingRef = useRef<HTMLButtonElement>(null);
+  const mainMenuButtonRef = useRef<HTMLButtonElement>(null);
   const withdrawalReportedRef = useRef(false);
 
   useGamepad(true);
@@ -385,6 +389,17 @@ export default function PostGame() {
   const practiceMode = gameMode === 'PRACTICE';
   const canDoubleOrNothing =
     !qrRevealed && !tournamentMode && !prizeClaimed && !loading;
+
+  useEffect(() => {
+    const claimFocused =
+      menu === 3 ? activeButtonMenu3 === 0 : activeButtonMenu1 === 0;
+    const menuFocused = menu === 3 && activeButtonMenu3 === 1;
+    const donFocused =
+      menu !== 3 && canDoubleOrNothing && activeButtonMenu1 === 1;
+    setButtonGlow(claimButtonRef.current, claimFocused);
+    setButtonGlow(mainMenuButtonRef.current, menuFocused);
+    setButtonGlow(doubleOrNothingRef.current, donFocused);
+  }, [menu, activeButtonMenu1, activeButtonMenu3, canDoubleOrNothing]);
   const qrCompatPulse = useLnurlQrCompatiblePulse(
     qrRevealed && menu === 2 && Boolean(qrValue) && !practiceMode
   );
@@ -609,16 +624,9 @@ export default function PostGame() {
             }}
           >
           <Button
+            ref={claimButtonRef}
             id="claimbutton"
             style={{
-              animationDuration:
-                menu === 3
-                  ? activeButtonMenu3 === 0
-                    ? '2s'
-                    : '0s'
-                  : activeButtonMenu1 === 0
-                    ? '2s'
-                    : '0s',
               marginLeft: menu === 3 ? '0px' : undefined,
               marginRight: menu === 3 ? '0px' : undefined,
             }}
@@ -629,13 +637,10 @@ export default function PostGame() {
           {menu === 3 || tournamentMode ? null : (
             <div className="don-section">
               <Button
+                ref={doubleOrNothingRef}
                 id="doubleornotthingbutton"
                 className={canDoubleOrNothing ? '' : 'disabled'}
                 disabled={!canDoubleOrNothing}
-                style={{
-                  animationDuration:
-                    canDoubleOrNothing && activeButtonMenu1 === 1 ? '2s' : '0s',
-                }}
                 onClick={onDoubleOrNothing}
               >
                 {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
@@ -647,10 +652,10 @@ export default function PostGame() {
           )}
           {menu === 3 ? (
             <Button
+              ref={mainMenuButtonRef}
               id="startnewbutton"
               style={{
                 display: 'block',
-                animationDuration: activeButtonMenu3 === 1 ? '2s' : '0s',
                 marginLeft: '0px',
                 marginRight: '0px',
               }}
