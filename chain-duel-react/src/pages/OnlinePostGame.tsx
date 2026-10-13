@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -16,7 +16,7 @@ import {
 import { isOnlineMatchPlayer, isOnlineVictoryWinner } from '@/lib/online/isOnlineVictoryWinner';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
-import '@/styles/components/matchResults.css';
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 
 
 type PostGameNav =
@@ -116,9 +116,15 @@ export default function OnlinePostGame({
   onReadyChange,
 }: OnlinePostGameProps = {}) {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
-  const roomId = roomIdProp ?? searchParams.get('roomId') ?? '';
+  const isPreview =
+    searchParams.get('preview') === 'results' ||
+    location.pathname === '/preview/online-results';
+  const roomId = isPreview
+    ? 'preview'
+    : roomIdProp ?? searchParams.get('roomId') ?? '';
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );
@@ -429,13 +435,44 @@ export default function OnlinePostGame({
   }, [navFocus]);
 
   useEffect(() => {
-    if (!roomId) {
-      navigate(ONLINE_HOME);
-    }
-  }, [navigate, roomId]);
+    if (isPreview || roomId) return;
+    navigate(ONLINE_HOME);
+  }, [isPreview, navigate, roomId]);
 
   useEffect(() => {
-    if (!socket || !roomId) {
+    if (!isPreview) return;
+    setLoading(false);
+    setInfo({
+      roomId: 'preview',
+      phase: 'postgame',
+      p1Name: 'Satoshi',
+      p2Name: 'Hal',
+      p1Points: 42000,
+      p2Points: 18000,
+      winnerRole: 'Player 1',
+      winnerName: 'Satoshi',
+      winnerPoints: 42000,
+      totalPrize: 60000,
+      doubleOrNothingVotes: 0,
+      matchRounds: [
+        {
+          matchRound: 1,
+          finishedAt: Date.now(),
+          winnerName: 'Satoshi',
+          p1Name: 'Satoshi',
+          p2Name: 'Hal',
+          p1Score: 42000,
+          p2Score: 18000,
+          netPrize: 39900,
+          winnerRole: 'Player 1',
+          replayAvailable: false,
+        },
+      ],
+    });
+  }, [isPreview]);
+
+  useEffect(() => {
+    if (isPreview || !socket || !roomId) {
       return;
     }
 
@@ -573,7 +610,7 @@ export default function OnlinePostGame({
       socket.off('resCreateOnlineNostrPayout', onNostrPayout);
       socket.off('onlinePinInvalid', onInvalid);
     };
-  }, [navigate, onReadyChange, roomId, socket]);
+  }, [isPreview, navigate, onReadyChange, roomId, socket]);
 
   const withdrawalValue = useMemo(() => {
     if (lnurlw) {
@@ -610,6 +647,7 @@ export default function OnlinePostGame({
 
   return (
     <div className="online-postgame-page">
+      <SoloZapRadiatingLines className="end-screen-rays" />
       <Sponsorship id="sponsorship-online-postgame" />
       <header id="brand">
         <h2 id="chain">CHAIN</h2>

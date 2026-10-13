@@ -13,7 +13,7 @@ import {
   MATCH_REVEAL_MS,
   MATCH_REVEAL_SKIP_AFTER_MS,
 } from '@/lib/online/matchRevealTiming';
-import '@/styles/components/onlineVictoryReveal.css';
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 
 export type OnlineVictoryRevealProps = {
   room: OnlineRoomState;
@@ -111,6 +111,7 @@ export function OnlineVictoryReveal({
       aria-live="polite"
       aria-label={ariaLabel}
     >
+      <SoloZapRadiatingLines className="end-screen-rays" />
       <div className="duel-finish__sheet">
         <header className="duel-finish__masthead">
           <span>CHAIN DUEL</span>

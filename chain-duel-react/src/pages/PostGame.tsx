@@ -31,7 +31,7 @@ import {
 import '@/components/ui/Button.css';
 import './postgame.css';
 
-import '@/styles/components/matchResults.css';
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 
 type MenuState = 1 | 2 | 3;
 type ActiveButtonMenu1 = 0 | 1;
@@ -111,6 +111,33 @@ export default function PostGame() {
   }, [location, navigate]);
 
   useEffect(() => {
+    if (new URLSearchParams(location.search).get('preview') === 'claim') {
+      const qr = new URLSearchParams(location.search).get('qr');
+      setLoading(false);
+      setWinnerName('SATOSHI');
+      setP1Name('Satoshi');
+      setP2Name('Hal');
+      setP1Deposit(25000);
+      setP2Deposit(25000);
+      setTotalPrize(50000);
+      setGameMode('DUEL');
+      setLnurlw('lnurl1previewwithdrawalsample');
+      setQrValue('lnurl1previewwithdrawalsample');
+      if (qr === '1' || qr === 'show') {
+        setMenu(2);
+        setQrRevealed(true);
+        setPrizeClaimed(false);
+      } else if (qr === '0' || qr === 'blur') {
+        setMenu(1);
+        setQrRevealed(false);
+        setPrizeClaimed(false);
+      } else {
+        setMenu(3);
+        setQrRevealed(false);
+        setPrizeClaimed(true);
+      }
+      return;
+    }
     if (!socket) return;
     const requestPostGameInfo = () => {
       socket.emit('postGameInfoRequest');
@@ -128,7 +155,7 @@ export default function PostGame() {
       window.clearTimeout(fallbackTimer);
       socket.off('connect', requestPostGameInfo);
     };
-  }, [socket]);
+  }, [location.search, socket]);
 
   const updateHighscores = useCallback(async () => {
     try {
@@ -481,6 +508,8 @@ export default function PostGame() {
         id="postGame"
         className={`flex full flex-center animateIn ${loading ? 'empty' : ''}`}
       >
+        <SoloZapRadiatingLines className="end-screen-rays" />
+        <div className="postgame-scrim" aria-hidden />
         {practiceMode ? null : <Sponsorship id="sponsorship-postgame" />}
         <div className="flex match-result-heading">
           <h2 id="gameOver">MATCH COMPLETE</h2>
@@ -500,6 +529,9 @@ export default function PostGame() {
           </div>
         </div>
 
+        <h1 id="prize">
+          {totalPrize.toLocaleString()} SATS{prizeClaimed ? ' CLAIMED' : ''}
+        </h1>
         {practiceMode ? null : (
           <div id="fees">
             <span id="split1">
@@ -524,10 +556,6 @@ export default function PostGame() {
             </span>
           </div>
         )}
-
-        <h1 id="prize">
-          {totalPrize.toLocaleString()} SATS{prizeClaimed ? ' CLAIMED' : ''}
-        </h1>
         <p
           id="claimText"
           style={{ display: menu === 3 || practiceMode ? 'none' : undefined }}

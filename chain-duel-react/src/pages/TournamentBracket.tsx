@@ -26,6 +26,7 @@ import { npubEncode } from 'nostr-tools/nip19';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import './tournbracket.css';
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 
 /** Strip external styles from SVG so page font CSS applies to inlined SVG. */
 function stripSvgStyle(svgText: string): string {
@@ -121,7 +122,18 @@ export default function TournamentBracket() {
     setNostrNote1('');
     setNostrCode('');
     timesWithdrawnRef.current = 0;
-  }, [urlDeposit, numberOfPlayersFromUrl, isNostrTournament]);
+    if (params.get('preview') === 'finished') {
+      setPlayersPaid({
+        'Player 1': { name: 'Ada' },
+        'Player 2': { name: 'Bea' },
+        'Player 3': { name: 'Cal' },
+        'Player 4': { name: 'Dee' },
+      });
+      setWinnersList(['Player 1', 'Player 1', 'Player 1']);
+      setLoading(false);
+      setShowPaymentPanel(false);
+    }
+  }, [urlDeposit, numberOfPlayersFromUrl, isNostrTournament, params]);
 
   // Displayed buy-in follows URL by default, then backend min when provided.
   const finalPrize = computeFinalPrize(numberOfPlayers, deposit);
@@ -992,6 +1004,9 @@ export default function TournamentBracket() {
       )}
 
       {/* ── Tournament finished: champion panel (matches legacy tournFinishedDiv) ── */}
+      {tournamentPhase === 'finished' && (
+        <SoloZapRadiatingLines className="end-screen-rays" />
+      )}
       {tournamentPhase === 'finished' && (
         <div className="tournFinishedDiv" id="tournFinishedDiv">
           <h2 className="m-0 tourn-finished-headline">
