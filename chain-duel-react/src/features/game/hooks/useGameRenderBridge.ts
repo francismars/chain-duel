@@ -166,7 +166,8 @@ export function useGameRenderBridge({
         canvasObjectives: canvasObjectivesRef?.current ?? {},
       };
       const label = challengeContinueLabelRef?.current;
-      if (label) opts.challengeContinueLabel = label;
+      // Empty string hides the continue prompt (e.g. free-play action buttons).
+      if (label != null) opts.challengeContinueLabel = label;
       if (suppressVictoryOverlayRef?.current) opts.suppressVictoryOverlay = true;
       return opts;
     };

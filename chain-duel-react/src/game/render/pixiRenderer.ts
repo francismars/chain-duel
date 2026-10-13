@@ -15,24 +15,16 @@ import {
 } from '@/game/engine/powerups';
 import { clearPreMatchKeyHighlight } from '@/game/render/preMatchKeyHighlight';
 import {
-  applyCanvasTextDropShadow,
-  clearCanvasTextDropShadow,
-  computeCanvasObjectivesLayout,
-  computeStartPromptPulse,
-  fitStartPromptFontSize,
+  fitStartPromptToBoard,
   measureStartWordWidth,
-  resolveStartPromptWords,
   START_PROMPT_GAP_RATIO,
   START_PROMPT_WORDS,
   START_WORD_SHADOW_BLUR,
   startPromptLineWidth,
-  startPromptRevealElapsedMs,
-  startPromptWordRevealAlpha,
   type CanvasObjectivesOpts,
 } from '@/game/render/matchObjectives';
 import {
   CanvasObjectivesOverlay,
-  drawCanvasObjectivesFallback,
 } from '@/game/render/canvasObjectivesOverlay';
 import {
   CanvasControlsOverlay,
@@ -50,8 +42,8 @@ import {
 import {
   EndGameOverlay,
   END_OVERLAY_DELAY_MS,
-  drawEndGameCanvas,
-  winnerSats,
+  END_RESOLVE_DURATION_MS,
+  endOverlayRevealDurationMs,
 } from './endGameOverlay';
 import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 
@@ -94,6 +86,10 @@ export class PixiGameRenderer {
   private resolveAnimStartMs: number | null = null;
   /** When the end overlay first became eligible; delay starts from this. */
   private endOverlayEligibleAtMs: number | null = null;
+  /** When the staggered end-screen reveal began (after the settle delay). */
+  private endOverlayAnimStartMs: number | null = null;
+  /** True after the reveal finished (or was suppressed). */
+  private endOverlayRevealDone = false;
   // Coinbase capture pulse tracking
   private prevScoreP1 = -1;
   private prevScoreP2 = -1;
@@ -295,8 +291,8 @@ export class PixiGameRenderer {
     if (state.gameEnded) {
       const resolve = this.getResolveProgress(state);
       if (resolve > 0 && resolve < 1) return true;
-      // Keep painting through the post-settle beat before the winner overlay.
-      return this.isEndOverlayPending(state, resolve);
+      // Keep painting through the hold and the reveal frame itself.
+      return this.needsEndOverlayPaint(state, resolve);
     }
     return false;
   }
@@ -407,7 +403,8 @@ export class PixiGameRenderer {
   private fitAndLayoutStartWords(
     width: number,
     height: number,
-    words: readonly string[]
+    words: readonly string[],
+    opts: CanvasObjectivesOpts
   ): number {
     const wordWidthsForSize = (fontSize: number) =>
       words.map((word) => this.measureStartWordGlyphWidth(word, fontSize));
@@ -416,7 +413,7 @@ export class PixiGameRenderer {
       startPromptLineWidth(fontSize, wordWidthsForSize(fontSize)) +
       START_WORD_SHADOW_BLUR;
 
-    const fontSize = fitStartPromptFontSize(width, height, measureLine);
+    const fontSize = fitStartPromptToBoard(width, height, measureLine, opts);
     const gap = fontSize * START_PROMPT_GAP_RATIO;
     const wordWidths = wordWidthsForSize(fontSize);
     const widthSig = wordWidths.map((w) => Math.ceil(w)).join(',');
@@ -705,27 +702,25 @@ export class PixiGameRenderer {
     // ── Text overlays ─────────────────────────────────────────────────────────
     this.endOverlay.hide();
     if (!state.gameEnded) {
-      this.endOverlayEligibleAtMs = null;
+      this.resetEndOverlayTiming();
     }
 
-    if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
+    const preMatch =
+      !state.gameStarted && !state.gameEnded && !state.countdownStart;
+    this.host
+      ?.closest('#gameCanvas')
+      ?.classList.toggle('is-prematch', preMatch);
+
+    if (preMatch) {
       this.hideCountdownOverlay();
       const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
-      const promptWords = resolveStartPromptWords(objOpts);
-      this.syncStartPromptWords(promptWords);
-      const startFontSize = this.fitAndLayoutStartWords(
-        width,
-        height,
-        promptWords
-      );
-      const objLayout = this.objectives.render(
-        width,
-        height,
-        startFontSize,
-        objOpts,
-        this.startRevealTime
-      );
+      this.objectives.hide();
+      for (const word of this.startWords) {
+        word.alpha = 0;
+        word.visible = false;
+      }
+      this.startPromptSubtext.visible = false;
       this.controls.render(
         state,
         width,
@@ -734,45 +729,10 @@ export class PixiGameRenderer {
         this.startRevealTime,
         objOpts.controlLabelSlots
       );
-      // ── Staggered word-by-word reveal + idle pulse ─────────────────────────
-      this.startWordsContainer.position.set(width / 2, objLayout.startY);
-      const revealElapsed = startPromptRevealElapsedMs(
-        performance.now(),
-        this.startRevealTime
-      );
-      const pulseAlpha = computeStartPromptPulse(
-        revealElapsed,
-        promptWords.length
-      );
-      let startWordAlpha = 0;
-      for (let i = 0; i < promptWords.length; i++) {
-        const eased = startPromptWordRevealAlpha(revealElapsed, i);
-        const wordAlpha = eased * pulseAlpha;
-        this.startWords[i].alpha = wordAlpha;
-        this.startWords[i].y = (1 - eased) * 6;
-        startWordAlpha = Math.max(startWordAlpha, wordAlpha);
-      }
       const readyAlpha = onlineStartReadyAlpha(
         Boolean(objOpts.onlineStartReady),
-        startWordAlpha
+        1
       );
-      const subtext = objOpts.startPromptSubtext?.trim();
-      if (subtext) {
-        const subtextPx = Math.max(10, startFontSize * 0.26);
-        const subAlpha = objOpts.onlineStartReady
-          ? readyAlpha
-          : startWordAlpha;
-        this.startPromptSubtext.text = subtext;
-        this.startPromptSubtext.style.fontSize = subtextPx;
-        this.startPromptSubtext.position.set(
-          width / 2,
-          objLayout.startY + startFontSize * 0.52
-        );
-        this.startPromptSubtext.alpha = subAlpha;
-        this.startPromptSubtext.visible = subAlpha > 0.02;
-      } else {
-        this.startPromptSubtext.visible = false;
-      }
       this.startReady.render(
         colSize,
         rowSize,
@@ -798,20 +758,13 @@ export class PixiGameRenderer {
       } else {
         this.hideCountdownOverlay();
         if (state.gameEnded) {
-          // During the resolving-blocks animation, suppress the text until blocks cover the board
-          if (
-            !opts?.suppressVictoryOverlay &&
-            this.shouldShowEndOverlay(state, resolveProgress)
-          ) {
-            this.endOverlay.render(
-              width,
-              height,
-              state.winnerName,
-              opts?.replayView
-                ? ''
-                : opts?.challengeContinueLabel ?? 'PRESS ANY BUTTON TO CONTINUE',
-              winnerSats(state)
-            );
+          const elapsed = this.beginEndOverlayReveal(
+            state,
+            resolveProgress,
+            Boolean(opts?.suppressVictoryOverlay)
+          );
+          if (elapsed !== null) {
+            this.endOverlay.hide();
           }
         }
       }
@@ -847,8 +800,6 @@ export class PixiGameRenderer {
 
   // ── Resolving blocks animation ─────────────────────────────────────────────
 
-  private static readonly RESOLVE_DURATION_MS = 1400;
-
   private getResolveProgress(state: GameState): number {
     if (!state.convergenceWallClosed) {
       this.resolveAnimStartMs = null;
@@ -859,9 +810,14 @@ export class PixiGameRenderer {
     }
     return Math.min(
       1,
-      (performance.now() - this.resolveAnimStartMs) /
-        PixiGameRenderer.RESOLVE_DURATION_MS
+      (performance.now() - this.resolveAnimStartMs) / END_RESOLVE_DURATION_MS
     );
+  }
+
+  private resetEndOverlayTiming(): void {
+    this.endOverlayEligibleAtMs = null;
+    this.endOverlayAnimStartMs = null;
+    this.endOverlayRevealDone = false;
   }
 
   /** Board settled enough for the winner overlay (blocks done, or no resolve anim). */
@@ -870,14 +826,13 @@ export class PixiGameRenderer {
     resolveProgress: number
   ): boolean {
     if (!state.gameEnded) {
-      this.endOverlayEligibleAtMs = null;
+      this.resetEndOverlayTiming();
       return false;
     }
     return resolveProgress >= 1.0 || !state.convergenceWallClosed;
   }
 
-  /** Eligible but still in the short post-settle hold. */
-  private isEndOverlayPending(
+  private armEndOverlayDelay(
     state: GameState,
     resolveProgress: number
   ): boolean {
@@ -885,22 +840,50 @@ export class PixiGameRenderer {
     if (this.endOverlayEligibleAtMs === null) {
       this.endOverlayEligibleAtMs = performance.now();
     }
-    return (
-      performance.now() - this.endOverlayEligibleAtMs < END_OVERLAY_DELAY_MS
-    );
+    return true;
   }
 
-  private shouldShowEndOverlay(
+  /** Keep painting through the settle hold and staggered reveal. */
+  private needsEndOverlayPaint(
     state: GameState,
     resolveProgress: number
   ): boolean {
-    if (!this.isEndOverlayEligible(state, resolveProgress)) return false;
-    if (this.endOverlayEligibleAtMs === null) {
-      this.endOverlayEligibleAtMs = performance.now();
+    if (this.endOverlayRevealDone) return false;
+    if (!this.armEndOverlayDelay(state, resolveProgress)) return false;
+    return true;
+  }
+
+  /**
+   * After the settle delay, starts the stagger clock and returns elapsed ms.
+   * Suppressed overlays skip the animation and mark the reveal done.
+   * Returns null while still in the settle hold.
+   */
+  private beginEndOverlayReveal(
+    state: GameState,
+    resolveProgress: number,
+    suppressed: boolean
+  ): number | null {
+    if (this.endOverlayRevealDone && this.endOverlayAnimStartMs !== null) {
+      return endOverlayRevealDurationMs();
     }
-    return (
-      performance.now() - this.endOverlayEligibleAtMs >= END_OVERLAY_DELAY_MS
-    );
+    if (!this.armEndOverlayDelay(state, resolveProgress)) return null;
+    const sinceEligible =
+      performance.now() - (this.endOverlayEligibleAtMs as number);
+    if (sinceEligible < END_OVERLAY_DELAY_MS) return null;
+
+    if (suppressed) {
+      this.endOverlayRevealDone = true;
+      return null;
+    }
+
+    if (this.endOverlayAnimStartMs === null) {
+      this.endOverlayAnimStartMs = performance.now();
+    }
+    const elapsed = performance.now() - this.endOverlayAnimStartMs;
+    if (elapsed >= endOverlayRevealDurationMs()) {
+      this.endOverlayRevealDone = true;
+    }
+    return elapsed;
   }
 
   private renderResolveBlocks(
@@ -1964,81 +1947,14 @@ export class PixiGameRenderer {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#000000';
-    if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
+    const preMatch =
+      !state.gameStarted && !state.gameEnded && !state.countdownStart;
+    this.host
+      ?.closest('#gameCanvas')
+      ?.classList.toggle('is-prematch', preMatch);
+    if (preMatch) {
       const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
-      const promptWords = resolveStartPromptWords(objOpts);
-      const fbStartPx = fitStartPromptFontSize(width, height, (fontSize) => {
-        ctx.font = `${fontSize}px BureauGrotesque`;
-        const wordWidths = promptWords.map((word) =>
-          measureStartWordWidth(word, fontSize, ctx.measureText(word).width)
-        );
-        return (
-          startPromptLineWidth(fontSize, wordWidths) + START_WORD_SHADOW_BLUR
-        );
-      });
-      const objLayout = computeCanvasObjectivesLayout(
-        width,
-        height,
-        fbStartPx,
-        objOpts
-      );
-      const elapsed = Math.max(
-        0,
-        performance.now() - this.startRevealTime - 900
-      );
-      const objAlpha = Math.min(1, elapsed / 420);
-      const eased = 1 - Math.pow(1 - objAlpha, 3);
-      const fbElapsed = startPromptRevealElapsedMs(
-        performance.now(),
-        this.startRevealTime
-      );
-      const fbGap = fbStartPx * START_PROMPT_GAP_RATIO;
-      ctx.font = `${fbStartPx}px BureauGrotesque`;
-      const fbWordWidths = promptWords.map((word) =>
-        measureStartWordWidth(word, fbStartPx, ctx.measureText(word).width)
-      );
-      const fbLineW = startPromptLineWidth(fbStartPx, fbWordWidths);
-      let fbX = -fbLineW / 2;
-      let startWordAlpha = 0;
-      ctx.save();
-      ctx.translate(width / 2, objLayout.startY);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      applyCanvasTextDropShadow(ctx);
-      const pulseAlpha = computeStartPromptPulse(
-        fbElapsed,
-        promptWords.length
-      );
-      for (let i = 0; i < promptWords.length; i++) {
-        const reveal = startPromptWordRevealAlpha(fbElapsed, i);
-        if (reveal <= 0.02) {
-          fbX += (fbWordWidths[i] ?? 0) + fbGap;
-          continue;
-        }
-        const wordAlpha = reveal * pulseAlpha;
-        startWordAlpha = Math.max(startWordAlpha, wordAlpha);
-        ctx.globalAlpha = wordAlpha;
-        ctx.fillText(promptWords[i]!, fbX + (fbWordWidths[i] ?? 0) / 2, 0);
-        fbX += (fbWordWidths[i] ?? 0) + fbGap;
-      }
-      clearCanvasTextDropShadow(ctx);
-      ctx.restore();
-      const subtext = objOpts.startPromptSubtext?.trim();
-      if (subtext) {
-        const subtextPx = Math.max(10, fbStartPx * 0.26);
-        const subAlpha = objOpts.onlineStartReady
-          ? onlineStartReadyAlpha(true, startWordAlpha * eased)
-          : startWordAlpha * eased;
-        ctx.save();
-        ctx.globalAlpha = subAlpha;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.font = `500 ${Math.floor(subtextPx)}px Inter, system-ui, sans-serif`;
-        ctx.fillStyle = 'rgba(255,255,255,0.62)';
-        ctx.fillText(subtext, width / 2, objLayout.startY + fbStartPx * 0.52);
-        ctx.restore();
-      }
       drawOnlineStartReadyFallback(
         ctx,
         colSize,
@@ -2048,18 +1964,7 @@ export class PixiGameRenderer {
         p1Bob,
         p2Bob,
         objOpts.onlineStartReady,
-        onlineStartReadyAlpha(
-          Boolean(objOpts.onlineStartReady),
-          startWordAlpha * eased
-        )
-      );
-      drawCanvasObjectivesFallback(
-        ctx,
-        width,
-        objLayout,
-        objOpts,
-        eased,
-        Math.max(0, elapsed - 180)
+        onlineStartReadyAlpha(Boolean(objOpts.onlineStartReady), 1)
       );
       drawCanvasControlsFallback(
         ctx,
@@ -2067,7 +1972,7 @@ export class PixiGameRenderer {
         width,
         height,
         objOpts.controlSlots ?? [],
-        eased,
+        1,
         objOpts.controlLabelSlots
       );
     } else if (state.countdownStart) {
@@ -2086,20 +1991,13 @@ export class PixiGameRenderer {
       ctx.fillText(countdownText, width / 2, height / 2);
     } else if (state.gameEnded) {
       this.startRevealTime = -1;
-      if (
-        !opts?.suppressVictoryOverlay &&
-        this.shouldShowEndOverlay(state, resolveProgressFb)
-      ) {
-        drawEndGameCanvas(
-          ctx,
-          width,
-          height,
-          state.winnerName,
-          opts?.replayView
-            ? ''
-            : opts?.challengeContinueLabel ?? 'PRESS ANY BUTTON TO CONTINUE',
-              winnerSats(state)
-        );
+      const elapsed = this.beginEndOverlayReveal(
+        state,
+        resolveProgressFb,
+        Boolean(opts?.suppressVictoryOverlay)
+      );
+      if (elapsed !== null) {
+        // Winner card is DOM. Keep the reveal timer so continue actions still wait.
       }
     }
   }

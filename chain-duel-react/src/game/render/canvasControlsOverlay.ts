@@ -47,6 +47,11 @@ function keyCapCornerRadius(keyPx: number): number {
   return Math.max(2, keyPx * 0.1);
 }
 
+/** Confirm labels longer than two characters (Space, Enter) span the three keys above. */
+function confirmKeyCapWidth(keyPx: number, gap: number, wide: boolean): number {
+  return wide ? keyPx * 3 + gap * 2 : keyPx;
+}
+
 function formatKeyCapLabel(label: string, dir: PreMatchKeyDir): string {
   return dir === 'confirm' ? label.toUpperCase() : label;
 }
@@ -189,6 +194,7 @@ export class CanvasControlsOverlay {
   private pads: SlotPad[] = [];
   private layoutKey = '';
   private keyPx = 16;
+  private keyGap = 4;
 
   constructor() {
     for (let i = 0; i < 4; i += 1) {
@@ -295,6 +301,7 @@ export class CanvasControlsOverlay {
     const capLayout = preMatchKeyCapLayout(width, height);
     const { keyPx, fontPx, gap } = capLayout;
     this.keyPx = keyPx;
+    this.keyGap = gap;
 
     for (let i = 0; i < this.pads.length; i += 1) {
       const pad = this.pads[i];
@@ -344,7 +351,7 @@ export class CanvasControlsOverlay {
   private paintCap(cap: KeyCap, slot: PlayerControlSlot): void {
     const keyPx = this.keyPx;
     const wide = cap.dir === 'confirm' && cap.label.text.length > 2;
-    const capW = wide ? keyPx * 1.65 : keyPx;
+    const capW = confirmKeyCapWidth(keyPx, this.keyGap, wide);
     const capH = keyPx;
     const active = isPreMatchKeyHeld(slot, cap.dir);
     const borderAlpha = active ? 0.48 : 0.42;
@@ -408,7 +415,7 @@ export function drawCanvasControlsFallback(
 
     for (const spec of dpad) {
       const scale = preMatchKeyCapScale(slot, spec.dir, now);
-      const capW = (spec.wide ? keyPx * 1.65 : keyPx) * scale;
+      const capW = confirmKeyCapWidth(keyPx, gap, Boolean(spec.wide)) * scale;
       const capH = keyPx * scale;
       const x = anchorX + spec.x;
       const y = anchorY + spec.y;
