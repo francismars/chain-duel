@@ -321,7 +321,7 @@ export default function OnlineGame({
           );
         }
         const useOnlinePointAnims =
-          raw.meta?.modeLabel === 'ONLINE' && !replayViewRef.current;
+          replayViewRef.current || raw.meta?.modeLabel === 'ONLINE';
         const renderState = useOnlinePointAnims
           ? withOnlinePointAnimations(raw, pointAnimationsRef.current)
           : raw;
@@ -512,7 +512,17 @@ export default function OnlineGame({
           replayFetchInFlightRef.current = false;
           setReplayError(frames.length === 0 ? 'Replay has no frames.' : '');
           const first = frames[0] ?? null;
+          resetReplayPointAnims(
+            pointAnimationsRef,
+            prevPointCountByKeyRef
+          );
           if (first) {
+            ingestOnlinePointChanges(
+              first,
+              pointAnimationsRef.current,
+              prevPointCountByKeyRef.current,
+              { anyMode: true }
+            );
             setSnapshot(first);
           }
         } catch {
@@ -595,6 +605,17 @@ export default function OnlineGame({
         const next = Math.min(prev + steps, replayFrames.length - 1);
         if (next >= replayFrames.length - 1) {
           setReplayPlaying(false);
+        }
+        for (let i = prev + 1; i <= next; i += 1) {
+          const stepped = replayFrames[i];
+          if (stepped) {
+            ingestOnlinePointChanges(
+              stepped,
+              pointAnimationsRef.current,
+              prevPointCountByKeyRef.current,
+              { anyMode: true }
+            );
+          }
         }
         const frame = replayFrames[next];
         if (frame) {
@@ -795,6 +816,11 @@ export default function OnlineGame({
     const last = replayFrames.length - 1;
     if (last >= 0 && replayIndex >= last) {
       setReplayIndex(0);
+      seekReplayPointAnims(
+        replayFrames[0] ?? null,
+        pointAnimationsRef,
+        prevPointCountByKeyRef
+      );
       setSnapshot(replayFrames[0] ?? null);
     }
     setReplayPlaying(true);
@@ -804,6 +830,11 @@ export default function OnlineGame({
     if (!replayFrames.length) return;
     setReplayPlaying(false);
     setReplayIndex(0);
+    seekReplayPointAnims(
+      replayFrames[0] ?? null,
+      pointAnimationsRef,
+      prevPointCountByKeyRef
+    );
     setSnapshot(replayFrames[0] ?? null);
   }, [replayFrames]);
 
@@ -930,6 +961,11 @@ export default function OnlineGame({
             setReplayPlaying(false);
             const prev = Math.max(0, replayIndex - SCRUB);
             setReplayIndex(prev);
+            seekReplayPointAnims(
+              replayFrames[prev] ?? null,
+              pointAnimationsRef,
+              prevPointCountByKeyRef
+            );
             if (replayFrames[prev]) setSnapshot(replayFrames[prev]);
             break;
           }
@@ -937,6 +973,11 @@ export default function OnlineGame({
             event.preventDefault();
             const next = Math.min(replayFrames.length - 1, replayIndex + SCRUB);
             setReplayIndex(next);
+            seekReplayPointAnims(
+              replayFrames[next] ?? null,
+              pointAnimationsRef,
+              prevPointCountByKeyRef
+            );
             if (replayFrames[next]) setSnapshot(replayFrames[next]);
             break;
           }
@@ -1283,6 +1324,11 @@ export default function OnlineGame({
                   setReplayPlaying(false);
                   setReplayIndex(idx);
                   const frame = replayFrames[idx];
+                  seekReplayPointAnims(
+                    frame ?? null,
+                    pointAnimationsRef,
+                    prevPointCountByKeyRef
+                  );
                   if (frame) {
                     setSnapshot(frame);
                   }
@@ -1563,18 +1609,44 @@ type OnlinePointAnim = {
   startedAtMs: number;
 };
 
-const ONLINE_POINT_ANIM_MS = 650;
+const ONLINE_POINT_ANIM_MS = 2600;
 const ONLINE_POINT_RISE_PX = 52;
+
+function resetReplayPointAnims(
+  pointAnimationsRef: { current: OnlinePointAnim[] },
+  prevPointCountByKeyRef: { current: Map<string, number> }
+): void {
+  pointAnimationsRef.current = [];
+  prevPointCountByKeyRef.current.clear();
+}
+
+function seekReplayPointAnims(
+  frame: OnlineRoomSnapshot | null,
+  pointAnimationsRef: { current: OnlinePointAnim[] },
+  prevPointCountByKeyRef: { current: Map<string, number> }
+): void {
+  resetReplayPointAnims(pointAnimationsRef, prevPointCountByKeyRef);
+  if (!frame) {
+    return;
+  }
+  ingestOnlinePointChanges(
+    frame,
+    pointAnimationsRef.current,
+    prevPointCountByKeyRef.current,
+    { anyMode: true }
+  );
+}
 
 function ingestOnlinePointChanges(
   snapshot: OnlineRoomSnapshot,
   pointAnimations: OnlinePointAnim[],
-  prevPointCountByKey: Map<string, number>
+  prevPointCountByKey: Map<string, number>,
+  options?: { anyMode?: boolean }
 ): Array<'P1' | 'P2'> {
   const state = snapshot.state as Record<string, unknown> | null;
   const modeLabel = (state?.meta as { modeLabel?: string } | undefined)
     ?.modeLabel;
-  if (modeLabel !== 'ONLINE') {
+  if (!options?.anyMode && modeLabel !== 'ONLINE') {
     return [];
   }
   const incoming = getPointChanges(snapshot.state);
