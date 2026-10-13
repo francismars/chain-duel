@@ -63,6 +63,9 @@ export const START_PROMPT_WORDS = [
   'START',
 ] as const;
 
+export const PRESS_SPACE_TO_START = ['PRESS', 'SPACE', 'TO', 'START'] as const;
+export const PRESS_ENTER_TO_START = ['PRESS', 'ENTER', 'TO', 'START'] as const;
+
 /** Online arena: both players confirm before countdown. */
 export const ONLINE_START_PROMPT_WORDS = [
   'WAITING',
@@ -73,7 +76,10 @@ export const ONLINE_START_PROMPT_WORDS = [
 export const START_PROMPT_GAP_RATIO = 0.1;
 
 /** Extra space below objective hints — nudges start prompt down without moving hints. */
-export const START_PROMPT_Y_OFFSET_RATIO = 0.14;
+export const START_PROMPT_Y_OFFSET_RATIO = 0.72;
+
+/** Pulls the cycling objective (title + body) up, away from the start prompt. */
+export const OBJECTIVE_BLOCK_LIFT_RATIO = 0.07;
 
 /** BureauGrotesque avg glyph width as a fraction of font size (fallback only). */
 export const START_PROMPT_CHAR_WIDTH_RATIO = 0.46;
@@ -168,15 +174,34 @@ export type CanvasObjectivesOpts = {
   controlSlots?: readonly PlayerControlSlot[];
   /**
    * Parallel to controlSlots: which binding cluster labels to show on each pad.
-   * Used when solo seat switch keeps WASD bindings on the black snake.
+   * Omit so each pad shows that seat’s own keys (WASD on white, arrows on black).
    */
   controlLabelSlots?: readonly PlayerControlSlot[];
   onlineStartReady?: OnlineStartReadyState;
   /** Override default "PRESS BUTTON TO START" (e.g. online confirm flow). */
   startPromptWords?: readonly string[];
+  /** Second line to fade in after startPromptWords (two human players). */
+  startPromptAltWords?: readonly string[];
   /** Smaller Inter line under the start prompt (seat switch / online hints). */
   startPromptSubtext?: string;
 };
+
+/** Space for white, Enter for black. Both humans alternate the two lines. */
+export function localStartPromptWords(p1Human: boolean, p2Human: boolean): {
+  words: readonly string[];
+  altWords?: readonly string[];
+} {
+  if (p1Human && p2Human) {
+    return { words: PRESS_SPACE_TO_START, altWords: PRESS_ENTER_TO_START };
+  }
+  if (p2Human && !p1Human) {
+    return { words: PRESS_ENTER_TO_START };
+  }
+  if (p1Human) {
+    return { words: PRESS_SPACE_TO_START };
+  }
+  return { words: START_PROMPT_WORDS };
+}
 
 export function resolveStartPromptWords(
   opts?: Pick<CanvasObjectivesOpts, 'startPromptWords'>
@@ -245,8 +270,8 @@ export function computeCanvasObjectivesLayout(
   const instructionBlockH = instructionBlockHeight(layoutCore, opts.stakesHint);
 
   const sectionGap = Math.min(
-    Math.max(14, startFontSize * 0.42),
-    Math.max(12, height * 0.12)
+    Math.max(72, startFontSize * 1.85),
+    Math.max(48, height * 0.2)
   );
   const stackTopInset = Math.min(START_WORD_SHADOW_PAD, Math.max(6, height * 0.04));
   const stackBottomInset = Math.min(20, Math.max(4, height * 0.03));
@@ -257,7 +282,11 @@ export function computeCanvasObjectivesLayout(
     startFontSize +
     stackBottomInset;
   const stackTop = Math.max(4, (height - stackHeight) / 2);
-  const instructionTop = stackTop + stackTopInset;
+  const objectiveLift = Math.min(
+    height * OBJECTIVE_BLOCK_LIFT_RATIO,
+    Math.max(18, startFontSize * 0.55)
+  );
+  const instructionTop = Math.max(4, stackTop + stackTopInset - objectiveLift);
   const startPromptYOffset = Math.max(
     20,
     startFontSize * START_PROMPT_Y_OFFSET_RATIO

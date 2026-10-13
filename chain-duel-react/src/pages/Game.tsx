@@ -65,7 +65,10 @@ import {
   getChallengeTheme,
 } from '@/lib/challenges/challengeTheme';
 import { FfaHud } from '@/features/game/FfaGameHud';
-import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
+import {
+  localStartPromptWords,
+  type CanvasObjectivesOpts,
+} from '@/game/render/matchObjectives';
 import {
   humanControlSlotsFromConfig,
   humanControlSlotsFromState,
@@ -805,14 +808,17 @@ export default function Game() {
     liveState && canSwapSoloHumanSeat(liveState)
       ? soloSeatSwitchHint(liveState)
       : undefined;
-  const soloLabelSlots =
-    liveState?.meta.soloInputSlot && filteredControlSlots.length === 1
-      ? ([liveState.meta.soloInputSlot] as const)
-      : undefined;
+
+  const startPrompt = liveState
+    ? localStartPromptWords(liveState.meta.p1Human, liveState.meta.p2Human)
+    : { words: undefined, altWords: undefined };
 
   canvasObjectivesRef.current = {
     controlSlots: filteredControlSlots,
-    ...(soloLabelSlots ? { controlLabelSlots: soloLabelSlots } : {}),
+    ...(startPrompt.words ? { startPromptWords: startPrompt.words } : {}),
+    ...(startPrompt.altWords
+      ? { startPromptAltWords: startPrompt.altWords }
+      : {}),
     ...(soloSeatHint ? { startPromptSubtext: soloSeatHint } : {}),
   };
 
@@ -1553,10 +1559,15 @@ export default function Game() {
     if (!state) return;
     const humanSlot = state.meta.p1Human ? 'p1' : 'p2';
     const hint = soloSeatSwitchHint(state);
+    const startPrompt = localStartPromptWords(
+      state.meta.p1Human,
+      state.meta.p2Human
+    );
     canvasObjectivesRef.current = {
       controlSlots: [humanSlot],
-      ...(state.meta.soloInputSlot
-        ? { controlLabelSlots: [state.meta.soloInputSlot] }
+      startPromptWords: startPrompt.words,
+      ...(startPrompt.altWords
+        ? { startPromptAltWords: startPrompt.altWords }
         : {}),
       ...(hint ? { startPromptSubtext: hint } : {}),
     };
@@ -1593,8 +1604,8 @@ export default function Game() {
           <Sponsorship id="sponsorship-match-end" />
           <p className="match-end-card__kicker">
             {h2h
-              ? 'CHAIN DUEL / HUMAN VS HUMAN'
-              : 'CHAIN DUEL / MATCH COMPLETE'}
+              ? 'HUMAN VS HUMAN / MATCH COMPLETE'
+              : 'PRACTICE · 1v1 · CVG / MATCH COMPLETE'}
           </p>
           <p className="match-end-card__name">PLAYER 1</p>
           <p className="match-end-card__wins">WINS</p>
