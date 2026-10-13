@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { GameState } from '@/game/engine/types';
+import { Sponsorship } from '@/components/ui/Sponsorship';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 import {
   matchEndFigure,
@@ -10,18 +11,28 @@ import { isPracticeFreePlayConfig } from '@/pages/practiceHubModes';
 
 type EndCopy = {
   winner: string;
+  kicker: string;
   figure: ReturnType<typeof matchEndFigure>;
   prompt: string;
 };
+
+function matchEndKicker(cfg: Record<string, unknown>): string {
+  const hud = [cfg.practiceHudLabel, cfg.localHudLabel, cfg.testnetHudLabel].find(
+    (value) => typeof value === 'string' && value.trim()
+  );
+  const mode = typeof hud === 'string' ? hud.trim() : '';
+  return mode ? `${mode} / MATCH COMPLETE` : 'MATCH COMPLETE';
+}
 
 function readCopy(
   state: GameState,
   continueLabel: string | null | undefined
 ): EndCopy {
   let freeGame = false;
+  let cfg: Record<string, unknown> = {};
   try {
     const raw = sessionStorage.getItem('gameConfig');
-    const cfg = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    cfg = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
     freeGame = isPracticeFreePlayConfig(cfg);
   } catch {
     freeGame = false;
@@ -32,6 +43,7 @@ function readCopy(
       : (continueLabel ?? 'PRESS ANY BUTTON TO CONTINUE');
   return {
     winner: state.winnerName?.trim() || 'WINNER',
+    kicker: matchEndKicker(cfg),
     figure: matchEndFigure(freeGame, winnerSats(state)),
     prompt,
   };
@@ -71,7 +83,7 @@ export function MatchEndCard({
         }
       } else if (state) {
         const next = readCopy(state, continueLabelRef?.current);
-        const nextKey = `${next.winner}|${next.figure.kind}|${next.prompt}`;
+        const nextKey = `${next.winner}|${next.kicker}|${next.figure.kind}|${next.prompt}`;
         if (nextKey !== key) {
           key = nextKey;
           setCopy(next);
@@ -89,7 +101,8 @@ export function MatchEndCard({
     <div className="match-end-layer">
       <SoloZapRadiatingLines className="end-screen-rays match-end-layer__rays" />
       <div className="match-end-card">
-        <p className="match-end-card__kicker">CHAIN DUEL / MATCH COMPLETE</p>
+        <Sponsorship id="sponsorship-match-end" />
+        <p className="match-end-card__kicker">{copy.kicker}</p>
         <p className="match-end-card__name">{copy.winner.toUpperCase()}</p>
         <p className="match-end-card__wins">WINS</p>
         {copy.figure.kind === 'sats' ? (

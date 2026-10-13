@@ -18,8 +18,9 @@
   pointer-events: none;
 }
 
-.match-end-layer > #brand {
-  z-index: 3;
+.match-end-layer > #brand,
+body:has(.match-end-layer) header#brand {
+  z-index: 10005;
 }
 
 .match-end-card {
