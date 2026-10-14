@@ -14,6 +14,10 @@ import {
 } from '@/game/engine/powerups';
 import { clearPreMatchKeyHighlight } from '@/game/render/preMatchKeyHighlight';
 import {
+  anyCaptureAnimFlag,
+  captureAnimFlags,
+} from '@/game/render/captureAnimFlags';
+import {
   fitStartPromptToBoard,
   measureStartWordWidth,
   START_PROMPT_GAP_RATIO,
@@ -46,6 +50,8 @@ import {
 } from './endGameOverlay';
 import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 
+type CapturePulse = { startMs: number; reward: number };
+
 export type PixiRenderOpts = {
   replayView?: boolean;
   challengeContinueLabel?: string;
@@ -73,9 +79,21 @@ export class PixiGameRenderer {
   // Coinbase capture pulse tracking
   private prevScoreP1 = -1;
   private prevScoreP2 = -1;
-  private p1Pulses: number[] = [];
-  private p2Pulses: number[] = [];
+  private p1Pulses: CapturePulse[] = [];
+  private p2Pulses: CapturePulse[] = [];
+  private growAt: Record<string, number> = {};
+  private captureScales: { pos: GridPos; startMs: number }[] = [];
+  private prevCoins: { pos: GridPos; reward: number }[] = [];
+  private prevBodyLen: { p1: number; p2: number; extra: number[] } = {
+    p1: -1,
+    p2: -1,
+    extra: [],
+  };
+  private captureNotedTick = -1;
   private static readonly PULSE_DURATION_MS = 650;
+  private static readonly PULSE_MAX_MS = 1000;
+  private static readonly SCALE_MS = 390;
+  private static readonly GROW_MS = 580;
   // SURGE fading-square trail
   private p1SurgeTrail: { pos: GridPos; time: number }[] = [];
   private p2SurgeTrail: { pos: GridPos; time: number }[] = [];
@@ -256,6 +274,8 @@ export class PixiGameRenderer {
       if ((state.pointChanges?.length ?? 0) > 0) return true;
       if ((state.powerUpItems?.length ?? 0) > 0) return true;
       if (this.p1Pulses.length > 0 || this.p2Pulses.length > 0) return true;
+      if (this.growAnimating(performance.now())) return true;
+      if (this.captureScales.length > 0) return true;
       if (this.p1SurgeTrail.length > 0 || this.p2SurgeTrail.length > 0)
         return true;
       if (
@@ -465,23 +485,7 @@ export class PixiGameRenderer {
 
     // ── Coinbase capture pulse detection ─────────────────────────────────────
     const now = performance.now();
-    if (state.gameStarted && !state.gameEnded) {
-      if (this.prevScoreP1 >= 0 && state.score[0] > this.prevScoreP1)
-        this.p1Pulses.push(now);
-      if (this.prevScoreP2 >= 0 && state.score[1] > this.prevScoreP2)
-        this.p2Pulses.push(now);
-    } else if (!state.gameStarted) {
-      this.p1Pulses = [];
-      this.p2Pulses = [];
-    }
-    this.prevScoreP1 = state.score[0];
-    this.prevScoreP2 = state.score[1];
-    this.p1Pulses = this.p1Pulses.filter(
-      (t) => now - t < PixiGameRenderer.PULSE_DURATION_MS
-    );
-    this.p2Pulses = this.p2Pulses.filter(
-      (t) => now - t < PixiGameRenderer.PULSE_DURATION_MS
-    );
+    this.noteCaptures(state, now);
 
     // ── Scene ─────────────────────────────────────────────────────────────────
     this.scene.clear();
@@ -589,7 +593,8 @@ export class PixiGameRenderer {
         [],
         now,
         boardElapsed,
-        extraBob
+        extraBob,
+        `e${ei}`
       );
       // Ally / shadow border: solid inset outline distinguishes them from P1/P2
       if (extra.outline != null) {
@@ -625,7 +630,8 @@ export class PixiGameRenderer {
       this.p1Pulses,
       now,
       boardElapsed,
-      p1Bob
+      p1Bob,
+      'p1'
     );
 
     const p2Color = P2_SNAKE_COLOR;
@@ -644,7 +650,8 @@ export class PixiGameRenderer {
       this.p2Pulses,
       now,
       boardElapsed,
-      p2Bob
+      p2Bob,
+      'p2'
     );
 
     for (const cb of state.coinbases ?? []) {
@@ -931,10 +938,11 @@ export class PixiGameRenderer {
       surging?: boolean;
       amped?: boolean;
     },
-    pulses: number[] = [],
+    pulses: CapturePulse[] = [],
     now: number = 0,
     boardElapsed: number = Infinity,
-    preStartBobPx: number = 0
+    preStartBobPx: number = 0,
+    growKey = ''
   ): void {
     const bob = preStartBobPx;
     const segTop = (gy: number) => gy * rowSize - bob;
@@ -979,9 +987,12 @@ export class PixiGameRenderer {
     }
 
     // Head — with glow halo on pulse wave arrival
-    const headBoost = this.getSegmentGlow(0, totalLen, pulses, now);
-    if (headBoost > 0) {
-      const expand = headBoost * 4;
+    const headPulse = this.segmentPulse(0, totalLen, pulses, now);
+    const headBoost = headPulse.glow;
+    const flags = captureAnimFlags();
+    const pulseTint = isLight ? 0xffffff : 0x9f9f9f;
+    if (flags.tint && headBoost > 0) {
+      const expand = headBoost * 8;
       this.scene
         .rect(
           snake.head[0] * colSize - expand,
@@ -990,13 +1001,31 @@ export class PixiGameRenderer {
           segHeight + expand * 2
         )
         .fill({
-          color: isLight ? 0xffffff : 0xdddddd,
-          alpha: headBoost * 0.35,
+          color: pulseTint,
+          alpha: headBoost * 0.62,
         });
     }
-    this.scene
-      .rect(snake.head[0] * colSize, segTop(snake.head[1]), colSize, segHeight)
-      .fill({ color, alpha: Math.max(0, headAlpha) });
+    const headScale = this.scaleAtCell(snake.head, now);
+    this.fillSegment(
+      snake.head[0] * colSize,
+      segTop(snake.head[1]),
+      colSize,
+      segHeight,
+      headScale,
+      color,
+      Math.max(0, headAlpha)
+    );
+    if (flags.tint && headBoost > 0.05 && !isLight) {
+      this.fillSegment(
+        snake.head[0] * colSize,
+        segTop(snake.head[1]),
+        colSize,
+        segHeight,
+        headScale,
+        pulseTint,
+        headBoost * 0.85
+      );
+    }
 
     // Orange SURGE border on head
     if (effects.surging) {
@@ -1036,23 +1065,43 @@ export class PixiGameRenderer {
         .stroke({ width: 2, color: 0x3090c8, alpha: 0.7 });
     }
 
+    const growT =
+      flags.grow && growKey ? this.growProgress(growKey, now, totalLen) : 1;
+
     // Body — pulse wave travels head → tail
     for (let i = 0; i < snake.body.length; i++) {
-      const boost = this.getSegmentGlow(i + 1, totalLen, pulses, now);
+      const pulse = this.segmentPulse(i + 1, totalLen, pulses, now);
+      const boost = flags.tint ? pulse.glow : 0;
       const segAlpha =
-        Math.min(1, baseBodyAlpha + boost * 0.36) * segReveal(i + 1);
+        (flags.tint
+          ? Math.min(1, baseBodyAlpha + boost * 0.62)
+          : baseBodyAlpha) * segReveal(i + 1);
       const px = snake.body[i][0] * colSize;
       const py = segTop(snake.body[i][1]);
+      const isNewLink = i === snake.body.length - 1 && growT < 1;
+      const linkScale = isNewLink ? this.growLinkScale(growKey, now) : 1;
+      const blockScale = linkScale * this.scaleAtCell(snake.body[i]!, now);
 
-      this.scene
-        .rect(px, py, colSize, segHeight)
-        .fill({ color, alpha: Math.max(0, segAlpha) });
+      this.fillSegment(
+        px,
+        py,
+        colSize,
+        segHeight,
+        blockScale,
+        color,
+        Math.max(0, segAlpha) * (isNewLink ? growT : 1)
+      );
 
-      // Dark chains get a white overlay so the pulse is visible on black bg
-      if (!isLight && boost > 0.05) {
-        this.scene
-          .rect(px + 1, py + 1, colSize - 2, segHeight - 2)
-          .fill({ color: 0xffffff, alpha: boost * 0.28 });
+      if (flags.tint && !isLight && boost > 0.05) {
+        this.fillSegment(
+          px + 1,
+          py + 1,
+          colSize - 2,
+          segHeight - 2,
+          blockScale,
+          pulseTint,
+          boost * 0.85
+        );
       }
 
       // Orange SURGE border on each body segment
@@ -1073,25 +1122,185 @@ export class PixiGameRenderer {
     }
   }
 
-  /** Gaussian pulse: returns 0–1 boost for segment at index i as wave travels head→tail */
-  private getSegmentGlow(
+  private fillSegment(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    scale: number,
+    color: number,
+    alpha: number
+  ): void {
+    const dw = w * scale;
+    const dh = h * scale;
+    this.scene
+      .rect(x - (dw - w) / 2, y - (dh - h) / 2, dw, dh)
+      .fill({ color, alpha });
+  }
+
+  private pulseDuration(_totalLen: number): number {
+    return PixiGameRenderer.PULSE_DURATION_MS;
+  }
+
+  /** New link grows from nothing, overshoots, then settles to full size. */
+  private growLinkScale(key: string, now: number): number {
+    const start = this.growAt[key];
+    if (start == null) return 1;
+    const t = Math.max(0, Math.min(1, (now - start) / PixiGameRenderer.GROW_MS));
+    if (t < 0.45) return (t / 0.45) * 1.42;
+    return 1.42 - ((t - 0.45) / 0.55) * 0.42;
+  }
+
+  private growProgress(key: string, now: number, _totalLen: number): number {
+    const start = this.growAt[key];
+    if (start == null) return 1;
+    const t = (now - start) / PixiGameRenderer.GROW_MS;
+    if (t >= 1) return 1;
+    if (t <= 0) return 0;
+    return 1 - Math.pow(1 - t, 2);
+  }
+
+  private growAnimating(now: number): boolean {
+    if (!captureAnimFlags().grow) return false;
+    return Object.values(this.growAt).some(
+      (start) => now - start < PixiGameRenderer.PULSE_MAX_MS
+    );
+  }
+
+  /** Brightness peak for segment `segIndex` as the capture wave travels head → tail. */
+  private segmentPulse(
     segIndex: number,
     totalLen: number,
-    pulses: number[],
+    pulses: CapturePulse[],
     now: number
-  ): number {
-    if (pulses.length === 0 || totalLen === 0) return 0;
-    const D = PixiGameRenderer.PULSE_DURATION_MS;
-    const HALF_W = 0.16; // pulse width as fraction of body
-    let max = 0;
-    for (const startMs of pulses) {
-      const t = (now - startMs) / D;
+  ): { glow: number; reward: number } {
+    if (pulses.length === 0 || totalLen === 0) return { glow: 0, reward: 2 };
+    const D = this.pulseDuration(totalLen);
+    const halfW = 0.16;
+    let glow = 0;
+    let reward = 2;
+    for (const pulse of pulses) {
+      const t = (now - pulse.startMs) / D;
       if (t < 0 || t > 1.1) continue;
       const frac = totalLen > 1 ? segIndex / (totalLen - 1) : 0;
       const dist = Math.abs(frac - t);
-      max = Math.max(max, Math.max(0, 1 - dist / HALF_W));
+      const amount = Math.max(0, 1 - dist / halfW);
+      if (amount > glow) {
+        glow = amount;
+        reward = pulse.reward;
+      }
     }
-    return max;
+    return { glow, reward };
+  }
+
+  private getSegmentGlow(
+    segIndex: number,
+    totalLen: number,
+    pulses: CapturePulse[],
+    now: number
+  ): number {
+    return this.segmentPulse(segIndex, totalLen, pulses, now).glow;
+  }
+
+  private noteCaptures(state: GameState, now: number): void {
+    const flags = captureAnimFlags();
+    const alive = (pulse: CapturePulse) =>
+      now - pulse.startMs < PixiGameRenderer.PULSE_MAX_MS;
+
+    if (!state.gameStarted) {
+      this.p1Pulses = [];
+      this.p2Pulses = [];
+      this.growAt = {};
+      this.captureScales = [];
+      this.rememberCaptureBaseline(state);
+      return;
+    }
+
+    if (!state.gameEnded && state.tickCount !== this.captureNotedTick) {
+      this.captureNotedTick = state.tickCount;
+      if (anyCaptureAnimFlag(flags)) {
+        const coins = state.coinbases ?? [];
+        for (const prev of this.prevCoins) {
+          const still = coins.some(
+            (coin) => coin.pos[0] === prev.pos[0] && coin.pos[1] === prev.pos[1]
+          );
+          if (still) continue;
+          const eaters: { head: GridPos; pulses: CapturePulse[] }[] = [
+            { head: state.p1.head, pulses: this.p1Pulses },
+            { head: state.p2.head, pulses: this.p2Pulses },
+          ];
+          const eater = eaters.find(
+            (entry) =>
+              entry.head[0] === prev.pos[0] && entry.head[1] === prev.pos[1]
+          );
+          if (!eater) continue;
+          if (flags.tint) {
+            eater.pulses.push({ startMs: now, reward: prev.reward });
+          }
+          if (flags.scale) {
+            this.captureScales.push({
+              pos: [prev.pos[0], prev.pos[1]],
+              startMs: now,
+            });
+          }
+        }
+        if (flags.grow) {
+          if (
+            this.prevBodyLen.p1 >= 0 &&
+            state.p1.body.length > this.prevBodyLen.p1
+          ) {
+            this.growAt.p1 = now;
+          }
+          if (
+            this.prevBodyLen.p2 >= 0 &&
+            state.p2.body.length > this.prevBodyLen.p2
+          ) {
+            this.growAt.p2 = now;
+          }
+          for (let i = 0; i < state.extraSnakes.length; i += 1) {
+            const prev = this.prevBodyLen.extra[i] ?? -1;
+            if (prev >= 0 && state.extraSnakes[i]!.snake.body.length > prev) {
+              this.growAt[`e${i}`] = now;
+            }
+          }
+        }
+      }
+      this.rememberCaptureBaseline(state);
+    }
+
+    this.p1Pulses = this.p1Pulses.filter(alive);
+    this.p2Pulses = this.p2Pulses.filter(alive);
+    this.captureScales = this.captureScales.filter(
+      (hit) => now - hit.startMs < PixiGameRenderer.SCALE_MS
+    );
+  }
+
+  /** Scale only the cell the reward occupied, for a short pop. */
+  private scaleAtCell(pos: GridPos, now: number): number {
+    if (!captureAnimFlags().scale) return 1;
+    let scale = 1;
+    for (const hit of this.captureScales) {
+      if (hit.pos[0] !== pos[0] || hit.pos[1] !== pos[1]) continue;
+      const t = (now - hit.startMs) / PixiGameRenderer.SCALE_MS;
+      if (t < 0 || t > 1) continue;
+      const pop = Math.sin(t * Math.PI);
+      scale = Math.max(scale, 1 + pop * 1.05);
+    }
+    return scale;
+  }
+
+  private rememberCaptureBaseline(state: GameState): void {
+    this.prevScoreP1 = state.score[0];
+    this.prevScoreP2 = state.score[1];
+    this.prevCoins = (state.coinbases ?? []).map((coin) => ({
+      pos: [coin.pos[0], coin.pos[1]] as GridPos,
+      reward: coin.reward ?? 2,
+    }));
+    this.prevBodyLen = {
+      p1: state.p1.body.length,
+      p2: state.p2.body.length,
+      extra: state.extraSnakes.map((extra) => extra.snake.body.length),
+    };
   }
 
   // ── Coinbase drawing ───────────────────────────────────────────────────────
@@ -1397,25 +1606,8 @@ export class PixiGameRenderer {
       );
     }
 
-    // Pulse detection (fallback path shares same pulse arrays as PixiJS path)
     const nowFb = performance.now();
-    if (state.gameStarted && !state.gameEnded) {
-      if (this.prevScoreP1 >= 0 && state.score[0] > this.prevScoreP1)
-        this.p1Pulses.push(nowFb);
-      if (this.prevScoreP2 >= 0 && state.score[1] > this.prevScoreP2)
-        this.p2Pulses.push(nowFb);
-    } else if (!state.gameStarted) {
-      this.p1Pulses = [];
-      this.p2Pulses = [];
-    }
-    this.prevScoreP1 = state.score[0];
-    this.prevScoreP2 = state.score[1];
-    this.p1Pulses = this.p1Pulses.filter(
-      (t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS
-    );
-    this.p2Pulses = this.p2Pulses.filter(
-      (t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS
-    );
+    this.noteCaptures(state, nowFb);
 
     const fbP1Effects = getSnakeEffects(state, 0);
     const fbP2Effects = getSnakeEffects(state, 1);
