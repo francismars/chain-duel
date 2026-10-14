@@ -270,6 +270,84 @@
   width: min(100%, 280px);
   align-items: stretch;
 }
+
+/* Square and portrait: the three-column claim row clips both edges. */
+@media (max-aspect-ratio: 5/4), (max-width: 860px) {
+  #postGame {
+    justify-content: flex-start;
+    box-sizing: border-box;
+    padding: 72px 20px 28px;
+    overflow-x: clip;
+  }
+
+  #postGame .postgame-stage {
+    width: min(100%, 520px);
+  }
+
+  #postGame #winner {
+    font-size: clamp(28px, 7vmin, 48px);
+  }
+
+  #postGame #prize {
+    font-size: clamp(40px, 11vmin, 72px);
+  }
+
+  #postGame .postgame-claim-row {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 16px;
+    width: min(100%, 420px);
+  }
+
+  #postGame .postgame-claim-copy {
+    justify-self: center;
+    max-width: 36ch;
+    text-align: center;
+  }
+
+  #postGame #fees,
+  #postGame #claimText {
+    text-align: center;
+  }
+
+  #postGame #buttonsDiv {
+    justify-self: center;
+    width: min(100%, 320px);
+  }
+
+  #postGame #qrCode1,
+  #postGame #qrcodeLink canvas#qrCode1 {
+    width: clamp(132px, 26vmin, 188px) !important;
+    height: clamp(132px, 26vmin, 188px) !important;
+    max-width: none;
+    max-height: none;
+  }
+
+  #postGame .postgame-claim-row--menu3 {
+    width: min(100%, 420px);
+    min-width: 0;
+  }
+
+  #postGame .postgame-claim-row--menu3 #buttonsDiv {
+    height: auto;
+    min-height: 36px;
+  }
+
+  #postGame #socialFollow {
+    margin-top: 18px;
+    font-size: 13px;
+  }
+
+  #postGame #socialFollow .social-icon {
+    height: 16px;
+    margin-bottom: -3px;
+  }
+
+  #postGame #socialFollow .social-icon-x {
+    width: 13px;
+    height: 13px;
+  }
+}
 #postGame #buttonsDiv .button {
   width: 100%;
   min-height: 36px;
