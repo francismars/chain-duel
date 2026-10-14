@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createGameState } from '@/game/engine';
 import { GameAudioSystem } from './gameAudio';
+import { streakPops, tensionDebugSnapshot } from './tensionDebug';
 import { getTensionLevel } from './tension';
 
 function match() {
@@ -149,6 +150,9 @@ describe('game tension', () => {
       audio.updateGameState(state);
       vi.advanceTimersByTime(3500);
       expect(cue(name).volume).toBeCloseTo(volume);
+      const heard = tensionDebugSnapshot().layers.map((layer) => layer.name);
+      expect(heard).toContain('game');
+      expect(heard).toContain(name);
       for (const other of ['build', 'pressure', 'tension', 'critical']) {
         if (other !== name) expect(cue(other).volume).toBe(0);
         expect(cue(other).loop).toBe(true);
@@ -184,6 +188,73 @@ describe('game tension', () => {
       expect(cue(name).muted).toBe(false);
       expect(cue(name).currentTime).toBe(18);
     }
+    audio.stopAll();
+  });
+
+  it('raises the mix from a catch streak, then clears it on a death or the other player scoring', () => {
+    const audio = new GameAudioSystem();
+    const state = match();
+    audio.updateGameState(state);
+    for (let catchIndex = 1; catchIndex <= 8; catchIndex += 1) {
+      state.score = [1000 + catchIndex, 1000 - catchIndex];
+      audio.updateGameState(state);
+    }
+    expect(tensionDebugSnapshot().streakCount).toBe(8);
+    expect(tensionDebugSnapshot().streak).toBe(4);
+    expect(tensionDebugSnapshot().level).toBe(4);
+    expect(tensionDebugSnapshot().track).toBe('critical');
+    expect(streakPops()).toHaveLength(0);
+
+    state.p1.body = [];
+    audio.updateGameState(state);
+    expect(tensionDebugSnapshot().streakCount).toBe(0);
+
+    state.score = [1010, 990];
+    audio.updateGameState(state);
+    expect(tensionDebugSnapshot().streakCount).toBe(1);
+    state.score = [1000, 1000];
+    audio.updateGameState(state);
+    expect(tensionDebugSnapshot().streakCount).toBe(1);
+    state.score = [1000, 1004];
+    audio.updateGameState(state);
+    expect(tensionDebugSnapshot().streakCount).toBe(2);
+    audio.stopAll();
+    expect(tensionDebugSnapshot().active).toBe(false);
+    expect(streakPops()).toHaveLength(0);
+  });
+
+  it('shows FORK when a spawn-length chain resets a long one head-on', () => {
+    const audio = new GameAudioSystem();
+    const state = match();
+    state.p1.head = [10, 10];
+    state.p1.body = Array(7).fill([9, 10]);
+    state.p2.head = [12, 10];
+    state.p2.body = [[13, 10]];
+    audio.updateGameState(state);
+    state.p1.head = [4, 12];
+    state.p1.body = [[3, 12]];
+    state.p2.head = [44, 12];
+    state.p2.body = [[45, 12]];
+    audio.updateGameState(state);
+    expect(streakPops().some((pop) => pop.text === 'FORK')).toBe(true);
+    expect(streakPops().find((pop) => pop.text === 'FORK')).toMatchObject({
+      col: 10,
+      row: 10,
+    });
+
+    const wall = match();
+    wall.p1.head = [10, 10];
+    wall.p1.body = Array(7).fill([9, 10]);
+    wall.p2.head = [30, 10];
+    wall.p2.body = [[31, 10]];
+    audio.updateGameState(wall);
+    const before = streakPops().length;
+    wall.p1.head = [4, 12];
+    wall.p1.body = [[3, 12]];
+    audio.updateGameState(wall);
+    expect(streakPops().slice(before).some((pop) => pop.text === 'FORK')).toBe(
+      false
+    );
     audio.stopAll();
   });
 
