@@ -9,53 +9,6 @@
   z-index: 100;
 }
 
-.tension-debug {
-  position: absolute;
-  left: calc(100% + 0.7vw);
-  top: 0;
-  min-width: 7.2rem;
-  padding: 0.35rem 0.45rem;
-  background: rgba(0, 0, 0, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.78);
-  font-family: 'Inter', sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  pointer-events: none;
-}
-
-.tension-debug__idle,
-.tension-debug__track {
-  margin: 0;
-}
-
-.tension-debug__track {
-  color: rgba(111, 212, 168, 0.95);
-  margin-bottom: 0.3rem;
-}
-
-.tension-debug__audio {
-  margin: 0.35rem 0 0.15rem;
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.tension-debug ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.tension-debug li {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.8rem;
-}
-
-.tension-debug__lead {
-  color: rgba(255, 255, 255, 0.95);
-}
-
 .corner-btn {
   position: relative;
   width: 2.2vw;
@@ -161,10 +114,6 @@
 .corner-btn:focus-visible::after {
   opacity: 1;
   transform: translateY(-50%) translateX(0);
-}
-
-.corner-btn[aria-pressed='true']::after {
-  display: none;
 }
 
 @media (max-aspect-ratio: 1/1) {

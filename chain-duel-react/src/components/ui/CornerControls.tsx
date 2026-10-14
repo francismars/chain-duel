@@ -1,12 +1,7 @@
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
-import {
-  subscribeTensionDebug,
-  tensionDebugSnapshot,
-  type TensionDebugSnapshot,
-} from '@/game/audio/tensionDebug';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
 import './CornerControls.css';
 
@@ -19,66 +14,12 @@ function getStoredTvSafeInset(): boolean {
   }
 }
 
-const TENSION_ROWS = ['chain', 'walls', 'score', 'streak'] as const;
-
-function TensionDebugPanel({ snap }: { snap: TensionDebugSnapshot }) {
-  const leaders = TENSION_ROWS.filter(
-    (name) => snap.level > 0 && snap[name] === snap.level
-  );
-  return (
-    <div className="tension-debug" aria-live="polite">
-      {!snap.active ? (
-        <p className="tension-debug__idle">No match</p>
-      ) : (
-        <>
-          <p className="tension-debug__track">
-            {snap.track}
-            {snap.held ? ' held' : ''}
-          </p>
-          <ul>
-            {TENSION_ROWS.map((name) => (
-              <li
-                key={name}
-                className={
-                  leaders.includes(name) ? 'tension-debug__lead' : undefined
-                }
-              >
-                <span>{name}</span>
-                <span>{snap[name]}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="tension-debug__audio">Audio</p>
-          {snap.layers.length === 0 ? (
-            <p className="tension-debug__idle">Silent</p>
-          ) : (
-            <ul>
-              {snap.layers.map((layer) => (
-                <li key={layer.name} className="tension-debug__lead">
-                  <span>{layer.name}</span>
-                  <span>{Math.round(layer.volume * 100)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
 export function CornerControls() {
   const navigate = useNavigate();
   const { isMusicMuted, isMuted, toggleMusicMute, toggleMute } = useAudio();
   const nostr = useNostrSession();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [tvSafeInset, setTvSafeInset] = useState(getStoredTvSafeInset);
-  const [tensionOpen, setTensionOpen] = useState(false);
-  const tension = useSyncExternalStore(
-    subscribeTensionDebug,
-    tensionDebugSnapshot,
-    tensionDebugSnapshot
-  );
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -110,7 +51,6 @@ export function CornerControls() {
 
   return (
     <div className="corner-controls">
-      {tensionOpen ? <TensionDebugPanel snap={tension} /> : null}
       <button
         className="corner-btn"
         onClick={toggleFullscreen}
@@ -161,25 +101,6 @@ export function CornerControls() {
             rx="0.5"
             strokeDasharray="2 1.5"
           />
-        </svg>
-      </button>
-
-      <button
-        type="button"
-        className={`corner-btn ${tensionOpen ? 'corner-btn--tv-safe-on' : ''}`}
-        onClick={() => setTensionOpen((open) => !open)}
-        aria-pressed={tensionOpen}
-        aria-label={tensionOpen ? 'Hide tension levels' : 'Show tension levels'}
-        data-tooltip={tensionOpen ? 'Hide tension' : 'Tension'}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden
-        >
-          <path d="M4 16v4M10 10v10M16 6v14M22 2v18" />
         </svg>
       </button>
 
