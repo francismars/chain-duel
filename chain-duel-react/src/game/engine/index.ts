@@ -17,6 +17,7 @@ import {
   FFA_BOT_NAMES,
 } from '@/game/engine/constants';
 import { runAStar } from '@/game/engine/astar';
+import { captureRateLabel } from '@/game/engine/captureRateLabel';
 import { gameRandom } from '@/game/engine/runRng';
 import type {
   AiTier,
@@ -1143,6 +1144,7 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
     gainPos: player === 'P1' ? p1Pos : p2Pos,
     lossPos: player === 'P1' ? p2Pos : p1Pos,
     capturePercent,
+    captureRateLabel: captureRateLabel(state, index, capturePercent),
     p1YOffsetPx: 0,
     p2YOffsetPx: 0,
     alpha: 1,

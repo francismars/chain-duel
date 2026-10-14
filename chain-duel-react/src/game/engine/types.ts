@@ -49,6 +49,8 @@ export interface PointChange {
   lossPos?: GridPos;
   /** Capture tier used for this steal (shown on + pop). */
   capturePercent?: number;
+  /** Set only when this steal moves the chain into a new capture tier. */
+  captureRateLabel?: string;
   p1YOffsetPx: number;
   p2YOffsetPx: number;
   alpha: number;

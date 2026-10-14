@@ -16,6 +16,7 @@ type GlowTier = 's' | 'm' | 'l';
 type PopSpec = {
   mainText: string;
   labelText: string;
+  rateText?: string;
   x: number;
   y: number;
   value: number;
@@ -28,6 +29,7 @@ type PopSlot = {
   root: Container;
   main: Text;
   label: Text;
+  rate: Text;
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -177,6 +179,7 @@ function gainSpec(
   return {
     mainText: `+${change.value}`,
     labelText: SATS_LABEL,
+    rateText: change.captureRateLabel,
     x,
     y,
     value: change.value,
@@ -297,6 +300,14 @@ function drawPopCanvas(
   ctx.shadowBlur = glowBlur(tier, spec.isGain) * 0.45;
   drawFilledText(ctx, spec.labelText, cursorX, 1, fill);
 
+  if (spec.rateText && spec.isGain) {
+    const rateSize = Math.max(10, fontSize * 0.72);
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = baseAlpha;
+    ctx.font = `700 ${Math.round(rateSize)}px Inter, system-ui, sans-serif`;
+    drawFilledText(ctx, spec.rateText, 0, -fontSize * 0.95, fill);
+  }
+
   ctx.restore();
 }
 
@@ -372,6 +383,16 @@ export class PointChangeOverlay {
           fontSize
         );
         slot.label.visible = true;
+        if (spec.rateText && spec.isGain) {
+          const rateSize = Math.max(10, Math.round(fontSize * 0.72));
+          slot.rate.style = makePointChangeStyle(rateSize, tier, true, false);
+          slot.rate.text = spec.rateText;
+          slot.rate.position.set(0, -fontSize * 0.95);
+          slot.rate.visible = true;
+          slot.rate.alpha = 1;
+        } else {
+          slot.rate.visible = false;
+        }
 
         const x = Math.round(spec.x + pointChangeDriftX(spec.alpha, spec.drift));
         const y = Math.round(spec.y);
@@ -411,11 +432,19 @@ export class PointChangeOverlay {
       text.resolution = pixiTextResolution();
       text.roundPixels = true;
     }
+    const rate = new Text({
+      text: '',
+      style: makePointChangeStyle(11, 's', true, true),
+    });
+    rate.anchor.set(0.5, 0.5);
+    rate.resolution = pixiTextResolution();
+    rate.roundPixels = true;
+    root.addChild(rate);
     root.addChild(main);
     root.addChild(label);
     this.container.addChild(root);
 
-    const slot = { root, main, label };
+    const slot = { root, main, label, rate };
     this.pool.push(slot);
     return slot;
   }
