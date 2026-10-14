@@ -43,6 +43,11 @@ import {
   PointChangeOverlay,
 } from '@/game/render/pointChangeOverlay';
 import {
+  drawStreakPopsCanvas,
+  StreakPopOverlay,
+} from '@/game/render/streakPopOverlay';
+import { streakPops } from '@/game/audio/tensionDebug';
+import {
   EndGameOverlay,
   END_OVERLAY_DELAY_MS,
   END_RESOLVE_DURATION_MS,
@@ -107,6 +112,7 @@ export class PixiGameRenderer {
   private startReady = new OnlineStartReadyOverlay();
   private controls = new CanvasControlsOverlay();
   private pointChangesOverlay = new PointChangeOverlay();
+  private streakPopOverlay = new StreakPopOverlay();
   private startRevealTime = -1;
   private startLayoutKey = '';
   private startWordMeasureCtx: CanvasRenderingContext2D | null = null;
@@ -224,6 +230,7 @@ export class PixiGameRenderer {
       this.overlay.addChild(this.countdown1);
       this.overlay.addChild(this.countdownLfg);
       this.overlay.addChild(this.pointChangesOverlay.container);
+      this.overlay.addChild(this.streakPopOverlay.container);
       // Results cover the last capture's green/red amount popups.
       this.overlay.addChild(this.endOverlay.container);
       this.root.addChild(this.overlay);
@@ -272,6 +279,7 @@ export class PixiGameRenderer {
     }
     if (state.gameStarted && !state.gameEnded) {
       if ((state.pointChanges?.length ?? 0) > 0) return true;
+      if (streakPops().length > 0) return true;
       if ((state.powerUpItems?.length ?? 0) > 0) return true;
       if (this.p1Pulses.length > 0 || this.p2Pulses.length > 0) return true;
       if (this.growAnimating(performance.now())) return true;
@@ -678,6 +686,10 @@ export class PixiGameRenderer {
       colSize,
       rowSize
     );
+    if (this.streakPopOverlay.container.parent !== this.overlay) {
+      this.overlay.addChild(this.streakPopOverlay.container);
+    }
+    this.streakPopOverlay.render(colSize, rowSize);
 
     // ── Text overlays ─────────────────────────────────────────────────────────
     this.endOverlay.hide();
@@ -2033,6 +2045,7 @@ export class PixiGameRenderer {
     }
 
     drawPointChangesCanvas(ctx, state.pointChanges ?? [], colSize, rowSize);
+    drawStreakPopsCanvas(ctx, colSize, rowSize);
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

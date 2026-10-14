@@ -23,6 +23,7 @@ import type {
 import { useGamepad } from '@/hooks/useGamepad';
 import { canContinueOnlineAfterGame } from '@/game/engine';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
+import { advanceStreakPops, streakPops } from '@/game/audio/tensionDebug';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import {
   ONLINE_START_PROMPT_WORDS,
@@ -325,13 +326,15 @@ export default function OnlineGame({
         const renderState = useOnlinePointAnims
           ? withOnlinePointAnimations(raw, pointAnimationsRef.current)
           : raw;
+        const hadStreakPop = streakPops().length > 0;
+        advanceStreakPops();
         const popCount = renderState.pointChanges?.length ?? 0;
         const pointPopTail =
           popCount > 0 || prevPointPopCountRef.current > 0;
         prevPointPopCountRef.current = popCount;
         const snapshotChanged = snap !== lastPaintedSnapshot;
         const animActive = rendererRef.current.needsPaint(renderState);
-      if (snapshotChanged || animActive || pointPopTail) {
+      if (snapshotChanged || animActive || pointPopTail || hadStreakPop) {
         try {
           rendererRef.current.render(renderState, {
             replayView: replayViewRef.current,

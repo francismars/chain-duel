@@ -1,5 +1,6 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { advancePointChanges, getHudState, stepGame } from '@/game/engine';
+import { advanceStreakPops } from '@/game/audio/tensionDebug';
 import { applyHeldInputSteering } from '@/lib/controls/applyHeldInputSteering';
 import type { HeldInputState } from '@/lib/controls/heldDirectionSteering';
 import { isFfaMode } from '@/game/engine/ffa';
@@ -359,6 +360,7 @@ export function useGameRenderBridge({
         if (state.meta?.modeLabel !== 'ONLINE') {
           advancePointChanges(state);
         }
+        advanceStreakPops();
         if (simSteps > 0 || renderer.needsPaint(state)) {
           renderer.render(state, renderOpts());
         }
