@@ -1,4 +1,11 @@
+import { useSearchParams } from 'react-router-dom';
 import { OnlineVictoryReveal } from '@/components/online/OnlineVictoryReveal';
+import {
+  DEBUG_P1_SESSION,
+  DEBUG_P2_SESSION,
+  parseOnlinePreviewSide,
+  previewViewerSession,
+} from '@/lib/online/onlineUiDebug';
 import { PlayerRole, type OnlineRoomState } from '@/types/socket';
 
 const room = {
@@ -8,7 +15,20 @@ const room = {
   buyin: 10000,
   matchRound: 1,
   phase: 'postgame',
-  seats: {},
+  seats: {
+    [PlayerRole.Player1]: {
+      role: PlayerRole.Player1,
+      name: 'Satoshi',
+      sessionID: DEBUG_P1_SESSION,
+      status: 'paid',
+    },
+    [PlayerRole.Player2]: {
+      role: PlayerRole.Player2,
+      name: 'Hal',
+      sessionID: DEBUG_P2_SESSION,
+      status: 'paid',
+    },
+  },
   spectators: [],
   snapshot: {
     tick: 0,
@@ -44,5 +64,15 @@ const room = {
 } as OnlineRoomState;
 
 export default function OnlineFinishPreview() {
-  return <OnlineVictoryReveal room={room} onComplete={() => undefined} />;
+  const [searchParams] = useSearchParams();
+  const sessionID = previewViewerSession(
+    parseOnlinePreviewSide(searchParams.get('side'))
+  );
+  return (
+    <OnlineVictoryReveal
+      room={room}
+      sessionID={sessionID}
+      onComplete={() => undefined}
+    />
+  );
 }

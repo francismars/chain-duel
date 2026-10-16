@@ -28,6 +28,7 @@ import OnlineRoom from './pages/OnlineRoom';
 import OnlineRooms from './pages/OnlineRooms';
 import OnlinePostGame from './pages/OnlinePostGame';
 import OnlineFinishPreview from './pages/OnlineFinishPreview';
+import OnlineSeatPreview from './pages/OnlineSeatPreview';
 import './styles/index.css';
 
 function LegacyNetworkRedirect() {
@@ -80,10 +81,12 @@ function AppRoutes() {
         <Route path="/online" element={<OnlineRooms />} />
         <Route path="/online/r/:roomCode" element={<OnlineRoom />} />
         <Route path="/preview/online-finish" element={<OnlineFinishPreview />} />
+        <Route path="/preview/online-seat" element={<OnlineSeatPreview />} />
         <Route
           path="/preview/online-results"
           element={<OnlinePostGame />}
         />
+        <Route path="/preview/online-don" element={<OnlinePostGame />} />
         <Route path="/network/*" element={<LegacyNetworkRedirect />} />
       </Route>
     </Routes>

@@ -1607,7 +1607,11 @@ export default function Game() {
               ? 'HUMAN VS HUMAN / MATCH COMPLETE'
               : 'PRACTICE · 1v1 · CVG / MATCH COMPLETE'}
           </p>
-          <p className="match-end-card__name">PLAYER 1</p>
+          <p className="match-end-card__name">
+            {new URLSearchParams(window.location.search).get('side') === 'loser'
+              ? 'PLAYER 2'
+              : 'PLAYER 1'}
+          </p>
           <p className="match-end-card__wins">WINS</p>
           {endPreview === 'freeplay' ? (
             <div className="match-end-card__free">
