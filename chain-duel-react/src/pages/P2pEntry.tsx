@@ -235,7 +235,7 @@ export default function P2pEntry() {
   }, [navFocus, tournament]);
 
   const startLabel =
-    sessionKind === 'duel' ? 'Open game menu' : 'Start bracket';
+    sessionKind === 'duel' ? 'Start duel' : 'Start bracket';
 
   return (
     <div className="practice-hub practice-hub--practice p2p-entry-page">

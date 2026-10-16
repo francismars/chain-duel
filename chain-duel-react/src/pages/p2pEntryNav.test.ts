@@ -43,7 +43,7 @@ describe('moveNavFocus none state', () => {
 describe('moveNavFocus duel mode', () => {
   const tournament = false;
 
-  it('moves down from duel session through format to open game menu', () => {
+  it('moves down from duel session through format to start', () => {
     expect(
       moveNavFocus({ kind: 'session', idx: 0 }, 'down', tournament)
     ).toEqual({
