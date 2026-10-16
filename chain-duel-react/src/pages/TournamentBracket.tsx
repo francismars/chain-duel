@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { QRCodeCanvas } from 'qrcode.react';
+import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -27,6 +27,7 @@ import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import './tournbracket.css';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
+import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
 
 /** Strip external styles from SVG so page font CSS applies to inlined SVG. */
 function stripSvgStyle(svgText: string): string {
@@ -140,6 +141,18 @@ export default function TournamentBracket() {
   const paidCount = Object.keys(playersPaid).length;
   const canStart = paidCount >= numberOfPlayers;
   const refundPerPlayer = computeRefundPerPlayer(deposit);
+  const paymentQrVisible =
+    showPaymentPanel &&
+    panelView === 'payment' &&
+    !canStart &&
+    Boolean(payLink || nostrNote1);
+  const qrCompatPulse = useLnurlQrCompatiblePulse(paymentQrVisible);
+  const qrLinkClassName = [
+    'qr-code-link',
+    qrCompatPulse ? 'qr-code-link--compatible' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   // Flat player name array by slot index (mirrors legacy playersList)
   const playersList = useMemo<string[]>(() => {
@@ -784,14 +797,15 @@ export default function TournamentBracket() {
                       href={`https://njump.me/${nostrNote1}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="qr-code-link"
+                      className={qrLinkClassName}
                     >
                       <span className="qr-code-stack">
-                        <QRCodeCanvas
+                        <QRCodeSVG
                           id="qrTournament"
                           value={`nostr:${nostrNote1}`}
                           size={800}
                           level="M"
+                          marginSize={0}
                           className="qrcode"
                         />
                         {highlightDeposit && (
@@ -813,14 +827,15 @@ export default function TournamentBracket() {
                       href={`lightning:${payLink}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="qr-code-link"
+                      className={qrLinkClassName}
                     >
                       <span className="qr-code-stack">
-                        <QRCodeCanvas
+                        <QRCodeSVG
                           id="qrTournament"
                           value={payLink}
                           size={800}
                           level="M"
+                          marginSize={0}
                           className="qrcode"
                         />
                         {highlightDeposit && (

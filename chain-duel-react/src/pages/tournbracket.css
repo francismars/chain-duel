@@ -246,15 +246,33 @@
 
 /* Lightning gif overlay on QR when payment received (same pattern as GameMenu) */
 .tournbracket-page .bracketPayment .qr-code-link {
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-decoration: none;
   color: inherit;
+  line-height: 0;
+  --qr-compat-duration: 0.3s;
+  --qr-compat-ease: ease-in-out;
+  padding: 0.21vw;
+  box-sizing: border-box;
+  background: rgb(255 255 255 / 0%);
+  transition: background var(--qr-compat-duration) var(--qr-compat-ease);
+}
+
+.tournbracket-page .bracketPayment .qr-code-link.qr-code-link--compatible {
+  background: rgb(255 255 255 / 100%);
+}
+
+.tournbracket-page .bracketPayment .qr-code-link .label {
+  line-height: normal;
 }
 
 .tournbracket-page .bracketPayment .qr-code-stack {
   position: relative;
-  display: inline-block;
+  display: block;
   line-height: 0;
+  font-size: 0;
 }
 
 .tournbracket-page .bracketPayment .qrcodeDecoration {
@@ -265,6 +283,14 @@
   height: auto;
   pointer-events: none;
   z-index: 2;
+  transition: opacity var(--qr-compat-duration) var(--qr-compat-ease);
+}
+
+.tournbracket-page
+  .bracketPayment
+  .qr-code-link.qr-code-link--compatible
+  .qrcodeDecoration {
+  opacity: 0.12;
 }
 
 /* scalePop animation on sats deposited (matches legacy) */
@@ -348,11 +374,25 @@
   height: 15vw;
   max-width: none;
   max-height: none;
-  background: #fff;
+  background: transparent;
   padding: 0;
+  filter: invert(1);
+  mix-blend-mode: screen;
+  transition:
+    filter var(--qr-compat-duration) var(--qr-compat-ease),
+    mix-blend-mode var(--qr-compat-duration) var(--qr-compat-ease);
 }
 
-.tournbracket-page .bracketPayment .qrCodeDiv canvas.qrcode {
+.tournbracket-page
+  .bracketPayment
+  .qr-code-link.qr-code-link--compatible
+  .qrcode {
+  filter: invert(0);
+  mix-blend-mode: normal;
+}
+
+.tournbracket-page .bracketPayment .qrCodeDiv canvas.qrcode,
+.tournbracket-page .bracketPayment .qrCodeDiv svg.qrcode {
   width: 15vw !important;
   height: 15vw !important;
 }
