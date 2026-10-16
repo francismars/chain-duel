@@ -50,6 +50,7 @@ export default function TournamentBracket() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const isNostrTournament = params.get('mode') === 'tournamentnostr';
+  const isFinishedPreview = params.get('preview') === 'finished';
   const { socket } = useSocket();
 
   useGamepad(true);
@@ -123,7 +124,7 @@ export default function TournamentBracket() {
     setNostrNote1('');
     setNostrCode('');
     timesWithdrawnRef.current = 0;
-    if (params.get('preview') === 'finished') {
+    if (isFinishedPreview) {
       setPlayersPaid({
         'Player 1': { name: 'Ada' },
         'Player 2': { name: 'Bea' },
@@ -134,7 +135,7 @@ export default function TournamentBracket() {
       setLoading(false);
       setShowPaymentPanel(false);
     }
-  }, [urlDeposit, numberOfPlayersFromUrl, isNostrTournament, params]);
+  }, [urlDeposit, numberOfPlayersFromUrl, isNostrTournament, isFinishedPreview]);
 
   // Displayed buy-in follows URL by default, then backend min when provided.
   const finalPrize = computeFinalPrize(numberOfPlayers, deposit);
@@ -229,6 +230,7 @@ export default function TournamentBracket() {
         min: number;
       };
     }) => {
+      if (isFinishedPreview) return;
       if (d.gameInfo?.numberOfPlayers)
         setNumberOfPlayers(d.gameInfo.numberOfPlayers);
       const incomingMin =
@@ -241,13 +243,23 @@ export default function TournamentBracket() {
         setDeposit(parseInt(String(incomingMin), 10));
       }
       if (d.lnurlp) setPayLink(d.lnurlp);
-      if (d.gameInfo?.players) setPlayersPaid(d.gameInfo.players);
+      if (
+        !isFinishedPreview &&
+        d.gameInfo?.players &&
+        Object.keys(d.gameInfo.players).length > 0
+      ) {
+        setPlayersPaid(d.gameInfo.players);
+      }
       if (d.nostrMeta) {
         setNostrNote1(d.nostrMeta.note1);
         setNostrCode(d.nostrMeta.emojis);
       }
 
-      if (d.gameInfo?.winners && d.gameInfo.winners.length > 0) {
+      if (
+        !isFinishedPreview &&
+        d.gameInfo?.winners &&
+        d.gameInfo.winners.length > 0
+      ) {
         setWinnersList(d.gameInfo.winners as string[]);
         setPreStartReady(false);
         setShowPaymentPanel(false);
@@ -273,16 +285,17 @@ export default function TournamentBracket() {
         }
       }
     },
-    [navigate]
+    [navigate, isFinishedPreview]
   );
 
   const handleTournamentPayments = useCallback(
     (players: Record<string, TournamentPlayerIdentity>) => {
+      if (isFinishedPreview || Object.keys(players).length === 0) return;
       setPlayersPaid(players);
       setHighlightDeposit(true);
       setTimeout(() => setHighlightDeposit(false), 1200);
     },
-    []
+    [isFinishedPreview]
   );
 
   const handleTournamentCancel = useCallback(
@@ -448,7 +461,10 @@ export default function TournamentBracket() {
       const n = svgEl.querySelector<SVGElement>(`#${id}_name`);
       const r = svgEl.querySelector<SVGElement>(`#${id}_rect`);
       const p = svgEl.querySelector<SVGElement>(`#${id}_path`);
-      if (n) n.style.fill = 'black';
+      if (n) {
+        n.style.fill = 'black';
+        n.style.webkitTextFillColor = 'black';
+      }
       if (r) r.style.fill = '#fff';
       if (p) {
         p.style.opacity = '1';
@@ -506,12 +522,18 @@ export default function TournamentBracket() {
 
       WN.push(winnerName);
 
+      // An empty pass (roster not ready yet) must not wipe a name already shown.
+      if (!winnerName.trim()) continue;
+
       // Write the advancing winner's name into the next-round SVG slot
       const isFinal = i + 1 === numberOfPlayers - 1;
       if (isFinal) {
         const wn = svgEl.querySelector<SVGElement>('#Winner_name');
         const wr = svgEl.querySelector<SVGElement>('#Winner_rect');
-        if (wn) wn.style.fill = 'black';
+        if (wn) {
+          wn.style.fill = 'black';
+          wn.style.webkitTextFillColor = 'black';
+        }
         if (wr) wr.style.fill = '#fff';
         setAdvancingName('Winner', winnerName);
       } else {
@@ -1021,6 +1043,9 @@ export default function TournamentBracket() {
       {/* ── Tournament finished: champion panel (matches legacy tournFinishedDiv) ── */}
       {tournamentPhase === 'finished' && (
         <SoloZapRadiatingLines className="end-screen-rays" />
+      )}
+      {tournamentPhase === 'finished' && (
+        <div className="tournbracket-lines-scrim" aria-hidden="true" />
       )}
       {tournamentPhase === 'finished' && (
         <div className="tournFinishedDiv" id="tournFinishedDiv">

@@ -53,6 +53,21 @@
   overflow: visible;
 }
 
+/* Sits above the radiating-line canvas and under the bracket, champion panel, and stats. */
+.tournbracket-page .tournbracket-lines-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: rgb(0 0 0 / 62%);
+  pointer-events: none;
+}
+
+.tournbracket-page .tournbracket-header,
+.tournbracket-page .tournbracket-middle,
+.tournbracket-page .bracketDetails {
+  z-index: 2;
+}
+
 .tournbracket-page #bracket {
   width: 100%;
   max-width: none;
@@ -620,9 +635,12 @@
 .tournbracket-page .tournFinishedDiv {
   width: 100%;
   position: fixed;
-  /* Higher on screen than legacy 4vw — clears thumb reach / bottom chrome */
-  bottom: clamp(2.75rem, 10vw, 6.5rem);
-  padding: 1vw;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  /* Clear the Players / Prize / Buy In strip. Legacy sat at bottom: 4vw with a 19vw block. */
+  bottom: clamp(6.5rem, 18vh, 11rem);
+  padding: 1vw 1vw 0.4vw;
   box-sizing: border-box;
   text-align: center;
   background: radial-gradient(
@@ -632,6 +650,11 @@
     #00000000,
     #00000000
   );
+}
+
+.tournbracket-page .tournFinishedDiv h1 {
+  margin: 0.15vw 0 0.35vw;
+  line-height: 0.9;
 }
 
 .tournbracket-page .tournFinishedDiv h2.tourn-finished-headline {
@@ -688,7 +711,9 @@
 }
 
 .tournbracket-page #winnerName {
+  display: block;
   font-size: 7vw;
+  line-height: 0.9;
 }
 
 .tournbracket-page .claimSatsButton {
