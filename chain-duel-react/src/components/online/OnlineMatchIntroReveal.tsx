@@ -23,6 +23,8 @@ export type OnlineMatchIntroRevealProps = {
   sessionID?: string;
   socketID?: string;
   onComplete: () => void;
+  /** Keep the reveal on screen for UI previews. */
+  hold?: boolean;
 };
 
 export function OnlineMatchIntroReveal({
@@ -30,6 +32,7 @@ export function OnlineMatchIntroReveal({
   sessionID = '',
   socketID = '',
   onComplete,
+  hold = false,
 }: OnlineMatchIntroRevealProps) {
   const data = useMemo(
     () => buildMatchIntroData(room, { sessionID, socketID }),
@@ -54,6 +57,10 @@ export function OnlineMatchIntroReveal({
     setSkippable(false);
     setShowExit(false);
 
+    if (hold) {
+      return;
+    }
+
     const skipTimer = window.setTimeout(() => {
       setSkippable(true);
     }, MATCH_REVEAL_SKIP_AFTER_MS);
@@ -71,7 +78,7 @@ export function OnlineMatchIntroReveal({
       window.clearTimeout(exitTimer);
       window.clearTimeout(completeTimer);
     };
-  }, [finish, room.roomId, room.matchRound]);
+  }, [finish, hold, room.roomId, room.matchRound]);
 
   useEffect(() => {
     if (!skippable) {
@@ -121,6 +128,10 @@ export function OnlineMatchIntroReveal({
     >
       <div className="online-reveal__scrim" aria-hidden="true" />
       <div className="online-reveal__vignette" aria-hidden="true" />
+      <header className="online-reveal__brand">
+        <h2>CHAIN</h2>
+        <h2>DUEL</h2>
+      </header>
       <div className="online-reveal__pulse" aria-hidden="true" />
 
       <p className="online-reveal__kicker">{data.kicker}</p>

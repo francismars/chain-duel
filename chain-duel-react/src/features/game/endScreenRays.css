@@ -22,6 +22,11 @@ body:has(.end-screen-rays--burst) :is(#gameCanvas, .players, .points, .game-hud-
   animation: match-end-fade 0.9s ease 1.05s forwards;
 }
 
+.match-end-layer__rays--instant {
+  opacity: 1;
+  animation: none;
+}
+
 @keyframes match-end-burst-out {
   to {
     opacity: 0;
@@ -162,6 +167,55 @@ body:has(.match-end-layer) header#brand {
   bottom: max(28px, 8vh);
 }
 
+.match-end-card--instant {
+  background-color: rgb(5 5 5 / 88%);
+  animation: none;
+}
+
+.match-end-card--instant :is(
+  .match-end-card__kicker,
+  .match-end-card__name,
+  .match-end-card__wins,
+  .match-end-card__sats,
+  .match-end-card__note,
+  .match-end-card__prompt
+) {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.duel-finish__continue {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.duel-finish__progress {
+  position: absolute;
+  left: 6vw;
+  right: 6vw;
+  bottom: max(16px, 4vh);
+  height: 2px;
+  background: white;
+  transform-origin: left;
+  animation: duel-finish-progress var(--reveal-exit-ms) linear both;
+}
+
+@keyframes duel-finish-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 .match-end-card #sponsorship-match-end {
   position: absolute;
   top: max(18px, 4.5vh);
@@ -261,13 +315,13 @@ body:has(.match-end-layer) header#brand {
 
 #postGame > :not(.end-screen-rays),
 .online-postgame-page > :not(.end-screen-rays),
-.duel-finish > :not(.end-screen-rays),
-.tournbracket-page .tournFinishedDiv {
+.duel-finish > :not(.end-screen-rays) {
   position: relative;
   z-index: 1;
 }
 
-#postGame > .postgame-scrim {
+#postGame > .postgame-scrim,
+.online-postgame-page > .postgame-scrim {
   position: fixed;
   inset: 0;
   z-index: 0;

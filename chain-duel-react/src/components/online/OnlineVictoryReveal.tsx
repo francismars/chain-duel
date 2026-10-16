@@ -104,54 +104,49 @@ export function OnlineVictoryReveal({
 
   const ariaLabel = `${winner.name} wins. ${netPrize.toLocaleString()} sats net prize.`;
 
+  const prompt = showExit
+    ? 'OPENING RESULTS'
+    : skippable
+      ? 'PRESS ANY BUTTON TO CONTINUE'
+      : '';
+
   return (
     <div
-      className="duel-finish"
+      className="match-end-layer"
       role="status"
       aria-live="polite"
       aria-label={ariaLabel}
     >
-      <SoloZapRadiatingLines className="end-screen-rays" />
-      <div className="duel-finish__sheet">
-        <header className="duel-finish__masthead">
-          <span>CHAIN DUEL</span>
-          <span>ROUND {room.matchRound ?? 1} / FINAL</span>
-        </header>
-        <div className="duel-finish__hero">
-          <p className="duel-finish__eyebrow">MATCH COMPLETE</p>
-          <div className="duel-finish__identity">
-            {winner.picture && <img src={winner.picture} alt="" />}
-            <h2>{winner.name}</h2>
-          </div>
-          <div className="duel-finish__winning-line">
-            <p className="duel-finish__wins">WINS</p>
-            <p className="duel-finish__amount">
-              {netPrize.toLocaleString()} <span>SATS NET</span>
-            </p>
-          </div>
-        </div>
-        <div className="duel-finish__ledger">
-          <div>
-            <span>FINAL SCORE · SATS</span>
-            <strong>
-              {winner.score.toLocaleString()}{' '}
-              <small>/ {loser.score.toLocaleString()}</small>
-            </strong>
-          </div>
-          <div>
-            <span>OPPONENT</span>
-            <strong className="duel-finish__opponent">{loser.name}</strong>
-          </div>
-        </div>
-        <p className="duel-finish__footer">{footerCopy}</p>
-        <div className="duel-finish__navigation">
-          <span>{showExit ? 'OPENING RESULTS' : 'MATCH COMPLETE'}</span>
-          {skippable && (
-            <button type="button" onClick={finish}>
-              CONTINUE <span aria-hidden="true">↗</span>
+      <SoloZapRadiatingLines
+        className="end-screen-rays match-end-layer__rays match-end-layer__rays--instant"
+      />
+      <div className="match-end-card match-end-card--instant">
+        <p className="match-end-card__kicker">
+          ROUND {room.matchRound ?? 1} / FINAL / MATCH COMPLETE
+        </p>
+        <p className="match-end-card__name">{winner.name.toUpperCase()}</p>
+        <p className="match-end-card__wins">WINS</p>
+        <p className="match-end-card__sats">
+          {netPrize.toLocaleString()} SATS
+        </p>
+        <p className="match-end-card__note">
+          {winner.score.toLocaleString()} / {loser.score.toLocaleString()} ·{' '}
+          {loser.name.toUpperCase()}
+        </p>
+        <p className="match-end-card__note">{footerCopy}</p>
+        {prompt ? (
+          skippable ? (
+            <button
+              type="button"
+              className="match-end-card__prompt duel-finish__continue"
+              onClick={finish}
+            >
+              {prompt}
             </button>
-          )}
-        </div>
+          ) : (
+            <p className="match-end-card__prompt">{prompt}</p>
+          )
+        ) : null}
         {showExit && (
           <div
             className="duel-finish__progress"
