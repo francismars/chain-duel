@@ -233,6 +233,8 @@ export type OnlineRoomLobbyProps = {
   roomId?: string;
   roomCode?: string;
   externalRoom?: OnlineRoomState | null;
+  /** When false, the full-room spectator stamp stays hidden. */
+  showFullRoomNotice?: boolean;
 };
 
 export default function OnlineRoomLobby({
@@ -240,6 +242,7 @@ export default function OnlineRoomLobby({
   roomId: roomIdProp,
   roomCode: _roomCodeProp,
   externalRoom,
+  showFullRoomNotice = true,
 }: OnlineRoomLobbyProps = {}) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -666,7 +669,7 @@ export default function OnlineRoomLobby({
     };
     const syncRoomPresence = () => {
       refreshLocalIdentity();
-      if (!roomId) {
+      if (!roomId || externalRoom?.roomId === 'preview') {
         return;
       }
       socket.emit('getOnlineRoomState', { roomId });
@@ -734,7 +737,7 @@ export default function OnlineRoomLobby({
       socket.off('session', onSession);
       socket.off('connect', syncRoomPresence);
     };
-  }, [roomId, socket, kind1]);
+  }, [roomId, socket, kind1, externalRoom]);
 
   useEffect(() => {
     if (!socket) {
@@ -835,7 +838,7 @@ export default function OnlineRoomLobby({
   }, [socket, nostrLinkStorageKey]);
 
   useEffect(() => {
-    if (!socket || !roomId) {
+    if (!socket || !roomId || roomId === 'preview') {
       return;
     }
     const measure = () => {
@@ -1192,6 +1195,53 @@ export default function OnlineRoomLobby({
   const nostrUri = kind1 ? `nostr:${kind1}` : '';
   const p1 = room?.seats['Player 1'];
   const p2 = room?.seats['Player 2'];
+  const [seatClaimAnim, setSeatClaimAnim] = useState({ p1: false, p2: false });
+  const seatPaidSeenRef = useRef<{
+    ready: boolean;
+    p1: boolean;
+    p2: boolean;
+  }>({
+    ready: false,
+    p1: false,
+    p2: false,
+  });
+  const seatClaimTimersRef = useRef<{ p1: number; p2: number }>({
+    p1: 0,
+    p2: 0,
+  });
+  const p1Paid = p1?.status === 'paid';
+  const p2Paid = p2?.status === 'paid';
+  const totalPrizeSats =
+    (p1Paid ? (p1?.paidAmount ?? room?.buyin ?? 0) : 0) +
+    (p2Paid ? (p2?.paidAmount ?? room?.buyin ?? 0) : 0);
+
+  useEffect(() => {
+    if (!room) return;
+    const seen = seatPaidSeenRef.current;
+    if (!seen.ready) {
+      seen.ready = true;
+      seen.p1 = p1Paid;
+      seen.p2 = p2Paid;
+      return;
+    }
+    const next = { p1: p1Paid, p2: p2Paid };
+    (['p1', 'p2'] as const).forEach((key) => {
+      const wasPaid = seen[key];
+      seen[key] = next[key];
+      if (wasPaid || !next[key]) return;
+      if (
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ) {
+        return;
+      }
+      window.clearTimeout(seatClaimTimersRef.current[key]);
+      setSeatClaimAnim((prev) => ({ ...prev, [key]: true }));
+      seatClaimTimersRef.current[key] = window.setTimeout(() => {
+        setSeatClaimAnim((prev) => ({ ...prev, [key]: false }));
+      }, 1100);
+    });
+  }, [room, p1Paid, p2Paid]);
   const p1AvatarSrc = isMatchEnded
     ? p1?.picture ||
       room?.postGame?.p1Picture ||
@@ -2372,6 +2422,7 @@ export default function OnlineRoomLobby({
               'online-lobby-arena-seat',
               'online-lobby-arena-seat--p1',
               isMyP1Seat ? 'online-lobby-arena-seat--mine' : '',
+              seatClaimAnim.p1 ? 'online-lobby-arena-seat--claim' : '',
               seatHighlightLobby && isMyP1Seat && p1?.ready === true
                 ? 'online-lobby-arena-seat--ready'
                 : '',
@@ -2429,7 +2480,9 @@ export default function OnlineRoomLobby({
             <span className="online-lobby-arena-vs" aria-hidden="true">
               VS
             </span>
-            <span className="online-lobby-arena-state">{arenaCenterText}</span>
+            <span className="online-lobby-arena-state">
+              <span>{arenaCenterText}</span>
+            </span>
             {(room?.spectators.length ?? 0) > 0 ? (
               <span className="online-lobby-arena-spectators">
                 {room?.spectators.length} watching
@@ -2443,6 +2496,7 @@ export default function OnlineRoomLobby({
               'online-lobby-arena-seat',
               'online-lobby-arena-seat--p2',
               isMyP2Seat ? 'online-lobby-arena-seat--mine' : '',
+              seatClaimAnim.p2 ? 'online-lobby-arena-seat--claim' : '',
               seatHighlightLobby && isMyP2Seat && p2?.ready === true
                 ? 'online-lobby-arena-seat--ready'
                 : '',
@@ -2525,14 +2579,34 @@ export default function OnlineRoomLobby({
           ) : null}
 
           {/* Spectator — room full, or registration closed after match */}
-          {isSpectatingFullRoom ? (
-            <div className="online-lobby-pin-card">
-              <p className="online-lobby-label">SPECTATING</p>
-              <p className="online-lobby-pin">ROOM FULL</p>
-              <p className="online-lobby-copy">
-                Both seats are taken. Watch here — the match starts when both
-                players confirm on the arena.
-              </p>
+          {isSpectatingFullRoom && showFullRoomNotice ? (
+            <div className="online-lobby-pin-card online-lobby-pin-card--overlay">
+              <div className="online-lobby-full-room">
+                <div className="online-lobby-full-room-players">
+                  <div className="online-lobby-full-room-player">
+                    <img
+                      src={p1AvatarSrc || '/images/loading.gif'}
+                      alt={p1?.name || 'Player 1'}
+                    />
+                    <p>{p1NameDisplay}</p>
+                  </div>
+                  <div className="online-lobby-full-room-player">
+                    <img
+                      src={p2AvatarSrc || '/images/loading.gif'}
+                      alt={p2?.name || 'Player 2'}
+                    />
+                    <p>{p2NameDisplay}</p>
+                  </div>
+                </div>
+                <div className="online-lobby-full-room-mark">
+                  <p className="online-lobby-label">SPECTATING</p>
+                  <p className="online-lobby-pin">LOCKED IN</p>
+                  <p className="online-lobby-full-room-prize">
+                    {totalPrizeSats.toLocaleString()}{' '}
+                    <span className="online-lobby-full-room-prize-unit">sats</span>
+                  </p>
+                </div>
+              </div>
             </div>
           ) : null}
 
