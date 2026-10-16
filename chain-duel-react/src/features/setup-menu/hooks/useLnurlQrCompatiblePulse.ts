@@ -7,7 +7,7 @@ import {
 /**
  * Periodically switches LNURL QR codes into scanner-friendly mode
  * (quiet zone + standard black-on-white) for a few seconds, then reverts.
- * Cycle: normal → wait 5s → pulse 3s → repeat.
+ * Cycle: normal → wait 5s → pulse 5s → repeat.
  */
 export function useLnurlQrCompatiblePulse(enabled: boolean) {
   const [pulseActive, setPulseActive] = useState(false);
