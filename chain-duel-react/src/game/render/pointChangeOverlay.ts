@@ -9,6 +9,7 @@ const LOSS_GLOW = 0xff7a6a;
 const LABEL_SIZE_RATIO = 0.52;
 const LABEL_ALPHA = 0.58;
 const POP_FONT_SCALE = 0.92;
+const GAIN_SIZE_SCALE = 0.8;
 const SATS_LABEL = 'sats';
 
 type GlowTier = 's' | 'm' | 'l';
@@ -266,7 +267,9 @@ function drawPopCanvas(
   cellSize: number
 ): void {
   const scale = pointChangePopScale(spec.alpha);
-  const fontSize = pointChangeFontSize(spec.value, cellSize);
+  const fontSize =
+    pointChangeFontSize(spec.value, cellSize) *
+    (spec.isGain ? GAIN_SIZE_SCALE : 1);
   const labelSize = Math.max(9, fontSize * LABEL_SIZE_RATIO);
   const dx = pointChangeDriftX(spec.alpha, spec.drift);
   const tier = glowTier(spec.value);
@@ -355,7 +358,10 @@ export class PointChangeOverlay {
         const slot = this.acquire(used);
         used += 1;
 
-        const fontSize = Math.round(pointChangeFontSize(spec.value, cellSize));
+        const fontSize = Math.round(
+          pointChangeFontSize(spec.value, cellSize) *
+            (spec.isGain ? GAIN_SIZE_SCALE : 1)
+        );
         const labelSize = Math.max(9, Math.round(fontSize * LABEL_SIZE_RATIO));
         const tier = glowTier(spec.value);
 

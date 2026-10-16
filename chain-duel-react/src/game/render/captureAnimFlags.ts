@@ -7,7 +7,7 @@ export type CaptureAnimFlags = {
 const FLAGS: CaptureAnimFlags = {
   grow: true,
   tint: false,
-  scale: true,
+  scale: false,
 };
 
 export function captureAnimFlags(): CaptureAnimFlags {
