@@ -379,9 +379,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  border-bottom: 1px solid #777;
-  padding-bottom: 18px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 .online-postgame-page .online-postgame-kicker {
   font:
@@ -392,8 +390,8 @@
   color: #aaa;
 }
 .online-postgame-page .online-postgame-result {
-  padding: 28px 0;
-  border-block: 1px solid #777;
+  padding: 0;
+  border: none;
   gap: 24px;
 }
 .online-postgame-page .online-postgame-winner-name {
@@ -403,7 +401,8 @@
   overflow-wrap: anywhere;
 }
 .online-postgame-page .online-postgame-avatar {
-  border-radius: 0;
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / 0.28);
   box-shadow: none;
 }
 .online-postgame-page .online-postgame-prize {
@@ -432,18 +431,40 @@
   animation: none;
   font-size: 11px;
 }
+.online-postgame-page .button.online-postgame-btn-don {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+}
 .online-postgame-page
-  .button.online-postgame-btn:not(:disabled):not(.disabled):is(
-    :hover,
-    :focus-visible,
-    .online-selected
-  ) {
+  .button.online-postgame-btn:not(:disabled):not(.disabled):not(
+    .online-postgame-btn-back
+  ):is(:hover, :focus-visible, .online-selected) {
   background: white;
   color: black;
   border-color: white;
   box-shadow: none;
   outline: 2px solid white;
   outline-offset: 3px;
+}
+.online-postgame-page
+  .button.online-postgame-btn-back:is(
+    :hover,
+    :focus-visible,
+    .online-selected
+  ) {
+  color: #fff;
+  background-color: transparent;
+}
+.online-postgame-page
+  .button.online-postgame-btn.online-postgame-btn-don:not(:disabled):not(
+    .disabled
+  ):not(.online-postgame-btn-back):is(:hover, :focus-visible, .online-selected) {
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
 }
 .online-postgame-page .online-postgame-round-winner-crown {
   display: none;
