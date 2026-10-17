@@ -628,3 +628,102 @@
   height: 2cqw;
   margin: 0 0.4vw;
 }
+
+/* Preview: two payment stations, prize shared above them. */
+.gamemenu-preview.game-setup-page .game-setup-middle,
+html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
+  max-height: none;
+  justify-content: center;
+  padding-bottom: 0;
+}
+
+.gamemenu-preview #centerSection {
+  display: none;
+}
+
+html.tv-safe-inset .gamemenu-preview #bottomInfo,
+.gamemenu-preview #bottomInfo {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 3rem;
+  row-gap: 0.6rem;
+  align-items: start;
+  justify-items: center;
+  width: min(760px, calc(100% - 5rem));
+  margin: 0.25rem auto 0;
+  padding: 0;
+}
+
+.gamemenu-preview .prizeinfocard {
+  order: -1;
+  grid-column: 1 / -1;
+  width: auto;
+  justify-content: center;
+}
+
+.gamemenu-preview #player1card,
+.gamemenu-preview #player2card {
+  width: auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.gamemenu-preview #player2card {
+  flex-direction: column-reverse;
+}
+
+.gamemenu-preview .qrcodeContainer .qrcode {
+  width: 18vw;
+  height: 18vw;
+  max-width: 200px;
+  max-height: 200px;
+}
+
+.gamemenu-preview .player-card-info {
+  height: auto;
+  align-items: center;
+  text-align: center;
+  margin-top: 0.6rem;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo,
+.gamemenu-page.gamemenu-preview #player2cardinfo {
+  align-items: center;
+  text-align: center;
+  padding: 0;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer,
+.gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
+.gamemenu-page.gamemenu-preview #player1cardinfo .condensed,
+.gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+  align-self: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.gamemenu-page.gamemenu-preview #player2satsContainer,
+.gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+  flex-direction: row-reverse;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo .deposit-message,
+.gamemenu-page.gamemenu-preview #player2cardinfo .deposit-message {
+  display: none;
+}
+
+.gamemenu-preview .gamemenu-preview-deposit {
+  grid-column: 1 / -1;
+  max-width: 28rem;
+  margin-top: 0.2rem;
+  text-align: center;
+}
+
+.gamemenu-preview #gameButtons {
+  padding-top: 1.1rem;
+}

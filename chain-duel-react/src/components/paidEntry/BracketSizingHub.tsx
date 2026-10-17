@@ -25,6 +25,8 @@ export interface BracketSizingHubProps {
   onPlayersChange: (n: 4 | 8 | 16) => void;
   onDepositChange: (sats: number) => void;
   playSelect: () => void;
+  /** Subset of buy-in amounts. Defaults to every 10K step through 100K. */
+  buyinSteps?: readonly number[];
   /** Keyboard/gamepad highlight (P2P entry). */
   menuFocus?: P2pNavFocus | null;
   /** Keep nav model in sync when using mouse / second gamepad. */
@@ -50,6 +52,7 @@ export const BracketSizingHub = forwardRef<
     onPlayersChange,
     onDepositChange,
     playSelect,
+    buyinSteps = BUYIN_STEPS,
     menuFocus,
     onMenuFocus,
   },
@@ -74,13 +77,13 @@ export const BracketSizingHub = forwardRef<
         onPlayersChange(n);
       },
       triggerBuyinPill: (i: number) => {
-        const sats = BUYIN_STEPS[i];
+        const sats = buyinSteps[i];
         if (sats === undefined) return;
         playSelect();
         onDepositChange(sats);
       },
     }),
-    [onDepositChange, onPlayersChange, playSelect]
+    [buyinSteps, onDepositChange, onPlayersChange, playSelect]
   );
 
   return (
@@ -136,7 +139,7 @@ export const BracketSizingHub = forwardRef<
             role="group"
             aria-label="Buy-in in sats"
           >
-            {BUYIN_STEPS.map((sats, i) => {
+            {buyinSteps.map((sats, i) => {
               const active = deposit === sats;
               return (
                 <button

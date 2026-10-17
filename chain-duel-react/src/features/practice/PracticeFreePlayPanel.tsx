@@ -70,6 +70,12 @@ interface PracticeFreePlayPanelProps {
   footerStartRef: RefObject<HTMLButtonElement | null>;
   onExitToPlayStyle?: () => void;
   onEnterFooter?: (which: 'back' | 'start') => void;
+  /** `stepped` picks a format first, then opens that format's options. */
+  flow?: 'flat' | 'stepped';
+  onFlowChange?: (state: {
+    step: 'format' | 'options';
+    format: MatchFormat;
+  }) => void;
 }
 
 export const PracticeFreePlayPanel = forwardRef<
@@ -83,6 +89,8 @@ export const PracticeFreePlayPanel = forwardRef<
     footerStartRef,
     onExitToPlayStyle,
     onEnterFooter,
+    flow = 'flat',
+    onFlowChange,
   },
   ref
 ) {
@@ -95,6 +103,8 @@ export const PracticeFreePlayPanel = forwardRef<
   const [slotHuman, setSlotHuman] = useState<boolean[]>([...FFA_DEFAULT_SLOTS]);
   const [aiTier, setAiTier] = useState<AiTier>('stacker');
   const [powerup, setPowerup] = useState(false);
+  const [step, setStep] = useState<'format' | 'options'>('format');
+  const stepped = flow === 'stepped';
 
   const [navFocus, setNavFocus] = useState<PracticeNavFocus>({
     kind: 'format',
@@ -126,7 +136,8 @@ export const PracticeFreePlayPanel = forwardRef<
     if (next === 'ffa') {
       setSlotHuman([...FFA_DEFAULT_SLOTS]);
     }
-  }, []);
+    if (flow === 'stepped') setStep('options');
+  }, [flow]);
 
   const toggleSlot = useCallback(
     (idx: number) => {
@@ -216,14 +227,22 @@ export const PracticeFreePlayPanel = forwardRef<
     setNavFocus({ kind: 'rulePowerup' });
   }, []);
 
+  const backToFormat = useCallback(() => {
+    if (flow !== 'stepped' || step !== 'options') return false;
+    setStep('format');
+    setNavFocus({ kind: 'format', idx: format === 'solo' ? 0 : 1 });
+    return true;
+  }, [flow, format, step]);
+
   useImperativeHandle(
     ref,
     () => ({
       startPractice: start,
       focusDefault,
       focusBeforeFooter,
+      backToFormat,
     }),
-    [start, focusDefault, focusBeforeFooter]
+    [start, focusDefault, focusBeforeFooter, backToFormat]
   );
 
   const activatePracticeNavFocus = useCallback(
@@ -415,6 +434,13 @@ export const PracticeFreePlayPanel = forwardRef<
     }
   }, [navFocus, panelKeyboardFocus]);
 
+  useEffect(() => {
+    onFlowChange?.({ step: stepped ? step : 'options', format });
+  }, [format, onFlowChange, step, stepped]);
+
+  const showFormat = !stepped || step === 'format';
+  const showOptions = !stepped || step === 'options';
+
   return (
     <div
       className="practice-free-play-panel"
@@ -423,7 +449,7 @@ export const PracticeFreePlayPanel = forwardRef<
     >
       <div className="practice-free-play-panel__body">
         <div className="local-setup-top-row">
-          {/* ── FORMAT ──────────────────────────────────────────────────── */}
+          {showFormat ? (
           <section
             className="practice-section local-format-section"
             aria-labelledby="lh-format"
@@ -589,8 +615,9 @@ export const PracticeFreePlayPanel = forwardRef<
               </div>
             </div>
           </section>
+          ) : null}
 
-          {/* ── Mode config overlay (same grid cell — no height shift) ──── */}
+          {showOptions ? (
           <div className="local-mode-config-area">
             {/* Solo / 1v1 section */}
             <section
@@ -943,8 +970,10 @@ export const PracticeFreePlayPanel = forwardRef<
               </div>
             </section>
           </div>
+          ) : null}
         </div>
 
+        {showOptions ? (
         <GameModifiersSection
           powerups={{
             enabled: powerup,
@@ -957,6 +986,7 @@ export const PracticeFreePlayPanel = forwardRef<
             },
           }}
         />
+        ) : null}
       </div>
     </div>
   );

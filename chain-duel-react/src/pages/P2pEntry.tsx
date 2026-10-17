@@ -17,6 +17,7 @@ import {
 } from '@/shared/constants/menuNavigation';
 import {
   advanceFlatNav,
+  buildFlatNavOrder,
   isBracketNavFocus,
   moveNavFocus,
   navFocusEqual,
@@ -30,17 +31,27 @@ import '@/styles/pages/onlinePostGame.css';
 
 type SessionKind = 'duel' | 'tournament';
 type PaymentKind = 'lightning' | 'nostr';
+type P2pStep = 'mode' | 'options';
 
-export default function P2pEntry() {
+const STEPPED_BUYIN_SATS = [10000, 20000, 50000, 100000] as const;
+
+export default function P2pEntry({
+  flow = 'flat',
+}: {
+  /** `stepped` is the settings preview: pick a mode, then open that mode's options. */
+  flow?: 'flat' | 'stepped';
+} = {}) {
   const navigate = useNavigate();
   const { playSfx } = useAudio();
   const { socket } = useSocket();
   useGamepad(true);
 
-  const [navFocus, setNavFocus] = useState<P2pNavFocus>({
-    kind: 'payment',
-    idx: 0,
-  });
+  const stepped = flow === 'stepped';
+  const [step, setStep] = useState<P2pStep>('mode');
+  const [modeChosen, setModeChosen] = useState(false);
+  const [navFocus, setNavFocus] = useState<P2pNavFocus>(
+    stepped ? { kind: 'session', idx: 0 } : { kind: 'payment', idx: 0 }
+  );
   const paymentRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const sessionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const duelFormatRef = useRef<HTMLButtonElement | null>(null);
@@ -54,6 +65,11 @@ export default function P2pEntry() {
   const [deposit, setDeposit] = useState(10000);
 
   const tournament = sessionKind === 'tournament';
+  const showMode = !stepped || step === 'mode';
+  const showOptions = !stepped || step === 'options';
+  const duelSelected = (!stepped || modeChosen) && sessionKind === 'duel';
+  const tournamentSelected =
+    (!stepped || modeChosen) && sessionKind === 'tournament';
 
   const keyboardNavState = useMemo(
     () => ({ [CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM]: true }),
@@ -61,6 +77,26 @@ export default function P2pEntry() {
   );
 
   const playSelect = useCallback(() => playSfx(SFX.MENU_SELECT), [playSfx]);
+
+  const openModeOptions = useCallback(
+    (kind: SessionKind) => {
+      setSessionKind(kind);
+      setModeChosen(true);
+      if (!stepped) return;
+      setStep('options');
+      setNavFocus(
+        kind === 'tournament'
+          ? { kind: 'players', idx: 0 }
+          : { kind: 'duelFormat' }
+      );
+    },
+    [stepped]
+  );
+
+  const leaveOptions = useCallback(() => {
+    setStep('mode');
+    setNavFocus({ kind: 'session', idx: tournament ? 1 : 0 });
+  }, [tournament]);
 
   const bracketMenuFocus = useMemo(() => {
     if (!tournament) return null;
@@ -110,8 +146,8 @@ export default function P2pEntry() {
           playSfx(SFX.MENU_SELECT);
           break;
         case 'session':
-          setSessionKind(f.idx === 0 ? 'duel' : 'tournament');
           playSfx(SFX.MENU_SELECT);
+          openModeOptions(f.idx === 0 ? 'duel' : 'tournament');
           break;
         case 'players':
           bracketHubRef.current?.triggerPlayer(f.idx);
@@ -124,13 +160,17 @@ export default function P2pEntry() {
           break;
         case 'back':
           playSfx(SFX.MENU_SELECT);
+          if (stepped && step === 'options') {
+            leaveOptions();
+            break;
+          }
           navigateToMainMenu(navigate);
           break;
         default:
           break;
       }
     },
-    [navigate, playSfx, start]
+    [leaveOptions, navigate, openModeOptions, playSfx, start, step, stepped]
   );
 
   useEffect(() => {
@@ -138,6 +178,10 @@ export default function P2pEntry() {
       if (e.key === 'Escape') {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
+        if (stepped && step === 'options') {
+          leaveOptions();
+          return;
+        }
         navigateToMainMenu(navigate);
         return;
       }
@@ -164,14 +208,67 @@ export default function P2pEntry() {
 
       if (e.repeat && isActivate) return;
 
+      const advance = (delta: 1 | -1) => {
+        if (stepped && step === 'mode') {
+          setNavFocus((prev) => {
+            const order: P2pNavFocus[] = [
+              { kind: 'session', idx: 0 },
+              { kind: 'session', idx: 1 },
+              { kind: 'back' },
+            ];
+            const i = order.findIndex((item) => navFocusEqual(item, prev));
+            const next = order[(i + delta + order.length) % order.length];
+            return next ?? prev;
+          });
+          return;
+        }
+        if (stepped && step === 'options') {
+          setNavFocus((prev) => {
+            const base = buildFlatNavOrder(tournament).filter(
+              (item) => item.kind !== 'session'
+            );
+            const flat = tournament
+              ? [
+                  ...base.filter(
+                    (item) =>
+                      item.kind === 'players' ||
+                      (item.kind === 'buyinPill' &&
+                        item.idx < STEPPED_BUYIN_SATS.length)
+                  ),
+                  ...base.filter((item) => item.kind === 'payment'),
+                  ...base.filter(
+                    (item) => item.kind === 'start' || item.kind === 'back'
+                  ),
+                ]
+              : [
+                  ...base.filter((item) => item.kind === 'duelFormat'),
+                  ...base.filter((item) => item.kind === 'payment'),
+                  ...base.filter(
+                    (item) => item.kind === 'start' || item.kind === 'back'
+                  ),
+                ];
+            if (prev.kind === 'none' || prev.kind === 'session') {
+              return delta === 1
+                ? (flat[0] ?? prev)
+                : (flat[flat.length - 1] ?? prev);
+            }
+            const i = flat.findIndex((item) => navFocusEqual(item, prev));
+            if (i < 0) return flat[0] ?? prev;
+            return flat[(i + delta + flat.length) % flat.length] ?? prev;
+          });
+          return;
+        }
+        setNavFocus((prev) => advanceFlatNav(prev, delta, tournament));
+      };
+
       if (isTab) {
         e.preventDefault();
-        setNavFocus((prev) => advanceFlatNav(prev, 1, tournament));
+        advance(1);
         return;
       }
       if (isTabBack) {
         e.preventDefault();
-        setNavFocus((prev) => advanceFlatNav(prev, -1, tournament));
+        advance(-1);
         return;
       }
 
@@ -188,8 +285,75 @@ export default function P2pEntry() {
 
       e.preventDefault();
       const dir = isUp ? 'up' : isDown ? 'down' : isLeft ? 'left' : 'right';
+      if (stepped && step === 'mode') {
+        setNavFocus((prev) => {
+          let next = prev;
+          if (prev.kind === 'session') {
+            if (dir === 'left') next = { kind: 'session', idx: 0 };
+            else if (dir === 'right') next = { kind: 'session', idx: 1 };
+            else if (dir === 'down') next = { kind: 'back' };
+          } else if (prev.kind === 'back' && dir === 'up') {
+            next = { kind: 'session', idx: tournament ? 1 : 0 };
+          }
+          if (!navFocusEqual(prev, next)) playSelect();
+          return next;
+        });
+        return;
+      }
       setNavFocus((prev) => {
-        const next = moveNavFocus(prev, dir, tournament);
+        let next = moveNavFocus(prev, dir, tournament);
+        if (stepped && step === 'options' && tournament) {
+          if (prev.kind === 'players') {
+            if (dir === 'left' && prev.idx > 0) {
+              next = { kind: 'players', idx: (prev.idx - 1) as 0 | 1 | 2 };
+            } else if (dir === 'right' && prev.idx < 2) {
+              next = { kind: 'players', idx: (prev.idx + 1) as 0 | 1 | 2 };
+            } else if (dir === 'down') {
+              next = { kind: 'buyinPill', idx: 0 };
+            } else {
+              next = prev;
+            }
+          } else if (prev.kind === 'buyinPill') {
+            if (dir === 'left' && prev.idx > 0) {
+              next = { kind: 'buyinPill', idx: prev.idx - 1 };
+            } else if (dir === 'right' && prev.idx < STEPPED_BUYIN_SATS.length - 1) {
+              next = { kind: 'buyinPill', idx: prev.idx + 1 };
+            } else if (dir === 'up') {
+              next = { kind: 'players', idx: 0 };
+            } else if (dir === 'down') {
+              next = { kind: 'payment', idx: 0 };
+            } else {
+              next = prev;
+            }
+          } else if (prev.kind === 'payment' && dir === 'up') {
+            next = {
+              kind: 'buyinPill',
+              idx: prev.idx === 0 ? 0 : STEPPED_BUYIN_SATS.length - 1,
+            };
+          } else if (prev.kind === 'payment' && dir === 'down') {
+            next = { kind: 'start' };
+          } else if (
+            (prev.kind === 'start' || prev.kind === 'back') &&
+            dir === 'up'
+          ) {
+            next = { kind: 'payment', idx: prev.kind === 'back' ? 0 : 1 };
+          }
+        } else if (stepped && step === 'options') {
+          if (prev.kind === 'payment' && dir === 'up') {
+            next = { kind: 'duelFormat' };
+          } else if (prev.kind === 'payment' && dir === 'down') {
+            next = { kind: 'start' };
+          } else if (prev.kind === 'duelFormat' && dir === 'down') {
+            next = { kind: 'payment', idx: 0 };
+          } else if (prev.kind === 'duelFormat' && dir === 'up') {
+            next = prev;
+          } else if (
+            (prev.kind === 'start' || prev.kind === 'back') &&
+            dir === 'up'
+          ) {
+            next = { kind: 'payment', idx: prev.kind === 'back' ? 0 : 1 };
+          }
+        }
         if (!navFocusEqual(prev, next)) {
           playSelect();
         }
@@ -201,10 +365,13 @@ export default function P2pEntry() {
     return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [
     activateNavFocus,
+    leaveOptions,
     navFocus,
     navigate,
     playSelect,
     playSfx,
+    step,
+    stepped,
     tournament,
   ]);
 
@@ -235,19 +402,43 @@ export default function P2pEntry() {
   }, [navFocus, tournament]);
 
   const startLabel =
-    sessionKind === 'duel' ? 'Open game menu' : 'Start bracket';
+    sessionKind === 'duel' ? 'Start duel' : 'Start bracket';
+  const pageTitle =
+    stepped && step === 'options'
+      ? sessionKind === 'duel'
+        ? 'P2P Duel'
+        : 'P2P Tournament'
+      : 'P2P';
 
   return (
-    <div className="practice-hub practice-hub--practice p2p-entry-page">
+    <div
+      className={`practice-hub practice-hub--practice p2p-entry-page${stepped ? ' p2p-entry-page--stepped' : ''}`}
+    >
       <header id="brand">
         <h2 id="chain">CHAIN</h2>
         <h2 id="duel">DUEL</h2>
       </header>
       <header className="practice-hub-header">
-        <h2 className="practice-hub-title">P2P</h2>
+        <h2 className="practice-hub-title">{pageTitle}</h2>
       </header>
 
       <div className="practice-panel" role="main" aria-label="P2P paid entry">
+        {showOptions && stepped && tournament ? (
+          <section className="practice-section" aria-labelledby="te-bracket">
+            <BracketSizingHub
+              ref={bracketHubRef}
+              menuFocus={bracketMenuFocus}
+              onMenuFocus={setNavFocus}
+              playersNumber={playersNumber}
+              deposit={deposit}
+              onPlayersChange={setPlayersNumber}
+              onDepositChange={setDeposit}
+              playSelect={playSelect}
+              buyinSteps={STEPPED_BUYIN_SATS}
+            />
+          </section>
+        ) : null}
+        {showOptions ? (
         <section className="practice-section" aria-labelledby="te-pay">
           <h3 id="te-pay" className="p2p-picker-group-label">
             PAY WITH
@@ -360,7 +551,9 @@ export default function P2pEntry() {
             </button>
           </div>
         </section>
+        ) : null}
 
+        {showMode ? (
         <section className="practice-section" aria-labelledby="te-session">
           <h3 id="te-session" className="p2p-picker-group-label">
             MODE
@@ -376,14 +569,14 @@ export default function P2pEntry() {
               }}
               type="button"
               role="radio"
-              aria-checked={sessionKind === 'duel'}
+              aria-checked={duelSelected}
               tabIndex={
                 navFocus.kind === 'session' && navFocus.idx === 0 ? 0 : -1
               }
               className={[
                 'p2p-picker-card',
                 'p2p-picker-card--duel',
-                sessionKind === 'duel' ? 'p2p-picker-card--selected' : '',
+                duelSelected ? 'p2p-picker-card--selected' : '',
                 navFocus.kind === 'session' && navFocus.idx === 0
                   ? 'practice-focus-target'
                   : '',
@@ -393,7 +586,7 @@ export default function P2pEntry() {
               onClick={() => {
                 setNavFocus({ kind: 'session', idx: 0 });
                 playSfx(SFX.MENU_SELECT);
-                setSessionKind('duel');
+                openModeOptions('duel');
               }}
             >
               <svg
@@ -440,14 +633,14 @@ export default function P2pEntry() {
               }}
               type="button"
               role="radio"
-              aria-checked={sessionKind === 'tournament'}
+              aria-checked={tournamentSelected}
               tabIndex={
                 navFocus.kind === 'session' && navFocus.idx === 1 ? 0 : -1
               }
               className={[
                 'p2p-picker-card',
                 'p2p-picker-card--tournament',
-                sessionKind === 'tournament' ? 'p2p-picker-card--selected' : '',
+                tournamentSelected ? 'p2p-picker-card--selected' : '',
                 navFocus.kind === 'session' && navFocus.idx === 1
                   ? 'practice-focus-target'
                   : '',
@@ -457,7 +650,7 @@ export default function P2pEntry() {
               onClick={() => {
                 setNavFocus({ kind: 'session', idx: 1 });
                 playSfx(SFX.MENU_SELECT);
-                setSessionKind('tournament');
+                openModeOptions('tournament');
               }}
             >
               <svg
@@ -510,15 +703,17 @@ export default function P2pEntry() {
               </svg>
               <span className="p2p-picker-label">TOURNAMENT</span>
               <span className="p2p-picker-sub">
-                {sessionKind === 'tournament'
+                {tournamentSelected
                   ? `${playersNumber}P · ${deposit / 1000}K SATS`
                   : 'Bracket'}
               </span>
             </button>
           </div>
         </section>
+        ) : null}
 
         {/* Grid overlay: both sections occupy the same cell so height never shifts */}
+        {showOptions && !(stepped && tournament) ? (
         <div className="p2p-mode-config-area">
           <section
             className={`practice-section${sessionKind !== 'duel' ? ' p2p-mode-inactive' : ''}`}
@@ -757,6 +952,7 @@ export default function P2pEntry() {
             </div>
           </section>
 
+          {!stepped ? (
           <section
             className={`practice-section${sessionKind !== 'tournament' ? ' p2p-mode-inactive' : ''}`}
             aria-labelledby="te-bracket"
@@ -773,9 +969,11 @@ export default function P2pEntry() {
               playSelect={playSelect}
             />
           </section>
+          ) : null}
         </div>
+        ) : null}
 
-        <GameModifiersSection />
+        {showOptions ? <GameModifiersSection /> : null}
 
         <div className="practice-actions">
           <Button
@@ -785,11 +983,16 @@ export default function P2pEntry() {
             onClick={() => {
               setNavFocus({ kind: 'back' });
               playSfx(SFX.MENU_SELECT);
+              if (stepped && step === 'options') {
+                leaveOptions();
+                return;
+              }
               navigateToMainMenu(navigate);
             }}
           >
-            MAIN MENU
+            {stepped && step === 'options' ? 'BACK' : 'MAIN MENU'}
           </Button>
+          {showOptions ? (
           <Button
             ref={startRef}
             tabIndex={navFocus.kind === 'start' ? 0 : -1}
@@ -801,6 +1004,7 @@ export default function P2pEntry() {
           >
             {startLabel}
           </Button>
+          ) : null}
         </div>
       </div>
 

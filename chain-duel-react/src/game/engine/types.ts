@@ -49,6 +49,8 @@ export interface PointChange {
   lossPos?: GridPos;
   /** Capture tier used for this steal (shown on + pop). */
   capturePercent?: number;
+  /** Set only when this steal moves the chain into a new capture tier. */
+  captureRateLabel?: string;
   p1YOffsetPx: number;
   p2YOffsetPx: number;
   alpha: number;
@@ -107,6 +109,11 @@ export interface GameMeta {
   practiceMode: boolean;
   p1Human: boolean;
   p2Human: boolean;
+  /**
+   * Solo vs AI: which binding cluster the human keeps when swapping seats.
+   * Set at match start; pressing X flips p1Human/p2Human but not this slot.
+   */
+  soloInputSlot?: 'p1' | 'p2';
   aiTier: AiTier;
   convergenceMode: boolean;
   convergenceShrinkInterval: number;

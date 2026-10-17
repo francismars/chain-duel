@@ -77,6 +77,18 @@ export function applyPreMatchKeyEvent(
     if (dir) setPreMatchKeyHeld(movement.slot, dir, isHeld);
   }
 
+  const soloTarget =
+    state.meta.soloInputSlot && state.meta.p1Human !== state.meta.p2Human
+      ? state.meta.p1Human
+        ? 'p1'
+        : 'p2'
+      : null;
+  if (soloTarget && state.meta.soloInputSlot) {
+    if (event.code === confirmKeyCode(state.meta.soloInputSlot)) {
+      setPreMatchKeyHeld(soloTarget, 'confirm', isHeld);
+    }
+  }
+
   const slots: PlayerControlSlot[] = ['p1', 'p2', 'p3', 'p4'];
   for (const slot of slots) {
     if (event.code === confirmKeyCode(slot)) {

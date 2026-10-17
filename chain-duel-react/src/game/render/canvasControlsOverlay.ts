@@ -47,6 +47,11 @@ function keyCapCornerRadius(keyPx: number): number {
   return Math.max(2, keyPx * 0.1);
 }
 
+/** Confirm labels longer than two characters (Space, Enter) span the three keys above. */
+function confirmKeyCapWidth(keyPx: number, gap: number, wide: boolean): number {
+  return wide ? keyPx * 3 + gap * 2 : keyPx;
+}
+
 function formatKeyCapLabel(label: string, dir: PreMatchKeyDir): string {
   return dir === 'confirm' ? label.toUpperCase() : label;
 }
@@ -189,6 +194,7 @@ export class CanvasControlsOverlay {
   private pads: SlotPad[] = [];
   private layoutKey = '';
   private keyPx = 16;
+  private keyGap = 4;
 
   constructor() {
     for (let i = 0; i < 4; i += 1) {
@@ -232,7 +238,8 @@ export class CanvasControlsOverlay {
     width: number,
     height: number,
     slots: readonly PlayerControlSlot[],
-    startRevealTime: number
+    startRevealTime: number,
+    labelSlots?: readonly PlayerControlSlot[]
   ): void {
     if (slots.length === 0) {
       this.hide();
@@ -247,16 +254,17 @@ export class CanvasControlsOverlay {
       })
       .join('|');
     const bindingsKey = slots
-      .map((slot) => {
-        const labels = slotBindingLabels(slot, layout);
-        const confirm = confirmKeyLabel(slot, layout);
-        return `${labels.up}${labels.down}${labels.left}${labels.right}${confirm}`;
+      .map((slot, i) => {
+        const labelSlot = labelSlots?.[i] ?? slot;
+        const labels = slotBindingLabels(labelSlot, layout);
+        const confirm = confirmKeyLabel(labelSlot, layout);
+        return `${labelSlot}:${labels.up}${labels.down}${labels.left}${labels.right}${confirm}`;
       })
       .join('|');
     const token = `${width}x${height}:${state.cols}x${state.rows}:${headsKey}:${bindingsKey}`;
     if (token !== this.layoutKey) {
       this.layoutKey = token;
-      this.applyLayout(state, width, height, slots, layout);
+      this.applyLayout(state, width, height, slots, layout, labelSlots);
     }
 
     const now = performance.now();
@@ -287,11 +295,13 @@ export class CanvasControlsOverlay {
     width: number,
     height: number,
     slots: readonly PlayerControlSlot[],
-    layout: ReturnType<typeof readKeyboardLayoutId>
+    layout: ReturnType<typeof readKeyboardLayoutId>,
+    labelSlots?: readonly PlayerControlSlot[]
   ): void {
     const capLayout = preMatchKeyCapLayout(width, height);
     const { keyPx, fontPx, gap } = capLayout;
     this.keyPx = keyPx;
+    this.keyGap = gap;
 
     for (let i = 0; i < this.pads.length; i += 1) {
       const pad = this.pads[i];
@@ -302,8 +312,9 @@ export class CanvasControlsOverlay {
       }
       pad.slot = slot;
 
-      const labels = slotBindingLabels(slot, layout);
-      const confirm = confirmKeyLabel(slot, layout);
+      const labelSlot = labelSlots?.[i] ?? slot;
+      const labels = slotBindingLabels(labelSlot, layout);
+      const confirm = confirmKeyLabel(labelSlot, layout);
       const { x: anchorX, y: anchorY } = computePadAnchor(
         state,
         slot,
@@ -340,7 +351,7 @@ export class CanvasControlsOverlay {
   private paintCap(cap: KeyCap, slot: PlayerControlSlot): void {
     const keyPx = this.keyPx;
     const wide = cap.dir === 'confirm' && cap.label.text.length > 2;
-    const capW = wide ? keyPx * 1.65 : keyPx;
+    const capW = confirmKeyCapWidth(keyPx, this.keyGap, wide);
     const capH = keyPx;
     const active = isPreMatchKeyHeld(slot, cap.dir);
     const borderAlpha = active ? 0.48 : 0.42;
@@ -369,7 +380,8 @@ export function drawCanvasControlsFallback(
   width: number,
   height: number,
   slots: readonly PlayerControlSlot[],
-  alpha: number
+  alpha: number,
+  labelSlots?: readonly PlayerControlSlot[]
 ): void {
   if (alpha < 0.02 || slots.length === 0) return;
 
@@ -386,9 +398,11 @@ export function drawCanvasControlsFallback(
   ctx.font = `600 ${Math.floor(fontPx)}px Inter, system-ui, sans-serif`;
   ctx.lineWidth = 1;
 
-  for (const slot of slots) {
-    const labels = slotBindingLabels(slot, layout);
-    const confirm = confirmKeyLabel(slot, layout);
+  for (let i = 0; i < slots.length; i += 1) {
+    const slot = slots[i]!;
+    const labelSlot = labelSlots?.[i] ?? slot;
+    const labels = slotBindingLabels(labelSlot, layout);
+    const confirm = confirmKeyLabel(labelSlot, layout);
     const { x: anchorX, y: anchorY } = computePadAnchor(
       state,
       slot,
@@ -401,7 +415,7 @@ export function drawCanvasControlsFallback(
 
     for (const spec of dpad) {
       const scale = preMatchKeyCapScale(slot, spec.dir, now);
-      const capW = (spec.wide ? keyPx * 1.65 : keyPx) * scale;
+      const capW = confirmKeyCapWidth(keyPx, gap, Boolean(spec.wide)) * scale;
       const capH = keyPx * scale;
       const x = anchorX + spec.x;
       const y = anchorY + spec.y;

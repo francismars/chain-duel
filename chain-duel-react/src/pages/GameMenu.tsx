@@ -54,7 +54,12 @@ type ButtonSelected =
   | 'cancelGameConfirm'
   | null;
 
-export default function GameMenu() {
+export default function GameMenu({
+  preview = false,
+}: {
+  /** Preview layout: both players pay from their own station. */
+  preview?: boolean;
+} = {}) {
   const logger = useMemo(() => createLogger('GameMenu'), []);
   const navigate = useNavigate();
   const location = useLocation();
@@ -71,7 +76,7 @@ export default function GameMenu() {
   const isNostrMode = useNostrFromQuery;
   const { socket, connected } = useSocket();
   const { playSfx } = useAudio();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!preview);
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
   const [player1Sats, setPlayer1Sats] = useState(0);
   const [player2Sats, setPlayer2Sats] = useState(0);
@@ -639,12 +644,12 @@ export default function GameMenu() {
     <>
       <GameSetupLayout
         title={gameMenuTitle}
-        pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}`}
+        pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}${
+          preview ? ' gamemenu-preview' : ''
+        }`}
         mainMenuDisabled={false}
         canStart={canStart}
-        mainMenuLabel={
-          prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'
-        }
+        mainMenuLabel={prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'}
         cancelOverlayTitle={
           prevWinner
             ? 'Return to claim screen?'
@@ -1037,6 +1042,18 @@ export default function GameMenu() {
                 </a>
               </div>
             </div>
+            {preview ? (
+              <div className="deposit-message gamemenu-preview-deposit">
+                Deposit between <b>{fmt(Math.min(minP1, minP2))}</b> and{' '}
+                <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
+                <br />
+                Set player name on the payment note
+                <br />
+                LNURL compatible wallet required
+                <br />
+                Allows for multiple deposits
+              </div>
+            ) : null}
           </>
         )}
       </GameSetupLayout>

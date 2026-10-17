@@ -116,26 +116,28 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 #buttonsDiv {
   display: flex;
   flex-direction: column;
+  gap: 6px;
 }
 
 #buttonsDiv .button {
-  width: 25%;
+  width: 28vw;
+  min-width: min(16rem, 88vw);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   box-sizing: border-box;
   line-height: 1;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
 }
 
 #startnewbutton {
   display: none;
-  animation: glowing 0ms infinite;
 }
 
 #claimbutton {
   margin-bottom: 1%;
-  animation: glowing 2000ms infinite;
   border-color: #ffffff;
   border-width: 1.2px;
 }
@@ -151,7 +153,11 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 #doubleornotthingbutton {
   margin-top: 0;
   margin-bottom: 0;
-  animation: glowing 0ms infinite;
+  --button-glow-bg-low: rgb(255 130 40 / 0.16);
+  --button-glow-bg-peak: rgb(255 130 40 / 0.32);
+  --button-glow-shadow-low: 0 0 15px rgb(255 140 40 / 0.45);
+  --button-glow-shadow-peak: 0 0 35px rgb(255 140 40 / 0.7);
+  --button-glow-border: rgb(255 175 85 / 0.95);
   border-color: rgb(255 175 85 / 0.75);
   border-width: 1.2px;
   color: rgb(255 210 140 / 0.97);
@@ -181,7 +187,7 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
   color: rgb(255 175 85 / 0.65);
   letter-spacing: 0.04em;
   text-align: center;
-  margin: 0.35em 0 0;
+  margin: 0.15em 0 0;
   line-height: 1.1;
 }
 
@@ -202,16 +208,16 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 
 #qrCode1 {
   margin: 0;
-  height: 13cqw;
-  width: 13cqw;
+  height: 10cqw;
+  width: 10cqw;
 }
 
 #qrcodeLink canvas#qrCode1 {
   margin: 0;
-  width: 13cqw !important;
-  height: 13cqw !important;
-  max-width: 13cqw;
-  max-height: 13cqw;
+  width: 10cqw !important;
+  height: 10cqw !important;
+  max-width: 10cqw;
+  max-height: 10cqw;
   filter: none;
   mix-blend-mode: normal;
 }
@@ -286,9 +292,9 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 }
 
 #socialFollow {
-  margin-top: 0.8cqw;
+  margin-top: 4.6cqw;
   text-align: center;
-  font-size: 1cqw;
+  font-size: 1.35cqw;
 }
 
 #socialFollow .social-follow-link {
@@ -302,14 +308,18 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 
 .social-icon {
   display: inline-block;
-  height: 1.5cqw;
+  height: 1.7cqw;
   margin-bottom: -0.5cqw;
 }
 
+#socialFollow img.social-icon {
+  filter: grayscale(1) brightness(6);
+}
+
 .social-icon-x {
-  width: 1.05cqw;
-  height: 1.05cqw;
-  margin-bottom: -0.35cqw;
+  width: 1.2cqw;
+  height: 1.2cqw;
+  margin-bottom: -0.28cqw;
   vertical-align: baseline;
   color: #fff;
 }

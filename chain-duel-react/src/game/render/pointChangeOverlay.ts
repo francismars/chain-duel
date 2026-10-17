@@ -9,6 +9,7 @@ const LOSS_GLOW = 0xff7a6a;
 const LABEL_SIZE_RATIO = 0.52;
 const LABEL_ALPHA = 0.58;
 const POP_FONT_SCALE = 0.92;
+const GAIN_SIZE_SCALE = 0.8;
 const SATS_LABEL = 'sats';
 
 type GlowTier = 's' | 'm' | 'l';
@@ -16,6 +17,7 @@ type GlowTier = 's' | 'm' | 'l';
 type PopSpec = {
   mainText: string;
   labelText: string;
+  rateText?: string;
   x: number;
   y: number;
   value: number;
@@ -28,6 +30,7 @@ type PopSlot = {
   root: Container;
   main: Text;
   label: Text;
+  rate: Text;
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -53,10 +56,9 @@ export function pointChangeFontSize(value: number, cellSize: number): number {
   return base * (1 + tier * 0.38) * POP_FONT_SCALE;
 }
 
-/** Drift away from center so gain/loss feel directional. */
-export function pointChangeDriftX(alpha: number, outward: -1 | 1): number {
-  const life = pointChangeLifeProgress(alpha);
-  return outward * life * life * 11;
+/** Horizontal drift is disabled — pops only rise. */
+export function pointChangeDriftX(_alpha: number, _outward: -1 | 1): number {
+  return 0;
 }
 
 function glowTier(value: number): GlowTier {
@@ -178,6 +180,7 @@ function gainSpec(
   return {
     mainText: `+${change.value}`,
     labelText: SATS_LABEL,
+    rateText: change.captureRateLabel,
     x,
     y,
     value: change.value,
@@ -264,7 +267,9 @@ function drawPopCanvas(
   cellSize: number
 ): void {
   const scale = pointChangePopScale(spec.alpha);
-  const fontSize = pointChangeFontSize(spec.value, cellSize);
+  const fontSize =
+    pointChangeFontSize(spec.value, cellSize) *
+    (spec.isGain ? GAIN_SIZE_SCALE : 1);
   const labelSize = Math.max(9, fontSize * LABEL_SIZE_RATIO);
   const dx = pointChangeDriftX(spec.alpha, spec.drift);
   const tier = glowTier(spec.value);
@@ -297,6 +302,14 @@ function drawPopCanvas(
   ctx.font = `600 ${Math.round(labelSize)}px Inter, system-ui, sans-serif`;
   ctx.shadowBlur = glowBlur(tier, spec.isGain) * 0.45;
   drawFilledText(ctx, spec.labelText, cursorX, 1, fill);
+
+  if (spec.rateText && spec.isGain) {
+    const rateSize = Math.max(10, fontSize * 0.72);
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = baseAlpha;
+    ctx.font = `700 ${Math.round(rateSize)}px Inter, system-ui, sans-serif`;
+    drawFilledText(ctx, spec.rateText, 0, -fontSize * 0.95, fill);
+  }
 
   ctx.restore();
 }
@@ -345,7 +358,10 @@ export class PointChangeOverlay {
         const slot = this.acquire(used);
         used += 1;
 
-        const fontSize = Math.round(pointChangeFontSize(spec.value, cellSize));
+        const fontSize = Math.round(
+          pointChangeFontSize(spec.value, cellSize) *
+            (spec.isGain ? GAIN_SIZE_SCALE : 1)
+        );
         const labelSize = Math.max(9, Math.round(fontSize * LABEL_SIZE_RATIO));
         const tier = glowTier(spec.value);
 
@@ -373,6 +389,16 @@ export class PointChangeOverlay {
           fontSize
         );
         slot.label.visible = true;
+        if (spec.rateText && spec.isGain) {
+          const rateSize = Math.max(10, Math.round(fontSize * 0.72));
+          slot.rate.style = makePointChangeStyle(rateSize, tier, true, false);
+          slot.rate.text = spec.rateText;
+          slot.rate.position.set(0, -fontSize * 0.95);
+          slot.rate.visible = true;
+          slot.rate.alpha = 1;
+        } else {
+          slot.rate.visible = false;
+        }
 
         const x = Math.round(spec.x + pointChangeDriftX(spec.alpha, spec.drift));
         const y = Math.round(spec.y);
@@ -412,11 +438,19 @@ export class PointChangeOverlay {
       text.resolution = pixiTextResolution();
       text.roundPixels = true;
     }
+    const rate = new Text({
+      text: '',
+      style: makePointChangeStyle(11, 's', true, true),
+    });
+    rate.anchor.set(0.5, 0.5);
+    rate.resolution = pixiTextResolution();
+    rate.roundPixels = true;
+    root.addChild(rate);
     root.addChild(main);
     root.addChild(label);
     this.container.addChild(root);
 
-    const slot = { root, main, label };
+    const slot = { root, main, label, rate };
     this.pool.push(slot);
     return slot;
   }

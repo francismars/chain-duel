@@ -1,0 +1,490 @@
+/* Match results share the game's hard edges, restrained palette and display type. */
+.match-result-masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #666;
+  font:
+    500 10px/1.5 Inter,
+    sans-serif;
+  letter-spacing: 0.12em;
+}
+.match-result-masthead svg {
+  width: 56px;
+  flex-shrink: 0;
+}
+
+.solo-zap-overlay[data-rank] {
+  background: rgb(0 0 0 / 92%);
+  overflow-y: auto;
+  padding: 24px 16px;
+}
+.solo-zap-overlay[data-rank]::after {
+  display: none;
+}
+.solo-zap-overlay[data-rank] .solo-zap-card[data-rank] {
+  width: min(680px, 100%);
+  max-width: 100%;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  background: #090909;
+  border: 1px solid #555;
+  border-top: 3px solid #fff;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: clamp(20px, 3vw, 40px);
+  --ph-fs-caption: 12px;
+  --ph-fs-body-sm: 12px;
+  --ph-fs-body: 14px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-card__content {
+  align-items: stretch;
+  text-align: left;
+  gap: 16px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile {
+  flex-direction: row;
+  gap: 14px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile__text {
+  align-items: flex-start;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 0;
+  border: 1px solid #777;
+  box-shadow: none;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile__name {
+  font-size: 24px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-header {
+  margin-top: 12px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-title-row {
+  justify-content: flex-start;
+}
+.solo-zap-overlay[data-rank] .solo-zap-title {
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1;
+  color: #fff;
+  text-shadow: none;
+}
+.solo-zap-overlay[data-rank] .solo-zap-amount {
+  justify-content: flex-start;
+  padding: 20px 0;
+  border-color: #666;
+}
+.solo-zap-overlay[data-rank] .solo-zap-sats {
+  font-size: clamp(56px, 9vw, 104px);
+  line-height: 0.9;
+  color: #fff;
+  text-shadow: none;
+}
+.solo-zap-overlay[data-rank] .solo-zap-card .solo-zap-badge,
+.solo-zap-overlay[data-rank] .solo-zap-card .solo-zap-profile__greeting {
+  color: #aaa;
+}
+.solo-zap-overlay[data-rank] .solo-zap-footer {
+  gap: 8px;
+  margin-top: 12px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-card .button {
+  min-height: 44px;
+  height: auto;
+  font-size: 11px;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+.solo-zap-overlay
+  .solo-zap-card
+  .button:not(:disabled):is(:hover, :focus-visible, .practice-start--focused) {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+  box-shadow: none;
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.overlay.free-play-end {
+  background: transparent;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 24px 16px max(28px, 8vh);
+  pointer-events: none;
+  /* Above .match-end-layer (10003) and its radiating lines */
+  z-index: 10004;
+}
+.free-play-end--actions .free-play-end__actions {
+  pointer-events: auto;
+  width: min(420px, 92vw);
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  animation: free-play-actions-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.free-play-end__actions .button {
+  flex: 1;
+  min-height: 44px;
+  height: auto;
+}
+@keyframes free-play-actions-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#postGame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  gap: 8px;
+}
+#postGame #sponsorship-postgame {
+  position: absolute;
+  top: max(56px, 8vh);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+#postGame .postgame-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: min(100%, 980px);
+  text-align: center;
+}
+#postGame .match-result-heading {
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+#postGame #gameOver {
+  font:
+    500 11px/1.4 Inter,
+    sans-serif;
+  letter-spacing: 0.15em;
+  -webkit-text-stroke: 0;
+  -webkit-text-fill-color: #aaa;
+}
+#postGame #winner {
+  font-size: clamp(26px, 4.2vw, 60px);
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+#postGame #prize {
+  width: 100%;
+  font-size: clamp(40px, 6.4vw, 84px);
+  line-height: 0.9;
+  margin: 0;
+  text-align: center;
+  text-shadow: none;
+}
+#postGame .postgame-claim-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  align-self: center;
+  gap: 28px;
+  width: min(100%, 980px);
+  margin-inline: auto;
+}
+#postGame .postgame-claim-row--menu3 {
+  display: flex;
+  justify-content: center;
+  width: min(52vw, 720px);
+  min-width: min(22rem, 92vw);
+}
+#postGame .postgame-claim-row--menu3 #buttonsDiv {
+  width: 100%;
+  height: 3vw;
+  gap: 2%;
+  margin-top: 0 !important;
+}
+#postGame .postgame-claim-row--menu3 #buttonsDiv .button {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
+}
+#postGame .postgame-claim-row--menu3 .postgame-claim-copy,
+#postGame .postgame-claim-row--menu3 .postgame-claim-qr {
+  display: none;
+}
+#postGame .postgame-claim-copy {
+  justify-self: end;
+  max-width: 280px;
+  text-align: left;
+}
+#postGame .postgame-claim-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#postGame #fees {
+  max-width: 100%;
+  margin: 6px 0 0;
+  text-align: left;
+  white-space: normal;
+  color: #aaa;
+  font-size: 11px;
+  line-height: 1.35;
+}
+#postGame #claimText {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-align: left;
+}
+#postGame #claimReq1 {
+  font-size: 11px;
+  color: #aaa;
+  margin: 6px 0 0;
+  text-align: center;
+}
+#postGame #sponsorship-postgame .sponsored-img {
+  margin-bottom: 0;
+}
+#postGame #buttonsDiv {
+  justify-self: start;
+  width: min(100%, 280px);
+  align-items: stretch;
+}
+
+/* Square and portrait: the three-column claim row clips both edges. */
+@media (max-aspect-ratio: 5/4), (max-width: 860px) {
+  #postGame {
+    justify-content: flex-start;
+    box-sizing: border-box;
+    padding: 72px 20px 28px;
+    overflow-x: clip;
+  }
+
+  #postGame .postgame-stage {
+    width: min(100%, 520px);
+  }
+
+  #postGame #winner {
+    font-size: clamp(28px, 7vmin, 48px);
+  }
+
+  #postGame #prize {
+    font-size: clamp(40px, 11vmin, 72px);
+  }
+
+  #postGame .postgame-claim-row {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 16px;
+    width: min(100%, 420px);
+  }
+
+  #postGame .postgame-claim-copy {
+    justify-self: center;
+    max-width: 36ch;
+    text-align: center;
+  }
+
+  #postGame #fees,
+  #postGame #claimText {
+    text-align: center;
+  }
+
+  #postGame #buttonsDiv {
+    justify-self: center;
+    width: min(100%, 320px);
+  }
+
+  #postGame #qrCode1,
+  #postGame #qrcodeLink canvas#qrCode1 {
+    width: clamp(132px, 26vmin, 188px) !important;
+    height: clamp(132px, 26vmin, 188px) !important;
+    max-width: none;
+    max-height: none;
+  }
+
+  #postGame .postgame-claim-row--menu3 {
+    width: min(100%, 420px);
+    min-width: 0;
+  }
+
+  #postGame .postgame-claim-row--menu3 #buttonsDiv {
+    height: auto;
+    min-height: 36px;
+  }
+
+  #postGame #socialFollow {
+    margin-top: 18px;
+    font-size: 13px;
+  }
+
+  #postGame #socialFollow .social-icon {
+    height: 16px;
+    margin-bottom: -3px;
+  }
+
+  #postGame #socialFollow .social-icon-x {
+    width: 13px;
+    height: 13px;
+  }
+}
+#postGame #buttonsDiv .button {
+  width: 100%;
+  min-height: 36px;
+  height: auto;
+  padding: 8px 20px;
+  font-size: 11px;
+  border-radius: 0;
+  background: transparent;
+  color: white;
+  box-shadow: none;
+  animation: none;
+}
+#postGame
+  #buttonsDiv
+  .button:not(:disabled):not(.disabled):is(:hover, :focus-visible) {
+  background: white;
+  color: black;
+  outline: 2px solid white;
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+.online-postgame-page .online-postgame-card {
+  max-width: min(100%, 1000px);
+  padding: 24px 0;
+}
+.online-postgame-page .online-postgame-headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+.online-postgame-page .online-postgame-kicker {
+  font:
+    500 11px/1.4 Inter,
+    sans-serif;
+  letter-spacing: 0.12em;
+  text-shadow: none;
+  color: #aaa;
+}
+.online-postgame-page .online-postgame-result {
+  padding: 0;
+  border: none;
+  gap: 24px;
+}
+.online-postgame-page .online-postgame-winner-name {
+  font-size: clamp(28px, 4vw, 54px);
+  letter-spacing: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.online-postgame-page .online-postgame-avatar {
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  box-shadow: none;
+}
+.online-postgame-page .online-postgame-prize {
+  font-size: clamp(36px, 5vw, 70px);
+  text-shadow: none;
+  letter-spacing: -0.025em;
+}
+.online-postgame-page .online-postgame-winner-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+  color: #aaa;
+}
+.online-postgame-page .online-postgame-don-panel {
+  background: #0b0b0b;
+  border: 1px solid #555;
+  box-shadow: none;
+  border-radius: 0;
+}
+.online-postgame-page .button.online-postgame-btn {
+  min-height: 44px;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  color: #fff;
+  animation: none;
+  font-size: 11px;
+}
+.online-postgame-page .button.online-postgame-btn-don {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+}
+.online-postgame-page
+  .button.online-postgame-btn:not(:disabled):not(.disabled):not(
+    .online-postgame-btn-back
+  ):is(:hover, :focus-visible, .online-selected) {
+  background: white;
+  color: black;
+  border-color: white;
+  box-shadow: none;
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+.online-postgame-page
+  .button.online-postgame-btn-back:is(
+    :hover,
+    :focus-visible,
+    .online-selected
+  ) {
+  color: #fff;
+  background-color: transparent;
+}
+.online-postgame-page
+  .button.online-postgame-btn.online-postgame-btn-don:not(:disabled):not(
+    .disabled
+  ):not(.online-postgame-btn-back):is(:hover, :focus-visible, .online-selected) {
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
+}
+.online-postgame-page .online-postgame-round-winner-crown {
+  display: none;
+}
+@media (max-width: 600px) {
+  .online-postgame-page .online-postgame-result {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .online-postgame-page .online-postgame-prize-block {
+    text-align: left;
+  }
+  .online-postgame-page .online-postgame-avatar {
+    width: 40px;
+    height: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .solo-zap-overlay[data-rank] .solo-zap-card,
+  .solo-zap-overlay[data-rank] .solo-zap-card * {
+    animation: none;
+  }
+}

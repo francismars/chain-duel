@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { Button } from '@/components/ui/Button';
 import { useNoteContentDisplay } from '@/lib/nostr/formatNoteContentForDisplay';
@@ -31,7 +32,10 @@ import type { GameState } from '@/game/engine/types';
 import { normalizeAiTier } from '@/game/engine/types';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
+import { endOverlayActionsDelayMs } from '@/game/render/endGameOverlay';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
+import { MatchEndCard } from '@/features/game/MatchEndCard';
+import { MatchStartPrompt } from '@/features/game/MatchStartPrompt';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { createNewCoinbase } from '@/game/engine';
 import type { BlockInfo } from '@/game/io/mempool';
@@ -52,7 +56,6 @@ import {
 import { useGameInputBindings } from '@/features/game/hooks/useGameInputBindings';
 import { createEmptyHeldInputState } from '@/lib/controls/heldDirectionSteering';
 import { PowerUpLegend } from '@/features/game/PowerUpLegend';
-import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 import {
   ChallengeRowIcon,
   isChallengeIconId,
@@ -62,10 +65,20 @@ import {
   getChallengeTheme,
 } from '@/lib/challenges/challengeTheme';
 import { FfaHud } from '@/features/game/FfaGameHud';
-import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
+import {
+  localStartPromptWords,
+  type CanvasObjectivesOpts,
+} from '@/game/render/matchObjectives';
 import {
   humanControlSlotsFromConfig,
+  humanControlSlotsFromState,
+  type PlayerControlSlot,
 } from '@/lib/controls/playerControls';
+import {
+  canSwapSoloHumanSeat,
+  soloSeatSwitchHint,
+  type SoloSeatSwapResult,
+} from '@/game/soloSeatSwitch';
 import {
   GameInfoLabel,
   readChallengeHudFromConfig,
@@ -86,6 +99,7 @@ import {
 } from '@/pages/practiceHubModes';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './game.css';
+import '@/styles/components/matchResults.css';
 
 interface ZapMessage {
   id: string;
@@ -109,6 +123,8 @@ type SoloEndData = {
   zapPaid?: boolean;
   zapReason?: string;
 };
+
+type FreePlayEndFocus = 'again' | 'menu';
 
 type SoloZapFocusId =
   | 'openPrimal'
@@ -155,6 +171,7 @@ function soloZapNavDirection(
 }
 
 export default function Game() {
+  const endPreview = new URLSearchParams(window.location.search).get('preview');
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
   const nostrSession = useNostrSession();
@@ -223,6 +240,11 @@ export default function Game() {
   const [canvasHighlight, setCanvasHighlight] = useState(false);
   const [zapMessages, setZapMessages] = useState<ZapMessage[]>([]);
   const [soloEndData, setSoloEndData] = useState<SoloEndData | null>(null);
+  const [freePlayEnd, setFreePlayEnd] = useState(false);
+  const [freePlayEndFocus, setFreePlayEndFocus] =
+    useState<FreePlayEndFocus>('again');
+  const freePlayEndPendingRef = useRef(false);
+  const suppressVictoryOverlayRef = useRef(false);
   const [soloZapOverlayVisible, setSoloZapOverlayVisible] = useState(false);
   const [showExitOverlay, setShowExitOverlay] = useState(false);
   const [exitOverlayFocus, setExitOverlayFocus] = useState<'abort' | 'confirm'>(
@@ -760,26 +782,58 @@ export default function Game() {
     []
   );
 
-  const humanControlSlots = useMemo(
+  const configHumanControlSlots = useMemo(
     () => humanControlSlotsFromConfig(readSessionGameConfig()),
     []
   );
+
+  const liveState = stateRef.current;
+  const humanControlSlots: PlayerControlSlot[] = liveState
+    ? humanControlSlotsFromState(liveState)
+    : configHumanControlSlots;
 
   const showP1Controls = humanControlSlots.includes('p1');
   const showP2Controls =
     humanControlSlots.includes('p2') && !show2v1Ui && !showFfaUi;
 
+  const filteredControlSlots = showFfaUi
+    ? [...humanControlSlots]
+    : humanControlSlots.filter((slot) => {
+        if (slot === 'p1') return showP1Controls;
+        if (slot === 'p2') return showP2Controls;
+        return false;
+      });
+
+  const soloSeatHint =
+    liveState && canSwapSoloHumanSeat(liveState)
+      ? soloSeatSwitchHint(liveState)
+      : undefined;
+
+  const startPrompt = liveState
+    ? localStartPromptWords(liveState.meta.p1Human, liveState.meta.p2Human)
+    : { words: undefined, altWords: undefined };
+
   canvasObjectivesRef.current = {
-    controlSlots: showFfaUi
-      ? [...humanControlSlots]
-      : humanControlSlots.filter((slot) => {
-          if (slot === 'p1') return showP1Controls;
-          if (slot === 'p2') return showP2Controls;
-          return false;
-        }),
+    controlSlots: filteredControlSlots,
+    ...(startPrompt.words ? { startPromptWords: startPrompt.words } : {}),
+    ...(startPrompt.altWords
+      ? { startPromptAltWords: startPrompt.altWords }
+      : {}),
+    ...(soloSeatHint ? { startPromptSubtext: soloSeatHint } : {}),
   };
 
   const bootstrapLocalGame = useCallback(() => {
+    const endPreviewNow = new URLSearchParams(window.location.search).get(
+      'preview'
+    );
+    if (
+      endPreviewNow === 'local' ||
+      endPreviewNow === 'freeplay' ||
+      endPreviewNow === 'h2h'
+    ) {
+      setLoading(false);
+      return;
+    }
     // sessionStorage from practice hub (/practice); legacy POWERUP sessions may remain
     const gameConfig = readSessionGameConfig();
 
@@ -922,12 +976,31 @@ export default function Game() {
         convergenceStepMs,
         powerupMode: isPowerup,
         teamMode,
+        allowSoloSeatSwitch:
+          !isPracticeChallengeConfig(gameConfig) &&
+          teamMode === 'solo' &&
+          p1Human !== p2Human &&
+          !p3Human &&
+          !p4Human,
       });
       stateRef.current = state;
+      const endPreview = new URLSearchParams(window.location.search).get(
+        'preview'
+      );
+      if (endPreview === 'local' || endPreview === 'freeplay') {
+        state.gameStarted = true;
+        state.gameEnded = true;
+        state.winnerPlayer = 'P1';
+        state.winnerName = state.p1Name || 'PLAYER 1';
+      }
       winnerSentRef.current = false;
       if (isPracticeFreePlayConfig(gameConfig)) {
         quickMatchStartedAtRef.current = Date.now();
         quickMatchCompletedRef.current = false;
+        freePlayEndPendingRef.current = false;
+        suppressVictoryOverlayRef.current = false;
+        setFreePlayEnd(false);
+        setFreePlayEndFocus('again');
       }
 
       const hud = getHudState(state);
@@ -968,6 +1041,26 @@ export default function Game() {
     // Ensure menu background music is stopped when entering gameplay.
     stop();
   }, [stop]);
+
+  useEffect(() => {
+    const endPreview = new URLSearchParams(window.location.search).get(
+      'preview'
+    );
+    if (endPreview === 'freeplay') {
+      setFreePlayEndFocus('again');
+      setFreePlayEnd(true);
+    }
+    if (endPreview === 'solo') {
+      setLoading(false);
+      setSoloEndData({
+        won: true,
+        name: 'MEMPOOL SPRINT',
+        bounty: 21000,
+        challengeId: 'preview',
+      });
+      setSoloZapOverlayVisible(true);
+    }
+  }, []);
 
   // Gate start-key input until the reveal animations have settled (~1.2 s after load).
   useEffect(() => {
@@ -1043,6 +1136,7 @@ export default function Game() {
     const cfg = readSessionGameConfig();
     if (!isPracticeFreePlayConfig(cfg) || loading) return;
 
+    let endTimer = 0;
     const poll = window.setInterval(() => {
       const state = stateRef.current;
       if (!state?.gameEnded || quickMatchCompletedRef.current) return;
@@ -1052,6 +1146,14 @@ export default function Game() {
       if (!hasWinner) return;
       quickMatchCompletedRef.current = true;
       window.clearInterval(poll);
+
+      freePlayEndPendingRef.current = true;
+      blockChallengeContinueRef.current = true;
+      suppressVictoryOverlayRef.current = false;
+      endTimer = window.setTimeout(() => {
+        setFreePlayEndFocus('again');
+        setFreePlayEnd(true);
+      }, endOverlayActionsDelayMs(state.convergenceWallClosed));
 
       const won =
         state.winnerPlayer === 'P1' ||
@@ -1065,13 +1167,21 @@ export default function Game() {
       });
     }, 150);
 
-    return () => window.clearInterval(poll);
+    return () => {
+      window.clearInterval(poll);
+      window.clearTimeout(endTimer);
+    };
   }, [loading, socket, stateRef]);
 
-  blockChallengeContinueRef.current = Boolean(soloEndData?.validating);
+  blockChallengeContinueRef.current =
+    Boolean(soloEndData?.validating) ||
+    freePlayEndPendingRef.current ||
+    freePlayEnd;
   challengeContinueLabelRef.current = soloEndData?.validating
     ? 'VALIDATING WIN ON SERVER…'
-    : null;
+    : practiceSession.active && !practiceSession.isChallenge
+      ? ''
+      : null;
 
   useEffect(() => {
     audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
@@ -1304,6 +1414,49 @@ export default function Game() {
     navigate(practiceHubExitPath(readSessionGameConfig()));
   }, [navigate]);
 
+  const replayFreePlay = useCallback(() => {
+    freePlayEndPendingRef.current = false;
+    suppressVictoryOverlayRef.current = false;
+    blockChallengeContinueRef.current = false;
+    setFreePlayEnd(false);
+    localBootRef.current = false;
+    bootstrapLocalGame();
+  }, [bootstrapLocalGame]);
+
+  useEffect(() => {
+    if (!freePlayEnd) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key === 'ArrowLeft' ||
+        event.key === 'ArrowUp' ||
+        event.key === 'a' ||
+        event.key === 'A'
+      ) {
+        event.preventDefault();
+        setFreePlayEndFocus('again');
+        return;
+      }
+      if (
+        event.key === 'ArrowRight' ||
+        event.key === 'ArrowDown' ||
+        event.key === 'd' ||
+        event.key === 'D'
+      ) {
+        event.preventDefault();
+        setFreePlayEndFocus('menu');
+        return;
+      }
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (freePlayEndFocus === 'menu') confirmExitToMenu();
+        else replayFreePlay();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [confirmExitToMenu, freePlayEnd, freePlayEndFocus, replayFreePlay]);
+
   useEffect(() => {
     if (!practiceSession.active || loading || soloEndData) return;
 
@@ -1389,12 +1542,36 @@ export default function Game() {
     onSatsCaptured: handleSatsCaptured,
     simStepRef: isChallengeSession ? simStepRef : undefined,
     challengeInputLogRef: isChallengeSession ? challengeInputLogRef : undefined,
-    challengeContinueLabelRef: isChallengeSession
-      ? challengeContinueLabelRef
-      : undefined,
+    challengeContinueLabelRef:
+      isChallengeSession ||
+      (practiceSession.active && !practiceSession.isChallenge)
+        ? challengeContinueLabelRef
+        : undefined,
+    suppressVictoryOverlayRef,
     canvasObjectivesRef,
     heldInputRef,
   });
+
+  const handleSoloSeatSwapped = useCallback((result: SoloSeatSwapResult) => {
+    setPlayer1Name(result.p1Name);
+    setPlayer2Name(result.p2Name);
+    const state = stateRef.current;
+    if (!state) return;
+    const humanSlot = state.meta.p1Human ? 'p1' : 'p2';
+    const hint = soloSeatSwitchHint(state);
+    const startPrompt = localStartPromptWords(
+      state.meta.p1Human,
+      state.meta.p2Human
+    );
+    canvasObjectivesRef.current = {
+      controlSlots: [humanSlot],
+      startPromptWords: startPrompt.words,
+      ...(startPrompt.altWords
+        ? { startPromptAltWords: startPrompt.altWords }
+        : {}),
+      ...(hint ? { startPromptSubtext: hint } : {}),
+    };
+  }, []);
 
   useGameInputBindings({
     stateRef,
@@ -1402,11 +1579,73 @@ export default function Game() {
     onEmitWinner: emitWinner,
     onNavigateAfterFinish: handleNavigateAfterFinish,
     readyToStartRef,
-    blockContinueAfterGameRef: isChallengeSession
-      ? blockChallengeContinueRef
-      : undefined,
+    blockContinueAfterGameRef:
+      isChallengeSession || practiceSession.active
+        ? blockChallengeContinueRef
+        : undefined,
     heldInputRef,
+    onSoloSeatSwapped: handleSoloSeatSwapped,
   });
+
+  if (
+    endPreview === 'local' ||
+    endPreview === 'freeplay' ||
+    endPreview === 'h2h'
+  ) {
+    const h2h = endPreview === 'h2h';
+    return (
+      <div className="match-end-layer">
+        <SoloZapRadiatingLines className="end-screen-rays match-end-layer__rays" />
+        <header id="brand">
+          <h2 id="chain">CHAIN</h2>
+          <h2 id="duel">DUEL</h2>
+        </header>
+        <div className="match-end-card">
+          <Sponsorship id="sponsorship-match-end" />
+          <p className="match-end-card__kicker">
+            {h2h
+              ? 'HUMAN VS HUMAN / MATCH COMPLETE'
+              : 'PRACTICE · 1v1 · CVG / MATCH COMPLETE'}
+          </p>
+          <p className="match-end-card__name">
+            {new URLSearchParams(window.location.search).get('side') === 'loser'
+              ? 'PLAYER 2'
+              : 'PLAYER 1'}
+          </p>
+          <p className="match-end-card__wins">WINS</p>
+          {endPreview === 'freeplay' ? (
+            <div className="match-end-card__free">
+              <p className="match-end-card__sats">FREE GAME</p>
+              <p className="match-end-card__note">NO SATS WON</p>
+            </div>
+          ) : (
+            <p className="match-end-card__sats">
+              {h2h ? '200,000 SATS' : '2,000 SATS'}
+            </p>
+          )}
+          {endPreview !== 'freeplay' ? (
+            <p className="match-end-card__prompt">
+              PRESS ANY BUTTON TO CONTINUE
+            </p>
+          ) : null}
+        </div>
+        {endPreview === 'freeplay' ? (
+          <div className="match-end-preview__actions">
+            <Button type="button" className="button" glowing>
+              Play again
+            </Button>
+            <Button
+              type="button"
+              className="button"
+              onClick={() => navigate('/practice')}
+            >
+              Freeplay menu
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -1666,6 +1905,16 @@ export default function Game() {
 
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
             <div id="gameCanvasHost" ref={hostRef} />
+            <MatchStartPrompt
+              getState={() => stateRef.current}
+              optsRef={canvasObjectivesRef}
+            />
+            <MatchEndCard
+              getState={() => stateRef.current}
+              suppressedRef={suppressVictoryOverlayRef}
+              continueLabelRef={challengeContinueLabelRef}
+              hidden={soloZapOverlayVisible}
+            />
           </div>
 
           {isPowerupMode && <PowerUpLegend />}
@@ -1744,6 +1993,34 @@ export default function Game() {
         </div>
       ) : null}
 
+      {freePlayEnd ? (
+        <div
+          className="overlay free-play-end free-play-end--actions"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Free play complete"
+        >
+          <div className="free-play-end__actions">
+            <Button
+              type="button"
+              className="button"
+              glowing={freePlayEndFocus === 'again'}
+              onClick={replayFreePlay}
+            >
+              Play again
+            </Button>
+            <Button
+              type="button"
+              className="button"
+              glowing={freePlayEndFocus === 'menu'}
+              onClick={confirmExitToMenu}
+            >
+              Freeplay menu
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       {soloEndData && soloZapOverlayVisible && (
         <div
           className={`solo-zap-overlay${
@@ -1756,19 +2033,16 @@ export default function Game() {
           aria-modal="true"
           aria-label={soloEndData.won ? 'Challenge complete' : 'Game over'}
         >
-          {soloEndData.won ? (
-            <SoloZapRadiatingLines
-              className="solo-zap-overlay__radiating-lines"
-              accent={soloChallengeTheme.accent}
-              accentStrong={soloChallengeTheme.accentStrong}
-            />
-          ) : null}
+          <SoloZapRadiatingLines className="solo-zap-overlay__radiating-lines" />
           <div
             className="solo-zap-card"
             data-challenge={soloEndData.challengeId}
             data-rank={soloChallengeTheme.rank}
             style={soloZapThemeVars}
           >
+            <header className="match-result-masthead">
+              <span>CHAIN DUEL / {soloEndData.won ? 'CHALLENGE COMPLETE' : 'GAME OVER'}</span>
+            </header>
             <div className="solo-zap-card__content">
             <div className="solo-zap-profile">
               <img

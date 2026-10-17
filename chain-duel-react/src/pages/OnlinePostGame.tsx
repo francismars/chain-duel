@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -14,8 +14,16 @@ import {
   onlineRoomUrl,
 } from '@/shared/constants/onlineRoutes';
 import { isOnlineMatchPlayer, isOnlineVictoryWinner } from '@/lib/online/isOnlineVictoryWinner';
+import {
+  DEBUG_P1_SESSION,
+  DEBUG_P2_SESSION,
+  parseOnlinePreviewSide,
+  previewViewerSession,
+} from '@/lib/online/onlineUiDebug';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
+
 
 type PostGameNav =
   | { type: 'replay'; index: number } // round replay buttons
@@ -114,9 +122,17 @@ export default function OnlinePostGame({
   onReadyChange,
 }: OnlinePostGameProps = {}) {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
-  const roomId = roomIdProp ?? searchParams.get('roomId') ?? '';
+  const isDonHistory = location.pathname === '/preview/online-don';
+  const isPreview =
+    searchParams.get('preview') === 'results' ||
+    location.pathname === '/preview/online-results' ||
+    isDonHistory;
+  const roomId = isPreview
+    ? 'preview'
+    : roomIdProp ?? searchParams.get('roomId') ?? '';
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );
@@ -174,6 +190,8 @@ export default function OnlinePostGame({
   /** Settled sessions (e.g. from finished list): no payout UI or QR. */
   const sessionFinished = info?.phase === 'finished';
   const showPayoutUi = Boolean(info && !sessionFinished);
+  /** Withdraw / LN payout controls and QR are winner-only. */
+  const showWinnerPayout = showPayoutUi && isWinner;
 
   useEffect(() => {
     mountedAtRef.current = Date.now();
@@ -293,7 +311,8 @@ export default function OnlinePostGame({
         playSelect();
         setNavFocus((prev) => {
           if (prev.type === 'exit') {
-            if (showPayoutUi) return { type: 'payout', slot: 'withdraw' };
+            if (showWinnerPayout) return { type: 'payout', slot: 'withdraw' };
+            if (showPayoutUi) return { type: 'don' };
             if (roundCount > 0)
               return { type: 'replay', index: roundCount - 1 };
             return prev;
@@ -330,7 +349,7 @@ export default function OnlinePostGame({
             return { type: 'exit' };
           }
           if (prev.type === 'don') {
-            if (showPayoutUi) return { type: 'payout', slot: 'withdraw' };
+            if (showWinnerPayout) return { type: 'payout', slot: 'withdraw' };
             return { type: 'exit' };
           }
           if (prev.type === 'payout') return { type: 'exit' };
@@ -415,6 +434,7 @@ export default function OnlinePostGame({
     playSelect,
     roomId,
     showPayoutUi,
+    showWinnerPayout,
     socket,
     winnerHasNostrLn,
   ]);
@@ -427,13 +447,90 @@ export default function OnlinePostGame({
   }, [navFocus]);
 
   useEffect(() => {
-    if (!roomId) {
-      navigate(ONLINE_HOME);
-    }
-  }, [navigate, roomId]);
+    if (isPreview || roomId) return;
+    navigate(ONLINE_HOME);
+  }, [isPreview, navigate, roomId]);
 
   useEffect(() => {
-    if (!socket || !roomId) {
+    if (!isPreview) return;
+    const side = parseOnlinePreviewSide(searchParams.get('side'));
+    setLoading(false);
+    setCurrentSessionID(previewViewerSession(side));
+    const now = Date.now();
+    const donRounds = [
+      {
+        matchRound: 1,
+        finishedAt: now - 1000 * 60 * 40,
+        winnerName: 'Satoshi',
+        p1Name: 'Satoshi',
+        p2Name: 'Hal',
+        p1Score: 42000,
+        p2Score: 18000,
+        netPrize: 19000,
+        winnerRole: 'Player 1' as const,
+        replayAvailable: true,
+      },
+      {
+        matchRound: 2,
+        finishedAt: now - 1000 * 60 * 24,
+        winnerName: 'Hal',
+        p1Name: 'Satoshi',
+        p2Name: 'Hal',
+        p1Score: 12000,
+        p2Score: 31000,
+        netPrize: 38000,
+        winnerRole: 'Player 2' as const,
+        replayAvailable: true,
+      },
+      {
+        matchRound: 3,
+        finishedAt: now - 1000 * 60 * 6,
+        winnerName: 'Satoshi',
+        p1Name: 'Satoshi',
+        p2Name: 'Hal',
+        p1Score: 51000,
+        p2Score: 22000,
+        netPrize: 76000,
+        winnerRole: 'Player 1' as const,
+        replayAvailable: false,
+      },
+    ];
+    setInfo({
+      roomId: 'preview',
+      phase: 'postgame',
+      p1Name: 'Satoshi',
+      p2Name: 'Hal',
+      p1SessionID: side ? DEBUG_P1_SESSION : undefined,
+      p2SessionID: side ? DEBUG_P2_SESSION : undefined,
+      p1Points: isDonHistory ? 51000 : 42000,
+      p2Points: isDonHistory ? 22000 : 18000,
+      winnerRole: 'Player 1',
+      winnerSessionID: side ? DEBUG_P1_SESSION : undefined,
+      winnerName: 'Satoshi',
+      winnerPoints: isDonHistory ? 80000 : 42000,
+      totalPrize: isDonHistory ? 80000 : 60000,
+      doubleOrNothingVotes: 0,
+      matchRounds: isDonHistory
+        ? donRounds
+        : [
+            {
+              matchRound: 1,
+              finishedAt: now,
+              winnerName: 'Satoshi',
+              p1Name: 'Satoshi',
+              p2Name: 'Hal',
+              p1Score: 42000,
+              p2Score: 18000,
+              netPrize: 39900,
+              winnerRole: 'Player 1' as const,
+              replayAvailable: false,
+            },
+          ],
+    });
+  }, [isDonHistory, isPreview, searchParams]);
+
+  useEffect(() => {
+    if (isPreview || !socket || !roomId) {
       return;
     }
 
@@ -571,7 +668,7 @@ export default function OnlinePostGame({
       socket.off('resCreateOnlineNostrPayout', onNostrPayout);
       socket.off('onlinePinInvalid', onInvalid);
     };
-  }, [navigate, onReadyChange, roomId, socket]);
+  }, [isPreview, navigate, onReadyChange, roomId, socket]);
 
   const withdrawalValue = useMemo(() => {
     if (lnurlw) {
@@ -608,6 +705,8 @@ export default function OnlinePostGame({
 
   return (
     <div className="online-postgame-page">
+      <SoloZapRadiatingLines className="end-screen-rays" />
+      <div className="postgame-scrim" aria-hidden="true" />
       <Sponsorship id="sponsorship-online-postgame" />
       <header id="brand">
         <h2 id="chain">CHAIN</h2>
@@ -616,7 +715,35 @@ export default function OnlinePostGame({
 
       <div className="online-postgame-card">
         <div className="online-postgame-headline">
-          <p className="online-postgame-kicker">ONLINE · VICTORY SCREEN</p>
+          <p className="online-postgame-kicker">ONLINE / MATCH COMPLETE</p>
+        </div>
+
+        <div className="online-postgame-result">
+          <div className="online-postgame-winner">
+            {info.winnerPicture ? (
+              <img
+                className="online-postgame-avatar"
+                src={info.winnerPicture}
+                alt={info.winnerName}
+              />
+            ) : null}
+            <div className="online-postgame-winner-text">
+              <p className="online-postgame-winner-label">WINNER</p>
+              <h2 className="online-postgame-winner-name">
+                {info.winnerName.toUpperCase()}
+              </h2>
+            </div>
+          </div>
+
+          <div className="online-postgame-prize-block">
+            <p className="online-postgame-prize">
+              {netPayoutAmount.toLocaleString()} SATS
+            </p>
+            <p className="online-postgame-sub">
+              Net · gross {grossWinnerAmount.toLocaleString()} · fee{' '}
+              {feeAmount.toLocaleString()} sats
+            </p>
+          </div>
         </div>
 
         {(info.matchRounds?.length ?? 0) > 0 ? (
@@ -848,34 +975,6 @@ export default function OnlinePostGame({
           </section>
         ) : null}
 
-        <div className="online-postgame-result">
-          <div className="online-postgame-winner">
-            {info.winnerPicture ? (
-              <img
-                className="online-postgame-avatar"
-                src={info.winnerPicture}
-                alt={info.winnerName}
-              />
-            ) : null}
-            <div className="online-postgame-winner-text">
-              <p className="online-postgame-winner-label">WINNER</p>
-              <h2 className="online-postgame-winner-name">
-                {info.winnerName.toUpperCase()}
-              </h2>
-            </div>
-          </div>
-
-          <div className="online-postgame-prize-block">
-            <p className="online-postgame-prize">
-              {netPayoutAmount.toLocaleString()} SATS
-            </p>
-            <p className="online-postgame-sub">
-              Net · gross {grossWinnerAmount.toLocaleString()} · fee{' '}
-              {feeAmount.toLocaleString()} sats
-            </p>
-          </div>
-        </div>
-
         {showPayoutUi ? (
           <div
             className={[
@@ -965,13 +1064,13 @@ export default function OnlinePostGame({
         <div
           className={[
             'online-postgame-grid',
-            sessionFinished ? 'online-postgame-grid--finished' : '',
+            !showWinnerPayout ? 'online-postgame-grid--finished' : '',
           ]
             .filter(Boolean)
             .join(' ')}
         >
           <div className="online-postgame-actions">
-            {showPayoutUi ? (
+            {showWinnerPayout ? (
               <>
                 <div className="online-postgame-payout-choice">
                   <p className="online-postgame-payout-title">
@@ -986,7 +1085,6 @@ export default function OnlinePostGame({
                   <Button
                     type="button"
                     className={[
-                      isWinner ? '' : 'disabled',
                       'online-postgame-btn online-postgame-btn-withdraw',
                       navFocus.type === 'payout' && navFocus.slot === 'withdraw'
                         ? 'online-selected'
@@ -994,9 +1092,9 @@ export default function OnlinePostGame({
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    disabled={!isWinner || creatingWithdrawal || donLocked}
+                    disabled={creatingWithdrawal || donLocked}
                     onClick={() => {
-                      if (!socket || !roomId || !isWinner || donLocked) {
+                      if (!socket || !roomId || donLocked) {
                         return;
                       }
                       playConfirm();
@@ -1005,20 +1103,16 @@ export default function OnlinePostGame({
                       socket.emit('createOnlineWithdrawal', { roomId });
                     }}
                   >
-                    {isWinner
-                      ? creatingWithdrawal
-                        ? 'Preparing QR...'
-                        : donLocked
-                          ? 'QR payout locked'
-                          : 'Withdraw via QR'
-                      : 'Winner only'}
+                    {creatingWithdrawal
+                      ? 'Preparing QR...'
+                      : donLocked
+                        ? 'QR payout locked'
+                        : 'Withdraw via QR'}
                   </Button>
                   <Button
                     type="button"
                     className={[
-                      isWinner && winnerHasNostrLn && !donLocked
-                        ? ''
-                        : 'disabled',
+                      winnerHasNostrLn && !donLocked ? '' : 'disabled',
                       'online-postgame-btn online-postgame-btn-nostr',
                       navFocus.type === 'payout' && navFocus.slot === 'nostr'
                         ? 'online-selected'
@@ -1027,16 +1121,12 @@ export default function OnlinePostGame({
                       .filter(Boolean)
                       .join(' ')}
                     disabled={
-                      !isWinner ||
-                      !winnerHasNostrLn ||
-                      donLocked ||
-                      creatingNostrPayout
+                      !winnerHasNostrLn || donLocked || creatingNostrPayout
                     }
                     onClick={() => {
                       if (
                         !socket ||
                         !roomId ||
-                        !isWinner ||
                         !winnerHasNostrLn ||
                         donLocked
                       ) {
@@ -1065,7 +1155,7 @@ export default function OnlinePostGame({
             </Button>
           </div>
 
-          {showPayoutUi ? (
+          {showWinnerPayout ? (
             <div className="online-postgame-qr-wrap">
               <p className="online-postgame-qr-title">WITHDRAWAL QR</p>
               {withdrawalValue ? (
@@ -1113,13 +1203,13 @@ export default function OnlinePostGame({
           ) : null}
         </div>
 
-        {showPayoutUi && payoutChosen ? (
+        {showWinnerPayout && payoutChosen ? (
           <p className="online-postgame-error">{payoutStatusText}</p>
         ) : null}
-        {showPayoutUi && error ? (
+        {showWinnerPayout && error ? (
           <p className="online-postgame-error">Error: {error}</p>
         ) : null}
-        {showPayoutUi &&
+        {showWinnerPayout &&
         info?.payoutMethod === 'nostr_zap' &&
         info.payoutTarget ? (
           <p className="online-postgame-error">

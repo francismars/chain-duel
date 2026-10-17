@@ -343,6 +343,7 @@
 
 #gameCanvas {
   position: relative;
+  container-type: inline-size;
   z-index: 0;
   margin: 0 var(--game-board-margin-x);
   width: var(--game-board-width);
@@ -354,10 +355,234 @@
   isolation: isolate;
 }
 
+#gameCanvasHost {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
 #gameCanvasHost,
 #gameCanvas canvas {
   width: 100%;
   height: 100%;
+}
+
+#gameCanvas canvas {
+  position: relative;
+  z-index: 0;
+}
+
+.match-start {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  padding: 11% 8% 9%;
+  pointer-events: none;
+  text-align: center;
+}
+
+.match-start__objectives {
+  position: relative;
+  width: min(100%, 40rem);
+  min-height: 4.6em;
+}
+
+.match-start__card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.match-start__title,
+.match-start__body {
+  opacity: 0;
+  animation-duration: 10.8s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.match-start__title {
+  animation-name: match-start-line-title;
+}
+
+.match-start__body {
+  animation-name: match-start-line-body;
+}
+
+.match-start__card:nth-child(2) .match-start__title,
+.match-start__card:nth-child(2) .match-start__body {
+  animation-delay: -7.2s;
+}
+
+.match-start__card:nth-child(3) .match-start__title,
+.match-start__card:nth-child(3) .match-start__body {
+  animation-delay: -3.6s;
+}
+
+.match-start__title {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(1.7rem, 9cqi, 3.6rem);
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: 0.04em;
+  color: transparent;
+  -webkit-text-stroke: clamp(1px, 0.22cqi, 2px) #fff;
+}
+
+.match-start__body {
+  margin: 0;
+  max-width: 36em;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: clamp(0.78rem, 2.5cqi, 1.05rem);
+  font-weight: 400;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.match-start__stakes {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: clamp(0.72rem, 2.2cqi, 0.95rem);
+  font-weight: 500;
+  color: #ffcc99;
+}
+
+.match-start__prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.match-start__line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.22em;
+  margin-top: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.match-start__line.is-fading {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.match-start__word {
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(1.28rem, 6.6cqi, 2.65rem);
+  font-weight: 500;
+  line-height: 0.9;
+  color: #fff;
+  text-shadow: 0 0 22px rgba(0, 0, 0, 0.9);
+  animation:
+    match-start-word-in 0.62s cubic-bezier(0.16, 1, 0.3, 1) both,
+    match-start-word-pulse 3s ease-in-out infinite;
+}
+
+.match-start__sub {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: clamp(0.58rem, 1.8cqi, 0.78rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+  opacity: 0;
+  animation: match-start-word-in 0.62s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes match-start-line-title {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  8% {
+    opacity: 1;
+    transform: none;
+  }
+  27% {
+    opacity: 1;
+    transform: none;
+  }
+  33.2% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes match-start-line-body {
+  0%,
+  6.5% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  14% {
+    opacity: 1;
+    transform: none;
+  }
+  27% {
+    opacity: 1;
+    transform: none;
+  }
+  33.2% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes match-start-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes match-start-word-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.66;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .match-start__title,
+  .match-start__body,
+  .match-start__word,
+  .match-start__sub {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .match-start__card:nth-child(n + 2) {
+    display: none;
+  }
 }
 
 /* Tighten gap between board and power-up legend */
@@ -1072,7 +1297,7 @@
   justify-content: center;
   transition: all 0.35s ease-in-out;
   opacity: 1;
-  /* Above WebGL canvas (composited) and .corner-controls (100) */
+  /* Above the WebGL canvas. .corner-controls stays above overlays (11000). */
   z-index: 10000;
 }
 
@@ -1945,8 +2170,10 @@
 
   #chain,
   #duel {
-    font-size: clamp(1.15rem, 5.2vmax, 2.6rem);
+    font-size: clamp(1rem, 5.4vmin, 1.85rem);
     letter-spacing: 0.02em;
+    max-width: 46%;
+    overflow: hidden;
   }
 
   .flex.full.game {
@@ -1979,18 +2206,18 @@
     height: clamp(7px, 2.8vmax, 16px);
   }
 
-  /* Player names: prioritize legibility; mode line slightly smaller */
+  /* Size from the short edge so square and portrait columns stay one line. */
   #player1info,
   #player2info {
-    font-size: clamp(1rem, 4.25vmax, 1.75rem);
+    font-size: clamp(0.85rem, 3.5vmin, 1.25rem);
   }
 
   #gameInfo {
-    font-size: clamp(0.65rem, 2.25vmax, 1rem);
+    font-size: clamp(0.55rem, 2.05vmin, 0.85rem);
   }
 
   .player-sats span {
-    font-size: clamp(0.88rem, 3.15vmax, 1.2rem);
+    font-size: clamp(0.75rem, 2.7vmin, 1.05rem);
   }
 
   .player-sats span.grey {
@@ -1999,7 +2226,7 @@
 
   #p1Points,
   #p2Points {
-    font-size: clamp(1.15rem, 4.25vmax, 1.85rem);
+    font-size: clamp(0.95rem, 3.5vmin, 1.45rem);
   }
 
   .playerImg {
@@ -2036,7 +2263,7 @@
   }
 
   .capturingAmount {
-    font-size: clamp(0.68rem, 2.5vmax, 1rem);
+    font-size: clamp(0.62rem, 2.2vmin, 0.9rem);
     transform: scale(1);
   }
 
@@ -2089,29 +2316,30 @@
 
   /* Match mempool type scale to power-up legend (name + desc) */
   #bitcoinDetails {
-    flex-wrap: wrap;
-    justify-content: center;
-    row-gap: 0.65rem;
-    column-gap: 0.5rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    row-gap: 0.35rem;
+    column-gap: 0.35rem;
     margin-top: 0.5rem;
     padding: 0.65rem 0.35rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
     max-width: 100%;
   }
 
   #bitcoinDetails .detail {
-    flex: 1 1 calc(33.333% - 0.4rem);
-    min-width: 5.25rem;
-    max-width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
   }
 
   #bitcoinDetails .label {
-    font-size: clamp(0.34rem, 1.05vmax, 0.48rem);
+    font-size: clamp(0.42rem, 1.65vmin, 0.62rem);
     opacity: 0.55;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
   }
 
   #bitcoinDetails .value {
-    font-size: clamp(0.4rem, 1.25vmax, 0.55rem);
+    font-size: clamp(0.48rem, 1.85vmin, 0.7rem);
     width: auto;
     min-width: 0;
     max-width: 100%;
@@ -2325,4 +2553,15 @@
     animation: game-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.96s
       both;
   }
+}
+
+/* The board stays crisp while the rest of the interface recedes into black. */
+#gameCanvas.game-result-active {
+  z-index: 9999;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 85%);
+}
+
+/* Hide the live player labels and scores once the result repeats them centrally. */
+#gameContainer:has(#gameCanvas.game-result-active) :is(.players, .points, .ffa-hud-names, .ffa-hud-sats-row) {
+  visibility: hidden;
 }
