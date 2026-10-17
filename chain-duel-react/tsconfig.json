@@ -21,8 +21,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
 
-    /* Path aliases */
-    "baseUrl": ".",
+    /* Path aliases — resolved relative to this config file */
     "paths": {
       "@/*": ["./src/*"]
     }
