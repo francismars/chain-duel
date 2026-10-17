@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
+import { UiDebugMenu } from '@/components/ui/UiDebugMenu';
 import './CornerControls.css';
 
 function getStoredTvSafeInset(): boolean {
@@ -204,6 +205,7 @@ export function CornerControls() {
           </svg>
         )}
       </button>
+      <UiDebugMenu />
     </div>
   );
 }

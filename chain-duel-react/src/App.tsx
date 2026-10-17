@@ -29,6 +29,12 @@ import OnlineRooms from './pages/OnlineRooms';
 import OnlinePostGame from './pages/OnlinePostGame';
 import OnlineFinishPreview from './pages/OnlineFinishPreview';
 import OnlineSeatPreview from './pages/OnlineSeatPreview';
+import UiDebugIndex from './pages/UiDebugIndex';
+import {
+  FreePlaySettingsPreviewB,
+  P2pPaymentPreviewB,
+  P2pSettingsPreviewB,
+} from './pages/uiDebugLayouts';
 import './styles/index.css';
 
 function LegacyNetworkRedirect() {
@@ -80,6 +86,13 @@ function AppRoutes() {
         {/* Online (legacy /network/* redirects preserve query strings) */}
         <Route path="/online" element={<OnlineRooms />} />
         <Route path="/online/r/:roomCode" element={<OnlineRoom />} />
+        <Route path="/preview" element={<UiDebugIndex />} />
+        <Route path="/preview/p2p-settings-b" element={<P2pSettingsPreviewB />} />
+        <Route
+          path="/preview/freeplay-settings-b"
+          element={<FreePlaySettingsPreviewB />}
+        />
+        <Route path="/preview/p2p-payment-b" element={<P2pPaymentPreviewB />} />
         <Route path="/preview/online-finish" element={<OnlineFinishPreview />} />
         <Route path="/preview/online-seat" element={<OnlineSeatPreview />} />
         <Route

@@ -1,0 +1,131 @@
+.ui-debug-menu {
+  position: relative;
+}
+
+.ui-debug-menu__btn--open {
+  color: #fff;
+  border-color: #fff;
+}
+
+.ui-debug-menu__panel {
+  position: absolute;
+  left: calc(100% + 0.6rem);
+  top: 0;
+  width: min(22rem, 70vw);
+  max-height: 70vh;
+  overflow: auto;
+  padding: 0.75rem 0.85rem 0.9rem;
+  background: #0a0a0a;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  color: #eee;
+  text-align: left;
+  z-index: 120;
+}
+
+.ui-debug-menu__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ui-debug-menu__head a,
+.ui-debug-menu__head button,
+.ui-debug-menu__panel a {
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+}
+
+.ui-debug-menu__head button {
+  color: #ffb4b4;
+}
+
+.ui-debug-menu__panel section + section {
+  margin-top: 0.75rem;
+}
+
+.ui-debug-menu__panel p {
+  margin: 0 0 0.25rem;
+  color: #9a9a9a;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ui-debug-menu__panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-debug-menu__panel li + li {
+  margin-top: 0.2rem;
+}
+
+.ui-debug-menu__panel a {
+  display: flex;
+  gap: 0.45rem;
+  align-items: baseline;
+  font-size: 0.82rem;
+}
+
+.ui-debug-menu__panel a span {
+  min-width: 0.9rem;
+  font-weight: 700;
+}
+
+.ui-debug-menu__panel a:hover,
+.ui-debug-menu__panel a:focus-visible {
+  color: #fff;
+}
+
+.ui-debug-index {
+  min-height: 100vh;
+  padding: 6vh 8vw 8vh;
+  color: #eee;
+  background: #050505;
+}
+
+.ui-debug-index h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ui-debug-index section + section {
+  margin-top: 1.4rem;
+}
+
+.ui-debug-index h2 {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9a9a9a;
+}
+
+.ui-debug-index ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-debug-index a {
+  color: #fff;
+  display: inline-flex;
+  gap: 0.5rem;
+  margin: 0.2rem 0;
+}
+
+.ui-debug-index__locked {
+  min-height: 100vh;
+}
