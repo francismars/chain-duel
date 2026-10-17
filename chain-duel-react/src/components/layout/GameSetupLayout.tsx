@@ -74,6 +74,7 @@ export function GameSetupLayout({
   cancelGameConfirmRef,
   children,
 }: GameSetupLayoutProps) {
+  const previewSwap = pageClass.includes('gamemenu-preview');
   const internalMainRef = useRef<HTMLButtonElement>(null);
   const internalStartRef = useRef<HTMLButtonElement>(null);
   const internalAbortRef = useRef<HTMLButtonElement>(null);
@@ -171,10 +172,16 @@ export function GameSetupLayout({
               <h2 id="gameMenuTitle" className="hero-outline condensed">
                 {title}
               </h2>
-              <p id="titleslogan">Rules</p>
+              {previewSwap ? null : <p id="titleslogan">Rules</p>}
             </div>
 
-            <RulesSection />
+            {previewSwap ? (
+              <div id="bottomInfo" className="game-setup-bottom">
+                {children}
+              </div>
+            ) : (
+              <RulesSection />
+            )}
             {statusMessage ? (
               <p className="game-setup-status grey">{statusMessage}</p>
             ) : null}
@@ -216,10 +223,15 @@ export function GameSetupLayout({
           </div>
         </div>
 
-        {/* Bottom: bottom info (player card(s), prize, etc.) */}
-        <div id="bottomInfo" className="game-setup-bottom">
-          {children}
-        </div>
+        {previewSwap ? (
+          <div className="game-setup-bottom">
+            <RulesSection />
+          </div>
+        ) : (
+          <div id="bottomInfo" className="game-setup-bottom">
+            {children}
+          </div>
+        )}
       </div>
       {overlays}
     </>

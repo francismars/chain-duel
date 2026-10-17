@@ -57,7 +57,7 @@ type ButtonSelected =
 export default function GameMenu({
   preview = false,
 }: {
-  /** Static stepped preview: pick a seat, then open that seat's payment QR. */
+  /** Preview layout: both players pay from their own station. */
   preview?: boolean;
 } = {}) {
   const logger = useMemo(() => createLogger('GameMenu'), []);
@@ -77,7 +77,6 @@ export default function GameMenu({
   const { socket, connected } = useSocket();
   const { playSfx } = useAudio();
   const [loading, setLoading] = useState(!preview);
-  const [paySeat, setPaySeat] = useState<'both' | 'p1' | 'p2'>('both');
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
   const [player1Sats, setPlayer1Sats] = useState(0);
   const [player2Sats, setPlayer2Sats] = useState(0);
@@ -646,17 +645,11 @@ export default function GameMenu({
       <GameSetupLayout
         title={gameMenuTitle}
         pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}${
-          preview ? ` gamemenu-preview gamemenu-preview--${paySeat}` : ''
+          preview ? ' gamemenu-preview' : ''
         }`}
         mainMenuDisabled={false}
         canStart={canStart}
-        mainMenuLabel={
-          preview && paySeat !== 'both'
-            ? 'BACK'
-            : prevWinner
-              ? 'CLAIM PRIZE INSTEAD'
-              : 'BACK TO P2P SETTINGS'
-        }
+        mainMenuLabel={prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'}
         cancelOverlayTitle={
           prevWinner
             ? 'Return to claim screen?'
@@ -671,14 +664,7 @@ export default function GameMenu({
               ? 'Are you sure you want to go back to P2P settings? Deposited funds may be lost.'
               : 'Are you sure you want to leave?'
         }
-        onMainMenu={() => {
-          if (preview && paySeat !== 'both') {
-            playSfx(SFX.MENU_SELECT);
-            setPaySeat('both');
-            return;
-          }
-          openExitOverlay();
-        }}
+        onMainMenu={openExitOverlay}
         onStart={handleStartAttempt}
         loading={loading}
         showCancelOverlay={showCancelOverlay}
@@ -879,15 +865,6 @@ export default function GameMenu({
             <div
               id="player1card"
               className={player1CardExpanded ? 'expanded' : ''}
-              onClick={
-                preview && paySeat === 'both'
-                  ? () => {
-                      playSfx(SFX.MENU_SELECT);
-                      setPaySeat('p1');
-                    }
-                  : undefined
-              }
-              role={preview && paySeat === 'both' ? 'button' : undefined}
             >
               <div
                 id="qrcodeContainer1"
@@ -988,15 +965,6 @@ export default function GameMenu({
             <div
               id="player2card"
               className={player2CardExpanded ? 'expanded' : ''}
-              onClick={
-                preview && paySeat === 'both'
-                  ? () => {
-                      playSfx(SFX.MENU_SELECT);
-                      setPaySeat('p2');
-                    }
-                  : undefined
-              }
-              role={preview && paySeat === 'both' ? 'button' : undefined}
             >
               <div id="player2cardinfo" className="player-card-info">
                 <div
@@ -1074,6 +1042,18 @@ export default function GameMenu({
                 </a>
               </div>
             </div>
+            {preview ? (
+              <div className="deposit-message gamemenu-preview-deposit">
+                Deposit between <b>{fmt(Math.min(minP1, minP2))}</b> and{' '}
+                <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
+                <br />
+                Set player name on the payment note
+                <br />
+                LNURL compatible wallet required
+                <br />
+                Allows for multiple deposits
+              </div>
+            ) : null}
           </>
         )}
       </GameSetupLayout>
