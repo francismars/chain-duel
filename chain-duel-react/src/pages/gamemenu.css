@@ -628,3 +628,17 @@
   height: 2cqw;
   margin: 0 0.4vw;
 }
+
+.gamemenu-preview--both #player1card,
+.gamemenu-preview--both #player2card {
+  cursor: pointer;
+}
+
+.gamemenu-preview--both .qrcodeContainer {
+  display: none;
+}
+
+.gamemenu-preview--p1 #player2card,
+.gamemenu-preview--p2 #player1card {
+  display: none;
+}

@@ -54,7 +54,12 @@ type ButtonSelected =
   | 'cancelGameConfirm'
   | null;
 
-export default function GameMenu() {
+export default function GameMenu({
+  preview = false,
+}: {
+  /** Static stepped preview: pick a seat, then open that seat's payment QR. */
+  preview?: boolean;
+} = {}) {
   const logger = useMemo(() => createLogger('GameMenu'), []);
   const navigate = useNavigate();
   const location = useLocation();
@@ -71,7 +76,8 @@ export default function GameMenu() {
   const isNostrMode = useNostrFromQuery;
   const { socket, connected } = useSocket();
   const { playSfx } = useAudio();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!preview);
+  const [paySeat, setPaySeat] = useState<'both' | 'p1' | 'p2'>('both');
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
   const [player1Sats, setPlayer1Sats] = useState(0);
   const [player2Sats, setPlayer2Sats] = useState(0);
@@ -639,11 +645,17 @@ export default function GameMenu() {
     <>
       <GameSetupLayout
         title={gameMenuTitle}
-        pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}`}
+        pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}${
+          preview ? ` gamemenu-preview gamemenu-preview--${paySeat}` : ''
+        }`}
         mainMenuDisabled={false}
         canStart={canStart}
         mainMenuLabel={
-          prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'
+          preview && paySeat !== 'both'
+            ? 'BACK'
+            : prevWinner
+              ? 'CLAIM PRIZE INSTEAD'
+              : 'BACK TO P2P SETTINGS'
         }
         cancelOverlayTitle={
           prevWinner
@@ -659,7 +671,14 @@ export default function GameMenu() {
               ? 'Are you sure you want to go back to P2P settings? Deposited funds may be lost.'
               : 'Are you sure you want to leave?'
         }
-        onMainMenu={openExitOverlay}
+        onMainMenu={() => {
+          if (preview && paySeat !== 'both') {
+            playSfx(SFX.MENU_SELECT);
+            setPaySeat('both');
+            return;
+          }
+          openExitOverlay();
+        }}
         onStart={handleStartAttempt}
         loading={loading}
         showCancelOverlay={showCancelOverlay}
@@ -860,6 +879,15 @@ export default function GameMenu() {
             <div
               id="player1card"
               className={player1CardExpanded ? 'expanded' : ''}
+              onClick={
+                preview && paySeat === 'both'
+                  ? () => {
+                      playSfx(SFX.MENU_SELECT);
+                      setPaySeat('p1');
+                    }
+                  : undefined
+              }
+              role={preview && paySeat === 'both' ? 'button' : undefined}
             >
               <div
                 id="qrcodeContainer1"
@@ -960,6 +988,15 @@ export default function GameMenu() {
             <div
               id="player2card"
               className={player2CardExpanded ? 'expanded' : ''}
+              onClick={
+                preview && paySeat === 'both'
+                  ? () => {
+                      playSfx(SFX.MENU_SELECT);
+                      setPaySeat('p2');
+                    }
+                  : undefined
+              }
+              role={preview && paySeat === 'both' ? 'button' : undefined}
             >
               <div id="player2cardinfo" className="player-card-info">
                 <div
