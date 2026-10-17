@@ -92,6 +92,9 @@ export function UiDebugMenu() {
             >
               Turn off debug
             </button>
+            <p>
+              To turn it back on, type debug, press Ctrl+Shift+D, or open a URL like /?debug.
+            </p>
           </div>
           {UI_DEBUG_GROUPS.map((group) => (
             <section key={group.title}>

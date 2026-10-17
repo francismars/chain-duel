@@ -1297,7 +1297,7 @@
   justify-content: center;
   transition: all 0.35s ease-in-out;
   opacity: 1;
-  /* Above WebGL canvas (composited) and .corner-controls (100) */
+  /* Above the WebGL canvas. .corner-controls stays above overlays (11000). */
   z-index: 10000;
 }
 

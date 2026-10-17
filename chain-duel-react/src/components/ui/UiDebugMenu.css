@@ -8,11 +8,12 @@
 }
 
 .ui-debug-menu__panel {
-  position: absolute;
+  /* .corner-controls is transform-centered, so fixed is relative to that box. */
+  position: fixed;
   left: calc(100% + 0.6rem);
-  top: 0;
+  top: calc(1rem - 50vh + 50%);
   width: min(22rem, 70vw);
-  max-height: 70vh;
+  max-height: calc(100vh - 2rem);
   overflow: auto;
   padding: 0.75rem 0.85rem 0.9rem;
   background: #0a0a0a;
@@ -24,12 +25,23 @@
 
 .ui-debug-menu__head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.35rem 0.75rem;
   margin-bottom: 0.7rem;
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.ui-debug-menu__head p {
+  flex-basis: 100%;
+  margin: 0;
+  color: #9a9a9a;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  text-transform: none;
 }
 
 .ui-debug-menu__head a,
@@ -45,14 +57,26 @@
 }
 
 .ui-debug-menu__head button {
+  align-self: center;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid rgb(255 180 180 / 0.7);
+  background: rgb(255 80 80 / 0.12);
   color: #ffb4b4;
+  line-height: 1;
+}
+
+.ui-debug-menu__head button:hover,
+.ui-debug-menu__head button:focus-visible {
+  background: rgb(255 80 80 / 0.28);
+  color: #fff;
+  border-color: #ffb4b4;
 }
 
 .ui-debug-menu__panel section + section {
   margin-top: 0.75rem;
 }
 
-.ui-debug-menu__panel p {
+.ui-debug-menu__panel section p {
   margin: 0 0 0.25rem;
   color: #9a9a9a;
   font-size: 0.68rem;
@@ -85,6 +109,11 @@
 .ui-debug-menu__panel a:hover,
 .ui-debug-menu__panel a:focus-visible {
   color: #fff;
+}
+
+html.tv-safe-inset .ui-debug-menu__panel {
+  top: calc(var(--tv-safe-padding) + 0.5rem - 50vh + 50%);
+  max-height: calc(100vh - var(--tv-safe-padding) - 1.5rem);
 }
 
 .ui-debug-index {
