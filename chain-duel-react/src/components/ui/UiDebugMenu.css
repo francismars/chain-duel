@@ -12,7 +12,7 @@
   position: fixed;
   left: calc(100% + 0.6rem);
   top: calc(1rem - 50vh + 50%);
-  width: min(22rem, 70vw);
+  width: min(54rem, calc(100vw - 5rem));
   max-height: calc(100vh - 2rem);
   overflow: auto;
   padding: 0.75rem 0.85rem 0.9rem;
@@ -72,8 +72,15 @@
   border-color: #ffb4b4;
 }
 
+.ui-debug-menu__groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem 1.25rem;
+  align-items: start;
+}
+
 .ui-debug-menu__panel section + section {
-  margin-top: 0.75rem;
+  margin-top: 0;
 }
 
 .ui-debug-menu__panel section p {

@@ -96,21 +96,23 @@ export function UiDebugMenu() {
               To turn it back on, type debug, press Ctrl+Shift+D, or open a URL like /?debug.
             </p>
           </div>
-          {UI_DEBUG_GROUPS.map((group) => (
-            <section key={group.title}>
-              <p>{group.title}</p>
-              <ul>
-                {group.links.map((link) => (
-                  <li key={link.href}>
-                    <Link to={link.href} onClick={() => setOpen(false)}>
-                      {link.variant ? <span>{link.variant}</span> : null}
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          <div className="ui-debug-menu__groups">
+            {UI_DEBUG_GROUPS.map((group) => (
+              <section key={group.title}>
+                <p>{group.title}</p>
+                <ul>
+                  {group.links.map((link) => (
+                    <li key={link.href}>
+                      <Link to={link.href} onClick={() => setOpen(false)}>
+                        {link.variant ? <span>{link.variant}</span> : null}
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
         </div>
       ) : null}
     </div>
