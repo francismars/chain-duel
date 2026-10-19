@@ -66,6 +66,38 @@
   font-size: var(--ph-fs-display);
 }
 
+/* Preview play-style step: two cards only, so the row is narrower and the cards taller */
+.practice-hub-page.practice-hub--style-pick {
+  max-width: min(760px, 68vw);
+}
+
+.practice-hub-page.practice-hub--style-pick
+  .practice-play-style-section
+  .p2p-picker-card--lightning,
+.practice-hub-page.practice-hub--style-pick
+  .practice-play-style-section
+  .p2p-picker-card--nostr {
+  min-height: calc(var(--ph-compact-card-min) * 1.7);
+}
+
+/* Preview settings step: narrower panel; format cards side by side; opponent below, full width */
+.practice-hub-page.practice-hub--setup-pick {
+  max-width: min(960px, 82vw);
+}
+
+.practice-hub-page.practice-hub--setup-pick
+  .practice-free-play-panel__body
+  .local-setup-top-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.practice-hub-page.practice-hub--setup-pick
+  .local-format-section
+  .ph-picker-block
+  .p2p-picker-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 /* Strip panel chrome so content floats on the page background */
 .practice-hub-page .practice-panel {
   grid-row: 3;
@@ -530,6 +562,10 @@
   padding-inline: var(--ph-content-inset);
   padding-block: max(0.35rem, 0.45vw);
   box-sizing: border-box;
+}
+
+.practice-hub-page.practice-hub--setup-pick .practice-hub-panel-footer {
+  margin-top: clamp(1.25rem, 2.4vw, 2.25rem);
 }
 
 /* Match home page .button — overrides practiceHub.css gold .practice-start */
