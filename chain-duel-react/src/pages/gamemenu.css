@@ -659,6 +659,12 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
   padding: 0;
 }
 
+.gamemenu-page.gamemenu-preview.is-nostr #bottomInfo {
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  box-sizing: border-box;
+}
+
 .gamemenu-preview #leaderboard {
   margin-top: 0.85rem;
 }

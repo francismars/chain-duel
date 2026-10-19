@@ -412,16 +412,6 @@ export default function GameMenu({
       setHighlightP1(false);
       setHighlightP2(false);
     };
-    const signIn = (side: 1 | 2) => {
-      if (side === 1) {
-        setP1Name('Ada');
-        setPlayer1Image('/images/social/Nostr.png');
-      } else {
-        setP2Name('Hal');
-        setPlayer2Image('/images/about/lnd.png');
-      }
-      flash(side, 'name');
-    };
     const pay = (side: 1 | 2, sats: number, part: HighlightPart = 'all') => {
       if (side === 1) {
         setPlayer1Sats(sats);
@@ -480,10 +470,16 @@ export default function GameMenu({
     setNostrRelayProbe('done');
     nostrNote1Ref.current = PREVIEW_NOSTR_NOTE1;
 
-    later(1600, () => signIn(1));
-    later(4800, () => pay(1, 21_000, 'pay'));
-    later(8000, () => signIn(2));
-    later(11200, () => pay(2, 21_000, 'pay'));
+    later(1600, () => {
+      setP1Name('Ada');
+      setPlayer1Image('/images/social/Nostr.png');
+      pay(1, 21_000, 'all');
+    });
+    later(5200, () => {
+      setP2Name('Hal');
+      setPlayer2Image('/images/about/lnd.png');
+      pay(2, 21_000, 'all');
+    });
 
     return () => {
       cancelled = true;
