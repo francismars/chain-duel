@@ -1552,6 +1552,32 @@
   }
 }
 
+.page-reveal-scope--gameplay:has(.solo-zap-overlay__radiating-lines--back) {
+  isolation: isolate;
+}
+
+.solo-zap-overlay__radiating-lines--back {
+  position: fixed;
+  z-index: 0;
+}
+
+.page-reveal-scope--gameplay:has(.solo-zap-overlay__radiating-lines--back)
+  #gameContainer {
+  position: relative;
+  z-index: 1;
+}
+
+.page-reveal-scope--gameplay:has(.solo-zap-overlay__radiating-lines--back)
+  .solo-zap-overlay {
+  z-index: 2;
+}
+
+.page-reveal-scope--gameplay:has(.solo-zap-overlay__radiating-lines--back)
+  header#brand {
+  position: relative;
+  z-index: 3;
+}
+
 .solo-zap-overlay__radiating-lines {
   position: absolute;
   inset: 0;
@@ -1931,43 +1957,8 @@
 }
 
 .solo-zap-card .button.solo-zap-footer-btn {
-  color: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-}
-
-.solo-zap-card .button.solo-zap-footer-btn--subtle {
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background-color: transparent;
-  box-shadow: none;
-}
-
-.solo-zap-card .button.solo-zap-footer-btn--subtle:hover:not(:disabled):not(.practice-start--focused),
-.solo-zap-card
-  .button.solo-zap-footer-btn--subtle:focus-visible:not(:disabled):not(
-    .practice-start--focused
-  ) {
-  animation: none !important;
-  color: #fff;
-  background-color: transparent;
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: none;
-}
-
-.solo-zap-card .button.solo-zap-footer-btn--subtle:active:not(:disabled),
-.solo-zap-card .button.solo-zap-footer-btn--subtle:hover:active:not(:disabled) {
-  color: #fff;
-  background-color: transparent;
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: none;
-}
-
-.solo-zap-card .button.solo-zap-footer-btn--subtle.practice-start--focused {
-  animation: none;
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.22);
-  background-color: rgba(255, 255, 255, 0.04);
-  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.34);
 }
 
 .solo-zap-card .button.solo-zap-post-btn:focus,
@@ -1982,9 +1973,15 @@
   cursor: default;
 }
 
-.solo-zap-card .button.practice-start--focused:not(.solo-zap-footer-btn--subtle),
-.solo-zap-card .button.practice-back.practice-start--focused:not(.solo-zap-footer-btn--subtle) {
-  animation: glowing 2s ease-in-out infinite;
+.solo-zap-card .button.practice-start--focused,
+.solo-zap-card .button.practice-back.practice-start--focused,
+.solo-zap-overlay
+  .solo-zap-card
+  .button.practice-start.practice-start--focused:is(:hover, :focus, :focus-visible),
+.solo-zap-overlay
+  .solo-zap-card
+  .button.practice-back.practice-start--focused:is(:hover, :focus, :focus-visible) {
+  animation: glowing 2s ease-in-out infinite !important;
 }
 
 /* ── Post-note section ── */
@@ -2010,11 +2007,7 @@
 .solo-zap-note-preview__actions {
   margin-top: clamp(10px, 1vw, 14px);
   padding-top: clamp(10px, 1vw, 14px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.solo-zap-card[data-rank] .solo-zap-note-preview__actions {
-  border-top-color: rgba(var(--solo-accent-strong), 0.16);
+  border-top: none;
 }
 
 .solo-zap-note-preview__actions .solo-zap-post-btn {
@@ -2151,7 +2144,7 @@
 
 .solo-zap-value--tip {
   color: rgba(255, 255, 255, 0.4);
-  font-style: italic;
+  font-style: normal;
 }
 
 /* ─── Vertical / portrait: arcade & mobile ───────────────────────────────────

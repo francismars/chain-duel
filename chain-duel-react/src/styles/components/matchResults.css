@@ -18,46 +18,144 @@
 }
 
 .solo-zap-overlay[data-rank] {
-  background: rgb(0 0 0 / 92%);
+  background: rgb(5 5 5 / 88%);
   overflow-y: auto;
-  padding: 24px 16px;
+  padding: 0;
 }
 .solo-zap-overlay[data-rank]::after {
   display: none;
 }
 .solo-zap-overlay[data-rank] .solo-zap-card[data-rank] {
-  width: min(680px, 100%);
-  max-width: 100%;
-  max-height: calc(100dvh - 48px);
-  overflow-y: auto;
-  background: #090909;
-  border: 1px solid #555;
-  border-top: 3px solid #fff;
+  width: 100%;
+  min-height: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
   box-shadow: none;
   backdrop-filter: none;
-  padding: clamp(20px, 3vw, 40px);
+  padding: 6vh 6vw;
   --ph-fs-caption: 12px;
   --ph-fs-body-sm: 12px;
   --ph-fs-body: 14px;
 }
 .solo-zap-overlay[data-rank] .solo-zap-card__content {
-  align-items: stretch;
-  text-align: left;
-  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0;
+  min-height: 100%;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile--winner {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  order: 0;
+  margin-top: 0;
+  gap: 10px 14px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile__identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile--winner .solo-zap-profile__avatar {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile--winner .match-end-card__name,
+.solo-zap-overlay[data-rank] .solo-zap-profile--winner .match-end-card__wins {
+  margin-top: 0;
+  font-size: clamp(40px, 6vw, 72px);
+  line-height: 1;
+  width: auto;
+  white-space: nowrap;
+}
+.solo-zap-overlay[data-rank] .match-end-card__wins-word {
+  -webkit-text-stroke: 1px #fff;
+  -webkit-text-fill-color: transparent;
+}
+.solo-zap-overlay[data-rank] .match-end-card__kicker,
+.solo-zap-overlay[data-rank] .match-end-card__name,
+.solo-zap-overlay[data-rank] .match-end-card__wins,
+.solo-zap-overlay[data-rank] .match-end-card__sats,
+.solo-zap-overlay[data-rank] .match-end-card__note {
+  animation: none;
 }
 .solo-zap-overlay[data-rank] .solo-zap-profile {
-  flex-direction: row;
-  gap: 14px;
+  order: 0;
+  margin-top: 8px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-note-section,
+.solo-zap-overlay[data-rank] .solo-zap-receipt,
+.solo-zap-overlay[data-rank] .solo-zap-footer {
+  width: min(420px, 92vw);
+}
+.solo-zap-overlay[data-rank] .solo-zap-footer {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  width: min(420px, 92vw);
+  transform: none;
+  margin: 28px auto 0;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile:not(.solo-zap-profile--winner) {
+  flex-direction: column;
+  gap: 8px;
 }
 .solo-zap-overlay[data-rank] .solo-zap-profile__text {
-  align-items: flex-start;
+  align-items: center;
 }
 .solo-zap-overlay[data-rank] .solo-zap-profile__avatar {
   width: 40px;
   height: 40px;
-  border-radius: 0;
+  border-radius: 50%;
   border: 1px solid #777;
   box-shadow: none;
+}
+.solo-zap-overlay[data-rank] .solo-zap-note-section {
+  margin-top: 18px;
+  gap: 0;
+  align-items: stretch;
+}
+.solo-zap-overlay[data-rank] .solo-zap-note-label {
+  margin: 0 0 8px;
+  color: #aaa;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-align: center;
+  animation: none;
+}
+.solo-zap-overlay[data-rank] .solo-zap-card[data-rank] .solo-zap-note-preview {
+  background: #111;
+  border: 1px solid #3a3a3a;
+  padding: 16px 16px 14px;
+  margin: 0;
+}
+.solo-zap-overlay[data-rank] .solo-zap-note-text {
+  color: #eee;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.solo-zap-overlay[data-rank] .solo-zap-note-preview__actions {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: none;
+}
+.solo-zap-overlay[data-rank] .solo-zap-card .button.solo-zap-post-btn,
+.solo-zap-overlay[data-rank] .solo-zap-card .button.solo-zap-footer-btn--subtle {
+  color: #fff;
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.34);
 }
 .solo-zap-overlay[data-rank] .solo-zap-profile__name {
   font-size: 24px;
@@ -66,7 +164,7 @@
   margin-top: 12px;
 }
 .solo-zap-overlay[data-rank] .solo-zap-title-row {
-  justify-content: flex-start;
+  justify-content: center;
 }
 .solo-zap-overlay[data-rank] .solo-zap-title {
   font-size: clamp(28px, 4vw, 48px);
@@ -75,7 +173,7 @@
   text-shadow: none;
 }
 .solo-zap-overlay[data-rank] .solo-zap-amount {
-  justify-content: flex-start;
+  justify-content: center;
   padding: 20px 0;
   border-color: #666;
 }
@@ -91,7 +189,7 @@
 }
 .solo-zap-overlay[data-rank] .solo-zap-footer {
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 28px;
 }
 .solo-zap-overlay[data-rank] .solo-zap-card .button {
   min-height: 44px;
@@ -101,15 +199,22 @@
   box-shadow: none;
   animation: none;
 }
+/* Overlay actions match home .button (transparent + glow pulse) */
+.solo-zap-overlay .solo-zap-card .button.solo-zap-post-btn,
+.solo-zap-overlay .solo-zap-card .button.solo-zap-footer-btn {
+  color: #fff;
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  box-shadow: none;
+  animation: none;
+}
 .solo-zap-overlay
   .solo-zap-card
-  .button:not(:disabled):is(:hover, :focus-visible, .practice-start--focused) {
-  background: #fff;
-  color: #000;
-  border-color: #fff;
-  box-shadow: none;
-  outline: 2px solid #fff;
-  outline-offset: 3px;
+  .button.solo-zap-post-btn.practice-start--focused,
+.solo-zap-overlay
+  .solo-zap-card
+  .button.solo-zap-footer-btn.practice-start--focused {
+  animation: glowing 2s ease-in-out infinite;
 }
 
 .overlay.free-play-end {

@@ -75,7 +75,13 @@ export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
       { label: 'Free game, loser', href: '/game?preview=freeplay&side=loser', variant: 'B' },
       { label: 'Human vs human', href: '/game?preview=h2h' },
       { label: 'Human vs human, loser', href: '/game?preview=h2h&side=loser', variant: 'B' },
-      { label: 'Solo boot', href: '/game?preview=solo' },
+    ],
+  },
+  {
+    title: 'Challenge end',
+    links: [
+      { label: 'Win', href: '/game?preview=solo', variant: 'A' },
+      { label: 'Loss', href: '/game?preview=solo&side=loser', variant: 'B' },
     ],
   },
   {
