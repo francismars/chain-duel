@@ -39,13 +39,16 @@ import { hasChallengeMenuFocus } from '@/lib/challengeMenuFocus';
 import { useSocket } from '@/hooks/useSocket';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 
-function readInitialHubFocus(): PracticeHubFocus {
+function readInitialHubFocus(stepped: boolean): PracticeHubFocus {
   if (hasChallengeMenuFocus()) {
     return { zone: 'panel' };
   }
   const play = parsePlaySearchParam(
     new URLSearchParams(window.location.search).get('play')
   );
+  if (!stepped && play === 'free') {
+    return { zone: 'footer', which: 'start' };
+  }
   return { zone: 'playStyle', idx: playStyleToIdx(play) };
 }
 
@@ -86,7 +89,9 @@ export default function PracticeHub({
   const showStyle = !stepped || hubStep === 'style';
   const showSetup = !stepped || hubStep === 'setup';
 
-  const [hubFocus, setHubFocus] = useState<PracticeHubFocus>(readInitialHubFocus);
+  const [hubFocus, setHubFocus] = useState<PracticeHubFocus>(() =>
+    readInitialHubFocus(stepped)
+  );
   const [pickerRowRevealed, setPickerRowRevealed] = useState(false);
   const [challengeLaunching, setChallengeLaunching] = useState(false);
   const [challengeLaunchPhase, setChallengeLaunchPhase] =
@@ -194,10 +199,13 @@ export default function PracticeHub({
     (style: PracticePlayStyle) => {
       if (!stepped) return;
       setHubStep('setup');
+      if (style === 'free') {
+        setHubFocus({ zone: 'footer', which: 'start' });
+        return;
+      }
       setHubFocus({ zone: 'panel' });
       window.requestAnimationFrame(() => {
-        if (style === 'free') freePlayPanelRef.current?.focusDefault();
-        else challengesPanelRef.current?.focusDefault();
+        challengesPanelRef.current?.focusDefault();
       });
     },
     [stepped]

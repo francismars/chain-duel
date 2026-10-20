@@ -50,7 +50,7 @@ export default function P2pEntry({
   const [step, setStep] = useState<P2pStep>('mode');
   const [modeChosen, setModeChosen] = useState(false);
   const [navFocus, setNavFocus] = useState<P2pNavFocus>(
-    stepped ? { kind: 'session', idx: 0 } : { kind: 'payment', idx: 0 }
+    stepped ? { kind: 'session', idx: 0 } : { kind: 'start' }
   );
   const paymentRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const sessionRefs = useRef<(HTMLButtonElement | null)[]>([]);
