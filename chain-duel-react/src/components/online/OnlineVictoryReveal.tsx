@@ -117,9 +117,11 @@ export function OnlineVictoryReveal({
       aria-live="polite"
       aria-label={ariaLabel}
     >
-      <SoloZapRadiatingLines
-        className="end-screen-rays match-end-layer__rays match-end-layer__rays--instant"
-      />
+      {data.viewerRole === 'loser' ? null : (
+        <SoloZapRadiatingLines
+          className="end-screen-rays match-end-layer__rays match-end-layer__rays--instant"
+        />
+      )}
       <div className="match-end-card match-end-card--instant">
         <p className="match-end-card__kicker">
           ROUND {room.matchRound ?? 1} / FINAL / MATCH COMPLETE

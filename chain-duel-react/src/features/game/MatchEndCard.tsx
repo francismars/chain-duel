@@ -24,6 +24,14 @@ function matchEndKicker(cfg: Record<string, unknown>): string {
   return mode ? `${mode} / MATCH COMPLETE` : 'MATCH COMPLETE';
 }
 
+function localViewerLost(state: GameState): boolean {
+  const { p1Human, p2Human } = state.meta;
+  if (p1Human && p2Human) return false;
+  if (state.winnerPlayer === 'P1') return !p1Human;
+  if (state.winnerPlayer === 'P2') return !p2Human;
+  return false;
+}
+
 function readCopy(
   state: GameState,
   continueLabel: string | null | undefined
@@ -62,10 +70,16 @@ export function MatchEndCard({
   hidden?: boolean;
 }) {
   const [copy, setCopy] = useState<EndCopy | null>(null);
+  const [viewerLost, setViewerLost] = useState(false);
   const getStateRef = useRef(getState);
   getStateRef.current = getState;
 
   useEffect(() => {
+    if (hidden) {
+      setCopy(null);
+      setViewerLost(false);
+      return;
+    }
     let frame = 0;
     let key = '';
     const tick = () => {
@@ -80,8 +94,10 @@ export function MatchEndCard({
         if (key) {
           key = '';
           setCopy(null);
+          setViewerLost(false);
         }
       } else if (state) {
+        setViewerLost(localViewerLost(state));
         const next = readCopy(state, continueLabelRef?.current);
         const nextKey = `${next.winner}|${next.kicker}|${next.figure.kind}|${next.prompt}`;
         if (nextKey !== key) {
@@ -99,19 +115,23 @@ export function MatchEndCard({
 
   return (
     <>
-      {createPortal(
-        <SoloZapRadiatingLines
-          className="end-screen-rays end-screen-rays--burst"
-          tone="burst"
-        />,
-        document.body
-      )}
+      {!viewerLost
+        ? createPortal(
+            <SoloZapRadiatingLines
+              className="end-screen-rays end-screen-rays--burst"
+              tone="burst"
+            />,
+            document.body
+          )
+        : null}
       {createPortal(
     <div className="match-end-layer">
+      {viewerLost ? null : (
       <SoloZapRadiatingLines
         className="end-screen-rays match-end-layer__rays"
         tone="calm"
       />
+      )}
       <div className="match-end-card">
         <Sponsorship id="sponsorship-match-end" />
         <p className="match-end-card__kicker">{copy.kicker}</p>

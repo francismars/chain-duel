@@ -705,7 +705,9 @@ export default function OnlinePostGame({
 
   return (
     <div className="online-postgame-page">
-      <SoloZapRadiatingLines className="end-screen-rays" />
+      {isMatchPlayer && !isWinner ? null : (
+        <SoloZapRadiatingLines className="end-screen-rays" />
+      )}
       <div className="postgame-scrim" aria-hidden="true" />
       <Sponsorship id="sponsorship-online-postgame" />
       <header id="brand">
