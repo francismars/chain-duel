@@ -91,6 +91,7 @@ export default function GameMenu({
   const { socket, connected } = useSocket();
   const { playSfx } = useAudio();
   const [loading, setLoading] = useState(!preview);
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
   const [player1Sats, setPlayer1Sats] = useState(0);
   const [player2Sats, setPlayer2Sats] = useState(0);
@@ -347,12 +348,13 @@ export default function GameMenu({
             : 'Waiting for payment links from backend...'
       );
       setLoading(false);
+      setLoadingTimedOut(false);
     },
     [applySerializedPlayers, navigate, useNostrFromQuery]
   );
 
   const handleMenuLoadingTimeout = useCallback(() => {
-    setLoading(false);
+    setLoadingTimedOut(true);
   }, []);
 
   useMenuSocketInfo({
@@ -792,6 +794,8 @@ export default function GameMenu({
         onMainMenu={openExitOverlay}
         onStart={handleStartAttempt}
         loading={loading}
+        loadingTimedOut={loadingTimedOut}
+        onLoadingTimeoutExit={confirmExit}
         showCancelOverlay={showCancelOverlay}
         statusMessage={statusMessage}
         startBlockedHint={startBlockedHint}

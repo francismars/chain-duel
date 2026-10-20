@@ -26,6 +26,9 @@ export interface GameSetupLayoutProps {
   onMainMenu: () => void;
   onStart: () => void;
   loading: boolean;
+  /** Keep the loading overlay up and offer a way out after the load times out */
+  loadingTimedOut?: boolean;
+  onLoadingTimeoutExit?: () => void;
   showCancelOverlay: boolean;
   /** Overlay copy when leaving the setup screen */
   cancelOverlayTitle?: string;
@@ -59,6 +62,8 @@ export function GameSetupLayout({
   onMainMenu,
   onStart,
   loading,
+  loadingTimedOut = false,
+  onLoadingTimeoutExit,
   showCancelOverlay,
   cancelOverlayTitle = 'Cancel Game?',
   cancelOverlayText = 'Are you sure you want to leave?',
@@ -115,7 +120,31 @@ export function GameSetupLayout({
       ? createPortal(
           <>
             <div className={`overlay ${loading ? '' : 'hide'}`} id="loading">
-              <img src="/images/loading.gif" alt="Loading" />
+              {loadingTimedOut ? (
+                <div className="warning">
+                  <div className="warning-inner">
+                    <h2 className="warning-title condensed">
+                      Still waiting for the game
+                    </h2>
+                    <div className="warning-text">
+                      The game menu did not load. Return to the menu and try
+                      again.
+                    </div>
+                  </div>
+                  <div className="warning-actions">
+                    <Button
+                      className="button"
+                      id="loadingTimeoutExit"
+                      type="button"
+                      onClick={onLoadingTimeoutExit}
+                    >
+                      Return to menu
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <img src="/images/loading.gif" alt="Loading" />
+              )}
             </div>
             <div
               className={`overlay ${showCancelOverlay ? '' : 'hide'}`}
