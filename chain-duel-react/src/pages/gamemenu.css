@@ -628,3 +628,231 @@
   height: 2cqw;
   margin: 0 0.4vw;
 }
+
+/* Preview: two payment stations, prize shared above them. */
+.gamemenu-preview.game-setup-page .game-setup-middle,
+html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
+  max-height: none;
+  justify-content: center;
+  padding-bottom: 0;
+}
+
+.gamemenu-preview #centerSection {
+  display: none;
+}
+
+html.tv-safe-inset .gamemenu-preview #bottomInfo,
+.gamemenu-preview #bottomInfo {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  column-gap: 1.25rem;
+  row-gap: 0.55rem;
+  width: min(1080px, calc(100% - 2.5rem));
+  margin: 0.25rem auto 1.75rem;
+  padding: 0;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #bottomInfo {
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  box-sizing: border-box;
+}
+
+.gamemenu-preview #leaderboard {
+  margin-top: 0.85rem;
+}
+
+.gamemenu-preview .prizeinfocard {
+  order: 0;
+  width: 18rem;
+  flex: 0 0 18rem;
+  justify-content: center;
+  align-self: center;
+}
+
+.gamemenu-preview #prizevaluesats {
+  width: 100%;
+  justify-content: center;
+}
+
+.gamemenu-preview #player1card,
+.gamemenu-preview #player2card {
+  width: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.85rem;
+}
+
+.gamemenu-preview #player2card {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.gamemenu-preview .qrcodeContainer .qrcode {
+  width: 11vw;
+  height: 11vw;
+  max-width: 132px;
+  max-height: 132px;
+}
+
+/* B preview: codes sit mid-screen, so scale grows inward from the outer edge. */
+.gamemenu-page.gamemenu-preview #player1card .qrcodeContainer .qrcode {
+  transform-origin: center left;
+}
+
+.gamemenu-page.gamemenu-preview #player2card .qrcodeContainer .qrcode {
+  transform-origin: center right;
+}
+
+/* B preview: border lives on the QR so Control-scale grows it. Black inverts to a white frame. */
+.gamemenu-page.gamemenu-preview
+  #player1card
+  .qrcodeContainer:not(.qrcodeContainer--compatible)
+  .qrcode,
+.gamemenu-page.gamemenu-preview
+  #player2card
+  .qrcodeContainer:not(.qrcodeContainer--compatible)
+  .qrcode,
+.gamemenu-page.gamemenu-preview
+  #player1card.expanded
+  .qrcodeContainer:not(.qrcodeContainer--compatible)
+  .qrcode,
+.gamemenu-page.gamemenu-preview
+  #player2card.expanded
+  .qrcodeContainer:not(.qrcodeContainer--compatible)
+  .qrcode {
+  border: 1px solid #000;
+}
+
+.gamemenu-preview .player-card-info {
+  height: auto;
+  margin-top: 0;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo .condensed,
+.gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+  order: -1;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo,
+.gamemenu-page.gamemenu-preview #player2cardinfo {
+  padding: 0;
+  height: auto;
+  flex: 0 0 11rem;
+  width: 11rem;
+  min-width: 11rem;
+  max-width: 11rem;
+}
+
+.gamemenu-page.gamemenu-preview .player1info,
+.gamemenu-page.gamemenu-preview .player2info {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gamemenu-page.gamemenu-preview #player1satsContainer,
+.gamemenu-page.gamemenu-preview #player2satsContainer {
+  width: 100%;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.gamemenu-page.gamemenu-preview #player2cardinfo {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer,
+.gamemenu-page.gamemenu-preview #player1cardinfo .condensed {
+  align-self: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
+.gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+  align-self: flex-end;
+  justify-content: flex-end;
+  text-align: right;
+  flex-direction: row;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo .deposit-message,
+.gamemenu-page.gamemenu-preview #player2cardinfo .deposit-message {
+  display: none;
+}
+
+/* Nostr preview has one center QR, so the side players can take the spare space. */
+.gamemenu-page.gamemenu-preview.is-nostr #player1card,
+.gamemenu-page.gamemenu-preview.is-nostr #player2card {
+  flex: 1 1 0;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #player1cardinfo,
+.gamemenu-page.gamemenu-preview.is-nostr #player2cardinfo {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: max-content;
+  max-width: none;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer,
+.gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer {
+  width: auto;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer span:not(.sats-label),
+.gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer span:not(.sats-label) {
+  font-size: 2cqw;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer .sats-label,
+.gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer .sats-label {
+  font-size: 1.15cqw;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr .player1info,
+.gamemenu-page.gamemenu-preview.is-nostr .player2info {
+  font-size: 4cqw;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr .playerSquare,
+.gamemenu-page.gamemenu-preview.is-nostr .playerImg {
+  width: 3.4cqw;
+  height: 3.4cqw;
+}
+
+.gamemenu-preview .gamemenu-preview-deposit {
+  flex: 0 0 100%;
+  width: 100%;
+  max-width: none;
+  margin-top: 0.2rem;
+  text-align: center;
+}
+
+.gamemenu-preview #splits {
+  flex: 0 0 100%;
+  width: 100%;
+  margin-top: 0.35rem;
+  text-align: center;
+}
+
+.gamemenu-preview #gameButtons {
+  padding-top: 1.1rem;
+}

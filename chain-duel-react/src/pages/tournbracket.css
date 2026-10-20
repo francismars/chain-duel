@@ -53,6 +53,21 @@
   overflow: visible;
 }
 
+/* Sits above the radiating-line canvas and under the bracket, champion panel, and stats. */
+.tournbracket-page .tournbracket-lines-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: rgb(0 0 0 / 62%);
+  pointer-events: none;
+}
+
+.tournbracket-page .tournbracket-header,
+.tournbracket-page .tournbracket-middle,
+.tournbracket-page .bracketDetails {
+  z-index: 2;
+}
+
 .tournbracket-page #bracket {
   width: 100%;
   max-width: none;
@@ -246,15 +261,33 @@
 
 /* Lightning gif overlay on QR when payment received (same pattern as GameMenu) */
 .tournbracket-page .bracketPayment .qr-code-link {
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-decoration: none;
   color: inherit;
+  line-height: 0;
+  --qr-compat-duration: 0.3s;
+  --qr-compat-ease: ease-in-out;
+  padding: 0.21vw;
+  box-sizing: border-box;
+  background: rgb(255 255 255 / 0%);
+  transition: background var(--qr-compat-duration) var(--qr-compat-ease);
+}
+
+.tournbracket-page .bracketPayment .qr-code-link.qr-code-link--compatible {
+  background: rgb(255 255 255 / 100%);
+}
+
+.tournbracket-page .bracketPayment .qr-code-link .label {
+  line-height: normal;
 }
 
 .tournbracket-page .bracketPayment .qr-code-stack {
   position: relative;
-  display: inline-block;
+  display: block;
   line-height: 0;
+  font-size: 0;
 }
 
 .tournbracket-page .bracketPayment .qrcodeDecoration {
@@ -265,6 +298,14 @@
   height: auto;
   pointer-events: none;
   z-index: 2;
+  transition: opacity var(--qr-compat-duration) var(--qr-compat-ease);
+}
+
+.tournbracket-page
+  .bracketPayment
+  .qr-code-link.qr-code-link--compatible
+  .qrcodeDecoration {
+  opacity: 0.12;
 }
 
 /* scalePop animation on sats deposited (matches legacy) */
@@ -348,11 +389,25 @@
   height: 15vw;
   max-width: none;
   max-height: none;
-  background: #fff;
+  background: transparent;
   padding: 0;
+  filter: invert(1);
+  mix-blend-mode: screen;
+  transition:
+    filter var(--qr-compat-duration) var(--qr-compat-ease),
+    mix-blend-mode var(--qr-compat-duration) var(--qr-compat-ease);
 }
 
-.tournbracket-page .bracketPayment .qrCodeDiv canvas.qrcode {
+.tournbracket-page
+  .bracketPayment
+  .qr-code-link.qr-code-link--compatible
+  .qrcode {
+  filter: invert(0);
+  mix-blend-mode: normal;
+}
+
+.tournbracket-page .bracketPayment .qrCodeDiv canvas.qrcode,
+.tournbracket-page .bracketPayment .qrCodeDiv svg.qrcode {
   width: 15vw !important;
   height: 15vw !important;
 }
@@ -580,9 +635,12 @@
 .tournbracket-page .tournFinishedDiv {
   width: 100%;
   position: fixed;
-  /* Higher on screen than legacy 4vw — clears thumb reach / bottom chrome */
-  bottom: clamp(2.75rem, 10vw, 6.5rem);
-  padding: 1vw;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  /* Clear the Players / Prize / Buy In strip. Legacy sat at bottom: 4vw with a 19vw block. */
+  bottom: clamp(6.5rem, 18vh, 11rem);
+  padding: 1vw 1vw 0.4vw;
   box-sizing: border-box;
   text-align: center;
   background: radial-gradient(
@@ -592,6 +650,11 @@
     #00000000,
     #00000000
   );
+}
+
+.tournbracket-page .tournFinishedDiv h1 {
+  margin: 0.15vw 0 0.35vw;
+  line-height: 0.9;
 }
 
 .tournbracket-page .tournFinishedDiv h2.tourn-finished-headline {
@@ -648,7 +711,9 @@
 }
 
 .tournbracket-page #winnerName {
+  display: block;
   font-size: 7vw;
+  line-height: 0.9;
 }
 
 .tournbracket-page .claimSatsButton {

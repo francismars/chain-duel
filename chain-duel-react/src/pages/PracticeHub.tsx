@@ -39,13 +39,16 @@ import { hasChallengeMenuFocus } from '@/lib/challengeMenuFocus';
 import { useSocket } from '@/hooks/useSocket';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 
-function readInitialHubFocus(): PracticeHubFocus {
+function readInitialHubFocus(stepped: boolean): PracticeHubFocus {
   if (hasChallengeMenuFocus()) {
     return { zone: 'panel' };
   }
   const play = parsePlaySearchParam(
     new URLSearchParams(window.location.search).get('play')
   );
+  if (!stepped && play === 'free') {
+    return { zone: 'footer', which: 'start' };
+  }
   return { zone: 'playStyle', idx: playStyleToIdx(play) };
 }
 
@@ -67,7 +70,12 @@ const CHALLENGE_LAUNCH_COPY: Record<
   },
 };
 
-export default function PracticeHub() {
+export default function PracticeHub({
+  flow = 'flat',
+}: {
+  /** `stepped` is the preview: pick a play style, then that style's settings. */
+  flow?: 'flat' | 'stepped';
+} = {}) {
   const navigate = useNavigate();
   const { socket } = useSocket();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -76,8 +84,14 @@ export default function PracticeHub() {
 
   const playStyle = parsePlaySearchParam(searchParams.get('play'));
   const playStyleIdx = playStyleToIdx(playStyle);
+  const stepped = flow === 'stepped';
+  const [hubStep, setHubStep] = useState<'style' | 'setup'>('style');
+  const showStyle = !stepped || hubStep === 'style';
+  const showSetup = !stepped || hubStep === 'setup';
 
-  const [hubFocus, setHubFocus] = useState<PracticeHubFocus>(readInitialHubFocus);
+  const [hubFocus, setHubFocus] = useState<PracticeHubFocus>(() =>
+    readInitialHubFocus(stepped)
+  );
   const [pickerRowRevealed, setPickerRowRevealed] = useState(false);
   const [challengeLaunching, setChallengeLaunching] = useState(false);
   const [challengeLaunchPhase, setChallengeLaunchPhase] =
@@ -176,9 +190,26 @@ export default function PracticeHub() {
   }, [playStyle]);
 
   const enterPlayStyle = useCallback(() => {
+    if (stepped) setHubStep('style');
     setHubFocus({ zone: 'playStyle', idx: playStyleIdx });
     focusPlayStyleCard(playStyleIdx);
-  }, [focusPlayStyleCard, playStyleIdx]);
+  }, [focusPlayStyleCard, playStyleIdx, stepped]);
+
+  const openSetup = useCallback(
+    (style: PracticePlayStyle) => {
+      if (!stepped) return;
+      setHubStep('setup');
+      if (style === 'free') {
+        setHubFocus({ zone: 'footer', which: 'start' });
+        return;
+      }
+      setHubFocus({ zone: 'panel' });
+      window.requestAnimationFrame(() => {
+        challengesPanelRef.current?.focusDefault();
+      });
+    },
+    [stepped]
+  );
 
   const enterFooter = useCallback((which: 'back' | 'start') => {
     setHubFocus({ zone: 'footer', which });
@@ -238,7 +269,7 @@ export default function PracticeHub() {
         if (e.repeat && isActivate) return true;
 
         if (isActivate) {
-          if (which === 'back') exitToMainMenu();
+          if (which === 'back') footerBackRef.current?.click();
           else footerStartRef.current?.click();
           return true;
         }
@@ -305,6 +336,10 @@ export default function PracticeHub() {
       if (isTab || isDown) {
         e.preventDefault();
         playSfx(SFX.MENU_SELECT);
+        if (stepped && hubStep === 'style') {
+          openSetup(playStyle);
+          return;
+        }
         enterPanel();
         return;
       }
@@ -319,6 +354,7 @@ export default function PracticeHub() {
         e.preventDefault();
         if (e.repeat) return;
         activatePlayStyle(hubFocus.idx);
+        if (stepped) openSetup(playStyleFromIdx(hubFocus.idx));
         return;
       }
 
@@ -342,8 +378,12 @@ export default function PracticeHub() {
     enterPlayStyle,
     hubFocus,
     playSfx,
+    hubStep,
+    openSetup,
+    playStyle,
     resumePanelFromFooter,
     setPlayStyle,
+    stepped,
   ]);
 
   useEffect(() => {
@@ -413,6 +453,8 @@ export default function PracticeHub() {
         'practice-hub-page',
         'p2p-entry-page',
         'practice-hub-page--challenges',
+        stepped && showStyle ? 'practice-hub--style-pick' : '',
+        stepped && showSetup ? 'practice-hub--setup-pick' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -423,10 +465,17 @@ export default function PracticeHub() {
       </header>
 
       <header className="practice-hub-header">
-        <h2 className="practice-hub-title">FREE TO PLAY</h2>
+        <h2 className="practice-hub-title">
+          {stepped && showStyle
+            ? 'FREE PLAY'
+            : playStyle === 'challenges'
+              ? 'CHALLENGES'
+              : 'QUICK MATCH'}
+        </h2>
       </header>
 
       <div className="practice-panel" role="main" aria-label="Practice play">
+        {showStyle ? (
         <section
           className="practice-section practice-play-style-section"
           aria-label="Play style"
@@ -463,6 +512,7 @@ export default function PracticeHub() {
                 onClick={() => {
                   setHubFocus({ zone: 'playStyle', idx: 0 });
                   activatePlayStyle(0);
+                  if (stepped) openSetup('free');
                 }}
               >
                 <svg
@@ -531,6 +581,7 @@ export default function PracticeHub() {
                 onClick={() => {
                   setHubFocus({ zone: 'playStyle', idx: 1 });
                   activatePlayStyle(1);
+                  if (stepped) openSetup('challenges');
                 }}
               >
                 <svg
@@ -570,8 +621,13 @@ export default function PracticeHub() {
             </div>
           </div>
         </section>
+        ) : null}
 
-        <div className="practice-play-style-area" ref={playStyleAreaRef}>
+        {showSetup ? (
+        <div
+          className="practice-play-style-area"
+          ref={playStyleAreaRef}
+        >
           <div
             ref={freePlayPanelShellRef}
             className={[
@@ -584,7 +640,7 @@ export default function PracticeHub() {
           >
             <PracticeFreePlayPanel
               ref={freePlayPanelRef}
-              isActive={playStyle === 'free'}
+              isActive={showSetup && playStyle === 'free'}
               menuZone={playStyle === 'free' ? hubFocus.zone : 'playStyle'}
               footerBackRef={footerBackRef}
               footerStartRef={footerStartRef}
@@ -604,7 +660,7 @@ export default function PracticeHub() {
           >
             <PracticeChallengesPanel
               ref={challengesPanelRef}
-              isActive={playStyle === 'challenges'}
+              isActive={showSetup && playStyle === 'challenges'}
               menuZone={
                 playStyle === 'challenges' ? hubFocus.zone : 'playStyle'
               }
@@ -616,6 +672,7 @@ export default function PracticeHub() {
             />
           </div>
         </div>
+        ) : null}
 
         <div className="practice-actions practice-hub-panel-footer">
           <Button
@@ -628,10 +685,17 @@ export default function PracticeHub() {
               .filter(Boolean)
               .join(' ')}
             onFocus={() => enterFooter('back')}
-            onClick={exitToMainMenu}
+            onClick={() => {
+              if (stepped && hubStep === 'setup') {
+                enterPlayStyle();
+                return;
+              }
+              exitToMainMenu();
+            }}
           >
-            MAIN MENU
+            {stepped && hubStep === 'setup' ? 'BACK' : 'MAIN MENU'}
           </Button>
+          {!(stepped && hubStep === 'style') ? (
           <Button
             ref={footerStartRef}
             tabIndex={footerStartFocused ? 0 : -1}
@@ -652,6 +716,7 @@ export default function PracticeHub() {
                 ? 'STARTING CHALLENGE…'
                 : 'START CHALLENGE'}
           </Button>
+          ) : null}
         </div>
       </div>
 

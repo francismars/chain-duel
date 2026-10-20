@@ -4,6 +4,7 @@ import {
   FFA_START_SATS_PER_PLAYER,
 } from '@/game/engine/constants';
 import type { GameState, GridPos, PlayerId } from '@/game/engine/types';
+import { captureRateLabel } from '@/game/engine/captureRateLabel';
 import type { FfaHudPlayer } from '@/game/engine/types';
 
 export type FfaPlayerIndex = 0 | 1 | 2 | 3;
@@ -352,6 +353,7 @@ export function ffaApplyCaptureAmount(
     gainPos,
     lossPos,
     capturePercent,
+    captureRateLabel: captureRateLabel(state, winner, capturePercent),
     p1YOffsetPx: 0,
     p2YOffsetPx: 0,
     alpha: 1,

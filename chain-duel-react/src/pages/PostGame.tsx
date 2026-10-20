@@ -24,12 +24,15 @@ import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';
 import { createLogger } from '@/shared/utils/logger';
+import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import {
   postGameConfirmGate,
   postGameWinnerAllowsKey,
 } from '@/pages/postGameWinnerControl';
 import '@/components/ui/Button.css';
 import './postgame.css';
+
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 
 type MenuState = 1 | 2 | 3;
 type ActiveButtonMenu1 = 0 | 1;
@@ -85,6 +88,9 @@ export default function PostGame() {
   const [creatingWithdrawal, setCreatingWithdrawal] = useState(false);
   const [qrRevealed, setQrRevealed] = useState(false);
   const postGameReportedRef = useRef(false);
+  const claimButtonRef = useRef<HTMLButtonElement>(null);
+  const doubleOrNothingRef = useRef<HTMLButtonElement>(null);
+  const mainMenuButtonRef = useRef<HTMLButtonElement>(null);
   const withdrawalReportedRef = useRef(false);
 
   useGamepad(true);
@@ -109,6 +115,33 @@ export default function PostGame() {
   }, [location, navigate]);
 
   useEffect(() => {
+    if (new URLSearchParams(location.search).get('preview') === 'claim') {
+      const qr = new URLSearchParams(location.search).get('qr');
+      setLoading(false);
+      setWinnerName('SATOSHI');
+      setP1Name('Satoshi');
+      setP2Name('Hal');
+      setP1Deposit(25000);
+      setP2Deposit(25000);
+      setTotalPrize(50000);
+      setGameMode('DUEL');
+      setLnurlw('lnurl1previewwithdrawalsample');
+      setQrValue('lnurl1previewwithdrawalsample');
+      if (qr === '1' || qr === 'show') {
+        setMenu(2);
+        setQrRevealed(true);
+        setPrizeClaimed(false);
+      } else if (qr === '0' || qr === 'blur') {
+        setMenu(1);
+        setQrRevealed(false);
+        setPrizeClaimed(false);
+      } else {
+        setMenu(3);
+        setQrRevealed(false);
+        setPrizeClaimed(true);
+      }
+      return;
+    }
     if (!socket) return;
     const requestPostGameInfo = () => {
       socket.emit('postGameInfoRequest');
@@ -126,7 +159,7 @@ export default function PostGame() {
       window.clearTimeout(fallbackTimer);
       socket.off('connect', requestPostGameInfo);
     };
-  }, [socket]);
+  }, [location.search, socket]);
 
   const updateHighscores = useCallback(async () => {
     try {
@@ -356,6 +389,17 @@ export default function PostGame() {
   const practiceMode = gameMode === 'PRACTICE';
   const canDoubleOrNothing =
     !qrRevealed && !tournamentMode && !prizeClaimed && !loading;
+
+  useEffect(() => {
+    const claimFocused =
+      menu === 3 ? activeButtonMenu3 === 0 : activeButtonMenu1 === 0;
+    const menuFocused = menu === 3 && activeButtonMenu3 === 1;
+    const donFocused =
+      menu !== 3 && canDoubleOrNothing && activeButtonMenu1 === 1;
+    setButtonGlow(claimButtonRef.current, claimFocused);
+    setButtonGlow(mainMenuButtonRef.current, menuFocused);
+    setButtonGlow(doubleOrNothingRef.current, donFocused);
+  }, [menu, activeButtonMenu1, activeButtonMenu3, canDoubleOrNothing]);
   const qrCompatPulse = useLnurlQrCompatiblePulse(
     qrRevealed && menu === 2 && Boolean(qrValue) && !practiceMode
   );
@@ -479,9 +523,12 @@ export default function PostGame() {
         id="postGame"
         className={`flex full flex-center animateIn ${loading ? 'empty' : ''}`}
       >
+        <SoloZapRadiatingLines className="end-screen-rays" />
+        <div className="postgame-scrim" aria-hidden />
         {practiceMode ? null : <Sponsorship id="sponsorship-postgame" />}
-        <div className="flex">
-          <h2 id="gameOver">GAME OVER</h2>
+        <div className="postgame-stage">
+        <div className="flex match-result-heading">
+          <h2 id="gameOver">MATCH COMPLETE</h2>
           <div className="playerInfoGroup">
             <img
               className={`playerImg ${winnerPicture ? '' : 'hide'}`}
@@ -498,84 +545,88 @@ export default function PostGame() {
           </div>
         </div>
 
-        {practiceMode ? null : (
-          <div id="fees">
-            <span id="split1">
-              2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span> to
-              the Sponsor (@piratehash)
-            </span>{' '}
-            ·{' '}
-            <span id="split2">
-              2%{' '}
-              <span id="developerFee">
-                ({developerFee.toLocaleString()} sats)
-              </span>{' '}
-              to the developer (@francismars)
-            </span>{' '}
-            ·{' '}
-            <span id="split3">
-              1%{' '}
-              <span id="designerFee">
-                ({designerFee.toLocaleString()} sats)
-              </span>{' '}
-              to the designer (@bitcoinanatomy)
-            </span>
-          </div>
-        )}
-
         <h1 id="prize">
           {totalPrize.toLocaleString()} SATS{prizeClaimed ? ' CLAIMED' : ''}
         </h1>
-        <p
-          id="claimText"
-          style={{ display: menu === 3 || practiceMode ? 'none' : undefined }}
-        >
-          CLAIM YOUR WINNINGS
-        </p>
-        <a
-          id="qrcodeLink"
-          href={qrHref}
-          className={qrcodeLinkClassName || undefined}
-        >
-          {menu === 3 ? null : qrValue ? (
-            <QRCodeCanvas
-              className={`qrcode ${menu === 1 ? 'blur' : ''}`}
-              id="qrCode1"
-              value={qrValue}
-              size={800}
-            />
-          ) : (
-            <img
-              className={menu === 1 ? 'blur' : ''}
-              id="qrCode1"
-              src="/images/loading.gif"
-              alt=""
-            />
-          )}
-        </a>
-        <p id="claimReq1" style={{ display: menu === 3 ? 'none' : undefined }}>
-          Requires compatible wallet.
-        </p>
+        </div>
         <div
-          id="buttonsDiv"
-          style={{
-            flexDirection: menu === 3 ? 'row' : 'column',
-            justifyContent: menu === 3 ? 'center' : undefined,
-            gap: menu === 3 ? '21px' : undefined,
-            marginTop: menu === 3 ? '16cqw' : undefined,
-          }}
+          className={`postgame-claim-row${menu === 3 ? ' postgame-claim-row--menu3' : ''}`}
         >
+          <div className="postgame-claim-copy">
+            <p
+              id="claimText"
+              style={{
+                display: menu === 3 || practiceMode ? 'none' : undefined,
+              }}
+            >
+              CLAIM YOUR WINNINGS
+            </p>
+            {practiceMode ? null : (
+              <div id="fees">
+                <span id="split1">
+                  2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span>{' '}
+                  to the Sponsor (@piratehash)
+                </span>{' '}
+                ·{' '}
+                <span id="split2">
+                  2%{' '}
+                  <span id="developerFee">
+                    ({developerFee.toLocaleString()} sats)
+                  </span>{' '}
+                  to the developer (@francismars)
+                </span>{' '}
+                ·{' '}
+                <span id="split3">
+                  1%{' '}
+                  <span id="designerFee">
+                    ({designerFee.toLocaleString()} sats)
+                  </span>{' '}
+                  to the designer (@bitcoinanatomy)
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="postgame-claim-qr">
+            <a
+              id="qrcodeLink"
+              href={qrHref}
+              className={qrcodeLinkClassName || undefined}
+            >
+              {menu === 3 ? null : qrValue ? (
+                <QRCodeCanvas
+                  className={`qrcode ${menu === 1 ? 'blur' : ''}`}
+                  id="qrCode1"
+                  value={qrValue}
+                  size={800}
+                />
+              ) : (
+                <img
+                  className={menu === 1 ? 'blur' : ''}
+                  id="qrCode1"
+                  src="/images/loading.gif"
+                  alt=""
+                />
+              )}
+            </a>
+            <p
+              id="claimReq1"
+              style={{ display: menu === 3 ? 'none' : undefined }}
+            >
+              Requires compatible wallet.
+            </p>
+          </div>
+          <div
+            id="buttonsDiv"
+            style={{
+              flexDirection: menu === 3 ? 'row' : 'column',
+              justifyContent: menu === 3 ? 'center' : undefined,
+              marginTop: menu === 3 ? '16cqw' : undefined,
+            }}
+          >
           <Button
+            ref={claimButtonRef}
             id="claimbutton"
             style={{
-              animationDuration:
-                menu === 3
-                  ? activeButtonMenu3 === 0
-                    ? '2s'
-                    : '0s'
-                  : activeButtonMenu1 === 0
-                    ? '2s'
-                    : '0s',
               marginLeft: menu === 3 ? '0px' : undefined,
               marginRight: menu === 3 ? '0px' : undefined,
             }}
@@ -586,13 +637,10 @@ export default function PostGame() {
           {menu === 3 || tournamentMode ? null : (
             <div className="don-section">
               <Button
+                ref={doubleOrNothingRef}
                 id="doubleornotthingbutton"
                 className={canDoubleOrNothing ? '' : 'disabled'}
                 disabled={!canDoubleOrNothing}
-                style={{
-                  animationDuration:
-                    canDoubleOrNothing && activeButtonMenu1 === 1 ? '2s' : '0s',
-                }}
                 onClick={onDoubleOrNothing}
               >
                 {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
@@ -604,10 +652,10 @@ export default function PostGame() {
           )}
           {menu === 3 ? (
             <Button
+              ref={mainMenuButtonRef}
               id="startnewbutton"
               style={{
                 display: 'block',
-                animationDuration: activeButtonMenu3 === 1 ? '2s' : '0s',
                 marginLeft: '0px',
                 marginRight: '0px',
               }}
@@ -624,6 +672,7 @@ export default function PostGame() {
               RETURN TO MAIN MENU
             </Button>
           )}
+          </div>
         </div>
         <div id="socialFollow">
           Follow{' '}

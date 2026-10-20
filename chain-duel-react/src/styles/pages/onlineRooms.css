@@ -967,10 +967,7 @@
 
 .online-room-card--history
   .online-history-matchup-score.online-postgame-player--round-loser
-  .online-history-matchup-amount,
-.online-room-card--history
-  .online-history-matchup-score.online-postgame-player--round-loser
-  .online-postgame-player-denom {
+  .online-history-matchup-amount {
   opacity: 0.48;
 }
 

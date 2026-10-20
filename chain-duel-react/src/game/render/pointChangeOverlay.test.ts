@@ -24,9 +24,9 @@ describe('pointChangeOverlay', () => {
     expect(large).toBeGreaterThan(small);
   });
 
-  it('drifts outward as the pop fades', () => {
-    expect(Math.abs(pointChangeDriftX(1, -1))).toBeLessThan(0.001);
-    expect(Math.abs(pointChangeDriftX(0.2, -1))).toBeGreaterThan(0);
+  it('stays on a vertical path as the pop fades', () => {
+    expect(pointChangeDriftX(1, -1)).toBe(0);
+    expect(pointChangeDriftX(0.2, 1)).toBe(0);
   });
 
   it('keeps label to the right of the number', () => {

@@ -1,0 +1,114 @@
+.ui-b {
+  min-height: 100vh;
+  padding: 6vh 8vw 10vh;
+  color: #f4f4f4;
+  background: #070707;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  max-width: 52rem;
+}
+
+.ui-b header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 1rem;
+  align-items: end;
+}
+
+.ui-b header p,
+.ui-b section h2,
+.ui-b__lead {
+  margin: 0;
+  color: #9a9a9a;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.ui-b h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ui-b header button,
+.ui-b__row button,
+.ui-b__stack button,
+.ui-b__go {
+  border: 1px solid rgb(255 255 255 / 0.28);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ui-b header button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: 0.45rem 0.8rem;
+}
+
+.ui-b__row,
+.ui-b__stack {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+}
+
+.ui-b__stack {
+  flex-direction: column;
+}
+
+.ui-b__row button,
+.ui-b__stack button {
+  flex: 1;
+  text-align: left;
+  padding: 0.85rem 1rem;
+}
+
+.ui-b__stack button {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ui-b button.is-on {
+  background: #fff;
+  color: #0a0a0a;
+  border-color: #fff;
+}
+
+.ui-b__go {
+  margin-top: auto;
+  padding: 1rem 1.2rem;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ui-b__go:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ui-b__pay {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.ui-b__pay h2 {
+  margin: 0.2rem 0;
+  font-size: 2rem;
+  text-transform: uppercase;
+}
+
+.ui-b__qr {
+  width: 9rem;
+  height: 9rem;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgb(255 255 255 / 0.4);
+  letter-spacing: 0.14em;
+}

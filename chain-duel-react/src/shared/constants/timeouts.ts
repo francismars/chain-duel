@@ -10,5 +10,5 @@ export const SETUP_MENU_KEY_GRACE_MS = 420;
 
 /** LNURL QR on game menu: normal display duration before compatible pulse. */
 export const LNURL_QR_COMPAT_PULSE_INTERVAL_MS = 5_000;
-/** LNURL QR compatible pulse (padding + standard black-on-white) duration. */
-export const LNURL_QR_COMPAT_PULSE_DURATION_MS = 3_000;
+/** LNURL QR compatible pulse (standard black-on-white) duration. */
+export const LNURL_QR_COMPAT_PULSE_DURATION_MS = 5_000;

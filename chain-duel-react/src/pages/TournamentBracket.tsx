@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { QRCodeCanvas } from 'qrcode.react';
+import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
@@ -26,6 +26,8 @@ import { npubEncode } from 'nostr-tools/nip19';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import './tournbracket.css';
+import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
+import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
 
 /** Strip external styles from SVG so page font CSS applies to inlined SVG. */
 function stripSvgStyle(svgText: string): string {
@@ -48,6 +50,7 @@ export default function TournamentBracket() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const isNostrTournament = params.get('mode') === 'tournamentnostr';
+  const isFinishedPreview = params.get('preview') === 'finished';
   const { socket } = useSocket();
 
   useGamepad(true);
@@ -121,13 +124,36 @@ export default function TournamentBracket() {
     setNostrNote1('');
     setNostrCode('');
     timesWithdrawnRef.current = 0;
-  }, [urlDeposit, numberOfPlayersFromUrl, isNostrTournament]);
+    if (isFinishedPreview) {
+      setPlayersPaid({
+        'Player 1': { name: 'Ada' },
+        'Player 2': { name: 'Bea' },
+        'Player 3': { name: 'Cal' },
+        'Player 4': { name: 'Dee' },
+      });
+      setWinnersList(['Player 1', 'Player 1', 'Player 1']);
+      setLoading(false);
+      setShowPaymentPanel(false);
+    }
+  }, [urlDeposit, numberOfPlayersFromUrl, isNostrTournament, isFinishedPreview]);
 
   // Displayed buy-in follows URL by default, then backend min when provided.
   const finalPrize = computeFinalPrize(numberOfPlayers, deposit);
   const paidCount = Object.keys(playersPaid).length;
   const canStart = paidCount >= numberOfPlayers;
   const refundPerPlayer = computeRefundPerPlayer(deposit);
+  const paymentQrVisible =
+    showPaymentPanel &&
+    panelView === 'payment' &&
+    !canStart &&
+    Boolean(payLink || nostrNote1);
+  const qrCompatPulse = useLnurlQrCompatiblePulse(paymentQrVisible);
+  const qrLinkClassName = [
+    'qr-code-link',
+    qrCompatPulse ? 'qr-code-link--compatible' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   // Flat player name array by slot index (mirrors legacy playersList)
   const playersList = useMemo<string[]>(() => {
@@ -204,6 +230,7 @@ export default function TournamentBracket() {
         min: number;
       };
     }) => {
+      if (isFinishedPreview) return;
       if (d.gameInfo?.numberOfPlayers)
         setNumberOfPlayers(d.gameInfo.numberOfPlayers);
       const incomingMin =
@@ -216,13 +243,23 @@ export default function TournamentBracket() {
         setDeposit(parseInt(String(incomingMin), 10));
       }
       if (d.lnurlp) setPayLink(d.lnurlp);
-      if (d.gameInfo?.players) setPlayersPaid(d.gameInfo.players);
+      if (
+        !isFinishedPreview &&
+        d.gameInfo?.players &&
+        Object.keys(d.gameInfo.players).length > 0
+      ) {
+        setPlayersPaid(d.gameInfo.players);
+      }
       if (d.nostrMeta) {
         setNostrNote1(d.nostrMeta.note1);
         setNostrCode(d.nostrMeta.emojis);
       }
 
-      if (d.gameInfo?.winners && d.gameInfo.winners.length > 0) {
+      if (
+        !isFinishedPreview &&
+        d.gameInfo?.winners &&
+        d.gameInfo.winners.length > 0
+      ) {
         setWinnersList(d.gameInfo.winners as string[]);
         setPreStartReady(false);
         setShowPaymentPanel(false);
@@ -248,16 +285,17 @@ export default function TournamentBracket() {
         }
       }
     },
-    [navigate]
+    [navigate, isFinishedPreview]
   );
 
   const handleTournamentPayments = useCallback(
     (players: Record<string, TournamentPlayerIdentity>) => {
+      if (isFinishedPreview || Object.keys(players).length === 0) return;
       setPlayersPaid(players);
       setHighlightDeposit(true);
       setTimeout(() => setHighlightDeposit(false), 1200);
     },
-    []
+    [isFinishedPreview]
   );
 
   const handleTournamentCancel = useCallback(
@@ -423,7 +461,10 @@ export default function TournamentBracket() {
       const n = svgEl.querySelector<SVGElement>(`#${id}_name`);
       const r = svgEl.querySelector<SVGElement>(`#${id}_rect`);
       const p = svgEl.querySelector<SVGElement>(`#${id}_path`);
-      if (n) n.style.fill = 'black';
+      if (n) {
+        n.style.fill = 'black';
+        n.style.webkitTextFillColor = 'black';
+      }
       if (r) r.style.fill = '#fff';
       if (p) {
         p.style.opacity = '1';
@@ -481,12 +522,18 @@ export default function TournamentBracket() {
 
       WN.push(winnerName);
 
+      // An empty pass (roster not ready yet) must not wipe a name already shown.
+      if (!winnerName.trim()) continue;
+
       // Write the advancing winner's name into the next-round SVG slot
       const isFinal = i + 1 === numberOfPlayers - 1;
       if (isFinal) {
         const wn = svgEl.querySelector<SVGElement>('#Winner_name');
         const wr = svgEl.querySelector<SVGElement>('#Winner_rect');
-        if (wn) wn.style.fill = 'black';
+        if (wn) {
+          wn.style.fill = 'black';
+          wn.style.webkitTextFillColor = 'black';
+        }
         if (wr) wr.style.fill = '#fff';
         setAdvancingName('Winner', winnerName);
       } else {
@@ -772,14 +819,15 @@ export default function TournamentBracket() {
                       href={`https://njump.me/${nostrNote1}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="qr-code-link"
+                      className={qrLinkClassName}
                     >
                       <span className="qr-code-stack">
-                        <QRCodeCanvas
+                        <QRCodeSVG
                           id="qrTournament"
                           value={`nostr:${nostrNote1}`}
                           size={800}
                           level="M"
+                          marginSize={0}
                           className="qrcode"
                         />
                         {highlightDeposit && (
@@ -801,14 +849,15 @@ export default function TournamentBracket() {
                       href={`lightning:${payLink}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="qr-code-link"
+                      className={qrLinkClassName}
                     >
                       <span className="qr-code-stack">
-                        <QRCodeCanvas
+                        <QRCodeSVG
                           id="qrTournament"
                           value={payLink}
                           size={800}
                           level="M"
+                          marginSize={0}
                           className="qrcode"
                         />
                         {highlightDeposit && (
@@ -992,6 +1041,12 @@ export default function TournamentBracket() {
       )}
 
       {/* ── Tournament finished: champion panel (matches legacy tournFinishedDiv) ── */}
+      {tournamentPhase === 'finished' && (
+        <SoloZapRadiatingLines className="end-screen-rays" />
+      )}
+      {tournamentPhase === 'finished' && (
+        <div className="tournbracket-lines-scrim" aria-hidden="true" />
+      )}
       {tournamentPhase === 'finished' && (
         <div className="tournFinishedDiv" id="tournFinishedDiv">
           <h2 className="m-0 tourn-finished-headline">
