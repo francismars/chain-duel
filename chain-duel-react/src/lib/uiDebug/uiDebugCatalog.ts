@@ -11,6 +11,12 @@ export type UiDebugGroup = {
 
 export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
   {
+    title: 'In-game triggers',
+    links: [
+      { label: 'Sounds, chains, walls, pops', href: '/preview/match-triggers' },
+    ],
+  },
+  {
     title: 'P2P settings',
     links: [
       { label: 'Current layout', href: '/p2p', variant: 'A' },

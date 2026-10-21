@@ -341,6 +341,7 @@ export class GameAudioSystem {
     if (this.endingPlayed) {
       publishTensionLayers([
         { name: 'end', volume: this.ending.paused ? 0 : 1 },
+        { name: 'menu', volume: this.menuMusic.paused ? 0 : 1 },
       ]);
       return;
     }
