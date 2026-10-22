@@ -1,28 +1,37 @@
-import { Container, Text, TextStyle } from 'pixi.js';
+import { CanvasTextMetrics, Container, Text, TextStyle } from 'pixi.js';
 import { streakPops, type StreakPop } from '@/game/audio/tensionDebug';
 import {
-  pointChangeFontSize,
+  keepPopOnBoard,
+  placeOnBoard,
   pointChangePopScale,
 } from '@/game/render/pointChangeOverlay';
 import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 
-const GAIN_FILL = 0x6fd4a8;
-const GAIN_GLOW = 0x88e0b8;
-const LOSS_FILL = 0xe85a4a;
-const LOSS_GLOW = 0xff7a6a;
+/** Gold, so a reorg doesn't read as a sats gain or a sats loss. */
+const REORG_FILL = 0xf0c14d;
+const REORG_GLOW = 0xffe09a;
+/** Full life stays a little see-through, so the word doesn't shout. */
+const REORG_ALPHA = 0.82;
 /** Sit above the +sats label, which already occupies the head. */
 const LIFT_CELLS = 1.35;
-const SIZE_SCALE = 0.85;
+
+const boundText = new WeakMap<Text, string>();
 
 export class StreakPopOverlay {
   readonly container = new Container();
   private pool: Text[] = [];
+  private styles = new Map<string, TextStyle>();
 
   hide(): void {
     for (const text of this.pool) text.visible = false;
   }
 
-  render(colSize: number, rowSize: number): void {
+  render(
+    colSize: number,
+    rowSize: number,
+    boardWidth = Number.POSITIVE_INFINITY,
+    boardHeight = Number.POSITIVE_INFINITY
+  ): void {
     const pops = streakPops();
     if (pops.length === 0) {
       this.hide();
@@ -32,7 +41,16 @@ export class StreakPopOverlay {
     const spawnLift = -rowSize * LIFT_CELLS;
     pops.forEach((pop, index) => {
       const text = this.acquire(index);
-      this.layout(text, pop, cellSize, colSize, rowSize, spawnLift);
+      this.layout(
+        text,
+        pop,
+        cellSize,
+        colSize,
+        rowSize,
+        spawnLift,
+        boardWidth,
+        boardHeight
+      );
     });
     for (let i = pops.length; i < this.pool.length; i += 1) {
       this.pool[i].visible = false;
@@ -45,37 +63,54 @@ export class StreakPopOverlay {
     cellSize: number,
     colSize: number,
     rowSize: number,
-    spawnLift: number
+    spawnLift: number,
+    boardWidth: number,
+    boardHeight: number
   ): void {
-    const fontSize = Math.max(
-      11,
-      Math.round(pointChangeFontSize(2, cellSize) * SIZE_SCALE)
-    );
-    text.text = pop.text;
-    const fill = pop.up ? GAIN_FILL : LOSS_FILL;
-    const glow = pop.up ? GAIN_GLOW : LOSS_GLOW;
-    text.style = new TextStyle({
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontSize,
-      fontWeight: '700',
-      fill,
-      align: 'center',
-      padding: 8,
-      dropShadow: {
-        color: glow,
-        alpha: 0.85,
-        blur: 10,
-        angle: 0,
-        distance: 0,
-      },
-    });
-    text.position.set(
-      Math.round(pop.col * colSize + colSize / 2),
-      Math.round(pop.row * rowSize + rowSize / 2 + pop.yOffsetPx + spawnLift)
-    );
+    const fontSize = Math.max(16, Math.round(cellSize * 0.95));
+    const styleKey = String(fontSize);
+    let style = this.styles.get(styleKey);
+    if (!style) {
+      style = new TextStyle({
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize,
+        fontWeight: '700',
+        fill: REORG_FILL,
+        align: 'center',
+        padding: 8,
+        dropShadow: {
+          color: REORG_GLOW,
+          alpha: 0.35,
+          blur: 6,
+          angle: 0,
+          distance: 0,
+        },
+      });
+      this.styles.set(styleKey, style);
+    }
+    const token = `${styleKey}|${pop.text}`;
+    if (boundText.get(text) !== token) {
+      boundText.set(text, token);
+      text.style = style;
+      text.text = pop.text;
+    }
     const scale = pointChangePopScale(pop.alpha);
+    const rawX = pop.col * colSize + colSize / 2;
+    const rawY = pop.row * rowSize + rowSize / 2 + pop.yOffsetPx + spawnLift;
+    const measured = CanvasTextMetrics.measureText(pop.text || ' ', style).width;
+    const glow = 16;
+    const placed = placeOnBoard(
+      rawX,
+      rawY,
+      (measured / 2 + glow) * scale,
+      (fontSize / 2 + glow) * scale,
+      boardWidth,
+      boardHeight
+    );
+    text.position.set(Math.round(placed.x), Math.round(placed.y));
     text.scale.set(scale);
-    text.alpha = pop.alpha;
+    keepPopOnBoard(text, boardWidth, boardHeight);
+    text.alpha = pop.alpha * REORG_ALPHA;
     text.visible = true;
   }
 
@@ -88,7 +123,7 @@ export class StreakPopOverlay {
         fontFamily: 'Inter, system-ui, sans-serif',
         fontSize: 13,
         fontWeight: '700',
-        fill: GAIN_FILL,
+        fill: REORG_FILL,
         align: 'center',
       }),
     });
@@ -113,17 +148,13 @@ export function drawStreakPopsCanvas(
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#6fd4a8';
   for (const pop of pops) {
-    const fontSize = Math.max(
-      11,
-      Math.round(pointChangeFontSize(2, cellSize) * SIZE_SCALE)
-    );
+    const fontSize = Math.max(16, Math.round(cellSize * 0.95));
     ctx.font = `700 ${fontSize}px Inter, system-ui, sans-serif`;
-    ctx.fillStyle = pop.up ? '#6fd4a8' : '#e85a4a';
-    ctx.shadowColor = pop.up ? '#88e0b8' : '#ff7a6a';
-    ctx.shadowBlur = 10;
-    ctx.globalAlpha = pop.alpha;
+    ctx.fillStyle = '#f0c14d';
+    ctx.shadowColor = 'rgba(255, 224, 154, 0.35)';
+    ctx.shadowBlur = 6;
+    ctx.globalAlpha = pop.alpha * REORG_ALPHA;
     const scale = pointChangePopScale(pop.alpha);
     const x = pop.col * colSize + colSize / 2;
     const y = pop.row * rowSize + rowSize / 2 + pop.yOffsetPx + spawnLift;

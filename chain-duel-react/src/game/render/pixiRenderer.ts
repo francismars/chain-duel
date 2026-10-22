@@ -16,6 +16,7 @@ import { clearPreMatchKeyHighlight } from '@/game/render/preMatchKeyHighlight';
 import {
   anyCaptureAnimFlag,
   captureAnimFlags,
+  type CaptureAnimFlags,
 } from '@/game/render/captureAnimFlags';
 import {
   fitStartPromptToBoard,
@@ -95,6 +96,8 @@ export class PixiGameRenderer {
     extra: [],
   };
   private captureNotedTick = -1;
+  /** Lab preview. A real match leaves this empty and reads the applied recipe. */
+  private captureAnimOverride: CaptureAnimFlags | null = null;
   private static readonly PULSE_DURATION_MS = 650;
   private static readonly PULSE_MAX_MS = 1000;
   private static readonly SCALE_MS = 390;
@@ -445,6 +448,14 @@ export class PixiGameRenderer {
     return fontSize;
   }
 
+  setCaptureAnimOverride(flags: CaptureAnimFlags | null): void {
+    this.captureAnimOverride = flags;
+  }
+
+  private animFlags(): CaptureAnimFlags {
+    return this.captureAnimOverride ?? captureAnimFlags();
+  }
+
   render(state: GameState, opts?: PixiRenderOpts): void {
     this.host?.closest('#gameCanvas')?.classList.toggle('game-result-active', state.gameEnded);
     if (!this.app) {
@@ -684,12 +695,14 @@ export class PixiGameRenderer {
     this.pointChangesOverlay.render(
       state.pointChanges ?? [],
       colSize,
-      rowSize
+      rowSize,
+      width,
+      height
     );
     if (this.streakPopOverlay.container.parent !== this.overlay) {
       this.overlay.addChild(this.streakPopOverlay.container);
     }
-    this.streakPopOverlay.render(colSize, rowSize);
+    this.streakPopOverlay.render(colSize, rowSize, width, height);
 
     // ── Text overlays ─────────────────────────────────────────────────────────
     this.endOverlay.hide();
@@ -1001,8 +1014,9 @@ export class PixiGameRenderer {
     // Head — with glow halo on pulse wave arrival
     const headPulse = this.segmentPulse(0, totalLen, pulses, now);
     const headBoost = headPulse.glow;
-    const flags = captureAnimFlags();
-    const pulseTint = isLight ? 0xffffff : 0x9f9f9f;
+    const flags = this.animFlags();
+    // Warm on both chains. White-on-white disappeared into the light snake.
+    const pulseTint = isLight ? 0xffb15a : 0xffc98a;
     if (flags.tint && headBoost > 0) {
       const expand = headBoost * 8;
       this.scene
@@ -1173,7 +1187,7 @@ export class PixiGameRenderer {
   }
 
   private growAnimating(now: number): boolean {
-    if (!captureAnimFlags().grow) return false;
+    if (!this.animFlags().grow) return false;
     return Object.values(this.growAt).some(
       (start) => now - start < PixiGameRenderer.PULSE_MAX_MS
     );
@@ -1215,7 +1229,7 @@ export class PixiGameRenderer {
   }
 
   private noteCaptures(state: GameState, now: number): void {
-    const flags = captureAnimFlags();
+    const flags = this.animFlags();
     const alive = (pulse: CapturePulse) =>
       now - pulse.startMs < PixiGameRenderer.PULSE_MAX_MS;
 
@@ -1289,7 +1303,7 @@ export class PixiGameRenderer {
 
   /** Scale only the cell the reward occupied, for a short pop. */
   private scaleAtCell(pos: GridPos, now: number): number {
-    if (!captureAnimFlags().scale) return 1;
+    if (!this.animFlags().scale) return 1;
     let scale = 1;
     for (const hit of this.captureScales) {
       if (hit.pos[0] !== pos[0] || hit.pos[1] !== pos[1]) continue;

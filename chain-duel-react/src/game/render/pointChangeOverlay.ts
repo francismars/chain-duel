@@ -37,6 +37,73 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+/** Keep a centered popup inside the board. Heads near the edge were clipping the word. */
+export function placeOnBoard(
+  x: number,
+  y: number,
+  halfW: number,
+  halfH: number,
+  boardWidth: number,
+  boardHeight: number
+): { x: number; y: number } {
+  const axis = (value: number, half: number, limit: number) => {
+    if (!(limit > 16)) return value;
+    const pad = Math.min(Math.max(8, half), Math.max(8, limit / 2 - 1));
+    return clamp(value, pad, Math.max(pad, limit - pad));
+  };
+  return {
+    x: axis(x, halfW, boardWidth),
+    y: axis(y, halfH, boardHeight),
+  };
+}
+
+/** How far to move a box so it sits inside the board. */
+export function shiftToFit(
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  boardWidth: number,
+  boardHeight: number,
+  margin = 8
+): { dx: number; dy: number } {
+  if (!(right > left + 1) || !(bottom > top + 1)) return { dx: 0, dy: 0 };
+  if (!(boardWidth > 16) || !(boardHeight > 16)) return { dx: 0, dy: 0 };
+  let dx = 0;
+  let dy = 0;
+  if (right > boardWidth - margin) dx -= right - (boardWidth - margin);
+  if (left + dx < margin) dx += margin - (left + dx);
+  if (bottom > boardHeight - margin) dy -= bottom - (boardHeight - margin);
+  if (top + dy < margin) dy += margin - (top + dy);
+  return { dx, dy };
+}
+
+/** After Pixi has a real texture, pull any leftover overflow back onto the board. */
+export function keepPopOnBoard(
+  node: Container,
+  boardWidth: number,
+  boardHeight: number
+): void {
+  const bounds = node.getBounds();
+  const box = bounds as {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    minX?: number;
+    minY?: number;
+    maxX?: number;
+    maxY?: number;
+  };
+  const left = box.minX ?? box.x;
+  const top = box.minY ?? box.y;
+  const right = box.maxX ?? left + box.width;
+  const bottom = box.maxY ?? top + box.height;
+  const { dx, dy } = shiftToFit(left, top, right, bottom, boardWidth, boardHeight);
+  if (dx !== 0) node.position.x += dx;
+  if (dy !== 0) node.position.y += dy;
+}
+
 /** 0 at spawn, 1 as the pop fades out. */
 export function pointChangeLifeProgress(alpha: number): number {
   return clamp(1 - alpha, 0, 1);
@@ -80,6 +147,17 @@ function styleCacheKey(
   label = false
 ): string {
   return `${label ? 'l' : 'm'}-${isGain ? 'g' : 'l'}-${fontSize}-${tier}`;
+}
+
+/** Pixi rebuilds a text texture when `.text` or `.style` is set, even to the same value. */
+const boundText = new WeakMap<Text, { style: TextStyle; value: string }>();
+
+function bindText(text: Text, style: TextStyle, value: string): void {
+  const previous = boundText.get(text);
+  if (previous && previous.style === style && previous.value === value) return;
+  boundText.set(text, { style, value });
+  text.style = style;
+  text.text = value;
 }
 
 function makePointChangeStyle(
@@ -140,10 +218,8 @@ export function layoutPopTexts(
   labelText: string,
   fontSize: number
 ): void {
-  main.style = mainStyle;
-  label.style = labelStyle;
-  main.text = mainText;
-  label.text = labelText;
+  bindText(main, mainStyle, mainText);
+  bindText(label, labelStyle, labelText);
 
   const mainW = measurePopTextWidth(mainText, mainStyle);
   const labelW = measurePopTextWidth(labelText, labelStyle);
@@ -226,7 +302,9 @@ function buildPopSpecs(
   colSize: number,
   rowSize: number
 ): PopSpec[] {
-  const spawnLift = -rowSize * 0.42;
+  // Clear the chain. A shorter lift dropped the green number onto a white
+  // head, where it disappeared, and left only the word beside the chain.
+  const spawnLift = -rowSize * 1.25;
   const { gain: gainPos, loss: lossPos } = resolveGainLossPos(change);
 
   const gain = popScreenPos(
@@ -343,7 +421,9 @@ export class PointChangeOverlay {
   render(
     changes: readonly PointChange[],
     colSize: number,
-    rowSize: number
+    rowSize: number,
+    boardWidth = Number.POSITIVE_INFINITY,
+    boardHeight = Number.POSITIVE_INFINITY
   ): void {
     if (changes.length === 0) {
       this.hide();
@@ -389,23 +469,46 @@ export class PointChangeOverlay {
           fontSize
         );
         slot.label.visible = true;
+        let rateW = 0;
         if (spec.rateText && spec.isGain) {
           const rateSize = Math.max(10, Math.round(fontSize * 0.72));
-          slot.rate.style = makePointChangeStyle(rateSize, tier, true, false);
-          slot.rate.text = spec.rateText;
-          slot.rate.position.set(0, -fontSize * 0.95);
+          const rateKey = styleCacheKey(rateSize, tier, true, false);
+          let rateStyle = this.styleCache.get(rateKey);
+          if (!rateStyle) {
+            rateStyle = makePointChangeStyle(rateSize, tier, true, false);
+            this.styleCache.set(rateKey, rateStyle);
+          }
+          bindText(slot.rate, rateStyle, spec.rateText);
+          slot.rate.position.set(0, Math.round(-fontSize * 0.95));
           slot.rate.visible = true;
           slot.rate.alpha = 1;
+          rateW = measurePopTextWidth(spec.rateText, rateStyle);
         } else {
           slot.rate.visible = false;
         }
 
-        const x = Math.round(spec.x + pointChangeDriftX(spec.alpha, spec.drift));
-        const y = Math.round(spec.y);
-        slot.root.position.set(x, y);
-
         const scale = pointChangePopScale(spec.alpha);
+        // Text.width stays 0 until Pixi uploads the texture, so a head at the
+        // edge kept the word off the board. Measure the string instead.
+        const rowW =
+          measurePopTextWidth(spec.mainText, mainStyle) +
+          fontSize * 0.12 +
+          measurePopTextWidth(spec.labelText, labelStyle);
+        const glow = 14;
+        const halfW = (Math.max(rowW, rateW) / 2 + glow) * scale;
+        const halfH =
+          (fontSize * (rateW > 0 ? 1.55 : 0.7) + glow) * scale;
+        const placed = placeOnBoard(
+          Math.round(spec.x + pointChangeDriftX(spec.alpha, spec.drift)),
+          Math.round(spec.y),
+          halfW,
+          halfH,
+          boardWidth,
+          boardHeight
+        );
+        slot.root.position.set(placed.x, placed.y);
         slot.root.scale.set(scale);
+        keepPopOnBoard(slot.root, boardWidth, boardHeight);
 
         slot.main.alpha = 1;
         slot.label.alpha = LABEL_ALPHA;
