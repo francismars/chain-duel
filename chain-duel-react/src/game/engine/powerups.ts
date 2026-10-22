@@ -1,5 +1,4 @@
 import {
-  CAPTURE_LEVELS,
   POWERUP_AMPLIFIER_CHARGES,
   POWERUP_FREEZE_DURATION_TICKS,
   POWERUP_PHANTOM_DURATION_TICKS,
@@ -7,6 +6,7 @@ import {
   POWERUP_SURGE_DURATION_TICKS,
 } from '@/game/engine/constants';
 import { isEliminationMode, isFfaPlayerAlive, isFfaMode, is2v1Mode, multiplayerPlayerCount, get2v1TeamCapturePercent } from '@/game/engine/ffa';
+import { capturePercentForLength, gameRecipe } from '@/game/effects/matchRecipe';
 import { gameRandom } from '@/game/engine/runRng';
 import type {
   ActivePowerUp,
@@ -292,11 +292,8 @@ export function computeCaptureChangeForIndex(
 }
 
 function capturePercentByLength(length: number): number {
-  for (const level of CAPTURE_LEVELS) {
-    if (length >= level.minLength && length <= level.maxLength)
-      return level.percent;
-  }
-  return 32;
+  const recipe = gameRecipe();
+  return capturePercentForLength(length, recipe.captureFrom, recipe.capturePercent);
 }
 
 export function wrapSnakeHeadRef(state: GameState, snake: SnakeState): void {

@@ -1,5 +1,4 @@
 import {
-  CAPTURE_LEVELS,
   COUNTDOWN_END_TICK,
   GAME_COLS,
   GAME_ROWS,
@@ -18,6 +17,7 @@ import {
 } from '@/game/engine/constants';
 import { runAStar } from '@/game/engine/astar';
 import { captureRateLabel } from '@/game/engine/captureRateLabel';
+import { capturePercentForLength, gameRecipe } from '@/game/effects/matchRecipe';
 import { gameRandom } from '@/game/engine/runRng';
 import type {
   AiTier,
@@ -1160,12 +1160,8 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
 }
 
 function capturePercentByLength(length: number): number {
-  for (const level of CAPTURE_LEVELS) {
-    if (length >= level.minLength && length <= level.maxLength) {
-      return level.percent;
-    }
-  }
-  return 32;
+  const recipe = gameRecipe();
+  return capturePercentForLength(length, recipe.captureFrom, recipe.capturePercent);
 }
 
 export function getCaptureLabel(length: number): string {

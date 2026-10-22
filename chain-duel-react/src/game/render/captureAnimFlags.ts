@@ -1,17 +1,18 @@
+import { gameRecipe } from '@/game/effects/matchRecipe';
+
 export type CaptureAnimFlags = {
   grow: boolean;
   tint: boolean;
   scale: boolean;
 };
 
-const FLAGS: CaptureAnimFlags = {
-  grow: true,
-  tint: false,
-  scale: false,
-};
-
 export function captureAnimFlags(): CaptureAnimFlags {
-  return FLAGS;
+  const recipe = gameRecipe();
+  return {
+    grow: recipe.animGrow,
+    tint: recipe.animTint,
+    scale: recipe.animScale,
+  };
 }
 
 export function anyCaptureAnimFlag(flags: CaptureAnimFlags): boolean {
