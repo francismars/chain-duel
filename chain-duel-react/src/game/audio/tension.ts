@@ -1,4 +1,15 @@
+import {
+  CONVERGENCE_MIN_COLS,
+  CONVERGENCE_MIN_ROWS,
+  GAME_COLS,
+  GAME_ROWS,
+} from '@/game/engine/constants';
 import type { GameState, GridPos } from '@/game/engine/types';
+import {
+  SHIPPED_RECIPE,
+  levelFromMarks,
+  type MatchRecipe,
+} from '@/game/effects/matchRecipe';
 
 /** Shares use the current pool, so stake size and block bonuses don't change thresholds. */
 export type TensionLevel = 0 | 1 | 2 | 3 | 4;
@@ -56,37 +67,49 @@ export function tensionPlayers(state: GameState): TensionPlayer[] {
   ];
 }
 
-export function chainTension(longest: number): TensionLevel {
-  if (longest >= 16) return 4;
-  if (longest >= 11) return 3;
-  if (longest >= 7) return 2;
-  if (longest >= 4) return 1;
-  return 0;
+export function chainTension(
+  longest: number,
+  marks: MatchRecipe['chainMarks'] = SHIPPED_RECIPE.chainMarks
+): TensionLevel {
+  return levelFromMarks(longest, marks);
 }
 
-export function wallsTension(lostPercent: number): TensionLevel {
-  if (lostPercent >= 65) return 4;
-  if (lostPercent >= 45) return 3;
-  if (lostPercent >= 25) return 2;
-  if (lostPercent > 0) return 1;
-  return 0;
+export function wallsTension(
+  lostPercent: number,
+  marks: MatchRecipe['wallMarks'] = SHIPPED_RECIPE.wallMarks
+): TensionLevel {
+  return levelFromMarks(lostPercent, marks, 'gt');
 }
 
-export function scoreTension(leaderShare: number): TensionLevel {
-  if (leaderShare >= 0.95) return 4;
-  if (leaderShare >= 0.85) return 3;
-  if (leaderShare >= 0.75) return 2;
-  if (leaderShare >= 0.6) return 1;
-  return 0;
+export function scoreTension(
+  leaderShare: number,
+  marks: MatchRecipe['scoreMarks'] = SHIPPED_RECIPE.scoreMarks
+): TensionLevel {
+  const shares = marks.map((mark) => mark / 100) as MatchRecipe['scoreMarks'];
+  return levelFromMarks(leaderShare, shares);
 }
 
-/** Consecutive catches: 2 / 3 / 5 / 8. */
-export function streakTension(count: number): TensionLevel {
-  if (count >= 8) return 4;
-  if (count >= 5) return 3;
-  if (count >= 3) return 2;
-  if (count >= 2) return 1;
-  return 0;
+/** Consecutive catches. */
+export function streakTension(
+  count: number,
+  marks: MatchRecipe['streakMarks'] = SHIPPED_RECIPE.streakMarks
+): TensionLevel {
+  return levelFromMarks(count, marks);
+}
+
+/** How far the walls have closed when the match ends, as playable area lost. */
+export function wallsClosedLostPercent(
+  cols = GAME_COLS,
+  rows = GAME_ROWS,
+  minCols = CONVERGENCE_MIN_COLS,
+  minRows = CONVERGENCE_MIN_ROWS
+): number {
+  const span = (start: number, min: number) =>
+    start <= min ? start : start - Math.floor((start - min) / 2) * 2;
+  const original = Math.max(0, cols - 2) * Math.max(0, rows - 2);
+  const current =
+    Math.max(0, span(cols, minCols) - 2) * Math.max(0, span(rows, minRows) - 2);
+  return original > 0 ? ((original - current) * 100) / original : 0;
 }
 
 export function lostPlayablePercent(state: GameState): number {
@@ -103,7 +126,8 @@ export function lostPlayablePercent(state: GameState): number {
 
 export function getTensionBreakdown(
   state: GameState,
-  streakCount = 0
+  streakCount = 0,
+  recipe: MatchRecipe = SHIPPED_RECIPE
 ): TensionBreakdown {
   const idle: TensionBreakdown = {
     chain: 0,
@@ -125,10 +149,10 @@ export function getTensionBreakdown(
       : players.map((player) => player.score);
   const pool = scores.reduce((sum, score) => sum + score, 0);
   const leaderShare = pool > 0 ? Math.max(...scores) / pool : 0;
-  const chain = chainTension(longest);
-  const walls = wallsTension(lostPlayablePercent(state));
-  const score = scoreTension(leaderShare);
-  const streak = streakTension(streakCount);
+  const chain = chainTension(longest, recipe.chainMarks);
+  const walls = wallsTension(lostPlayablePercent(state), recipe.wallMarks);
+  const score = scoreTension(leaderShare, recipe.scoreMarks);
+  const streak = streakTension(streakCount, recipe.streakMarks);
   const level = Math.max(chain, walls, score, streak) as TensionLevel;
   return { chain, walls, score, streak, level, streakCount };
 }

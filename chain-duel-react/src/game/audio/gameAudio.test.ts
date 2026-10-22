@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createGameState } from '@/game/engine';
-import { GameAudioSystem } from './gameAudio';
+import { GameAudioSystem, reorgCaptureGap } from './gameAudio';
 import { streakPops, tensionDebugSnapshot } from './tensionDebug';
-import { getTensionLevel } from './tension';
+import { getTensionLevel, wallsClosedLostPercent } from './tension';
 
 function match() {
   const state = createGameState({
@@ -107,6 +107,10 @@ describe('game tension', () => {
     state.gameStarted = true;
     state.gameEnded = true;
     expect(getTensionLevel(state)).toBe(0);
+  });
+
+  it('ends the match when the walls have taken 93% of the board', () => {
+    expect(Math.round(wallsClosedLostPercent())).toBe(93);
   });
 
   it.each([
@@ -223,7 +227,7 @@ describe('game tension', () => {
     expect(streakPops()).toHaveLength(0);
   });
 
-  it('shows FORK when a spawn-length chain resets a long one head-on', () => {
+  it('shows REORG when a 2% chain resets an 8%+ chain head-on', () => {
     const audio = new GameAudioSystem();
     const state = match();
     state.p1.head = [10, 10];
@@ -236,8 +240,8 @@ describe('game tension', () => {
     state.p2.head = [44, 12];
     state.p2.body = [[45, 12]];
     audio.updateGameState(state);
-    expect(streakPops().some((pop) => pop.text === 'FORK')).toBe(true);
-    expect(streakPops().find((pop) => pop.text === 'FORK')).toMatchObject({
+    expect(streakPops().some((pop) => pop.text === 'REORG')).toBe(true);
+    expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({
       col: 10,
       row: 10,
     });
@@ -252,10 +256,56 @@ describe('game tension', () => {
     wall.p1.head = [4, 12];
     wall.p1.body = [[3, 12]];
     audio.updateGameState(wall);
-    expect(streakPops().slice(before).some((pop) => pop.text === 'FORK')).toBe(
+    expect(streakPops().slice(before).some((pop) => pop.text === 'REORG')).toBe(
+      false
+    );
+
+    const four = match();
+    four.p1.head = [10, 10];
+    four.p1.body = [
+      [9, 10],
+      [8, 10],
+    ];
+    four.p2.head = [12, 10];
+    four.p2.body = Array(7).fill([13, 10]);
+    audio.updateGameState(four);
+    const fourBefore = streakPops().length;
+    four.p1.head = [4, 12];
+    four.p1.body = [[3, 12]];
+    four.p2.head = [44, 12];
+    four.p2.body = [[45, 12]];
+    audio.updateGameState(four);
+    expect(streakPops().slice(fourBefore).some((pop) => pop.text === 'REORG')).toBe(
+      true
+    );
+
+    const close = match();
+    close.p1.head = [10, 10];
+    close.p1.body = [
+      [9, 10],
+      [8, 10],
+    ];
+    close.p2.head = [12, 10];
+    close.p2.body = Array(5).fill([13, 10]);
+    audio.updateGameState(close);
+    const closeBefore = streakPops().length;
+    close.p1.head = [4, 12];
+    close.p1.body = [[3, 12]];
+    close.p2.head = [44, 12];
+    close.p2.body = [[45, 12]];
+    audio.updateGameState(close);
+    expect(streakPops().slice(closeBefore).some((pop) => pop.text === 'REORG')).toBe(
       false
     );
     audio.stopAll();
+  });
+
+  it('pairs a 2% chain with 8%+ and a 4% chain with 16%+', () => {
+    expect(reorgCaptureGap(2, 8)).toBe(true);
+    expect(reorgCaptureGap(2, 32)).toBe(true);
+    expect(reorgCaptureGap(4, 16)).toBe(true);
+    expect(reorgCaptureGap(4, 8)).toBe(false);
+    expect(reorgCaptureGap(8, 32)).toBe(false);
   });
 
   it('counts teammates together and ignores eliminated chains', () => {

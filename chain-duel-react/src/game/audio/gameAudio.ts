@@ -1,5 +1,10 @@
 import type { GameState, PlayerId } from '@/game/engine/types';
 import {
+  capturePercentForLength,
+  gameRecipe,
+  type MatchRecipe,
+} from '@/game/effects/matchRecipe';
+import {
   getTensionBreakdown,
   tensionPlayers,
   type TensionLevel,
@@ -21,11 +26,21 @@ function headTravel(before: TensionPlayer, after: TensionPlayer): number {
 }
 
 /**
- * Head-to-head: both chains reset on the same tick, one still at spawn
- * length (no extra block) and the other long. The word sits on the long
- * chain's last head.
+ * A 2% chain against 8% or more, or a 4% chain against 16% or more.
+ * The percents are whatever the current recipe pays for that body length.
  */
-function forkedLongChain(
+export function reorgCaptureGap(percentA: number, percentB: number): boolean {
+  const low = Math.min(percentA, percentB);
+  const high = Math.max(percentA, percentB);
+  if (low === 2 && high >= 8) return true;
+  return low === 4 && high >= 16;
+}
+
+/**
+ * Head-to-head: both chains reset on the same tick, and one's capture rate
+ * is far below the other's. The word sits on the richer chain's last head.
+ */
+function reorgedLongChain(
   previous: TensionPlayer[],
   players: TensionPlayer[]
 ): TensionPlayer | null {
@@ -41,14 +56,28 @@ function forkedLongChain(
       pair.after.length <= pair.before.length
   );
   if (reset.length < 2) return null;
-  const short = reset.find((pair) => pair.before.length <= 1);
-  const long = reset.find((pair) => pair.before.length >= 4);
-  if (!short || !long || short.before.index === long.before.index) return null;
-  const apart =
-    Math.abs(short.before.head[0] - long.before.head[0]) +
-    Math.abs(short.before.head[1] - long.before.head[1]);
-  if (apart > 2) return null;
-  return long.before;
+  const recipe = gameRecipe();
+  const rated = reset.map((pair) => ({
+    ...pair,
+    percent: capturePercentForLength(
+      pair.before.length,
+      recipe.captureFrom,
+      recipe.capturePercent
+    ),
+  }));
+  for (let i = 0; i < rated.length; i += 1) {
+    for (let j = i + 1; j < rated.length; j += 1) {
+      const a = rated[i]!;
+      const b = rated[j]!;
+      if (!reorgCaptureGap(a.percent, b.percent)) continue;
+      const apart =
+        Math.abs(a.before.head[0] - b.before.head[0]) +
+        Math.abs(a.before.head[1] - b.before.head[1]);
+      if (apart > 2) continue;
+      return a.percent >= b.percent ? a.before : b.before;
+    }
+  }
+  return null;
 }
 
 // Each pressure stage has its own timbre, synchronized with the original loop.
@@ -65,6 +94,8 @@ function createAudio(src: string, loop = false): HTMLAudioElement {
   return audio;
 }
 
+const boundSoundFile = new WeakMap<HTMLAudioElement, string>();
+
 export class GameAudioSystem {
   private menuMusic = createAudio('/sound/chain_duel_produced_menu.m4a', true);
   private music = createAudio('/sound/chain_duel_produced_game.m4a', true);
@@ -75,6 +106,7 @@ export class GameAudioSystem {
   private ending = createAudio('/sound/chain_duel_end.m4a');
   private tensionLevel: TensionLevel = 0;
   private tensionHoldUntil = 0;
+  private recipe: MatchRecipe = gameRecipe();
   private streakPlayer: number | null = null;
   private streakCount = 0;
   private previousPlayers: TensionPlayer[] | null = null;
@@ -84,6 +116,7 @@ export class GameAudioSystem {
 
   constructor() {
     for (const { audio } of this.themes) audio.volume = 0;
+    this.applyRecipeFiles();
   }
   private beep1 = createAudio('/sound/Beep1.m4a');
   private beep2 = createAudio('/sound/Beep2.m4a');
@@ -220,12 +253,12 @@ export class GameAudioSystem {
     // Local simulation mutates the same border object; retain a value snapshot.
     this.previousBorder = border ? { ...border } : null;
     this.trackStreak(state);
-    const breakdown = getTensionBreakdown(state, this.streakCount);
+    const breakdown = getTensionBreakdown(state, this.streakCount, this.recipe);
     const next = breakdown.level;
     const now = performance.now();
     if (next >= this.tensionLevel) {
       this.tensionLevel = next;
-      this.tensionHoldUntil = now + 4000;
+      this.tensionHoldUntil = now + this.recipe.holdMs;
     } else if (!state.gameStarted || now >= this.tensionHoldUntil) {
       this.tensionLevel = next;
     }
@@ -255,8 +288,8 @@ export class GameAudioSystem {
       return;
     }
 
-    const forked = forkedLongChain(previous, players);
-    if (forked) pushCaptureRatePop(forked.head, 'FORK', true);
+    const reorged = reorgedLongChain(previous, players);
+    if (reorged) pushCaptureRatePop(reorged.head, 'REORG', true);
 
     const died = new Set<number>();
     for (const player of players) {
@@ -314,9 +347,12 @@ export class GameAudioSystem {
     let combinedVolume = 0;
     for (const theme of this.themes) {
       const { audio } = theme;
-      const target = this.tensionLevel === theme.level ? theme.volume : 0;
-      // Crossfade themes without restarting their musical phrases.
-      const step = audio.volume < target ? 0.02 : 0.01;
+      const audible = this.audibleLevel();
+      const target =
+        audible === theme.level ? this.recipe.stemVolumes[theme.level - 1]! : 0;
+      const fadeMs = Number.isFinite(this.recipe.fadeMs) ? this.recipe.fadeMs : 5000;
+      const step =
+        fadeMs <= 0 ? 1 : (50 / fadeMs) * (audio.volume < target ? 2 : 1);
       audio.volume +=
         Math.sign(target - audio.volume) *
         Math.min(step, Math.abs(target - audio.volume));
@@ -328,8 +364,16 @@ export class GameAudioSystem {
         audio.currentTime = this.music.currentTime;
       }
     }
-    this.music.volume = 1 - Math.min(1, combinedVolume) * 0.35;
+    this.music.volume = 1 - Math.min(1, combinedVolume) * this.recipe.duck;
     this.publishHeardLayers();
+  }
+
+  /** Loudest reached mark that is still switched on. */
+  private audibleLevel(): number {
+    let level = this.tensionLevel;
+    const enabled = this.recipe.stemEnabled;
+    while (level > 0 && enabled?.[level - 1] === false) level -= 1;
+    return level;
   }
 
   /** Base bed plus any pressure stem that still has volume during a crossfade. */
@@ -367,11 +411,48 @@ export class GameAudioSystem {
     this.play(player === 'P1' ? this.p1Reset : this.p2Reset);
   }
 
+  setRecipe(recipe: MatchRecipe): void {
+    this.recipe = recipe;
+    this.applyRecipeFiles();
+  }
+
+  private applyRecipeFiles(): void {
+    this.bindFile(this.music, this.recipe.bedFile, true);
+    this.themes.forEach((theme, index) => {
+      this.bindFile(theme.audio, this.recipe.stemFiles[index]!, true);
+    });
+  }
+
+  private bindFile(audio: HTMLAudioElement, file: string, loop: boolean): void {
+    audio.loop = loop;
+    const bound = boundSoundFile.get(audio);
+    if (bound === file) return;
+    boundSoundFile.set(audio, file);
+    if (bound == null && audio.src.includes(file)) return;
+    const playing = audio.paused === false;
+    const time = audio.currentTime;
+    audio.src = `/sound/${file}`;
+    if (!playing) return;
+    const resume = () => {
+      if (Number.isFinite(time) && time > 0) {
+        try {
+          audio.currentTime = time;
+        } catch {
+          // A shorter file cannot seek that far.
+        }
+      }
+      void audio.play().catch(() => undefined);
+    };
+    if (audio.readyState >= 1) resume();
+    else audio.addEventListener('loadedmetadata', resume, { once: true });
+  }
+
   playCapture(bodyLength: number): void {
-    if (bodyLength <= 1) this.play(this.capture2);
-    else if (bodyLength <= 2) this.play(this.capture4);
-    else if (bodyLength < 8) this.play(this.capture8);
-    else if (bodyLength < 16) this.play(this.capture16);
+    const [until2, until4, until8, until16] = this.recipe.captureAt;
+    if (bodyLength <= until2) this.play(this.capture2);
+    else if (bodyLength <= until4) this.play(this.capture4);
+    else if (bodyLength < until8) this.play(this.capture8);
+    else if (bodyLength < until16) this.play(this.capture16);
     else this.play(this.capture32);
   }
 
