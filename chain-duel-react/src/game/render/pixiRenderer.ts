@@ -18,6 +18,7 @@ import {
   captureAnimFlags,
   type CaptureAnimFlags,
 } from '@/game/render/captureAnimFlags';
+import { planCaptureAnims, retainFreshCoins } from '@/game/render/captureAnimPlan';
 import {
   fitStartPromptToBoard,
   measureStartWordWidth,
@@ -1245,44 +1246,32 @@ export class PixiGameRenderer {
     if (!state.gameEnded && state.tickCount !== this.captureNotedTick) {
       this.captureNotedTick = state.tickCount;
       if (anyCaptureAnimFlag(flags)) {
-        const coins = state.coinbases ?? [];
-        for (const prev of this.prevCoins) {
-          const still = coins.some(
-            (coin) => coin.pos[0] === prev.pos[0] && coin.pos[1] === prev.pos[1]
-          );
-          if (still) continue;
-          const eaters: { head: GridPos; pulses: CapturePulse[] }[] = [
-            { head: state.p1.head, pulses: this.p1Pulses },
-            { head: state.p2.head, pulses: this.p2Pulses },
-          ];
-          const eater = eaters.find(
-            (entry) =>
-              entry.head[0] === prev.pos[0] && entry.head[1] === prev.pos[1]
-          );
-          if (!eater) continue;
-          if (flags.tint) {
-            eater.pulses.push({ startMs: now, reward: prev.reward });
-          }
+        const coins = (state.coinbases ?? []).map((coin) => ({
+          pos: [coin.pos[0], coin.pos[1]] as GridPos,
+        }));
+        const plans = planCaptureAnims(this.prevCoins, coins, [
+          {
+            key: 'p1',
+            head: state.p1.head,
+            prevLength: this.prevBodyLen.p1,
+            length: state.p1.body.length,
+          },
+          {
+            key: 'p2',
+            head: state.p2.head,
+            prevLength: this.prevBodyLen.p2,
+            length: state.p2.body.length,
+          },
+        ]);
+        for (const plan of plans) {
+          const pulses = plan.key === 'p1' ? this.p1Pulses : this.p2Pulses;
+          if (flags.tint) pulses.push({ startMs: now, reward: plan.reward });
           if (flags.scale) {
-            this.captureScales.push({
-              pos: [prev.pos[0], prev.pos[1]],
-              startMs: now,
-            });
+            this.captureScales.push({ pos: plan.head, startMs: now });
           }
+          if (flags.grow && plan.grew) this.growAt[plan.key] = now;
         }
         if (flags.grow) {
-          if (
-            this.prevBodyLen.p1 >= 0 &&
-            state.p1.body.length > this.prevBodyLen.p1
-          ) {
-            this.growAt.p1 = now;
-          }
-          if (
-            this.prevBodyLen.p2 >= 0 &&
-            state.p2.body.length > this.prevBodyLen.p2
-          ) {
-            this.growAt.p2 = now;
-          }
           for (let i = 0; i < state.extraSnakes.length; i += 1) {
             const prev = this.prevBodyLen.extra[i] ?? -1;
             if (prev >= 0 && state.extraSnakes[i]!.snake.body.length > prev) {
@@ -1292,6 +1281,14 @@ export class PixiGameRenderer {
         }
       }
       this.rememberCaptureBaseline(state);
+    } else if (!state.gameEnded) {
+      // Food placed between ticks, such as a lab bait, has to be remembered
+      // before the eat or the wave and head pop never see it leave.
+      const coins = (state.coinbases ?? []).map((coin) => ({
+        pos: [coin.pos[0], coin.pos[1]] as GridPos,
+        reward: coin.reward ?? 2,
+      }));
+      this.prevCoins = retainFreshCoins(this.prevCoins, coins);
     }
 
     this.p1Pulses = this.p1Pulses.filter(alive);
