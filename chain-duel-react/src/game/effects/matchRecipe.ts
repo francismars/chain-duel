@@ -21,16 +21,14 @@ export type MatchRecipe = {
   fadeMs: number;
   /** Mark 1–4. A mark that is off does not play, and the next lower mark that is on plays instead. */
   stemEnabled: [boolean, boolean, boolean, boolean];
-  /**
-   * Capture-clip steps, as body length.
-   * Up to the first plays 2, up to the second plays 4, below the third plays 8,
-   * below the fourth plays 16, and anything longer plays 32.
-   */
-  captureAt: [number, number, number, number];
   /** Body length where each capture percent begins. Five steps, shortest first. */
   captureFrom: [number, number, number, number, number];
   /** Percent taken from that length until the next step. */
   capturePercent: [number, number, number, number, number];
+  /** Capture percent any chain has reached. The lower tick is warning, the higher tick is critical. */
+  gapLeader: [number, number];
+  /** Trailer share of the sats, in percent. The lower tick is critical, the higher tick is warning. */
+  drainMarks: [number, number];
   animGrow: boolean;
   animTint: boolean;
   animScale: boolean;
@@ -82,9 +80,8 @@ export const SHIPPED_RECIPE: MatchRecipe = {
   streakMarks: [2, 3, 5, 8],
   stemVolumes: [0.22, 0.34, 0.46, 0.65],
   duck: 0.35,
-  holdMs: 4000,
-  fadeMs: 5000,
-  captureAt: [1, 2, 8, 16],
+  holdMs: 1000,
+  fadeMs: 2500,
   captureFrom: CAPTURE_LEVELS.map((level) => level.minLength) as [
     number,
     number,
@@ -99,6 +96,8 @@ export const SHIPPED_RECIPE: MatchRecipe = {
     number,
     number,
   ],
+  gapLeader: [16, 32],
+  drainMarks: [10, 25],
   animGrow: true,
   animTint: false,
   animScale: false,
@@ -125,9 +124,10 @@ export function cloneRecipe(recipe: MatchRecipe): MatchRecipe {
     holdMs: recipe.holdMs,
     fadeMs: recipe.fadeMs,
     stemEnabled: [...recipe.stemEnabled],
-    captureAt: [...recipe.captureAt],
     captureFrom: [...recipe.captureFrom],
     capturePercent: [...recipe.capturePercent],
+    gapLeader: [...recipe.gapLeader],
+    drainMarks: [...recipe.drainMarks],
     animGrow: recipe.animGrow,
     animTint: recipe.animTint,
     animScale: recipe.animScale,
@@ -192,6 +192,42 @@ export function capturePercentForLength(
   return value;
 }
 
+const CAPTURE_CLIPS = [2, 4, 8, 16, 32] as const;
+
+/** The eat clip for this percent. The files are 2, 4, 8, 16, and 32. */
+export function captureClipForPercent(percent: number): number {
+  let clip: number = CAPTURE_CLIPS[0];
+  for (const step of CAPTURE_CLIPS) {
+    if (percent >= step) clip = step;
+  }
+  return clip;
+}
+
+/** The eat clip for this body length, using the same bands as the capture percent. */
+export function captureClipForLength(
+  length: number,
+  from: readonly number[] = SHIPPED_RECIPE.captureFrom,
+  percent: readonly number[] = SHIPPED_RECIPE.capturePercent
+): number {
+  return captureClipForPercent(capturePercentForLength(length, from, percent));
+}
+
+function steps(
+  value: unknown,
+  count: number,
+  min: number,
+  max: number,
+  fallback: readonly number[]
+): number[] {
+  if (!Array.isArray(value) || value.length !== count) return [...fallback];
+  const next = value.map((mark, index) => {
+    const n = Number(mark);
+    return Number.isFinite(n) ? clamp(Math.round(n), min, max) : fallback[index]!;
+  });
+  next.sort((a, b) => a - b);
+  return next;
+}
+
 function flags(
   value: unknown,
   fallback: [boolean, boolean, boolean, boolean]
@@ -241,9 +277,10 @@ export function sanitizeRecipe(value: unknown): MatchRecipe {
       ? clamp(Number(raw.fadeMs), 0, 20000)
       : shipped.fadeMs,
     stemEnabled: flags(raw.stemEnabled, shipped.stemEnabled),
-    captureAt: marks(raw.captureAt, 1, 40, shipped.captureAt),
     captureFrom: five(raw.captureFrom, 1, 36, shipped.captureFrom, true),
     capturePercent: five(raw.capturePercent, 1, 100, shipped.capturePercent, false),
+    gapLeader: steps(raw.gapLeader, 2, 1, 100, shipped.gapLeader) as [number, number],
+    drainMarks: steps(raw.drainMarks, 2, 1, 100, shipped.drainMarks) as [number, number],
     animGrow: typeof raw.animGrow === 'boolean' ? raw.animGrow : shipped.animGrow,
     animTint: typeof raw.animTint === 'boolean' ? raw.animTint : shipped.animTint,
     animScale: typeof raw.animScale === 'boolean' ? raw.animScale : shipped.animScale,

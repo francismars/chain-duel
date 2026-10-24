@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { wallsClosedLostPercent, type TensionLevel } from '@/game/audio/tension';
+import { type TensionLevel } from '@/game/audio/tension';
 import {
   SHIPPED_RECIPE,
   SOUND_FILES,
   applyRecipe,
+  captureClipForLength,
   capturePercentForLength,
   cloneRecipe,
   countRecipeDiffs,
@@ -15,11 +16,9 @@ import {
 
 type Marks = [number, number, number, number];
 
-const RANK = [
-  ['Mark 1', 'Comes in first'],
-  ['Mark 2', 'Louder'],
-  ['Mark 3', 'Louder still'],
-  ['Mark 4', 'Loudest'],
+const LAYERS = [
+  ['Warning', 'Comes in first', 1],
+  ['Critical', 'Louder', 3],
 ] as const;
 
 export function EffectRecipePanel({
@@ -45,9 +44,7 @@ export function EffectRecipePanel({
   onChange: (next: MatchRecipe) => void;
   levels: {
     chain: TensionLevel;
-    walls: TensionLevel;
     score: TensionLevel;
-    streak: TensionLevel;
   };
   onPlay: (file: string) => void;
   playing: string | null;
@@ -61,7 +58,7 @@ export function EffectRecipePanel({
   chainLength: number;
   chainName: string;
   onChainLength: (length: number) => void;
-  page: 'music' | 'marks' | 'eat';
+  page: 'music' | 'eat';
   liveTick: number;
 }) {
   const live = useMemo(() => gameRecipe(), [liveTick]);
@@ -73,8 +70,9 @@ export function EffectRecipePanel({
       <section className="recipe">
         <h2>Music</h2>
         <p className="recipe__hint">
-          Ranked from the first layer to the loudest. The name in the list is
-          the sound file. The loudest mark that is reached wins.
+          Warning is the pressure stem. Critical is the critical stem. The
+          louder one reached is the one that plays. Drag a tick to move when
+          that layer comes in.
         </p>
         <div className="match-lab__actions">
           <button type="button" aria-pressed={!silenced && playing == null} onClick={onHearMix}>
@@ -100,7 +98,7 @@ export function EffectRecipePanel({
           onPlay={() => onPlay(draft.bedFile)}
           onFile={(bedFile) => patch({ bedFile })}
         />
-        {RANK.map(([label, detail], index) => (
+        {LAYERS.map(([label, detail, index]) => (
           <SoundRow
             key={label}
             label={label}
@@ -135,6 +133,31 @@ export function EffectRecipePanel({
             }}
           />
         ))}
+        <h3>When it plays</h3>
+        <MarkRail
+          label="One chain reaches"
+          now={layerName(levels.chain)}
+          hint="Warning when any chain reaches the lower tick. Critical when any chain reaches the higher tick."
+          names={['warning', 'critical']}
+          marks={draft.gapLeader}
+          match={live.gapLeader}
+          min={1}
+          max={100}
+          suffix="%"
+          onChange={(next) => patch({ gapLeader: [next[0]!, next[1]!] })}
+        />
+        <MarkRail
+          label="Sats left"
+          now={layerName(levels.score)}
+          hint="The trailer's share of the sats. The lower tick is critical. The higher tick is warning."
+          names={['critical', 'warning']}
+          marks={draft.drainMarks}
+          match={live.drainMarks}
+          min={1}
+          max={100}
+          suffix="%"
+          onChange={(next) => patch({ drainMarks: [next[0]!, next[1]!] })}
+        />
         <div className="recipe__pair">
           <VolumeRow
             label="Quiet the bed"
@@ -150,7 +173,7 @@ export function EffectRecipePanel({
           />
           <HoldRow
             label="Fade out"
-            hint="After the hold, the volume eases to silence over this long. Zero cuts it off."
+            hint="How long a full-volume layer takes to leave. These layers are quieter, so they leave sooner. The way in is twice as fast. Zero cuts it off."
             aria="Fade out"
             value={draft.fadeMs}
             match={live.fadeMs}
@@ -158,61 +181,6 @@ export function EffectRecipePanel({
             onChange={(fadeMs) => patch({ fadeMs })}
           />
         </div>
-      </section>
-    );
-  }
-
-  if (page === 'marks') {
-    return (
-      <section className="recipe">
-        <h2>Marks</h2>
-        <p className="recipe__hint">
-          Drag a tick. The pips are the level on the board right now. The
-          loudest mark picks the music.
-        </p>
-        <MarkRail
-          label="Chain length"
-          hint="How long the chain is"
-          level={levels.chain}
-          marks={draft.chainMarks}
-          match={live.chainMarks}
-          min={1}
-          max={36}
-          onChange={(chainMarks) => patch({ chainMarks })}
-        />
-        <MarkRail
-          label="Walls closed"
-          hint={`Mark 1 starts above the first number. The match ends at ${Math.round(wallsClosedLostPercent())}% gone.`}
-          level={levels.walls}
-          marks={draft.wallMarks}
-          match={live.wallMarks}
-          min={0}
-          max={100}
-          suffix="%"
-          endAt={wallsClosedLostPercent()}
-          onChange={(wallMarks) => patch({ wallMarks })}
-        />
-        <MarkRail
-          label="Score lead"
-          hint="Leader's share of the sats"
-          level={levels.score}
-          marks={draft.scoreMarks}
-          match={live.scoreMarks}
-          min={1}
-          max={100}
-          suffix="%"
-          onChange={(scoreMarks) => patch({ scoreMarks })}
-        />
-        <MarkRail
-          label="Catch streak"
-          hint="Eats in a row"
-          level={levels.streak}
-          marks={draft.streakMarks}
-          match={live.streakMarks}
-          min={1}
-          max={16}
-          onChange={(streakMarks) => patch({ streakMarks })}
-        />
       </section>
     );
   }
@@ -247,7 +215,7 @@ export function EffectRecipePanel({
       </p>
       <LookRow
         title="Tail swell"
-        detail="The new tail block grows in from nothing. Watch the tail."
+        detail="The new tail block grows up to the cell and stops. Watch the tail."
         checked={draft.animGrow}
         match={live.animGrow}
         onChange={(animGrow) => patch({ animGrow })}
@@ -276,15 +244,6 @@ export function EffectRecipePanel({
         onFrom={(captureFrom) => patch({ captureFrom })}
         onPercent={(capturePercent) => patch({ capturePercent })}
         onLength={onChainLength}
-      />
-      <MarkRail
-        label="Eat sound"
-        hint="The clip that plays when a chain eats. Up to the first mark plays 2, up to the second plays 4, below the third plays 8, below the fourth plays 16, and longer plays 32."
-        marks={draft.captureAt}
-        match={live.captureAt}
-        min={1}
-        max={36}
-        onChange={(captureAt) => patch({ captureAt })}
       />
     </section>
   );
@@ -349,33 +308,36 @@ export function RecipeBar({
 }
 
 
-function sameMarks(a: Marks, b: Marks): boolean {
-  return a.every((mark, index) => mark === b[index]);
+function layerName(level: TensionLevel): string {
+  return level >= 4 ? 'Critical' : level >= 2 ? 'Warning' : 'Quiet';
+}
+
+function sameMarks(a: readonly number[], b: readonly number[]): boolean {
+  return a.length === b.length && a.every((mark, index) => mark === b[index]);
 }
 
 function MarkRail({
   label,
   hint,
-  level,
+  now,
+  names,
   marks,
   match,
   min,
   max,
   suffix = '',
-  endAt,
   onChange,
 }: {
   label: string;
   hint: string;
-  level?: TensionLevel;
-  marks: Marks;
-  match: Marks;
+  now?: string;
+  names?: readonly string[];
+  marks: readonly number[];
+  match: readonly number[];
   min: number;
   max: number;
   suffix?: string;
-  /** Fixed point on the rail, such as where the walls end the match. */
-  endAt?: number;
-  onChange: (next: Marks) => void;
+  onChange: (next: number[]) => void;
 }) {
   const railRef = useRef<HTMLDivElement>(null);
   const drag = useRef<number | null>(null);
@@ -384,6 +346,7 @@ function MarkRail({
   const differ = !sameMarks(marks, match);
   const span = max - min || 1;
   const shown = drag.current === null ? marks : marksRef.current;
+  const last = marks.length - 1;
 
   const valueAt = (clientX: number) => {
     const rect = railRef.current!.getBoundingClientRect();
@@ -392,18 +355,18 @@ function MarkRail({
     return Math.min(max, Math.max(min, Math.round(raw)));
   };
 
-  const commit = (index: number, value: number, sort: boolean) => {
-    const next = [...marksRef.current] as Marks;
+  const commit = (index: number, value: number) => {
+    const next = [...marksRef.current];
     next[index] = Math.min(max, Math.max(min, value));
-    if (sort) next.sort((a, b) => a - b);
+    next.sort((a, b) => a - b);
     marksRef.current = next;
-    onChange(sort ? next : ([...next].sort((a, b) => a - b) as Marks));
+    onChange(next);
   };
 
   const nudge = (index: number, value: number) => {
-    const next = [...marks] as Marks;
+    const next = [...marks];
     const lo = index === 0 ? min : next[index - 1]!;
-    const hi = index === 3 ? max : next[index + 1]!;
+    const hi = index === last ? max : next[index + 1]!;
     next[index] = Math.min(hi, Math.max(lo, value));
     onChange(next);
   };
@@ -412,50 +375,31 @@ function MarkRail({
     <div className="recipe__mark">
       <div className="recipe__mark-head">
         <span>{label}</span>
-        {level != null ? (
-          <span className="match-lab__pips" aria-label={`now ${level} of 4`}>
-            {[1, 2, 3, 4].map((step) => (
-              <i key={step} className={step <= level ? 'on' : undefined} />
-            ))}
-          </span>
-        ) : null}
+        {now ? <em>{now}</em> : null}
         {differ ? (
-          <em>
-            match {match.map((mark) => `${mark}${suffix}`).join(' ')}
-          </em>
+          <em>match {match.map((mark) => `${mark}${suffix}`).join(' ')}</em>
         ) : null}
       </div>
       <div className="recipe__rail" ref={railRef}>
         <i className="recipe__rail-line" />
-        {endAt != null ? (
-          <span
-            className="recipe__end"
-            style={{ left: `${((endAt - min) / span) * 100}%` }}
-          >
-            <b>
-              {Math.round(endAt)}
-              {suffix}
-            </b>
-          </span>
-        ) : null}
         {shown.map((mark, index) => (
           <button
             key={index}
             type="button"
             className="recipe__tick"
             style={{ left: `${((mark - min) / span) * 100}%` }}
-            aria-label={`${label} mark ${index + 1}, ${mark}${suffix}`}
+            aria-label={`${label} ${names?.[index] ?? `mark ${index + 1}`}, ${mark}${suffix}`}
             onPointerDown={(event) => {
               drag.current = index;
               event.currentTarget.setPointerCapture(event.pointerId);
             }}
             onPointerMove={(event) => {
               if (drag.current !== index) return;
-              commit(index, valueAt(event.clientX), false);
+              commit(index, valueAt(event.clientX));
             }}
             onPointerUp={(event) => {
               if (drag.current !== index) return;
-              commit(index, valueAt(event.clientX), true);
+              commit(index, valueAt(event.clientX));
               drag.current = null;
             }}
             onKeyDown={(event) => {
@@ -711,6 +655,7 @@ function CaptureLadder({
   const max = 36;
   const span = max - min;
   const taken = capturePercentForLength(length, from, percent);
+  const clip = captureClipForLength(length, from, percent);
   const active = from.findIndex(
     (start, index) =>
       length >= start && (index === 4 || length < from[index + 1]!)
@@ -755,8 +700,9 @@ function CaptureLadder({
         {differ ? <em>match differs</em> : null}
       </div>
       <p className="recipe__hint">
-        {chainName} is length {length}, so an eat takes {taken}%. Drag a tick to
-        move where a band starts. Click a band, then set its percent once.
+        {chainName} is length {length}, so an eat takes {taken}% and plays the{' '}
+        {clip} clip. Drag a tick to move where a band starts. Click a band, then
+        set its percent once.
       </p>
       <div className="recipe__bands">
         {from.map((start, index) => {
@@ -855,8 +801,8 @@ function CaptureLadder({
         />
       </label>
       <p className="recipe__hint">
-        The slider grows that chain on the board. The score stays put, and the
-        capture line in the score bar follows the percent.
+        The slider grows that chain on the board. The score stays put. The
+        capture line and the eat clip follow the percent.
       </p>
     </div>
   );

@@ -7,6 +7,7 @@ import {
 import type { GameState, GridPos } from '@/game/engine/types';
 import {
   SHIPPED_RECIPE,
+  capturePercentForLength,
   levelFromMarks,
   type MatchRecipe,
 } from '@/game/effects/matchRecipe';
@@ -97,6 +98,33 @@ export function streakTension(
   return levelFromMarks(count, marks);
 }
 
+/**
+ * Warning when any chain reaches the lower tick.
+ * Critical when any chain reaches the higher tick.
+ * Returns 2 or 4 so the mixer plays the pressure stem, then the critical stem.
+ */
+export function captureGapTension(
+  reached: number,
+  recipe: MatchRecipe = SHIPPED_RECIPE
+): TensionLevel {
+  const [warnHigh, critHigh] = recipe.gapLeader;
+  if (reached >= critHigh) return 4;
+  if (reached >= warnHigh) return 2;
+  return 0;
+}
+
+/** The lower mark is critical. The higher mark is warning. Both are a share of the pool. */
+export function drainTension(
+  trailerShare: number,
+  marks: readonly [number, number] = SHIPPED_RECIPE.drainMarks
+): TensionLevel {
+  const crit = Math.min(marks[0], marks[1]) / 100;
+  const warn = Math.max(marks[0], marks[1]) / 100;
+  if (trailerShare <= crit) return 4;
+  if (trailerShare <= warn) return 2;
+  return 0;
+}
+
 /** How far the walls have closed when the match ends, as playable area lost. */
 export function wallsClosedLostPercent(
   cols = GAME_COLS,
@@ -142,19 +170,33 @@ export function getTensionBreakdown(
   const players = tensionPlayers(state).filter(
     (player) => player.score > 0 && !player.eliminated
   );
-  const longest = Math.max(0, ...players.map((player) => player.length));
+  const rates = players.map((player) =>
+    capturePercentForLength(
+      player.length,
+      recipe.captureFrom,
+      recipe.capturePercent
+    )
+  );
+  const capture =
+    rates.length > 0
+      ? captureGapTension(Math.max(...rates), recipe)
+      : 0;
   const scores =
     state.meta.teamMode === '2v1'
       ? [state.score[0], state.score[1] + (state.extraSnakes[0]?.score ?? 0)]
       : players.map((player) => player.score);
   const pool = scores.reduce((sum, score) => sum + score, 0);
-  const leaderShare = pool > 0 ? Math.max(...scores) / pool : 0;
-  const chain = chainTension(longest, recipe.chainMarks);
-  const walls = wallsTension(lostPlayablePercent(state), recipe.wallMarks);
-  const score = scoreTension(leaderShare, recipe.scoreMarks);
-  const streak = streakTension(streakCount, recipe.streakMarks);
-  const level = Math.max(chain, walls, score, streak) as TensionLevel;
-  return { chain, walls, score, streak, level, streakCount };
+  const trailerShare = pool > 0 ? Math.min(...scores) / pool : 1;
+  const score = drainTension(trailerShare, recipe.drainMarks);
+  const level = Math.max(capture, score) as TensionLevel;
+  return {
+    chain: capture,
+    walls: 0,
+    score,
+    streak: 0,
+    level,
+    streakCount,
+  };
 }
 
 export function getTensionLevel(

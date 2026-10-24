@@ -44,36 +44,7 @@ afterEach(() => {
 });
 
 describe('game tension', () => {
-  it.each([
-    [100, 0],
-    [99, 1],
-    [76, 1],
-    [75, 2],
-    [56, 2],
-    [55, 3],
-    [36, 3],
-    [35, 4],
-    [10, 4],
-  ])('maps %s percent remaining playable area to level %s', (width, level) => {
-    const state = match();
-    state.cols = 102;
-    state.rows = 12;
-    state.shrinkBorder = {
-      left: 0,
-      right: width + 1,
-      top: 0,
-      bottom: 11,
-      warningActive: true,
-    };
-    expect(getTensionLevel(state)).toBe(level);
-    state.gameStarted = false;
-    expect(getTensionLevel(state)).toBe(0);
-    state.gameStarted = true;
-    state.gameEnded = true;
-    expect(getTensionLevel(state)).toBe(0);
-  });
-
-  it('keeps stronger chain or score pressure on a shrinking board', () => {
+  it('does not treat closing walls as pressure', () => {
     const state = match();
     state.shrinkBorder = {
       left: 1,
@@ -82,30 +53,28 @@ describe('game tension', () => {
       bottom: state.rows - 2,
       warningActive: false,
     };
-    expect(getTensionLevel(state)).toBe(1);
-    state.p1.body = Array(11).fill([1, 1]);
-    expect(getTensionLevel(state)).toBe(3);
-    state.score = [1900, 100];
-    expect(getTensionLevel(state)).toBe(4);
-  });
-
-  it.each([
-    [3, 0],
-    [4, 1],
-    [6, 1],
-    [7, 2],
-    [10, 2],
-    [11, 3],
-    [15, 3],
-    [16, 4],
-  ])('maps a chain of %s segments to intensity %s', (length, level) => {
-    const state = match();
-    state.p1.body = Array(length).fill([1, 1]);
-    expect(getTensionLevel(state)).toBe(level);
+    expect(getTensionLevel(state)).toBe(0);
     state.gameStarted = false;
     expect(getTensionLevel(state)).toBe(0);
     state.gameStarted = true;
     state.gameEnded = true;
+    expect(getTensionLevel(state)).toBe(0);
+  });
+
+  it('warns once a chain reaches 16% and goes critical at 32%', () => {
+    const state = match();
+    state.p1.body = Array(7).fill([1, 1]);
+    state.p2.body = [[1, 1]];
+    expect(getTensionLevel(state)).toBe(2);
+    state.p2.body = Array(4).fill([1, 1]);
+    expect(getTensionLevel(state)).toBe(2);
+    state.p1.body = Array(11).fill([1, 1]);
+    state.p2.body = Array(7).fill([1, 1]);
+    expect(getTensionLevel(state)).toBe(4);
+    state.p1.body = [[1, 1]];
+    state.p2.body = [[1, 1]];
+    expect(getTensionLevel(state)).toBe(0);
+    state.gameStarted = false;
     expect(getTensionLevel(state)).toBe(0);
   });
 
@@ -114,15 +83,12 @@ describe('game tension', () => {
   });
 
   it.each([
-    [1199, 0],
-    [1200, 1],
-    [1499, 1],
+    [1499, 0],
     [1500, 2],
-    [1699, 2],
-    [1700, 3],
-    [1899, 3],
+    [1799, 2],
+    [1800, 4],
     [1900, 4],
-  ])('builds tension at a leading score of %s / 2000', (leader, level) => {
+  ])('warns when %s / 2000 leaves a quarter, and goes critical at a tenth', (leader, level) => {
     const state = match();
     state.score = [leader, 2000 - leader];
     expect(getTensionLevel(state)).toBe(level);
@@ -130,42 +96,39 @@ describe('game tension', () => {
     expect(getTensionLevel(state)).toBe(level);
   });
 
-  it('uses the stronger of chain pressure and score pressure', () => {
+  it('lets a drained score speak while both chains are short, and a long chain speak over a mild drain', () => {
     const state = match();
-    state.p1.body = Array(4).fill([1, 1]);
     state.score = [100, 1900];
     expect(getTensionLevel(state)).toBe(4);
-    state.p1.body = Array(16).fill([1, 1]);
-    state.score = [1200, 800];
+    state.score = [1500, 500];
+    expect(getTensionLevel(state)).toBe(2);
+    state.p1.body = Array(11).fill([1, 1]);
     expect(getTensionLevel(state)).toBe(4);
   });
 
-  it('crossfades to a different synchronized theme at every pressure level', () => {
+  it('crossfades from the pressure stem to the critical stem', () => {
     const audio = new GameAudioSystem();
     const state = match();
     audio.startMusic();
-    for (const [length, volume, name] of [
-      [4, 0.22, 'build'],
-      [7, 0.34, 'pressure'],
-      [11, 0.46, 'tension'],
-      [16, 0.65, 'critical'],
-    ] as const) {
-      state.p1.body = Array(length).fill([1, 1]);
-      audio.updateGameState(state);
-      vi.advanceTimersByTime(3500);
-      expect(cue(name).volume).toBeCloseTo(volume);
-      const heard = tensionDebugSnapshot().layers.map((layer) => layer.name);
-      expect(heard).toContain('game');
-      expect(heard).toContain(name);
-      for (const other of ['build', 'pressure', 'tension', 'critical']) {
-        if (other !== name) expect(cue(other).volume).toBe(0);
-        expect(cue(other).loop).toBe(true);
-      }
-    }
+    state.p1.body = Array(7).fill([1, 1]);
+    audio.updateGameState(state);
+    vi.advanceTimersByTime(3500);
+    expect(cue('pressure').volume).toBeCloseTo(0.34);
+    expect(cue('critical').volume).toBe(0);
+    expect(cue('build').volume).toBe(0);
+    expect(cue('tension').volume).toBe(0);
+    state.p1.body = Array(11).fill([1, 1]);
+    audio.updateGameState(state);
+    vi.advanceTimersByTime(3500);
+    expect(cue('critical').volume).toBeCloseTo(0.65);
+    expect(cue('pressure').volume).toBe(0);
+    const heard = tensionDebugSnapshot().layers.map((layer) => layer.name);
+    expect(heard).toContain('game');
+    expect(heard).toContain('critical');
     audio.stopAll();
   });
 
-  it('holds critical pressure, then fades back to the quieter build theme', () => {
+  it('holds critical pressure, then fades back to the bed', () => {
     const audio = new GameAudioSystem();
     const state = match();
     audio.startMusic();
@@ -175,12 +138,12 @@ describe('game tension', () => {
     state.score = [1200, 800];
     audio.updateGameState(state);
     expect(cue('critical').volume).toBeCloseTo(0.65);
-    expect(cue('build').volume).toBe(0);
+    expect(cue('pressure').volume).toBe(0);
     vi.advanceTimersByTime(2100);
     audio.updateGameState(state);
     vi.advanceTimersByTime(4000);
-    expect(cue('build').volume).toBeCloseTo(0.22);
     expect(cue('critical').volume).toBe(0);
+    expect(cue('pressure').volume).toBe(0);
     cue('produced_game').currentTime = 18;
     audio.applyAppMuteState(true, false);
     for (const name of ['build', 'pressure', 'tension', 'critical']) {
@@ -195,7 +158,7 @@ describe('game tension', () => {
     audio.stopAll();
   });
 
-  it('raises the mix from a catch streak, then clears it on a death or the other player scoring', () => {
+  it('keeps counting a catch streak without letting it choose the music', () => {
     const audio = new GameAudioSystem();
     const state = match();
     audio.updateGameState(state);
@@ -204,9 +167,8 @@ describe('game tension', () => {
       audio.updateGameState(state);
     }
     expect(tensionDebugSnapshot().streakCount).toBe(8);
-    expect(tensionDebugSnapshot().streak).toBe(4);
-    expect(tensionDebugSnapshot().level).toBe(4);
-    expect(tensionDebugSnapshot().track).toBe('critical');
+    expect(tensionDebugSnapshot().level).toBe(0);
+    expect(tensionDebugSnapshot().track).toBe('off');
     expect(streakPops()).toHaveLength(0);
 
     state.p1.body = [];
@@ -334,14 +296,16 @@ describe('game tension', () => {
     state.p1.body = Array(16).fill([1, 1]);
     audio.updateGameState(state);
     vi.advanceTimersByTime(2000);
+    audio.updateGameState(state);
     expect(cue('critical').volume).toBeCloseTo(0.65);
     state.p1.body = [];
     audio.updateGameState(state);
-    vi.advanceTimersByTime(1000);
-    expect(cue('critical').volume).toBeCloseTo(0.65);
-    vi.advanceTimersByTime(1100);
+    vi.advanceTimersByTime(500);
     audio.updateGameState(state);
-    vi.advanceTimersByTime(4000);
+    expect(cue('critical').volume).toBeCloseTo(0.65);
+    vi.advanceTimersByTime(600);
+    audio.updateGameState(state);
+    vi.advanceTimersByTime(1700);
     expect(cue('critical').volume).toBe(0);
     audio.stopAll();
     expect(vi.getTimerCount()).toBe(0);

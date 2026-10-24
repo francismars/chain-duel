@@ -43,6 +43,7 @@ import {
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import {
+  captureClipForLength,
   capturePercentForLength,
   gameRecipe,
   type MatchRecipe,
@@ -72,8 +73,7 @@ const LAB_MODES: LabMode[] = [
   {
     id: 'freeplay',
     label: 'Free play',
-    summary:
-      'Walls close and power-ups can appear. A new block plays a sound. Captures, deaths, the countdown, and the pressure music are the same in every match.',
+    summary: 'Walls close. Power-ups can appear. A new block plays a sound.',
     convergence: true,
     powerups: true,
     block: true,
@@ -84,8 +84,7 @@ const LAB_MODES: LabMode[] = [
   {
     id: 'p2p',
     label: 'P2P',
-    summary:
-      'No closing walls and no power-ups. A new block still plays. The match music, captures, deaths, and countdown match free play.',
+    summary: 'Walls stay open. No power-ups. A new block still plays a sound.',
     convergence: false,
     powerups: false,
     block: true,
@@ -96,8 +95,7 @@ const LAB_MODES: LabMode[] = [
   {
     id: 'tournament',
     label: 'Tournament',
-    summary:
-      'The board matches a P2P duel. The bracket, the seat payment, and the QR live outside the match.',
+    summary: 'Same board as P2P. The bracket and the payment sit outside the match.',
     convergence: false,
     powerups: false,
     block: true,
@@ -109,7 +107,7 @@ const LAB_MODES: LabMode[] = [
     id: 'online',
     label: 'Online',
     summary:
-      'No closing walls and no power-ups. A new block still plays. Scrubbing a replay also fires the floating score pops again.',
+      'Walls stay open. No power-ups. Scrubbing a replay fires the score pops again.',
     convergence: false,
     powerups: false,
     block: true,
@@ -120,8 +118,7 @@ const LAB_MODES: LabMode[] = [
   {
     id: 'challenge',
     label: 'Challenge',
-    summary:
-      'No closing walls, and a new block does not play a sound. Captures, deaths, the countdown, and the pressure music still play.',
+    summary: 'Walls stay open. A new block is silent.',
     convergence: false,
     powerups: false,
     block: false,
@@ -243,7 +240,7 @@ const SOLO_CLIPS: SoloClip[] = [
     name: 'Capture 2',
     src: '/sound/P-FC_2.aac',
     loop: false,
-    where: 'Chain length 1',
+    where: 'Chain length 1 · 2%',
     inMode: () => true,
   },
   {
@@ -251,7 +248,7 @@ const SOLO_CLIPS: SoloClip[] = [
     name: 'Capture 4',
     src: '/sound/P-FC_4.aac',
     loop: false,
-    where: 'Chain length 2',
+    where: 'Chain length 2–3 · 4%',
     inMode: () => true,
   },
   {
@@ -259,7 +256,7 @@ const SOLO_CLIPS: SoloClip[] = [
     name: 'Capture 8',
     src: '/sound/P-FC_8.aac',
     loop: false,
-    where: 'Chain length 3–7',
+    where: 'Chain length 4–6 · 8%',
     inMode: () => true,
   },
   {
@@ -267,7 +264,7 @@ const SOLO_CLIPS: SoloClip[] = [
     name: 'Capture 16',
     src: '/sound/P-FC_16.aac',
     loop: false,
-    where: 'Chain length 8–15',
+    where: 'Chain length 7–10 · 16%',
     inMode: () => true,
   },
   {
@@ -275,7 +272,7 @@ const SOLO_CLIPS: SoloClip[] = [
     name: 'Capture 32',
     src: '/sound/P-FC_32.aac',
     loop: false,
-    where: 'Chain length 16+',
+    where: 'Chain length 11+ · 32%',
     inMode: () => true,
   },
   {
@@ -327,7 +324,7 @@ const COUNTDOWN = [
   { tick: 31, label: 'LFG', clip: 'Beep2' },
 ] as const;
 
-const TRACK_NAME = ['off', 'build', 'pressure', 'tension', 'critical'] as const;
+const TRACK_NAME = ['off', 'warning', 'warning', 'critical', 'critical'] as const;
 
 function makeLabState(mode: LabMode): GameState {
   const state = createGameState({
@@ -372,12 +369,8 @@ function whiteShareOf(state: GameState): number {
   return state.score[0] / pool;
 }
 
-function captureClip(length: number): string {
-  if (length <= 1) return 'P-FC_2';
-  if (length <= 2) return 'P-FC_4';
-  if (length < 8) return 'P-FC_8';
-  if (length < 16) return 'P-FC_16';
-  return 'P-FC_32';
+function captureClip(recipe: MatchRecipe, length: number): string {
+  return `P-FC_${captureClipForLength(length, recipe.captureFrom, recipe.capturePercent)}`;
 }
 
 function placeBody(state: GameState, snake: SnakeState, length: number): void {
@@ -522,10 +515,8 @@ function transferToP2(state: GameState, amount: number): number {
 
 function layerLabel(name: string): string {
   if (name === 'game') return 'Bed';
-  if (name === 'build') return 'Mark 1';
-  if (name === 'pressure') return 'Mark 2';
-  if (name === 'tension') return 'Mark 3';
-  if (name === 'critical') return 'Mark 4';
+  if (name === 'pressure') return 'Warning';
+  if (name === 'critical') return 'Critical';
   if (name === 'end') return 'End';
   if (name === 'menu') return 'Menu';
   return name;
@@ -535,28 +526,20 @@ function musicReason(tension: TensionDebugSnapshot): string {
   const ended = tension.layers.some(
     (layer) => layer.name === 'end' || layer.name === 'menu'
   );
-  if (ended) {
-    return 'The match ended. The end cue plays once over menu music, and the menu loop keeps going onto the results screen.';
-  }
-  if (tension.level === 0) {
-    return 'Only the game bed is playing. A pressure layer comes in when chain, walls, score, or streak reaches the next mark. The loudest of those four wins.';
-  }
-  const track = `Mark ${tension.level}`;
+  if (ended) return 'Match over. The end cue plays once, then the menu loop continues.';
+  if (tension.level === 0) return 'Bed only.';
+  const name = tension.level >= 4 ? 'Critical' : 'Warning';
   const causes = (
     [
-      ['chain', tension.chain, 'chain length'],
-      ['walls', tension.walls, 'the shrinking board'],
-      ['score', tension.score, 'score share'],
-      ['streak', tension.streak, 'the catch streak'],
+      ['capture', tension.chain, "one chain's capture percent"],
+      ['drain', tension.score, 'one side running out of sats'],
     ] as const
   )
     .filter((entry) => entry[1] === tension.level)
     .map((entry) => entry[2]);
   const because = causes.length > 0 ? causes.join(' and ') : 'the held level';
-  const held = tension.held
-    ? ' It is holding for 4 seconds after the input dropped.'
-    : '';
-  return `${track} is in because ${because} ${tension.level === 1 ? 'reached the first mark' : `reached mark ${tension.level}`}.${held} The game bed ducks under it.`;
+  const held = tension.held ? ' Holding after that passed.' : '';
+  return `${name} is in because of ${because}.${held}`;
 }
 
 function ScoreHud({
@@ -723,7 +706,7 @@ export default function MatchTriggerLab() {
   const [silenced, setSilenced] = useState(false);
   const silenceRef = useRef(false);
   const [otherId, setOtherId] = useState('menu');
-  const [desk, setDesk] = useState<'board' | 'music' | 'marks' | 'eat'>('board');
+  const [desk, setDesk] = useState<'board' | 'music' | 'eat'>('board');
   const [recipeTick, setRecipeTick] = useState(0);
   const soloRef = useRef<HTMLAudioElement | null>(null);
   const baitRef = useRef(new WeakSet<Coinbase>());
@@ -834,7 +817,7 @@ export default function MatchTriggerLab() {
         }
         audio.playCapture(length);
         note(
-          `Eat · ${lookLabel(draftRef.current)} · +${gained} sats${rate ? ` ${rate}` : ''} · ${captureClip(length)}${respawn ? ' · new food' : ''}`
+          `Eat · ${lookLabel(draftRef.current)} · +${gained} sats${rate ? ` ${rate}` : ''} · ${captureClip(draftRef.current, length)}${respawn ? ' · new food' : ''}`
         );
       }
       if (finishMatch(state)) {
@@ -1404,17 +1387,23 @@ export default function MatchTriggerLab() {
         </div>
         <div className="match-lab__hud">
           <div>
-            Chain <span>{chain}</span>
+            <em>Chain</em>
+            <b>{chain}</b>
           </div>
           <div>
-            Walls <span>{lost.toFixed(0)}% gone</span>
+            <em>Walls</em>
+            <b>{lost.toFixed(0)}%</b>
           </div>
           <div>
-            Streak <span>{tension.streakCount}</span>
-            {tension.held ? ' · held' : ''}
+            <em>Streak</em>
+            <b>
+              {tension.streakCount}
+              {tension.held ? ' held' : ''}
+            </b>
           </div>
           <div>
-            Music <span>{TRACK_NAME[tension.level] ?? 'off'}</span>
+            <em>Music</em>
+            <b>{TRACK_NAME[tension.level] ?? 'off'}</b>
           </div>
         </div>
       </section>
@@ -1425,7 +1414,6 @@ export default function MatchTriggerLab() {
             [
               ['board', 'Board'],
               ['music', 'Music'],
-              ['marks', 'Marks'],
               ['eat', 'Eat'],
             ] as const
           ).map(([id, label]) => (
@@ -1457,13 +1445,11 @@ export default function MatchTriggerLab() {
               </button>
             ))}
           </div>
-          <p className="match-lab__note" style={{ marginTop: '0.45rem' }}>
-            {mode.summary}
-          </p>
+          <p className="match-lab__note">{mode.summary}</p>
         </section>
 
         <section>
-          <h2>Move</h2>
+          <h2>Drive</h2>
           <div className="match-lab__ride">
             <button
               type="button"
@@ -1485,24 +1471,55 @@ export default function MatchTriggerLab() {
                 checked={growOn}
                 onChange={(event) => setGrowOn(event.target.checked)}
               />
-              Grow while dragging
+              Grow
             </label>
             <button type="button" disabled={historyCount === 0} onClick={undoMove}>
-              Back one move
+              Undo
             </button>
           </div>
-          <p className="match-lab__note" style={{ marginTop: '0.4rem' }}>
-            Drag routes around both chains. The chain cannot reverse or cross a
-            body. Touching its own body, the other chain, or the wall resets it.
-            The match ends when one side has no sats left. Back one move rewinds
-            the last step.
+          <p className="match-lab__note">
+            Drag the selected chain. Grow turns each new cell into an eat.
           </p>
         </section>
 
         <section>
-          <h2>One moment</h2>
-          <div className="match-lab__actions">
-            <button type="button" disabled={ended} onClick={eatOne}>
+          <h2>Score and walls</h2>
+          <label className="slider">
+            <span>
+              White {Math.round(whiteShare * 100)}% · Black{' '}
+              {100 - Math.round(whiteShare * 100)}%
+            </span>
+            <input
+              type="range"
+              min={1}
+              max={99}
+              value={Math.min(99, Math.max(1, Math.round(whiteShare * 100)))}
+              disabled={ended}
+              aria-label="Score split"
+              onChange={(event) => setScoreShare(Number(event.target.value) / 100)}
+            />
+          </label>
+          <label className="slider">
+            <span>Wall inset {inset}</span>
+            <input
+              type="range"
+              min={0}
+              max={MAX_INSET}
+              value={inset}
+              disabled={ended || !mode.convergence}
+              aria-label="Wall inset"
+              onChange={(event) => setWalls(Number(event.target.value))}
+            />
+          </label>
+          {mode.convergence ? null : (
+            <p className="match-lab__note">Walls stay open in {mode.label}.</p>
+          )}
+        </section>
+
+        <section>
+          <h2>Moments</h2>
+          <div className="match-lab__moments">
+            <button type="button" className="wide" disabled={ended} onClick={eatOne}>
               Eat one step
             </button>
             <button type="button" disabled={ended} onClick={() => die('P1')}>
@@ -1511,7 +1528,7 @@ export default function MatchTriggerLab() {
             <button type="button" disabled={ended} onClick={() => die('P2')}>
               Black dies
             </button>
-            <button type="button" disabled={ended} onClick={fork}>
+            <button type="button" className="wide" disabled={ended} onClick={fork}>
               Head-on REORG
             </button>
             <button
@@ -1529,7 +1546,7 @@ export default function MatchTriggerLab() {
             </button>
             {ended && !state?.winnerPlayer ? (
               <button type="button" onClick={resume}>
-                Resume match
+                Resume
               </button>
             ) : ended ? null : (
               <button type="button" onClick={endMatch}>
@@ -1537,6 +1554,31 @@ export default function MatchTriggerLab() {
               </button>
             )}
           </div>
+        </section>
+
+        <section>
+          <h2>Heard now</h2>
+          {tension.layers.length === 0 ? (
+            <p className="match-lab__note">
+              Nothing audible yet. Click the board once if the browser blocked
+              the bed.
+            </p>
+          ) : (
+            <>
+              <p className="match-lab__why">{musicReason(tension)}</p>
+              <div className="match-lab__layers">
+                {tension.layers.map((layer) => (
+                  <div className="match-lab__layer" key={layer.name}>
+                    <span>{layerLabel(layer.name)}</span>
+                    <b>
+                      <i style={{ width: `${Math.round(layer.volume * 100)}%` }} />
+                    </b>
+                    <span>{layer.volume.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </section>
 
         <section>
@@ -1549,70 +1591,9 @@ export default function MatchTriggerLab() {
             )}
           </div>
         </section>
-
-        <section>
-          <h2>Heard now</h2>
-          <p className="match-lab__why">{musicReason(tension)}</p>
-          <div className="match-lab__layers" style={{ marginTop: '0.45rem' }}>
-            {tension.layers.length === 0 ? (
-              <p className="match-lab__note">
-                Nothing audible yet. Click the board once if the browser blocked
-                the bed.
-              </p>
-            ) : (
-              tension.layers.map((layer) => (
-                <div className="match-lab__layer" key={layer.name}>
-                  <span>{layerLabel(layer.name)}</span>
-                  <b>
-                    <i style={{ width: `${Math.round(layer.volume * 100)}%` }} />
-                  </b>
-                  <span>{layer.volume.toFixed(2)}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section>
-          <h2>Try a mark</h2>
-          <p className="match-lab__note">
-            Close the walls or move the score. Marks shows the level, and the
-            music follows the loudest one.
-          </p>
-          <label className="slider">
-            <span>Wall inset {inset}</span>
-            <input
-              type="range"
-              min={0}
-              max={MAX_INSET}
-              value={inset}
-              disabled={ended || !mode.convergence}
-              onChange={(event) => setWalls(Number(event.target.value))}
-            />
-          </label>
-          {mode.convergence ? null : (
-            <p className="match-lab__note">
-              Walls do not close in {mode.label}.
-            </p>
-          )}
-          <label className="slider">
-            <span>
-              Score split · white {Math.round(whiteShare * 100)}% · black{' '}
-              {100 - Math.round(whiteShare * 100)}%
-            </span>
-            <input
-              type="range"
-              min={1}
-              max={99}
-              value={Math.min(99, Math.max(1, Math.round(whiteShare * 100)))}
-              disabled={ended}
-              onChange={(event) => setScoreShare(Number(event.target.value) / 100)}
-            />
-          </label>
-        </section>
             </>
           ) : null}
-          {desk === 'music' || desk === 'marks' || desk === 'eat' ? (
+          {desk === 'music' || desk === 'eat' ? (
             <EffectRecipePanel
               page={desk}
               liveTick={recipeTick}
@@ -1620,9 +1601,7 @@ export default function MatchTriggerLab() {
               onChange={setDraft}
               levels={{
                 chain: tension.chain,
-                walls: tension.walls,
                 score: tension.score,
-                streak: tension.streak,
               }}
               onPlay={playFile}
               playing={playingFile}

@@ -1,5 +1,6 @@
 import type { GameState, PlayerId } from '@/game/engine/types';
 import {
+  captureClipForLength,
   capturePercentForLength,
   gameRecipe,
   type MatchRecipe,
@@ -350,7 +351,7 @@ export class GameAudioSystem {
       const audible = this.audibleLevel();
       const target =
         audible === theme.level ? this.recipe.stemVolumes[theme.level - 1]! : 0;
-      const fadeMs = Number.isFinite(this.recipe.fadeMs) ? this.recipe.fadeMs : 5000;
+      const fadeMs = Number.isFinite(this.recipe.fadeMs) ? this.recipe.fadeMs : 2500;
       const step =
         fadeMs <= 0 ? 1 : (50 / fadeMs) * (audio.volume < target ? 2 : 1);
       audio.volume +=
@@ -368,12 +369,15 @@ export class GameAudioSystem {
     this.publishHeardLayers();
   }
 
-  /** Loudest reached mark that is still switched on. */
+  /**
+   * Warning plays the pressure stem (mark 2). Critical plays the critical stem
+   * (mark 4). A switched-off critical layer falls back to warning.
+   */
   private audibleLevel(): number {
-    let level = this.tensionLevel;
     const enabled = this.recipe.stemEnabled;
-    while (level > 0 && enabled?.[level - 1] === false) level -= 1;
-    return level;
+    if (this.tensionLevel >= 4 && enabled?.[3] !== false) return 4;
+    if (this.tensionLevel >= 2 && enabled?.[1] !== false) return 2;
+    return 0;
   }
 
   /** Base bed plus any pressure stem that still has volume during a crossfade. */
@@ -448,12 +452,22 @@ export class GameAudioSystem {
   }
 
   playCapture(bodyLength: number): void {
-    const [until2, until4, until8, until16] = this.recipe.captureAt;
-    if (bodyLength <= until2) this.play(this.capture2);
-    else if (bodyLength <= until4) this.play(this.capture4);
-    else if (bodyLength < until8) this.play(this.capture8);
-    else if (bodyLength < until16) this.play(this.capture16);
-    else this.play(this.capture32);
+    const clip = captureClipForLength(
+      bodyLength,
+      this.recipe.captureFrom,
+      this.recipe.capturePercent
+    );
+    const audio =
+      clip >= 32
+        ? this.capture32
+        : clip >= 16
+          ? this.capture16
+          : clip >= 8
+            ? this.capture8
+            : clip >= 4
+              ? this.capture4
+              : this.capture2;
+    this.play(audio);
   }
 
   playBlockFound(): void {

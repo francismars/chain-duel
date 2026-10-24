@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { chainTension, scoreTension, wallsTension } from '@/game/audio/tension';
+import {
+  captureGapTension,
+  chainTension,
+  drainTension,
+  scoreTension,
+  wallsTension,
+} from '@/game/audio/tension';
 import {
   SHIPPED_RECIPE,
+  captureClipForLength,
   capturePercentForLength,
   levelFromMarks,
   sanitizeRecipe,
@@ -30,13 +37,30 @@ describe('match recipe', () => {
     expect(recipe.wallMarks).toEqual([0, 10, 20, 30]);
     expect(recipe.duck).toBe(0);
     expect(recipe.stemVolumes).toEqual(SHIPPED_RECIPE.stemVolumes);
-    expect(recipe.holdMs).toBe(4000);
-    expect(recipe.fadeMs).toBe(5000);
+    expect(recipe.holdMs).toBe(1000);
+    expect(recipe.fadeMs).toBe(2500);
     expect(recipe.stemEnabled).toEqual([true, true, true, true]);
     expect(recipe.bedFile).toBe('chain_duel_produced_game.m4a');
     expect(recipe.stemFiles[0]).toBe('chain_duel_build.m4a');
     expect(recipe.captureFrom).toEqual([1, 2, 4, 7, 11]);
     expect(recipe.capturePercent).toEqual([2, 4, 8, 16, 32]);
+    expect(recipe.gapLeader).toEqual([16, 32]);
+    expect(recipe.drainMarks).toEqual([10, 25]);
+  });
+
+  it('lets a saved capture line and sats line move the music', () => {
+    const recipe = sanitizeRecipe({
+      gapLeader: [20, 40],
+      drainMarks: [15, 5],
+    });
+    expect(recipe.gapLeader).toEqual([20, 40]);
+    expect(recipe.drainMarks).toEqual([5, 15]);
+    expect(captureGapTension(16, recipe)).toBe(0);
+    expect(captureGapTension(20, recipe)).toBe(2);
+    expect(captureGapTension(40, recipe)).toBe(4);
+    expect(drainTension(0.12, recipe.drainMarks)).toBe(2);
+    expect(drainTension(0.05, recipe.drainMarks)).toBe(4);
+    expect(drainTension(0.2, recipe.drainMarks)).toBe(0);
   });
 
   it('treats the first wall mark as above that number', () => {
@@ -51,5 +75,16 @@ describe('match recipe', () => {
     expect(capturePercentForLength(10)).toBe(16);
     expect(capturePercentForLength(11)).toBe(32);
     expect(capturePercentForLength(8, [1, 3, 5, 9, 12], [2, 5, 9, 20, 40])).toBe(9);
+  });
+
+  it('plays the eat clip for the capture percent of that length', () => {
+    expect(captureClipForLength(1)).toBe(2);
+    expect(captureClipForLength(3)).toBe(4);
+    expect(captureClipForLength(6)).toBe(8);
+    expect(captureClipForLength(10)).toBe(16);
+    expect(captureClipForLength(11)).toBe(32);
+    expect(captureClipForLength(36)).toBe(32);
+    expect(captureClipForLength(10, [1, 3, 5, 9, 12], [2, 5, 9, 20, 40])).toBe(16);
+    expect(captureClipForLength(12, [1, 3, 5, 9, 12], [2, 5, 9, 20, 40])).toBe(32);
   });
 });
