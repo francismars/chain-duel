@@ -147,6 +147,12 @@ export interface GameState {
   p2Name: string;
   meta: GameMeta;
   tickCount: number;
+  /**
+   * Set for the tick a chain actually resets. Cleared at the start of the next
+   * step. Spawn cells move, so the cue cannot be "head arrived at column 6".
+   */
+  resetCueP1?: boolean;
+  resetCueP2?: boolean;
   powerUpItems: PowerUpItem[];
   activePowerUps: ActivePowerUp[];
   obstacleWalls: ObstacleWall[];

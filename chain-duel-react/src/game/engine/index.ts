@@ -278,6 +278,8 @@ export function createGameState(args: CreateStateArgs): GameState {
       currentStepMs: args.convergenceStepMs ?? STEP_SPEED_MS,
     },
     tickCount: 0,
+    resetCueP1: false,
+    resetCueP2: false,
     powerUpItems: [],
     activePowerUps: [],
     obstacleWalls: [],
@@ -538,6 +540,8 @@ export function stepGame(state: GameState): TickResult {
 
   if (state.gameStarted && !state.gameEnded) {
     state.tickCount += 1;
+    state.resetCueP1 = false;
+    state.resetCueP2 = false;
 
     // Convergence: shrink border
     if (state.meta.convergenceMode && state.shrinkBorder) {
@@ -1173,6 +1177,8 @@ export function getCaptureLabel(length: number): string {
 // ============================================================================
 
 function resetSnake(state: GameState, player: PlayerId): void {
+  if (player === 'P1') state.resetCueP1 = true;
+  else state.resetCueP2 = true;
   const retainSpeed = player === 'P2' && state.meta.powerupMode;
   const teamMode = state.meta.teamMode ?? 'solo';
   const conv = Boolean(state.meta.convergenceMode && state.shrinkBorder);

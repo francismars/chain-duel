@@ -9,6 +9,7 @@ import { STEP_SPEED_MS } from '@/game/engine/constants';
 import type { PixiGameRenderer, PixiRenderOpts } from '@/game/render/pixiRenderer';
 import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
 import type { GameAudioSystem } from '@/game/audio/gameAudio';
+import { resetCuesFromStep } from '@/game/audio/resetCue';
 
 interface HudSnapshot {
   p1Points: number;
@@ -258,8 +259,6 @@ export function useGameRenderBridge({
         const prevP1Len = state.p1.body.length;
         const prevP2Len = state.p2.body.length;
         const prevExtraLen = state.extraSnakes[0]?.snake.body.length ?? 1;
-        const prevP1Head = [...state.p1.head] as [number, number];
-        const prevP2Head = [...state.p2.head] as [number, number];
         const prevStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
         const prevPowerUpItems = state.powerUpItems.length;
 
@@ -310,19 +309,8 @@ export function useGameRenderBridge({
         if (extraLen > prevExtraLen)
           audio?.playCapture(extraLen);
 
-        if (
-          (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
-          state.p1.head[0] === 6 &&
-          state.p1.head[1] === 12
-        ) {
-          audio?.playReset('P1');
-        }
-        if (
-          (prevP2Head[0] !== 44 || prevP2Head[1] !== 12) &&
-          state.p2.head[0] === 44 &&
-          state.p2.head[1] === 12
-        ) {
-          audio?.playReset('P2');
+        for (const player of resetCuesFromStep(state)) {
+          audio?.playReset(player);
         }
 
         if (state.gameEnded && state.winnerPlayer && !winnerSentRef.current) {

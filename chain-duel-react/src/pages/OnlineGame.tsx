@@ -23,6 +23,7 @@ import type {
 import { useGamepad } from '@/hooks/useGamepad';
 import { canContinueOnlineAfterGame } from '@/game/engine';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
+import { resetCuesFromTransition } from '@/game/audio/resetCue';
 import { advanceStreakPops, streakPops } from '@/game/audio/tensionDebug';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import {
@@ -1777,21 +1778,8 @@ function playOnlineAudioFromStateTransition(
   if (state.powerUpItems.length < (prev.powerUpItems?.length ?? 0)) {
     audio.playPowerUp();
   }
-  const prevP1Head = prev.p1.head;
-  const prevP2Head = prev.p2.head;
-  if (
-    (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
-    state.p1.head[0] === 6 &&
-    state.p1.head[1] === 12
-  ) {
-    audio.playReset('P1');
-  }
-  if (
-    (prevP2Head[0] !== 44 || prevP2Head[1] !== 12) &&
-    state.p2.head[0] === 44 &&
-    state.p2.head[1] === 12
-  ) {
-    audio.playReset('P2');
+  for (const player of resetCuesFromTransition(prev, state)) {
+    audio.playReset(player);
   }
   const prevStepMs = prev.meta?.currentStepMs;
   const newStepMs = state.meta?.currentStepMs;
