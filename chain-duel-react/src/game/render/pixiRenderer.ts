@@ -18,7 +18,12 @@ import {
   captureAnimFlags,
   type CaptureAnimFlags,
 } from '@/game/render/captureAnimFlags';
-import { planCaptureAnims, retainFreshCoins } from '@/game/render/captureAnimPlan';
+import {
+  planCaptureAnims,
+  retainFreshCoins,
+  TAIL_GROW_MS,
+  tailGrowScale,
+} from '@/game/render/captureAnimPlan';
 import {
   fitStartPromptToBoard,
   measureStartWordWidth,
@@ -102,7 +107,7 @@ export class PixiGameRenderer {
   private static readonly PULSE_DURATION_MS = 650;
   private static readonly PULSE_MAX_MS = 1000;
   private static readonly SCALE_MS = 390;
-  private static readonly GROW_MS = 580;
+  private static readonly GROW_MS = TAIL_GROW_MS;
   // SURGE fading-square trail
   private p1SurgeTrail: { pos: GridPos; time: number }[] = [];
   private p2SurgeTrail: { pos: GridPos; time: number }[] = [];
@@ -1169,28 +1174,21 @@ export class PixiGameRenderer {
     return PixiGameRenderer.PULSE_DURATION_MS;
   }
 
-  /** New link grows from nothing, overshoots, then settles to full size. */
+  /** New link grows from nothing up to the cell. */
   private growLinkScale(key: string, now: number): number {
     const start = this.growAt[key];
     if (start == null) return 1;
-    const t = Math.max(0, Math.min(1, (now - start) / PixiGameRenderer.GROW_MS));
-    if (t < 0.45) return (t / 0.45) * 1.42;
-    return 1.42 - ((t - 0.45) / 0.55) * 0.42;
+    return tailGrowScale(now - start);
   }
 
   private growProgress(key: string, now: number, _totalLen: number): number {
-    const start = this.growAt[key];
-    if (start == null) return 1;
-    const t = (now - start) / PixiGameRenderer.GROW_MS;
-    if (t >= 1) return 1;
-    if (t <= 0) return 0;
-    return 1 - Math.pow(1 - t, 2);
+    return this.growLinkScale(key, now);
   }
 
   private growAnimating(now: number): boolean {
     if (!this.animFlags().grow) return false;
     return Object.values(this.growAt).some(
-      (start) => now - start < PixiGameRenderer.PULSE_MAX_MS
+      (start) => now - start < PixiGameRenderer.GROW_MS
     );
   }
 

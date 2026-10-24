@@ -50,6 +50,15 @@ export function planCaptureAnims(
   return plans;
 }
 
+/** How long the new tail block takes to reach the cell. */
+export const TAIL_GROW_MS = 250;
+
+/** Grows from nothing to the cell. The scale stays inside the cell. */
+export function tailGrowScale(elapsedMs: number, durationMs = TAIL_GROW_MS): number {
+  const t = Math.max(0, Math.min(1, elapsedMs / durationMs));
+  return 1 - (1 - t) ** 2;
+}
+
 /** Keep food that appeared between ticks, so the next eat still sees it leave. */
 export function retainFreshCoins(
   prev: SeenCoin[],

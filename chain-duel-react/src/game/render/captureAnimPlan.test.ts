@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { planCaptureAnims, retainFreshCoins } from './captureAnimPlan';
+import {
+  planCaptureAnims,
+  retainFreshCoins,
+  TAIL_GROW_MS,
+  tailGrowScale,
+} from './captureAnimPlan';
 
 const food = { pos: [25, 12] as [number, number], reward: 2 };
 
@@ -57,5 +62,20 @@ describe('planCaptureAnims', () => {
     );
     expect(plans).toHaveLength(1);
     expect(plans[0]?.head).toEqual([7, 12]);
+  });
+});
+
+describe('tailGrowScale', () => {
+  it('grows up to the cell and stops there', () => {
+    expect(TAIL_GROW_MS).toBe(250);
+    expect(tailGrowScale(0)).toBe(0);
+    expect(tailGrowScale(125)).toBeCloseTo(0.75);
+    expect(tailGrowScale(TAIL_GROW_MS)).toBe(1);
+    expect(tailGrowScale(TAIL_GROW_MS + 200)).toBe(1);
+    for (let elapsed = 0; elapsed <= 400; elapsed += 10) {
+      const scale = tailGrowScale(elapsed);
+      expect(scale).toBeGreaterThanOrEqual(0);
+      expect(scale).toBeLessThanOrEqual(1);
+    }
   });
 });
