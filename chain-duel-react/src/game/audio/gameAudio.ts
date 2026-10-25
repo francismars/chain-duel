@@ -81,6 +81,54 @@ function reorgedLongChain(
   return null;
 }
 
+/** Last head was on the rim, so the reset was a wall rather than another chain. */
+function hitWall(head: TensionPlayer['head'], state: GameState): boolean {
+  const border = state.shrinkBorder;
+  const minX = border?.left ?? 0;
+  const maxX = border ? border.right - 1 : state.cols - 1;
+  const minY = border?.top ?? 0;
+  const maxY = border ? border.bottom - 1 : state.rows - 1;
+  return (
+    head[0] <= minX + 1 ||
+    head[0] >= maxX - 1 ||
+    head[1] <= minY + 1 ||
+    head[1] >= maxY - 1
+  );
+}
+
+/** Head-to-head with no capture-rate gap. The word sits between the two heads. */
+function clashedHeads(
+  previous: TensionPlayer[],
+  players: TensionPlayer[]
+): TensionPlayer['head'] | null {
+  const pairs = players.flatMap((player) => {
+    const before = previous.find((entry) => entry.index === player.index);
+    return before ? [{ before, after: player }] : [];
+  });
+  const reset = pairs.filter(
+    (pair) =>
+      !pair.before.eliminated &&
+      !pair.after.eliminated &&
+      headTravel(pair.before, pair.after) > 1 &&
+      pair.after.length <= pair.before.length
+  );
+  for (let i = 0; i < reset.length; i += 1) {
+    for (let j = i + 1; j < reset.length; j += 1) {
+      const a = reset[i]!;
+      const b = reset[j]!;
+      const apart =
+        Math.abs(a.before.head[0] - b.before.head[0]) +
+        Math.abs(a.before.head[1] - b.before.head[1]);
+      if (apart > 2) continue;
+      return [
+        Math.round((a.before.head[0] + b.before.head[0]) / 2),
+        Math.round((a.before.head[1] + b.before.head[1]) / 2),
+      ];
+    }
+  }
+  return null;
+}
+
 // Each pressure stage has its own timbre, synchronized with the original loop.
 const PRESSURE_THEMES = [
   { level: 1, name: 'build', volume: 0.22 },
@@ -290,7 +338,22 @@ export class GameAudioSystem {
     }
 
     const reorged = reorgedLongChain(previous, players);
-    if (reorged) pushCaptureRatePop(reorged.head, 'REORG', true);
+    const clash = reorged ? null : clashedHeads(previous, players);
+    const toneFor = (index: number): 'white' | 'black' =>
+      index === 0 ? 'white' : 'black';
+    if (reorged) {
+      pushCaptureRatePop(reorged.head, 'REORG', true, reorged.length + 1, toneFor(reorged.index));
+    } else if (clash) pushCaptureRatePop(clash, 'CLASH', true, undefined, 'grey');
+    else {
+      for (const player of players) {
+        const before = previous.find((entry) => entry.index === player.index);
+        if (!before || before.eliminated || player.eliminated) continue;
+        if (headTravel(before, player) <= 1) continue;
+        if (player.length > before.length) continue;
+        if (!hitWall(before.head, state)) continue;
+        pushCaptureRatePop(before.head, 'WALL', true, undefined, toneFor(before.index));
+      }
+    }
 
     const died = new Set<number>();
     for (const player of players) {

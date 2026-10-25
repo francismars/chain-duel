@@ -1487,16 +1487,11 @@ export default function MatchTriggerLab() {
                   left: `${((impact.col + 0.5) / state.cols) * 100}%`,
                   top: `${((impact.row + 0.5) / state.rows) * 100}%`,
                 }}
-                onAnimationEnd={() => setImpact(null)}
-              >
-                <span>
-                  {impact.kind === 'reorg'
-                    ? 'Reorg'
-                    : impact.kind === 'clash'
-                      ? 'Clash'
-                      : 'Wall'}
-                </span>
-              </div>
+                onAnimationEnd={(event) => {
+                  if (event.animationName.includes('ring')) return;
+                  setImpact(null);
+                }}
+              />
             ) : null}
             {state?.gameEnded ? (
               <div className="match-lab__over" role="status">

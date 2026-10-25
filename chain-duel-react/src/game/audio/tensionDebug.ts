@@ -37,6 +37,10 @@ export interface StreakPop {
   alpha: number;
   /** True when the capture rate went up. */
   up: boolean;
+  /** Body plus head. The reorg ring's diameter matches this. */
+  chainLength?: number;
+  /** Who lost the most. Even head-to-heads stay grey. */
+  tone?: 'white' | 'black' | 'grey';
 }
 
 const EMPTY: TensionDebugSnapshot = {
@@ -135,7 +139,9 @@ export function resetTensionDebug(): void {
 export function pushCaptureRatePop(
   head: GridPos,
   label: string,
-  up: boolean
+  up: boolean,
+  chainLength?: number,
+  tone?: 'white' | 'black' | 'grey'
 ): void {
   pops = [
     ...pops,
@@ -147,6 +153,8 @@ export function pushCaptureRatePop(
       yOffsetPx: 0,
       alpha: 1,
       up,
+      chainLength,
+      tone,
     },
   ];
   nextPopId += 1;
@@ -157,14 +165,14 @@ export function streakPops(): readonly StreakPop[] {
   return pops;
 }
 
-/** Same rise and fade rate as the sats popups. Renderer reads the list each paint. */
+/** About half a second at 60fps, matching the preview ring burst. */
 export function advanceStreakPops(): void {
   if (pops.length === 0) return;
   pops = pops
     .map((pop) => ({
       ...pop,
-      yOffsetPx: pop.yOffsetPx - 0.25,
-      alpha: pop.alpha - 0.1 / 24,
+      yOffsetPx: pop.yOffsetPx,
+      alpha: pop.alpha - (pop.text === 'REORG' ? 0.016 : 0.03),
     }))
     .filter((pop) => pop.alpha >= 0);
 }

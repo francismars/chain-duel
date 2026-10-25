@@ -708,7 +708,7 @@ export class PixiGameRenderer {
     if (this.streakPopOverlay.container.parent !== this.overlay) {
       this.overlay.addChild(this.streakPopOverlay.container);
     }
-    this.streakPopOverlay.render(colSize, rowSize, width, height);
+    this.streakPopOverlay.render(colSize, rowSize);
 
     // ── Text overlays ─────────────────────────────────────────────────────────
     this.endOverlay.hide();

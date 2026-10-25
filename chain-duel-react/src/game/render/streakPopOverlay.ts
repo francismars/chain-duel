@@ -1,139 +1,122 @@
-import { CanvasTextMetrics, Container, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import { streakPops, type StreakPop } from '@/game/audio/tensionDebug';
-import {
-  keepPopOnBoard,
-  placeOnBoard,
-  pointChangePopScale,
-} from '@/game/render/pointChangeOverlay';
-import { pixiTextResolution } from '@/game/render/pixiTextResolution';
 
-/** Gold, so a reorg doesn't read as a sats gain or a sats loss. */
-const REORG_FILL = 0xf0c14d;
-const REORG_GLOW = 0xffe09a;
-/** Full life stays a little see-through, so the word doesn't shout. */
-const REORG_ALPHA = 0.82;
-/** Sit above the +sats label, which already occupies the head. */
-const LIFT_CELLS = 1.35;
+const WHITE = 0xffffff;
+const BLACK = 0x111111;
+const GREY = 0xb0b0b0;
 
-const boundText = new WeakMap<Text, string>();
+type RingSpec = { life: number; from: number; to: number; arrive?: number };
+
+/** Keep expanding for the whole life. Each line finishes at its own pace. */
+const REORG_RINGS: RingSpec[] = [
+  { life: 1, from: 0.42, to: 1 },
+  { life: 0.82, from: 0.22, to: 0.58 },
+  { life: 0.64, from: 0.08, to: 0.24 },
+];
+
+const SINGLE_RING: RingSpec[] = [{ life: 1, from: 0.55, to: 1.05 }];
+
+function ringColor(pop: StreakPop): { fill: number; css: string } {
+  const tone =
+    pop.tone ?? (pop.text === 'CLASH' ? 'grey' : pop.text === 'WALL' ? 'white' : 'black');
+  if (tone === 'white') return { fill: WHITE, css: '#ffffff' };
+  if (tone === 'grey') return { fill: GREY, css: '#b0b0b0' };
+  return { fill: BLACK, css: '#111111' };
+}
+
+/** Wall and clash stay fixed. A reorg's diameter is the chain that was lost. */
+function baseRadiusCells(pop: StreakPop): number {
+  if (pop.text === 'WALL') return 2;
+  if (pop.text === 'CLASH') return 3.3;
+  const length = Math.max(4, pop.chainLength ?? 8);
+  return length * 0.28;
+}
+
+function ringAlpha(popLife: number, spec: RingSpec): { scale: number; alpha: number } | null {
+  const t = popLife / spec.life;
+  if (t >= 1) return null;
+  const eased = 1 - Math.pow(1 - t, 2);
+  return {
+    scale: spec.from + (spec.to - spec.from) * eased,
+    alpha: 0.88 * (1 - t),
+  };
+}
+
+function specsFor(text: string): RingSpec[] {
+  return text === 'REORG' ? REORG_RINGS : SINGLE_RING;
+}
+
+type Mark = {
+  root: Container;
+  rings: Graphics[];
+};
 
 export class StreakPopOverlay {
   readonly container = new Container();
-  private pool: Text[] = [];
-  private styles = new Map<string, TextStyle>();
+  private pool: Mark[] = [];
 
   hide(): void {
-    for (const text of this.pool) text.visible = false;
+    for (const mark of this.pool) mark.root.visible = false;
   }
 
-  render(
-    colSize: number,
-    rowSize: number,
-    boardWidth = Number.POSITIVE_INFINITY,
-    boardHeight = Number.POSITIVE_INFINITY
-  ): void {
+  render(colSize: number, rowSize: number): void {
     const pops = streakPops();
     if (pops.length === 0) {
       this.hide();
       return;
     }
-    const cellSize = Math.min(colSize, rowSize);
-    const spawnLift = -rowSize * LIFT_CELLS;
+    const cell = Math.min(colSize, rowSize);
     pops.forEach((pop, index) => {
-      const text = this.acquire(index);
-      this.layout(
-        text,
-        pop,
-        cellSize,
-        colSize,
-        rowSize,
-        spawnLift,
-        boardWidth,
-        boardHeight
-      );
+      const mark = this.acquire(index);
+      paintMark(mark, pop, cell, colSize, rowSize);
     });
     for (let i = pops.length; i < this.pool.length; i += 1) {
-      this.pool[i].visible = false;
+      this.pool[i].root.visible = false;
     }
   }
 
-  private layout(
-    text: Text,
-    pop: StreakPop,
-    cellSize: number,
-    colSize: number,
-    rowSize: number,
-    spawnLift: number,
-    boardWidth: number,
-    boardHeight: number
-  ): void {
-    const fontSize = Math.max(16, Math.round(cellSize * 0.95));
-    const styleKey = String(fontSize);
-    let style = this.styles.get(styleKey);
-    if (!style) {
-      style = new TextStyle({
-        fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize,
-        fontWeight: '700',
-        fill: REORG_FILL,
-        align: 'center',
-        padding: 8,
-        dropShadow: {
-          color: REORG_GLOW,
-          alpha: 0.35,
-          blur: 6,
-          angle: 0,
-          distance: 0,
-        },
-      });
-      this.styles.set(styleKey, style);
-    }
-    const token = `${styleKey}|${pop.text}`;
-    if (boundText.get(text) !== token) {
-      boundText.set(text, token);
-      text.style = style;
-      text.text = pop.text;
-    }
-    const scale = pointChangePopScale(pop.alpha);
-    const rawX = pop.col * colSize + colSize / 2;
-    const rawY = pop.row * rowSize + rowSize / 2 + pop.yOffsetPx + spawnLift;
-    const measured = CanvasTextMetrics.measureText(pop.text || ' ', style).width;
-    const glow = 16;
-    const placed = placeOnBoard(
-      rawX,
-      rawY,
-      (measured / 2 + glow) * scale,
-      (fontSize / 2 + glow) * scale,
-      boardWidth,
-      boardHeight
-    );
-    text.position.set(Math.round(placed.x), Math.round(placed.y));
-    text.scale.set(scale);
-    keepPopOnBoard(text, boardWidth, boardHeight);
-    text.alpha = pop.alpha * REORG_ALPHA;
-    text.visible = true;
-  }
-
-  private acquire(index: number): Text {
+  private acquire(index: number): Mark {
     const existing = this.pool[index];
     if (existing) return existing;
-    const text = new Text({
-      text: '',
-      style: new TextStyle({
-        fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize: 13,
-        fontWeight: '700',
-        fill: REORG_FILL,
-        align: 'center',
-      }),
+    const root = new Container();
+    const rings = [0, 1, 2].map(() => {
+      const ring = new Graphics();
+      root.addChild(ring);
+      return ring;
     });
-    text.anchor.set(0.5, 0.5);
-    text.resolution = pixiTextResolution();
-    text.roundPixels = true;
-    this.container.addChild(text);
-    this.pool.push(text);
-    return text;
+    this.container.addChild(root);
+    const mark = { root, rings };
+    this.pool.push(mark);
+    return mark;
   }
+}
+
+function paintMark(
+  mark: Mark,
+  pop: StreakPop,
+  cell: number,
+  colSize: number,
+  rowSize: number
+): void {
+  const life = 1 - pop.alpha;
+  const color = ringColor(pop).fill;
+  const base = baseRadiusCells(pop) * cell;
+  const specs = specsFor(pop.text);
+  mark.root.position.set(
+    pop.col * colSize + colSize / 2,
+    pop.row * rowSize + rowSize / 2
+  );
+  mark.root.visible = true;
+  mark.rings.forEach((ring, index) => {
+    const spec = specs[index];
+    ring.clear();
+    if (!spec) return;
+    const drawn = ringAlpha(life, spec);
+    if (!drawn) return;
+    const half = base * drawn.scale;
+    const width = pop.text === 'REORG' ? Math.max(1.6, cell * 0.1) : Math.max(1.25, cell * 0.08);
+    ring.rect(-half, -half, half * 2, half * 2).stroke({ width, color, alpha: drawn.alpha });
+  });
 }
 
 export function drawStreakPopsCanvas(
@@ -143,26 +126,24 @@ export function drawStreakPopsCanvas(
 ): void {
   const pops = streakPops();
   if (pops.length === 0) return;
-  const cellSize = Math.min(colSize, rowSize);
-  const spawnLift = -rowSize * LIFT_CELLS;
+  const cell = Math.min(colSize, rowSize);
   ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
   for (const pop of pops) {
-    const fontSize = Math.max(16, Math.round(cellSize * 0.95));
-    ctx.font = `700 ${fontSize}px Inter, system-ui, sans-serif`;
-    ctx.fillStyle = '#f0c14d';
-    ctx.shadowColor = 'rgba(255, 224, 154, 0.35)';
-    ctx.shadowBlur = 6;
-    ctx.globalAlpha = pop.alpha * REORG_ALPHA;
-    const scale = pointChangePopScale(pop.alpha);
+    const life = 1 - pop.alpha;
+    const css = ringColor(pop).css;
+    const base = baseRadiusCells(pop) * cell;
     const x = pop.col * colSize + colSize / 2;
-    const y = pop.row * rowSize + rowSize / 2 + pop.yOffsetPx + spawnLift;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
-    ctx.fillText(pop.text, 0, 0);
-    ctx.restore();
+    const y = pop.row * rowSize + rowSize / 2;
+    for (const spec of specsFor(pop.text)) {
+      const drawn = ringAlpha(life, spec);
+      if (!drawn) continue;
+      const half = base * drawn.scale;
+      ctx.strokeStyle = css;
+      ctx.globalAlpha = drawn.alpha;
+      ctx.lineWidth =
+        pop.text === 'REORG' ? Math.max(1.6, cell * 0.1) : Math.max(1.25, cell * 0.08);
+      ctx.strokeRect(x - half, y - half, half * 2, half * 2);
+    }
   }
   ctx.restore();
 }

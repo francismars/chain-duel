@@ -259,6 +259,9 @@ describe('game tension', () => {
     expect(streakPops().slice(closeBefore).some((pop) => pop.text === 'REORG')).toBe(
       false
     );
+    expect(streakPops().slice(closeBefore).some((pop) => pop.text === 'CLASH')).toBe(
+      true
+    );
     audio.stopAll();
   });
 
