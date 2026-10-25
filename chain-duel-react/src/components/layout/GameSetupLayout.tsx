@@ -19,8 +19,6 @@ import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import './game-setup.css';
 
-const RULES_IDLE_MS = 12000;
-
 export interface GameSetupLayoutProps {
   /** Page title, e.g. "PRACTICE" or "P2P" */
   title: string;
@@ -91,7 +89,6 @@ export function GameSetupLayout({
 }: GameSetupLayoutProps) {
   const previewSwap = pageClass.includes('gamemenu-preview');
   const [rulesOpen, setRulesOpen] = useState(false);
-  const [rulesAuto, setRulesAuto] = useState(false);
   const [rulesTitle, setRulesTitle] = useState({
     kicker: 'Rule 1',
     title: 'Stake your sats',
@@ -138,63 +135,11 @@ export function GameSetupLayout({
   useEffect(() => {
     if (!rulesOpen) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setRulesAuto(false);
-        setRulesOpen(false);
-      }
+      if (event.key === 'Escape') setRulesOpen(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [rulesOpen]);
-
-  useEffect(() => {
-    if (!previewSwap || rulesOpen || loading || showCancelOverlay) return;
-    let timer = window.setTimeout(() => {
-      setRulesAuto(true);
-      setRulesOpen(true);
-    }, RULES_IDLE_MS);
-    const arm = () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        setRulesAuto(true);
-        setRulesOpen(true);
-      }, RULES_IDLE_MS);
-    };
-    window.addEventListener('mousemove', arm);
-    window.addEventListener('keydown', arm);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener('mousemove', arm);
-      window.removeEventListener('keydown', arm);
-    };
-  }, [previewSwap, rulesOpen, loading, showCancelOverlay]);
-
-  useEffect(() => {
-    if (!rulesOpen || !rulesAuto) return;
-    let origin: { x: number; y: number } | null = null;
-    const close = () => {
-      setRulesAuto(false);
-      setRulesOpen(false);
-    };
-    const onMove = (event: MouseEvent) => {
-      if (!origin) {
-        origin = { x: event.clientX, y: event.clientY };
-        return;
-      }
-      const dx = event.clientX - origin.x;
-      const dy = event.clientY - origin.y;
-      if (dx * dx + dy * dy > 36) close();
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (!event.isTrusted) close();
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [rulesOpen, rulesAuto]);
 
   const overlays =
     typeof document !== 'undefined'
@@ -288,10 +233,7 @@ export function GameSetupLayout({
                   id="gamemenu-rules"
                   type="button"
                   className="gamemenu-preview-rules-btn"
-                  onClick={() => {
-                    setRulesAuto(false);
-                    setRulesOpen(true);
-                  }}
+                  onClick={() => setRulesOpen(true)}
                 >
                   Rules
                 </button>
@@ -358,10 +300,7 @@ export function GameSetupLayout({
         ? createPortal(
             <div
               className="rules-modal-backdrop"
-              onClick={() => {
-                setRulesAuto(false);
-                setRulesOpen(false);
-              }}
+              onClick={() => setRulesOpen(false)}
             >
               <div
                 className="rules-modal"
@@ -387,11 +326,7 @@ export function GameSetupLayout({
                 <RulesSection
                   variant="clips"
                   onTitleChange={setRulesTitle}
-                  autoplay={rulesAuto}
-                  onClose={() => {
-                    setRulesAuto(false);
-                    setRulesOpen(false);
-                  }}
+                  onClose={() => setRulesOpen(false)}
                 />
               </div>
             </div>,
