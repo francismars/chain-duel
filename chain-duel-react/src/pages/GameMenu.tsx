@@ -64,6 +64,7 @@ function showsPayPop(part: HighlightPart) {
 type ButtonSelected =
   | 'mainMenuButton'
   | 'startgame'
+  | 'rules'
   | 'cancelGameAbort'
   | 'cancelGameConfirm'
   | null;
@@ -672,6 +673,9 @@ export default function GameMenu({
           return;
         }
         e.preventDefault();
+        if (document.querySelector('.rules-modal')) {
+          return;
+        }
         if (buttonSelected === null) {
           if (document.activeElement?.id === 'startgame') {
             handleStartAttempt();
@@ -686,6 +690,8 @@ export default function GameMenu({
         }
         if (buttonSelected === 'startgame') {
           handleStartAttempt();
+        } else if (buttonSelected === 'rules') {
+          document.getElementById('gamemenu-rules')?.click();
         } else if (buttonSelected === 'mainMenuButton') {
           openExitOverlay();
         } else if (buttonSelected === 'cancelGameAbort') {
@@ -695,6 +701,32 @@ export default function GameMenu({
         } else if (buttonSelected === 'cancelGameConfirm') {
           confirmExit();
         }
+      }
+      if (document.querySelector('.rules-modal')) {
+        return;
+      }
+      const down =
+        e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
+      const up = e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W';
+      if (preview && up && !showCancelOverlay) {
+        if (
+          buttonSelected === 'mainMenuButton' ||
+          buttonSelected === 'startgame' ||
+          buttonSelected === null
+        ) {
+          playSfx(SFX.MENU_SELECT);
+          setStartBlockedHint(null);
+          setButtonSelected('rules');
+        }
+      }
+      if (
+        preview &&
+        down &&
+        !showCancelOverlay &&
+        buttonSelected === 'rules'
+      ) {
+        playSfx(SFX.MENU_SELECT);
+        setButtonSelected('mainMenuButton');
       }
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         if (buttonSelected === 'cancelGameConfirm') {
@@ -706,6 +738,9 @@ export default function GameMenu({
         } else if (!showCancelOverlay && buttonSelected === 'startgame') {
           playSfx(SFX.MENU_SELECT);
           setStartBlockedHint(null);
+          setButtonSelected('mainMenuButton');
+        } else if (!showCancelOverlay && buttonSelected === 'rules') {
+          playSfx(SFX.MENU_SELECT);
           setButtonSelected('mainMenuButton');
         }
       }
@@ -720,6 +755,9 @@ export default function GameMenu({
         } else if (!showCancelOverlay && buttonSelected === 'mainMenuButton') {
           playSfx(SFX.MENU_SELECT);
           setStartBlockedHint(null);
+          setButtonSelected('startgame');
+        } else if (!showCancelOverlay && buttonSelected === 'rules') {
+          playSfx(SFX.MENU_SELECT);
           setButtonSelected('startgame');
         }
       }
@@ -740,6 +778,7 @@ export default function GameMenu({
     handleStartAttempt,
     openExitOverlay,
     confirmExit,
+    preview,
   ]);
 
   useQrExpandState({

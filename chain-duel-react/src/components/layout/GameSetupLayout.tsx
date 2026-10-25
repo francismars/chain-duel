@@ -2,7 +2,14 @@
  * Shared layout for Practice and P2P game setup pages.
  * Template: top = header brand, middle = game setup (rules + buttons), bottom = bottom info (player/prize).
  */
-import { RefObject, ReactNode, useEffect, useMemo, useRef } from 'react';
+import {
+  RefObject,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
@@ -42,6 +49,7 @@ export interface GameSetupLayoutProps {
   selectedButton?:
     | 'mainMenuButton'
     | 'startgame'
+    | 'rules'
     | 'cancelGameAbort'
     | 'cancelGameConfirm'
     | null;
@@ -80,10 +88,16 @@ export function GameSetupLayout({
   children,
 }: GameSetupLayoutProps) {
   const previewSwap = pageClass.includes('gamemenu-preview');
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [rulesTitle, setRulesTitle] = useState({
+    kicker: 'Rule 1',
+    title: 'Stake your sats',
+  });
   const internalMainRef = useRef<HTMLButtonElement>(null);
   const internalStartRef = useRef<HTMLButtonElement>(null);
   const internalAbortRef = useRef<HTMLButtonElement>(null);
   const internalConfirmRef = useRef<HTMLButtonElement>(null);
+  const rulesButtonRef = useRef<HTMLButtonElement>(null);
 
   const refs = useMemo(
     () => ({
@@ -104,6 +118,7 @@ export function GameSetupLayout({
     (Object.keys(refs) as Array<keyof typeof refs>).forEach((key) => {
       setButtonGlow(refs[key].current, selectedButton === key);
     });
+    setButtonGlow(rulesButtonRef.current, selectedButton === 'rules');
     if (!selectedButton) {
       const active = document.activeElement;
       const isGameButton = (
@@ -114,6 +129,15 @@ export function GameSetupLayout({
       }
     }
   }, [refs, selectedButton]);
+
+  useEffect(() => {
+    if (!rulesOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setRulesOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [rulesOpen]);
 
   const overlays =
     typeof document !== 'undefined'
@@ -201,7 +225,19 @@ export function GameSetupLayout({
               <h2 id="gameMenuTitle" className="hero-outline condensed">
                 {title}
               </h2>
-              {previewSwap ? null : <p id="titleslogan">Rules</p>}
+              {previewSwap ? (
+                <button
+                  ref={rulesButtonRef}
+                  id="gamemenu-rules"
+                  type="button"
+                  className="gamemenu-preview-rules-btn"
+                  onClick={() => setRulesOpen(true)}
+                >
+                  Rules
+                </button>
+              ) : (
+                <p id="titleslogan">Rules</p>
+              )}
             </div>
 
             {previewSwap ? (
@@ -252,16 +288,41 @@ export function GameSetupLayout({
           </div>
         </div>
 
-        {previewSwap ? (
-          <div className="game-setup-bottom">
-            <RulesSection />
-          </div>
-        ) : (
+        {previewSwap ? null : (
           <div id="bottomInfo" className="game-setup-bottom">
             {children}
           </div>
         )}
       </div>
+      {rulesOpen
+        ? createPortal(
+            <div
+              className="rules-modal-backdrop"
+              onClick={() => setRulesOpen(false)}
+            >
+              <div
+                className="rules-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="rules-modal-title"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="rules-modal__bar">
+                  <p id="rules-modal-title" className="rules-modal__title">
+                    <span className="rules-modal__kicker">{rulesTitle.kicker}</span>
+                    <span className="rules-modal__heading">{rulesTitle.title}</span>
+                  </p>
+                </div>
+                <RulesSection
+                  variant="clips"
+                  onTitleChange={setRulesTitle}
+                  onClose={() => setRulesOpen(false)}
+                />
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
       {overlays}
     </>
   );
