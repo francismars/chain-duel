@@ -182,6 +182,7 @@ export function RuleClip({ id }: { id: RuleClipId }) {
     let state = makeClip(id);
     let ticks = 0;
     let qrTicks = 0;
+    let holdQr = id === 'stake';
     let playTicks = 0;
     let chainCoin = 0;
     let ateNormal = false;
@@ -205,14 +206,19 @@ export function RuleClip({ id }: { id: RuleClipId }) {
     const tick = () => {
       if (stopped) return;
       if (id === 'stake') {
-        if (qrTicks < QR_HOLD_TICKS) {
+        const paid =
+          stakeAmount(qrTicks, 2) >= STAKE_TARGET &&
+          stakeAmount(qrTicks, 6) >= STAKE_TARGET;
+        if (!paid || qrTicks < QR_HOLD_TICKS) {
           qrTicks += 1;
+          holdQr = true;
           setStake({
             p1: stakeAmount(qrTicks, 2),
             p2: stakeAmount(qrTicks, 6),
           });
           return;
         }
+        holdQr = false;
         if (!state.countdownStart && !state.gameStarted) {
           setShowQr(false);
           startCountdown(state);
@@ -223,6 +229,7 @@ export function RuleClip({ id }: { id: RuleClipId }) {
           state = makeClip(id);
           qrTicks = 0;
           playTicks = 0;
+          holdQr = true;
           setStake({ p1: 0, p2: 0 });
           setShowQr(true);
         }
@@ -361,7 +368,26 @@ export function RuleClip({ id }: { id: RuleClipId }) {
     };
 
     const paint = () => {
+      if (!holdQr) {
+        renderer.render(state, { replayView: true, suppressVictoryOverlay: true });
+        return;
+      }
+      const p1Head = state.p1.head;
+      const p1Body = state.p1.body;
+      const p2Head = state.p2.head;
+      const p2Body = state.p2.body;
+      const coins = state.coinbases;
+      state.p1.head = [-8, -8];
+      state.p1.body = [];
+      state.p2.head = [-8, -8];
+      state.p2.body = [];
+      state.coinbases = [];
       renderer.render(state, { replayView: true, suppressVictoryOverlay: true });
+      state.p1.head = p1Head;
+      state.p1.body = p1Body;
+      state.p2.head = p2Head;
+      state.p2.body = p2Body;
+      state.coinbases = coins;
     };
 
     void renderer.mount(host).then(() => {

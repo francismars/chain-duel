@@ -776,6 +776,7 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   inset: 0;
   z-index: 2;
   pointer-events: none;
+  background: rgba(8, 8, 8, 0.62);
   animation: rule-qr-in 0.35s ease-out;
 }
 
@@ -786,16 +787,15 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   flex-direction: column;
   align-items: center;
   gap: 0.28rem;
+  transform: translateY(-50%);
 }
 
 .rule-clip__qr-player:first-child {
-  left: 0;
-  transform: translate(-46%, -50%);
+  left: 0.7rem;
 }
 
 .rule-clip__qr-player:nth-child(2) {
-  right: 0;
-  transform: translate(46%, -50%);
+  right: 0.7rem;
 }
 
 .rule-clip__qr-card {
