@@ -666,7 +666,7 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   inset: 0;
   z-index: 40;
   display: flex;
-  background: rgba(0, 0, 0, 0.48);
+  background: transparent;
 }
 
 .rules-modal {
@@ -679,7 +679,7 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: #0b0b0b;
+  background: rgba(11, 11, 11, 0.58);
   border: none;
 }
 
@@ -702,6 +702,14 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+
+.rules-modal__title--hide {
+  animation: rules-slide-hide 240ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.rules-modal__title--show {
+  animation: rules-slide-show 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .rules-modal__kicker {
@@ -750,6 +758,91 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 
 .rules-slider__card {
   text-align: center;
+}
+
+.rules-slider--hide .rules-slider__copy {
+  animation: rules-slide-hide 240ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.rules-slider--show .rules-slider__copy {
+  animation: rules-slide-show 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rules-slider--show .rule-clip {
+  animation: rules-board-in 220ms ease both;
+}
+
+.rules-slider--hide .rules-slider__copy,
+.rules-modal__title--hide {
+  --rules-out-x: -16px;
+}
+
+.rules-slider--show .rules-slider__copy,
+.rules-modal__title--show {
+  --rules-in-x: 18px;
+}
+
+.rules-slider--prev.rules-slider--hide .rules-slider__copy,
+.rules-modal__title--prev.rules-modal__title--hide {
+  --rules-out-x: 16px;
+}
+
+.rules-slider--prev.rules-slider--show .rules-slider__copy,
+.rules-modal__title--prev.rules-modal__title--show {
+  --rules-in-x: -18px;
+}
+
+@keyframes rules-board-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rules-slide-hide {
+  0% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(14% 40% 18% 40%);
+    transform: translateX(var(--rules-out-x)) scale(0.94);
+    filter: blur(5px);
+  }
+}
+
+@keyframes rules-slide-show {
+  0% {
+    opacity: 0;
+    clip-path: inset(14% 46% 18% 46%);
+    transform: translateX(var(--rules-in-x)) scale(0.94);
+    filter: blur(7px);
+  }
+  42% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rules-slider--hide .rules-slider__copy,
+  .rules-slider--show .rules-slider__copy,
+  .rules-slider--show .rule-clip,
+  .rules-modal__title--hide,
+  .rules-modal__title--show {
+    animation: none;
+  }
 }
 
 .rule-clip--flash,

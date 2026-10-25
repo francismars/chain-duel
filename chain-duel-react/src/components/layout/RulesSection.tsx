@@ -2,7 +2,7 @@
  * Shared rules for Practice and P2P setup.
  * Classic cards stay on the live menu. The clip slider is the preview treatment.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RuleClip, type RuleClipId } from './RuleClip';
 
 const RULES: Array<{
@@ -38,6 +38,10 @@ const RULES: Array<{
 ];
 
 type RulesFocus = 'prev' | 'next' | 'close';
+type SlideDir = 'next' | 'prev';
+type SlidePhase = 'idle' | 'hide' | 'show';
+
+const SLIDE_HIDE_MS = 240;
 
 export function RulesSection({
   variant = 'classic',
@@ -45,7 +49,12 @@ export function RulesSection({
   onClose,
 }: {
   variant?: 'classic' | 'clips';
-  onTitleChange?: (title: { kicker: string; title: string }) => void;
+  onTitleChange?: (title: {
+    kicker: string;
+    title: string;
+    phase?: SlidePhase;
+    dir?: SlideDir;
+  }) => void;
   onClose?: () => void;
 }) {
   if (variant === 'classic') return <ClassicRules />;
@@ -56,19 +65,61 @@ function ClipRules({
   onTitleChange,
   onClose,
 }: {
-  onTitleChange?: (title: { kicker: string; title: string }) => void;
+  onTitleChange?: (title: {
+    kicker: string;
+    title: string;
+    phase?: SlidePhase;
+    dir?: SlideDir;
+  }) => void;
   onClose?: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [focus, setFocus] = useState<RulesFocus>('next');
+  const [phase, setPhase] = useState<SlidePhase>('idle');
+  const [dir, setDir] = useState<SlideDir>('next');
+  const hideTimer = useRef<number | null>(null);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
   const rule = RULES[index] ?? RULES[0];
-  const prev = () =>
-    setIndex((current) => (current - 1 + RULES.length) % RULES.length);
-  const next = () => setIndex((current) => (current + 1) % RULES.length);
+
+  const go = (delta: 1 | -1) => {
+    if (phaseRef.current === 'hide') return;
+    phaseRef.current = 'hide';
+    const nextDir: SlideDir = delta > 0 ? 'next' : 'prev';
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      phaseRef.current = 'idle';
+      setDir(nextDir);
+      setPhase('idle');
+      setIndex((current) => (current + delta + RULES.length) % RULES.length);
+      return;
+    }
+    setDir(nextDir);
+    setPhase('hide');
+    if (hideTimer.current != null) window.clearTimeout(hideTimer.current);
+    hideTimer.current = window.setTimeout(() => {
+      hideTimer.current = null;
+      setIndex((current) => (current + delta + RULES.length) % RULES.length);
+      setPhase('show');
+    }, SLIDE_HIDE_MS);
+  };
+  const prev = () => go(-1);
+  const next = () => go(1);
 
   useEffect(() => {
-    onTitleChange?.({ kicker: rule.kicker, title: rule.title });
-  }, [onTitleChange, rule.kicker, rule.title]);
+    return () => {
+      if (hideTimer.current != null) window.clearTimeout(hideTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    onTitleChange?.({
+      kicker: rule.kicker,
+      title: rule.title,
+      phase,
+      dir,
+    });
+  }, [onTitleChange, rule.kicker, rule.title, phase, dir]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -100,15 +151,24 @@ function ClipRules({
   }, [focus, onClose]);
 
   return (
-    <div id="centerSection" className="rules-slider">
+    <div
+      id="centerSection"
+      className={
+        phase === 'idle'
+          ? 'rules-slider'
+          : `rules-slider rules-slider--${phase} rules-slider--${dir}`
+      }
+    >
       <div className="rules-slider__card">
         <RuleClip key={rule.id} id={rule.id} />
-        {onTitleChange ? null : (
-          <p className="ruleTitle">
-            {rule.kicker} {rule.title}
-          </p>
-        )}
-        <p className="gameDescription grey">{rule.text}</p>
+        <div className="rules-slider__copy" key={`${rule.id}-${phase}`}>
+          {onTitleChange ? null : (
+            <p className="ruleTitle">
+              {rule.kicker} {rule.title}
+            </p>
+          )}
+          <p className="gameDescription grey">{rule.text}</p>
+        </div>
       </div>
       <div className={onClose ? 'rules-modal__actions' : 'rules-slider__nav'}>
         <div className="rules-slider__nav">

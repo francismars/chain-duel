@@ -92,6 +92,8 @@ export function GameSetupLayout({
   const [rulesTitle, setRulesTitle] = useState({
     kicker: 'Rule 1',
     title: 'Stake your sats',
+    phase: 'idle' as 'idle' | 'hide' | 'show',
+    dir: 'next' as 'next' | 'prev',
   });
   const internalMainRef = useRef<HTMLButtonElement>(null);
   const internalStartRef = useRef<HTMLButtonElement>(null);
@@ -308,7 +310,15 @@ export function GameSetupLayout({
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="rules-modal__bar">
-                  <p id="rules-modal-title" className="rules-modal__title">
+                  <p
+                    id="rules-modal-title"
+                    key={`${rulesTitle.kicker}-${rulesTitle.phase}`}
+                    className={
+                      rulesTitle.phase === 'idle'
+                        ? 'rules-modal__title'
+                        : `rules-modal__title rules-modal__title--${rulesTitle.phase} rules-modal__title--${rulesTitle.dir}`
+                    }
+                  >
                     <span className="rules-modal__kicker">{rulesTitle.kicker}</span>
                     <span className="rules-modal__heading">{rulesTitle.title}</span>
                   </p>
