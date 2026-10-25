@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAudio } from '@/contexts/AudioContext';
-import { GameAudioSystem } from '@/game/audio/gameAudio';
+import { GameAudioSystem, reorgCaptureGap } from '@/game/audio/gameAudio';
 import {
   advanceStreakPops,
   pushCaptureRatePop,
@@ -31,6 +31,7 @@ import {
   inPlay,
   projectSnake,
   routeAround,
+  type Rider,
 } from './matchTriggerLabMotion';
 import { GameInfoLabel } from '@/features/game/GameInfoLabel';
 import {
@@ -423,6 +424,57 @@ function ahead(snake: SnakeState): GridPos {
   return [x + 1, y];
 }
 
+function placeSnake(
+  snake: SnakeState,
+  head: GridPos,
+  dir: SnakeState['dir'],
+  body: GridPos[]
+): void {
+  snake.head = [head[0], head[1]];
+  snake.body = body.map((cell) => [cell[0], cell[1]]);
+  snake.dir = dir;
+  snake.dirWanted = dir;
+}
+
+/** Park the selected chain one cell inside the left edge, facing out. */
+function stageWallCrash(state: GameState, rider: Rider): GridPos {
+  const border = state.shrinkBorder;
+  const left = border?.left ?? 0;
+  const top = border?.top ?? 0;
+  const bottom = border?.bottom ?? state.rows - 1;
+  const right = border?.right ?? state.cols - 1;
+  const y = Math.min(bottom - 1, Math.max(top + 1, 12));
+  const snake = rider === 'p1' ? state.p1 : state.p2;
+  const other = rider === 'p1' ? state.p2 : state.p1;
+  placeSnake(snake, [left, y], 'Left', [[left + 1, y]]);
+  const parkX = Math.max(left + 4, right - 2);
+  placeSnake(other, [parkX, y], 'Left', [[Math.min(right, parkX + 1), y]]);
+  return [left - 1, y];
+}
+
+/** Face both heads across one shared cell. The selected chain takes the step. */
+function stageHeadOn(state: GameState, rider: Rider): GridPos {
+  const border = state.shrinkBorder;
+  const top = border?.top ?? 0;
+  const bottom = border?.bottom ?? state.rows - 1;
+  const left = border?.left ?? 0;
+  const right = border?.right ?? state.cols - 1;
+  const y = Math.min(bottom - 1, Math.max(top + 1, 12));
+  let x = Math.floor((left + right) / 2) - 1;
+  x = Math.max(left + 2, Math.min(right - 4, x));
+  const mover = rider === 'p1' ? state.p1 : state.p2;
+  const other = rider === 'p1' ? state.p2 : state.p1;
+  placeSnake(mover, [x, y], 'Right', [
+    [x - 1, y],
+    [x - 2, y],
+  ]);
+  placeSnake(other, [x + 1, y], 'Left', [
+    [x + 2, y],
+    [x + 3, y],
+  ]);
+  return [x + 1, y];
+}
+
 function snapSnake(state: GameState, player: 'P1' | 'P2'): void {
   const border = state.shrinkBorder;
   if (player === 'P1') {
@@ -716,6 +768,12 @@ export default function MatchTriggerLab() {
     intensity: number;
     id: number;
   } | null>(null);
+  const [impact, setImpact] = useState<{
+    id: number;
+    col: number;
+    row: number;
+    kind: 'wall' | 'clash' | 'reorg';
+  } | null>(null);
   const mutedRef = useRef(isMuted);
   mutedRef.current = isMuted;
   const mode = labMode(modeId);
@@ -757,6 +815,19 @@ export default function MatchTriggerLab() {
       remember();
       pathRef.current.shift();
       if (kind !== 'ok') {
+        const recipe = draftRef.current;
+        const gap = reorgCaptureGap(
+          capturePercentForLength(
+            state.p1.body.length,
+            recipe.captureFrom,
+            recipe.capturePercent
+          ),
+          capturePercentForLength(
+            state.p2.body.length,
+            recipe.captureFrom,
+            recipe.capturePercent
+          )
+        );
         commitMove(snake, next, false);
         state.tickCount += 1;
         audio.updateGameState(state);
@@ -773,6 +844,14 @@ export default function MatchTriggerLab() {
         pathRef.current = [];
         state.tickCount += 1;
         audio.updateGameState(state);
+        if (kind === 'wall' || kind === 'headon') {
+          setImpact((prev) => ({
+            id: (prev?.id ?? 0) + 1,
+            col: Math.max(0, Math.min(state.cols - 1, next[0])),
+            row: Math.max(0, Math.min(state.rows - 1, next[1])),
+            kind: kind === 'wall' ? 'wall' : gap ? 'reorg' : 'clash',
+          }));
+        }
         note(
           kind === 'headon'
             ? 'Head-on · both reset'
@@ -1172,6 +1251,29 @@ export default function MatchTriggerLab() {
     bump();
   };
 
+  const lineUp = (fatal: GridPos, line: string) => {
+    pathRef.current = [fatal];
+    note(line);
+    bump();
+  };
+
+  const hitWall = () => {
+    const current = stateRef.current;
+    if (!current || current.gameEnded) return;
+    remember();
+    const fatal = stageWallCrash(current, riderRef.current);
+    const who = riderRef.current === 'p1' ? 'White' : 'Black';
+    lineUp(fatal, `${who} lined up on the wall`);
+  };
+
+  const hitHeadOn = () => {
+    const current = stateRef.current;
+    if (!current || current.gameEnded) return;
+    remember();
+    const fatal = stageHeadOn(current, riderRef.current);
+    lineUp(fatal, 'Chains lined up · next step is head to head');
+  };
+
   const die = (player: 'P1' | 'P2') => {
     const current = stateRef.current;
     const audio = audioRef.current;
@@ -1216,6 +1318,12 @@ export default function MatchTriggerLab() {
     // The detector marks the crash cell, which is empty once both chains
     // snap home. Keep a second word on the long chain so it stays visible.
     pushCaptureRatePop(current.p2.head, 'REORG', true);
+    setImpact((prev) => ({
+      id: (prev?.id ?? 0) + 1,
+      col: 20,
+      row: 12,
+      kind: 'reorg',
+    }));
     note('Head-on · both reset sounds · REORG floats on the long chain');
     bump();
   };
@@ -1371,6 +1479,25 @@ export default function MatchTriggerLab() {
             onPointerMove={onPointerMove}
           >
             <div className="match-lab__host" ref={hostRef} />
+            {impact && state ? (
+              <div
+                key={impact.id}
+                className={`match-lab__impact is-${impact.kind}`}
+                style={{
+                  left: `${((impact.col + 0.5) / state.cols) * 100}%`,
+                  top: `${((impact.row + 0.5) / state.rows) * 100}%`,
+                }}
+                onAnimationEnd={() => setImpact(null)}
+              >
+                <span>
+                  {impact.kind === 'reorg'
+                    ? 'Reorg'
+                    : impact.kind === 'clash'
+                      ? 'Clash'
+                      : 'Wall'}
+                </span>
+              </div>
+            ) : null}
             {state?.gameEnded ? (
               <div className="match-lab__over" role="status">
                 <strong>
@@ -1527,6 +1654,12 @@ export default function MatchTriggerLab() {
             </button>
             <button type="button" disabled={ended} onClick={() => die('P2')}>
               Black dies
+            </button>
+            <button type="button" disabled={ended} onClick={hitWall}>
+              Hit the wall
+            </button>
+            <button type="button" disabled={ended} onClick={hitHeadOn}>
+              Head to head
             </button>
             <button type="button" className="wide" disabled={ended} onClick={fork}>
               Head-on REORG

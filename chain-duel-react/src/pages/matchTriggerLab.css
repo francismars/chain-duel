@@ -127,6 +127,56 @@
   height: 100%;
 }
 
+.match-lab__impact {
+  position: absolute;
+  z-index: 4;
+  width: 12%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.55);
+  animation: match-lab-impact 0.32s ease-out forwards;
+}
+
+.match-lab__impact span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(0.55rem, 1.8cqw, 0.85rem);
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.match-lab__impact.is-wall {
+  color: rgb(255 176 32 / 0.72);
+}
+
+.match-lab__impact.is-clash {
+  color: rgb(255 90 114 / 0.78);
+}
+
+.match-lab__impact.is-reorg {
+  color: rgb(240 193 77 / 0.82);
+}
+
+@keyframes match-lab-impact {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+  35% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
 .match-lab__over {
   position: absolute;
   inset: 0;
