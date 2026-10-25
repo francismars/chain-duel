@@ -79,23 +79,26 @@ function trail(head: GridPos, dir: 'left' | 'right' | 'up', length: number): Gri
   return body;
 }
 
-type ResetPhase = 'wall' | 'long' | 'short' | 'restart';
+type ResetPhase = 'wall' | 'straight' | 'reorg' | 'clash' | 'restart';
+
+/** Left, with a one-cell rise and fall so the long chain arrives later. */
+const BLACK_ZIGZAG = ['Left', 'Left', 'Up', 'Left', 'Left', 'Down'] as const;
 
 function jumped(from: GridPos, to: GridPos): boolean {
   return Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1]) > 1;
 }
 
 /**
- * White climbs into the top wall. Black is already long, on the center row,
- * closing from the right so the next crash is head to head.
+ * White is short and aimed at the top wall. Black is already long on the
+ * center row, moving left, clear of white so the wall hit is white's alone.
  */
 function placeWallApproach(state: GameState): void {
-  state.p1.head = [16, 6];
-  state.p1.body = trail(state.p1.head, 'up', 3);
+  state.p1.head = [18, 4];
+  state.p1.body = trail(state.p1.head, 'up', 2);
   state.p1.dir = 'Up';
   state.p1.dirWanted = 'Up';
-  state.p2.head = [36, 12];
-  state.p2.body = trail(state.p2.head, 'right', 12);
+  state.p2.head = [34, 12];
+  state.p2.body = trail(state.p2.head, 'right', 14);
   state.p2.dir = 'Left';
   state.p2.dirWanted = 'Left';
   state.coinbases = [];
@@ -171,6 +174,8 @@ export function RuleClip({ id }: { id: RuleClipId }) {
     left: number;
     top: number;
     kind: 'wall' | 'clash' | 'reorg';
+    /** Reorg diameter as a percent of the board, matching the long chain. */
+    size?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -192,6 +197,7 @@ export function RuleClip({ id }: { id: RuleClipId }) {
     let blackStep = 0;
     let resetPhase: ResetPhase = 'wall';
     let restartSteps = 0;
+    let zigSteps = 0;
     let impactId = 0;
     setShowQr(id === 'stake');
     setImpact(null);
@@ -281,21 +287,35 @@ export function RuleClip({ id }: { id: RuleClipId }) {
             placeWallApproach(state);
             resetPhase = 'wall';
             restartSteps = 0;
+            zigSteps = 0;
           }
+        }
+        const zig = BLACK_ZIGZAG[zigSteps % BLACK_ZIGZAG.length] ?? 'Left';
+        if (resetPhase === 'wall' || resetPhase === 'straight') {
+          state.p2.dir = zig;
+          state.p2.dirWanted = zig;
+          zigSteps += 1;
+        } else if (resetPhase === 'reorg' && state.p2.head[1] < state.p1.head[1]) {
+          state.p2.dir = 'Down';
+          state.p2.dirWanted = 'Down';
+        } else if (resetPhase === 'reorg' && state.p2.head[1] > state.p1.head[1]) {
+          state.p2.dir = 'Up';
+          state.p2.dirWanted = 'Up';
+        } else {
+          state.p2.dir = 'Left';
+          state.p2.dirWanted = 'Left';
         }
         if (resetPhase === 'wall') {
           state.p1.dir = 'Up';
           state.p1.dirWanted = 'Up';
-          state.p2.dir = 'Left';
-          state.p2.dirWanted = 'Left';
         } else {
           state.p1.dir = 'Right';
           state.p1.dirWanted = 'Right';
-          state.p2.dir = 'Left';
-          state.p2.dirWanted = 'Left';
+          if (resetPhase === 'straight' && zigSteps >= 16) resetPhase = 'reorg';
         }
         const beforeP1: GridPos = [state.p1.head[0], state.p1.head[1]];
         const beforeP2: GridPos = [state.p2.head[0], state.p2.head[1]];
+        const longChain = Math.max(state.p1.body.length, state.p2.body.length) + 1;
         stepGame(state);
         const p1Hit = jumped(beforeP1, state.p1.head);
         const p2Hit = jumped(beforeP2, state.p2.head);
@@ -306,15 +326,16 @@ export function RuleClip({ id }: { id: RuleClipId }) {
             left: ((col + 0.5) / state.cols) * 100,
             top: ((row + 0.5) / state.rows) * 100,
             kind,
+            size: kind === 'reorg' ? (longChain / state.cols) * 56 : undefined,
           });
         };
         if (resetPhase === 'wall' && p1Hit && !p2Hit) {
           flash('wall', beforeP1[0], 0);
-          resetPhase = 'long';
-        } else if (resetPhase === 'long' && p1Hit && p2Hit) {
+          resetPhase = 'straight';
+        } else if (resetPhase === 'reorg' && p1Hit && p2Hit) {
           flash('reorg', (beforeP1[0] + beforeP2[0]) / 2, beforeP1[1]);
-          resetPhase = 'short';
-        } else if (resetPhase === 'short' && p1Hit && p2Hit) {
+          resetPhase = 'clash';
+        } else if (resetPhase === 'clash' && p1Hit && p2Hit) {
           flash('clash', (beforeP1[0] + beforeP2[0]) / 2, beforeP1[1]);
           resetPhase = 'restart';
           restartSteps = 0;
@@ -435,12 +456,25 @@ export function RuleClip({ id }: { id: RuleClipId }) {
         <div
           key={impact.id}
           className={`rule-clip__impact rule-clip__impact--${impact.kind}`}
-          style={{ left: `${impact.left}%`, top: `${impact.top}%` }}
-          onAnimationEnd={() => setImpact(null)}
+          style={{
+            left: `${impact.left}%`,
+            top: `${impact.top}%`,
+            width: impact.size ? `${impact.size}%` : undefined,
+          }}
+          onAnimationEnd={(event) => {
+            const target = event.target as HTMLElement;
+            const outer = (event.currentTarget as HTMLElement).firstElementChild;
+            if (target !== event.currentTarget && target !== outer) return;
+            setImpact(null);
+          }}
         >
-          <span>
-            {impact.kind === 'reorg' ? 'Reorg' : impact.kind === 'clash' ? 'Clash' : 'Wall'}
-          </span>
+          {impact.kind === 'reorg' ? (
+            <>
+              <span />
+              <span />
+              <span />
+            </>
+          ) : null}
         </div>
       ) : null}
       {id === 'stake' && showQr ? (
