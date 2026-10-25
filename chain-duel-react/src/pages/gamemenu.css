@@ -679,7 +679,7 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: rgba(11, 11, 11, 0.84);
+  background: rgba(11, 11, 11, 0.94);
   border: none;
 }
 

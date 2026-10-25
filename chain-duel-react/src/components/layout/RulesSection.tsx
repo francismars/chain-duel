@@ -47,6 +47,7 @@ export function RulesSection({
   variant = 'classic',
   onTitleChange,
   onClose,
+  autoplay = false,
 }: {
   variant?: 'classic' | 'clips';
   onTitleChange?: (title: {
@@ -56,14 +57,24 @@ export function RulesSection({
     dir?: SlideDir;
   }) => void;
   onClose?: () => void;
+  autoplay?: boolean;
 }) {
   if (variant === 'classic') return <ClassicRules />;
-  return <ClipRules onTitleChange={onTitleChange} onClose={onClose} />;
+  return (
+    <ClipRules
+      onTitleChange={onTitleChange}
+      onClose={onClose}
+      autoplay={autoplay}
+    />
+  );
 }
+
+const AUTOPLAY_MS = 4800;
 
 function ClipRules({
   onTitleChange,
   onClose,
+  autoplay = false,
 }: {
   onTitleChange?: (title: {
     kicker: string;
@@ -72,6 +83,7 @@ function ClipRules({
     dir?: SlideDir;
   }) => void;
   onClose?: () => void;
+  autoplay?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const [focus, setFocus] = useState<RulesFocus>('next');
@@ -105,6 +117,14 @@ function ClipRules({
   };
   const prev = () => go(-1);
   const next = () => go(1);
+  const goRef = useRef(go);
+  goRef.current = go;
+
+  useEffect(() => {
+    if (!autoplay) return;
+    const id = window.setInterval(() => goRef.current(1), AUTOPLAY_MS);
+    return () => window.clearInterval(id);
+  }, [autoplay]);
 
   useEffect(() => {
     return () => {
