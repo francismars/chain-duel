@@ -76,6 +76,30 @@ describe('routeAround', () => {
     expect(classifyStep(state, 'p1', state.p1, [7, 12])).toBe('ok');
   });
 
+  it('treats another free-for-all head as a head-on', () => {
+    const state = createGameState({
+      p1Name: 'White',
+      p2Name: 'Black',
+      p1Points: 2500,
+      p2Points: 2500,
+      modeLabel: 'FFA',
+      practiceMode: true,
+      teamMode: 'ffa',
+      p1Human: true,
+      p2Human: true,
+      p3Human: true,
+      p4Human: true,
+    });
+    state.p1.head = [6, 12];
+    state.p1.body = [[5, 12]];
+    state.p1.dir = 'Right';
+    state.p1.dirWanted = 'Right';
+    const ghost = state.extraSnakes[0]!.snake;
+    ghost.head = [7, 12];
+    ghost.body = [[8, 12]];
+    expect(classifyStep(state, 'p1', state.p1, [7, 12])).toBe('headon');
+  });
+
   it('treats the cell under the opponent body as a hit', () => {
     const state = board();
     state.p2.head = [8, 12];

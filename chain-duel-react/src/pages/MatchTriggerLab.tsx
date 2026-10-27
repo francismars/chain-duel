@@ -24,6 +24,7 @@ import {
 } from '@/game/engine';
 import type {
   Coinbase,
+  Direction,
   GameState,
   GridPos,
   SnakeState,
@@ -59,7 +60,7 @@ const POT = 10000;
 const MAX_CHAIN = 36;
 const MAX_INSET = 8;
 
-type LabModeId = 'freeplay' | 'p2p' | 'tournament' | 'online' | 'challenge';
+type LabModeId = 'freeplay' | 'p2p' | 'tournament' | 'online' | 'challenge' | 'ffa';
 
 type LabMode = {
   id: LabModeId;
@@ -70,6 +71,8 @@ type LabMode = {
   block: boolean;
   practice: boolean;
   tournament: boolean;
+  /** Four chains. Drain, death color, and crash sounds follow the free-for-all. */
+  ffa: boolean;
   modeLabel: string;
 };
 
@@ -83,6 +86,7 @@ const LAB_MODES: LabMode[] = [
     block: true,
     practice: true,
     tournament: false,
+    ffa: false,
     modeLabel: 'FREE PLAY',
   },
   {
@@ -94,6 +98,7 @@ const LAB_MODES: LabMode[] = [
     block: true,
     practice: false,
     tournament: false,
+    ffa: false,
     modeLabel: 'P2P',
   },
   {
@@ -105,6 +110,7 @@ const LAB_MODES: LabMode[] = [
     block: true,
     practice: false,
     tournament: true,
+    ffa: false,
     modeLabel: 'TOURNAMENT',
   },
   {
@@ -117,6 +123,7 @@ const LAB_MODES: LabMode[] = [
     block: true,
     practice: false,
     tournament: false,
+    ffa: false,
     modeLabel: 'ONLINE',
   },
   {
@@ -128,7 +135,21 @@ const LAB_MODES: LabMode[] = [
     block: false,
     practice: true,
     tournament: false,
+    ffa: false,
     modeLabel: 'CHALLENGE',
+  },
+  {
+    id: 'ffa',
+    label: 'Free for all',
+    summary:
+      'Four chains, equal sats. Drain follows how many still hold sats. Each death uses that chain’s color and crash sound.',
+    convergence: false,
+    powerups: false,
+    block: true,
+    practice: true,
+    tournament: false,
+    ffa: true,
+    modeLabel: 'FFA',
   },
 ];
 
@@ -330,23 +351,74 @@ const COUNTDOWN = [
 
 const TRACK_NAME = ['off', 'warning', 'warning', 'critical', 'critical'] as const;
 
+type Seat = 'P1' | 'P2' | 'P3' | 'P4';
+
+const SEATS: { seat: Seat; rider: Rider; label: string }[] = [
+  { seat: 'P1', rider: 'p1', label: 'White' },
+  { seat: 'P2', rider: 'p2', label: 'Black' },
+  { seat: 'P3', rider: 'p3', label: 'Ghost' },
+  { seat: 'P4', rider: 'p4', label: 'Specter' },
+];
+
+function labSnake(state: GameState, rider: Rider): SnakeState {
+  if (rider === 'p1') return state.p1;
+  if (rider === 'p2') return state.p2;
+  if (rider === 'p3') return state.extraSnakes[0]!.snake;
+  return state.extraSnakes[1]!.snake;
+}
+
+function seatOf(rider: Rider): Seat {
+  return SEATS.find((entry) => entry.rider === rider)?.seat ?? 'P1';
+}
+
+function seatIndex(seat: Seat): number {
+  return seat === 'P1' ? 0 : seat === 'P2' ? 1 : seat === 'P3' ? 2 : 3;
+}
+
+function presentSeats(state: GameState) {
+  return SEATS.filter((entry) => {
+    if (entry.rider === 'p3') return Boolean(state.extraSnakes[0]);
+    if (entry.rider === 'p4') return Boolean(state.extraSnakes[1]);
+    return true;
+  });
+}
+
+function chainPercent(state: GameState, rider: Rider, recipe: MatchRecipe): number {
+  if (!presentSeats(state).some((entry) => entry.rider === rider)) return 0;
+  return capturePercentForLength(
+    labSnake(state, rider).body.length,
+    recipe.captureFrom,
+    recipe.capturePercent
+  );
+}
+
 function makeLabState(mode: LabMode): GameState {
+  const stake = mode.ffa ? POT / 4 : POT / 2;
   const state = createGameState({
     p1Name: 'White',
     p2Name: 'Black',
-    p1Points: POT / 2,
-    p2Points: POT / 2,
+    p1Points: stake,
+    p2Points: stake,
     modeLabel: mode.modeLabel,
     practiceMode: mode.practice,
     convergenceMode: mode.convergence,
     powerupMode: mode.powerups,
     isTournament: mode.tournament,
+    teamMode: mode.ffa ? 'ffa' : 'solo',
     p1Human: true,
     p2Human: true,
+    p3Human: mode.ffa,
+    p4Human: mode.ffa,
   });
   state.gameStarted = true;
   state.p1.dirWanted = 'Right';
   state.p2.dirWanted = 'Left';
+  if (mode.ffa) {
+    state.p1Name = 'White';
+    state.p2Name = 'Black';
+    if (state.extraSnakes[0]) state.extraSnakes[0].name = 'Ghost';
+    if (state.extraSnakes[1]) state.extraSnakes[1].name = 'Specter';
+  }
   return state;
 }
 
@@ -367,10 +439,47 @@ function applyWhiteShare(state: GameState, share: number): void {
   state.score = [p1, Math.max(0, state.totalPoints - p1)];
 }
 
+function readScore(state: GameState, index: number): number {
+  if (index === 0) return state.score[0];
+  if (index === 1) return state.score[1];
+  return state.extraSnakes[index - 2]?.score ?? 0;
+}
+
+function writeScore(state: GameState, index: number, value: number): void {
+  if (index === 0) state.score[0] = value;
+  else if (index === 1) state.score[1] = value;
+  else if (state.extraSnakes[index - 2]) state.extraSnakes[index - 2]!.score = value;
+}
+
+/** Selected chain takes `share` of the pot. The other three split what remains. */
+function applyFfaShare(state: GameState, rider: Rider, share: number): void {
+  const clamped = Math.max(0.01, Math.min(0.99, share));
+  const mine = Math.round(state.totalPoints * clamped);
+  const rest = Math.max(0, state.totalPoints - mine);
+  const base = Math.floor(rest / 3);
+  let spare = rest - base * 3;
+  const selected = seatIndex(seatOf(rider));
+  for (let index = 0; index < 4; index += 1) {
+    if (index === selected) writeScore(state, index, mine);
+    else {
+      writeScore(state, index, base + (spare > 0 ? 1 : 0));
+      if (spare > 0) spare -= 1;
+    }
+  }
+}
+
 function whiteShareOf(state: GameState): number {
   const pool = state.score[0] + state.score[1];
   if (pool <= 0) return 0.5;
   return state.score[0] / pool;
+}
+
+function selectedShare(state: GameState, rider: Rider): number {
+  if (state.meta.teamMode !== 'ffa') return whiteShareOf(state);
+  const scores = [0, 1, 2, 3].map((index) => readScore(state, index));
+  const pool = scores.reduce((sum, score) => sum + score, 0);
+  if (pool <= 0) return 0.25;
+  return readScore(state, seatIndex(seatOf(rider))) / pool;
 }
 
 function captureClip(recipe: MatchRecipe, length: number): string {
@@ -379,11 +488,14 @@ function captureClip(recipe: MatchRecipe, length: number): string {
 
 function placeBody(state: GameState, snake: SnakeState, length: number): void {
   const taken = new Set<string>();
-  const other = snake === state.p1 ? state.p2 : state.p1;
   const block = (cell: GridPos) => taken.add(`${cell[0]},${cell[1]}`);
   block(snake.head);
-  block(other.head);
-  for (const cell of other.body) block(cell);
+  for (const entry of presentSeats(state)) {
+    const other = labSnake(state, entry.rider);
+    if (other === snake) continue;
+    block(other.head);
+    for (const cell of other.body) block(cell);
+  }
   const facing = snake.dir || snake.dirWanted || 'Right';
   const steps: GridPos[] =
     facing === 'Left'
@@ -445,13 +557,16 @@ function stageWallCrash(state: GameState, rider: Rider): GridPos {
   const left = border?.left ?? 0;
   const top = border?.top ?? 0;
   const bottom = border?.bottom ?? state.rows - 1;
-  const snake = rider === 'p1' ? state.p1 : state.p2;
-  const other = rider === 'p1' ? state.p2 : state.p1;
-  // Leave the other chain where it is. Only the dying chain snaps home after
-  // the hit, so parking the other here used to leave it stranded.
-  const otherCells = new Set(
-    [other.head, ...other.body].map((cell) => `${cell[0]},${cell[1]}`)
-  );
+  const snake = labSnake(state, rider);
+  const otherCells = new Set<string>();
+  for (const entry of SEATS) {
+    if (entry.rider === rider) continue;
+    if (entry.rider === 'p3' && !state.extraSnakes[0]) continue;
+    if (entry.rider === 'p4' && !state.extraSnakes[1]) continue;
+    const other = labSnake(state, entry.rider);
+    otherCells.add(`${other.head[0]},${other.head[1]}`);
+    for (const cell of other.body) otherCells.add(`${cell[0]},${cell[1]}`);
+  }
   let y = Math.min(bottom - 1, Math.max(top + 1, 12));
   if (otherCells.has(`${left},${y}`) || otherCells.has(`${left + 1},${y}`)) {
     y = Math.min(bottom - 1, Math.max(top + 1, y === 12 ? 10 : 12));
@@ -476,8 +591,9 @@ function headOnCenter(state: GameState): { x: number; y: number } {
 /** Face both heads across one shared cell. The selected chain takes the step. */
 function stageHeadOn(state: GameState, rider: Rider): GridPos {
   const { x, y } = headOnCenter(state);
-  const mover = rider === 'p1' ? state.p1 : state.p2;
-  const other = rider === 'p1' ? state.p2 : state.p1;
+  const mover = labSnake(state, rider);
+  const partner: Rider = rider === 'p2' ? 'p1' : 'p2';
+  const other = labSnake(state, partner);
   placeSnake(mover, [x, y], 'Right', [
     [x - 1, y],
     [x - 2, y],
@@ -528,6 +644,28 @@ function snapSnake(state: GameState, player: 'P1' | 'P2'): void {
   state.p2.dir = '';
   state.p2.dirWanted = 'Left';
   state.currentCaptureP2 = '2%';
+}
+
+function tailBehind(head: GridPos, dir: Direction): GridPos {
+  const [x, y] = head;
+  if (dir === 'Left') return [x + 1, y];
+  if (dir === 'Up') return [x, y + 1];
+  if (dir === 'Down') return [x, y - 1];
+  return [x - 1, y];
+}
+
+function snapSeat(state: GameState, seat: Seat): void {
+  if (seat === 'P1' || seat === 'P2') {
+    snapSnake(state, seat);
+    return;
+  }
+  const extra = state.extraSnakes[seat === 'P3' ? 0 : 1];
+  if (!extra) return;
+  const dir: Direction = extra.spawnDir === '' ? 'Right' : extra.spawnDir;
+  extra.snake.head = [extra.spawnHead[0], extra.spawnHead[1]];
+  extra.snake.body = [tailBehind(extra.snake.head, dir)];
+  extra.snake.dir = '';
+  extra.snake.dirWanted = dir;
 }
 
 function finishMatch(state: GameState): boolean {
@@ -605,6 +743,25 @@ function transferToP2(state: GameState, amount: number): number {
   const gain = Math.min(amount, state.score[0]);
   state.score[1] += gain;
   state.score[0] -= gain;
+  return gain;
+}
+
+function transferToExtra(state: GameState, rider: Rider, amount: number): number {
+  const index = seatIndex(seatOf(rider));
+  let richest = -1;
+  let richestScore = 0;
+  for (let other = 0; other < 4; other += 1) {
+    if (other === index) continue;
+    const score = readScore(state, other);
+    if (score > richestScore) {
+      richest = other;
+      richestScore = score;
+    }
+  }
+  if (richest < 0) return 0;
+  const gain = Math.min(amount, richestScore);
+  writeScore(state, richest, richestScore - gain);
+  writeScore(state, index, readScore(state, index) + gain);
   return gain;
 }
 
@@ -781,7 +938,7 @@ export default function MatchTriggerLab() {
   const pathRef = useRef<GridPos[]>([]);
   const historyRef = useRef<Array<{ state: GameState; bait: string[] }>>([]);
   const [historyCount, setHistoryCount] = useState(0);
-  const riderRef = useRef<'p1' | 'p2'>('p1');
+  const riderRef = useRef<Rider>('p1');
   const growRef = useRef(false);
   const endedRef = useRef(false);
   const countdownGen = useRef(0);
@@ -791,7 +948,7 @@ export default function MatchTriggerLab() {
   const [revision, setRevision] = useState(0);
   const [log, setLog] = useState<string[]>([]);
   const [ended, setEnded] = useState(false);
-  const [rider, setRider] = useState<'p1' | 'p2'>('p1');
+  const [rider, setRider] = useState<Rider>('p1');
   const [growOn, setGrowOn] = useState(false);
   const [modeId, setModeId] = useState<LabModeId>('freeplay');
   const [draft, setDraft] = useState<MatchRecipe>(() => gameRecipe());
@@ -830,8 +987,7 @@ export default function MatchTriggerLab() {
     setLog((prev) => [line, ...prev].slice(0, 8));
   }, []);
 
-  const snakeOf = (state: GameState) =>
-    riderRef.current === 'p1' ? state.p1 : state.p2;
+  const snakeOf = (state: GameState) => labSnake(state, riderRef.current);
 
   const remember = useCallback(() => {
     const current = stateRef.current;
@@ -860,35 +1016,31 @@ export default function MatchTriggerLab() {
       pathRef.current.shift();
       if (kind !== 'ok') {
         const recipe = draftRef.current;
-        const p1Percent = capturePercentForLength(
-          state.p1.body.length,
-          recipe.captureFrom,
-          recipe.capturePercent
+        const deadPercent = chainPercent(state, rider, recipe);
+        const livePercent = Math.max(
+          ...presentSeats(state)
+            .filter((entry) => entry.rider !== rider)
+            .map((entry) => chainPercent(state, entry.rider, recipe))
         );
-        const p2Percent = capturePercentForLength(
-          state.p2.body.length,
-          recipe.captureFrom,
-          recipe.capturePercent
-        );
-        const captureGap = reorgCaptureGap(p1Percent, p2Percent);
-        const deadPercent = rider === 'p1' ? p1Percent : p2Percent;
-        const livePercent = rider === 'p1' ? p2Percent : p1Percent;
+        const captureGap = reorgCaptureGap(deadPercent, livePercent);
         const gap =
+          kind === 'headon' ? captureGap : captureGap && deadPercent > livePercent;
+        const player = seatOf(rider);
+        const struck =
           kind === 'headon'
-            ? captureGap
-            : captureGap && deadPercent > livePercent;
+            ? presentSeats(state).find((entry) => {
+                if (entry.rider === rider) return false;
+                const head = labSnake(state, entry.rider).head;
+                return head[0] === next[0] && head[1] === next[1];
+              })
+            : undefined;
         commitMove(snake, next, false);
         state.tickCount += 1;
         audio.updateGameState(state);
-        const player = rider === 'p1' ? 'P1' : 'P2';
-        if (kind === 'headon') {
-          snapSnake(state, 'P1');
-          snapSnake(state, 'P2');
-          audio.playReset('P1');
-          audio.playReset('P2');
-        } else {
-          snapSnake(state, player);
-          audio.playReset(player);
+        const seats = struck ? [player, struck.seat] : [player];
+        for (const seat of seats) {
+          snapSeat(state, seat);
+          audio.playReset(seat);
         }
         pathRef.current = [];
         state.tickCount += 1;
@@ -924,7 +1076,7 @@ export default function MatchTriggerLab() {
       state.tickCount += 1;
       if (eating) {
         const length = snake.body.length;
-        const playerIndex = rider === 'p1' ? 0 : 1;
+        const playerIndex = seatIndex(seatOf(rider));
         const percent = Number.parseInt(labelFor(draftRef.current, length), 10);
         const rate = captureRateLabel(state, playerIndex, percent);
         const requested = Math.max(
@@ -932,9 +1084,13 @@ export default function MatchTriggerLab() {
           Math.floor((state.totalPoints * percent) / 100)
         );
         const gained =
-          rider === 'p1' ? transferToP1(state, requested) : transferToP2(state, requested);
-        const side: CaptureSide = rider === 'p1' ? 'P1' : 'P2';
-        if (gained > 0) {
+          rider === 'p1'
+            ? transferToP1(state, requested)
+            : rider === 'p2'
+              ? transferToP2(state, requested)
+              : transferToExtra(state, rider, requested);
+        const side: CaptureSide = rider === 'p2' ? 'P2' : 'P1';
+        if (gained > 0 && (rider === 'p1' || rider === 'p2')) {
           pushSatsPop(state, side, gained, percent, rate);
           const intensity = satsCaptureBarIntensityFromLabel(labelFor(draftRef.current, length));
           setBarHit((prev) => ({ side, intensity, id: (prev?.id ?? 0) + 1 }));
@@ -1062,7 +1218,8 @@ export default function MatchTriggerLab() {
   const state = stateRef.current;
   const chain = state?.p1.body.length ?? 1;
   const inset = state?.shrinkBorder?.left ?? 0;
-  const whiteShare = state ? whiteShareOf(state) : 0.5;
+  const whiteShare = state ? selectedShare(state, rider) : 0.5;
+  const driven = SEATS.find((entry) => entry.rider === rider) ?? SEATS[0]!;
   const lost = state ? lostPlayablePercent(state) : 0;
   void revision;
 
@@ -1073,7 +1230,7 @@ export default function MatchTriggerLab() {
     const projected = projectSnake(
       live,
       rider,
-      rider === 'p1' ? live.p1 : live.p2,
+      labSnake(live, rider),
       pathRef.current,
       growRef.current,
       MAX_CHAIN
@@ -1213,6 +1370,10 @@ export default function MatchTriggerLab() {
     stateRef.current = next;
     setModeId(id);
     setEnded(false);
+    if (!nextMode.ffa && (riderRef.current === 'p3' || riderRef.current === 'p4')) {
+      riderRef.current = 'p1';
+      setRider('p1');
+    }
     const audio = audioRef.current;
     if (audio) {
       audio.stopAll();
@@ -1244,14 +1405,23 @@ export default function MatchTriggerLab() {
     const audio = audioRef.current;
     if (!current || !audio || current.gameEnded) return;
     current.gameStarted = false;
-    applyWhiteShare(current, nextShare);
+    if (current.meta.teamMode === 'ffa') applyFfaShare(current, riderRef.current, nextShare);
+    else applyWhiteShare(current, nextShare);
     audio.updateGameState(current);
     current.gameStarted = true;
     audio.updateGameState(current);
-    const white = Math.round(whiteShareOf(current) * 100);
-    note(
-      `Score split · white ${white}% · black ${100 - white}% · streak reset so this slider is not a catch`
-    );
+    if (current.meta.teamMode === 'ffa') {
+      const label = SEATS.find((entry) => entry.rider === riderRef.current)?.label ?? 'Chain';
+      const share = Math.round(selectedShare(current, riderRef.current) * 1000) / 10;
+      note(
+        `${label} holds ${share}% of the pot. Warning at 12.5%, critical at 5%.`
+      );
+    } else {
+      const white = Math.round(whiteShareOf(current) * 100);
+      note(
+        `Score split · white ${white}% · black ${100 - white}% · streak reset so this slider is not a catch`
+      );
+    }
     bump();
   };
 
@@ -1262,7 +1432,7 @@ export default function MatchTriggerLab() {
     const projected = projectSnake(
       current,
       rider,
-      rider === 'p1' ? current.p1 : current.p2,
+      labSnake(current, rider),
       pathRef.current,
       growRef.current,
       MAX_CHAIN
@@ -1329,34 +1499,32 @@ export default function MatchTriggerLab() {
     lineUp(fatal, 'Chains lined up · next step is head to head');
   };
 
-  const die = (player: 'P1' | 'P2') => {
+  const die = (player: Seat) => {
     const current = stateRef.current;
     const audio = audioRef.current;
     if (!current || !audio || current.gameEnded) return;
+    if (player === 'P3' && !current.extraSnakes[0]) return;
+    if (player === 'P4' && !current.extraSnakes[1]) return;
     remember();
     pathRef.current = [];
     clearStreakPops();
     setImpact(null);
-    const dying = player === 'P1' ? current.p1 : current.p2;
-    const living = player === 'P1' ? current.p2 : current.p1;
+    const dyingRider = SEATS.find((entry) => entry.seat === player)?.rider ?? 'p1';
+    const dying = labSnake(current, dyingRider);
     const head: GridPos = [dying.head[0], dying.head[1]];
     const recipe = draftRef.current;
-    const deadPercent = capturePercentForLength(
-      dying.body.length,
-      recipe.captureFrom,
-      recipe.capturePercent
-    );
-    const livePercent = capturePercentForLength(
-      living.body.length,
-      recipe.captureFrom,
-      recipe.capturePercent
+    const deadPercent = chainPercent(current, dyingRider, recipe);
+    const livePercent = Math.max(
+      ...presentSeats(current)
+        .filter((entry) => entry.seat !== player)
+        .map((entry) => chainPercent(current, entry.rider, recipe))
     );
     // Solo reorg: the long chain dies. Short deaths are ordinary WALL.
     const isReorg =
       deadPercent > livePercent && reorgCaptureGap(deadPercent, livePercent);
     const markAt: GridPos = head;
     audio.playReset(player);
-    snapSnake(current, player);
+    snapSeat(current, player);
     current.tickCount += 1;
     // Same path as free play: detector marks + spawn flash. Only force them
     // when the chain was already on spawn so the teleport never registers.
@@ -1639,20 +1807,16 @@ export default function MatchTriggerLab() {
         <section>
           <h2>Drive</h2>
           <div className="match-lab__ride">
-            <button
-              type="button"
-              aria-pressed={rider === 'p1'}
-              onClick={() => setRider('p1')}
-            >
-              White
-            </button>
-            <button
-              type="button"
-              aria-pressed={rider === 'p2'}
-              onClick={() => setRider('p2')}
-            >
-              Black
-            </button>
+            {(mode.ffa ? SEATS : SEATS.slice(0, 2)).map((entry) => (
+              <button
+                key={entry.rider}
+                type="button"
+                aria-pressed={rider === entry.rider}
+                onClick={() => setRider(entry.rider)}
+              >
+                {entry.label}
+              </button>
+            ))}
             <label className="match-lab__check">
               <input
                 type="checkbox"
@@ -1674,8 +1838,9 @@ export default function MatchTriggerLab() {
           <h2>Score and walls</h2>
           <label className="slider">
             <span>
-              White {Math.round(whiteShare * 100)}% · Black{' '}
-              {100 - Math.round(whiteShare * 100)}%
+              {mode.ffa
+                ? `${driven.label} ${Math.round(whiteShare * 100)}% of the pot`
+                : `White ${Math.round(whiteShare * 100)}% · Black ${100 - Math.round(whiteShare * 100)}%`}
             </span>
             <input
               type="range"
@@ -1702,6 +1867,12 @@ export default function MatchTriggerLab() {
           {mode.convergence ? null : (
             <p className="match-lab__note">Walls stay open in {mode.label}.</p>
           )}
+          {mode.ffa ? (
+            <p className="match-lab__note">
+              Four equal chains stay on the bed. This slider gives the selected
+              chain that share. Warning at 12.5%, critical at 5%.
+            </p>
+          ) : null}
         </section>
 
         <section>
@@ -1710,12 +1881,16 @@ export default function MatchTriggerLab() {
             <button type="button" className="wide" disabled={ended} onClick={eatOne}>
               Eat one step
             </button>
-            <button type="button" disabled={ended} onClick={() => die('P1')}>
-              White dies
-            </button>
-            <button type="button" disabled={ended} onClick={() => die('P2')}>
-              Black dies
-            </button>
+            {(mode.ffa ? SEATS : SEATS.slice(0, 2)).map((entry) => (
+              <button
+                key={entry.seat}
+                type="button"
+                disabled={ended}
+                onClick={() => die(entry.seat)}
+              >
+                {entry.label} dies
+              </button>
+            ))}
             <button type="button" disabled={ended} onClick={hitWall}>
               Hit the wall
             </button>
@@ -1807,11 +1982,11 @@ export default function MatchTriggerLab() {
               onHearMix={hearMix}
               silenced={silenced}
               chainLength={
-                rider === 'p1'
-                  ? (state?.p1.body.length ?? 1)
-                  : (state?.p2.body.length ?? 1)
+                state && presentSeats(state).some((entry) => entry.rider === rider)
+                  ? labSnake(state, rider).body.length
+                  : (state?.p1.body.length ?? 1)
               }
-              chainName={rider === 'p1' ? 'White' : 'Black'}
+              chainName={driven.label}
               onChainLength={setChainLength}
             />
           ) : null}

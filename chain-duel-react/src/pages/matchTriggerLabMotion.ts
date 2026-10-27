@@ -1,6 +1,6 @@
 import type { Direction, GameState, GridPos, SnakeState } from '@/game/engine/types';
 
-export type Rider = 'p1' | 'p2';
+export type Rider = 'p1' | 'p2' | 'p3' | 'p4';
 export type StepKind = 'ok' | 'blocked' | 'wall' | 'self' | 'opponent' | 'headon';
 
 const SEARCH_CAP = 8000;
@@ -78,6 +78,17 @@ export function commitMove(snake: SnakeState, next: GridPos, grow: boolean): voi
   if (grow) appendTail(snake);
 }
 
+function otherSnakes(state: GameState, rider: Rider): SnakeState[] {
+  const snakes: SnakeState[] = [];
+  if (rider !== 'p1') snakes.push(state.p1);
+  if (rider !== 'p2') snakes.push(state.p2);
+  state.extraSnakes.forEach((extra, index) => {
+    const seat: Rider = index === 0 ? 'p3' : 'p4';
+    if (seat !== rider) snakes.push(extra.snake);
+  });
+  return snakes;
+}
+
 function heading(snake: SnakeState): Direction {
   return snake.dir || snake.dirWanted;
 }
@@ -100,9 +111,11 @@ export function classifyStep(
   if (current && dir === opposite(current)) return 'blocked';
   if (!inPlay(state, next)) return 'wall';
   if (state.obstacleWalls.some((wall) => same(wall.pos, next))) return 'wall';
-  const other = rider === 'p1' ? state.p2 : state.p1;
-  if (same(other.head, next)) return 'headon';
-  if (other.body.some((cell) => same(cell, next))) return 'opponent';
+  const rivals = otherSnakes(state, rider);
+  if (rivals.some((other) => same(other.head, next))) return 'headon';
+  if (rivals.some((other) => other.body.some((cell) => same(cell, next)))) {
+    return 'opponent';
+  }
   const tail = snake.body[snake.body.length - 1];
   const onBody = snake.body.some((cell) => same(cell, next));
   if (onBody && !(tail && same(tail, next))) return 'self';
