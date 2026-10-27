@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { RefObject } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useAudio, SFX } from '@/contexts/AudioContext';
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import type { PracticeChallengesPanelHandle } from '@/features/practice/practicePanelHandles';

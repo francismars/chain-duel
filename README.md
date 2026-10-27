@@ -77,7 +77,7 @@ src/
 | `npm run format` | Prettier |
 | `npm test` | Vitest |
 
-React 18, TypeScript, Vite 8, PixiJS 8, React Router 6, socket.io-client, nostr-tools, Zod, Vitest.
+React 18, TypeScript, Vite 8, PixiJS 8, React Router 7, socket.io-client, nostr-tools, Zod, Vitest.
 
 Pressure-music knobs are `SHIPPED_RECIPE` in `src/game/effects/matchRecipe.ts`. Rebuild cues with `python3 scripts/audio/create-game-cues.py` and `python3 scripts/audio/create-shrink-cue.py`.
 

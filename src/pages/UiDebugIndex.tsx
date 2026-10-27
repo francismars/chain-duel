@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router';
 import { UI_DEBUG_GROUPS } from '@/lib/uiDebug/uiDebugCatalog';
 import {
   readUiDebugEnabled,

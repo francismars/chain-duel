@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import { OnlineVictoryReveal } from '@/components/online/OnlineVictoryReveal';
 import {
   DEBUG_P1_SESSION,

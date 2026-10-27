@@ -1,4 +1,4 @@
-import type { NavigateFunction } from 'react-router-dom';
+import type { NavigateFunction } from 'react-router';
 import { SETUP_MENU_KEY_GRACE_MS } from '@/shared/constants/timeouts';
 
 /**

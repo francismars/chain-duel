@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import OnlineRoomLobby from '@/pages/OnlineRoomLobby';
 import { buildOnlineUiDebugRoom, DEBUG_P2_SESSION } from '@/lib/online/onlineUiDebug';
 import { PlayerRole, type OnlineRoomState } from '@/types/socket';

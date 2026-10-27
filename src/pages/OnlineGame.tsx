@@ -9,7 +9,7 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { useAudio } from '@/contexts/AudioContext';
 import { useSocket } from '@/hooks/useSocket';

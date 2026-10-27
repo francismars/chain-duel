@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useAudio } from '@/contexts/AudioContext';
 import { GameAudioSystem, reorgCaptureGap } from '@/game/audio/gameAudio';
 import {

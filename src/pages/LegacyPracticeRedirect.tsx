@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router';
 
 /** Preserves query string when redirecting legacy /local URLs to /practice. */
 export function LegacyPracticeRedirect() {

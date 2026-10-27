@@ -1,6 +1,6 @@
 // P2P game menu page – two players LNURL setup
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { GameSetupLayout } from '@/components/layout/GameSetupLayout';

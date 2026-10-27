@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { Button } from '@/components/ui/Button';

@@ -4,7 +4,7 @@ import {
   Route,
   Navigate,
   useLocation,
-} from 'react-router-dom';
+} from 'react-router';
 import { AudioProvider } from './contexts/AudioContext';
 import { NostrSessionProvider } from './contexts/NostrSessionContext';
 import { SocketProvider } from './contexts/SocketContext';

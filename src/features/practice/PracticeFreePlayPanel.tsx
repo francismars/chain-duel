@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react';
 import type { RefObject } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useAudio, SFX } from '@/contexts/AudioContext';
 import type { AiTier, TeamMode } from '@/game/engine/types';
 import {
