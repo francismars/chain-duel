@@ -15,6 +15,7 @@ import {
   publishTensionDebug,
   publishTensionLayers,
   pushCaptureRatePop,
+  pushSpawnFlash,
   resetTensionDebug,
 } from './tensionDebug';
 import { saveMenuMusicPosition } from './resultMusicHandoff';
@@ -342,18 +343,31 @@ export class GameAudioSystem {
     const clash = reorged ? null : clashedHeads(previous, players);
     const toneFor = (index: number): 'white' | 'black' =>
       index === 0 ? 'white' : 'black';
+    const resets = players.flatMap((player) => {
+      const before = previous.find((entry) => entry.index === player.index);
+      if (!before || before.eliminated || player.eliminated) return [];
+      if (headTravel(before, player) <= 1) return [];
+      if (player.length > before.length) return [];
+      return [{ before, after: player }];
+    });
     if (reorged) {
-      pushCaptureRatePop(reorged.head, 'REORG', true, 'gold');
+      const home = players.find((player) => player.index === reorged.index)?.head;
+      pushCaptureRatePop(reorged.head, 'REORG', true, 'gold', home);
     } else if (clash) pushCaptureRatePop(clash, 'CLASH', true, 'gold');
     else {
-      for (const player of players) {
-        const before = previous.find((entry) => entry.index === player.index);
-        if (!before || before.eliminated || player.eliminated) continue;
-        if (headTravel(before, player) <= 1) continue;
-        if (player.length > before.length) continue;
+      for (const { before, after } of resets) {
         // Wall, own body, or another body: one ordinary square in that chain's color.
-        pushCaptureRatePop(before.head, 'WALL', true, toneFor(before.index));
+        pushCaptureRatePop(
+          before.head,
+          'WALL',
+          true,
+          toneFor(before.index),
+          after.head
+        );
       }
+    }
+    for (const { after } of resets) {
+      pushSpawnFlash(after.head, toneFor(after.index));
     }
 
     const died = new Set<number>();

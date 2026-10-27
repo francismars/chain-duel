@@ -12,13 +12,15 @@ type RingSpec = { life: number; from: number; to: number; peak: number };
 const HIT_RING: RingSpec = { life: 1, from: 0.72, to: 0.98, peak: 0.72 };
 /** REORG: story beat — clearly bigger, still brief. */
 const REORG_RING: RingSpec = { life: 1, from: 0.58, to: 1.02, peak: 0.82 };
+/** Soft home flash after a reset. */
+const SPAWN_RING: RingSpec = { life: 1, from: 0.85, to: 1.05, peak: 0.55 };
 
 function ringColor(pop: StreakPop): { fill: number; css: string } {
   const tone =
     pop.tone ??
     (pop.text === 'CLASH' || pop.text === 'REORG'
       ? 'gold'
-      : pop.text === 'WALL'
+      : pop.text === 'WALL' || pop.text === 'SPAWN'
         ? 'white'
         : 'black');
   if (tone === 'white') return { fill: WHITE, css: '#ffffff' };
@@ -28,7 +30,9 @@ function ringColor(pop: StreakPop): { fill: number; css: string } {
 
 /** Half-side in cells. Wall and clash match. Reorg is a bit larger, double-ring. */
 function baseRadiusCells(pop: StreakPop): number {
-  return pop.text === 'REORG' ? 1.85 : 1.25;
+  if (pop.text === 'REORG') return 1.85;
+  if (pop.text === 'SPAWN') return 0.9;
+  return 1.25;
 }
 
 function ringAlpha(
@@ -45,7 +49,9 @@ function ringAlpha(
 }
 
 function specFor(text: string): RingSpec {
-  return text === 'REORG' ? REORG_RING : HIT_RING;
+  if (text === 'REORG') return REORG_RING;
+  if (text === 'SPAWN') return SPAWN_RING;
+  return HIT_RING;
 }
 
 type Mark = {
@@ -120,6 +126,25 @@ function paintMark(
   if (!drawn) return;
   const half = base * drawn.scale;
   const width = Math.max(1, cell * 0.06);
+
+  if (
+    pop.text !== 'SPAWN' &&
+    pop.toCol !== undefined &&
+    pop.toRow !== undefined
+  ) {
+    const dx = (pop.toCol - pop.col) * colSize;
+    const dy = (pop.toRow - pop.row) * rowSize;
+    const travel = Math.min(1, life * 1.35);
+    mark.ring
+      .moveTo(0, 0)
+      .lineTo(dx * travel, dy * travel)
+      .stroke({
+        width: Math.max(1, cell * 0.04),
+        color,
+        alpha: drawn.alpha * 0.35,
+      });
+  }
+
   // REORG: two close gold squares — same stroke as WALL/CLASH; double ring is the cue.
   if (pop.text === 'REORG') {
     const innerHalf = half * 0.72;
@@ -151,6 +176,22 @@ export function drawStreakPopsCanvas(
     const width = Math.max(1, cell * 0.06);
     ctx.strokeStyle = css;
     ctx.lineWidth = width;
+    if (
+      pop.text !== 'SPAWN' &&
+      pop.toCol !== undefined &&
+      pop.toRow !== undefined
+    ) {
+      const tx = pop.toCol * colSize + colSize / 2;
+      const ty = pop.toRow * rowSize + rowSize / 2;
+      const travel = Math.min(1, life * 1.35);
+      ctx.globalAlpha = drawn.alpha * 0.35;
+      ctx.lineWidth = Math.max(1, cell * 0.04);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (tx - x) * travel, y + (ty - y) * travel);
+      ctx.stroke();
+      ctx.lineWidth = width;
+    }
     if (pop.text === 'REORG') {
       const innerHalf = half * 0.72;
       ctx.globalAlpha = drawn.alpha * 0.85;

@@ -206,7 +206,12 @@ describe('game tension', () => {
     expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({
       col: 10,
       row: 10,
+      toCol: 4,
+      toRow: 12,
     });
+    expect(
+      streakPops().filter((pop) => pop.text === 'SPAWN')
+    ).toHaveLength(2);
 
     const soloLong = match();
     soloLong.p1.head = [10, 10];

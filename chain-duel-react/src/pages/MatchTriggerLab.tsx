@@ -6,6 +6,7 @@ import {
   advanceStreakPops,
   clearStreakPops,
   pushCaptureRatePop,
+  pushSpawnFlash,
   streakPops,
   subscribeTensionDebug,
   tensionDebugSnapshot,
@@ -1357,17 +1358,17 @@ export default function MatchTriggerLab() {
     audio.playReset(player);
     snapSnake(current, player);
     current.tickCount += 1;
-    // Same path as free play: one detector mark. Only force a pop when the
-    // chain was already on spawn so the teleport never registers.
+    // Same path as free play: detector marks + spawn flash. Only force them
+    // when the chain was already on spawn so the teleport never registers.
     audio.updateGameState(current);
     const want = isReorg ? 'REORG' : 'WALL';
+    const tone = isReorg ? 'gold' : player === 'P1' ? 'white' : 'black';
+    const home: GridPos = [dying.head[0], dying.head[1]];
     if (!streakPops().some((pop) => pop.text === want)) {
-      pushCaptureRatePop(
-        markAt,
-        want,
-        true,
-        isReorg ? 'gold' : player === 'P1' ? 'white' : 'black'
-      );
+      pushCaptureRatePop(markAt, want, true, tone, home);
+    }
+    if (!streakPops().some((pop) => pop.text === 'SPAWN')) {
+      pushSpawnFlash(home, player === 'P1' ? 'white' : 'black');
     }
     note(
       isReorg

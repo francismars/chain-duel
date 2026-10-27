@@ -39,6 +39,9 @@ export interface StreakPop {
   up: boolean;
   /** Wall uses the chain's color. Clash and reorg use gold. */
   tone?: 'white' | 'black' | 'gold';
+  /** Spawn cell for a thin death→home wipe. */
+  toCol?: number;
+  toRow?: number;
 }
 
 const EMPTY: TensionDebugSnapshot = {
@@ -139,12 +142,13 @@ export function clearStreakPops(): void {
   emit();
 }
 
-/** Floating capture rate. Only spawned when the percent actually changes. */
+/** Floating capture rate / collision mark. Optional home draws a death→spawn wipe. */
 export function pushCaptureRatePop(
   head: GridPos,
   label: string,
   up: boolean,
-  tone?: 'white' | 'black' | 'gold'
+  tone?: 'white' | 'black' | 'gold',
+  home?: GridPos
 ): void {
   pops = [
     ...pops,
@@ -157,10 +161,20 @@ export function pushCaptureRatePop(
       alpha: 1,
       up,
       tone,
+      toCol: home?.[0],
+      toRow: home?.[1],
     },
   ];
   nextPopId += 1;
   emit();
+}
+
+/** Soft flash on the cell a chain snaps back to. */
+export function pushSpawnFlash(
+  head: GridPos,
+  tone: 'white' | 'black'
+): void {
+  pushCaptureRatePop(head, 'SPAWN', true, tone);
 }
 
 export function streakPops(): readonly StreakPop[] {
@@ -168,7 +182,7 @@ export function streakPops(): readonly StreakPop[] {
 }
 
 /**
- * WALL/CLASH ~0.35s, REORG ~0.5s at 60fps — short enough that spawn still reads.
+ * WALL/CLASH ~0.35s, REORG ~0.5s, SPAWN ~0.25s at 60fps.
  */
 export function advanceStreakPops(): void {
   if (pops.length === 0) return;
@@ -176,7 +190,9 @@ export function advanceStreakPops(): void {
     .map((pop) => ({
       ...pop,
       yOffsetPx: pop.yOffsetPx,
-      alpha: pop.alpha - (pop.text === 'REORG' ? 0.028 : 0.045),
+      alpha:
+        pop.alpha -
+        (pop.text === 'SPAWN' ? 0.06 : pop.text === 'REORG' ? 0.028 : 0.045),
     }))
     .filter((pop) => pop.alpha >= 0);
 }
