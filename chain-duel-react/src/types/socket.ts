@@ -624,7 +624,9 @@ export interface ServerToClientEvents {
   }) => void;
   resOnlineSeatZapPayError: (data: { reason: string }) => void;
   resOnlineSeatLightning: (data: {
-    lnurl: string;
+    roomId?: string;
+    pr?: string;
+    lnurl?: string;
     lightningUri: string;
     buyin: number;
     expiresAt: number;

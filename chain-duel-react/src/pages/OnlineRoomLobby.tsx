@@ -316,7 +316,7 @@ export default function OnlineRoomLobby({
   const [nostrPayError, setNostrPayError] = useState<string | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [lightningPay, setLightningPay] = useState<{
-    lnurl: string;
+    pr: string;
     lightningUri: string;
     buyin: number;
     expiresAt: number;
@@ -570,11 +570,24 @@ export default function OnlineRoomLobby({
     };
     const onLightning = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.resOnlineSeatLightning(payload);
-      if (parsed) {
-        setLightningPay(parsed);
-        setLightningBusy(false);
-        setError('');
+      if (!parsed) {
+        return;
       }
+      if (parsed.roomId && parsed.roomId !== roomIdRef.current) {
+        return;
+      }
+      const pr = (parsed.pr ?? parsed.lnurl)?.trim();
+      if (!pr) {
+        return;
+      }
+      setLightningPay({
+        pr,
+        lightningUri: parsed.lightningUri,
+        buyin: parsed.buyin,
+        expiresAt: parsed.expiresAt,
+      });
+      setLightningBusy(false);
+      setError('');
     };
     const onLightningErr = (payload: unknown) => {
       const parsed = SocketBoundaryParsers.resOnlineSeatLightningError(payload);
@@ -3119,12 +3132,7 @@ export default function OnlineRoomLobby({
                                       className="online-lobby-action online-lobby-nwc-pay-btn"
                                       disabled={nwcBusy}
                                       onClick={() =>
-                                        void tryNwcPay(
-                                          lightningPay.lightningUri.replace(
-                                            /^lightning:/i,
-                                            ''
-                                          )
-                                        )
+                                        void tryNwcPay(lightningPay.pr)
                                       }
                                     >
                                       {nwcBusy ? 'PAYING…' : 'PAY WITH NWC'}
