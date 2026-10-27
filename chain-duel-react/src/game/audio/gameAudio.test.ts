@@ -208,19 +208,48 @@ describe('game tension', () => {
       row: 10,
     });
 
-    const wall = match();
-    wall.p1.head = [10, 10];
-    wall.p1.body = Array(7).fill([9, 10]);
-    wall.p2.head = [30, 10];
-    wall.p2.body = [[31, 10]];
-    audio.updateGameState(wall);
+    const soloLong = match();
+    soloLong.p1.head = [10, 10];
+    soloLong.p1.body = Array(7).fill([9, 10]);
+    soloLong.p2.head = [30, 10];
+    soloLong.p2.body = [[31, 10]];
+    audio.updateGameState(soloLong);
     const before = streakPops().length;
-    wall.p1.head = [4, 12];
-    wall.p1.body = [[3, 12]];
-    audio.updateGameState(wall);
+    soloLong.p1.head = [4, 12];
+    soloLong.p1.body = [[3, 12]];
+    audio.updateGameState(soloLong);
+    // Solo death of the long chain while a short chain lives: REORG on the long head.
     expect(streakPops().slice(before).some((pop) => pop.text === 'REORG')).toBe(
+      true
+    );
+    expect(streakPops().slice(before).find((pop) => pop.text === 'REORG')).toMatchObject({
+      tone: 'gold',
+      col: 10,
+      row: 10,
+    });
+
+    const soloShort = match();
+    soloShort.p1.head = [10, 10];
+    soloShort.p1.body = Array(7).fill([9, 10]);
+    soloShort.p2.head = [20, 10];
+    soloShort.p2.body = [[21, 10]];
+    audio.updateGameState(soloShort);
+    const soloBefore = streakPops().length;
+    soloShort.p2.head = [44, 12];
+    soloShort.p2.body = [[45, 12]];
+    audio.updateGameState(soloShort);
+    // Short chain dies: ordinary WALL, even when a long chain is alive.
+    expect(streakPops().slice(soloBefore).some((pop) => pop.text === 'REORG')).toBe(
       false
     );
+    expect(streakPops().slice(soloBefore).some((pop) => pop.text === 'WALL')).toBe(
+      true
+    );
+    expect(streakPops().slice(soloBefore).find((pop) => pop.text === 'WALL')).toMatchObject({
+      tone: 'black',
+      col: 20,
+      row: 10,
+    });
 
     const four = match();
     four.p1.head = [10, 10];
@@ -262,13 +291,20 @@ describe('game tension', () => {
     expect(streakPops().slice(closeBefore).some((pop) => pop.text === 'CLASH')).toBe(
       true
     );
+    expect(streakPops().slice(closeBefore).find((pop) => pop.text === 'CLASH')).toMatchObject({
+      tone: 'gold',
+    });
+    expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({
+      tone: 'gold',
+    });
     audio.stopAll();
   });
 
-  it('pairs a 2% chain with 8%+ and a 4% chain with 16%+', () => {
+  it('pairs 2% or under with 8%+, and 4% or under with 16%+', () => {
     expect(reorgCaptureGap(2, 8)).toBe(true);
     expect(reorgCaptureGap(2, 32)).toBe(true);
     expect(reorgCaptureGap(4, 16)).toBe(true);
+    expect(reorgCaptureGap(2, 16)).toBe(true);
     expect(reorgCaptureGap(4, 8)).toBe(false);
     expect(reorgCaptureGap(8, 32)).toBe(false);
   });

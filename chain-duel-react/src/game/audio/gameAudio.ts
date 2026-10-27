@@ -27,19 +27,20 @@ function headTravel(before: TensionPlayer, after: TensionPlayer): number {
 }
 
 /**
- * A 2% chain against 8% or more, or a 4% chain against 16% or more.
- * The percents are whatever the current recipe pays for that body length.
+ * A chain at 2% or under against 8% or more, or at 4% or under against 16% or more.
+ * On the shipped ladder that is 2% vs 8%+, and 2% or 4% vs 16%+.
  */
 export function reorgCaptureGap(percentA: number, percentB: number): boolean {
   const low = Math.min(percentA, percentB);
   const high = Math.max(percentA, percentB);
-  if (low === 2 && high >= 8) return true;
-  return low === 4 && high >= 16;
+  if (low <= 2 && high >= 8) return true;
+  return low <= 4 && high >= 16;
 }
 
 /**
- * Head-to-head: both chains reset on the same tick, and one's capture rate
- * is far below the other's. The word sits on the richer chain's last head.
+ * A reorg mark sits on the richer chain's last head.
+ * Head-to-head: both reset on the same tick with heads close.
+ * Solo death: the long chain dies while a shorter one keeps going with the gap.
  */
 function reorgedLongChain(
   previous: TensionPlayer[],
@@ -56,47 +57,47 @@ function reorgedLongChain(
       headTravel(pair.before, pair.after) > 1 &&
       pair.after.length <= pair.before.length
   );
-  if (reset.length < 2) return null;
   const recipe = gameRecipe();
-  const rated = reset.map((pair) => ({
-    ...pair,
-    percent: capturePercentForLength(
-      pair.before.length,
-      recipe.captureFrom,
-      recipe.capturePercent
-    ),
-  }));
-  for (let i = 0; i < rated.length; i += 1) {
-    for (let j = i + 1; j < rated.length; j += 1) {
-      const a = rated[i]!;
-      const b = rated[j]!;
-      if (!reorgCaptureGap(a.percent, b.percent)) continue;
-      const apart =
-        Math.abs(a.before.head[0] - b.before.head[0]) +
-        Math.abs(a.before.head[1] - b.before.head[1]);
-      if (apart > 2) continue;
-      return a.percent >= b.percent ? a.before : b.before;
+  const percentOf = (length: number) =>
+    capturePercentForLength(length, recipe.captureFrom, recipe.capturePercent);
+
+  if (reset.length >= 2) {
+    const rated = reset.map((pair) => ({
+      ...pair,
+      percent: percentOf(pair.before.length),
+    }));
+    for (let i = 0; i < rated.length; i += 1) {
+      for (let j = i + 1; j < rated.length; j += 1) {
+        const a = rated[i]!;
+        const b = rated[j]!;
+        if (!reorgCaptureGap(a.percent, b.percent)) continue;
+        const apart =
+          Math.abs(a.before.head[0] - b.before.head[0]) +
+          Math.abs(a.before.head[1] - b.before.head[1]);
+        if (apart > 2) continue;
+        return a.percent >= b.percent ? a.before : b.before;
+      }
     }
+    return null;
+  }
+
+  if (reset.length !== 1) return null;
+  const dead = reset[0]!;
+  const deadPercent = percentOf(dead.before.length);
+  for (const pair of pairs) {
+    if (pair.before.index === dead.before.index) continue;
+    if (pair.before.eliminated || pair.after.eliminated) continue;
+    if (pair.after.score <= 0) continue;
+    const livePercent = percentOf(pair.before.length);
+    // Solo reorg: the long chain dies; a short death is an ordinary WALL.
+    if (deadPercent <= livePercent) continue;
+    if (!reorgCaptureGap(deadPercent, livePercent)) continue;
+    return dead.before;
   }
   return null;
 }
 
-/** Last head was on the rim, so the reset was a wall rather than another chain. */
-function hitWall(head: TensionPlayer['head'], state: GameState): boolean {
-  const border = state.shrinkBorder;
-  const minX = border?.left ?? 0;
-  const maxX = border ? border.right - 1 : state.cols - 1;
-  const minY = border?.top ?? 0;
-  const maxY = border ? border.bottom - 1 : state.rows - 1;
-  return (
-    head[0] <= minX + 1 ||
-    head[0] >= maxX - 1 ||
-    head[1] <= minY + 1 ||
-    head[1] >= maxY - 1
-  );
-}
-
-/** Head-to-head with no capture-rate gap. The word sits between the two heads. */
+/** Head-to-head with no capture-rate gap. The mark sits between the two heads. */
 function clashedHeads(
   previous: TensionPlayer[],
   players: TensionPlayer[]
@@ -350,7 +351,7 @@ export class GameAudioSystem {
         if (!before || before.eliminated || player.eliminated) continue;
         if (headTravel(before, player) <= 1) continue;
         if (player.length > before.length) continue;
-        if (!hitWall(before.head, state)) continue;
+        // Wall, own body, or another body: one ordinary square in that chain's color.
         pushCaptureRatePop(before.head, 'WALL', true, toneFor(before.index));
       }
     }

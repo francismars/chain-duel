@@ -210,8 +210,9 @@ export function EffectRecipePanel({
       </div>
       <p className="recipe__hint">
         Sats floats the + and − with the percent above the gain, the way an eat
-        does. REORG sits on the long chain. A head-on shows it when a 2%
-        chain resets one at 8% or more, or a 4% chain resets one at 16% or more.
+        does. REORG sits on the long chain when a chain at 2% or under resets
+        one at 8% or more, or a chain at 4% or under resets one at 16% or more.
+        Solo: only when that long chain dies; a short death stays a normal mark.
       </p>
       <LookRow
         title="Tail swell"
