@@ -23,8 +23,14 @@ function ringColor(pop: StreakPop): { fill: number; css: string } {
       : pop.text === 'WALL' || pop.text === 'SPAWN'
         ? 'white'
         : 'black');
-  if (tone === 'white') return { fill: WHITE, css: '#ffffff' };
   if (tone === 'gold') return { fill: GOLD, css: '#f0c14d' };
+  if (pop.fill != null) {
+    return {
+      fill: pop.fill,
+      css: `#${pop.fill.toString(16).padStart(6, '0')}`,
+    };
+  }
+  if (tone === 'white') return { fill: WHITE, css: '#ffffff' };
   return { fill: BLACK, css: '#111111' };
 }
 

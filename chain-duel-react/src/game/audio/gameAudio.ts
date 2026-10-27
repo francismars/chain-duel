@@ -362,12 +362,13 @@ export class GameAudioSystem {
           'WALL',
           true,
           toneFor(before.index),
-          after.head
+          after.head,
+          before.color
         );
       }
     }
     for (const { after } of resets) {
-      pushSpawnFlash(after.head, toneFor(after.index));
+      pushSpawnFlash(after.head, toneFor(after.index), after.color);
     }
 
     const died = new Set<number>();

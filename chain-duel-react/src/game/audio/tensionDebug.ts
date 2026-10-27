@@ -39,6 +39,8 @@ export interface StreakPop {
   up: boolean;
   /** Wall uses the chain's color. Clash and reorg use gold. */
   tone?: 'white' | 'black' | 'gold';
+  /** On-board fill for a wall or spawn. Gold marks ignore it. */
+  fill?: number;
   /** Spawn cell for a thin death→home wipe. */
   toCol?: number;
   toRow?: number;
@@ -148,7 +150,8 @@ export function pushCaptureRatePop(
   label: string,
   up: boolean,
   tone?: 'white' | 'black' | 'gold',
-  home?: GridPos
+  home?: GridPos,
+  fill?: number
 ): void {
   pops = [
     ...pops,
@@ -161,6 +164,7 @@ export function pushCaptureRatePop(
       alpha: 1,
       up,
       tone,
+      fill,
       toCol: home?.[0],
       toRow: home?.[1],
     },
@@ -172,9 +176,10 @@ export function pushCaptureRatePop(
 /** Soft flash on the cell a chain snaps back to. */
 export function pushSpawnFlash(
   head: GridPos,
-  tone: 'white' | 'black'
+  tone: 'white' | 'black',
+  fill?: number
 ): void {
-  pushCaptureRatePop(head, 'SPAWN', true, tone);
+  pushCaptureRatePop(head, 'SPAWN', true, tone, undefined, fill);
 }
 
 export function streakPops(): readonly StreakPop[] {

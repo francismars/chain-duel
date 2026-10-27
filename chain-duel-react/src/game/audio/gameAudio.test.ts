@@ -305,6 +305,45 @@ describe('game tension', () => {
     audio.stopAll();
   });
 
+  it('paints an extra-chain death in that chain color', () => {
+    const audio = new GameAudioSystem();
+    const state = match();
+    state.extraSnakes = [
+      {
+        snake: {
+          head: [20, 20],
+          body: [[21, 20]],
+          dir: 'Left',
+          dirWanted: 'Left',
+        },
+        score: 1000,
+        color: 0x2a2a2a,
+        teamId: 1,
+        name: 'Ghost',
+        aiTier: 'stacker',
+        humanControlled: true,
+        spawnHead: [46, 20],
+        spawnDir: 'Left',
+      },
+    ];
+    audio.updateGameState(state);
+    state.extraSnakes[0]!.snake.head = [46, 20];
+    state.extraSnakes[0]!.snake.body = [[47, 20]];
+    audio.updateGameState(state);
+    expect(streakPops().find((pop) => pop.text === 'WALL')).toMatchObject({
+      fill: 0x2a2a2a,
+      tone: 'black',
+      col: 20,
+      row: 20,
+    });
+    expect(streakPops().find((pop) => pop.text === 'SPAWN')).toMatchObject({
+      fill: 0x2a2a2a,
+      col: 46,
+      row: 20,
+    });
+    audio.stopAll();
+  });
+
   it('pairs 2% or under with 8%+, and 4% or under with 16%+', () => {
     expect(reorgCaptureGap(2, 8)).toBe(true);
     expect(reorgCaptureGap(2, 32)).toBe(true);

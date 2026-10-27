@@ -3,6 +3,7 @@ import {
   CONVERGENCE_MIN_ROWS,
   GAME_COLS,
   GAME_ROWS,
+  P2_SNAKE_COLOR,
 } from '@/game/engine/constants';
 import type { GameState, GridPos } from '@/game/engine/types';
 import {
@@ -40,6 +41,8 @@ export interface TensionPlayer {
   score: number;
   eliminated: boolean;
   head: GridPos;
+  /** On-board fill. Death squares use this so extra chains are not painted as P2. */
+  color: number;
 }
 
 export function tensionPlayers(state: GameState): TensionPlayer[] {
@@ -50,6 +53,7 @@ export function tensionPlayers(state: GameState): TensionPlayer[] {
       score: state.score[0],
       eliminated: Boolean(state.ffaEliminated?.[0]),
       head: state.p1.head,
+      color: 0xffffff,
     },
     {
       index: 1,
@@ -57,13 +61,15 @@ export function tensionPlayers(state: GameState): TensionPlayer[] {
       score: state.score[1],
       eliminated: Boolean(state.ffaEliminated?.[1]),
       head: state.p2.head,
+      color: P2_SNAKE_COLOR,
     },
-    ...state.extraSnakes.map(({ snake, score }, offset) => ({
+    ...state.extraSnakes.map(({ snake, score, color }, offset) => ({
       index: offset + 2,
       length: snake.body.length,
       score,
       eliminated: Boolean(state.ffaEliminated?.[offset + 2]),
       head: snake.head,
+      color,
     })),
   ];
 }
