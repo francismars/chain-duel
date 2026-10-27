@@ -11,6 +11,7 @@ export type MatchIntroPlayer = {
 };
 
 export type MatchIntroViewerRole = 'duelist' | 'spectator';
+export type MatchIntroViewerSide = 'p1' | 'p2';
 
 export type MatchIntroData = {
   kicker: string;
@@ -21,6 +22,7 @@ export type MatchIntroData = {
   netPrize: number;
   spectatorCount: number;
   viewerRole: MatchIntroViewerRole;
+  viewerSide: MatchIntroViewerSide | null;
   roomCode: string;
 };
 
@@ -42,21 +44,30 @@ function seatName(
   return fallback;
 }
 
-function resolveViewerRole(
+function seatIsViewer(
+  seat: OnlineRoomState['seats'][string] | undefined,
+  sessionID: string,
+  socketID: string
+): boolean {
+  return (
+    seat?.status === 'paid' &&
+    ((Boolean(seat.sessionID) && seat.sessionID === sessionID) ||
+      (Boolean(seat.socketID) && seat.socketID === socketID))
+  );
+}
+
+function resolveViewerSide(
   room: OnlineRoomState,
   sessionID: string,
   socketID: string
-): MatchIntroViewerRole {
-  const p1 = room.seats[PlayerRole.Player1];
-  const p2 = room.seats[PlayerRole.Player2];
-  const isDuelist =
-    (p1?.status === 'paid' &&
-      ((p1.sessionID && p1.sessionID === sessionID) ||
-        (p1.socketID && p1.socketID === socketID))) ||
-    (p2?.status === 'paid' &&
-      ((p2.sessionID && p2.sessionID === sessionID) ||
-        (p2.socketID && p2.socketID === socketID)));
-  return isDuelist ? 'duelist' : 'spectator';
+): MatchIntroViewerSide | null {
+  if (seatIsViewer(room.seats[PlayerRole.Player1], sessionID, socketID)) {
+    return 'p1';
+  }
+  if (seatIsViewer(room.seats[PlayerRole.Player2], sessionID, socketID)) {
+    return 'p2';
+  }
+  return null;
 }
 
 export function buildMatchIntroData(
@@ -86,6 +97,7 @@ export function buildMatchIntroData(
 
   const sessionID = viewer.sessionID ?? '';
   const socketID = viewer.socketID ?? '';
+  const viewerSide = resolveViewerSide(room, sessionID, socketID);
 
   return {
     kicker,
@@ -103,7 +115,8 @@ export function buildMatchIntroData(
     totalPot,
     netPrize,
     spectatorCount: room.spectators?.length ?? 0,
-    viewerRole: resolveViewerRole(room, sessionID, socketID),
+    viewerRole: viewerSide ? 'duelist' : 'spectator',
+    viewerSide,
     roomCode: room.roomCode,
   };
 }

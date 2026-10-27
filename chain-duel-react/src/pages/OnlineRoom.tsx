@@ -17,6 +17,7 @@ import {
 } from '@/lib/online/shouldShowMatchIntro';
 import {
   buildOnlineUiDebugRoom,
+  DEBUG_P1_SESSION,
   parseOnlineUiDebugScene,
 } from '@/lib/online/onlineUiDebug';
 import './game.css';
@@ -465,8 +466,8 @@ export default function OnlineRoom() {
         {matchIntroActive && room ? (
           <OnlineMatchIntroReveal
             room={room}
-            sessionID={viewerSessionID}
-            socketID={viewerSocketID}
+            sessionID={debugScene ? DEBUG_P1_SESSION : viewerSessionID}
+            socketID={debugScene ? '' : viewerSocketID}
             hold={debugScene === 'loading' && !enterArena}
             onComplete={handleMatchIntroComplete}
           />

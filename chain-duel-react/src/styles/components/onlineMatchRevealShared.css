@@ -1,3 +1,7 @@
+body:has(.online-reveal) {
+  overflow: hidden;
+}
+
 .online-reveal {
   position: fixed;
   inset: 0;
@@ -141,6 +145,12 @@
     inset 0 0 20px rgb(0 0 0 / 0.35);
 }
 
+.online-reveal__player--you {
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.78),
+    0 0 28px rgb(255 255 255 / 0.08);
+}
+
 .online-reveal__role {
   margin: 0 0 0.5rem;
   font-family: Inter, sans-serif;
@@ -148,6 +158,16 @@
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.55);
+}
+
+.online-reveal__you {
+  display: inline-flex;
+  margin-left: 0.45rem;
+  padding: 0.12rem 0.32rem 0.08rem;
+  border: 1px solid rgb(255 255 255 / 0.82);
+  letter-spacing: 0.14em;
+  color: #fff;
+  vertical-align: 1px;
 }
 
 .online-reveal__avatar {
@@ -207,6 +227,31 @@
   font-size: 0.78em;
   font-weight: 500;
   opacity: 0.8;
+}
+
+.online-reveal__watchers {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.9rem 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.58);
+  opacity: 0;
+  animation: online-reveal-fade-up 0.4s ease 0.42s forwards;
+}
+
+.online-reveal__watchers-dot {
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 50%;
+  background: #e8e8e8;
+  box-shadow: 0 0 8px rgb(255 255 255 / 0.7);
+  animation: online-reveal-live-dot 1.6s ease-in-out infinite;
 }
 
 .online-reveal__footer {
@@ -317,6 +362,31 @@
   }
 }
 
+@keyframes online-reveal-progress-loop {
+  0% {
+    width: 8%;
+  }
+
+  78% {
+    width: 100%;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes online-reveal-live-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 720px) {
   .online-reveal__matchup {
     flex-direction: column;
@@ -336,6 +406,7 @@
   .online-reveal__player,
   .online-reveal__vs,
   .online-reveal__stakes,
+  .online-reveal__watchers,
   .online-reveal__footer,
   .online-reveal__exit,
   .online-reveal__skip,

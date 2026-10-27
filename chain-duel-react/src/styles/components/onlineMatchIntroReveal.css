@@ -39,9 +39,22 @@
   }
 }
 
+.online-reveal--held .online-reveal__progress-fill {
+  animation: online-reveal-progress-loop 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .online-reveal--intro .online-reveal__pulse {
     animation: none;
     opacity: 0;
+  }
+
+  .online-reveal--held .online-reveal__progress-fill,
+  .online-reveal__watchers-dot {
+    animation: none;
+  }
+
+  .online-reveal--held .online-reveal__progress-fill {
+    width: 70%;
   }
 }

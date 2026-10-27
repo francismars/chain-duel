@@ -34,10 +34,14 @@ export function previewViewerSession(side: OnlinePreviewSide | null): string {
   return '';
 }
 
+const PREVIEW_P1_PICTURE = '/images/preview/player-lena.jpg';
+const PREVIEW_P2_PICTURE = '/images/preview/player-samir.jpg';
+
 function paidSeat(
   role: PlayerRole.Player1 | PlayerRole.Player2,
   name: string,
-  sessionID: string
+  sessionID: string,
+  extra: Partial<OnlineSeatState> = {}
 ): OnlineSeatState {
   return {
     role,
@@ -46,18 +50,22 @@ function paidSeat(
     status: 'paid',
     paidAmount: 10000,
     ready: true,
+    ...extra,
   };
 }
 
-function snapshot(phase: OnlineRoomState['phase']): OnlineRoomState['snapshot'] {
+function snapshot(
+  phase: OnlineRoomState['phase'],
+  names: { p1: string; p2: string } = { p1: 'Satoshi', p2: 'Hal' }
+): OnlineRoomState['snapshot'] {
   return {
     tick: 0,
     phase,
     state: {
       gameStarted: false,
       score: [0, 0],
-      p1Name: 'Satoshi',
-      p2Name: 'Hal',
+      p1Name: names.p1,
+      p2Name: names.p2,
     },
     hud: {
       p1Points: 0,
@@ -77,14 +85,33 @@ export function buildOnlineUiDebugRoom(
   roomCode: string
 ): OnlineRoomState {
   const code = roomCode.trim().toUpperCase() || 'DEBUG';
-  const p1 = paidSeat(PlayerRole.Player1, 'Satoshi', DEBUG_P1_SESSION);
-  const p2 =
-    scene === 'loading'
-      ? paidSeat(PlayerRole.Player2, 'Hal', DEBUG_P2_SESSION)
-      : ({
-          role: PlayerRole.Player2,
-          status: 'open',
-        } satisfies OnlineSeatState);
+  const liveMatch = scene === 'loading';
+  const p1Name = liveMatch ? 'Lena Okonkwo' : 'Satoshi';
+  const p2Name = 'Samir Dalal';
+  const p1 = paidSeat(PlayerRole.Player1, p1Name, DEBUG_P1_SESSION, {
+    picture: liveMatch ? PREVIEW_P1_PICTURE : undefined,
+    pubkey: liveMatch
+      ? '7f3c1a9e4b28d6c0a15e8f42b9d3076ac4e1f8502d6b9a73c8e0145f2a6d91b0'
+      : undefined,
+    pingMs: liveMatch ? 36 : undefined,
+    paidAt: liveMatch ? Date.now() - 48_000 : undefined,
+    payMethod: liveMatch ? 'lightning' : undefined,
+    startConfirmed: liveMatch ? true : undefined,
+  });
+  const p2 = liveMatch
+    ? paidSeat(PlayerRole.Player2, p2Name, DEBUG_P2_SESSION, {
+        picture: PREVIEW_P2_PICTURE,
+        pubkey:
+          'c2e84b17a90d3f65e1b8c4a27d0591f6e3a8b0c54d1729e6f0a3b8c1d5e74920',
+        pingMs: 94,
+        paidAt: Date.now() - 12_000,
+        payMethod: 'nostr_web',
+        startConfirmed: true,
+      })
+    : ({
+        role: PlayerRole.Player2,
+        status: 'open',
+      } satisfies OnlineSeatState);
   return {
     roomId: 'preview',
     roomCode: code,
@@ -96,7 +123,12 @@ export function buildOnlineUiDebugRoom(
       [PlayerRole.Player1]: p1,
       [PlayerRole.Player2]: p2,
     },
-    spectators: [],
-    snapshot: snapshot('lobby'),
+    spectators: liveMatch
+      ? ['watch-1', 'watch-2', 'watch-3', 'watch-4', 'watch-5', 'watch-6']
+      : [],
+    snapshot: snapshot('lobby', {
+      p1: p1Name,
+      p2: liveMatch ? p2Name : 'Hal',
+    }),
   };
 }

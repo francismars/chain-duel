@@ -131,6 +131,7 @@ describe('buildMatchIntroData', () => {
     expect(data!.netPrize).toBe(1900);
     expect(data!.spectatorCount).toBe(1);
     expect(data!.viewerRole).toBe('duelist');
+    expect(data!.viewerSide).toBe('p1');
   });
 
   it('uses rematch kicker for round > 1', () => {
@@ -141,6 +142,7 @@ describe('buildMatchIntroData', () => {
   it('marks spectator when session not in seats', () => {
     const data = buildMatchIntroData(baseRoom(), { sessionID: 'spec1' });
     expect(data!.viewerRole).toBe('spectator');
+    expect(data!.viewerSide).toBeNull();
   });
 
   it('returns null when seats not both paid', () => {
