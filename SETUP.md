@@ -56,7 +56,7 @@ Restart the Vite dev server after changing `.env`.
 
 ## What works without marspay
 
-- **Practice — Free Play** (`/practice?play=free`) runs entirely client-side
+- **Quick play** (`/practice`) runs entirely client-side, including Convergence
 - All menu navigation and UI
 - Local game rendering (with bootstrap fallback on `/game`)
 
@@ -66,18 +66,10 @@ Everything else — P2P, tournaments, ONLINE, challenge bounties, Nostr session 
 
 ```
 chain-duel/
-├── src/
-│   ├── pages/          # Route components
-│   ├── features/       # Route-specific hooks and UI
-│   ├── game/           # Engine, Pixi render, input, audio
-│   ├── lib/            # Socket, config, Nostr, Lightning helpers
-│   ├── replay/         # ONLINE replay codec (synced with marspay)
-│   ├── contexts/       # Socket, Nostr, Audio providers
-│   ├── components/     # UI and layout
-│   ├── shared/         # Constants, socket parsers
-│   ├── types/          # socket.ts (marspay contract)
-│   └── styles/         # CSS
+├── src/                # React client
 ├── public/             # Static assets
+├── docs/FEATURES.md    # Feature guide
+├── legacy/             # Retired Express client
 └── index.html
 ```
 
@@ -94,7 +86,7 @@ chain-duel/
 
 ## Documentation
 
-- [README.md](README.md) — frontend overview and features
-- [docs/FEATURES.md](docs/FEATURES.md) — full feature guide (all components)
+- [README.md](README.md) — overview and setup
+- [docs/FEATURES.md](docs/FEATURES.md) — modes, rules, and presentation
 - [../marspay/docs/AGENTS_ONLINE.md](../marspay/docs/AGENTS_ONLINE.md) — ONLINE protocol
 - [../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md](../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md) — challenge bounty protocol

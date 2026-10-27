@@ -1,16 +1,16 @@
 # Chain Duel — Features & Architecture
 
-Chain Duel is a **Lightning-native competitive Snake game**. Players stake sats, grow their on-chain “snake” by capturing **coinbases**, and compete in a zero-sum pool until one side’s score hits zero. The winner takes the pooled stakes (minus fees).
+Chain Duel is a **Lightning-native competitive Snake game**. Chains stake sats, grow by capturing **coinbases**, and drain a zero-sum pool until one side's score hits zero. The winner takes the pooled stakes (minus fees).
 
-This document describes the full feature set across the three components that make up the stack:
+A match is not only 1v1. Quick play is 1v1 or four chains, bounty challenges add a 2v1, and ONLINE rooms are server-authoritative 2P. Local and paid matches simulate in the browser. ONLINE simulates on marspay.
+
+Production: game at [game.chainduel.net](https://game.chainduel.net/), backend at `wss://marspay.chainduel.net`.
 
 | Component | Path | Role |
 |-----------|------|------|
-| **React client** | repository root | Modern frontend (React + PixiJS) — **primary client** |
-| **Legacy frontend** | `legacy/` | Original Express + Canvas frontend — retired |
-| **marspay** | `marspay/` (sibling repo) | Lightning + Socket.IO backend — sessions, payments, authoritative ONLINE play |
-
-Production URLs: game at [game.chainduel.net](https://game.chainduel.net/), backend at `wss://marspay.chainduel.net`.
+| **React client** | repository root | The game |
+| **Legacy frontend** | `legacy/` | Retired Express + Canvas client |
+| **marspay** | sibling repo `../marspay` | Lightning, Nostr, sessions, challenge validation, authoritative ONLINE play |
 
 ---
 
@@ -32,295 +32,202 @@ Production URLs: game at [game.chainduel.net](https://game.chainduel.net/), back
 ┌─────────────────────────┐
 │  LNbits                 │  Lightning invoices, LNURLp, LNURLw
 └─────────────────────────┘
-
-The legacy frontend (`legacy/`, Express :3000) serves static HTML/Canvas and proxies
-socket config via GET /loadconfig — same marspay backend, no new features.
 ```
 
-**Division of responsibility:**
+- **This client** renders, reads input, signs Nostr events, and runs every match that is not ONLINE.
+- **marspay** owns session IDs, LNURL links, payment webhooks, Kind 1 publish/subscribe, tournament brackets, challenge replay validation, and the ONLINE simulation.
+- **`legacy/`** still serves the old Canvas client on port 3000 and proxies socket config with `GET /loadconfig`. It does not get new features.
 
-- **Frontend** — rendering, local input, menu UX, Nostr signing (NIP-07 / NIP-46), QR display
-- **marspay** — session IDs, LNURL link generation, payment webhooks, Nostr Kind1 publish/subscribe, tournament brackets, challenge replay validation, **authoritative ONLINE simulation**
-
-Shared protocol types live in `src/types/socket.ts` (must stay in sync with marspay handlers).
-
----
-
-## Game Mechanics
-
-These rules apply across practice, P2P, tournament, and ONLINE modes (ONLINE runs them server-side; other modes run locally in the browser).
-
-### Board & movement
-
-- **Grid:** 51 × 25 discrete cells
-- **Players:** snake-like chains (head + body segments)
-- **Input:** direction keys (`Up` / `Down` / `Left` / `Right`); invalid reversals are ignored based on current facing
-- **ONLINE:** clients send held keys every tick via `roomInput`; server snapshots at **100 ms**
-
-### Coinbases
-
-Neutral objects on the grid themed around Bitcoin blocks. Eating one (head on same cell) **transfers sats from the opponent into your score**.
-
-- **Transfer size:** percentage of the total pool, scaling with chain length — **2% → 32%** across length tiers
-- **Reward tiers:** fixed values of 2 / 4 / 8 / 16 / 32 sats (mapped to mempool fee tiers)
-- **Mempool bonus:** live [mempool.space](https://mempool.space) block feed spawns extra coinbases when new blocks arrive
-
-### Collisions
-
-Hitting a wall, your own body, enemy body, or head-to-head does **not** end the round. Affected snakes reset to spawn and capture % drops toward the minimum.
-
-**Win condition:** either player’s score reaches **zero** (or highest score when the arena shrinks in Convergence mode).
-
-### Game modifiers
-
-| Modifier | Description |
-|----------|-------------|
-| **Power-ups** | SURGE, FREEZE, PHANTOM, AMPLIFIER, DECOY |
-| **Convergence** | Border shrinks to 11×11 over time |
-| **FFA (4-player)** | Four snakes; bot names include BigToshi, Nakamotor, etc. |
-| **AI tiers** | normie → stacker → noderunner → sovereign (practice/challenges) |
-
-### Economy
-
-- Stakes become in-game points in a **zero-sum pool**
-- **Payout multiplier:** 95% to winner (5% fees split: 2% host, 2% developer, 1% designer)
-- Default P2P buy-in: **10,000 sats**; ONLINE buy-in range **1,000 – 1,000,000 sats**
+Shared protocol types live in `src/types/socket.ts` and must stay aligned with marspay.
 
 ---
 
-## Game Modes
+## Game mechanics
 
-### Practice — Free Play (`/practice?play=free`)
+The board is **51 × 25**. Chains move on a 100 ms tick. Reversing into your own neck is ignored. Crashing into a wall, your body, or another chain **respawns** that chain and drops its capture rate. It does not end the match.
 
-Client-only, no socket required.
+**Win:** a side's score reaches zero. In Convergence, the match can also end when the shrinking arena leaves a highest score.
 
-- 1v1 or 4-player FFA against AI
-- Configurable AI tier, power-ups, convergence preset
-- Session isolated in `sessionStorage` (`sessionOrigin: 'practice'`)
+### Captures
 
-### Practice — Challenges / Bounty (`/practice?play=challenges`)
+A coinbase on the same cell as a head moves sats from the other side into the capturer. The share of the pool scales with chain length:
 
-Server-validated practice runs with real Lightning bounties.
+| Length | Share |
+|--------|-------|
+| 1 | 2% |
+| 2–3 | 4% |
+| 4–6 | 8% |
+| 7–10 | 16% |
+| 11+ | 32% |
 
-| Rank | Challenge | Format | AI tier | Power-ups | Bounty (sats) |
-|------|-----------|--------|---------|-----------|---------------|
+Block coinbases from the live [mempool.space](https://mempool.space) feed use fixed rewards of 2 / 4 / 8 / 16 / 32 sats. In 2v1, the two AI chains share one team capture rate.
+
+### Formats
+
+| Format | Who plays |
+|--------|-----------|
+| **1v1** | Two chains. Quick play can be human vs AI or two local humans. |
+| **FFA** | Four chains. Seats are human or AI. Bots are BigToshi, Nakamotor, XORNOTHING, and 256octans. Each starts with 1,000 sats. |
+| **2v1** | One human against two AI teammates (Team Sovereign). The human spawns mid-left. Pressure music treats the AI pair as one side. |
+
+AI tiers, easiest to hardest: **normie, stacker, noderunner, sovereign**.
+
+### Convergence
+
+Quick play always uses the Soldier preset. The border contracts toward **11 × 11**, one step every 40 ticks (about 1.3 minutes to the minimum). Bounty challenges do not shrink the board.
+
+### Power-ups
+
+Optional in quick play. On in the Node Runner bounty. Each lasts a few seconds at the 100 ms tick:
+
+| Power-up | Effect |
+|----------|--------|
+| **SURGE** | Extra step every other tick, 40 ticks |
+| **FREEZE** | Target moves only on alternate ticks, 40 ticks. Hits every other chain in FFA. |
+| **PHANTOM** | Wrap through walls and the shrinking border, 50 ticks |
+| **AMPLIFIER** | Next 3 captures take double percent, capped at 32% |
+| **DECOY** | Drops a fake coinbase |
+
+---
+
+## Game modes
+
+### Quick play (`/practice`)
+
+Client-only. No marspay required.
+
+- 1v1 against an AI tier, or two players on one keyboard
+- Four-chain free-for-all, each seat human or AI
+- Power-ups toggle
+- Convergence always on
+- HUD label looks like `PRACTICE · 1V1 · CVG`
+
+### Bounty challenges (`/practice?play=challenges`)
+
+Seeded local play. marspay replays the input log before it pays. Display names are fixed in `src/lib/challenges/challengeCatalogClient.ts`. The sats below are the client fallback; the live catalog from marspay replaces them after it loads.
+
+| Rank | Challenge | Format | AI | Power-ups | Fallback bounty |
+|------|-----------|--------|----|-----------|-----------------|
 | 1 | NORMIE DUEL | 1v1 | normie | — | 21 |
-| 2 | STACKER TRIAL | 1v1 | stacker | — | 210 |
-| 3 | NODE RUNNER | 1v1 | noderunner | ✓ | 420 |
-| 4 | SOVEREIGN GAUNTLET | 1v1 | sovereign | — | 1337 |
-| 5 | FFA RUMBLE | 4P FFA | noderunner | — | 2100 |
-| 6 | SOVEREIGN STACK | 1v1 | sovereign | ✓ | 4200 |
+| 2 | STACKER TRIAL | 1v1 | stacker | — | 50 |
+| 3 | NODE RUNNER | 1v1 | noderunner | yes | 210 |
+| 4 | FFA RUMBLE | 4P FFA | noderunner | — | 600 |
+| 5 | SOVEREIGN GAUNTLET | 1v1 | sovereign | — | 1,337 |
+| 6 | TEAM SOVEREIGN | 2v1 | sovereign | — | 6,900 |
 
-**Flow:** sign in with Nostr → server checks eligibility → `requestChallengeRun` (seeded RNG) → play locally with input log → `submitChallengeWin` (server replays to validate) → sign victory Kind1 → `claimChallengeBounty` → NIP-57 zap payout.
+Flow: Nostr sign-in → eligibility → `requestChallengeRun` → play with an input log → `submitChallengeWin` → sign a victory Kind 1 → `claimChallengeBounty` → NIP-57 zap.
 
-**Eligibility requirements:** NIP-05, 100+ follows, follow @chainduel, account ≥ 30 days old, LUD16 Lightning address, linked app Nostr session.
+Eligibility: linked app session, verified NIP-05, 100+ follows, follow @chainduel, account at least 30 days old, zap-capable Lightning address (LUD16).
 
 Protocol: [marspay/docs/AGENTS_CHALLENGE_BOUNTY.md](../../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md)
 
-### P2P Duel — Lightning (`/p2p` → `/gamemenu` → `/game` → `/postgame`)
+### P2P duel (`/p2p` → `/gamemenu` → `/game` → `/postgame`)
 
-Classic 1v1 with two LNURL-pay QR codes.
+1v1. Lightning is two LNURL-pay QR codes (minimum buy-in 3,000 sats; the usual stake is 10,000). Nostr admission is a Kind 1 game note plus a zap (`/gamemenu?nostr=true`).
 
-1. Both players scan and pay buy-in (min 3,000 sats)
-2. Game runs locally in both browsers
-3. Winner reports `gameFinished`; loser’s stake merges into winner’s pot
-4. Post-game: LNURL-withdraw QR, rematch, **double-or-nothing**
+Both browsers simulate. The winner emits `gameFinished` once. Post-game offers an LNURL-withdraw, a rematch, and double-or-nothing.
 
-### P2P Duel — Nostr (`/gamemenu?nostr=true`)
+### Tournament (`/p2p` → `/tournbracket` → `/tournlobby`)
 
-Same flow, but admission via Nostr Kind1 game note + zap instead of LNURL-pay QR.
+Brackets of 4, 8, 16, or 32. One shared Lightning or Nostr buy-in. Prize is `buy-in × players × 0.95`. No double-or-nothing on the tournament result screen.
 
-### Tournament — Lightning / Nostr (`/p2p` → `/tournbracket` → `/tournlobby` → …)
+### ONLINE (`/online`, `/online/r/:roomCode`)
 
-Bracket tournaments for **4 / 8 / 16 / 32** players.
+marspay simulates. Clients send held keys as `roomInput`. The server emits `onlineRoomSnapshot` about every 100 ms.
 
-- Shared LNURL-pay or Nostr zap entry
-- Bracket UI with loading overlay, cancel/confirm, deposit QR codes
-- Multi-round winners; prize = `buy-in × players × 0.95`
-- No double-or-nothing in tournament post-game
-
-### ONLINE — Server-authoritative multiplayer (`/online/*`)
-
-The largest new feature in the React client. Game simulation runs **on marspay**, not in the browser.
-
-| Route | Purpose |
-|-------|---------|
-| `/online` | Room browser — active rooms, match history, Hall of Fame (≥ 1,000 sats buy-in) |
-| `/online/r/:roomCode` | Unified room — waiting, live match, results, and replay (`?replay=1`) on one URL |
-
-**Room lifecycle:** `lobby` → `playing` → `postgame` → `finished` / `cancelled`
-
-**Create/join:** host sets buy-in (presets 1K / 10K / 100K); guest joins by room code; shareable invite URLs.
-
-**Seat purchase (three paths):**
-
-1. **Lightning (anonymous)** — LNURL-pay invoice; server auto-zaps Kind1 with ephemeral key
-2. **Nostr web zap** — zap the room’s Kind1 note from a Nostr client
-3. **Nostr app (PIN-zap)** — include 4-digit PIN in zap comment; or link Nostr pubkey for PIN-less zaps
-
-**During play:** server emits `onlineRoomSnapshot` every 100 ms; clients send `roomInput`.
-
-**Post-game:** LNURL-withdraw QR or Nostr zap to winner’s LUD16; optional double-or-nothing rematch; compact gzip replay archive (up to 3,600 frames).
-
-**Spectators:** can join and watch without paying.
+| Piece | Behavior |
+|-------|----------|
+| Browser | Active rooms, match history, Hall of Fame (buy-in at least 1,000 sats) |
+| Room | `lobby` → `playing` → `postgame` → `finished` / `cancelled` on one URL |
+| Buy-in | Host presets 1K / 10K / 100K, anywhere from 1,000 to 1,000,000 sats |
+| Seats | Anonymous LNURL-pay, a Nostr zap on the room note, or an in-app zap with a 4-digit PIN. A linked pubkey can zap without the PIN. NWC can pay the seat invoice. |
+| Watch | Spectators join without paying |
+| After | LNURL-withdraw or a zap to the winner's LUD16, optional double-or-nothing, gzip replay of up to 3,600 frames (`?replay=1`) |
+| Presentation | Pre-match intro and a victory reveal on the result |
 
 Protocol: [marspay/docs/AGENTS_ONLINE.md](../../marspay/docs/AGENTS_ONLINE.md)
 
 ---
 
-## Nostr Integration
+## Match presentation
 
-| Feature | Description |
-|---------|-------------|
-| **Sign-in modes** | NIP-07 browser extension, NIP-46 Nostr Connect / bunker, nsec (session-only) |
-| **App session link** | Kind-1 challenge signed locally → `confirmAppNostrLink` on marspay |
-| **Profile** | Kind-0 fetched via server (no direct client relay reads) |
-| **Event publish** | Client-signed events published through marspay |
-| **P2P/tournament entry** | Kind-1 game notes, nevent QR, relay probing |
-| **ONLINE seat linking** | Per-room Nostr link challenge for PIN-less zaps |
-| **Challenge bounty** | Signed victory Kind-1 → server publishes + NIP-57 zap |
-| **NWC (NIP-47)** | Pay bolt11 invoices from online lobby via `nostr+walletconnect://` URI |
+Local games, ONLINE snapshots, and replays share one presentation layer.
 
-Protocol: [marspay/docs/AGENTS_NOSTR_SESSION.md](../../marspay/docs/AGENTS_NOSTR_SESSION.md)
+**Pressure music** crossfades four stems over the game bed. The loudest of four signals wins: chain length, board lost to shrinkage, leader's share of sats, and captures in a row. Below the first mark, only the game bed plays. Eliminated chains are ignored. Inactive stems keep running in silence so a crossfade does not restart the loop.
 
----
+| Level | Stem | Chain | Board lost | Score share | Streak | Volume |
+|-------|------|-------|------------|-------------|--------|--------|
+| 1 Build | Sub-bass heartbeat | 4+ | after the first shrink | 60%+ | 2 | 22% |
+| 2 Pressure | FM plucks | 7+ | 25% | 75%+ | 3 | 34% |
+| 3 Tension | Detuned pad | 11+ | 45% | 85%+ | 5 | 46% |
+| 4 Critical | Saturated lead | 16+ | 65% | 95%+ | 8 | 65% |
 
-## Lightning Integration
+A stem holds 1 second after its mark drops, then fades over 2.5 seconds. The bed ducks under the loudest stem. Numbers live in `SHIPPED_RECIPE` in `src/game/effects/matchRecipe.ts`. Mixing is `src/game/audio/gameAudio.ts`.
 
-| Feature | Used in |
-|---------|---------|
-| **LNURL-pay (deposits)** | P2P, tournament, practice (paid), ONLINE seat purchase |
-| **LNURL-withdraw (payouts)** | Post-game winner withdrawal |
-| **NIP-57 zaps** | Nostr P2P/tournament entry, ONLINE seats, challenge bounties, ONLINE winner payout |
-| **NWC pay_invoice** | ONLINE lobby — pay seat invoice from configured Nostr wallet |
-| **Revenue splits** | Host / developer / designer percentages on non-ONLINE LNURL deposits |
+Other cues, all silenced by full mute:
 
----
+- **Shrink** (`chain_duel_shrink.m4a`) on a real border contraction. Warning flashes are silent.
+- **Reset** when a chain respawns.
+- **End** (`chain_duel_end.wav`) as results take over and pressure stems stop. Menu music keeps its place. Playing again restarts the game bed.
+- **Block found** (`MAINNET_BLOCK.aac`) is separate from the ending cue.
 
-## Other Features
+Rebuild stems with `python3 scripts/audio/create-game-cues.py`. `--end-only` rebuilds the ending cue. `python3 scripts/audio/create-shrink-cue.py` rebuilds the shrink sweep.
 
-| Feature | Route / location | Notes |
-|---------|------------------|-------|
-| **Highscores** | `/highscores` | Static JSON leaderboard |
-| **About** | `/about` | 5-page carousel — game rules, sponsors, value-for-value, contribute LNURL |
-| **Config / Settings** | `/config` | Nostr login, NWC wallet, host name, return-to deep links |
-| **Global controls** | All pages | Fullscreen, mute, TV-safe inset, Nostr avatar shortcut |
-| **Audio** | All pages | Background music + SFX |
-| **Input** | All pages | Keyboard navigation on menus; dual gamepad support |
-| **Sponsorship** | Various | Relai, Bitcoin Magazine, Geyser Fund branding |
-| **Zap overlay** | During game | Animated zap notifications from socket events |
+`/preview` and `/preview/match-triggers` are local labs for this layer. They are not shipped modes.
 
 ---
 
-## Legacy vs React
+## Nostr and Lightning
 
-| Feature | Legacy (`legacy/`) | React (repository root) |
-|---------|------------------------|----------------------------|
-| Practice (free) | Basic local play | Free play + full config (FFA, AI tiers, power-ups, convergence) |
-| Practice (bounty) | — | 6 ranked challenges with Lightning bounties |
-| P2P Lightning | ✓ | ✓ |
-| P2P Nostr | ✓ | ✓ (enhanced relay probing, nevent QR) |
-| Tournament | ✓ | ✓ |
-| **ONLINE rooms** | — | ✓ (server-authoritative) |
-| NIP-46 / bunker sign-in | — | ✓ |
-| App Nostr session | — | ✓ |
-| NWC wallet | — | ✓ |
-| Rendering | Canvas 2D | PixiJS 8 (+ canvas fallback) |
-| Type safety | Vanilla JS | TypeScript + Zod |
-| Tests | — | Vitest |
-| Socket config | `GET /loadconfig` → env IP/PORT | `VITE_SOCKET_URL` direct |
-| Build | `npm start` (Express :3000) | Vite build → static deploy |
+| Feature | Where it is used |
+|---------|------------------|
+| NIP-07, NIP-46 bunker, session-only nsec | Sign-in |
+| App session link | Kind 1 challenge, then `confirmAppNostrLink` |
+| Kind 0 profile | Fetched through marspay, not by reading relays from the browser |
+| LNURL-pay | P2P, tournament, ONLINE seats |
+| LNURL-withdraw | Winner payout |
+| NIP-57 zaps | Nostr entry, ONLINE seats, challenge bounties, ONLINE winner payout |
+| NWC `pay_invoice` | Pay an ONLINE seat from a connected wallet |
+| Fee split | 2% host, 2% developer, 1% designer on non-ONLINE Lightning deposits. Winner receives 95%. |
 
-React is the **intended replacement** for the legacy frontend. See [parity-matrix.md](parity-matrix.md) for migration status.
+Nostr session protocol: [marspay/docs/AGENTS_NOSTR_SESSION.md](../../marspay/docs/AGENTS_NOSTR_SESSION.md)
 
 ---
 
-## marspay Backend Features
+## Other surfaces
 
-marspay is a **reusable Lightning backend** — Chain Duel is the reference game, but the Socket.IO contract supports other staked games.
+| Surface | Route | Notes |
+|---------|-------|-------|
+| Highscores | `/highscores` | Static JSON leaderboard |
+| About | `/about` | Rules, sponsors, value-for-value, contribute LNURL |
+| Config | `/config` | Nostr login, NWC, host name |
+| Corner controls | every page | Fullscreen, music mute, full mute, TV-safe inset, Nostr shortcut |
+| Input | every page | Keyboard menus, dual gamepad, keyboard-layout autodetect |
 
-| Area | Features |
-|------|----------|
-| **Sessions** | Emoji-prefixed `sessionID`; reconnect restores same ID |
-| **Game modes** | P2P, P2PNOSTR, PRACTICE, TOURNAMENT, TOURNAMENTNOSTR, ONLINE |
-| **Lightning** | LNURLp/LNURLw via LNbits; payment/withdraw webhooks; revenue splits |
-| **Nostr** | NDK relay client; Kind1 publish; zap subscription; profile/eligibility |
-| **ONLINE** | Authoritative sim, room lifecycle, replay codec, archive, Hall of Fame |
-| **Challenges** | Seeded replay validation, eligibility checks, bounty zaps, daily cap |
-| **Admin** | `GET /dashboard?password=` — dumps in-memory state |
-| **Cleanup** | 2h inactivity threshold; game history → `public/games.json` |
+Old URLs redirect: `/local`, `/regtest`, `/testnet` → `/practice`; `/solo` → `/practice?play=challenges`; `/testnet-entry` → `/p2p`; `/network/*` → `/online/*`.
 
-### Code kept in sync between repos
+---
+
+## Kept in sync with marspay
 
 | Shared logic | Client | Server |
 |--------------|--------|--------|
 | Challenge RNG | `src/game/engine/runRng.ts` | `marspay/src/game/challengeEngine/runRng.ts` |
 | ONLINE replay codec | `src/replay/codec/onlineReplayCodec.ts` | `marspay/src/state/onlineReplayCodec.ts` |
-| NIP-46 relay list | `src/lib/nostr/nip46Relays.ts` | `marspay/src/consts/nostrRelays.ts` |
-| Socket event types | `src/types/socket.ts` | `marspay/src/socket/index.ts` |
+| NIP-46 relays | `src/lib/nostr/nip46Relays.ts` | `marspay/src/consts/nostrRelays.ts` |
+| Socket events | `src/types/socket.ts` | `marspay/src/socket/index.ts` |
+
+marspay modes: `P2P`, `P2PNOSTR`, `PRACTICE`, `TOURNAMENT`, `TOURNAMENTNOSTR`, `ONLINE`.
 
 ---
 
-## Route Map
+## Docs
 
-| Route | Purpose |
-|-------|---------|
-| `/` | Main menu |
-| `/practice` | Free play + challenges hub |
-| `/p2p` | Paid entry hub (duel or tournament) |
-| `/gamemenu` | P2P funding lobby |
-| `/game` | Local / P2P / tournament match |
-| `/postgame` | P2P / tournament results |
-| `/tournbracket` | Tournament bracket |
-| `/tournlobby` | Tournament waiting room |
-| `/online` | Online room browser |
-| `/online/r/:roomCode` | Online room (lobby, match, postgame, replay) |
-| `/highscores` | Leaderboard |
-| `/about` | Info carousel |
-| `/config` | Nostr, NWC, settings |
-
-Legacy redirects: `/local`, `/regtest`, `/testnet` → `/practice`; `/solo` → `/practice?play=challenges`; `/testnet-entry` → `/p2p`; `/network/*` → `/online/*`.
-
----
-
-## Documentation Index
-
-| Document | Location | Contents |
-|----------|----------|----------|
-| **This file** | `docs/FEATURES.md` | Full feature overview (you are here) |
-| **Setup** | `README.md` | Dev setup, project structure, migration status |
-| **Setup (detailed)** | `SETUP.md` | Prerequisites, marspay on :3001 |
-| **Parity matrix** | `docs/parity-matrix.md` | Legacy page → React mapping |
-| **marspay README** | `marspay/README.md` | Backend overview, setup, scripts |
-| **Socket protocol** | `marspay/docs/AGENTS.md` | Sessions, reconnect, bot integration |
-| **ONLINE protocol** | `marspay/docs/AGENTS_ONLINE.md` | Full ONLINE lifecycle, events, rules |
-| **Nostr session** | `marspay/docs/AGENTS_NOSTR_SESSION.md` | App-level sign-in vs room link |
-| **Challenge bounty** | `marspay/docs/AGENTS_CHALLENGE_BOUNTY.md` | Bounty protocol, eligibility, persistence |
-
----
-
-## Development Quick Start
-
-**Frontend:**
-
-```bash
-cd chain-duel
-cp .env.example .env   # set VITE_SOCKET_URL=wss://marspay.chainduel.net
-npm install && npm run dev   # http://localhost:5173
-```
-
-**Backend (marspay):**
-
-```bash
-cd marspay
-cp .env.example .env   # fill LNbits + Nostr keys
-npm install && npm run dev   # http://localhost:3001
-```
-
-**Legacy (optional):**
-
-```bash
-cd chain-duel/legacy
-# .env: IP_SOCKET + PORT_SOCKET pointing at marspay
-npm install && npm start   # http://localhost:3000
-```
+| Document | What it is |
+|----------|------------|
+| [README.md](../README.md) | Setup and a short map of the client |
+| [SETUP.md](../SETUP.md) | marspay on port 3001 |
+| [marspay/docs/AGENTS.md](../../marspay/docs/AGENTS.md) | Sessions, reconnect, bots |
+| [marspay/docs/AGENTS_ONLINE.md](../../marspay/docs/AGENTS_ONLINE.md) | ONLINE lifecycle |
+| [marspay/docs/AGENTS_NOSTR_SESSION.md](../../marspay/docs/AGENTS_NOSTR_SESSION.md) | App sign-in vs room link |
+| [marspay/docs/AGENTS_CHALLENGE_BOUNTY.md](../../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md) | Bounty protocol |
