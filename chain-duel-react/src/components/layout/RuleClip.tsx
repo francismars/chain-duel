@@ -174,8 +174,6 @@ export function RuleClip({ id }: { id: RuleClipId }) {
     left: number;
     top: number;
     kind: 'wall' | 'clash' | 'reorg';
-    /** Reorg diameter as a percent of the board, matching the long chain. */
-    size?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -315,7 +313,6 @@ export function RuleClip({ id }: { id: RuleClipId }) {
         }
         const beforeP1: GridPos = [state.p1.head[0], state.p1.head[1]];
         const beforeP2: GridPos = [state.p2.head[0], state.p2.head[1]];
-        const longChain = Math.max(state.p1.body.length, state.p2.body.length) + 1;
         stepGame(state);
         const p1Hit = jumped(beforeP1, state.p1.head);
         const p2Hit = jumped(beforeP2, state.p2.head);
@@ -326,7 +323,6 @@ export function RuleClip({ id }: { id: RuleClipId }) {
             left: ((col + 0.5) / state.cols) * 100,
             top: ((row + 0.5) / state.rows) * 100,
             kind,
-            size: kind === 'reorg' ? (longChain / state.cols) * 56 : undefined,
           });
         };
         if (resetPhase === 'wall' && p1Hit && !p2Hit) {
@@ -456,26 +452,9 @@ export function RuleClip({ id }: { id: RuleClipId }) {
         <div
           key={impact.id}
           className={`rule-clip__impact rule-clip__impact--${impact.kind}`}
-          style={{
-            left: `${impact.left}%`,
-            top: `${impact.top}%`,
-            width: impact.size ? `${impact.size}%` : undefined,
-          }}
-          onAnimationEnd={(event) => {
-            const target = event.target as HTMLElement;
-            const outer = (event.currentTarget as HTMLElement).firstElementChild;
-            if (target !== event.currentTarget && target !== outer) return;
-            setImpact(null);
-          }}
-        >
-          {impact.kind === 'reorg' ? (
-            <>
-              <span />
-              <span />
-              <span />
-            </>
-          ) : null}
-        </div>
+          style={{ left: `${impact.left}%`, top: `${impact.top}%` }}
+          onAnimationEnd={() => setImpact(null)}
+        />
       ) : null}
       {id === 'stake' && showQr ? (
         <div className="rule-clip__qr">

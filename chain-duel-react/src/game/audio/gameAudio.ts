@@ -342,8 +342,8 @@ export class GameAudioSystem {
     const toneFor = (index: number): 'white' | 'black' =>
       index === 0 ? 'white' : 'black';
     if (reorged) {
-      pushCaptureRatePop(reorged.head, 'REORG', true, reorged.length + 1, toneFor(reorged.index));
-    } else if (clash) pushCaptureRatePop(clash, 'CLASH', true, undefined, 'grey');
+      pushCaptureRatePop(reorged.head, 'REORG', true, 'gold');
+    } else if (clash) pushCaptureRatePop(clash, 'CLASH', true, 'gold');
     else {
       for (const player of players) {
         const before = previous.find((entry) => entry.index === player.index);
@@ -351,7 +351,7 @@ export class GameAudioSystem {
         if (headTravel(before, player) <= 1) continue;
         if (player.length > before.length) continue;
         if (!hitWall(before.head, state)) continue;
-        pushCaptureRatePop(before.head, 'WALL', true, undefined, toneFor(before.index));
+        pushCaptureRatePop(before.head, 'WALL', true, toneFor(before.index));
       }
     }
 

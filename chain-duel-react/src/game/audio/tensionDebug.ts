@@ -37,10 +37,8 @@ export interface StreakPop {
   alpha: number;
   /** True when the capture rate went up. */
   up: boolean;
-  /** Body plus head. The reorg ring's diameter matches this. */
-  chainLength?: number;
-  /** Who lost the most. Even head-to-heads stay grey. */
-  tone?: 'white' | 'black' | 'grey';
+  /** Wall uses the chain's color. Clash and reorg use gold. */
+  tone?: 'white' | 'black' | 'gold';
 }
 
 const EMPTY: TensionDebugSnapshot = {
@@ -135,13 +133,18 @@ export function resetTensionDebug(): void {
   emit();
 }
 
+export function clearStreakPops(): void {
+  if (pops.length === 0) return;
+  pops = [];
+  emit();
+}
+
 /** Floating capture rate. Only spawned when the percent actually changes. */
 export function pushCaptureRatePop(
   head: GridPos,
   label: string,
   up: boolean,
-  chainLength?: number,
-  tone?: 'white' | 'black' | 'grey'
+  tone?: 'white' | 'black' | 'gold'
 ): void {
   pops = [
     ...pops,
@@ -153,7 +156,6 @@ export function pushCaptureRatePop(
       yOffsetPx: 0,
       alpha: 1,
       up,
-      chainLength,
       tone,
     },
   ];
@@ -165,14 +167,16 @@ export function streakPops(): readonly StreakPop[] {
   return pops;
 }
 
-/** About half a second at 60fps, matching the preview ring burst. */
+/**
+ * WALL/CLASH ~0.35s, REORG ~0.5s at 60fps — short enough that spawn still reads.
+ */
 export function advanceStreakPops(): void {
   if (pops.length === 0) return;
   pops = pops
     .map((pop) => ({
       ...pop,
       yOffsetPx: pop.yOffsetPx,
-      alpha: pop.alpha - (pop.text === 'REORG' ? 0.016 : 0.03),
+      alpha: pop.alpha - (pop.text === 'REORG' ? 0.028 : 0.045),
     }))
     .filter((pop) => pop.alpha >= 0);
 }

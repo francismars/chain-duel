@@ -3,52 +3,54 @@ import { streakPops, type StreakPop } from '@/game/audio/tensionDebug';
 
 const WHITE = 0xffffff;
 const BLACK = 0x111111;
-const GREY = 0xb0b0b0;
+/** Same gold as the old REORG word. Clash and reorg both use it. */
+const GOLD = 0xf0c14d;
 
-type RingSpec = { life: number; from: number; to: number; arrive?: number };
+type RingSpec = { life: number; from: number; to: number; peak: number };
 
-/** Keep expanding for the whole life. Each line finishes at its own pace. */
-const REORG_RINGS: RingSpec[] = [
-  { life: 1, from: 0.42, to: 1 },
-  { life: 0.82, from: 0.22, to: 0.58 },
-  { life: 0.64, from: 0.08, to: 0.24 },
-];
-
-const SINGLE_RING: RingSpec[] = [{ life: 1, from: 0.55, to: 1.05 }];
+/** WALL and CLASH: quiet ack — small, short, little expand. */
+const HIT_RING: RingSpec = { life: 1, from: 0.72, to: 0.98, peak: 0.72 };
+/** REORG: story beat — clearly bigger, still brief. */
+const REORG_RING: RingSpec = { life: 1, from: 0.58, to: 1.02, peak: 0.82 };
 
 function ringColor(pop: StreakPop): { fill: number; css: string } {
   const tone =
-    pop.tone ?? (pop.text === 'CLASH' ? 'grey' : pop.text === 'WALL' ? 'white' : 'black');
+    pop.tone ??
+    (pop.text === 'CLASH' || pop.text === 'REORG'
+      ? 'gold'
+      : pop.text === 'WALL'
+        ? 'white'
+        : 'black');
   if (tone === 'white') return { fill: WHITE, css: '#ffffff' };
-  if (tone === 'grey') return { fill: GREY, css: '#b0b0b0' };
+  if (tone === 'gold') return { fill: GOLD, css: '#f0c14d' };
   return { fill: BLACK, css: '#111111' };
 }
 
-/** Wall and clash stay fixed. A reorg's diameter is the chain that was lost. */
+/** Half-side in cells. Wall and clash match. Reorg is a bit larger, double-ring. */
 function baseRadiusCells(pop: StreakPop): number {
-  if (pop.text === 'WALL') return 2;
-  if (pop.text === 'CLASH') return 3.3;
-  const length = Math.max(4, pop.chainLength ?? 8);
-  return length * 0.28;
+  return pop.text === 'REORG' ? 1.85 : 1.25;
 }
 
-function ringAlpha(popLife: number, spec: RingSpec): { scale: number; alpha: number } | null {
+function ringAlpha(
+  popLife: number,
+  spec: RingSpec
+): { scale: number; alpha: number } | null {
   const t = popLife / spec.life;
   if (t >= 1) return null;
   const eased = 1 - Math.pow(1 - t, 2);
   return {
     scale: spec.from + (spec.to - spec.from) * eased,
-    alpha: 0.88 * (1 - t),
+    alpha: spec.peak * (1 - t),
   };
 }
 
-function specsFor(text: string): RingSpec[] {
-  return text === 'REORG' ? REORG_RINGS : SINGLE_RING;
+function specFor(text: string): RingSpec {
+  return text === 'REORG' ? REORG_RING : HIT_RING;
 }
 
 type Mark = {
   root: Container;
-  rings: Graphics[];
+  ring: Graphics;
 };
 
 export class StreakPopOverlay {
@@ -71,7 +73,7 @@ export class StreakPopOverlay {
       paintMark(mark, pop, cell, colSize, rowSize);
     });
     for (let i = pops.length; i < this.pool.length; i += 1) {
-      this.pool[i].root.visible = false;
+      this.pool[i]!.root.visible = false;
     }
   }
 
@@ -79,16 +81,23 @@ export class StreakPopOverlay {
     const existing = this.pool[index];
     if (existing) return existing;
     const root = new Container();
-    const rings = [0, 1, 2].map(() => {
-      const ring = new Graphics();
-      root.addChild(ring);
-      return ring;
-    });
+    const ring = new Graphics();
+    root.addChild(ring);
     this.container.addChild(root);
-    const mark = { root, rings };
+    const mark = { root, ring };
     this.pool.push(mark);
     return mark;
   }
+}
+
+function strokeSquare(
+  ring: Graphics,
+  half: number,
+  width: number,
+  color: number,
+  alpha: number
+): void {
+  ring.rect(-half, -half, half * 2, half * 2).stroke({ width, color, alpha });
 }
 
 function paintMark(
@@ -101,22 +110,24 @@ function paintMark(
   const life = 1 - pop.alpha;
   const color = ringColor(pop).fill;
   const base = baseRadiusCells(pop) * cell;
-  const specs = specsFor(pop.text);
+  const drawn = ringAlpha(life, specFor(pop.text));
   mark.root.position.set(
     pop.col * colSize + colSize / 2,
     pop.row * rowSize + rowSize / 2
   );
   mark.root.visible = true;
-  mark.rings.forEach((ring, index) => {
-    const spec = specs[index];
-    ring.clear();
-    if (!spec) return;
-    const drawn = ringAlpha(life, spec);
-    if (!drawn) return;
-    const half = base * drawn.scale;
-    const width = pop.text === 'REORG' ? Math.max(1.6, cell * 0.1) : Math.max(1.25, cell * 0.08);
-    ring.rect(-half, -half, half * 2, half * 2).stroke({ width, color, alpha: drawn.alpha });
-  });
+  mark.ring.clear();
+  if (!drawn) return;
+  const half = base * drawn.scale;
+  const width = Math.max(1, cell * 0.06);
+  // REORG: two close gold squares — same stroke as WALL/CLASH; double ring is the cue.
+  if (pop.text === 'REORG') {
+    const innerHalf = half * 0.72;
+    strokeSquare(mark.ring, half, width, color, drawn.alpha * 0.85);
+    strokeSquare(mark.ring, innerHalf, width, color, drawn.alpha);
+    return;
+  }
+  strokeSquare(mark.ring, half, width, color, drawn.alpha);
 }
 
 export function drawStreakPopsCanvas(
@@ -132,18 +143,24 @@ export function drawStreakPopsCanvas(
     const life = 1 - pop.alpha;
     const css = ringColor(pop).css;
     const base = baseRadiusCells(pop) * cell;
+    const drawn = ringAlpha(life, specFor(pop.text));
+    if (!drawn) continue;
+    const half = base * drawn.scale;
     const x = pop.col * colSize + colSize / 2;
     const y = pop.row * rowSize + rowSize / 2;
-    for (const spec of specsFor(pop.text)) {
-      const drawn = ringAlpha(life, spec);
-      if (!drawn) continue;
-      const half = base * drawn.scale;
-      ctx.strokeStyle = css;
-      ctx.globalAlpha = drawn.alpha;
-      ctx.lineWidth =
-        pop.text === 'REORG' ? Math.max(1.6, cell * 0.1) : Math.max(1.25, cell * 0.08);
+    const width = Math.max(1, cell * 0.06);
+    ctx.strokeStyle = css;
+    ctx.lineWidth = width;
+    if (pop.text === 'REORG') {
+      const innerHalf = half * 0.72;
+      ctx.globalAlpha = drawn.alpha * 0.85;
       ctx.strokeRect(x - half, y - half, half * 2, half * 2);
+      ctx.globalAlpha = drawn.alpha;
+      ctx.strokeRect(x - innerHalf, y - innerHalf, innerHalf * 2, innerHalf * 2);
+      continue;
     }
+    ctx.globalAlpha = drawn.alpha;
+    ctx.strokeRect(x - half, y - half, half * 2, half * 2);
   }
   ctx.restore();
 }

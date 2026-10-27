@@ -911,78 +911,47 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 .rule-clip__impact {
   position: absolute;
   z-index: 2;
-  width: 13%;
+  width: 4.5%;
   aspect-ratio: 1;
   border: 1px solid currentColor;
   pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.55);
-  animation: rule-clip-impact 0.32s ease-out forwards;
+  transform: translate(-50%, -50%) scale(0.72);
+  animation: rule-clip-impact 0.35s ease-out forwards;
 }
 
 .rule-clip__impact--wall {
-  width: 8%;
   color: #fff;
 }
 
 .rule-clip__impact--clash {
-  color: #b0b0b0;
+  color: #f0c14d;
 }
 
 .rule-clip__impact--reorg {
-  color: #111;
-  border: none;
-  transform: translate(-50%, -50%);
-  animation: none;
+  width: 6.5%;
+  border-width: 1px;
+  color: #f0c14d;
+  animation-duration: 0.5s;
 }
 
-.rule-clip__impact--reorg span {
+.rule-clip__impact--reorg::after {
+  content: '';
   position: absolute;
-  left: 50%;
-  top: 50%;
-  border: 1.5px solid currentColor;
-  animation: rule-clip-reorg-line 0.7s ease-out forwards;
-}
-
-.rule-clip__impact--reorg span:nth-child(1) {
-  width: 100%;
-  height: 100%;
-  animation-duration: 0.78s;
-}
-
-.rule-clip__impact--reorg span:nth-child(2) {
-  width: 58%;
-  height: 58%;
-  animation-duration: 0.62s;
-}
-
-.rule-clip__impact--reorg span:nth-child(3) {
-  width: 24%;
-  height: 24%;
-  animation-duration: 0.48s;
+  inset: 14%;
+  border: 1px solid currentColor;
 }
 
 @keyframes rule-clip-impact {
   0% {
-    opacity: 0.85;
-    transform: translate(-50%, -50%) scale(0.55);
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.72);
   }
   35% {
-    opacity: 0.7;
+    opacity: 0.55;
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(1.05);
-  }
-}
-
-@keyframes rule-clip-reorg-line {
-  0% {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) scale(0.55);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.08);
+    transform: translate(-50%, -50%) scale(0.98);
   }
 }
 
