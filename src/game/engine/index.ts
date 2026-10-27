@@ -1685,9 +1685,35 @@ function pathStepsToCoin(
   playerIndex: PowerUpPlayerIndex,
   coin: GridPos
 ): number {
+  return Math.max(0, routeLengthForPlayer(state, playerIndex, coin) - 1);
+}
+
+/**
+ * Length of `findPathForPlayer` from this chain's head to `target`.
+ * During four-player coin assignment the same route is scored several times
+ * before any bot writes a direction. Outside that pass the memo is null.
+ */
+let ffaRouteLengthMemo: Map<string, number> | null = null;
+
+function routeLengthForPlayer(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  target: GridPos
+): number {
+  const memo = ffaRouteLengthMemo;
+  let key = '';
+  if (memo) {
+    const head = getPlayerHead(state, playerIndex);
+    const snake = getSnakeByIndex(state, playerIndex);
+    const facing = snake.dir || snake.dirWanted || '';
+    key = `${playerIndex}|${facing}|${head[0]},${head[1]}|${target[0]},${target[1]}`;
+    const cached = memo.get(key);
+    if (cached !== undefined) return cached;
+  }
   const head = getPlayerHead(state, playerIndex);
-  const path = findPathForPlayer(state, playerIndex, head, coin);
-  return Math.max(0, path.length - 1);
+  const length = findPathForPlayer(state, playerIndex, head, target).length;
+  if (memo) memo.set(key, length);
+  return length;
 }
 
 function chooseTeamCoinFor2v1(state: GameState): GridPos | null {
@@ -2253,8 +2279,10 @@ function scoreCoinForPlayer(
   contestHuman: boolean
 ): number {
   const head = getPlayerHead(state, playerIndex);
-  const path = findPathForPlayer(state, playerIndex, head, cb.pos);
-  const ticks = Math.max(1, path.length - 1);
+  const ticks = Math.max(
+    1,
+    routeLengthForPlayer(state, playerIndex, cb.pos) - 1
+  );
   const expectedSats = expectedSatsForFood(state, playerIndex, cb);
   let score = expectedSats / ticks + (cb.reward ?? 2) * 2;
 
@@ -2666,6 +2694,15 @@ function assignFfaCoins(
 }
 
 function computeFfaEconomyPlan(state: GameState): FfaEconomyPlan {
+  ffaRouteLengthMemo = new Map();
+  try {
+    return scoreFfaEconomyPlan(state);
+  } finally {
+    ffaRouteLengthMemo = null;
+  }
+}
+
+function scoreFfaEconomyPlan(state: GameState): FfaEconomyPlan {
   const bots = activeFfaAiBots(state);
   const coins = state.coinbases
     .filter((cb) => !cb.isDecoy)
@@ -3606,12 +3643,45 @@ function preferredDirToward(
 // Pathfinding
 // ============================================================================
 
+/** Cells `findPath` used to reject by walking each chain on every neighbor. */
+function blockedCellsForFindPath(
+  state: GameState,
+  playerAvoidance: PlayerPathAvoidance
+): Set<string> {
+  const blocked = new Set<string>();
+  const add = (pos: GridPos) => {
+    blocked.add(posKey(pos));
+  };
+  for (const segment of state.p2.body) add(segment);
+  if (isEliminationMode(state)) {
+    for (const extra of state.extraSnakes) {
+      for (const segment of extra.snake.body) add(segment);
+      add(extra.snake.head);
+    }
+  }
+  if (is2v1Mode(state) || isFfaMode(state)) {
+    const rivals: PowerUpPlayerIndex[] = isFfaMode(state) ? [1, 2, 3] : [1, 2];
+    for (const idx of rivals) {
+      if (!isPlayerActive(state, idx)) continue;
+      add(predictedNextHead(state, idx));
+    }
+  }
+  if (playerAvoidance !== 'none') {
+    for (const segment of state.p1.body) add(segment);
+  }
+  if (playerAvoidance === 'head-and-body') add(state.p1.head);
+  return blocked;
+}
+
 function findPath(
   state: GameState,
   start: GridPos,
   target: GridPos,
   playerAvoidance: PlayerPathAvoidance = 'none'
 ): GridPos[] {
+  const blocked = blockedCellsForFindPath(state, playerAvoidance);
+  const startIsBotHead = samePos(start, state.p2.head);
+  const facing = state.p2.dir || state.p2.dirWanted;
   return runAStar({
     start,
     target,
@@ -3625,50 +3695,14 @@ function findPath(
         [current[0], current[1] - 1],
       ];
       const out: GridPos[] = [];
+      const atBotStart = startIsBotHead && samePos(current, start);
       for (const neighbor of candidates) {
         if (outOfBounds(state, neighbor)) continue;
         if (hitsObstacle(state, neighbor)) continue;
-        if (state.p2.body.some((p) => samePos(p, neighbor))) continue;
-        if (
-          isEliminationMode(state) &&
-          state.extraSnakes.some(
-            (extra) =>
-              extra.snake.body.some((p) => samePos(p, neighbor)) ||
-              samePos(extra.snake.head, neighbor)
-          )
-        ) {
-          continue;
-        }
-        if (is2v1Mode(state) || isFfaMode(state)) {
-          let blockedByRivalNext = false;
-          const rivals: PowerUpPlayerIndex[] = isFfaMode(state)
-            ? [1, 2, 3]
-            : [1, 2];
-          for (const idx of rivals) {
-            if (!isPlayerActive(state, idx)) continue;
-            if (samePos(neighbor, predictedNextHead(state, idx))) {
-              blockedByRivalNext = true;
-              break;
-            }
-          }
-          if (blockedByRivalNext) continue;
-        }
-        if (
-          playerAvoidance !== 'none' &&
-          state.p1.body.some((p) => samePos(p, neighbor))
-        ) {
-          continue;
-        }
-        if (
-          playerAvoidance === 'head-and-body' &&
-          samePos(state.p1.head, neighbor)
-        ) {
-          continue;
-        }
-        if (samePos(current, start) && samePos(start, state.p2.head)) {
-          const facing = state.p2.dir || state.p2.dirWanted;
+        if (blocked.has(posKey(neighbor))) continue;
+        if (atBotStart && facing) {
           const step = stepDirFromTo(current, neighbor);
-          if (facing && step && dirsAreOpposite(facing, step)) continue;
+          if (step && dirsAreOpposite(facing, step)) continue;
         }
         out.push(neighbor);
       }
