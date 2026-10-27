@@ -314,6 +314,25 @@ describe('game tension', () => {
     expect(reorgCaptureGap(8, 32)).toBe(false);
   });
 
+  it('stays on the bed while four players split the pot evenly', () => {
+    const state = match();
+    state.meta.teamMode = 'ffa';
+    state.score = [1000, 1000];
+    state.extraSnakes = [
+      { snake: { ...state.p1 }, score: 1000, color: 0x2a2a2a },
+      { snake: { ...state.p2 }, score: 1000, color: 0x666666 },
+    ] as typeof state.extraSnakes;
+    expect(getTensionLevel(state)).toBe(0);
+    state.score = [1000, 1500];
+    state.extraSnakes[0]!.score = 1000;
+    state.extraSnakes[1]!.score = 500;
+    expect(getTensionLevel(state)).toBe(2);
+    state.score = [1000, 1800];
+    state.extraSnakes[0]!.score = 1000;
+    state.extraSnakes[1]!.score = 200;
+    expect(getTensionLevel(state)).toBe(4);
+  });
+
   it('counts teammates together and ignores eliminated chains', () => {
     const state = match();
     state.meta.teamMode = '2v1';

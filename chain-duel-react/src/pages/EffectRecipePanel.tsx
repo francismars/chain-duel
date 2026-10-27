@@ -149,7 +149,7 @@ export function EffectRecipePanel({
         <MarkRail
           label="Sats left"
           now={layerName(levels.score)}
-          hint="The trailer's share of the sats. The lower tick is critical. The higher tick is warning."
+          hint="Duel lines for the trailer's share. The lower tick is critical, the higher is warning. With more than two chains still in, both scale by 2 / living, so four equal players stay on the bed."
           names={['critical', 'warning']}
           marks={draft.drainMarks}
           match={live.drainMarks}

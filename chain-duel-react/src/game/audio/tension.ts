@@ -113,13 +113,21 @@ export function captureGapTension(
   return 0;
 }
 
-/** The lower mark is critical. The higher mark is warning. Both are a share of the pool. */
+/**
+ * The lower mark is critical. The higher mark is warning.
+ * Both are a share of the pool in a duel. With more chains still holding sats,
+ * they scale by 2 / living, so warning stays half a fair share and critical a fifth.
+ * Four equal players are each at a fair share and stay on the bed.
+ */
 export function drainTension(
   trailerShare: number,
-  marks: readonly [number, number] = SHIPPED_RECIPE.drainMarks
+  marks: readonly [number, number] = SHIPPED_RECIPE.drainMarks,
+  living = 2
 ): TensionLevel {
-  const crit = Math.min(marks[0], marks[1]) / 100;
-  const warn = Math.max(marks[0], marks[1]) / 100;
+  const seats = living >= 2 ? living : 2;
+  const scale = 2 / seats;
+  const crit = (Math.min(marks[0], marks[1]) / 100) * scale;
+  const warn = (Math.max(marks[0], marks[1]) / 100) * scale;
   if (trailerShare <= crit) return 4;
   if (trailerShare <= warn) return 2;
   return 0;
@@ -185,9 +193,13 @@ export function getTensionBreakdown(
     state.meta.teamMode === '2v1'
       ? [state.score[0], state.score[1] + (state.extraSnakes[0]?.score ?? 0)]
       : players.map((player) => player.score);
-  const pool = scores.reduce((sum, score) => sum + score, 0);
-  const trailerShare = pool > 0 ? Math.min(...scores) / pool : 1;
-  const score = drainTension(trailerShare, recipe.drainMarks);
+  const holding = scores.filter((score) => score > 0);
+  const pool = holding.reduce((sum, score) => sum + score, 0);
+  const trailerShare = pool > 0 ? Math.min(...holding) / pool : 1;
+  const score =
+    holding.length >= 2
+      ? drainTension(trailerShare, recipe.drainMarks, holding.length)
+      : 0;
   const level = Math.max(capture, score) as TensionLevel;
   return {
     chain: capture,
