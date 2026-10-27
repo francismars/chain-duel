@@ -28,9 +28,7 @@ import {
   START_PROMPT_WORDS,
   type CanvasObjectivesOpts,
 } from '@/game/render/matchObjectives';
-import {
-  CanvasObjectivesOverlay,
-} from '@/game/render/canvasObjectivesOverlay';
+import { CanvasObjectivesOverlay } from '@/game/render/canvasObjectivesOverlay';
 import {
   CanvasControlsOverlay,
   drawCanvasControlsFallback,
@@ -75,6 +73,8 @@ export class PixiGameRenderer {
   private deadZone: Graphics = new Graphics();
   private grid: Graphics = new Graphics();
   private scene: Graphics = new Graphics();
+  /** Icons and decoys. Redrawn on their own so a pulse does not rebuild the chains. */
+  private powerUpLayer: Graphics = new Graphics();
   private overlay: Container = new Container();
   private resolveAnimStartMs: number | null = null;
   /** When the end overlay first became eligible; delay starts from this. */
@@ -131,6 +131,10 @@ export class PixiGameRenderer {
    * until the next simulation tick.
    */
   private resizeDirty = false;
+  /** Last gameplay picture of chains, coins, and walls. */
+  private boardPaintKey = '';
+  /** One extra chain redraw after a glow, grow, or surge trail finishes. */
+  private chainMotionWasActive = false;
   /** Bumped on destroy / remount so in-flight async init cannot attach a stale canvas. */
   private mountGeneration = 0;
   private readonly textResolution = pixiTextResolution();
@@ -225,6 +229,7 @@ export class PixiGameRenderer {
       this.root.addChild(this.deadZone);
       this.root.addChild(this.grid);
       this.root.addChild(this.scene);
+      this.root.addChild(this.powerUpLayer);
       this.overlay.addChild(this.startWordsContainer);
       this.overlay.addChild(this.startPromptSubtext);
       this.overlay.addChild(this.startReady.container);
@@ -336,7 +341,8 @@ export class PixiGameRenderer {
     return (
       (this.objectives.container.visible &&
         this.objectives.container.alpha > 0.02) ||
-      (this.controls.container.visible && this.controls.container.alpha > 0.02) ||
+      (this.controls.container.visible &&
+        this.controls.container.alpha > 0.02) ||
       (this.startReady.container.visible &&
         this.startReady.container.alpha > 0.02) ||
       this.startWords.some((t) => t.alpha > 0.02) ||
@@ -361,14 +367,104 @@ export class PixiGameRenderer {
 
   setCaptureAnimOverride(flags: CaptureAnimFlags | null): void {
     this.captureAnimOverride = flags;
+    this.boardPaintKey = '';
   }
 
   private animFlags(): CaptureAnimFlags {
     return this.captureAnimOverride ?? captureAnimFlags();
   }
 
+  /** Glow, grow, surge, and Amplifier are painted on the chain squares. */
+  private chainMotionActive(state: GameState, now: number): boolean {
+    if (this.p1Pulses.length > 0 || this.p2Pulses.length > 0) return true;
+    if (this.captureScales.length > 0) return true;
+    if (this.growAnimating(now)) return true;
+    if (this.p1SurgeTrail.length > 0 || this.p2SurgeTrail.length > 0)
+      return true;
+    for (const ap of state.activePowerUps ?? []) {
+      if (ap.type === 'SURGE') return true;
+      if (ap.type === 'AMPLIFIER' && (ap.chargesLeft ?? 0) > 0) return true;
+    }
+    return false;
+  }
+
+  private snakeDrawKey(
+    state: GameState,
+    index: PowerUpPlayerIndex,
+    snake: GameState['p1']
+  ): string {
+    const effects = getSnakeEffects(state, index);
+    let key = `${snake.head[0]},${snake.head[1]}:${effects.frozen ? 'f' : ''}${effects.phantom ? 'p' : ''}:`;
+    for (const seg of snake.body) key += `${seg[0]},${seg[1]};`;
+    return key;
+  }
+
+  /** Chains, static coins, walls, and the shrink mask. Icons are not included. */
+  private boardDrawKey(
+    state: GameState,
+    width: number,
+    height: number
+  ): string {
+    const phase = state.gameEnded
+      ? 'e'
+      : state.countdownStart
+        ? 'c'
+        : state.gameStarted
+          ? 'p'
+          : 'w';
+    const sb = state.shrinkBorder;
+    let key = `${phase}:${Math.round(width)}x${Math.round(height)}:${state.cols}x${state.rows}:`;
+    if (sb) {
+      key += `${sb.left},${sb.top},${sb.right},${sb.bottom},${sb.warningActive ? 1 : 0}|`;
+    }
+    for (const wall of state.obstacleWalls ?? []) {
+      key += `w${wall.pos[0]},${wall.pos[1]};`;
+    }
+    key += this.snakeDrawKey(state, 0, state.p1);
+    key += this.snakeDrawKey(state, 1, state.p2);
+    const extras = state.extraSnakes ?? [];
+    for (let i = 0; i < extras.length; i += 1) {
+      const extra = extras[i]!;
+      key += this.snakeDrawKey(
+        state,
+        (i + 2) as PowerUpPlayerIndex,
+        extra.snake
+      );
+      key += `o${extra.outline ?? ''};`;
+    }
+    for (const cb of state.coinbases ?? []) {
+      if (cb.isDecoy) continue;
+      key += `c${cb.pos[0]},${cb.pos[1]},${cb.reward ?? 0};`;
+    }
+    return key;
+  }
+
+  private shouldRebuildBoard(
+    state: GameState,
+    width: number,
+    height: number,
+    now: number,
+    boardKey: string
+  ): boolean {
+    const playing =
+      state.gameStarted && !state.gameEnded && !state.countdownStart;
+    if (!playing || this.resizeDirty || boardKey !== this.boardPaintKey) {
+      return true;
+    }
+    const view = this.app?.renderer;
+    if (
+      view &&
+      (Math.abs(view.width - width) > 1 || Math.abs(view.height - height) > 1)
+    ) {
+      return true;
+    }
+    return this.chainMotionActive(state, now) || this.chainMotionWasActive;
+  }
+
   render(state: GameState, opts?: PixiRenderOpts): void {
-    this.host?.closest('#gameCanvas')?.classList.toggle('game-result-active', state.gameEnded);
+    this.host
+      ?.closest('#gameCanvas')
+      ?.classList.toggle('game-result-active', state.gameEnded);
     if (!this.app) {
       this.renderFallback(state, opts);
       return;
@@ -397,42 +493,12 @@ export class PixiGameRenderer {
     const colSize = width / state.cols;
     const rowSize = height / state.rows;
 
-    // ── Dead zone / convergence overlay ─────────────────────────────────────
-    this.deadZone.clear();
-    if (state.shrinkBorder) {
-      this.renderDeadZone(state, width, height, colSize, rowSize);
-    }
-
     const resolveProgress = this.getResolveProgress(state);
-
-    // ── Grid (cached; rebuild only on size change) ──
-    const gridAlpha = 0.05;
-    const cacheKey = `${width}|${height}|${state.cols}|${state.rows}|${gridAlpha.toFixed(3)}`;
-    if (cacheKey !== this.gridCacheKey) {
-      this.rebuildStaticGrid(state, colSize, rowSize, gridAlpha);
-      this.gridCacheKey = cacheKey;
-    }
 
     // ── Coinbase capture pulse detection ─────────────────────────────────────
     const now = performance.now();
     this.noteCaptures(state, now);
 
-    // ── Scene ─────────────────────────────────────────────────────────────────
-    this.scene.clear();
-
-    // Obstacle walls
-    for (const wall of state.obstacleWalls ?? []) {
-      const px = wall.pos[0] * colSize;
-      const py = wall.pos[1] * rowSize;
-      this.scene
-        .rect(px, py, colSize, rowSize)
-        .fill({ color: 0xffffff, alpha: 0.8 });
-      this.scene
-        .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
-        .stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
-    }
-
-    // ── Board reveal (pre-start only) ────────────────────────────────────────
     const preStart =
       !state.gameStarted && !state.countdownStart && !state.gameEnded;
     if (preStart) {
@@ -447,162 +513,273 @@ export class PixiGameRenderer {
         ? Math.max(0, performance.now() - this.boardRevealTime - 800)
         : Infinity;
 
-    // Snakes
-    const p1Effects = getSnakeEffects(state, 0);
-    const p2Effects = getSnakeEffects(state, 1);
-    const p1Frozen = p1Effects.frozen;
-    const p2Frozen = p2Effects.frozen;
-    const p1Phantom = p1Effects.phantom;
-    const p2Phantom = p2Effects.phantom;
-    const p1Surging = p1Effects.surging;
-    const p2Surging = p2Effects.surging;
-    const p1Amped = p1Effects.amped;
-    const p2Amped = p2Effects.amped;
+    const boardKey = this.boardDrawKey(state, width, height);
+    const rebuildBoard = this.shouldRebuildBoard(
+      state,
+      width,
+      height,
+      now,
+      boardKey
+    );
 
-    // Record surge trail positions each frame
-    const FADE = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
-    if (state.gameStarted && !state.gameEnded) {
-      if (p1Surging)
-        this.p1SurgeTrail.push({
-          pos: [state.p1.head[0], state.p1.head[1]],
-          time: now,
-        });
-      if (p2Surging)
-        this.p2SurgeTrail.push({
-          pos: [state.p2.head[0], state.p2.head[1]],
-          time: now,
-        });
-    }
-    this.p1SurgeTrail = this.p1SurgeTrail.filter((t) => now - t.time < FADE);
-    this.p2SurgeTrail = this.p2SurgeTrail.filter((t) => now - t.time < FADE);
+    if (rebuildBoard) {
+      // ── Dead zone / convergence overlay ─────────────────────────────────────
+      this.deadZone.clear();
+      if (state.shrinkBorder) {
+        this.renderDeadZone(state, width, height, colSize, rowSize);
+      }
 
-    // Draw fading orange trail squares (rendered before snakes so snakes appear on top)
-    for (const t of this.p1SurgeTrail) {
-      const a = (1 - (now - t.time) / FADE) * 0.6;
-      const pad = 1;
-      this.scene
-        .rect(
-          t.pos[0] * colSize + pad,
-          t.pos[1] * rowSize + pad,
-          colSize - pad * 2,
-          rowSize - pad * 2
-        )
-        .fill({ color: 0xff7200, alpha: a });
-    }
-    for (const t of this.p2SurgeTrail) {
-      const a = (1 - (now - t.time) / FADE) * 0.6;
-      const pad = 1;
-      this.scene
-        .rect(
-          t.pos[0] * colSize + pad,
-          t.pos[1] * rowSize + pad,
-          colSize - pad * 2,
-          rowSize - pad * 2
-        )
-        .fill({ color: 0xff7200, alpha: a });
-    }
+      // ── Grid (cached; rebuild only on size change) ──
+      const gridAlpha = 0.05;
+      const cacheKey = `${width}|${height}|${state.cols}|${state.rows}|${gridAlpha.toFixed(3)}`;
+      if (cacheKey !== this.gridCacheKey) {
+        this.rebuildStaticGrid(state, colSize, rowSize, gridAlpha);
+        this.gridCacheKey = cacheKey;
+      }
 
-    // Extra snakes (teams / ffa) — drawn behind main snakes
-    for (let ei = 0; ei < (state.extraSnakes ?? []).length; ei += 1) {
-      const extra = state.extraSnakes[ei];
-      const extraEffects = getSnakeEffects(
-        state,
-        (ei + 2) as PowerUpPlayerIndex
-      );
-      const extraBob = preStartControllerBobPx(
-        state,
-        (ei + 2) as GameSeatIndex,
-        rowSize
-      );
+      // ── Scene ─────────────────────────────────────────────────────────────────
+      this.scene.clear();
+
+      // Obstacle walls
+      for (const wall of state.obstacleWalls ?? []) {
+        const px = wall.pos[0] * colSize;
+        const py = wall.pos[1] * rowSize;
+        this.scene
+          .rect(px, py, colSize, rowSize)
+          .fill({ color: 0xffffff, alpha: 0.8 });
+        this.scene
+          .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
+          .stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
+      }
+
+      // Snakes
+      const p1Effects = getSnakeEffects(state, 0);
+      const p2Effects = getSnakeEffects(state, 1);
+      const p1Frozen = p1Effects.frozen;
+      const p2Frozen = p2Effects.frozen;
+      const p1Phantom = p1Effects.phantom;
+      const p2Phantom = p2Effects.phantom;
+      const p1Surging = p1Effects.surging;
+      const p2Surging = p2Effects.surging;
+      const p1Amped = p1Effects.amped;
+      const p2Amped = p2Effects.amped;
+
+      // Record surge trail positions each frame
+      const FADE = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
+      if (state.gameStarted && !state.gameEnded) {
+        if (p1Surging)
+          this.p1SurgeTrail.push({
+            pos: [state.p1.head[0], state.p1.head[1]],
+            time: now,
+          });
+        if (p2Surging)
+          this.p2SurgeTrail.push({
+            pos: [state.p2.head[0], state.p2.head[1]],
+            time: now,
+          });
+      }
+      this.p1SurgeTrail = this.p1SurgeTrail.filter((t) => now - t.time < FADE);
+      this.p2SurgeTrail = this.p2SurgeTrail.filter((t) => now - t.time < FADE);
+
+      // Draw fading orange trail squares (rendered before snakes so snakes appear on top)
+      for (const t of this.p1SurgeTrail) {
+        const a = (1 - (now - t.time) / FADE) * 0.6;
+        const pad = 1;
+        this.scene
+          .rect(
+            t.pos[0] * colSize + pad,
+            t.pos[1] * rowSize + pad,
+            colSize - pad * 2,
+            rowSize - pad * 2
+          )
+          .fill({ color: 0xff7200, alpha: a });
+      }
+      for (const t of this.p2SurgeTrail) {
+        const a = (1 - (now - t.time) / FADE) * 0.6;
+        const pad = 1;
+        this.scene
+          .rect(
+            t.pos[0] * colSize + pad,
+            t.pos[1] * rowSize + pad,
+            colSize - pad * 2,
+            rowSize - pad * 2
+          )
+          .fill({ color: 0xff7200, alpha: a });
+      }
+
+      // Extra snakes (teams / ffa) — drawn behind main snakes
+      for (let ei = 0; ei < (state.extraSnakes ?? []).length; ei += 1) {
+        const extra = state.extraSnakes[ei];
+        const extraEffects = getSnakeEffects(
+          state,
+          (ei + 2) as PowerUpPlayerIndex
+        );
+        const extraBob = preStartControllerBobPx(
+          state,
+          (ei + 2) as GameSeatIndex,
+          rowSize
+        );
+        this.drawSnake(
+          extra.snake,
+          extra.color,
+          colSize,
+          rowSize,
+          extraEffects,
+          [],
+          now,
+          boardElapsed,
+          extraBob,
+          `e${ei}`
+        );
+        // Ally / shadow border: solid inset outline distinguishes them from P1/P2
+        if (extra.outline != null) {
+          const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
+          const bob = extraBob;
+          const segTop = (gy: number) => gy * rowSize - bob;
+          const segH = rowSize + bob * 2;
+          for (const seg of [extra.snake.head, ...extra.snake.body]) {
+            this.scene
+              .rect(
+                seg[0] * colSize + lw / 2,
+                segTop(seg[1]) + lw / 2,
+                colSize - lw,
+                segH - lw
+              )
+              .stroke({ width: lw, color: extra.outline, alpha: 0.85 });
+          }
+        }
+      }
+
+      const p1Bob = preStartControllerBobPx(state, 0, rowSize);
       this.drawSnake(
-        extra.snake,
-        extra.color,
+        state.p1,
+        0xffffff,
         colSize,
         rowSize,
-        extraEffects,
-        [],
+        {
+          frozen: p1Frozen,
+          phantom: p1Phantom,
+          surging: p1Surging,
+          amped: p1Amped,
+        },
+        this.p1Pulses,
         now,
         boardElapsed,
-        extraBob,
-        `e${ei}`
+        p1Bob,
+        'p1'
       );
-      // Ally / shadow border: solid inset outline distinguishes them from P1/P2
-      if (extra.outline != null) {
-        const lw = Math.max(1.5, Math.min(colSize, rowSize) * 0.1);
-        const bob = extraBob;
-        const segTop = (gy: number) => gy * rowSize - bob;
-        const segH = rowSize + bob * 2;
-        for (const seg of [extra.snake.head, ...extra.snake.body]) {
-          this.scene
-            .rect(
-              seg[0] * colSize + lw / 2,
-              segTop(seg[1]) + lw / 2,
-              colSize - lw,
-              segH - lw
-            )
-            .stroke({ width: lw, color: extra.outline, alpha: 0.85 });
+
+      const p2Color = P2_SNAKE_COLOR;
+      const p2Bob = preStartControllerBobPx(state, 1, rowSize);
+      this.drawSnake(
+        state.p2,
+        p2Color,
+        colSize,
+        rowSize,
+        {
+          frozen: p2Frozen,
+          phantom: p2Phantom,
+          surging: p2Surging,
+          amped: p2Amped,
+        },
+        this.p2Pulses,
+        now,
+        boardElapsed,
+        p2Bob,
+        'p2'
+      );
+
+      for (const cb of state.coinbases ?? []) {
+        if (cb.isDecoy) continue;
+        this.drawCoinbase(
+          cb.pos,
+          colSize,
+          rowSize,
+          {
+            reward: cb.reward,
+            isDecoy: false,
+          },
+          boardElapsed
+        );
+      }
+
+      this.boardPaintKey = boardKey;
+      this.chainMotionWasActive = this.chainMotionActive(state, now);
+
+      // ── Text overlays ─────────────────────────────────────────────────────────
+      this.endOverlay.hide();
+      if (!state.gameEnded) {
+        this.resetEndOverlayTiming();
+      }
+
+      const preMatch =
+        !state.gameStarted && !state.gameEnded && !state.countdownStart;
+      this.host
+        ?.closest('#gameCanvas')
+        ?.classList.toggle('is-prematch', preMatch);
+
+      if (preMatch) {
+        this.hideCountdownOverlay();
+        const objOpts = opts?.canvasObjectives ?? {};
+        if (this.startRevealTime === -1)
+          this.startRevealTime = performance.now();
+        this.objectives.hide();
+        for (const word of this.startWords) {
+          word.alpha = 0;
+          word.visible = false;
+        }
+        this.startPromptSubtext.visible = false;
+        this.controls.render(
+          state,
+          width,
+          height,
+          objOpts.controlSlots ?? [],
+          this.startRevealTime,
+          objOpts.controlLabelSlots
+        );
+        const readyAlpha = onlineStartReadyAlpha(
+          Boolean(objOpts.onlineStartReady),
+          1
+        );
+        this.startReady.render(
+          colSize,
+          rowSize,
+          state.p1,
+          state.p2,
+          p1Bob,
+          p2Bob,
+          objOpts.onlineStartReady,
+          readyAlpha
+        );
+      } else {
+        this.startReady.hide();
+        if (
+          state.countdownStart &&
+          !state.gameStarted &&
+          this.preMatchOverlayVisible()
+        ) {
+          this.finishPreMatchDismiss();
+        }
+
+        if (state.countdownStart) {
+          this.renderCountdownOverlay(state, width, height);
+        } else {
+          this.hideCountdownOverlay();
+          if (state.gameEnded) {
+            const elapsed = this.beginEndOverlayReveal(
+              state,
+              resolveProgress,
+              Boolean(opts?.suppressVictoryOverlay)
+            );
+            if (elapsed !== null) {
+              this.endOverlay.hide();
+            }
+          }
         }
       }
     }
 
-    const p1Bob = preStartControllerBobPx(state, 0, rowSize);
-    this.drawSnake(
-      state.p1,
-      0xffffff,
-      colSize,
-      rowSize,
-      {
-        frozen: p1Frozen,
-        phantom: p1Phantom,
-        surging: p1Surging,
-        amped: p1Amped,
-      },
-      this.p1Pulses,
-      now,
-      boardElapsed,
-      p1Bob,
-      'p1'
-    );
-
-    const p2Color = P2_SNAKE_COLOR;
-    const p2Bob = preStartControllerBobPx(state, 1, rowSize);
-    this.drawSnake(
-      state.p2,
-      p2Color,
-      colSize,
-      rowSize,
-      {
-        frozen: p2Frozen,
-        phantom: p2Phantom,
-        surging: p2Surging,
-        amped: p2Amped,
-      },
-      this.p2Pulses,
-      now,
-      boardElapsed,
-      p2Bob,
-      'p2'
-    );
-
-    for (const cb of state.coinbases ?? []) {
-      this.drawCoinbase(
-        cb.pos,
-        colSize,
-        rowSize,
-        {
-          reward: cb.reward,
-          isDecoy: cb.isDecoy,
-        },
-        boardElapsed
-      );
-    }
-
-    // Power-up items
-    for (const item of state.powerUpItems ?? []) {
-      this.drawPowerUpItem(item.pos, item.type, colSize, rowSize, now);
-    }
-
-    // Point pop-ups (decay runs in useGameRenderBridge / online client anims)
+    this.renderPowerUpLayer(state, colSize, rowSize, now, boardElapsed);
     this.pointChangesOverlay.render(
       state.pointChanges ?? [],
       colSize,
@@ -614,77 +791,6 @@ export class PixiGameRenderer {
       this.overlay.addChild(this.streakPopOverlay.container);
     }
     this.streakPopOverlay.render(colSize, rowSize);
-
-    // ── Text overlays ─────────────────────────────────────────────────────────
-    this.endOverlay.hide();
-    if (!state.gameEnded) {
-      this.resetEndOverlayTiming();
-    }
-
-    const preMatch =
-      !state.gameStarted && !state.gameEnded && !state.countdownStart;
-    this.host
-      ?.closest('#gameCanvas')
-      ?.classList.toggle('is-prematch', preMatch);
-
-    if (preMatch) {
-      this.hideCountdownOverlay();
-      const objOpts = opts?.canvasObjectives ?? {};
-      if (this.startRevealTime === -1) this.startRevealTime = performance.now();
-      this.objectives.hide();
-      for (const word of this.startWords) {
-        word.alpha = 0;
-        word.visible = false;
-      }
-      this.startPromptSubtext.visible = false;
-      this.controls.render(
-        state,
-        width,
-        height,
-        objOpts.controlSlots ?? [],
-        this.startRevealTime,
-        objOpts.controlLabelSlots
-      );
-      const readyAlpha = onlineStartReadyAlpha(
-        Boolean(objOpts.onlineStartReady),
-        1
-      );
-      this.startReady.render(
-        colSize,
-        rowSize,
-        state.p1,
-        state.p2,
-        p1Bob,
-        p2Bob,
-        objOpts.onlineStartReady,
-        readyAlpha
-      );
-    } else {
-      this.startReady.hide();
-      if (
-        state.countdownStart &&
-        !state.gameStarted &&
-        this.preMatchOverlayVisible()
-      ) {
-        this.finishPreMatchDismiss();
-      }
-
-      if (state.countdownStart) {
-        this.renderCountdownOverlay(state, width, height);
-      } else {
-        this.hideCountdownOverlay();
-        if (state.gameEnded) {
-          const elapsed = this.beginEndOverlayReveal(
-            state,
-            resolveProgress,
-            Boolean(opts?.suppressVictoryOverlay)
-          );
-          if (elapsed !== null) {
-            this.endOverlay.hide();
-          }
-        }
-      }
-    }
 
     // Keep WebGL buffer in sync with layout (avoids stretched / nested-frame artifacts).
     const rw = this.app.renderer.width;
@@ -1230,12 +1336,37 @@ export class PixiGameRenderer {
 
   // ── Coinbase drawing ───────────────────────────────────────────────────────
 
+  private renderPowerUpLayer(
+    state: GameState,
+    colSize: number,
+    rowSize: number,
+    now: number,
+    boardElapsed: number
+  ): void {
+    this.powerUpLayer.clear();
+    for (const item of state.powerUpItems ?? []) {
+      this.drawPowerUpItem(item.pos, item.type, colSize, rowSize, now);
+    }
+    for (const cb of state.coinbases ?? []) {
+      if (!cb.isDecoy) continue;
+      this.drawCoinbase(
+        cb.pos,
+        colSize,
+        rowSize,
+        { reward: cb.reward, isDecoy: true },
+        boardElapsed,
+        this.powerUpLayer
+      );
+    }
+  }
+
   private drawCoinbase(
     pos: GridPos,
     colSize: number,
     rowSize: number,
     opts: { reward?: number; isDecoy?: boolean },
-    boardElapsed: number = Infinity
+    boardElapsed: number = Infinity,
+    target: Graphics = this.scene
   ): void {
     const coinReveal = (() => {
       if (boardElapsed === Infinity) return 1;
@@ -1251,7 +1382,7 @@ export class PixiGameRenderer {
       const iconSize = Math.min(colSize, rowSize) * 1.8 * coinReveal;
       const pulse = 0.7 + 0.3 * Math.sin((Date.now() / 700) * 1.7 + 1.2);
       drawPowerUpIconPixi(
-        this.scene,
+        target,
         cx,
         cy,
         iconSize,
@@ -1263,19 +1394,11 @@ export class PixiGameRenderer {
     }
 
     // Standard coinbase
-    this.scene
-      .circle(cx, cy, radius * 2.05)
-      .fill({ color: 0xffffff, alpha: 0.05 });
-    this.scene
-      .circle(cx, cy, radius * 1.7)
-      .fill({ color: 0xffffff, alpha: 0.08 });
-    this.scene
-      .circle(cx, cy, radius * 1.35)
-      .fill({ color: 0xffffff, alpha: 0.14 });
-    this.scene
-      .circle(cx, cy, radius * 1.1)
-      .fill({ color: 0xffffff, alpha: 0.22 });
-    this.scene.circle(cx, cy, radius * 0.9).fill({ color: 0xffffff, alpha: 1 });
+    target.circle(cx, cy, radius * 2.05).fill({ color: 0xffffff, alpha: 0.05 });
+    target.circle(cx, cy, radius * 1.7).fill({ color: 0xffffff, alpha: 0.08 });
+    target.circle(cx, cy, radius * 1.35).fill({ color: 0xffffff, alpha: 0.14 });
+    target.circle(cx, cy, radius * 1.1).fill({ color: 0xffffff, alpha: 0.22 });
+    target.circle(cx, cy, radius * 0.9).fill({ color: 0xffffff, alpha: 1 });
 
     // Reward rings
     if (opts.reward) {
@@ -1292,7 +1415,7 @@ export class PixiGameRenderer {
       let transparencyAdder = 1;
       for (let ring = rings; ring > 0; ring -= 1) {
         const alpha = 0.1 / rings + transparencyAdder / 20;
-        this.scene
+        target
           .circle(cx, cy, radius + ring * rowSize * 0.38)
           .stroke({ width: 1, color: 0xffffff, alpha });
         transparencyAdder += 1;
@@ -1332,7 +1455,7 @@ export class PixiGameRenderer {
     const pulse = 0.75 + 0.25 * Math.sin((now / 800) * 2);
 
     drawPowerUpIconPixi(
-      this.scene,
+      this.powerUpLayer,
       cx,
       cy,
       iconSize,
