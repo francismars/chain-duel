@@ -113,7 +113,7 @@ function makeClip(id: RuleClipId): GameState {
     modeLabel: 'P2P',
     p1Human: id !== 'stake',
     p2Human: id === 'chain' || id === 'reset' || id === 'block',
-    aiTier: 'easy',
+    aiTier: 'normie',
   });
   if (id === 'stake') {
     state.countdownStart = false;
