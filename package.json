@@ -28,12 +28,13 @@
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.7",
     "prettier": "^3.3.3",
-    "typescript": "^5.5.4",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite": "^8.0.16",
     "vitest": "^4.1.12"
   }
