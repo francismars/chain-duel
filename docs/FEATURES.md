@@ -6,8 +6,8 @@ This document describes the full feature set across the three components that ma
 
 | Component | Path | Role |
 |-----------|------|------|
-| **chain-duel-react** | `chain-duel/chain-duel-react/` | Modern frontend (React + PixiJS) — **primary client** |
-| **chain-duel (legacy)** | `chain-duel/` (root, excluding `chain-duel-react/`) | Original Express + Canvas frontend — being retired |
+| **React client** | repository root | Modern frontend (React + PixiJS) — **primary client** |
+| **Legacy frontend** | `legacy/` | Original Express + Canvas frontend — retired |
 | **marspay** | `marspay/` (sibling repo) | Lightning + Socket.IO backend — sessions, payments, authoritative ONLINE play |
 
 Production URLs: game at [game.chainduel.net](https://game.chainduel.net/), backend at `wss://marspay.chainduel.net`.
@@ -18,7 +18,7 @@ Production URLs: game at [game.chainduel.net](https://game.chainduel.net/), back
 
 ```
 ┌─────────────────────────┐
-│  chain-duel-react       │  React 18, TypeScript, PixiJS 8, Vite
+│  React client           │  React 18, TypeScript, PixiJS 8, Vite
 │  (Vite dev :5173)       │  Socket.IO client, nostr-tools
 └───────────┬─────────────┘
             │  Socket.IO (VITE_SOCKET_URL)
@@ -33,7 +33,7 @@ Production URLs: game at [game.chainduel.net](https://game.chainduel.net/), back
 │  LNbits                 │  Lightning invoices, LNURLp, LNURLw
 └─────────────────────────┘
 
-Legacy chain-duel (Express :3000) serves static HTML/Canvas and proxies
+The legacy frontend (`legacy/`, Express :3000) serves static HTML/Canvas and proxies
 socket config via GET /loadconfig — same marspay backend, no new features.
 ```
 
@@ -42,7 +42,7 @@ socket config via GET /loadconfig — same marspay backend, no new features.
 - **Frontend** — rendering, local input, menu UX, Nostr signing (NIP-07 / NIP-46), QR display
 - **marspay** — session IDs, LNURL link generation, payment webhooks, Nostr Kind1 publish/subscribe, tournament brackets, challenge replay validation, **authoritative ONLINE simulation**
 
-Shared protocol types live in `chain-duel-react/src/types/socket.ts` (must stay in sync with marspay handlers).
+Shared protocol types live in `src/types/socket.ts` (must stay in sync with marspay handlers).
 
 ---
 
@@ -141,7 +141,7 @@ Bracket tournaments for **4 / 8 / 16 / 32** players.
 
 ### ONLINE — Server-authoritative multiplayer (`/online/*`)
 
-The largest new feature in chain-duel-react. Game simulation runs **on marspay**, not in the browser.
+The largest new feature in the React client. Game simulation runs **on marspay**, not in the browser.
 
 | Route | Purpose |
 |-------|---------|
@@ -214,7 +214,7 @@ Protocol: [marspay/docs/AGENTS_NOSTR_SESSION.md](../../marspay/docs/AGENTS_NOSTR
 
 ## Legacy vs React
 
-| Feature | Legacy (`chain-duel/`) | React (`chain-duel-react/`) |
+| Feature | Legacy (`legacy/`) | React (repository root) |
 |---------|------------------------|----------------------------|
 | Practice (free) | Basic local play | Free play + full config (FFA, AI tiers, power-ups, convergence) |
 | Practice (bounty) | — | 6 ranked challenges with Lightning bounties |
@@ -231,7 +231,7 @@ Protocol: [marspay/docs/AGENTS_NOSTR_SESSION.md](../../marspay/docs/AGENTS_NOSTR
 | Socket config | `GET /loadconfig` → env IP/PORT | `VITE_SOCKET_URL` direct |
 | Build | `npm start` (Express :3000) | Vite build → static deploy |
 
-React is the **intended replacement** for the legacy frontend. See [chain-duel-react/docs/parity-matrix.md](../chain-duel-react/docs/parity-matrix.md) for migration status.
+React is the **intended replacement** for the legacy frontend. See [parity-matrix.md](parity-matrix.md) for migration status.
 
 ---
 
@@ -254,14 +254,14 @@ marspay is a **reusable Lightning backend** — Chain Duel is the reference game
 
 | Shared logic | Client | Server |
 |--------------|--------|--------|
-| Challenge RNG | `chain-duel-react/src/game/engine/runRng.ts` | `marspay/src/game/challengeEngine/runRng.ts` |
-| ONLINE replay codec | `chain-duel-react/src/replay/codec/onlineReplayCodec.ts` | `marspay/src/state/onlineReplayCodec.ts` |
-| NIP-46 relay list | `chain-duel-react/src/lib/nostr/nip46Relays.ts` | `marspay/src/consts/nostrRelays.ts` |
-| Socket event types | `chain-duel-react/src/types/socket.ts` | `marspay/src/socket/index.ts` |
+| Challenge RNG | `src/game/engine/runRng.ts` | `marspay/src/game/challengeEngine/runRng.ts` |
+| ONLINE replay codec | `src/replay/codec/onlineReplayCodec.ts` | `marspay/src/state/onlineReplayCodec.ts` |
+| NIP-46 relay list | `src/lib/nostr/nip46Relays.ts` | `marspay/src/consts/nostrRelays.ts` |
+| Socket event types | `src/types/socket.ts` | `marspay/src/socket/index.ts` |
 
 ---
 
-## Route Map (chain-duel-react)
+## Route Map
 
 | Route | Purpose |
 |-------|---------|
@@ -287,10 +287,10 @@ Legacy redirects: `/local`, `/regtest`, `/testnet` → `/practice`; `/solo` → 
 
 | Document | Location | Contents |
 |----------|----------|----------|
-| **This file** | `chain-duel/docs/FEATURES.md` | Full feature overview (you are here) |
-| **React setup** | `chain-duel/chain-duel-react/README.md` | Dev setup, project structure, migration status |
-| **React setup (detailed)** | `chain-duel/chain-duel-react/SETUP.md` | Prerequisites, marspay on :3001 |
-| **Parity matrix** | `chain-duel/chain-duel-react/docs/parity-matrix.md` | Legacy page → React mapping |
+| **This file** | `docs/FEATURES.md` | Full feature overview (you are here) |
+| **Setup** | `README.md` | Dev setup, project structure, migration status |
+| **Setup (detailed)** | `SETUP.md` | Prerequisites, marspay on :3001 |
+| **Parity matrix** | `docs/parity-matrix.md` | Legacy page → React mapping |
 | **marspay README** | `marspay/README.md` | Backend overview, setup, scripts |
 | **Socket protocol** | `marspay/docs/AGENTS.md` | Sessions, reconnect, bot integration |
 | **ONLINE protocol** | `marspay/docs/AGENTS_ONLINE.md` | Full ONLINE lifecycle, events, rules |
@@ -301,10 +301,10 @@ Legacy redirects: `/local`, `/regtest`, `/testnet` → `/practice`; `/solo` → 
 
 ## Development Quick Start
 
-**Frontend (chain-duel-react):**
+**Frontend:**
 
 ```bash
-cd chain-duel/chain-duel-react
+cd chain-duel
 cp .env.example .env   # set VITE_SOCKET_URL=wss://marspay.chainduel.net
 npm install && npm run dev   # http://localhost:5173
 ```
@@ -320,7 +320,7 @@ npm install && npm run dev   # http://localhost:3001
 **Legacy (optional):**
 
 ```bash
-cd chain-duel
+cd chain-duel/legacy
 # .env: IP_SOCKET + PORT_SOCKET pointing at marspay
 npm install && npm start   # http://localhost:3000
 ```

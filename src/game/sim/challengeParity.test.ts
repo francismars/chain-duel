@@ -95,7 +95,7 @@ function clientReplay(
 
 const marspayDist = join(
   import.meta.dirname,
-  '../../../../../marspay/dist/game/challengeEngine/replayRunner.js'
+  '../../../../marspay/dist/game/challengeEngine/replayRunner.js'
 );
 
 describe('client vs marspay replay parity', () => {

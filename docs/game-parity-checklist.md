@@ -2,11 +2,11 @@
 
 Legacy references:
 
-- `../views/game.html`
-- `../public/stylesheets/game.css`
-- `../public/javascripts/game.js`
-- `../public/javascripts/gamepads.js`
-- `../public/javascripts/mempool.js`
+- `../legacy/views/game.html`
+- `../legacy/public/stylesheets/game.css`
+- `../legacy/public/javascripts/game.js`
+- `../legacy/public/javascripts/gamepads.js`
+- `../legacy/public/javascripts/mempool.js`
 
 React target:
 

@@ -10,7 +10,7 @@
 1. Navigate to the project directory:
 
 ```bash
-cd chain-duel/chain-duel-react
+cd chain-duel
 ```
 
 2. Install dependencies:
@@ -40,12 +40,12 @@ The app runs at **http://localhost:5173**.
 In a separate terminal:
 
 ```bash
-cd ../../marspay
+cd ../marspay
 cp .env.example .env   # fill in LNbits + Nostr keys
 npm install && npm run dev   # http://localhost:3001
 ```
 
-Then in `chain-duel-react/.env`:
+Then in `.env`:
 
 ```
 VITE_SOCKET_URL=ws://localhost:3001
@@ -65,7 +65,7 @@ Everything else — P2P, tournaments, ONLINE, challenge bounties, Nostr session 
 ## Project structure
 
 ```
-chain-duel-react/
+chain-duel/
 ├── src/
 │   ├── pages/          # Route components
 │   ├── features/       # Route-specific hooks and UI
@@ -95,6 +95,6 @@ chain-duel-react/
 ## Documentation
 
 - [README.md](README.md) — frontend overview and features
-- [../docs/FEATURES.md](../docs/FEATURES.md) — full feature guide (all components)
-- [../../marspay/docs/AGENTS_ONLINE.md](../../marspay/docs/AGENTS_ONLINE.md) — ONLINE protocol
-- [../../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md](../../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md) — challenge bounty protocol
+- [docs/FEATURES.md](docs/FEATURES.md) — full feature guide (all components)
+- [../marspay/docs/AGENTS_ONLINE.md](../marspay/docs/AGENTS_ONLINE.md) — ONLINE protocol
+- [../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md](../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md) — challenge bounty protocol

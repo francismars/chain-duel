@@ -17,8 +17,15 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    // legacy/ is the retired Express app. Its HTML is not a Vite entry.
+    optimizeDeps: {
+      entries: ['index.html'],
+    },
     server: {
       port: 5173,
+      watch: {
+        ignored: ['**/legacy/**'],
+      },
       allowedHosts: [
         '.ngrok-free.app',
         '.ngrok-free.dev',
