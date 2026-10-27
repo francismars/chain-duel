@@ -137,7 +137,7 @@
 
 .online-postgame-round-row-inner {
   display: grid;
-  grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr) auto;
+  grid-template-columns: 1fr minmax(0, 36rem) 1fr;
   gap: 0.65rem 0.9rem;
   align-items: center;
   padding: 0.65rem 0.7rem 0.72rem 0.8rem;
@@ -214,6 +214,10 @@
 .online-postgame-player--p1 {
   align-items: flex-end;
   text-align: right;
+}
+
+.online-postgame-player--p1 .online-postgame-player-pts {
+  flex-direction: row-reverse;
 }
 
 .online-postgame-player--p2 {
@@ -296,8 +300,7 @@
 }
 
 .online-postgame-player--round-loser .online-postgame-player-name,
-.online-postgame-player--round-loser .online-postgame-player-pts,
-.online-postgame-player--round-loser .online-postgame-player-denom {
+.online-postgame-player--round-loser .online-postgame-player-pts {
   opacity: 0.48;
 }
 
@@ -358,7 +361,7 @@
 }
 
 .online-postgame-round-winner-kicker {
-  font-family: BureauGrotesque, sans-serif;
+  font-family: Inter, sans-serif;
   font-size: 0.52rem;
   font-weight: 600;
   letter-spacing: 0.22em;
@@ -474,8 +477,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.55rem 0 0.6rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+  padding: 0;
+  border: none;
   text-align: left;
 }
 
@@ -491,8 +494,8 @@
   height: 52px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgb(255 255 255 / 0.75);
-  box-shadow: 0 0 12px rgb(255 255 255 / 28%);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  box-shadow: none;
   flex-shrink: 0;
 }
 
@@ -884,39 +887,51 @@
 
 /* DoN button inherits .online-postgame-btn base sizing from actions context;
    re-declare dimensions since it sits outside .online-postgame-actions */
-.online-postgame-don-panel .online-postgame-btn-don {
+.online-postgame-page
+  .online-postgame-don-panel
+  .button.online-postgame-btn-don {
   height: 42px;
   min-width: 13rem;
   padding: 0 1rem;
   border-radius: 0;
   border-width: 1px;
-  font-family: BureauGrotesque, sans-serif;
-  font-size: 0.88rem;
-  letter-spacing: 0.09em;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.1rem;
   line-height: 1;
+  text-transform: uppercase;
   transition: all 120ms ease-in-out;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 6%);
+  box-shadow: none;
 }
 
-.online-postgame-don-panel
-  .online-postgame-btn-don:hover:not(.disabled):not(:disabled) {
+.online-postgame-page
+  .online-postgame-don-panel
+  .button.online-postgame-btn-don:hover:not(.disabled):not(:disabled) {
   transform: translateY(-1px);
   filter: brightness(1.1);
 }
 
-.online-postgame-don-panel
-  .online-postgame-btn-don:active:not(.disabled):not(:disabled) {
+.online-postgame-page
+  .online-postgame-don-panel
+  .button.online-postgame-btn-don:active:not(.disabled):not(:disabled) {
   transform: translateY(0);
   filter: brightness(0.96);
 }
 
-.online-postgame-don-panel .online-postgame-btn-don.disabled,
-.online-postgame-don-panel .online-postgame-btn-don:disabled {
+.online-postgame-page
+  .online-postgame-don-panel
+  .button.online-postgame-btn-don.disabled,
+.online-postgame-page
+  .online-postgame-don-panel
+  .button.online-postgame-btn-don:disabled {
   opacity: 0.35;
   box-shadow: none;
 }
 
-.online-postgame-don-panel .online-postgame-btn-don:focus-visible {
+.online-postgame-page
+  .online-postgame-don-panel
+  .button.online-postgame-btn-don:focus-visible {
   outline: 2px solid rgb(255 175 85 / 0.7);
   outline-offset: 2px;
 }
@@ -938,7 +953,9 @@
     justify-content: flex-start;
   }
 
-  .online-postgame-don-panel .online-postgame-btn-don {
+  .online-postgame-page
+    .online-postgame-don-panel
+    .button.online-postgame-btn-don {
     width: 100%;
     min-width: 0;
     height: 44px;

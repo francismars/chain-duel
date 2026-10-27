@@ -6,6 +6,8 @@ export type PracticeFreePlayPanelHandle = {
   focusDefault: () => void;
   /** Focus last setup control before the shared footer. */
   focusBeforeFooter: () => void;
+  /** Stepped flow: leave the options screen. Returns false on the format screen. */
+  backToFormat: () => boolean;
 };
 
 export type ChallengeLaunchPhase = 'checking' | 'server' | 'entering';

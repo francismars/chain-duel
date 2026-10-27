@@ -1,5 +1,6 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { advancePointChanges, getHudState, stepGame } from '@/game/engine';
+import { advanceStreakPops } from '@/game/audio/tensionDebug';
 import { applyHeldInputSteering } from '@/lib/controls/applyHeldInputSteering';
 import type { HeldInputState } from '@/lib/controls/heldDirectionSteering';
 import { isFfaMode } from '@/game/engine/ffa';
@@ -8,6 +9,7 @@ import { STEP_SPEED_MS } from '@/game/engine/constants';
 import type { PixiGameRenderer, PixiRenderOpts } from '@/game/render/pixiRenderer';
 import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
 import type { GameAudioSystem } from '@/game/audio/gameAudio';
+import { resetCuesFromStep } from '@/game/audio/resetCue';
 
 interface HudSnapshot {
   p1Points: number;
@@ -72,6 +74,8 @@ interface UseGameRenderBridgeArgs {
   challengeInputLogRef?: MutableRefObject<Array<{ tick: number; dir: string }>>;
   /** Optional canvas continue hint while challenge bounty is validating. */
   challengeContinueLabelRef?: MutableRefObject<string | null>;
+  /** Hide the canvas match-complete card when an HTML end screen owns the result. */
+  suppressVictoryOverlayRef?: MutableRefObject<boolean>;
   /** Optional stakes / match hints drawn on the pre-start canvas overlay. */
   canvasObjectivesRef?: MutableRefObject<CanvasObjectivesOpts>;
   /** Held direction keys — diagonal steering runs once per sim tick. */
@@ -117,6 +121,7 @@ export function useGameRenderBridge({
   simStepRef,
   challengeInputLogRef,
   challengeContinueLabelRef,
+  suppressVictoryOverlayRef,
   canvasObjectivesRef,
   heldInputRef,
 }: UseGameRenderBridgeArgs) {
@@ -163,7 +168,9 @@ export function useGameRenderBridge({
         canvasObjectives: canvasObjectivesRef?.current ?? {},
       };
       const label = challengeContinueLabelRef?.current;
-      if (label) opts.challengeContinueLabel = label;
+      // Empty string hides the continue prompt (e.g. free-play action buttons).
+      if (label != null) opts.challengeContinueLabel = label;
+      if (suppressVictoryOverlayRef?.current) opts.suppressVictoryOverlay = true;
       return opts;
     };
 
@@ -252,8 +259,6 @@ export function useGameRenderBridge({
         const prevP1Len = state.p1.body.length;
         const prevP2Len = state.p2.body.length;
         const prevExtraLen = state.extraSnakes[0]?.snake.body.length ?? 1;
-        const prevP1Head = [...state.p1.head] as [number, number];
-        const prevP2Head = [...state.p2.head] as [number, number];
         const prevStepMs = state.meta?.currentStepMs ?? STEP_SPEED_MS;
         const prevPowerUpItems = state.powerUpItems.length;
 
@@ -304,19 +309,8 @@ export function useGameRenderBridge({
         if (extraLen > prevExtraLen)
           audio?.playCapture(extraLen);
 
-        if (
-          (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
-          state.p1.head[0] === 6 &&
-          state.p1.head[1] === 12
-        ) {
-          audio?.playReset('P1');
-        }
-        if (
-          (prevP2Head[0] !== 44 || prevP2Head[1] !== 12) &&
-          state.p2.head[0] === 44 &&
-          state.p2.head[1] === 12
-        ) {
-          audio?.playReset('P2');
+        for (const player of resetCuesFromStep(state)) {
+          audio?.playReset(player);
         }
 
         if (state.gameEnded && state.winnerPlayer && !winnerSentRef.current) {
@@ -350,9 +344,11 @@ export function useGameRenderBridge({
 
       if (mountReady && state) {
         const simSteps = runSimulation(state, deltaMs);
+        audio?.updateGameState(state);
         if (state.meta?.modeLabel !== 'ONLINE') {
           advancePointChanges(state);
         }
+        advanceStreakPops();
         if (simSteps > 0 || renderer.needsPaint(state)) {
           renderer.render(state, renderOpts());
         }
@@ -379,6 +375,7 @@ export function useGameRenderBridge({
     captureP2Ref,
     challengeInputLogRef,
     challengeContinueLabelRef,
+    suppressVictoryOverlayRef,
     canvasObjectivesRef,
     heldInputRef,
     hostRef,

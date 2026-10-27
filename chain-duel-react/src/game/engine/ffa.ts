@@ -1,9 +1,10 @@
 import {
-  CAPTURE_LEVELS,
   FFA_HUD_COLORS,
   FFA_START_SATS_PER_PLAYER,
 } from '@/game/engine/constants';
 import type { GameState, GridPos, PlayerId } from '@/game/engine/types';
+import { captureRateLabel } from '@/game/engine/captureRateLabel';
+import { capturePercentForLength as percentForLength, gameRecipe } from '@/game/effects/matchRecipe';
 import type { FfaHudPlayer } from '@/game/engine/types';
 
 export type FfaPlayerIndex = 0 | 1 | 2 | 3;
@@ -231,12 +232,8 @@ function captureLabelForLength(length: number): string {
 
 /** Capture % tier for a single snake body length. */
 export function capturePercentForLength(length: number): number {
-  for (const level of CAPTURE_LEVELS) {
-    if (length >= level.minLength && length <= level.maxLength) {
-      return level.percent;
-    }
-  }
-  return 32;
+  const recipe = gameRecipe();
+  return percentForLength(length, recipe.captureFrom, recipe.capturePercent);
 }
 
 /**
@@ -352,6 +349,7 @@ export function ffaApplyCaptureAmount(
     gainPos,
     lossPos,
     capturePercent,
+    captureRateLabel: captureRateLabel(state, winner, capturePercent),
     p1YOffsetPx: 0,
     p2YOffsetPx: 0,
     alpha: 1,

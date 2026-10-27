@@ -23,6 +23,8 @@ import type {
 import { useGamepad } from '@/hooks/useGamepad';
 import { canContinueOnlineAfterGame } from '@/game/engine';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
+import { resetCuesFromTransition } from '@/game/audio/resetCue';
+import { advanceStreakPops, streakPops } from '@/game/audio/tensionDebug';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import {
   ONLINE_START_PROMPT_WORDS,
@@ -32,6 +34,8 @@ import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
+import { MatchEndCard } from '@/features/game/MatchEndCard';
+import { MatchStartPrompt } from '@/features/game/MatchStartPrompt';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
 import { useHudCaptureFeedback } from '@/features/game/hooks/useHudCaptureFeedback';
 import { captureFeedbackStyleFromCtx, captureHitStyleVars, distributionTrackFeedbackStyle } from '@/features/game/hudCaptureFeedback';
@@ -272,6 +276,7 @@ export default function OnlineGame({
     }
 
     const state = snapshot.state as GameState;
+    audioRef.current?.updateGameState(state);
     const prev = prevGameStateRef.current;
     if (prev) {
       playOnlineAudioFromStateTransition(prev, state, audioRef.current);
@@ -318,17 +323,19 @@ export default function OnlineGame({
           );
         }
         const useOnlinePointAnims =
-          raw.meta?.modeLabel === 'ONLINE' && !replayViewRef.current;
+          replayViewRef.current || raw.meta?.modeLabel === 'ONLINE';
         const renderState = useOnlinePointAnims
           ? withOnlinePointAnimations(raw, pointAnimationsRef.current)
           : raw;
+        const hadStreakPop = streakPops().length > 0;
+        advanceStreakPops();
         const popCount = renderState.pointChanges?.length ?? 0;
         const pointPopTail =
           popCount > 0 || prevPointPopCountRef.current > 0;
         prevPointPopCountRef.current = popCount;
         const snapshotChanged = snap !== lastPaintedSnapshot;
         const animActive = rendererRef.current.needsPaint(renderState);
-      if (snapshotChanged || animActive || pointPopTail) {
+      if (snapshotChanged || animActive || pointPopTail || hadStreakPop) {
         try {
           rendererRef.current.render(renderState, {
             replayView: replayViewRef.current,
@@ -509,7 +516,17 @@ export default function OnlineGame({
           replayFetchInFlightRef.current = false;
           setReplayError(frames.length === 0 ? 'Replay has no frames.' : '');
           const first = frames[0] ?? null;
+          resetReplayPointAnims(
+            pointAnimationsRef,
+            prevPointCountByKeyRef
+          );
           if (first) {
+            ingestOnlinePointChanges(
+              first,
+              pointAnimationsRef.current,
+              prevPointCountByKeyRef.current,
+              { anyMode: true }
+            );
             setSnapshot(first);
           }
         } catch {
@@ -592,6 +609,17 @@ export default function OnlineGame({
         const next = Math.min(prev + steps, replayFrames.length - 1);
         if (next >= replayFrames.length - 1) {
           setReplayPlaying(false);
+        }
+        for (let i = prev + 1; i <= next; i += 1) {
+          const stepped = replayFrames[i];
+          if (stepped) {
+            ingestOnlinePointChanges(
+              stepped,
+              pointAnimationsRef.current,
+              prevPointCountByKeyRef.current,
+              { anyMode: true }
+            );
+          }
         }
         const frame = replayFrames[next];
         if (frame) {
@@ -792,6 +820,11 @@ export default function OnlineGame({
     const last = replayFrames.length - 1;
     if (last >= 0 && replayIndex >= last) {
       setReplayIndex(0);
+      seekReplayPointAnims(
+        replayFrames[0] ?? null,
+        pointAnimationsRef,
+        prevPointCountByKeyRef
+      );
       setSnapshot(replayFrames[0] ?? null);
     }
     setReplayPlaying(true);
@@ -801,6 +834,11 @@ export default function OnlineGame({
     if (!replayFrames.length) return;
     setReplayPlaying(false);
     setReplayIndex(0);
+    seekReplayPointAnims(
+      replayFrames[0] ?? null,
+      pointAnimationsRef,
+      prevPointCountByKeyRef
+    );
     setSnapshot(replayFrames[0] ?? null);
   }, [replayFrames]);
 
@@ -927,6 +965,11 @@ export default function OnlineGame({
             setReplayPlaying(false);
             const prev = Math.max(0, replayIndex - SCRUB);
             setReplayIndex(prev);
+            seekReplayPointAnims(
+              replayFrames[prev] ?? null,
+              pointAnimationsRef,
+              prevPointCountByKeyRef
+            );
             if (replayFrames[prev]) setSnapshot(replayFrames[prev]);
             break;
           }
@@ -934,6 +977,11 @@ export default function OnlineGame({
             event.preventDefault();
             const next = Math.min(replayFrames.length - 1, replayIndex + SCRUB);
             setReplayIndex(next);
+            seekReplayPointAnims(
+              replayFrames[next] ?? null,
+              pointAnimationsRef,
+              prevPointCountByKeyRef
+            );
             if (replayFrames[next]) setSnapshot(replayFrames[next]);
             break;
           }
@@ -1250,6 +1298,18 @@ export default function OnlineGame({
 
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
             <div id="gameCanvasHost" ref={setHostEl} />
+            <MatchStartPrompt
+              getState={() =>
+                (snapshotRef.current?.state as GameState | undefined) ?? null
+              }
+              optsRef={canvasObjectivesRef}
+            />
+            <MatchEndCard
+              getState={() =>
+                (snapshotRef.current?.state as GameState | undefined) ?? null
+              }
+              suppressedRef={victoryHandoffRef}
+            />
           </div>
           {replayMode ? (
             <div className="online-replay-controls">
@@ -1268,6 +1328,11 @@ export default function OnlineGame({
                   setReplayPlaying(false);
                   setReplayIndex(idx);
                   const frame = replayFrames[idx];
+                  seekReplayPointAnims(
+                    frame ?? null,
+                    pointAnimationsRef,
+                    prevPointCountByKeyRef
+                  );
                   if (frame) {
                     setSnapshot(frame);
                   }
@@ -1548,18 +1613,44 @@ type OnlinePointAnim = {
   startedAtMs: number;
 };
 
-const ONLINE_POINT_ANIM_MS = 650;
+const ONLINE_POINT_ANIM_MS = 2600;
 const ONLINE_POINT_RISE_PX = 52;
+
+function resetReplayPointAnims(
+  pointAnimationsRef: { current: OnlinePointAnim[] },
+  prevPointCountByKeyRef: { current: Map<string, number> }
+): void {
+  pointAnimationsRef.current = [];
+  prevPointCountByKeyRef.current.clear();
+}
+
+function seekReplayPointAnims(
+  frame: OnlineRoomSnapshot | null,
+  pointAnimationsRef: { current: OnlinePointAnim[] },
+  prevPointCountByKeyRef: { current: Map<string, number> }
+): void {
+  resetReplayPointAnims(pointAnimationsRef, prevPointCountByKeyRef);
+  if (!frame) {
+    return;
+  }
+  ingestOnlinePointChanges(
+    frame,
+    pointAnimationsRef.current,
+    prevPointCountByKeyRef.current,
+    { anyMode: true }
+  );
+}
 
 function ingestOnlinePointChanges(
   snapshot: OnlineRoomSnapshot,
   pointAnimations: OnlinePointAnim[],
-  prevPointCountByKey: Map<string, number>
+  prevPointCountByKey: Map<string, number>,
+  options?: { anyMode?: boolean }
 ): Array<'P1' | 'P2'> {
   const state = snapshot.state as Record<string, unknown> | null;
   const modeLabel = (state?.meta as { modeLabel?: string } | undefined)
     ?.modeLabel;
-  if (modeLabel !== 'ONLINE') {
+  if (!options?.anyMode && modeLabel !== 'ONLINE') {
     return [];
   }
   const incoming = getPointChanges(snapshot.state);
@@ -1687,21 +1778,8 @@ function playOnlineAudioFromStateTransition(
   if (state.powerUpItems.length < (prev.powerUpItems?.length ?? 0)) {
     audio.playPowerUp();
   }
-  const prevP1Head = prev.p1.head;
-  const prevP2Head = prev.p2.head;
-  if (
-    (prevP1Head[0] !== 6 || prevP1Head[1] !== 12) &&
-    state.p1.head[0] === 6 &&
-    state.p1.head[1] === 12
-  ) {
-    audio.playReset('P1');
-  }
-  if (
-    (prevP2Head[0] !== 44 || prevP2Head[1] !== 12) &&
-    state.p2.head[0] === 44 &&
-    state.p2.head[1] === 12
-  ) {
-    audio.playReset('P2');
+  for (const player of resetCuesFromTransition(prev, state)) {
+    audio.playReset(player);
   }
   const prevStepMs = prev.meta?.currentStepMs;
   const newStepMs = state.meta?.currentStepMs;
@@ -1764,6 +1842,7 @@ function applyLiveOnlineSnapshot(
       ctx.gameMusicStartedRef.current = true;
       ctx.audioRef.current?.startMusic();
     }
+    ctx.audioRef.current?.updateGameState(state);
     if (ctx.prevGameStateRef.current) {
       playOnlineAudioFromStateTransition(
         ctx.prevGameStateRef.current,

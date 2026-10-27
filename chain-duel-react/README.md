@@ -125,3 +125,52 @@ See [docs/parity-matrix.md](docs/parity-matrix.md) for the full legacy → React
 | [marspay/docs/AGENTS_ONLINE.md](../../marspay/docs/AGENTS_ONLINE.md) | ONLINE protocol |
 | [marspay/docs/AGENTS_CHALLENGE_BOUNTY.md](../../marspay/docs/AGENTS_CHALLENGE_BOUNTY.md) | Challenge bounty protocol |
 | [src/types/socket.ts](src/types/socket.ts) | Socket event type definitions |
+
+## Adaptive game audio
+
+The active React client crossfades between four distinct pressure themes over the
+original game music in local games, online matches, and replays. Each theme is
+combines a treated version of the original recording with a synthesized voice.
+Synth notes follow the strongest bass pitch detected in each four-beat phrase;
+all layers share the original loop duration.
+
+| Level | Sound | Live chain length | Player/team share of sats | Volume |
+| --- | --- | --- | --- | --- |
+| 1 · Build | Sub-bass synth heartbeat | 4+ segments | 60%+ | 22% |
+| 2 · Pressure | FM synth plucks and octave sequence | 7+ segments | 75%+ | 34% |
+| 3 · Tension | Wide detuned synth pad and shimmer | 11+ segments | 85%+ | 46% |
+| 4 · Critical | Saturated synth lead and rapid octave pulses | 16+ segments | 95%+ | 65% |
+
+The assets are `chain_duel_build.m4a`, `chain_duel_pressure.m4a`,
+`chain_duel_tension.m4a`, and `chain_duel_critical.m4a`. Inactive themes run
+silently to stay synchronized; transitions crossfade without restarting them.
+
+Board shrinkage also raises the stage based on lost playable area: Build after
+the first contraction, Pressure at 25%, Tension at 45%, and Critical at 65%.
+The highest stage from board size, chain length, or score share wins. Below
+level 1, only the original game track plays.
+
+- Releases after four seconds below the current threshold, then fades gradually.
+  Eliminated chains are ignored; 2v1 combines the AI teammates' scores.
+- End of match: play `chain_duel_end.wav`, a short synthesized resolve (low pulse, fifth,
+  then a fading open chord), as music switches back to the menu loop. It is separate from
+  the block-found cue (`MAINNET_BLOCK.aac`). Pressure themes stop; menu music stays on while viewing results.
+  Results routes preserve the menu loop position. Playing again restarts game
+  music and re-arms the ending cue. The rest of the game UI is dimmed by a black backdrop.
+- Music mute covers the game loop and all pressure themes. Full mute also covers the ending cue.
+
+Rebuild the pressure themes and ending cue with Python 3 and ffmpeg:
+
+```sh
+python3 scripts/audio/create-game-cues.py
+```
+
+`python3 scripts/audio/create-game-cues.py --end-only` rebuilds just the ending cue.
+
+Thresholds live in `src/game/audio/tension.ts`; mixing and lifecycle behavior live
+in `src/game/audio/gameAudio.ts`. The retiring root frontend is unchanged.
+
+Board contractions play `chain_duel_shrink.m4a`, a short electronic downward
+sweep, in local games and online snapshots. Warning flashes and initial snapshots
+are silent; full mute also silences this effect. Regenerate it with
+`python3 scripts/audio/create-shrink-cue.py`.

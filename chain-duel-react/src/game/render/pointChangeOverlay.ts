@@ -9,6 +9,8 @@ const LOSS_GLOW = 0xff7a6a;
 const LABEL_SIZE_RATIO = 0.52;
 const LABEL_ALPHA = 0.58;
 const POP_FONT_SCALE = 0.92;
+const GAIN_SIZE_SCALE = 0.8;
+const LOSS_SIZE_SCALE = 0.66;
 const SATS_LABEL = 'sats';
 
 type GlowTier = 's' | 'm' | 'l';
@@ -16,6 +18,7 @@ type GlowTier = 's' | 'm' | 'l';
 type PopSpec = {
   mainText: string;
   labelText: string;
+  rateText?: string;
   x: number;
   y: number;
   value: number;
@@ -28,10 +31,78 @@ type PopSlot = {
   root: Container;
   main: Text;
   label: Text;
+  rate: Text;
 };
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+/** Keep a centered popup inside the board. Heads near the edge were clipping the word. */
+export function placeOnBoard(
+  x: number,
+  y: number,
+  halfW: number,
+  halfH: number,
+  boardWidth: number,
+  boardHeight: number
+): { x: number; y: number } {
+  const axis = (value: number, half: number, limit: number) => {
+    if (!(limit > 16)) return value;
+    const pad = Math.min(Math.max(8, half), Math.max(8, limit / 2 - 1));
+    return clamp(value, pad, Math.max(pad, limit - pad));
+  };
+  return {
+    x: axis(x, halfW, boardWidth),
+    y: axis(y, halfH, boardHeight),
+  };
+}
+
+/** How far to move a box so it sits inside the board. */
+export function shiftToFit(
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  boardWidth: number,
+  boardHeight: number,
+  margin = 8
+): { dx: number; dy: number } {
+  if (!(right > left + 1) || !(bottom > top + 1)) return { dx: 0, dy: 0 };
+  if (!(boardWidth > 16) || !(boardHeight > 16)) return { dx: 0, dy: 0 };
+  let dx = 0;
+  let dy = 0;
+  if (right > boardWidth - margin) dx -= right - (boardWidth - margin);
+  if (left + dx < margin) dx += margin - (left + dx);
+  if (bottom > boardHeight - margin) dy -= bottom - (boardHeight - margin);
+  if (top + dy < margin) dy += margin - (top + dy);
+  return { dx, dy };
+}
+
+/** After Pixi has a real texture, pull any leftover overflow back onto the board. */
+export function keepPopOnBoard(
+  node: Container,
+  boardWidth: number,
+  boardHeight: number
+): void {
+  const bounds = node.getBounds();
+  const box = bounds as {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    minX?: number;
+    minY?: number;
+    maxX?: number;
+    maxY?: number;
+  };
+  const left = box.minX ?? box.x;
+  const top = box.minY ?? box.y;
+  const right = box.maxX ?? left + box.width;
+  const bottom = box.maxY ?? top + box.height;
+  const { dx, dy } = shiftToFit(left, top, right, bottom, boardWidth, boardHeight);
+  if (dx !== 0) node.position.x += dx;
+  if (dy !== 0) node.position.y += dy;
 }
 
 /** 0 at spawn, 1 as the pop fades out. */
@@ -53,10 +124,9 @@ export function pointChangeFontSize(value: number, cellSize: number): number {
   return base * (1 + tier * 0.38) * POP_FONT_SCALE;
 }
 
-/** Drift away from center so gain/loss feel directional. */
-export function pointChangeDriftX(alpha: number, outward: -1 | 1): number {
-  const life = pointChangeLifeProgress(alpha);
-  return outward * life * life * 11;
+/** Horizontal drift is disabled — pops only rise. */
+export function pointChangeDriftX(_alpha: number, _outward: -1 | 1): number {
+  return 0;
 }
 
 function glowTier(value: number): GlowTier {
@@ -78,6 +148,17 @@ function styleCacheKey(
   label = false
 ): string {
   return `${label ? 'l' : 'm'}-${isGain ? 'g' : 'l'}-${fontSize}-${tier}`;
+}
+
+/** Pixi rebuilds a text texture when `.text` or `.style` is set, even to the same value. */
+const boundText = new WeakMap<Text, { style: TextStyle; value: string }>();
+
+function bindText(text: Text, style: TextStyle, value: string): void {
+  const previous = boundText.get(text);
+  if (previous && previous.style === style && previous.value === value) return;
+  boundText.set(text, { style, value });
+  text.style = style;
+  text.text = value;
 }
 
 function makePointChangeStyle(
@@ -138,10 +219,8 @@ export function layoutPopTexts(
   labelText: string,
   fontSize: number
 ): void {
-  main.style = mainStyle;
-  label.style = labelStyle;
-  main.text = mainText;
-  label.text = labelText;
+  bindText(main, mainStyle, mainText);
+  bindText(label, labelStyle, labelText);
 
   const mainW = measurePopTextWidth(mainText, mainStyle);
   const labelW = measurePopTextWidth(labelText, labelStyle);
@@ -178,6 +257,7 @@ function gainSpec(
   return {
     mainText: `+${change.value}`,
     labelText: SATS_LABEL,
+    rateText: change.captureRateLabel,
     x,
     y,
     value: change.value,
@@ -223,7 +303,9 @@ function buildPopSpecs(
   colSize: number,
   rowSize: number
 ): PopSpec[] {
-  const spawnLift = -rowSize * 0.42;
+  // Clear the chain. A shorter lift dropped the green number onto a white
+  // head, where it disappeared, and left only the word beside the chain.
+  const spawnLift = -rowSize * 1.25;
   const { gain: gainPos, loss: lossPos } = resolveGainLossPos(change);
 
   const gain = popScreenPos(
@@ -264,7 +346,9 @@ function drawPopCanvas(
   cellSize: number
 ): void {
   const scale = pointChangePopScale(spec.alpha);
-  const fontSize = pointChangeFontSize(spec.value, cellSize);
+  const fontSize =
+    pointChangeFontSize(spec.value, cellSize) *
+    (spec.isGain ? GAIN_SIZE_SCALE : LOSS_SIZE_SCALE);
   const labelSize = Math.max(9, fontSize * LABEL_SIZE_RATIO);
   const dx = pointChangeDriftX(spec.alpha, spec.drift);
   const tier = glowTier(spec.value);
@@ -298,6 +382,14 @@ function drawPopCanvas(
   ctx.shadowBlur = glowBlur(tier, spec.isGain) * 0.45;
   drawFilledText(ctx, spec.labelText, cursorX, 1, fill);
 
+  if (spec.rateText && spec.isGain) {
+    const rateSize = Math.max(10, fontSize * 0.72);
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = baseAlpha;
+    ctx.font = `700 ${Math.round(rateSize)}px Inter, system-ui, sans-serif`;
+    drawFilledText(ctx, spec.rateText, 0, -fontSize * 0.95, fill);
+  }
+
   ctx.restore();
 }
 
@@ -330,7 +422,9 @@ export class PointChangeOverlay {
   render(
     changes: readonly PointChange[],
     colSize: number,
-    rowSize: number
+    rowSize: number,
+    boardWidth = Number.POSITIVE_INFINITY,
+    boardHeight = Number.POSITIVE_INFINITY
   ): void {
     if (changes.length === 0) {
       this.hide();
@@ -345,7 +439,10 @@ export class PointChangeOverlay {
         const slot = this.acquire(used);
         used += 1;
 
-        const fontSize = Math.round(pointChangeFontSize(spec.value, cellSize));
+        const fontSize = Math.round(
+          pointChangeFontSize(spec.value, cellSize) *
+            (spec.isGain ? GAIN_SIZE_SCALE : LOSS_SIZE_SCALE)
+        );
         const labelSize = Math.max(9, Math.round(fontSize * LABEL_SIZE_RATIO));
         const tier = glowTier(spec.value);
 
@@ -373,13 +470,46 @@ export class PointChangeOverlay {
           fontSize
         );
         slot.label.visible = true;
-
-        const x = Math.round(spec.x + pointChangeDriftX(spec.alpha, spec.drift));
-        const y = Math.round(spec.y);
-        slot.root.position.set(x, y);
+        let rateW = 0;
+        if (spec.rateText && spec.isGain) {
+          const rateSize = Math.max(10, Math.round(fontSize * 0.72));
+          const rateKey = styleCacheKey(rateSize, tier, true, false);
+          let rateStyle = this.styleCache.get(rateKey);
+          if (!rateStyle) {
+            rateStyle = makePointChangeStyle(rateSize, tier, true, false);
+            this.styleCache.set(rateKey, rateStyle);
+          }
+          bindText(slot.rate, rateStyle, spec.rateText);
+          slot.rate.position.set(0, Math.round(-fontSize * 0.95));
+          slot.rate.visible = true;
+          slot.rate.alpha = 1;
+          rateW = measurePopTextWidth(spec.rateText, rateStyle);
+        } else {
+          slot.rate.visible = false;
+        }
 
         const scale = pointChangePopScale(spec.alpha);
+        // Text.width stays 0 until Pixi uploads the texture, so a head at the
+        // edge kept the word off the board. Measure the string instead.
+        const rowW =
+          measurePopTextWidth(spec.mainText, mainStyle) +
+          fontSize * 0.12 +
+          measurePopTextWidth(spec.labelText, labelStyle);
+        const glow = 14;
+        const halfW = (Math.max(rowW, rateW) / 2 + glow) * scale;
+        const halfH =
+          (fontSize * (rateW > 0 ? 1.55 : 0.7) + glow) * scale;
+        const placed = placeOnBoard(
+          Math.round(spec.x + pointChangeDriftX(spec.alpha, spec.drift)),
+          Math.round(spec.y),
+          halfW,
+          halfH,
+          boardWidth,
+          boardHeight
+        );
+        slot.root.position.set(placed.x, placed.y);
         slot.root.scale.set(scale);
+        keepPopOnBoard(slot.root, boardWidth, boardHeight);
 
         slot.main.alpha = 1;
         slot.label.alpha = LABEL_ALPHA;
@@ -412,11 +542,19 @@ export class PointChangeOverlay {
       text.resolution = pixiTextResolution();
       text.roundPixels = true;
     }
+    const rate = new Text({
+      text: '',
+      style: makePointChangeStyle(11, 's', true, true),
+    });
+    rate.anchor.set(0.5, 0.5);
+    rate.resolution = pixiTextResolution();
+    rate.roundPixels = true;
+    root.addChild(rate);
     root.addChild(main);
     root.addChild(label);
     this.container.addChild(root);
 
-    const slot = { root, main, label };
+    const slot = { root, main, label, rate };
     this.pool.push(slot);
     return slot;
   }

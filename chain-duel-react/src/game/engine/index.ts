@@ -1,5 +1,4 @@
 import {
-  CAPTURE_LEVELS,
   COUNTDOWN_END_TICK,
   GAME_COLS,
   GAME_ROWS,
@@ -17,6 +16,8 @@ import {
   FFA_BOT_NAMES,
 } from '@/game/engine/constants';
 import { runAStar } from '@/game/engine/astar';
+import { captureRateLabel } from '@/game/engine/captureRateLabel';
+import { capturePercentForLength, gameRecipe } from '@/game/effects/matchRecipe';
 import { gameRandom } from '@/game/engine/runRng';
 import type {
   AiTier,
@@ -177,6 +178,8 @@ interface CreateStateArgs {
   p2Human?: boolean;
   p3Human?: boolean;
   p4Human?: boolean;
+  /** Solo vs AI: allow pressing X to swap white/black before start. */
+  allowSoloSeatSwitch?: boolean;
 }
 
 /** One unique bot name per AI slot (P1 → P2 → P3 → P4). */
@@ -213,6 +216,18 @@ export function createGameState(args: CreateStateArgs): GameState {
   const p1HumanMeta = args.p1Human !== undefined ? Boolean(args.p1Human) : true;
   const p2HumanMeta =
     args.p2Human !== undefined ? Boolean(args.p2Human) : defaultP2Human;
+  const teamMode = (args.teamMode ?? 'solo') as TeamMode;
+  const soloSeatSwitchEnabled =
+    args.allowSoloSeatSwitch === true &&
+    teamMode === 'solo' &&
+    p1HumanMeta !== p2HumanMeta &&
+    args.p3Human !== true &&
+    args.p4Human !== true;
+  const soloInputSlot = soloSeatSwitchEnabled
+    ? p1HumanMeta
+      ? ('p1' as const)
+      : ('p2' as const)
+    : undefined;
 
   const state: GameState = {
     cols: GAME_COLS,
@@ -250,6 +265,7 @@ export function createGameState(args: CreateStateArgs): GameState {
       practiceMode: args.practiceMode ?? false,
       p1Human: p1HumanMeta,
       p2Human: p2HumanMeta,
+      ...(soloInputSlot ? { soloInputSlot } : {}),
       isTournament: args.isTournament ?? false,
       aiTier: args.aiTier ?? 'stacker',
       convergenceMode: args.convergenceMode ?? false,
@@ -258,10 +274,13 @@ export function createGameState(args: CreateStateArgs): GameState {
       convergenceMinCols: args.convergenceMinCols ?? CONVERGENCE_MIN_COLS,
       convergenceMinRows: args.convergenceMinRows ?? CONVERGENCE_MIN_ROWS,
       powerupMode: args.powerupMode ?? false,
-      teamMode: (args.teamMode ?? 'solo') as TeamMode,
+      teamMode,
       currentStepMs: args.convergenceStepMs ?? STEP_SPEED_MS,
     },
     tickCount: 0,
+    resetCueP1: false,
+    resetCueP2: false,
+    resetCueExtra: [],
     powerUpItems: [],
     activePowerUps: [],
     obstacleWalls: [],
@@ -282,7 +301,6 @@ export function createGameState(args: CreateStateArgs): GameState {
     controllerTestExtra: [],
   };
 
-  const teamMode = args.teamMode ?? 'solo';
   const p3Human = args.p3Human === true;
   const p4Human = args.p4Human === true;
   if (teamMode === 'ffa') {
@@ -523,6 +541,9 @@ export function stepGame(state: GameState): TickResult {
 
   if (state.gameStarted && !state.gameEnded) {
     state.tickCount += 1;
+    state.resetCueP1 = false;
+    state.resetCueP2 = false;
+    state.resetCueExtra = state.extraSnakes.map(() => false);
 
     // Convergence: shrink border
     if (state.meta.convergenceMode && state.shrinkBorder) {
@@ -644,9 +665,9 @@ export function advancePointChanges(state: GameState): void {
   state.pointChanges = state.pointChanges
     .map((change) => ({
       ...change,
-      p1YOffsetPx: change.p1YOffsetPx - 1,
-      p2YOffsetPx: change.p2YOffsetPx - 1,
-      alpha: change.alpha - 0.1 / 6,
+      p1YOffsetPx: change.p1YOffsetPx - 0.25,
+      p2YOffsetPx: change.p2YOffsetPx - 0.25,
+      alpha: change.alpha - 0.1 / 24,
     }))
     .filter((change) => change.alpha >= 0);
 }
@@ -1129,6 +1150,7 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
     gainPos: player === 'P1' ? p1Pos : p2Pos,
     lossPos: player === 'P1' ? p2Pos : p1Pos,
     capturePercent,
+    captureRateLabel: captureRateLabel(state, index, capturePercent),
     p1YOffsetPx: 0,
     p2YOffsetPx: 0,
     alpha: 1,
@@ -1144,12 +1166,8 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
 }
 
 function capturePercentByLength(length: number): number {
-  for (const level of CAPTURE_LEVELS) {
-    if (length >= level.minLength && length <= level.maxLength) {
-      return level.percent;
-    }
-  }
-  return 32;
+  const recipe = gameRecipe();
+  return capturePercentForLength(length, recipe.captureFrom, recipe.capturePercent);
 }
 
 export function getCaptureLabel(length: number): string {
@@ -1161,6 +1179,8 @@ export function getCaptureLabel(length: number): string {
 // ============================================================================
 
 function resetSnake(state: GameState, player: PlayerId): void {
+  if (player === 'P1') state.resetCueP1 = true;
+  else state.resetCueP2 = true;
   const retainSpeed = player === 'P2' && state.meta.powerupMode;
   const teamMode = state.meta.teamMode ?? 'solo';
   const conv = Boolean(state.meta.convergenceMode && state.shrinkBorder);
@@ -1395,8 +1415,12 @@ function resetExtraSnake(extra: ExtraSnake, state: GameState): void {
   extra.snake.body = body;
   extra.snake.dir = '';
   extra.snake.dirWanted = dirWanted;
-  const extraIndex = (state.extraSnakes.indexOf(extra) +
-    2) as PowerUpPlayerIndex;
+  const listed = state.extraSnakes.indexOf(extra);
+  if (listed >= 0) {
+    if (!state.resetCueExtra) state.resetCueExtra = [];
+    state.resetCueExtra[listed] = true;
+  }
+  const extraIndex = (listed + 2) as PowerUpPlayerIndex;
   if (extraIndex >= 2) clearPowerUpsForPlayer(state, extraIndex);
 }
 

@@ -1,6 +1,5 @@
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { GameState, GridPos, PowerUpType } from '@/game/engine/types';
-import { advancePointChanges } from '@/game/engine';
 import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
 import {
   drawPowerUpIconPixi,
@@ -15,24 +14,27 @@ import {
 } from '@/game/engine/powerups';
 import { clearPreMatchKeyHighlight } from '@/game/render/preMatchKeyHighlight';
 import {
-  applyCanvasTextDropShadow,
-  clearCanvasTextDropShadow,
-  computeCanvasObjectivesLayout,
-  computeStartPromptPulse,
-  fitStartPromptFontSize,
+  anyCaptureAnimFlag,
+  captureAnimFlags,
+  type CaptureAnimFlags,
+} from '@/game/render/captureAnimFlags';
+import {
+  planCaptureAnims,
+  retainFreshCoins,
+  TAIL_GROW_MS,
+  tailGrowScale,
+} from '@/game/render/captureAnimPlan';
+import {
+  fitStartPromptToBoard,
   measureStartWordWidth,
-  resolveStartPromptWords,
   START_PROMPT_GAP_RATIO,
   START_PROMPT_WORDS,
   START_WORD_SHADOW_BLUR,
   startPromptLineWidth,
-  startPromptRevealElapsedMs,
-  startPromptWordRevealAlpha,
   type CanvasObjectivesOpts,
 } from '@/game/render/matchObjectives';
 import {
   CanvasObjectivesOverlay,
-  drawCanvasObjectivesFallback,
 } from '@/game/render/canvasObjectivesOverlay';
 import {
   CanvasControlsOverlay,
@@ -47,7 +49,20 @@ import {
   drawPointChangesCanvas,
   PointChangeOverlay,
 } from '@/game/render/pointChangeOverlay';
+import {
+  drawStreakPopsCanvas,
+  StreakPopOverlay,
+} from '@/game/render/streakPopOverlay';
+import { streakPops } from '@/game/audio/tensionDebug';
+import {
+  EndGameOverlay,
+  END_OVERLAY_DELAY_MS,
+  END_RESOLVE_DURATION_MS,
+  endOverlayRevealDurationMs,
+} from './endGameOverlay';
 import { pixiTextResolution } from '@/game/render/pixiTextResolution';
+
+type CapturePulse = { startMs: number; reward: number };
 
 export type PixiRenderOpts = {
   replayView?: boolean;
@@ -65,15 +80,34 @@ export class PixiGameRenderer {
   private deadZone: Graphics = new Graphics();
   private grid: Graphics = new Graphics();
   private scene: Graphics = new Graphics();
-  private resolveBlocks: Graphics = new Graphics();
   private overlay: Container = new Container();
   private resolveAnimStartMs: number | null = null;
+  /** When the end overlay first became eligible; delay starts from this. */
+  private endOverlayEligibleAtMs: number | null = null;
+  /** When the staggered end-screen reveal began (after the settle delay). */
+  private endOverlayAnimStartMs: number | null = null;
+  /** True after the reveal finished (or was suppressed). */
+  private endOverlayRevealDone = false;
   // Coinbase capture pulse tracking
   private prevScoreP1 = -1;
   private prevScoreP2 = -1;
-  private p1Pulses: number[] = [];
-  private p2Pulses: number[] = [];
+  private p1Pulses: CapturePulse[] = [];
+  private p2Pulses: CapturePulse[] = [];
+  private growAt: Record<string, number> = {};
+  private captureScales: { pos: GridPos; startMs: number }[] = [];
+  private prevCoins: { pos: GridPos; reward: number }[] = [];
+  private prevBodyLen: { p1: number; p2: number; extra: number[] } = {
+    p1: -1,
+    p2: -1,
+    extra: [],
+  };
+  private captureNotedTick = -1;
+  /** Lab preview. A real match leaves this empty and reads the applied recipe. */
+  private captureAnimOverride: CaptureAnimFlags | null = null;
   private static readonly PULSE_DURATION_MS = 650;
+  private static readonly PULSE_MAX_MS = 1000;
+  private static readonly SCALE_MS = 390;
+  private static readonly GROW_MS = TAIL_GROW_MS;
   // SURGE fading-square trail
   private p1SurgeTrail: { pos: GridPos; time: number }[] = [];
   private p2SurgeTrail: { pos: GridPos; time: number }[] = [];
@@ -87,6 +121,7 @@ export class PixiGameRenderer {
   private startReady = new OnlineStartReadyOverlay();
   private controls = new CanvasControlsOverlay();
   private pointChangesOverlay = new PointChangeOverlay();
+  private streakPopOverlay = new StreakPopOverlay();
   private startRevealTime = -1;
   private startLayoutKey = '';
   private startWordMeasureCtx: CanvasRenderingContext2D | null = null;
@@ -94,8 +129,7 @@ export class PixiGameRenderer {
   private lastCountdownPhase: '3' | '2' | '1' | 'LFG' | null = null;
   private lastOverlayWidth = 0;
   private lastOverlayHeight = 0;
-  private endWinnerText: Text;
-  private endContinueText: Text;
+  private endOverlay = new EndGameOverlay();
   private countdown3: Text;
   private countdown2: Text;
   private countdown1: Text;
@@ -144,46 +178,6 @@ export class PixiGameRenderer {
     this.startPromptSubtext.anchor.set(0.5, 0);
     this.startPromptSubtext.resolution = this.textResolution;
     this.startPromptSubtext.visible = false;
-    this.endWinnerText = new Text({
-      text: '',
-      style: new TextStyle({
-        fontFamily: 'BureauGrotesque',
-        fill: '#ffffff',
-        fontSize: 34,
-        fontWeight: '500',
-        align: 'center',
-        padding: 48,
-        dropShadow: {
-          color: '#000000',
-          alpha: 0.95,
-          blur: 44,
-          angle: 0,
-          distance: 0,
-        },
-      }),
-    });
-    this.endWinnerText.anchor.set(0.5);
-    this.endWinnerText.resolution = this.textResolution;
-    this.endContinueText = new Text({
-      text: '',
-      style: new TextStyle({
-        fontFamily: 'BureauGrotesque',
-        fill: '#ffffff',
-        fontSize: 20,
-        fontWeight: '500',
-        align: 'center',
-        padding: 48,
-        dropShadow: {
-          color: '#000000',
-          alpha: 0.95,
-          blur: 44,
-          angle: 0,
-          distance: 0,
-        },
-      }),
-    });
-    this.endContinueText.anchor.set(0.5);
-    this.endContinueText.resolution = this.textResolution;
     this.countdown3 = this.createCountdownText('3');
     this.countdown2 = this.createCountdownText('2');
     this.countdown1 = this.createCountdownText('1');
@@ -207,6 +201,14 @@ export class PixiGameRenderer {
     this.host = host;
     host.innerHTML = '';
     await PixiGameRenderer.waitForHostLayout(host);
+    // Load the brand faces before Pixi caches text metrics (also on direct game links).
+    if (document.fonts) {
+      await Promise.allSettled([
+        document.fonts.load('16px BureauGrotesque'),
+        document.fonts.load('16px Inter'),
+      ]);
+    }
+    if (generation !== this.mountGeneration || this.host !== host) return;
     const initWidth = Math.max(1, host.clientWidth);
     const initHeight = Math.max(1, host.clientHeight);
     try {
@@ -227,19 +229,19 @@ export class PixiGameRenderer {
       this.root.addChild(this.deadZone);
       this.root.addChild(this.grid);
       this.root.addChild(this.scene);
-      this.root.addChild(this.resolveBlocks);
       this.overlay.addChild(this.startWordsContainer);
       this.overlay.addChild(this.startPromptSubtext);
       this.overlay.addChild(this.startReady.container);
       this.overlay.addChild(this.controls.container);
       this.overlay.addChild(this.objectives.container);
-      this.overlay.addChild(this.endWinnerText);
-      this.overlay.addChild(this.endContinueText);
       this.overlay.addChild(this.countdown3);
       this.overlay.addChild(this.countdown2);
       this.overlay.addChild(this.countdown1);
       this.overlay.addChild(this.countdownLfg);
       this.overlay.addChild(this.pointChangesOverlay.container);
+      this.overlay.addChild(this.streakPopOverlay.container);
+      // Results cover the last capture's green/red amount popups.
+      this.overlay.addChild(this.endOverlay.container);
       this.root.addChild(this.overlay);
       app.stage.addChild(this.root);
       this.resize();
@@ -286,8 +288,11 @@ export class PixiGameRenderer {
     }
     if (state.gameStarted && !state.gameEnded) {
       if ((state.pointChanges?.length ?? 0) > 0) return true;
+      if (streakPops().length > 0) return true;
       if ((state.powerUpItems?.length ?? 0) > 0) return true;
       if (this.p1Pulses.length > 0 || this.p2Pulses.length > 0) return true;
+      if (this.growAnimating(performance.now())) return true;
+      if (this.captureScales.length > 0) return true;
       if (this.p1SurgeTrail.length > 0 || this.p2SurgeTrail.length > 0)
         return true;
       if (
@@ -301,7 +306,9 @@ export class PixiGameRenderer {
     }
     if (state.gameEnded) {
       const resolve = this.getResolveProgress(state);
-      return resolve > 0 && resolve < 1;
+      if (resolve > 0 && resolve < 1) return true;
+      // Keep painting through the hold and the reveal frame itself.
+      return this.needsEndOverlayPaint(state, resolve);
     }
     return false;
   }
@@ -412,7 +419,8 @@ export class PixiGameRenderer {
   private fitAndLayoutStartWords(
     width: number,
     height: number,
-    words: readonly string[]
+    words: readonly string[],
+    opts: CanvasObjectivesOpts
   ): number {
     const wordWidthsForSize = (fontSize: number) =>
       words.map((word) => this.measureStartWordGlyphWidth(word, fontSize));
@@ -421,7 +429,7 @@ export class PixiGameRenderer {
       startPromptLineWidth(fontSize, wordWidthsForSize(fontSize)) +
       START_WORD_SHADOW_BLUR;
 
-    const fontSize = fitStartPromptFontSize(width, height, measureLine);
+    const fontSize = fitStartPromptToBoard(width, height, measureLine, opts);
     const gap = fontSize * START_PROMPT_GAP_RATIO;
     const wordWidths = wordWidthsForSize(fontSize);
     const widthSig = wordWidths.map((w) => Math.ceil(w)).join(',');
@@ -446,7 +454,16 @@ export class PixiGameRenderer {
     return fontSize;
   }
 
+  setCaptureAnimOverride(flags: CaptureAnimFlags | null): void {
+    this.captureAnimOverride = flags;
+  }
+
+  private animFlags(): CaptureAnimFlags {
+    return this.captureAnimOverride ?? captureAnimFlags();
+  }
+
   render(state: GameState, opts?: PixiRenderOpts): void {
+    this.host?.closest('#gameCanvas')?.classList.toggle('game-result-active', state.gameEnded);
     if (!this.app) {
       this.renderFallback(state, opts);
       return;
@@ -481,8 +498,6 @@ export class PixiGameRenderer {
       this.renderDeadZone(state, width, height, colSize, rowSize);
     }
 
-    // ── Resolving blocks (convergence wall-close finale) ─────────────────────
-    this.resolveBlocks.clear();
     const resolveProgress = this.getResolveProgress(state);
 
     // ── Grid (cached; rebuild only on size change) ──
@@ -495,23 +510,7 @@ export class PixiGameRenderer {
 
     // ── Coinbase capture pulse detection ─────────────────────────────────────
     const now = performance.now();
-    if (state.gameStarted && !state.gameEnded) {
-      if (this.prevScoreP1 >= 0 && state.score[0] > this.prevScoreP1)
-        this.p1Pulses.push(now);
-      if (this.prevScoreP2 >= 0 && state.score[1] > this.prevScoreP2)
-        this.p2Pulses.push(now);
-    } else if (!state.gameStarted) {
-      this.p1Pulses = [];
-      this.p2Pulses = [];
-    }
-    this.prevScoreP1 = state.score[0];
-    this.prevScoreP2 = state.score[1];
-    this.p1Pulses = this.p1Pulses.filter(
-      (t) => now - t < PixiGameRenderer.PULSE_DURATION_MS
-    );
-    this.p2Pulses = this.p2Pulses.filter(
-      (t) => now - t < PixiGameRenderer.PULSE_DURATION_MS
-    );
+    this.noteCaptures(state, now);
 
     // ── Scene ─────────────────────────────────────────────────────────────────
     this.scene.clear();
@@ -619,7 +618,8 @@ export class PixiGameRenderer {
         [],
         now,
         boardElapsed,
-        extraBob
+        extraBob,
+        `e${ei}`
       );
       // Ally / shadow border: solid inset outline distinguishes them from P1/P2
       if (extra.outline != null) {
@@ -655,7 +655,8 @@ export class PixiGameRenderer {
       this.p1Pulses,
       now,
       boardElapsed,
-      p1Bob
+      p1Bob,
+      'p1'
     );
 
     const p2Color = P2_SNAKE_COLOR;
@@ -674,7 +675,8 @@ export class PixiGameRenderer {
       this.p2Pulses,
       now,
       boardElapsed,
-      p2Bob
+      p2Bob,
+      'p2'
     );
 
     for (const cb of state.coinbases ?? []) {
@@ -699,95 +701,49 @@ export class PixiGameRenderer {
     this.pointChangesOverlay.render(
       state.pointChanges ?? [],
       colSize,
-      rowSize
+      rowSize,
+      width,
+      height
     );
-
-    if (opts?.replayView) {
-      advancePointChanges(state);
+    if (this.streakPopOverlay.container.parent !== this.overlay) {
+      this.overlay.addChild(this.streakPopOverlay.container);
     }
+    this.streakPopOverlay.render(colSize, rowSize);
 
     // ── Text overlays ─────────────────────────────────────────────────────────
-    /* Small boards (narrow viewports / portrait): height in px is tight — blend in height so win / continue copy stays readable */
-    const compactBoard = width < 560 || height < 260;
-    const overlayWinnerPx = compactBoard
-      ? Math.max(14, (width / 14) * 1.05, height / 5.5)
-      : Math.max(10, (width / 17) * 1.12);
-    const overlayContinuePx = compactBoard
-      ? Math.max(12, (width / 30) * 1.05, height / 11)
-      : Math.max(10, (width / 39) * 1.1);
-    const winnerYOffset = Math.min(22, height * 0.09);
-    const continueGap = Math.max(28, overlayWinnerPx * 0.85);
-    this.endWinnerText.position.set(width / 2, height / 2 - winnerYOffset);
-    this.endContinueText.position.set(
-      width / 2,
-      height / 2 - winnerYOffset + continueGap
-    );
-    this.endWinnerText.style.fontSize = overlayWinnerPx;
-    this.endContinueText.style.fontSize = overlayContinuePx;
+    this.endOverlay.hide();
+    if (!state.gameEnded) {
+      this.resetEndOverlayTiming();
+    }
 
-    if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
+    const preMatch =
+      !state.gameStarted && !state.gameEnded && !state.countdownStart;
+    this.host
+      ?.closest('#gameCanvas')
+      ?.classList.toggle('is-prematch', preMatch);
+
+    if (preMatch) {
       this.hideCountdownOverlay();
-      this.endWinnerText.text = '';
-      this.endContinueText.text = '';
       const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
-      const promptWords = resolveStartPromptWords(objOpts);
-      this.syncStartPromptWords(promptWords);
-      const startFontSize = this.fitAndLayoutStartWords(
-        width,
-        height,
-        promptWords
-      );
-      const objLayout = this.objectives.render(
-        width,
-        height,
-        startFontSize,
-        objOpts,
-        this.startRevealTime
-      );
+      this.objectives.hide();
+      for (const word of this.startWords) {
+        word.alpha = 0;
+        word.visible = false;
+      }
+      this.startPromptSubtext.visible = false;
       this.controls.render(
         state,
         width,
         height,
         objOpts.controlSlots ?? [],
-        this.startRevealTime
+        this.startRevealTime,
+        objOpts.controlLabelSlots
       );
-      // ── Staggered word-by-word reveal + idle pulse ─────────────────────────
-      this.startWordsContainer.position.set(width / 2, objLayout.startY);
-      const revealElapsed = startPromptRevealElapsedMs(
-        performance.now(),
-        this.startRevealTime
-      );
-      const pulseAlpha = computeStartPromptPulse(
-        revealElapsed,
-        promptWords.length
-      );
-      let startWordAlpha = 0;
-      for (let i = 0; i < promptWords.length; i++) {
-        const eased = startPromptWordRevealAlpha(revealElapsed, i);
-        const wordAlpha = eased * pulseAlpha;
-        this.startWords[i].alpha = wordAlpha;
-        this.startWords[i].y = (1 - eased) * 6;
-        startWordAlpha = Math.max(startWordAlpha, wordAlpha);
-      }
       const readyAlpha = onlineStartReadyAlpha(
         Boolean(objOpts.onlineStartReady),
-        startWordAlpha
+        1
       );
-      const subtext = objOpts.startPromptSubtext?.trim();
-      if (subtext) {
-        const subtextPx = Math.max(10, startFontSize * 0.26);
-        this.startPromptSubtext.text = subtext;
-        this.startPromptSubtext.style.fontSize = subtextPx;
-        this.startPromptSubtext.position.set(
-          width / 2,
-          objLayout.startY + startFontSize * 0.52
-        );
-        this.startPromptSubtext.alpha = readyAlpha;
-        this.startPromptSubtext.visible = readyAlpha > 0.02;
-      } else {
-        this.startPromptSubtext.visible = false;
-      }
       this.startReady.render(
         colSize,
         rowSize,
@@ -809,42 +765,20 @@ export class PixiGameRenderer {
       }
 
       if (state.countdownStart) {
-        this.endWinnerText.text = '';
-        this.endContinueText.text = '';
         this.renderCountdownOverlay(state, width, height);
       } else {
         this.hideCountdownOverlay();
         if (state.gameEnded) {
-          // During the resolving-blocks animation, suppress the text until blocks cover the board
-          if (
-            !opts?.suppressVictoryOverlay &&
-            (resolveProgress >= 1.0 || !state.convergenceWallClosed)
-          ) {
-            this.endWinnerText.text = `${state.winnerName.toUpperCase()} WINS!`;
-            this.endContinueText.text = opts?.replayView
-              ? ''
-              : opts?.challengeContinueLabel ?? 'PRESS ANY BUTTON TO CONTINUE';
-          } else if (opts?.suppressVictoryOverlay) {
-            this.endWinnerText.text = '';
-            this.endContinueText.text = '';
+          const elapsed = this.beginEndOverlayReveal(
+            state,
+            resolveProgress,
+            Boolean(opts?.suppressVictoryOverlay)
+          );
+          if (elapsed !== null) {
+            this.endOverlay.hide();
           }
-        } else {
-          this.endWinnerText.text = '';
-          this.endContinueText.text = '';
         }
       }
-    }
-
-    // Draw resolving blocks on top of scene (but behind text overlay)
-    if (resolveProgress > 0) {
-      this.renderResolveBlocks(
-        state,
-        width,
-        height,
-        colSize,
-        rowSize,
-        resolveProgress
-      );
     }
 
     // Keep WebGL buffer in sync with layout (avoids stretched / nested-frame artifacts).
@@ -865,8 +799,6 @@ export class PixiGameRenderer {
 
   // ── Resolving blocks animation ─────────────────────────────────────────────
 
-  private static readonly RESOLVE_DURATION_MS = 1400;
-
   private getResolveProgress(state: GameState): number {
     if (!state.convergenceWallClosed) {
       this.resolveAnimStartMs = null;
@@ -877,47 +809,80 @@ export class PixiGameRenderer {
     }
     return Math.min(
       1,
-      (performance.now() - this.resolveAnimStartMs) /
-        PixiGameRenderer.RESOLVE_DURATION_MS
+      (performance.now() - this.resolveAnimStartMs) / END_RESOLVE_DURATION_MS
     );
   }
 
-  private renderResolveBlocks(
+  private resetEndOverlayTiming(): void {
+    this.endOverlayEligibleAtMs = null;
+    this.endOverlayAnimStartMs = null;
+    this.endOverlayRevealDone = false;
+  }
+
+  /** Board settled enough for the winner overlay (blocks done, or no resolve anim). */
+  private isEndOverlayEligible(
     state: GameState,
-    _width: number,
-    _height: number,
-    colSize: number,
-    rowSize: number,
-    progress: number
-  ): void {
-    const cols = state.cols;
-    const rows = state.rows;
-    const maxDist = Math.min(Math.floor(cols / 2), Math.floor(rows / 2));
-    // Pseudo-random per-cell offset so blocks don't appear in a perfect geometric ring
-    const hashOffset = (x: number, y: number) =>
-      (((x * 2654435761 + y * 2246822519) >>> 0) % 1000) / 1000;
-
-    for (let x = 0; x < cols; x++) {
-      for (let y = 0; y < rows; y++) {
-        const distFromEdge = Math.min(x, cols - 1 - x, y, rows - 1 - y);
-        const threshold = (distFromEdge + hashOffset(x, y) * 0.6) / maxDist;
-        if (progress < threshold) continue;
-
-        const px = x * colSize;
-        const py = y * rowSize;
-        // Layered block: outer amber, inner dark-amber, innermost near-black
-        const blockAlpha = Math.min(1, (progress - threshold) * 6 + 0.6);
-        this.resolveBlocks
-          .rect(px, py, colSize, rowSize)
-          .fill({ color: 0xc88820, alpha: blockAlpha * 0.9 });
-        this.resolveBlocks
-          .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
-          .fill({ color: 0x7a5010, alpha: blockAlpha * 0.75 });
-        this.resolveBlocks
-          .rect(px + 2, py + 2, colSize - 4, rowSize - 4)
-          .fill({ color: 0x1a0e00, alpha: blockAlpha * 0.6 });
-      }
+    resolveProgress: number
+  ): boolean {
+    if (!state.gameEnded) {
+      this.resetEndOverlayTiming();
+      return false;
     }
+    return resolveProgress >= 1.0 || !state.convergenceWallClosed;
+  }
+
+  private armEndOverlayDelay(
+    state: GameState,
+    resolveProgress: number
+  ): boolean {
+    if (!this.isEndOverlayEligible(state, resolveProgress)) return false;
+    if (this.endOverlayEligibleAtMs === null) {
+      this.endOverlayEligibleAtMs = performance.now();
+    }
+    return true;
+  }
+
+  /** Keep painting through the settle hold and staggered reveal. */
+  private needsEndOverlayPaint(
+    state: GameState,
+    resolveProgress: number
+  ): boolean {
+    if (this.endOverlayRevealDone) return false;
+    if (!this.armEndOverlayDelay(state, resolveProgress)) return false;
+    return true;
+  }
+
+  /**
+   * After the settle delay, starts the stagger clock and returns elapsed ms.
+   * Suppressed overlays skip the animation and mark the reveal done.
+   * Returns null while still in the settle hold.
+   */
+  private beginEndOverlayReveal(
+    state: GameState,
+    resolveProgress: number,
+    suppressed: boolean
+  ): number | null {
+    if (this.endOverlayRevealDone && this.endOverlayAnimStartMs !== null) {
+      return endOverlayRevealDurationMs();
+    }
+    if (!this.armEndOverlayDelay(state, resolveProgress)) return null;
+    const sinceEligible =
+      performance.now() - (this.endOverlayEligibleAtMs as number);
+    if (sinceEligible < END_OVERLAY_DELAY_MS) return null;
+
+    if (suppressed) {
+      this.endOverlayRevealDone = true;
+      return null;
+    }
+
+    if (this.endOverlayAnimStartMs === null) {
+      this.endOverlayAnimStartMs = performance.now();
+    }
+    const elapsed = performance.now() - this.endOverlayAnimStartMs;
+    if (elapsed >= endOverlayRevealDurationMs()) {
+      this.endOverlayRevealDone = true;
+    }
+    return elapsed;
   }
 
   // ── Dead zone / convergence overlay ───────────────────────────────────────
@@ -1004,10 +969,11 @@ export class PixiGameRenderer {
       surging?: boolean;
       amped?: boolean;
     },
-    pulses: number[] = [],
+    pulses: CapturePulse[] = [],
     now: number = 0,
     boardElapsed: number = Infinity,
-    preStartBobPx: number = 0
+    preStartBobPx: number = 0,
+    growKey = ''
   ): void {
     const bob = preStartBobPx;
     const segTop = (gy: number) => gy * rowSize - bob;
@@ -1052,9 +1018,13 @@ export class PixiGameRenderer {
     }
 
     // Head — with glow halo on pulse wave arrival
-    const headBoost = this.getSegmentGlow(0, totalLen, pulses, now);
-    if (headBoost > 0) {
-      const expand = headBoost * 4;
+    const headPulse = this.segmentPulse(0, totalLen, pulses, now);
+    const headBoost = headPulse.glow;
+    const flags = this.animFlags();
+    // Warm on both chains. White-on-white disappeared into the light snake.
+    const pulseTint = isLight ? 0xffb15a : 0xffc98a;
+    if (flags.tint && headBoost > 0) {
+      const expand = headBoost * 8;
       this.scene
         .rect(
           snake.head[0] * colSize - expand,
@@ -1063,13 +1033,31 @@ export class PixiGameRenderer {
           segHeight + expand * 2
         )
         .fill({
-          color: isLight ? 0xffffff : 0xdddddd,
-          alpha: headBoost * 0.35,
+          color: pulseTint,
+          alpha: headBoost * 0.62,
         });
     }
-    this.scene
-      .rect(snake.head[0] * colSize, segTop(snake.head[1]), colSize, segHeight)
-      .fill({ color, alpha: Math.max(0, headAlpha) });
+    const headScale = this.scaleAtCell(snake.head, now);
+    this.fillSegment(
+      snake.head[0] * colSize,
+      segTop(snake.head[1]),
+      colSize,
+      segHeight,
+      headScale,
+      color,
+      Math.max(0, headAlpha)
+    );
+    if (flags.tint && headBoost > 0.05 && !isLight) {
+      this.fillSegment(
+        snake.head[0] * colSize,
+        segTop(snake.head[1]),
+        colSize,
+        segHeight,
+        headScale,
+        pulseTint,
+        headBoost * 0.85
+      );
+    }
 
     // Orange SURGE border on head
     if (effects.surging) {
@@ -1109,23 +1097,43 @@ export class PixiGameRenderer {
         .stroke({ width: 2, color: 0x3090c8, alpha: 0.7 });
     }
 
+    const growT =
+      flags.grow && growKey ? this.growProgress(growKey, now, totalLen) : 1;
+
     // Body — pulse wave travels head → tail
     for (let i = 0; i < snake.body.length; i++) {
-      const boost = this.getSegmentGlow(i + 1, totalLen, pulses, now);
+      const pulse = this.segmentPulse(i + 1, totalLen, pulses, now);
+      const boost = flags.tint ? pulse.glow : 0;
       const segAlpha =
-        Math.min(1, baseBodyAlpha + boost * 0.36) * segReveal(i + 1);
+        (flags.tint
+          ? Math.min(1, baseBodyAlpha + boost * 0.62)
+          : baseBodyAlpha) * segReveal(i + 1);
       const px = snake.body[i][0] * colSize;
       const py = segTop(snake.body[i][1]);
+      const isNewLink = i === snake.body.length - 1 && growT < 1;
+      const linkScale = isNewLink ? this.growLinkScale(growKey, now) : 1;
+      const blockScale = linkScale * this.scaleAtCell(snake.body[i]!, now);
 
-      this.scene
-        .rect(px, py, colSize, segHeight)
-        .fill({ color, alpha: Math.max(0, segAlpha) });
+      this.fillSegment(
+        px,
+        py,
+        colSize,
+        segHeight,
+        blockScale,
+        color,
+        Math.max(0, segAlpha) * (isNewLink ? growT : 1)
+      );
 
-      // Dark chains get a white overlay so the pulse is visible on black bg
-      if (!isLight && boost > 0.05) {
-        this.scene
-          .rect(px + 1, py + 1, colSize - 2, segHeight - 2)
-          .fill({ color: 0xffffff, alpha: boost * 0.28 });
+      if (flags.tint && !isLight && boost > 0.05) {
+        this.fillSegment(
+          px + 1,
+          py + 1,
+          colSize - 2,
+          segHeight - 2,
+          blockScale,
+          pulseTint,
+          boost * 0.85
+        );
       }
 
       // Orange SURGE border on each body segment
@@ -1146,25 +1154,174 @@ export class PixiGameRenderer {
     }
   }
 
-  /** Gaussian pulse: returns 0–1 boost for segment at index i as wave travels head→tail */
-  private getSegmentGlow(
+  private fillSegment(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    scale: number,
+    color: number,
+    alpha: number
+  ): void {
+    const dw = w * scale;
+    const dh = h * scale;
+    this.scene
+      .rect(x - (dw - w) / 2, y - (dh - h) / 2, dw, dh)
+      .fill({ color, alpha });
+  }
+
+  private pulseDuration(_totalLen: number): number {
+    return PixiGameRenderer.PULSE_DURATION_MS;
+  }
+
+  /** New link grows from nothing up to the cell. */
+  private growLinkScale(key: string, now: number): number {
+    const start = this.growAt[key];
+    if (start == null) return 1;
+    return tailGrowScale(now - start);
+  }
+
+  private growProgress(key: string, now: number, _totalLen: number): number {
+    return this.growLinkScale(key, now);
+  }
+
+  private growAnimating(now: number): boolean {
+    if (!this.animFlags().grow) return false;
+    return Object.values(this.growAt).some(
+      (start) => now - start < PixiGameRenderer.GROW_MS
+    );
+  }
+
+  /** Brightness peak for segment `segIndex` as the capture wave travels head → tail. */
+  private segmentPulse(
     segIndex: number,
     totalLen: number,
-    pulses: number[],
+    pulses: CapturePulse[],
     now: number
-  ): number {
-    if (pulses.length === 0 || totalLen === 0) return 0;
-    const D = PixiGameRenderer.PULSE_DURATION_MS;
-    const HALF_W = 0.16; // pulse width as fraction of body
-    let max = 0;
-    for (const startMs of pulses) {
-      const t = (now - startMs) / D;
+  ): { glow: number; reward: number } {
+    if (pulses.length === 0 || totalLen === 0) return { glow: 0, reward: 2 };
+    const D = this.pulseDuration(totalLen);
+    const halfW = 0.16;
+    let glow = 0;
+    let reward = 2;
+    for (const pulse of pulses) {
+      const t = (now - pulse.startMs) / D;
       if (t < 0 || t > 1.1) continue;
       const frac = totalLen > 1 ? segIndex / (totalLen - 1) : 0;
       const dist = Math.abs(frac - t);
-      max = Math.max(max, Math.max(0, 1 - dist / HALF_W));
+      const amount = Math.max(0, 1 - dist / halfW);
+      if (amount > glow) {
+        glow = amount;
+        reward = pulse.reward;
+      }
     }
-    return max;
+    return { glow, reward };
+  }
+
+  private getSegmentGlow(
+    segIndex: number,
+    totalLen: number,
+    pulses: CapturePulse[],
+    now: number
+  ): number {
+    return this.segmentPulse(segIndex, totalLen, pulses, now).glow;
+  }
+
+  private noteCaptures(state: GameState, now: number): void {
+    const flags = this.animFlags();
+    const alive = (pulse: CapturePulse) =>
+      now - pulse.startMs < PixiGameRenderer.PULSE_MAX_MS;
+
+    if (!state.gameStarted) {
+      this.p1Pulses = [];
+      this.p2Pulses = [];
+      this.growAt = {};
+      this.captureScales = [];
+      this.rememberCaptureBaseline(state);
+      return;
+    }
+
+    if (!state.gameEnded && state.tickCount !== this.captureNotedTick) {
+      this.captureNotedTick = state.tickCount;
+      if (anyCaptureAnimFlag(flags)) {
+        const coins = (state.coinbases ?? []).map((coin) => ({
+          pos: [coin.pos[0], coin.pos[1]] as GridPos,
+        }));
+        const plans = planCaptureAnims(this.prevCoins, coins, [
+          {
+            key: 'p1',
+            head: state.p1.head,
+            prevLength: this.prevBodyLen.p1,
+            length: state.p1.body.length,
+          },
+          {
+            key: 'p2',
+            head: state.p2.head,
+            prevLength: this.prevBodyLen.p2,
+            length: state.p2.body.length,
+          },
+        ]);
+        for (const plan of plans) {
+          const pulses = plan.key === 'p1' ? this.p1Pulses : this.p2Pulses;
+          if (flags.tint) pulses.push({ startMs: now, reward: plan.reward });
+          if (flags.scale) {
+            this.captureScales.push({ pos: plan.head, startMs: now });
+          }
+          if (flags.grow && plan.grew) this.growAt[plan.key] = now;
+        }
+        if (flags.grow) {
+          for (let i = 0; i < state.extraSnakes.length; i += 1) {
+            const prev = this.prevBodyLen.extra[i] ?? -1;
+            if (prev >= 0 && state.extraSnakes[i]!.snake.body.length > prev) {
+              this.growAt[`e${i}`] = now;
+            }
+          }
+        }
+      }
+      this.rememberCaptureBaseline(state);
+    } else if (!state.gameEnded) {
+      // Food placed between ticks, such as a lab bait, has to be remembered
+      // before the eat or the wave and head pop never see it leave.
+      const coins = (state.coinbases ?? []).map((coin) => ({
+        pos: [coin.pos[0], coin.pos[1]] as GridPos,
+        reward: coin.reward ?? 2,
+      }));
+      this.prevCoins = retainFreshCoins(this.prevCoins, coins);
+    }
+
+    this.p1Pulses = this.p1Pulses.filter(alive);
+    this.p2Pulses = this.p2Pulses.filter(alive);
+    this.captureScales = this.captureScales.filter(
+      (hit) => now - hit.startMs < PixiGameRenderer.SCALE_MS
+    );
+  }
+
+  /** Scale only the cell the reward occupied, for a short pop. */
+  private scaleAtCell(pos: GridPos, now: number): number {
+    if (!this.animFlags().scale) return 1;
+    let scale = 1;
+    for (const hit of this.captureScales) {
+      if (hit.pos[0] !== pos[0] || hit.pos[1] !== pos[1]) continue;
+      const t = (now - hit.startMs) / PixiGameRenderer.SCALE_MS;
+      if (t < 0 || t > 1) continue;
+      const pop = Math.sin(t * Math.PI);
+      scale = Math.max(scale, 1 + pop * 1.05);
+    }
+    return scale;
+  }
+
+  private rememberCaptureBaseline(state: GameState): void {
+    this.prevScoreP1 = state.score[0];
+    this.prevScoreP2 = state.score[1];
+    this.prevCoins = (state.coinbases ?? []).map((coin) => ({
+      pos: [coin.pos[0], coin.pos[1]] as GridPos,
+      reward: coin.reward ?? 2,
+    }));
+    this.prevBodyLen = {
+      p1: state.p1.body.length,
+      p2: state.p2.body.length,
+      extra: state.extraSnakes.map((extra) => extra.snake.body.length),
+    };
   }
 
   // ── Coinbase drawing ───────────────────────────────────────────────────────
@@ -1282,6 +1439,7 @@ export class PixiGameRenderer {
   }
 
   destroy(): void {
+    this.host?.closest('#gameCanvas')?.classList.remove('game-result-active');
     this.mountGeneration += 1;
     this.gridCacheKey = '';
     this.lastResizeWidth = 0;
@@ -1469,25 +1627,8 @@ export class PixiGameRenderer {
       );
     }
 
-    // Pulse detection (fallback path shares same pulse arrays as PixiJS path)
     const nowFb = performance.now();
-    if (state.gameStarted && !state.gameEnded) {
-      if (this.prevScoreP1 >= 0 && state.score[0] > this.prevScoreP1)
-        this.p1Pulses.push(nowFb);
-      if (this.prevScoreP2 >= 0 && state.score[1] > this.prevScoreP2)
-        this.p2Pulses.push(nowFb);
-    } else if (!state.gameStarted) {
-      this.p1Pulses = [];
-      this.p2Pulses = [];
-    }
-    this.prevScoreP1 = state.score[0];
-    this.prevScoreP2 = state.score[1];
-    this.p1Pulses = this.p1Pulses.filter(
-      (t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS
-    );
-    this.p2Pulses = this.p2Pulses.filter(
-      (t) => nowFb - t < PixiGameRenderer.PULSE_DURATION_MS
-    );
+    this.noteCaptures(state, nowFb);
 
     const fbP1Effects = getSnakeEffects(state, 0);
     const fbP2Effects = getSnakeEffects(state, 1);
@@ -1913,120 +2054,20 @@ export class PixiGameRenderer {
     }
 
     drawPointChangesCanvas(ctx, state.pointChanges ?? [], colSize, rowSize);
-
-    // Resolving blocks (Canvas2D fallback)
-    const resolveProgressFb = this.getResolveProgress(state);
-    if (resolveProgressFb > 0) {
-      const cols2 = state.cols;
-      const rows2 = state.rows;
-      const maxDist2 = Math.min(Math.floor(cols2 / 2), Math.floor(rows2 / 2));
-      for (let x = 0; x < cols2; x++) {
-        for (let y = 0; y < rows2; y++) {
-          const distFromEdge = Math.min(x, cols2 - 1 - x, y, rows2 - 1 - y);
-          const hashOff =
-            (((x * 2654435761 + y * 2246822519) >>> 0) % 1000) / 1000;
-          const threshold = (distFromEdge + hashOff * 0.6) / maxDist2;
-          if (resolveProgressFb < threshold) continue;
-          const px = x * colSize;
-          const py = y * rowSize;
-          const blockAlpha = Math.min(
-            1,
-            (resolveProgressFb - threshold) * 6 + 0.6
-          );
-          ctx.globalAlpha = blockAlpha * 0.9;
-          ctx.fillStyle = '#C88820';
-          ctx.fillRect(px, py, colSize, rowSize);
-          ctx.globalAlpha = blockAlpha * 0.75;
-          ctx.fillStyle = '#7A5010';
-          ctx.fillRect(px + 1, py + 1, colSize - 2, rowSize - 2);
-          ctx.globalAlpha = blockAlpha * 0.6;
-          ctx.fillStyle = '#1A0E00';
-          ctx.fillRect(px + 2, py + 2, colSize - 4, rowSize - 4);
-        }
-      }
-      ctx.globalAlpha = 1;
-    }
+    drawStreakPopsCanvas(ctx, colSize, rowSize);
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#000000';
-    if (!state.gameStarted && !state.gameEnded && !state.countdownStart) {
+    const preMatch =
+      !state.gameStarted && !state.gameEnded && !state.countdownStart;
+    this.host
+      ?.closest('#gameCanvas')
+      ?.classList.toggle('is-prematch', preMatch);
+    if (preMatch) {
       const objOpts = opts?.canvasObjectives ?? {};
       if (this.startRevealTime === -1) this.startRevealTime = performance.now();
-      const promptWords = resolveStartPromptWords(objOpts);
-      const fbStartPx = fitStartPromptFontSize(width, height, (fontSize) => {
-        ctx.font = `${fontSize}px BureauGrotesque`;
-        const wordWidths = promptWords.map((word) =>
-          measureStartWordWidth(word, fontSize, ctx.measureText(word).width)
-        );
-        return (
-          startPromptLineWidth(fontSize, wordWidths) + START_WORD_SHADOW_BLUR
-        );
-      });
-      const objLayout = computeCanvasObjectivesLayout(
-        width,
-        height,
-        fbStartPx,
-        objOpts
-      );
-      const elapsed = Math.max(
-        0,
-        performance.now() - this.startRevealTime - 900
-      );
-      const objAlpha = Math.min(1, elapsed / 420);
-      const eased = 1 - Math.pow(1 - objAlpha, 3);
-      const fbElapsed = startPromptRevealElapsedMs(
-        performance.now(),
-        this.startRevealTime
-      );
-      const fbGap = fbStartPx * START_PROMPT_GAP_RATIO;
-      ctx.font = `${fbStartPx}px BureauGrotesque`;
-      const fbWordWidths = promptWords.map((word) =>
-        measureStartWordWidth(word, fbStartPx, ctx.measureText(word).width)
-      );
-      const fbLineW = startPromptLineWidth(fbStartPx, fbWordWidths);
-      let fbX = -fbLineW / 2;
-      let startWordAlpha = 0;
-      ctx.save();
-      ctx.translate(width / 2, objLayout.startY);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      applyCanvasTextDropShadow(ctx);
-      const pulseAlpha = computeStartPromptPulse(
-        fbElapsed,
-        promptWords.length
-      );
-      for (let i = 0; i < promptWords.length; i++) {
-        const reveal = startPromptWordRevealAlpha(fbElapsed, i);
-        if (reveal <= 0.02) {
-          fbX += (fbWordWidths[i] ?? 0) + fbGap;
-          continue;
-        }
-        const wordAlpha = reveal * pulseAlpha;
-        startWordAlpha = Math.max(startWordAlpha, wordAlpha);
-        ctx.globalAlpha = wordAlpha;
-        ctx.fillText(promptWords[i]!, fbX + (fbWordWidths[i] ?? 0) / 2, 0);
-        fbX += (fbWordWidths[i] ?? 0) + fbGap;
-      }
-      clearCanvasTextDropShadow(ctx);
-      ctx.restore();
-      const subtext = objOpts.startPromptSubtext?.trim();
-      if (subtext) {
-        const subtextPx = Math.max(10, fbStartPx * 0.26);
-        const subAlpha = onlineStartReadyAlpha(
-          Boolean(objOpts.onlineStartReady),
-          startWordAlpha * eased
-        );
-        ctx.save();
-        ctx.globalAlpha = subAlpha * eased;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.font = `500 ${Math.floor(subtextPx)}px Inter, system-ui, sans-serif`;
-        ctx.fillStyle = 'rgba(255,255,255,0.62)';
-        ctx.fillText(subtext, width / 2, objLayout.startY + fbStartPx * 0.52);
-        ctx.restore();
-      }
       drawOnlineStartReadyFallback(
         ctx,
         colSize,
@@ -2036,18 +2077,7 @@ export class PixiGameRenderer {
         p1Bob,
         p2Bob,
         objOpts.onlineStartReady,
-        onlineStartReadyAlpha(
-          Boolean(objOpts.onlineStartReady),
-          startWordAlpha * eased
-        )
-      );
-      drawCanvasObjectivesFallback(
-        ctx,
-        width,
-        objLayout,
-        objOpts,
-        eased,
-        Math.max(0, elapsed - 180)
+        onlineStartReadyAlpha(Boolean(objOpts.onlineStartReady), 1)
       );
       drawCanvasControlsFallback(
         ctx,
@@ -2055,7 +2085,8 @@ export class PixiGameRenderer {
         width,
         height,
         objOpts.controlSlots ?? [],
-        eased
+        1,
+        objOpts.controlLabelSlots
       );
     } else if (state.countdownStart) {
       if (this.preMatchOverlayVisible()) {
@@ -2073,33 +2104,14 @@ export class PixiGameRenderer {
       ctx.fillText(countdownText, width / 2, height / 2);
     } else if (state.gameEnded) {
       this.startRevealTime = -1;
-      if (
-        !opts?.suppressVictoryOverlay &&
-        (resolveProgressFb >= 1.0 || !state.convergenceWallClosed)
-      ) {
-        const fbC = width < 560 || height < 260;
-        const fbWinPx = fbC
-          ? Math.max(14, Math.floor(Math.max(width / 14, height / 5.5)))
-          : Math.max(10, Math.floor(width / 17));
-        const fbContPx = fbC
-          ? Math.max(12, Math.floor(Math.max(width / 30, height / 11)))
-          : Math.max(10, Math.floor(width / 39));
-        const fbY0 = Math.min(22, height * 0.09);
-        const fbGap = Math.max(28, fbWinPx * 0.85);
-        ctx.font = `${fbWinPx}px BureauGrotesque`;
-        ctx.fillText(
-          `${state.winnerName.toUpperCase()} WINS!`,
-          width / 2,
-          height / 2 - fbY0
-        );
-        if (!opts?.replayView) {
-          ctx.font = `${fbContPx}px BureauGrotesque`;
-          ctx.fillText(
-            'PRESS ANY BUTTON TO CONTINUE',
-            width / 2,
-            height / 2 - fbY0 + fbGap
-          );
-        }
+      const resolveProgressFb = this.getResolveProgress(state);
+      const elapsed = this.beginEndOverlayReveal(
+        state,
+        resolveProgressFb,
+        Boolean(opts?.suppressVictoryOverlay)
+      );
+      if (elapsed !== null) {
+        // Winner card is DOM. Keep the reveal timer so continue actions still wait.
       }
     }
   }

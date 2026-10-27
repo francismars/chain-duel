@@ -47,14 +47,34 @@ import { clearClientGameConfig, markSocketDuelSession } from '@/pages/practiceHu
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './gamemenu.css';
 
+/** Valid note1 so the Nostr payment preview can show a note id and nevent. */
+const PREVIEW_NOSTR_NOTE1 =
+  'note1qurswpc8qurswpc8qurswpc8qurswpc8qurswpc8qurswpc8qurszx33xk';
+
+type HighlightPart = false | 'name' | 'pay' | 'all';
+
+function showsNamePop(part: HighlightPart) {
+  return part === 'name' || part === 'all';
+}
+
+function showsPayPop(part: HighlightPart) {
+  return part === 'pay' || part === 'all';
+}
+
 type ButtonSelected =
   | 'mainMenuButton'
   | 'startgame'
+  | 'rules'
   | 'cancelGameAbort'
   | 'cancelGameConfirm'
   | null;
 
-export default function GameMenu() {
+export default function GameMenu({
+  preview = false,
+}: {
+  /** Preview layout: both players pay from their own station. */
+  preview?: boolean;
+} = {}) {
   const logger = useMemo(() => createLogger('GameMenu'), []);
   const navigate = useNavigate();
   const location = useLocation();
@@ -71,7 +91,8 @@ export default function GameMenu() {
   const isNostrMode = useNostrFromQuery;
   const { socket, connected } = useSocket();
   const { playSfx } = useAudio();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!preview);
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   const [payLinks, setPayLinks] = useState<LNURLP[] | null>(null);
   const [player1Sats, setPlayer1Sats] = useState(0);
   const [player2Sats, setPlayer2Sats] = useState(0);
@@ -84,8 +105,8 @@ export default function GameMenu() {
   const [player1CardExpanded, setPlayer1CardExpanded] = useState(false);
   const [player2CardExpanded, setPlayer2CardExpanded] = useState(false);
   const [qrBackdropVisible, setQrBackdropVisible] = useState(false);
-  const [highlightP1, setHighlightP1] = useState(false);
-  const [highlightP2, setHighlightP2] = useState(false);
+  const [highlightP1, setHighlightP1] = useState<HighlightPart>(false);
+  const [highlightP2, setHighlightP2] = useState<HighlightPart>(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [gameMenuTitle, setGameMenuTitle] = useState<string>('P2P');
   const [prevWinner, setPrevWinner] = useState<string | null>(null);
@@ -157,9 +178,11 @@ export default function GameMenu() {
   );
 
   useEffect(() => {
-    if (!nostrNote1) {
-      setNostrServingRelays([]);
-      setNostrRelayProbe('idle');
+    if (preview || !nostrNote1) {
+      if (!nostrNote1) {
+        setNostrServingRelays([]);
+        setNostrRelayProbe('idle');
+      }
       return;
     }
 
@@ -176,7 +199,7 @@ export default function GameMenu() {
     return () => {
       cancelled = true;
     };
-  }, [nostrNote1, nostrProbeRelays]);
+  }, [nostrNote1, nostrProbeRelays, preview]);
 
   useEffect(() => {
     setupMenuKeyGraceUntilRef.current =
@@ -244,7 +267,7 @@ export default function GameMenu() {
           if (flashHighlights && didP1Change) {
             if (highlightTimeoutP1Ref.current)
               clearTimeout(highlightTimeoutP1Ref.current);
-            setHighlightP1(true);
+            setHighlightP1('all');
             highlightTimeoutP1Ref.current = window.setTimeout(
               () => setHighlightP1(false),
               HIGHLIGHT_FLASH_TIMEOUT_MS
@@ -265,7 +288,7 @@ export default function GameMenu() {
           if (flashHighlights && didP2Change) {
             if (highlightTimeoutP2Ref.current)
               clearTimeout(highlightTimeoutP2Ref.current);
-            setHighlightP2(true);
+            setHighlightP2('all');
             highlightTimeoutP2Ref.current = window.setTimeout(
               () => setHighlightP2(false),
               HIGHLIGHT_FLASH_TIMEOUT_MS
@@ -326,16 +349,17 @@ export default function GameMenu() {
             : 'Waiting for payment links from backend...'
       );
       setLoading(false);
+      setLoadingTimedOut(false);
     },
     [applySerializedPlayers, navigate, useNostrFromQuery]
   );
 
   const handleMenuLoadingTimeout = useCallback(() => {
-    setLoading(false);
+    setLoadingTimedOut(true);
   }, []);
 
   useMenuSocketInfo({
-    socket,
+    socket: preview ? null : socket,
     connected,
     requestEvent: useNostrFromQuery
       ? 'getGameMenuInfosNostr'
@@ -358,7 +382,116 @@ export default function GameMenu() {
   }, [useNostrFromQuery]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!preview) return;
+
+    const scene = searchParams.get('scene') ?? 'idle';
+    if (!useNostrFromQuery && scene !== 'play') return;
+    let cancelled = false;
+    const timers: number[] = [];
+    const later = (ms: number, fn: () => void) => {
+      timers.push(window.setTimeout(fn, ms));
+    };
+    const flash = (side: 1 | 2, part: HighlightPart = 'all') => {
+      const clear = side === 1 ? setHighlightP1 : setHighlightP2;
+      const timeoutRef =
+        side === 1 ? highlightTimeoutP1Ref : highlightTimeoutP2Ref;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      clear(part);
+      timeoutRef.current = window.setTimeout(
+        () => clear(false),
+        HIGHLIGHT_FLASH_TIMEOUT_MS
+      );
+    };
+
+    const resetPlayers = () => {
+      setP1Name('Player 1');
+      setP2Name('Player 2');
+      setPlayer1Image('');
+      setPlayer2Image('');
+      setPlayer1Sats(0);
+      setPlayer2Sats(0);
+      lastKnownP1SatsRef.current = 0;
+      lastKnownP2SatsRef.current = 0;
+      setHighlightP1(false);
+      setHighlightP2(false);
+    };
+    const pay = (side: 1 | 2, sats: number, part: HighlightPart = 'all') => {
+      if (side === 1) {
+        setPlayer1Sats(sats);
+        lastKnownP1SatsRef.current = sats;
+      } else {
+        setPlayer2Sats(sats);
+        lastKnownP2SatsRef.current = sats;
+      }
+      flash(side, part);
+    };
+
+    setLoading(false);
+    setStatusMessage('');
+    resetPlayers();
+
+    if (!useNostrFromQuery) {
+      setPayLinks([
+        {
+          id: 'preview-p1',
+          description: 'Player 1',
+          lnurlp: DECOY_LNURL_QR_VALUE,
+          min: P2P_DEFAULT_MIN_DEPOSIT_SATS,
+        },
+        {
+          id: 'preview-p2',
+          description: 'Player 2',
+          lnurlp: DECOY_LNURL_QR_VALUE,
+          min: P2P_DEFAULT_MIN_DEPOSIT_SATS,
+        },
+      ]);
+      const cycle = () => {
+        if (cancelled) return;
+        resetPlayers();
+        later(1400, () => {
+          setP1Name('Ada');
+          pay(1, 21_000);
+        });
+        later(4200, () => {
+          setP2Name('Hal');
+          pay(2, 21_000);
+        });
+        later(7600, cycle);
+      };
+      cycle();
+      return () => {
+        cancelled = true;
+        for (const timer of timers) window.clearTimeout(timer);
+      };
+    }
+
+    setNostrCode('⚔️ 🪙');
+    setNostrNote1(PREVIEW_NOSTR_NOTE1);
+    setNostrMinP1(1_000);
+    setNostrMinP2(1_000);
+    setNostrServingRelays(['wss://relay.damus.io', 'wss://nos.lol']);
+    setNostrRelayProbe('done');
+    nostrNote1Ref.current = PREVIEW_NOSTR_NOTE1;
+
+    later(1600, () => {
+      setP1Name('Ada');
+      setPlayer1Image('/images/social/Nostr.png');
+      pay(1, 21_000, 'all');
+    });
+    later(5200, () => {
+      setP2Name('Hal');
+      setPlayer2Image('/images/about/lnd.png');
+      pay(2, 21_000, 'all');
+    });
+
+    return () => {
+      cancelled = true;
+      for (const timer of timers) window.clearTimeout(timer);
+    };
+  }, [preview, searchParams, useNostrFromQuery]);
+
+  useEffect(() => {
+    if (!socket || preview) return;
     const handler = (body: SerializedGameInfo) => {
       logger.debug('updatePayments payload', body);
       if (
@@ -540,6 +673,9 @@ export default function GameMenu() {
           return;
         }
         e.preventDefault();
+        if (document.querySelector('.rules-modal')) {
+          return;
+        }
         if (buttonSelected === null) {
           if (document.activeElement?.id === 'startgame') {
             handleStartAttempt();
@@ -554,6 +690,8 @@ export default function GameMenu() {
         }
         if (buttonSelected === 'startgame') {
           handleStartAttempt();
+        } else if (buttonSelected === 'rules') {
+          document.getElementById('gamemenu-rules')?.click();
         } else if (buttonSelected === 'mainMenuButton') {
           openExitOverlay();
         } else if (buttonSelected === 'cancelGameAbort') {
@@ -563,6 +701,32 @@ export default function GameMenu() {
         } else if (buttonSelected === 'cancelGameConfirm') {
           confirmExit();
         }
+      }
+      if (document.querySelector('.rules-modal')) {
+        return;
+      }
+      const down =
+        e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
+      const up = e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W';
+      if (preview && up && !showCancelOverlay) {
+        if (
+          buttonSelected === 'mainMenuButton' ||
+          buttonSelected === 'startgame' ||
+          buttonSelected === null
+        ) {
+          playSfx(SFX.MENU_SELECT);
+          setStartBlockedHint(null);
+          setButtonSelected('rules');
+        }
+      }
+      if (
+        preview &&
+        down &&
+        !showCancelOverlay &&
+        buttonSelected === 'rules'
+      ) {
+        playSfx(SFX.MENU_SELECT);
+        setButtonSelected('mainMenuButton');
       }
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         if (buttonSelected === 'cancelGameConfirm') {
@@ -574,6 +738,9 @@ export default function GameMenu() {
         } else if (!showCancelOverlay && buttonSelected === 'startgame') {
           playSfx(SFX.MENU_SELECT);
           setStartBlockedHint(null);
+          setButtonSelected('mainMenuButton');
+        } else if (!showCancelOverlay && buttonSelected === 'rules') {
+          playSfx(SFX.MENU_SELECT);
           setButtonSelected('mainMenuButton');
         }
       }
@@ -588,6 +755,9 @@ export default function GameMenu() {
         } else if (!showCancelOverlay && buttonSelected === 'mainMenuButton') {
           playSfx(SFX.MENU_SELECT);
           setStartBlockedHint(null);
+          setButtonSelected('startgame');
+        } else if (!showCancelOverlay && buttonSelected === 'rules') {
+          playSfx(SFX.MENU_SELECT);
           setButtonSelected('startgame');
         }
       }
@@ -608,6 +778,7 @@ export default function GameMenu() {
     handleStartAttempt,
     openExitOverlay,
     confirmExit,
+    preview,
   ]);
 
   useQrExpandState({
@@ -638,13 +809,13 @@ export default function GameMenu() {
   return (
     <>
       <GameSetupLayout
-        title={gameMenuTitle}
-        pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}`}
+        title={preview ? 'P2P duel' : gameMenuTitle}
+        pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}${
+          preview ? ' gamemenu-preview' : ''
+        }`}
         mainMenuDisabled={false}
         canStart={canStart}
-        mainMenuLabel={
-          prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'
-        }
+        mainMenuLabel={prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'}
         cancelOverlayTitle={
           prevWinner
             ? 'Return to claim screen?'
@@ -662,6 +833,8 @@ export default function GameMenu() {
         onMainMenu={openExitOverlay}
         onStart={handleStartAttempt}
         loading={loading}
+        loadingTimedOut={loadingTimedOut}
+        onLoadingTimeoutExit={confirmExit}
         showCancelOverlay={showCancelOverlay}
         statusMessage={statusMessage}
         startBlockedHint={startBlockedHint}
@@ -686,7 +859,7 @@ export default function GameMenu() {
               <div id="player1cardinfo" className="player-card-info">
                 <div
                   id="player1satsContainer"
-                  className={`player-sats ${highlightP1 ? 'highlight' : ''}`}
+                  className={`player-sats ${showsPayPop(highlightP1) ? 'highlight' : ''}`}
                 >
                   <span id="nostrPlayer1sats">{fmt(player1Sats)}</span>{' '}
                   <span className="grey sats-label">sats</span>
@@ -701,7 +874,7 @@ export default function GameMenu() {
                   />
                   <div
                     id="nostrPlayer1info"
-                    className={`player1info inline ${highlightP1 ? 'highlight' : ''}`}
+                    className={`player1info inline ${showsNamePop(highlightP1) ? 'highlight' : ''}`}
                   >
                     {p1Name}
                   </div>
@@ -787,7 +960,7 @@ export default function GameMenu() {
                   )}
                   <img
                     id="qrcodeNostrDecoration"
-                    className={`qrcodeDecoration ${highlightP1 || highlightP2 ? '' : 'hide'}`}
+                    className={`qrcodeDecoration ${showsPayPop(highlightP1) || showsPayPop(highlightP2) ? '' : 'hide'}`}
                     src="/images/qr_lightning.gif"
                     alt=""
                   />
@@ -825,7 +998,7 @@ export default function GameMenu() {
               <div id="player2cardinfo" className="player-card-info">
                 <div
                   id="player2satsContainer"
-                  className={`player-sats ${highlightP2 ? 'highlight' : ''}`}
+                  className={`player-sats ${showsPayPop(highlightP2) ? 'highlight' : ''}`}
                 >
                   <span className="grey sats-label">sats</span>
                   <span id="nostrPlayer2sats">{fmt(player2Sats)}</span>
@@ -833,7 +1006,7 @@ export default function GameMenu() {
                 <div className="condensed">
                   <div
                     id="nostrPlayer2info"
-                    className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}
+                    className={`player2info inline ${showsNamePop(highlightP2) ? 'highlight' : ''}`}
                   >
                     {p2Name}
                   </div>
@@ -902,7 +1075,7 @@ export default function GameMenu() {
                   )}
                   <img
                     id="qrcode1Decoration"
-                    className={`qrcodeDecoration ${highlightP1 ? '' : 'hide'}`}
+                    className={`qrcodeDecoration ${showsPayPop(highlightP1) ? '' : 'hide'}`}
                     src="/images/qr_lightning.gif"
                     alt=""
                   />
@@ -911,7 +1084,7 @@ export default function GameMenu() {
               <div id="player1cardinfo" className="player-card-info">
                 <div
                   id="player1satsContainer"
-                  className={`player-sats ${highlightP1 ? 'highlight' : ''}`}
+                  className={`player-sats ${showsPayPop(highlightP1) ? 'highlight' : ''}`}
                 >
                   <span id="player1sats">{fmt(player1Sats)}</span>{' '}
                   <span className="grey sats-label">sats</span>
@@ -920,7 +1093,7 @@ export default function GameMenu() {
                   <div className="inline playerSquare white" />
                   <div
                     id="player1info"
-                    className={`player1info inline ${highlightP1 ? 'highlight' : ''}`}
+                    className={`player1info inline ${showsNamePop(highlightP1) ? 'highlight' : ''}`}
                   >
                     {p1Name}
                   </div>
@@ -944,11 +1117,13 @@ export default function GameMenu() {
                 <span className="grey sats-label">sats</span>
               </div>
               <div id="prizeinfosats">Total Prize</div>
-              <div id="splits">
-                <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
-                <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
-                <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
-              </div>
+              {preview ? null : (
+                <div id="splits">
+                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
+                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
+                  <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
+                </div>
+              )}
               <div id="leaderboard">
                 <p id="leaderboard-inner">
                   <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span>{' '}
@@ -964,7 +1139,7 @@ export default function GameMenu() {
               <div id="player2cardinfo" className="player-card-info">
                 <div
                   id="player2satsContainer"
-                  className={`player-sats ${highlightP2 ? 'highlight' : ''}`}
+                  className={`player-sats ${showsPayPop(highlightP2) ? 'highlight' : ''}`}
                 >
                   <span className="grey sats-label">sats</span>
                   <span id="player2sats">{fmt(player2Sats)}</span>
@@ -972,7 +1147,7 @@ export default function GameMenu() {
                 <div className="condensed">
                   <div
                     id="player2info"
-                    className={`player2info inline ${highlightP2 ? 'highlight' : ''}`}
+                    className={`player2info inline ${showsNamePop(highlightP2) ? 'highlight' : ''}`}
                   >
                     {p2Name}
                   </div>
@@ -1030,13 +1205,30 @@ export default function GameMenu() {
                   )}
                   <img
                     id="qrcode2Decoration"
-                    className={`qrcodeDecoration ${highlightP2 ? '' : 'hide'}`}
+                    className={`qrcodeDecoration ${showsPayPop(highlightP2) ? '' : 'hide'}`}
                     src="/images/qr_lightning.gif"
                     alt=""
                   />
                 </a>
               </div>
             </div>
+            {preview ? (
+              <>
+                <div className="deposit-message gamemenu-preview-deposit">
+                  Deposit between <b>{fmt(Math.min(minP1, minP2))}</b> and{' '}
+                  <b>{fmt(SATS_DISPLAY_MAX)}</b> sats. Set player name on the
+                  payment note.
+                  <br />
+                  LNURL compatible wallet required. Allows for multiple
+                  deposits.
+                </div>
+                <div id="splits">
+                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
+                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
+                  <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
+                </div>
+              </>
+            ) : null}
           </>
         )}
       </GameSetupLayout>

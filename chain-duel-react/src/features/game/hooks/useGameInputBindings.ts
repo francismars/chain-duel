@@ -19,6 +19,11 @@ import {
 } from '@/game/engine';
 import { applyPreMatchKeyEvent } from '@/game/render/preMatchKeyHighlight';
 import type { GameState } from '@/game/engine/types';
+import {
+  canSwapSoloHumanSeat,
+  swapSoloHumanSeat,
+  type SoloSeatSwapResult,
+} from '@/game/soloSeatSwitch';
 import { NAVIGATE_AFTER_FINISH_DELAY_MS } from '@/shared/constants/timeouts';
 
 interface UseGameInputBindingsArgs {
@@ -32,6 +37,8 @@ interface UseGameInputBindingsArgs {
   blockContinueAfterGameRef?: MutableRefObject<boolean>;
   /** Tracks keys held for diagonal steering (applied each sim tick). */
   heldInputRef?: MutableRefObject<HeldInputState>;
+  /** Solo vs AI: HUD / overlay update after pressing X to swap seats. */
+  onSoloSeatSwapped?: (result: SoloSeatSwapResult) => void;
 }
 
 function applyPreStartControllerTest(
@@ -120,11 +127,29 @@ export function useGameInputBindings({
   readyToStartRef,
   blockContinueAfterGameRef,
   heldInputRef,
+  onSoloSeatSwapped,
 }: UseGameInputBindingsArgs) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const state = stateRef.current;
       if (!state) return;
+
+      if (
+        event.code === 'KeyX' &&
+        !event.repeat &&
+        canSwapSoloHumanSeat(state)
+      ) {
+        event.preventDefault();
+        const result = swapSoloHumanSeat(state);
+        if (result) {
+          if (heldInputRef) {
+            heldInputRef.current = createEmptyHeldInputState();
+          }
+          onSoloSeatSwapped?.(result);
+        }
+        return;
+      }
+
       if (!state.gameStarted && isConfirmKeyForState(event, state)) {
         event.preventDefault();
         if (!readyToStartRef || readyToStartRef.current) {
@@ -177,6 +202,7 @@ export function useGameInputBindings({
   }, [
     onEmitWinner,
     onNavigateAfterFinish,
+    onSoloSeatSwapped,
     stateRef,
     winnerSentRef,
     readyToStartRef,

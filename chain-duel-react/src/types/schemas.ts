@@ -399,12 +399,24 @@ export const ResOnlineKind1PostSchema = z.discriminatedUnion('ok', [
   ResOnlineKind1PostErrSchema,
 ]);
 
-export const ResOnlineSeatLightningSchema = z.object({
-  lnurl: z.string(),
-  lightningUri: z.string(),
-  buyin: z.number(),
-  expiresAt: z.number(),
-});
+/**
+ * Host bolt11 (`pr`). `lnurl` is the previous LNbits link, still accepted so
+ * this client can deploy before marspay.
+ */
+export const ResOnlineSeatLightningSchema = z
+  .object({
+    roomId: z.string().optional(),
+    pr: z.string().optional(),
+    lnurl: z.string().optional(),
+    lightningUri: z.string(),
+    buyin: z.number(),
+    expiresAt: z.number(),
+  })
+  .refine(
+    (data) =>
+      Boolean((data.pr ?? data.lnurl)?.trim() && data.lightningUri.trim()),
+    { message: 'missing invoice' }
+  );
 
 export const ResOnlineSeatLightningErrorSchema = z.object({
   reason: z.string(),

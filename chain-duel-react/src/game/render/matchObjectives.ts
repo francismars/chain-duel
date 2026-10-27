@@ -63,6 +63,9 @@ export const START_PROMPT_WORDS = [
   'START',
 ] as const;
 
+export const PRESS_SPACE_TO_START = ['PRESS', 'SPACE', 'TO', 'START'] as const;
+export const PRESS_ENTER_TO_START = ['PRESS', 'ENTER', 'TO', 'START'] as const;
+
 /** Online arena: both players confirm before countdown. */
 export const ONLINE_START_PROMPT_WORDS = [
   'WAITING',
@@ -70,22 +73,26 @@ export const ONLINE_START_PROMPT_WORDS = [
   'PLAYERS',
 ] as const;
 
-export const START_PROMPT_GAP_RATIO = 0.22;
+export const START_PROMPT_GAP_RATIO = 0.1;
 
 /** Extra space below objective hints — nudges start prompt down without moving hints. */
-export const START_PROMPT_Y_OFFSET_RATIO = 0.14;
+export const START_PROMPT_Y_OFFSET_RATIO = 0.72;
+
+/** Pulls the cycling objective (title + body) up, away from the start prompt. */
+export const OBJECTIVE_BLOCK_LIFT_RATIO = 0.07;
 
 /** BureauGrotesque avg glyph width as a fraction of font size (fallback only). */
-export const START_PROMPT_CHAR_WIDTH_RATIO = 0.38;
+export const START_PROMPT_CHAR_WIDTH_RATIO = 0.46;
 
-/** Conservative horizontal budget — drop shadow bleeds past glyph metrics. */
-export const START_PROMPT_MAX_WIDTH_FRAC = 0.86;
+/** Horizontal budget — keep the line inside the board, including the glow. */
+export const START_PROMPT_MAX_WIDTH_FRAC = 0.78;
 
 export function baseStartPromptFontSize(width: number, height: number): number {
-  const compact = width < 560 || height < 260;
-  return compact
-    ? Math.max(12, (width / 14) * 1.05, height / 5.5)
-    : Math.max(10, (width / 17) * 1.12);
+  const byWidth = (width / 17) * 1.12;
+  // Square and portrait boards are short. Size from the smaller edge so the
+  // line does not grow until it clips the canvas.
+  const byHeight = height / 6.6;
+  return Math.max(11, Math.min(byWidth, byHeight, 64));
 }
 
 export function fitStartPromptFontSize(
@@ -101,7 +108,26 @@ export function fitStartPromptFontSize(
     }
     fontSize = Math.max(10, fontSize * 0.9);
   }
-  return Math.max(10, fontSize);
+  return Math.max(11, fontSize);
+}
+
+/** Shrink again when the objective stack would leave the short board. */
+export function fitStartPromptToBoard(
+  width: number,
+  height: number,
+  measureLineWidth: (fontSize: number) => number,
+  opts: CanvasObjectivesOpts = {}
+): number {
+  let fontSize = fitStartPromptFontSize(width, height, measureLineWidth);
+  for (let i = 0; i < 14 && fontSize > 11; i += 1) {
+    const layout = computeCanvasObjectivesLayout(width, height, fontSize, opts);
+    const bottom = layout.startY + fontSize * 0.62;
+    if (layout.instructionTop >= 0 && bottom <= height - 2) {
+      return fontSize;
+    }
+    fontSize = Math.max(11, fontSize * 0.9);
+  }
+  return fontSize;
 }
 
 export function startPromptLineWidth(
@@ -146,12 +172,36 @@ export type OnlineStartReadyState = {
 export type CanvasObjectivesOpts = {
   stakesHint?: string;
   controlSlots?: readonly PlayerControlSlot[];
+  /**
+   * Parallel to controlSlots: which binding cluster labels to show on each pad.
+   * Omit so each pad shows that seat’s own keys (WASD on white, arrows on black).
+   */
+  controlLabelSlots?: readonly PlayerControlSlot[];
   onlineStartReady?: OnlineStartReadyState;
   /** Override default "PRESS BUTTON TO START" (e.g. online confirm flow). */
   startPromptWords?: readonly string[];
-  /** Smaller Inter line under the start prompt (online confirm hint). */
+  /** Second line to fade in after startPromptWords (two human players). */
+  startPromptAltWords?: readonly string[];
+  /** Smaller Inter line under the start prompt (seat switch / online hints). */
   startPromptSubtext?: string;
 };
+
+/** Space for white, Enter for black. Both humans alternate the two lines. */
+export function localStartPromptWords(p1Human: boolean, p2Human: boolean): {
+  words: readonly string[];
+  altWords?: readonly string[];
+} {
+  if (p1Human && p2Human) {
+    return { words: PRESS_SPACE_TO_START, altWords: PRESS_ENTER_TO_START };
+  }
+  if (p2Human && !p1Human) {
+    return { words: PRESS_ENTER_TO_START };
+  }
+  if (p1Human) {
+    return { words: PRESS_SPACE_TO_START };
+  }
+  return { words: START_PROMPT_WORDS };
+}
 
 export function resolveStartPromptWords(
   opts?: Pick<CanvasObjectivesOpts, 'startPromptWords'>
@@ -202,14 +252,14 @@ export function computeCanvasObjectivesLayout(
   opts: CanvasObjectivesOpts
 ): CanvasObjectivesLayout {
   const titlePx = startFontSize;
-  const compact = width < 560 || height < 260;
-  const bodyPx = compact
-    ? Math.max(10, width * 0.016)
+  const shortBoard = height < 420 || width / Math.max(height, 1) < 2.15;
+  const bodyPx = shortBoard
+    ? Math.max(10, Math.min(width * 0.028, height * 0.055))
     : Math.max(11, width * 0.014);
   const footerPx = Math.max(8, bodyPx * 0.92);
-  const instructionW = Math.min(width * 0.78, 440);
-  const titleBodyGap = Math.max(bodyPx * 0.45, titlePx * 0.1);
-  const bodyBlockH = bodyPx * 2.35;
+  const instructionW = Math.min(width * 0.72, 440);
+  const titleBodyGap = Math.max(bodyPx * 0.35, titlePx * 0.08);
+  const bodyBlockH = bodyPx * 2.2;
   const layoutCore = {
     titlePx,
     bodyPx,
@@ -219,17 +269,24 @@ export function computeCanvasObjectivesLayout(
   };
   const instructionBlockH = instructionBlockHeight(layoutCore, opts.stakesHint);
 
-  const sectionGap = Math.max(80, startFontSize * 0.80);
-  const stackTopInset = START_WORD_SHADOW_PAD;
-  const stackBottomInset = START_WORD_SHADOW_PAD + START_WORD_SHADOW_BLUR;
+  const sectionGap = Math.min(
+    Math.max(72, startFontSize * 1.85),
+    Math.max(48, height * 0.2)
+  );
+  const stackTopInset = Math.min(START_WORD_SHADOW_PAD, Math.max(6, height * 0.04));
+  const stackBottomInset = Math.min(20, Math.max(4, height * 0.03));
   const stackHeight =
     stackTopInset +
     instructionBlockH +
     sectionGap +
     startFontSize +
     stackBottomInset;
-  const stackTop = Math.max(8, (height - stackHeight) / 2);
-  const instructionTop = stackTop + stackTopInset;
+  const stackTop = Math.max(4, (height - stackHeight) / 2);
+  const objectiveLift = Math.min(
+    height * OBJECTIVE_BLOCK_LIFT_RATIO,
+    Math.max(18, startFontSize * 0.55)
+  );
+  const instructionTop = Math.max(4, stackTop + stackTopInset - objectiveLift);
   const startPromptYOffset = Math.max(
     20,
     startFontSize * START_PROMPT_Y_OFFSET_RATIO

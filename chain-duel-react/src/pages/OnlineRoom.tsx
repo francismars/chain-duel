@@ -15,6 +15,11 @@ import {
   matchIntroDedupKey,
   shouldShowMatchIntro,
 } from '@/lib/online/shouldShowMatchIntro';
+import {
+  buildOnlineUiDebugRoom,
+  DEBUG_P1_SESSION,
+  parseOnlineUiDebugScene,
+} from '@/lib/online/onlineUiDebug';
 import './game.css';
 
 type ShellView = 'waiting' | 'arena' | 'replay' | 'results';
@@ -48,6 +53,8 @@ export default function OnlineRoom() {
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
   const roomCode = (roomCodeParam ?? '').trim().toUpperCase();
+  const debugScene = parseOnlineUiDebugScene(searchParams.get('preview'));
+  const enterArena = searchParams.get('enter') === '1';
   const replayMode = searchParams.has('replay');
   const bootstrapRoomId = (searchParams.get('roomId') ?? '').trim();
   const bootstrapMatchRoundRaw = Number(
@@ -57,8 +64,12 @@ export default function OnlineRoom() {
     Number.isFinite(bootstrapMatchRoundRaw) && bootstrapMatchRoundRaw >= 1
       ? Math.floor(bootstrapMatchRoundRaw)
       : undefined;
-  const [roomId, setRoomId] = useState(bootstrapRoomId);
-  const [room, setRoom] = useState<OnlineRoomState | null>(null);
+  const [roomId, setRoomId] = useState(
+    debugScene ? 'preview' : bootstrapRoomId
+  );
+  const [room, setRoom] = useState<OnlineRoomState | null>(() =>
+    debugScene ? buildOnlineUiDebugRoom(debugScene, roomCode) : null
+  );
   const [joinError, setJoinError] = useState('');
   const joinedRef = useRef(false);
   const [shellView, setShellView] = useState<ShellView>('waiting');
@@ -129,12 +140,15 @@ export default function OnlineRoom() {
   targetViewRef.current = targetView;
 
   const handleMatchIntroComplete = useCallback(() => {
+    if (debugScene === 'loading' && !enterArena) {
+      return;
+    }
     setMatchIntroActive(false);
     if (targetViewRef.current === 'arena') {
       shellViewRef.current = 'arena';
       setShellView('arena');
     }
-  }, []);
+  }, [debugScene, enterArena]);
 
   const handleVictoryHandoffComplete = useCallback(() => {
     setVictoryHandoff(false);
@@ -179,7 +193,7 @@ export default function OnlineRoom() {
   }, [socket]);
 
   useEffect(() => {
-    if (!socket || !roomCode) {
+    if (debugScene || !socket || !roomCode) {
       return;
     }
 
@@ -302,6 +316,7 @@ export default function OnlineRoom() {
     shouldSpectateOnJoin,
     socket,
     syncRoom,
+    debugScene,
   ]);
 
   useEffect(() => {
@@ -319,7 +334,9 @@ export default function OnlineRoom() {
     if (!bootstrappedRef.current) {
       bootstrappedRef.current = true;
       const initialView =
-        targetView === 'arena' && introPendingForRoom(roomRef.current)
+        targetView === 'arena' &&
+        introPendingForRoom(roomRef.current) &&
+        !enterArena
           ? 'waiting'
           : targetView;
       shellViewRef.current = initialView;
@@ -333,7 +350,7 @@ export default function OnlineRoom() {
     }
 
     if (targetView === 'arena' && prev === 'waiting') {
-      if (introPendingForRoom(roomRef.current)) {
+      if (introPendingForRoom(roomRef.current) && !enterArena) {
         return;
       }
     }
@@ -349,10 +366,10 @@ export default function OnlineRoom() {
 
     shellViewRef.current = targetView;
     setShellView(targetView);
-  }, [replayMode, targetView]);
+  }, [enterArena, replayMode, targetView]);
 
   useEffect(() => {
-    if (!room || replayMode) {
+    if (!room || replayMode || enterArena) {
       setMatchIntroActive(false);
       return;
     }
@@ -376,7 +393,7 @@ export default function OnlineRoom() {
       shellViewRef.current = 'waiting';
       setShellView('waiting');
     }
-  }, [room, replayMode, targetView]);
+  }, [enterArena, room, replayMode, targetView]);
 
   useEffect(() => {
     const gameplay =
@@ -449,8 +466,9 @@ export default function OnlineRoom() {
         {matchIntroActive && room ? (
           <OnlineMatchIntroReveal
             room={room}
-            sessionID={viewerSessionID}
-            socketID={viewerSocketID}
+            sessionID={debugScene ? DEBUG_P1_SESSION : viewerSessionID}
+            socketID={debugScene ? '' : viewerSocketID}
+            hold={debugScene === 'loading' && !enterArena}
             onComplete={handleMatchIntroComplete}
           />
         ) : null}

@@ -1,3 +1,7 @@
+body:has(.online-reveal) {
+  overflow: hidden;
+}
+
 .online-reveal {
   position: fixed;
   inset: 0;
@@ -22,6 +26,42 @@
   opacity: 1;
 }
 
+.online-reveal--intro .online-reveal__scrim {
+  background-color: black;
+  background-image:
+    linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
+    url('/images/chainduel_bg_no_sat.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.online-reveal__brand {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.online-reveal__brand h2 {
+  margin: 0;
+  color: white;
+  font-size: 2.5cqw;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.online-reveal__brand h2:first-child {
+  margin-left: 1%;
+}
+
+.online-reveal__brand h2:last-child {
+  margin-right: 1%;
+}
+
 .online-reveal__vignette {
   position: absolute;
   inset: 0;
@@ -40,9 +80,9 @@
   z-index: 1;
   margin: 0 0 1.1rem;
   font-family: BureauGrotesque, sans-serif;
-  font-size: clamp(0.7rem, 1.3vw, 0.9rem);
+  font-size: clamp(0.62rem, 1.05vw, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.38em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.72);
   opacity: 0;
@@ -79,7 +119,7 @@
   align-items: center;
   text-align: center;
   padding: 1rem 0.85rem 1.05rem;
-  border-radius: 0.35rem;
+  border-radius: 0;
   opacity: 0;
   transform: translateY(20px) scale(0.94);
   animation: online-reveal-player-in 0.55s cubic-bezier(0.34, 1.12, 0.64, 1) forwards;
@@ -105,13 +145,29 @@
     inset 0 0 20px rgb(0 0 0 / 0.35);
 }
 
+.online-reveal__player--you {
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.78),
+    0 0 28px rgb(255 255 255 / 0.08);
+}
+
 .online-reveal__role {
   margin: 0 0 0.5rem;
-  font-family: BureauGrotesque, sans-serif;
+  font-family: Inter, sans-serif;
   font-size: 0.58rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.55);
+}
+
+.online-reveal__you {
+  display: inline-flex;
+  margin-left: 0.45rem;
+  padding: 0.12rem 0.32rem 0.08rem;
+  border: 1px solid rgb(255 255 255 / 0.82);
+  letter-spacing: 0.14em;
+  color: #fff;
+  vertical-align: 1px;
 }
 
 .online-reveal__avatar {
@@ -157,19 +213,45 @@
   font-family: BureauGrotesque, sans-serif;
   font-size: clamp(0.95rem, 2vw, 1.35rem);
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgb(255 245 235 / 0.98);
+  color: rgb(255 255 255 / 0.92);
   text-align: center;
-  text-shadow: 0 0 18px rgb(255 190 70 / 0.35);
   opacity: 0;
   transform: translateY(10px);
   animation: online-reveal-fade-up 0.4s ease 0.35s forwards;
 }
 
 .online-reveal__stakes-denom {
+  font-family: Inter, sans-serif;
   font-size: 0.78em;
+  font-weight: 500;
   opacity: 0.8;
+}
+
+.online-reveal__watchers {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.9rem 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.58);
+  opacity: 0;
+  animation: online-reveal-fade-up 0.4s ease 0.42s forwards;
+}
+
+.online-reveal__watchers-dot {
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 50%;
+  background: #e8e8e8;
+  box-shadow: 0 0 8px rgb(255 255 255 / 0.7);
+  animation: online-reveal-live-dot 1.6s ease-in-out infinite;
 }
 
 .online-reveal__footer {
@@ -280,6 +362,31 @@
   }
 }
 
+@keyframes online-reveal-progress-loop {
+  0% {
+    width: 8%;
+  }
+
+  78% {
+    width: 100%;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes online-reveal-live-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 720px) {
   .online-reveal__matchup {
     flex-direction: column;
@@ -299,6 +406,7 @@
   .online-reveal__player,
   .online-reveal__vs,
   .online-reveal__stakes,
+  .online-reveal__watchers,
   .online-reveal__footer,
   .online-reveal__exit,
   .online-reveal__skip,

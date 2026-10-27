@@ -1,0 +1,365 @@
+.end-screen-rays {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* First burst paints under the board so the field stays readable. */
+.end-screen-rays--burst {
+  z-index: 10001;
+  animation: match-end-burst-out 0.7s ease 1.05s forwards;
+}
+
+body:has(.end-screen-rays--burst) :is(#gameCanvas, .players, .points, .game-hud-ffa-wrap, .game-hud-2v1-wrap, #powerUpKey) {
+  z-index: 10002;
+}
+
+.match-end-layer__rays {
+  opacity: 0;
+  animation: match-end-fade 0.9s ease 1.05s forwards;
+}
+
+.match-end-layer__rays--instant {
+  opacity: 1;
+  animation: none;
+}
+
+@keyframes match-end-burst-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.game-end-rays {
+  z-index: 10002;
+}
+
+.match-end-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10003;
+  pointer-events: none;
+}
+
+.match-end-layer > #brand,
+body:has(.match-end-layer) header#brand {
+  z-index: 10005;
+}
+
+.match-end-card {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(5 5 5 / 0);
+  color: #fff;
+  text-align: center;
+  padding: 8vh 6vw;
+  animation: match-end-scrim 0.9s ease 1.05s forwards;
+}
+
+@keyframes match-end-scrim {
+  to {
+    background-color: rgb(5 5 5 / 88%);
+  }
+}
+
+@keyframes match-end-line {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes match-end-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.match-end-card__kicker,
+.match-end-card__name,
+.match-end-card__wins,
+.match-end-card__sats,
+.match-end-card__note,
+.match-end-card__prompt {
+  animation: match-end-line 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.match-end-card__kicker {
+  animation-delay: 1.55s;
+}
+
+.match-end-card__name {
+  animation-delay: 1.74s;
+}
+
+.match-end-card__wins {
+  animation-delay: 1.93s;
+}
+
+.match-end-card__sats {
+  animation-delay: 2.14s;
+}
+
+.match-end-card__note {
+  animation-delay: 2.32s;
+}
+
+.match-end-card__prompt {
+  animation-delay: 2.55s;
+}
+
+.match-end-card__kicker,
+.match-end-card__prompt,
+.match-end-card__note {
+  margin: 0;
+  font:
+    500 clamp(10px, 1.1vw, 13px)/1.4 Inter,
+    sans-serif;
+  letter-spacing: 0.16em;
+  color: #aaa;
+}
+
+.match-end-card__name,
+.match-end-card__wins,
+.match-end-card__sats {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  line-height: 0.95;
+}
+
+.match-end-card__name {
+  margin-top: 18px;
+  font-size: clamp(32px, 5vw, 72px);
+}
+
+.match-end-card__wins {
+  font-size: clamp(64px, 10vw, 140px);
+}
+
+.match-end-card__sats {
+  margin-top: 12px;
+  font-size: clamp(28px, 4vw, 64px);
+}
+
+.match-end-card__note {
+  margin-top: 8px;
+}
+
+.match-end-card__prompt {
+  position: absolute;
+  bottom: max(28px, 8vh);
+}
+
+.match-end-card--instant {
+  background-color: rgb(5 5 5 / 88%);
+  animation: none;
+}
+
+.match-end-card--instant :is(
+  .match-end-card__kicker,
+  .match-end-card__name,
+  .match-end-card__wins,
+  .match-end-card__sats,
+  .match-end-card__note,
+  .match-end-card__prompt
+) {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.duel-finish__continue {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.duel-finish__progress {
+  position: absolute;
+  left: 6vw;
+  right: 6vw;
+  bottom: max(16px, 4vh);
+  height: 2px;
+  background: white;
+  transform-origin: left;
+  animation: duel-finish-progress var(--reveal-exit-ms) linear both;
+}
+
+@keyframes duel-finish-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.match-end-card #sponsorship-match-end {
+  position: absolute;
+  top: max(18px, 4.5vh);
+  left: 50%;
+  transform: translateX(-50%);
+  animation: match-end-fade 0.55s ease 1.55s both;
+}
+
+.match-end-card #sponsorship-match-end .sponsored-img {
+  height: clamp(28px, 3.5vw, 56px);
+  max-height: none;
+  max-width: 24vw;
+  margin-bottom: 0;
+}
+
+.match-end-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 10003;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(5 5 5 / 94%);
+  color: #fff;
+  text-align: center;
+}
+
+.match-end-preview__copy,
+.match-end-preview__actions {
+  position: relative;
+  z-index: 1;
+}
+
+.match-end-preview__kicker,
+.match-end-preview__prompt {
+  margin: 0;
+  font:
+    500 12px/1.4 Inter,
+    sans-serif;
+  letter-spacing: 0.16em;
+  color: #aaa;
+}
+
+.match-end-preview__name,
+.match-end-preview__wins,
+.match-end-preview__sats {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  line-height: 0.95;
+}
+
+.match-end-preview__name {
+  margin-top: 18px;
+  font-size: clamp(32px, 5vw, 72px);
+}
+
+.match-end-preview__wins {
+  font-size: clamp(64px, 10vw, 140px);
+}
+
+.match-end-preview__sats {
+  margin-top: 12px;
+  font-size: clamp(28px, 4vw, 64px);
+}
+
+.match-end-preview__actions {
+  position: absolute;
+  bottom: max(28px, 8vh);
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  gap: 2%;
+  width: min(52vw, 720px);
+  min-width: min(22rem, 92vw);
+  height: 3vw;
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: match-end-fade 0.5s ease 2.85s both;
+}
+
+.match-end-preview__actions .button {
+  pointer-events: auto;
+  flex: 1;
+  width: auto;
+  height: 3vw;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+#postGame > :not(.end-screen-rays),
+.online-postgame-page > :not(.end-screen-rays),
+.duel-finish > :not(.end-screen-rays) {
+  position: relative;
+  z-index: 1;
+}
+
+#postGame > .postgame-scrim,
+.online-postgame-page > .postgame-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: rgb(5 5 5 / 78%);
+  pointer-events: none;
+}
+
+#postGame > #buttonsDiv {
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .end-screen-rays--burst,
+  .match-end-layer__rays,
+  .match-end-card,
+  .match-end-card__kicker,
+  .match-end-card__name,
+  .match-end-card__wins,
+  .match-end-card__sats,
+  .match-end-card__note,
+  .match-end-card__prompt,
+  .match-end-card #sponsorship-match-end,
+  .match-end-preview__actions {
+    animation: none;
+    opacity: 1;
+    filter: none;
+  }
+
+  .match-end-card {
+    background-color: rgb(5 5 5 / 88%);
+  }
+
+  .match-end-card__kicker,
+  .match-end-card__name,
+  .match-end-card__wins,
+  .match-end-card__sats,
+  .match-end-card__note,
+  .match-end-card__prompt {
+    transform: none;
+  }
+}

@@ -628,3 +628,738 @@
   height: 2cqw;
   margin: 0 0.4vw;
 }
+
+/* Preview: two payment stations, prize shared above them. */
+.gamemenu-preview.game-setup-page .game-setup-middle,
+html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
+  max-height: none;
+  justify-content: center;
+  padding-bottom: 0;
+}
+
+.gamemenu-preview #centerSection {
+  display: none;
+}
+
+.gamemenu-preview-rules-btn {
+  display: block;
+  margin: 0.15rem auto 0;
+  padding: 0.1rem 0.4rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.gamemenu-preview-rules-btn:hover,
+.gamemenu-preview-rules-btn:focus-visible {
+  color: rgba(255, 255, 255, 0.9);
+  outline: none;
+}
+
+.rules-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  background: transparent;
+}
+
+.rules-modal {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  overflow: auto;
+  padding: 1.25rem 1.25rem 1.5rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: rgba(11, 11, 11, 0.94);
+  border: none;
+}
+
+.rules-modal__bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -1.85rem;
+  margin-bottom: 0.45rem;
+  min-height: 1.75rem;
+}
+
+.rules-modal__title {
+  margin: 0;
+  color: white;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.rules-modal__title--hide {
+  animation: rules-slide-hide 220ms ease forwards;
+}
+
+.rules-modal__title--show {
+  animation: rules-slide-show 320ms ease both;
+}
+
+.rules-modal__kicker {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.rules-modal__heading {
+  font-size: 0.95rem;
+}
+
+.rules-modal__close {
+  width: min(25vw, 16rem);
+  min-width: 12rem;
+  height: 3vw;
+  padding: 0;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: transparent;
+  color: white;
+  font-size: 0.8cqw;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rules-modal__actions .rules-slider__arrow--selected,
+.rules-modal__close--selected {
+  color: white;
+  outline: none;
+  animation: glowing 1.4s ease-in-out infinite;
+}
+
+.rules-modal #centerSection {
+  display: block;
+}
+
+.rules-slider {
+  width: min(520px, 100%);
+  margin: 0 auto;
+}
+
+.rules-slider__card {
+  text-align: center;
+}
+
+.rules-slider--hide .rules-slider__copy {
+  animation: rules-slide-hide 220ms ease forwards;
+}
+
+.rules-slider--show .rules-slider__copy {
+  animation: rules-slide-show 320ms ease both;
+}
+
+.rules-slider--prev.rules-slider--hide .rules-slider__copy,
+.rules-modal__title--prev.rules-modal__title--hide {
+  --rules-out-y: 10px;
+}
+
+.rules-slider--prev.rules-slider--show .rules-slider__copy,
+.rules-modal__title--prev.rules-modal__title--show {
+  --rules-in-y: -10px;
+}
+
+@keyframes rules-slide-hide {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(var(--rules-out-y, -10px));
+  }
+}
+
+@keyframes rules-slide-show {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rules-in-y, 10px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rules-slider--hide .rules-slider__copy,
+  .rules-slider--show .rules-slider__copy,
+  .rules-modal__title--hide,
+  .rules-modal__title--show {
+    animation: none;
+  }
+}
+
+.rule-clip--flash,
+.rule-clip--flash .rule-clip__stage {
+  background-image: url('/images/chainduel_bg_anim.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.rule-clip {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 51 / 25;
+  margin-bottom: 0;
+  overflow: hidden;
+  background-color: #4a4a4a;
+  background-image: url('/images/game_bg.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.rule-clip__qr {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: rgba(8, 8, 8, 0.62);
+  animation: rule-qr-in 0.35s ease-out;
+}
+
+.rule-clip__qr-player {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  transform: translateY(-50%);
+}
+
+.rule-clip__qr-player:first-child {
+  left: 0.7rem;
+}
+
+.rule-clip__qr-player:nth-child(2) {
+  right: 0.7rem;
+}
+
+.rule-clip__qr-card {
+  position: relative;
+  padding: 0.3rem;
+  background: #fff;
+  line-height: 0;
+}
+
+.rule-clip__qr-bolt {
+  height: auto;
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.rule-clip__qr-bolt--hide {
+  display: none;
+}
+
+.rule-clip__qr-label,
+.rule-clip__qr-amount,
+.rule-clip__qr-ready {
+  margin: 0;
+  color: #fff;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rule-clip__qr-amount {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.rule-clip__qr-ready {
+  position: absolute;
+  left: 50%;
+  bottom: 0.55rem;
+  transform: translateX(-50%);
+  color: #fff;
+}
+
+@keyframes rule-qr-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.rule-clip__impact {
+  position: absolute;
+  z-index: 2;
+  width: 4.5%;
+  aspect-ratio: 1;
+  border: 1px solid currentColor;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.72);
+  animation: rule-clip-impact 0.35s ease-out forwards;
+}
+
+.rule-clip__impact--wall {
+  color: #fff;
+}
+
+.rule-clip__impact--clash {
+  color: #f0c14d;
+}
+
+.rule-clip__impact--reorg {
+  width: 6.5%;
+  border-width: 1px;
+  color: #f0c14d;
+  animation-duration: 0.5s;
+}
+
+.rule-clip__impact--reorg::after {
+  content: '';
+  position: absolute;
+  inset: 14%;
+  border: 1px solid currentColor;
+}
+
+@keyframes rule-clip-impact {
+  0% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+  35% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+}
+
+.rule-clip__stage,
+.rule-clip canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rule-clip__stage {
+  position: absolute;
+  inset: 0;
+}
+
+.rule-clip-frame {
+  margin-bottom: 0.75rem;
+}
+
+.rule-clip__bar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  height: 0.55rem;
+  margin-bottom: 0.7rem;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.rule-clip__bar span {
+  flex: none;
+  transition: width 0.55s cubic-bezier(0.22, 0.8, 0.28, 1);
+}
+
+.rule-clip__bar span:first-child {
+  background: linear-gradient(180deg, #ffffff 0%, #b8b8b8 100%);
+}
+
+.rule-clip__bar span:last-child {
+  background: #111111;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.rules-modal__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.rules-slider__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.rules-modal__actions .rules-slider__nav {
+  width: min(25vw, 16rem);
+  min-width: 12rem;
+  margin-top: 0;
+  gap: 0.15rem;
+}
+
+.rules-modal__actions .rules-slider__arrow {
+  flex: 1;
+  min-width: 0;
+  height: 3vw;
+  padding: 0;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  font-size: 0.8cqw;
+  letter-spacing: 0.08em;
+}
+
+.rules-slider__arrow,
+.rules-slider__dot {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-size: 0.72rem;
+}
+
+.rules-slider__dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.rules-slider__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.rules-slider__dot--on {
+  background: white;
+}
+
+.rules-slider .ruleTitle,
+.rules-modal .ruleTitle {
+  font-size: 0.85rem;
+}
+
+.rules-slider .gameDescription,
+.rules-modal .gameDescription {
+  font-size: 0.85rem;
+  line-height: 1.35;
+  min-height: calc(2 * 1.35em);
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 34rem;
+}
+
+html.tv-safe-inset .gamemenu-preview #bottomInfo,
+.gamemenu-preview #bottomInfo {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  column-gap: 1.25rem;
+  row-gap: 0.55rem;
+  width: min(1080px, calc(100% - 2.5rem));
+  margin: 0.25rem auto 1.75rem;
+  padding: 0;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #bottomInfo {
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  box-sizing: border-box;
+}
+
+.gamemenu-preview #leaderboard {
+  margin-top: 0.85rem;
+}
+
+.gamemenu-preview .prizeinfocard {
+  order: 0;
+  width: 18rem;
+  flex: 0 0 18rem;
+  justify-content: center;
+  align-self: center;
+}
+
+.gamemenu-preview #prizevaluesats {
+  width: 100%;
+  justify-content: center;
+}
+
+.gamemenu-preview #player1card,
+.gamemenu-preview #player2card {
+  width: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.85rem;
+}
+
+.gamemenu-preview #player2card {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.gamemenu-preview .qrcodeContainer .qrcode {
+  width: 11vw;
+  height: 11vw;
+  max-width: 132px;
+  max-height: 132px;
+}
+
+/* B preview: codes sit mid-screen, so scale grows inward from the outer edge. */
+.gamemenu-page.gamemenu-preview #player1card .qrcodeContainer .qrcode {
+  transform-origin: center left;
+}
+
+.gamemenu-page.gamemenu-preview #player2card .qrcodeContainer .qrcode {
+  transform-origin: center right;
+}
+
+/* B preview: border lives on the QR so Control-scale grows it. Black inverts to a white frame. */
+.gamemenu-page.gamemenu-preview
+  #player1card
+  .qrcodeContainer:not(.qrcodeContainer--compatible)
+  .qrcode,
+.gamemenu-page.gamemenu-preview
+  #player2card
+  .qrcodeContainer:not(.qrcodeContainer--compatible)
+  .qrcode,
+.gamemenu-page.gamemenu-preview
+  #player1card.expanded
+  .qrcodeContainer:not(.qrcodeContainer--compatible)
+  .qrcode,
+.gamemenu-page.gamemenu-preview
+  #player2card.expanded
+  .qrcodeContainer:not(.qrcodeContainer--compatible)
+  .qrcode {
+  border: 1px solid #000;
+}
+
+.gamemenu-preview .player-card-info {
+  height: auto;
+  margin-top: 0;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo .condensed,
+.gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+  order: -1;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo,
+.gamemenu-page.gamemenu-preview #player2cardinfo {
+  padding: 0;
+  height: auto;
+  flex: 0 0 11rem;
+  width: 11rem;
+  min-width: 11rem;
+  max-width: 11rem;
+}
+
+.gamemenu-page.gamemenu-preview .player1info,
+.gamemenu-page.gamemenu-preview .player2info {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gamemenu-page.gamemenu-preview #player1satsContainer,
+.gamemenu-page.gamemenu-preview #player2satsContainer {
+  width: 100%;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.gamemenu-page.gamemenu-preview #player2cardinfo {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer,
+.gamemenu-page.gamemenu-preview #player1cardinfo .condensed {
+  align-self: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
+.gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+  align-self: flex-end;
+  justify-content: flex-end;
+  text-align: right;
+  flex-direction: row;
+}
+
+.gamemenu-page.gamemenu-preview #player1cardinfo .deposit-message,
+.gamemenu-page.gamemenu-preview #player2cardinfo .deposit-message {
+  display: none;
+}
+
+/* Nostr preview has one center QR, so the side players can take the spare space. */
+.gamemenu-page.gamemenu-preview.is-nostr #player1card,
+.gamemenu-page.gamemenu-preview.is-nostr #player2card {
+  flex: 1 1 0;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #player1cardinfo,
+.gamemenu-page.gamemenu-preview.is-nostr #player2cardinfo {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: max-content;
+  max-width: none;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer,
+.gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer {
+  width: auto;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer span:not(.sats-label),
+.gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer span:not(.sats-label) {
+  font-size: 2cqw;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer .sats-label,
+.gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer .sats-label {
+  font-size: 1.15cqw;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr .player1info,
+.gamemenu-page.gamemenu-preview.is-nostr .player2info {
+  font-size: 4cqw;
+}
+
+.gamemenu-page.gamemenu-preview.is-nostr .playerSquare,
+.gamemenu-page.gamemenu-preview.is-nostr .playerImg {
+  width: 3.4cqw;
+  height: 3.4cqw;
+}
+
+.gamemenu-preview .gamemenu-preview-deposit {
+  flex: 0 0 100%;
+  width: 100%;
+  max-width: none;
+  margin-top: 0.2rem;
+  text-align: center;
+}
+
+.gamemenu-preview #splits {
+  flex: 0 0 100%;
+  width: 100%;
+  margin-top: 0.35rem;
+  text-align: center;
+}
+
+.gamemenu-preview #gameButtons {
+  padding-top: 1.1rem;
+}
+
+/* Small desktop: keep player, prize, and player on one row, inside a narrower bar. */
+@media (max-width: 1100px) {
+  html.tv-safe-inset .gamemenu-preview #bottomInfo,
+  .gamemenu-preview #bottomInfo {
+    width: min(40rem, calc(100% - 3rem));
+    column-gap: 0.65rem;
+  }
+
+  .gamemenu-preview #player1card,
+  .gamemenu-preview #player2card {
+    flex: 1 1 0;
+    min-width: 0;
+    order: 0;
+  }
+
+  .gamemenu-preview .prizeinfocard {
+    order: 0;
+    flex: 0 1 8.5rem;
+    width: auto;
+    min-width: 0;
+  }
+
+  .gamemenu-page.gamemenu-preview #player1cardinfo,
+  .gamemenu-page.gamemenu-preview #player2cardinfo {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .gamemenu-preview .qrcodeContainer .qrcode {
+    width: 18vw;
+    height: 18vw;
+    max-width: 96px;
+    max-height: 96px;
+  }
+}
+
+@media (max-width: 640px) {
+  .gamemenu-preview #player1card,
+  .gamemenu-preview #player2card,
+  .gamemenu-preview .prizeinfocard {
+    flex: 1 0 100%;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .gamemenu-page.gamemenu-preview #player1cardinfo,
+  .gamemenu-page.gamemenu-preview #player2cardinfo {
+    flex: 0 1 auto;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
+  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+    align-self: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .gamemenu-preview #gameButtons {
+    flex-wrap: wrap;
+  }
+
+  .gamemenu-preview #gameButtons .button {
+    width: min(25vw, 100%);
+    min-width: 12rem;
+  }
+}

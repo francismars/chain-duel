@@ -2,7 +2,14 @@
  * Shared layout for Practice and P2P game setup pages.
  * Template: top = header brand, middle = game setup (rules + buttons), bottom = bottom info (player/prize).
  */
-import { RefObject, ReactNode, useEffect, useMemo, useRef } from 'react';
+import {
+  RefObject,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
@@ -26,6 +33,9 @@ export interface GameSetupLayoutProps {
   onMainMenu: () => void;
   onStart: () => void;
   loading: boolean;
+  /** Keep the loading overlay up and offer a way out after the load times out */
+  loadingTimedOut?: boolean;
+  onLoadingTimeoutExit?: () => void;
   showCancelOverlay: boolean;
   /** Overlay copy when leaving the setup screen */
   cancelOverlayTitle?: string;
@@ -39,6 +49,7 @@ export interface GameSetupLayoutProps {
   selectedButton?:
     | 'mainMenuButton'
     | 'startgame'
+    | 'rules'
     | 'cancelGameAbort'
     | 'cancelGameConfirm'
     | null;
@@ -59,6 +70,8 @@ export function GameSetupLayout({
   onMainMenu,
   onStart,
   loading,
+  loadingTimedOut = false,
+  onLoadingTimeoutExit,
   showCancelOverlay,
   cancelOverlayTitle = 'Cancel Game?',
   cancelOverlayText = 'Are you sure you want to leave?',
@@ -74,10 +87,19 @@ export function GameSetupLayout({
   cancelGameConfirmRef,
   children,
 }: GameSetupLayoutProps) {
+  const previewSwap = pageClass.includes('gamemenu-preview');
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [rulesTitle, setRulesTitle] = useState({
+    kicker: 'Rule 1',
+    title: 'Stake your sats',
+    phase: 'idle' as 'idle' | 'hide' | 'show',
+    dir: 'next' as 'next' | 'prev',
+  });
   const internalMainRef = useRef<HTMLButtonElement>(null);
   const internalStartRef = useRef<HTMLButtonElement>(null);
   const internalAbortRef = useRef<HTMLButtonElement>(null);
   const internalConfirmRef = useRef<HTMLButtonElement>(null);
+  const rulesButtonRef = useRef<HTMLButtonElement>(null);
 
   const refs = useMemo(
     () => ({
@@ -98,6 +120,7 @@ export function GameSetupLayout({
     (Object.keys(refs) as Array<keyof typeof refs>).forEach((key) => {
       setButtonGlow(refs[key].current, selectedButton === key);
     });
+    setButtonGlow(rulesButtonRef.current, selectedButton === 'rules');
     if (!selectedButton) {
       const active = document.activeElement;
       const isGameButton = (
@@ -109,12 +132,45 @@ export function GameSetupLayout({
     }
   }, [refs, selectedButton]);
 
+  useEffect(() => {
+    if (!rulesOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setRulesOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [rulesOpen]);
+
   const overlays =
     typeof document !== 'undefined'
       ? createPortal(
           <>
             <div className={`overlay ${loading ? '' : 'hide'}`} id="loading">
-              <img src="/images/loading.gif" alt="Loading" />
+              {loadingTimedOut ? (
+                <div className="warning">
+                  <div className="warning-inner">
+                    <h2 className="warning-title condensed">
+                      Still waiting for the game
+                    </h2>
+                    <div className="warning-text">
+                      The game menu did not load. Return to the menu and try
+                      again.
+                    </div>
+                  </div>
+                  <div className="warning-actions">
+                    <Button
+                      className="button"
+                      id="loadingTimeoutExit"
+                      type="button"
+                      onClick={onLoadingTimeoutExit}
+                    >
+                      Return to menu
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <img src="/images/loading.gif" alt="Loading" />
+              )}
             </div>
             <div
               className={`overlay ${showCancelOverlay ? '' : 'hide'}`}
@@ -171,10 +227,28 @@ export function GameSetupLayout({
               <h2 id="gameMenuTitle" className="hero-outline condensed">
                 {title}
               </h2>
-              <p id="titleslogan">Rules</p>
+              {previewSwap ? (
+                <button
+                  ref={rulesButtonRef}
+                  id="gamemenu-rules"
+                  type="button"
+                  className="gamemenu-preview-rules-btn"
+                  onClick={() => setRulesOpen(true)}
+                >
+                  Rules
+                </button>
+              ) : (
+                <p id="titleslogan">Rules</p>
+              )}
             </div>
 
-            <RulesSection />
+            {previewSwap ? (
+              <div id="bottomInfo" className="game-setup-bottom">
+                {children}
+              </div>
+            ) : (
+              <RulesSection />
+            )}
             {statusMessage ? (
               <p className="game-setup-status grey">{statusMessage}</p>
             ) : null}
@@ -216,11 +290,49 @@ export function GameSetupLayout({
           </div>
         </div>
 
-        {/* Bottom: bottom info (player card(s), prize, etc.) */}
-        <div id="bottomInfo" className="game-setup-bottom">
-          {children}
-        </div>
+        {previewSwap ? null : (
+          <div id="bottomInfo" className="game-setup-bottom">
+            {children}
+          </div>
+        )}
       </div>
+      {rulesOpen
+        ? createPortal(
+            <div
+              className="rules-modal-backdrop"
+              onClick={() => setRulesOpen(false)}
+            >
+              <div
+                className="rules-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="rules-modal-title"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="rules-modal__bar">
+                  <p
+                    id="rules-modal-title"
+                    key={`${rulesTitle.kicker}-${rulesTitle.phase}`}
+                    className={
+                      rulesTitle.phase === 'idle'
+                        ? 'rules-modal__title'
+                        : `rules-modal__title rules-modal__title--${rulesTitle.phase} rules-modal__title--${rulesTitle.dir}`
+                    }
+                  >
+                    <span className="rules-modal__kicker">{rulesTitle.kicker}</span>
+                    <span className="rules-modal__heading">{rulesTitle.title}</span>
+                  </p>
+                </div>
+                <RulesSection
+                  variant="clips"
+                  onTitleChange={setRulesTitle}
+                  onClose={() => setRulesOpen(false)}
+                />
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
       {overlays}
     </>
   );

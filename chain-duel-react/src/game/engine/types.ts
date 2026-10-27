@@ -49,6 +49,8 @@ export interface PointChange {
   lossPos?: GridPos;
   /** Capture tier used for this steal (shown on + pop). */
   capturePercent?: number;
+  /** Set only when this steal moves the chain into a new capture tier. */
+  captureRateLabel?: string;
   p1YOffsetPx: number;
   p2YOffsetPx: number;
   alpha: number;
@@ -107,6 +109,11 @@ export interface GameMeta {
   practiceMode: boolean;
   p1Human: boolean;
   p2Human: boolean;
+  /**
+   * Solo vs AI: which binding cluster the human keeps when swapping seats.
+   * Set at match start; pressing X flips p1Human/p2Human but not this slot.
+   */
+  soloInputSlot?: 'p1' | 'p2';
   aiTier: AiTier;
   convergenceMode: boolean;
   convergenceShrinkInterval: number;
@@ -140,6 +147,14 @@ export interface GameState {
   p2Name: string;
   meta: GameMeta;
   tickCount: number;
+  /**
+   * Set for the tick a chain actually resets. Cleared at the start of the next
+   * step. Spawn cells move, so the cue cannot be "head arrived at column 6".
+   */
+  resetCueP1?: boolean;
+  resetCueP2?: boolean;
+  /** Parallel to `extraSnakes`. Set for the tick that chain respawns. */
+  resetCueExtra?: boolean[];
   powerUpItems: PowerUpItem[];
   activePowerUps: ActivePowerUp[];
   obstacleWalls: ObstacleWall[];

@@ -1,0 +1,167 @@
+.ui-debug-menu {
+  position: relative;
+}
+
+.ui-debug-menu__btn--open {
+  color: #fff;
+  border-color: #fff;
+}
+
+.ui-debug-menu__panel {
+  /* .corner-controls is transform-centered, so fixed is relative to that box. */
+  position: fixed;
+  left: calc(100% + 0.6rem);
+  top: calc(1rem - 50vh + 50%);
+  width: min(54rem, calc(100vw - 5rem));
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 0.75rem 0.85rem 0.9rem;
+  background: #0a0a0a;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  color: #eee;
+  text-align: left;
+  z-index: 120;
+}
+
+.ui-debug-menu__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ui-debug-menu__head p {
+  flex-basis: 100%;
+  margin: 0;
+  color: #9a9a9a;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+.ui-debug-menu__head a,
+.ui-debug-menu__head button,
+.ui-debug-menu__panel a {
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+}
+
+.ui-debug-menu__head button {
+  align-self: center;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid rgb(255 180 180 / 0.7);
+  background: rgb(255 80 80 / 0.12);
+  color: #ffb4b4;
+  line-height: 1;
+}
+
+.ui-debug-menu__head button:hover,
+.ui-debug-menu__head button:focus-visible {
+  background: rgb(255 80 80 / 0.28);
+  color: #fff;
+  border-color: #ffb4b4;
+}
+
+.ui-debug-menu__groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem 1.25rem;
+  align-items: start;
+}
+
+.ui-debug-menu__panel section + section {
+  margin-top: 0;
+}
+
+.ui-debug-menu__panel section p {
+  margin: 0 0 0.25rem;
+  color: #9a9a9a;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ui-debug-menu__panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-debug-menu__panel li + li {
+  margin-top: 0.2rem;
+}
+
+.ui-debug-menu__panel a {
+  display: flex;
+  gap: 0.45rem;
+  align-items: baseline;
+  font-size: 0.82rem;
+}
+
+.ui-debug-menu__panel a span {
+  min-width: 0.9rem;
+  font-weight: 700;
+}
+
+.ui-debug-menu__panel a:hover,
+.ui-debug-menu__panel a:focus-visible {
+  color: #fff;
+}
+
+html.tv-safe-inset .ui-debug-menu__panel {
+  top: calc(var(--tv-safe-padding) + 0.5rem - 50vh + 50%);
+  max-height: calc(100vh - var(--tv-safe-padding) - 1.5rem);
+}
+
+.ui-debug-index {
+  min-height: 100vh;
+  padding: 6vh 8vw 8vh;
+  color: #eee;
+  background: #050505;
+}
+
+.ui-debug-index h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ui-debug-index section + section {
+  margin-top: 1.4rem;
+}
+
+.ui-debug-index h2 {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9a9a9a;
+}
+
+.ui-debug-index ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-debug-index a {
+  color: #fff;
+  display: inline-flex;
+  gap: 0.5rem;
+  margin: 0.2rem 0;
+}
+
+.ui-debug-index__locked {
+  min-height: 100vh;
+}

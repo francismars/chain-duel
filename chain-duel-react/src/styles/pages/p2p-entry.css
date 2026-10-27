@@ -1206,6 +1206,47 @@
   flex: 1 1 0;
 }
 
+.p2p-entry-page--stepped .bracket-sizing-hub__two-col {
+  flex-direction: column;
+}
+
+.p2p-entry-page--stepped .bracket-sizing-hub__players-col {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.p2p-entry-page--stepped .bracket-sizing-hub__buyin-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.p2p-entry-page--stepped .practice-panel > .p2p-mode-config-area {
+  order: -1;
+}
+
+.p2p-entry-page--stepped .practice-panel > .p2p-modifiers-section {
+  order: 1;
+}
+
+.p2p-entry-page--stepped .practice-panel > section[aria-labelledby='te-pay'] {
+  order: 2;
+  padding-bottom: 16px;
+}
+
+.p2p-entry-page--stepped .practice-panel > .practice-actions {
+  order: 3;
+}
+
+.p2p-entry-page--stepped .bracket-sizing-hub__player-card,
+.p2p-entry-page--stepped .bracket-sizing-hub__pill {
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.p2p-entry-page--stepped .bracket-sizing-hub__player-num,
+.p2p-entry-page--stepped .bracket-sizing-hub__pill {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
 .bracket-sizing-hub__player-card {
   display: flex;
   align-items: center;

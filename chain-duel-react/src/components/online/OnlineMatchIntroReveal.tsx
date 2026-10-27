@@ -23,6 +23,8 @@ export type OnlineMatchIntroRevealProps = {
   sessionID?: string;
   socketID?: string;
   onComplete: () => void;
+  /** Keep the reveal on screen for UI previews. */
+  hold?: boolean;
 };
 
 export function OnlineMatchIntroReveal({
@@ -30,6 +32,7 @@ export function OnlineMatchIntroReveal({
   sessionID = '',
   socketID = '',
   onComplete,
+  hold = false,
 }: OnlineMatchIntroRevealProps) {
   const data = useMemo(
     () => buildMatchIntroData(room, { sessionID, socketID }),
@@ -54,6 +57,11 @@ export function OnlineMatchIntroReveal({
     setSkippable(false);
     setShowExit(false);
 
+    if (hold) {
+      setShowExit(true);
+      return;
+    }
+
     const skipTimer = window.setTimeout(() => {
       setSkippable(true);
     }, MATCH_REVEAL_SKIP_AFTER_MS);
@@ -71,7 +79,7 @@ export function OnlineMatchIntroReveal({
       window.clearTimeout(exitTimer);
       window.clearTimeout(completeTimer);
     };
-  }, [finish, room.roomId, room.matchRound]);
+  }, [finish, hold, room.roomId, room.matchRound]);
 
   useEffect(() => {
     if (!skippable) {
@@ -97,11 +105,13 @@ export function OnlineMatchIntroReveal({
     return null;
   }
 
+  const watching =
+    data.spectatorCount > 0 ? `${data.spectatorCount} watching` : null;
   const footerCopy =
     data.viewerRole === 'duelist'
       ? 'You are dueling · Press Space or Enter when the board opens'
-      : data.spectatorCount > 0
-        ? `${data.spectatorCount} watching · spectating this duel`
+      : watching
+        ? `${watching} · spectating this duel`
         : 'Spectating this duel';
 
   const ariaLabel = `${data.p1.name} versus ${data.p2.name}. ${data.buyinEach.toLocaleString()} sats each. ${data.netPrize.toLocaleString()} sats to the winner.`;
@@ -111,6 +121,7 @@ export function OnlineMatchIntroReveal({
       className={[
         'online-reveal',
         'online-reveal--intro',
+        hold ? 'online-reveal--held' : '',
         skippable ? 'online-reveal--skippable' : '',
       ]
         .filter(Boolean)
@@ -121,6 +132,10 @@ export function OnlineMatchIntroReveal({
     >
       <div className="online-reveal__scrim" aria-hidden="true" />
       <div className="online-reveal__vignette" aria-hidden="true" />
+      <header className="online-reveal__brand">
+        <h2>CHAIN</h2>
+        <h2>DUEL</h2>
+      </header>
       <div className="online-reveal__pulse" aria-hidden="true" />
 
       <p className="online-reveal__kicker">{data.kicker}</p>
@@ -131,9 +146,17 @@ export function OnlineMatchIntroReveal({
             'online-reveal__player',
             'online-reveal__player--left',
             'online-reveal__player--white',
-          ].join(' ')}
+            data.viewerSide === 'p1' ? 'online-reveal__player--you' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
         >
-          <p className="online-reveal__role">Player 1</p>
+          <p className="online-reveal__role">
+            Player 1
+            {data.viewerSide === 'p1' ? (
+              <span className="online-reveal__you">You</span>
+            ) : null}
+          </p>
           {data.p1.picture ? (
             <img
               className="online-reveal__avatar"
@@ -155,9 +178,17 @@ export function OnlineMatchIntroReveal({
             'online-reveal__player',
             'online-reveal__player--right',
             'online-reveal__player--black',
-          ].join(' ')}
+            data.viewerSide === 'p2' ? 'online-reveal__player--you' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
         >
-          <p className="online-reveal__role">Player 2</p>
+          <p className="online-reveal__role">
+            Player 2
+            {data.viewerSide === 'p2' ? (
+              <span className="online-reveal__you">You</span>
+            ) : null}
+          </p>
           {data.p2.picture ? (
             <img
               className="online-reveal__avatar"
@@ -178,6 +209,13 @@ export function OnlineMatchIntroReveal({
         {data.netPrize.toLocaleString()}
         <span className="online-reveal__stakes-denom"> sats to winner</span>
       </p>
+
+      {watching && data.viewerRole === 'duelist' ? (
+        <p className="online-reveal__watchers">
+          <span className="online-reveal__watchers-dot" aria-hidden="true" />
+          {watching}
+        </p>
+      ) : null}
 
       <p className="online-reveal__footer">{footerCopy}</p>
 

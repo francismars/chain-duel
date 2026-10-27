@@ -1,0 +1,823 @@
+.match-lab {
+  height: 100vh;
+  max-height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 1.25rem 1.25rem 1rem 4.5rem;
+  background: #050505;
+  color: #eee;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(22rem, 26rem);
+  gap: 1.25rem 1.5rem;
+  align-items: stretch;
+}
+
+.match-lab__stage,
+.match-lab__panel {
+  min-width: 0;
+  min-height: 0;
+}
+
+.match-lab__stage {
+  overflow: auto;
+}
+
+.match-lab header h1 {
+  margin: 0.15rem 0 0.35rem;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.match-lab header p,
+.match-lab__note,
+.match-lab__log,
+.match-lab__why {
+  margin: 0;
+  color: #9a9a9a;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.match-lab header a {
+  color: #9a9a9a;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.match-lab__match {
+  container-type: inline-size;
+  margin-top: 0.85rem;
+}
+
+.match-lab__match .flex.players,
+.match-lab__match .flex.points,
+.match-lab__match .gameState {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Real HUD sizes are viewport units against a 70vw board. Scale them to this column. */
+.match-lab__match #player1info,
+.match-lab__match #player2info,
+.match-lab__match #gameInfo {
+  font-size: 3.57cqw;
+}
+
+.match-lab__match .playerSquare {
+  width: 2.86cqw;
+  height: 2.86cqw;
+}
+
+.match-lab__match .gameState {
+  font-size: 1cqw;
+}
+
+.match-lab__match .capturingAmount {
+  font-size: 1.43cqw;
+}
+
+.match-lab__match #currentDistribution.distributionBarOutter {
+  min-height: 2.43cqw;
+}
+
+.match-lab__match #currentDistribution .distributionBar {
+  height: 2.43cqw;
+}
+
+.match-lab__match .player-sats span {
+  font-size: 1.43cqw;
+}
+
+.match-lab__match #p1Points,
+.match-lab__match #p2Points {
+  font-size: 3.57cqw;
+}
+
+.match-lab__match .sponsored-img {
+  max-width: 22cqw;
+  max-height: 2.8cqw;
+  margin-bottom: 0.4cqw;
+}
+
+.match-lab__board {
+  position: relative;
+  margin-top: 0;
+  width: 100%;
+  aspect-ratio: 51 / 25;
+  background-color: #6969698f;
+  background-image: url('/images/game_bg.png');
+  background-size: cover;
+  background-position: center;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.match-lab__board.is-block {
+  background-image: url('/images/chainduel_bg_anim.png');
+}
+
+.match-lab__host,
+.match-lab__host canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.match-lab__impact {
+  position: absolute;
+  z-index: 4;
+  width: 4.5%;
+  aspect-ratio: 1;
+  border: 1px solid currentColor;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.72);
+  animation: match-lab-impact 0.35s ease-out forwards;
+}
+
+.match-lab__impact.is-wall.is-white {
+  color: #fff;
+}
+
+.match-lab__impact.is-wall.is-black {
+  color: #111;
+}
+
+.match-lab__impact.is-clash {
+  color: #f0c14d;
+}
+
+.match-lab__impact.is-reorg {
+  width: 6.5%;
+  border-width: 1px;
+  color: #f0c14d;
+  animation-duration: 0.5s;
+}
+
+.match-lab__impact.is-reorg::after {
+  content: '';
+  position: absolute;
+  inset: 14%;
+  border: 1px solid currentColor;
+}
+
+@keyframes match-lab-impact {
+  0% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+  35% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+}
+
+.match-lab__over {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: rgb(0 0 0 / 0.62);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  pointer-events: none;
+}
+
+.match-lab__over strong {
+  font-size: clamp(1.4rem, 4cqw, 2.4rem);
+}
+
+.match-lab__over span {
+  color: #c8c8c8;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.match-lab__hud {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.match-lab__hud div {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.4rem 0.5rem;
+  background: #111;
+  border: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.match-lab__hud em {
+  font-style: normal;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+}
+
+.match-lab__hud b {
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-lab__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  overflow: hidden;
+}
+
+.match-lab__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex: none;
+}
+
+.match-lab__nav button[aria-selected='true'] {
+  background: #fff;
+  color: #111;
+  border-color: #fff;
+}
+
+.match-lab__sheet {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-right: 0.15rem;
+}
+
+.match-lab__sheet > section {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.match-lab__dock {
+  flex: none;
+  border-top: 1px solid rgb(255 255 255 / 0.14);
+  padding-top: 0.55rem;
+}
+
+.match-lab__dock .recipe__bar {
+  margin-top: 0;
+}
+
+.match-lab__panel h2 {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9a9a9a;
+}
+
+.match-lab__ride {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.match-lab__ride button[aria-pressed='true'] {
+  background: #fff;
+  color: #111;
+  border-color: #fff;
+}
+
+.match-lab__meters {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.match-lab__meter {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+  font-size: 0.78rem;
+}
+
+.match-lab__pips {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.match-lab__pips i {
+  width: 0.7rem;
+  height: 0.7rem;
+  background: #2a2a2a;
+  display: block;
+}
+
+.match-lab__pips i.on {
+  background: #f2f2f2;
+}
+
+.match-lab__meter strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-lab__layers {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.match-lab__layer {
+  display: grid;
+  grid-template-columns: 5.2rem 1fr 2.4rem;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.match-lab__layer b {
+  height: 0.35rem;
+  background: #2a2a2a;
+}
+
+.match-lab__layer b i {
+  display: block;
+  height: 100%;
+  background: #e7a23a;
+}
+
+.match-lab label.slider {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+}
+
+.match-lab label.slider span,
+.match-lab__check {
+  color: #9a9a9a;
+}
+
+.match-lab__check {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.78rem;
+}
+
+.match-lab input[type='range'] {
+  width: 100%;
+  accent-color: #e7a23a;
+}
+
+.match-lab__actions,
+.match-lab__moments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.match-lab__moments button,
+.match-lab__actions button {
+  width: 100%;
+}
+
+.match-lab__moments button.wide {
+  grid-column: 1 / -1;
+}
+
+.recipe__pops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.55rem 0 0.35rem;
+}
+
+.match-lab button {
+  border: 1px solid rgb(255 255 255 / 0.28);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  padding: 0.4rem 0.55rem;
+  cursor: pointer;
+}
+
+.match-lab button:hover,
+.match-lab button:focus-visible {
+  border-color: #fff;
+}
+
+.match-lab button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.match-lab__log {
+  min-height: 2.6rem;
+  max-height: 6.5rem;
+  overflow: auto;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+}
+
+.match-lab__log p + p {
+  margin-top: 0.2rem;
+}
+
+.match-lab__sounds {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.28rem;
+}
+
+.match-lab__sounds li {
+  display: grid;
+  grid-template-columns: 6.6rem 1fr;
+  gap: 0.45rem;
+  align-items: center;
+  font-size: 0.72rem;
+  color: #9a9a9a;
+}
+
+.match-lab__sounds li.is-absent {
+  opacity: 0.45;
+}
+
+.match-lab__sounds button[aria-pressed='true'] {
+  background: #fff;
+  color: #111;
+  border-color: #fff;
+}
+
+.match-lab__causes {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.match-lab__causes li {
+  display: grid;
+  grid-template-columns: 7.2rem 1fr;
+  gap: 0.45rem;
+}
+
+.match-lab__causes strong {
+  font-weight: 600;
+  color: #eee;
+}
+
+@media (max-width: 960px) {
+  .match-lab {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    grid-template-columns: 1fr;
+  }
+
+  .match-lab__stage,
+  .match-lab__panel,
+  .match-lab__sheet {
+    height: auto;
+    overflow: visible;
+  }
+}
+
+html.tv-safe-inset .match-lab {
+  height: var(--tv-safe-height);
+  max-height: var(--tv-safe-height);
+}
+
+.recipe__tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.recipe__tabs button[aria-selected='true'] {
+  background: #fff;
+  color: #111;
+  border-color: #fff;
+}
+
+.recipe__body {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.recipe__mark-head,
+.recipe__vol span {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+}
+
+.recipe__mark-head em,
+.recipe__vol em,
+.recipe__checks em {
+  color: #6d6d6d;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.recipe__rail {
+  position: relative;
+  height: 2.35rem;
+  margin-top: 0.15rem;
+  touch-action: none;
+}
+
+.recipe__rail-line {
+  position: absolute;
+  left: 0.4rem;
+  right: 0.4rem;
+  top: 1.65rem;
+  height: 2px;
+  background: #2a2a2a;
+}
+
+.match-lab button.recipe__tick {
+  position: absolute;
+  top: 0.15rem;
+  min-width: 1.6rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  letter-spacing: 0;
+  transform: translateX(-50%);
+  cursor: ew-resize;
+}
+
+.match-lab button.recipe__tick b {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-lab button.recipe__tick::after {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 0.65rem;
+  margin: 0.12rem auto 0;
+  background: #e7a23a;
+}
+
+.recipe__end {
+  position: absolute;
+  top: 0.15rem;
+  color: #8d8d8d;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.recipe__end b {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.recipe__end::after {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 0.65rem;
+  margin: 0.12rem auto 0;
+  background: #6a6a6a;
+}
+
+.match-lab button.recipe__tick:hover,
+.match-lab button.recipe__tick:focus-visible {
+  z-index: 1;
+  border: 0;
+  color: #e7a23a;
+}
+
+.recipe__hint {
+  margin: 0.1rem 0 0;
+  color: #6d6d6d;
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.recipe__capture {
+  margin-top: 0.9rem;
+}
+
+.recipe__bands {
+  display: flex;
+  position: relative;
+  height: 1.7rem;
+  margin-top: 0.45rem;
+  overflow: hidden;
+  background: #141414;
+}
+
+.match-lab .recipe__bands button {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-right: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 0;
+  background: transparent;
+  color: #8d8d8d;
+  font-size: 0.62rem;
+  letter-spacing: 0;
+}
+
+.match-lab .recipe__bands button.on {
+  color: #fff;
+  background: rgb(231 162 58 / 0.28);
+}
+
+.match-lab .recipe__bands button[aria-pressed='true'] {
+  color: #fff;
+  outline: 1px solid #fff;
+  outline-offset: -1px;
+}
+
+.recipe__now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #fff;
+  transform: translateX(-1px);
+  pointer-events: none;
+}
+
+.recipe__tiers {
+  display: grid;
+  gap: 0.28rem;
+  margin-top: 0.35rem;
+}
+
+.recipe__tier {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.35rem;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.recipe__tier input {
+  width: 3.4rem;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  text-align: right;
+  padding: 0.15rem 0.35rem;
+}
+
+.recipe__vol {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  column-gap: 0.55rem;
+  row-gap: 0.1rem;
+  align-items: baseline;
+}
+
+.recipe__vol input {
+  grid-column: 1 / -1;
+}
+
+.recipe__vol b {
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.recipe__checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.recipe__bar {
+  display: grid;
+  justify-items: start;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.match-lab button.recipe__apply {
+  background: #fff;
+  color: #111;
+  border-color: #fff;
+}
+
+.recipe h3 {
+  margin: 1.1rem 0 0.2rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.recipe__sound {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.recipe__sound-head,
+.recipe__pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.recipe__sound-head span,
+.recipe__look span {
+  display: grid;
+  gap: 0.1rem;
+  font-size: 0.78rem;
+}
+
+.recipe__sound-head em,
+.recipe__look em,
+.recipe__vol em {
+  color: #8a8a8a;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.recipe__look {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem;
+  align-items: start;
+  margin-top: 0.55rem;
+}
+
+.recipe__look strong {
+  font-weight: 600;
+}
+
+.recipe__look small {
+  color: #9a9a9a;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.recipe__pair {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.recipe select,
+.recipe__pick select {
+  width: 100%;
+  min-width: 0;
+  background: #111;
+  color: #eee;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.35rem 0.4rem;
+}
+
+.recipe__pick {
+  margin-top: 0.45rem;
+}
+
+.recipe__pick select {
+  flex: 1;
+}
+
+.recipe__mark {
+  margin-top: 0.35rem;
+}
