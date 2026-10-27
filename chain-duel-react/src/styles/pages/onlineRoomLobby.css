@@ -1522,6 +1522,16 @@
   font-size: var(--online-lobby-fs-label);
 }
 
+.online-lobby-kind1-pending-copy {
+  margin: 0;
+  text-align: center;
+}
+
+.online-lobby-kind1-section--pending .online-lobby-action {
+  width: min(100%, var(--online-lobby-btn-width));
+  min-width: min(100%, var(--online-lobby-btn-width));
+}
+
 .online-lobby-kind1-section--room-error {
   min-height: 160px;
   align-items: center;

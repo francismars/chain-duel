@@ -228,6 +228,14 @@ function formatZapPayError(reason: string): string {
   }
 }
 
+/**
+ * Extra room-state reads while the kind1 note is still missing.
+ * The first read happens when the lobby opens. These waits follow it.
+ * After the last wait, the lobby asks the player to retry instead of polling.
+ */
+const KIND1_NOTE_RETRY_DELAYS_MS = [1_000, 2_000, 5_000];
+const KIND1_NOTE_GIVE_UP_MS = 5_000;
+
 export type OnlineRoomLobbyProps = {
   embedded?: boolean;
   roomId?: string;
@@ -281,6 +289,8 @@ export default function OnlineRoomLobby({
     'idle' | 'loading' | 'error'
   >('idle');
   const [kind1PostRetry, setKind1PostRetry] = useState(0);
+  const [kind1NoteGaveUp, setKind1NoteGaveUp] = useState(false);
+  const [kind1NoteRetryNonce, setKind1NoteRetryNonce] = useState(0);
   const [kind1AuthorNip05, setKind1AuthorNip05] = useState<string | null>(null);
   const [kind1AuthorNip05Verified, setKind1AuthorNip05Verified] = useState<
     boolean | null
@@ -478,6 +488,13 @@ export default function OnlineRoomLobby({
     }
   }, [nostrLinkExpiresAt, nowTick, nostrLinkStorageKey]);
 
+  const externalRoomRef = useRef(externalRoom);
+  externalRoomRef.current = externalRoom;
+  const embeddedRef = useRef(embedded);
+  embeddedRef.current = embedded;
+  const kind1Ref = useRef(kind1);
+  kind1Ref.current = kind1;
+
   useEffect(() => {
     if (!socket || !roomId) {
       return;
@@ -669,11 +686,11 @@ export default function OnlineRoomLobby({
     };
     const syncRoomPresence = () => {
       refreshLocalIdentity();
-      if (!roomId || externalRoom?.roomId === 'preview') {
+      if (!roomId || externalRoomRef.current?.roomId === 'preview') {
         return;
       }
       socket.emit('getOnlineRoomState', { roomId });
-      if (!embedded) {
+      if (!embeddedRef.current) {
         socket.emit('joinOnlineRoom', { roomId });
       }
     };
@@ -698,7 +715,7 @@ export default function OnlineRoomLobby({
           authorLud16: parsed.authorLud16 ?? null,
         };
         kind1PostCacheRef.current = {
-          key: `${roomId}:${kind1}`,
+          key: `${roomId}:${kind1Ref.current}`,
           event: loaded,
         };
         setKind1PostEvent(loaded);
@@ -723,6 +740,9 @@ export default function OnlineRoomLobby({
     socket.on('session', onSession);
     socket.on('connect', syncRoomPresence);
     syncRoomPresence();
+    // Room updates must not re-run this effect. The reply to getOnlineRoomState
+    // is onlineRoomUpdated, which replaces externalRoom. Depending on that object
+    // (or on kind1, which that update changes) emits the next request immediately.
     return () => {
       socket.off('onlineRoomUpdated', onUpdated);
       socket.off('resJoinOnlineRoom', onJoin);
@@ -737,7 +757,37 @@ export default function OnlineRoomLobby({
       socket.off('session', onSession);
       socket.off('connect', syncRoomPresence);
     };
-  }, [roomId, socket, kind1, externalRoom]);
+  }, [roomId, socket]);
+
+  useEffect(() => {
+    if (!socket || !roomId || roomId === 'preview') {
+      return;
+    }
+    setKind1NoteGaveUp(false);
+    if (kind1) {
+      return;
+    }
+    const timers: WindowTimeout[] = [];
+    let elapsed = 0;
+    for (const delay of KIND1_NOTE_RETRY_DELAYS_MS) {
+      elapsed += delay;
+      timers.push(
+        window.setTimeout(() => {
+          socket.emit('getOnlineRoomState', { roomId });
+        }, elapsed)
+      );
+    }
+    timers.push(
+      window.setTimeout(() => {
+        setKind1NoteGaveUp(true);
+      }, elapsed + KIND1_NOTE_GIVE_UP_MS)
+    );
+    return () => {
+      for (const timer of timers) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, [kind1, kind1NoteRetryNonce, roomId, socket]);
 
   useEffect(() => {
     if (!socket) {
@@ -2194,6 +2244,18 @@ export default function OnlineRoomLobby({
   const retryKind1PostLoad = () => {
     kind1PostCacheRef.current = null;
     setKind1PostRetry((n) => n + 1);
+  };
+
+  const retryKind1NotePublish = () => {
+    if (!socket || !roomId) {
+      return;
+    }
+    setKind1NoteGaveUp(false);
+    setKind1NoteRetryNonce((n) => n + 1);
+    if (roomId === 'preview') {
+      return;
+    }
+    socket.emit('getOnlineRoomState', { roomId });
   };
 
   useEffect(() => {
@@ -4064,8 +4126,28 @@ export default function OnlineRoomLobby({
             </Button>
           </div>
         ) : (
-          <div className="online-lobby-pay-zone online-lobby-kind1-section--pending">
-            {rematchPending ? 'Publishing rematch Kind1…' : 'Publishing Kind1…'}
+          <div
+            className="online-lobby-pay-zone online-lobby-kind1-section--pending"
+            role="status"
+          >
+            {kind1NoteGaveUp ? (
+              <>
+                <p className="online-lobby-kind1-pending-copy">
+                  Couldn't post to Nostr. Retry?
+                </p>
+                <Button
+                  type="button"
+                  className="online-lobby-action"
+                  onClick={retryKind1NotePublish}
+                >
+                  Retry
+                </Button>
+              </>
+            ) : rematchPending ? (
+              'Publishing rematch Kind1…'
+            ) : (
+              'Publishing Kind1…'
+            )}
           </div>
         )}
 
