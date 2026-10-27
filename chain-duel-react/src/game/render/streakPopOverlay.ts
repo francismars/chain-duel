@@ -150,6 +150,7 @@ function paintMark(
         alpha: drawn.alpha * 0.35,
       });
   }
+  if (pop.text === 'WIPE') return;
 
   // REORG: two close gold squares — same stroke as WALL/CLASH; double ring is the cue.
   if (pop.text === 'REORG') {
@@ -190,6 +191,7 @@ export function drawStreakPopsCanvas(
       const tx = pop.toCol * colSize + colSize / 2;
       const ty = pop.toRow * rowSize + rowSize / 2;
       const travel = Math.min(1, life * 1.35);
+      ctx.strokeStyle = css;
       ctx.globalAlpha = drawn.alpha * 0.35;
       ctx.lineWidth = Math.max(1, cell * 0.04);
       ctx.beginPath();
@@ -198,6 +200,7 @@ export function drawStreakPopsCanvas(
       ctx.stroke();
       ctx.lineWidth = width;
     }
+    if (pop.text === 'WIPE') continue;
     if (pop.text === 'REORG') {
       const innerHalf = half * 0.72;
       ctx.globalAlpha = drawn.alpha * 0.85;

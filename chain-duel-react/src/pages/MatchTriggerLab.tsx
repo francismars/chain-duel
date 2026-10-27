@@ -1365,7 +1365,7 @@ export default function MatchTriggerLab() {
     const tone = isReorg ? 'gold' : player === 'P1' ? 'white' : 'black';
     const home: GridPos = [dying.head[0], dying.head[1]];
     if (!streakPops().some((pop) => pop.text === want)) {
-      pushCaptureRatePop(markAt, want, true, tone, home);
+      pushCaptureRatePop(markAt, want, true, tone, isReorg ? undefined : home);
     }
     if (!streakPops().some((pop) => pop.text === 'SPAWN')) {
       pushSpawnFlash(home, player === 'P1' ? 'white' : 'black');

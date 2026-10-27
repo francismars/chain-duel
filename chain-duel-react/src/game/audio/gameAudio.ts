@@ -356,9 +356,10 @@ export class GameAudioSystem {
       if (player.length > before.length) return [];
       return [{ before, after: player }];
     });
+    const lined = new Set<number>();
     if (reorged) {
-      const home = players.find((player) => player.index === reorged.index)?.head;
-      pushCaptureRatePop(reorged.head, 'REORG', true, 'gold', home);
+      // Gold marks the crash. The line home is the chain's own color, below.
+      pushCaptureRatePop(reorged.head, 'REORG', true, 'gold');
     } else if (clash) pushCaptureRatePop(clash, 'CLASH', true, 'gold');
     else {
       for (const { before, after } of resets) {
@@ -371,7 +372,20 @@ export class GameAudioSystem {
           after.head,
           before.color
         );
+        lined.add(before.index);
       }
+    }
+    for (const { before, after } of resets) {
+      if (lined.has(before.index)) continue;
+      // Clash and REORG squares have no destination. The wipe is this chain's color.
+      pushCaptureRatePop(
+        before.head,
+        'WIPE',
+        true,
+        toneFor(before.index),
+        after.head,
+        before.color
+      );
     }
     for (const { after } of resets) {
       pushSpawnFlash(after.head, toneFor(after.index), after.color);

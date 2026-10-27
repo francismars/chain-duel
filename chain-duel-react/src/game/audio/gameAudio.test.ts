@@ -206,12 +206,32 @@ describe('game tension', () => {
     expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({
       col: 10,
       row: 10,
-      toCol: 4,
-      toRow: 12,
+      tone: 'gold',
+      toCol: undefined,
+      toRow: undefined,
     });
     expect(
       streakPops().filter((pop) => pop.text === 'SPAWN')
     ).toHaveLength(2);
+    const reorgWipes = streakPops().filter((pop) => pop.text === 'WIPE');
+    expect(reorgWipes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          col: 10,
+          row: 10,
+          toCol: 4,
+          toRow: 12,
+          tone: 'white',
+        }),
+        expect.objectContaining({
+          col: 12,
+          row: 10,
+          toCol: 44,
+          toRow: 12,
+          tone: 'black',
+        }),
+      ])
+    );
 
     const soloLong = match();
     soloLong.p1.head = [10, 10];
@@ -299,6 +319,15 @@ describe('game tension', () => {
     expect(streakPops().slice(closeBefore).find((pop) => pop.text === 'CLASH')).toMatchObject({
       tone: 'gold',
     });
+    const clashWipes = streakPops()
+      .slice(closeBefore)
+      .filter((pop) => pop.text === 'WIPE');
+    expect(clashWipes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ col: 10, row: 10, toCol: 4, toRow: 12, tone: 'white' }),
+        expect.objectContaining({ col: 12, row: 10, toCol: 44, toRow: 12, tone: 'black' }),
+      ])
+    );
     expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({
       tone: 'gold',
     });
