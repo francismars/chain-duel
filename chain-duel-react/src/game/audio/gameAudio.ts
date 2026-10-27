@@ -154,7 +154,7 @@ export class GameAudioSystem {
     ...theme,
     audio: createAudio(`/sound/chain_duel_${theme.name}.m4a`, true),
   }));
-  private ending = createAudio('/sound/chain_duel_end.m4a');
+  private ending = createAudio('/sound/chain_duel_end.wav');
   private tensionLevel: TensionLevel = 0;
   private tensionHoldUntil = 0;
   private recipe: MatchRecipe = gameRecipe();

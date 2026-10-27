@@ -64,7 +64,7 @@ export const SOUND_FILES = [
   'chain_duel_2.ogg',
   'chain_duel_build.m4a',
   'chain_duel_critical.m4a',
-  'chain_duel_end.m4a',
+  'chain_duel_end.wav',
   'chain_duel_pressure.m4a',
   'chain_duel_produced_game.m4a',
   'chain_duel_produced_menu.m4a',

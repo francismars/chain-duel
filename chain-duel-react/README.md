@@ -152,8 +152,9 @@ level 1, only the original game track plays.
 
 - Releases after four seconds below the current threshold, then fades gradually.
   Eliminated chains are ignored; 2v1 combines the AI teammates' scores.
-- End of match: play a 6.8-second variation of `MAINNET_BLOCK.aac` as music switches
-  back to the menu loop, with a subtle lower octave and diffuse stereo reverb. Pressure themes stop; menu music stays on while viewing results.
+- End of match: play `chain_duel_end.wav`, a short synthesized resolve (low pulse, fifth,
+  then a fading open chord), as music switches back to the menu loop. It is separate from
+  the block-found cue (`MAINNET_BLOCK.aac`). Pressure themes stop; menu music stays on while viewing results.
   Results routes preserve the menu loop position. Playing again restarts game
   music and re-arms the ending cue. The rest of the game UI is dimmed by a black backdrop.
 - Music mute covers the game loop and all pressure themes. Full mute also covers the ending cue.
@@ -163,6 +164,8 @@ Rebuild the pressure themes and ending cue with Python 3 and ffmpeg:
 ```sh
 python3 scripts/audio/create-game-cues.py
 ```
+
+`python3 scripts/audio/create-game-cues.py --end-only` rebuilds just the ending cue.
 
 Thresholds live in `src/game/audio/tension.ts`; mixing and lifecycle behavior live
 in `src/game/audio/gameAudio.ts`. The retiring root frontend is unchanged.

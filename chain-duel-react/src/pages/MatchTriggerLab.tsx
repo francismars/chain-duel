@@ -194,7 +194,7 @@ const SOLO_CLIPS: SoloClip[] = [
   {
     id: 'end',
     name: 'End',
-    src: '/sound/chain_duel_end.m4a',
+    src: '/sound/chain_duel_end.wav',
     loop: false,
     where: 'Match over, once',
     inMode: () => true,
