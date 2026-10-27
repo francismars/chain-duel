@@ -125,6 +125,12 @@ export class PixiGameRenderer {
   private gridCacheKey = '';
   private lastResizeWidth = 0;
   private lastResizeHeight = 0;
+  /**
+   * Framebuffer size changed. The game loop paints once, then this clears.
+   * Pixi's ticker is off, so a resize would otherwise leave a blank canvas
+   * until the next simulation tick.
+   */
+  private resizeDirty = false;
   /** Bumped on destroy / remount so in-flight async init cannot attach a stale canvas. */
   private mountGeneration = 0;
   private readonly textResolution = pixiTextResolution();
@@ -206,6 +212,9 @@ export class PixiGameRenderer {
         width: initWidth,
         height: initHeight,
         preference: 'webgl',
+        // The match loop calls app.render() itself. Leaving the ticker on
+        // draws the same frame a second time, including while nothing moves.
+        autoStart: false,
       });
       if (generation !== this.mountGeneration || this.host !== host) {
         app.destroy(true, { children: true });
@@ -248,6 +257,7 @@ export class PixiGameRenderer {
     this.lastResizeWidth = width;
     this.lastResizeHeight = height;
     this.gridCacheKey = '';
+    this.resizeDirty = true;
     if (this.app) {
       this.app.renderer.resize(width, height);
       return;
@@ -260,6 +270,7 @@ export class PixiGameRenderer {
 
   /** True when a paint is needed for time-based motion (bridge still paints on sim ticks). */
   needsPaint(state: GameState): boolean {
+    if (this.resizeDirty) return true;
     const preStart =
       !state.gameStarted && !state.countdownStart && !state.gameEnded;
     if (preStart) {
@@ -686,6 +697,7 @@ export class PixiGameRenderer {
     }
     try {
       this.app.render();
+      this.resizeDirty = false;
     } catch {
       this.destroy();
     }
@@ -1462,6 +1474,7 @@ export class PixiGameRenderer {
     const rowSize = height / state.rows;
 
     ctx.clearRect(0, 0, width, height);
+    this.resizeDirty = false;
 
     // Dead zone
     if (state.shrinkBorder) {
