@@ -280,6 +280,7 @@ export function createGameState(args: CreateStateArgs): GameState {
     tickCount: 0,
     resetCueP1: false,
     resetCueP2: false,
+    resetCueExtra: [],
     powerUpItems: [],
     activePowerUps: [],
     obstacleWalls: [],
@@ -542,6 +543,7 @@ export function stepGame(state: GameState): TickResult {
     state.tickCount += 1;
     state.resetCueP1 = false;
     state.resetCueP2 = false;
+    state.resetCueExtra = state.extraSnakes.map(() => false);
 
     // Convergence: shrink border
     if (state.meta.convergenceMode && state.shrinkBorder) {
@@ -1413,8 +1415,12 @@ function resetExtraSnake(extra: ExtraSnake, state: GameState): void {
   extra.snake.body = body;
   extra.snake.dir = '';
   extra.snake.dirWanted = dirWanted;
-  const extraIndex = (state.extraSnakes.indexOf(extra) +
-    2) as PowerUpPlayerIndex;
+  const listed = state.extraSnakes.indexOf(extra);
+  if (listed >= 0) {
+    if (!state.resetCueExtra) state.resetCueExtra = [];
+    state.resetCueExtra[listed] = true;
+  }
+  const extraIndex = (listed + 2) as PowerUpPlayerIndex;
   if (extraIndex >= 2) clearPowerUpsForPlayer(state, extraIndex);
 }
 

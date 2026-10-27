@@ -1,4 +1,5 @@
 import type { GameState, PlayerId } from '@/game/engine/types';
+import type { ResetCue } from '@/game/audio/resetCue';
 import {
   captureClipForLength,
   capturePercentForLength,
@@ -173,6 +174,9 @@ export class GameAudioSystem {
   private beep2 = createAudio('/sound/Beep2.m4a');
   private p1Reset = createAudio('/sound/P1-HWAC.aac');
   private p2Reset = createAudio('/sound/P2-HWAC.aac');
+  /** Same crash files as P1/P2, on their own elements so a shared tick can overlap. */
+  private p3Reset = createAudio('/sound/P1-HWAC.aac');
+  private p4Reset = createAudio('/sound/P2-HWAC.aac');
   private capture2 = createAudio('/sound/P-FC_2.aac');
   private capture4 = createAudio('/sound/P-FC_4.aac');
   private capture8 = createAudio('/sound/P-FC_8.aac');
@@ -195,6 +199,8 @@ export class GameAudioSystem {
     this.beep2,
     this.p1Reset,
     this.p2Reset,
+    this.p3Reset,
+    this.p4Reset,
     this.capture2,
     this.capture4,
     this.capture8,
@@ -490,8 +496,16 @@ export class GameAudioSystem {
     }
   }
 
-  playReset(player: PlayerId): void {
-    this.play(player === 'P1' ? this.p1Reset : this.p2Reset);
+  playReset(player: ResetCue | PlayerId): void {
+    const audio =
+      player === 'P1'
+        ? this.p1Reset
+        : player === 'P3'
+          ? this.p3Reset
+          : player === 'P4'
+            ? this.p4Reset
+            : this.p2Reset;
+    this.play(audio);
   }
 
   setRecipe(recipe: MatchRecipe): void {

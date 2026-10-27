@@ -153,6 +153,8 @@ export interface GameState {
    */
   resetCueP1?: boolean;
   resetCueP2?: boolean;
+  /** Parallel to `extraSnakes`. Set for the tick that chain respawns. */
+  resetCueExtra?: boolean[];
   powerUpItems: PowerUpItem[];
   activePowerUps: ActivePowerUp[];
   obstacleWalls: ObstacleWall[];

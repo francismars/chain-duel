@@ -4,6 +4,7 @@ import { applyPowerUpForPlayer } from '@/game/engine/powerups';
 import type { GameState, SnakeState } from '@/game/engine/types';
 import {
   didSnakeReset,
+  resetCuesFromStep,
   resetCuesFromTransition,
 } from '@/game/audio/resetCue';
 
@@ -87,6 +88,39 @@ describe('resetCuesFromTransition', () => {
     next.p2 = moving([30, 9], [30, 8], 'Down');
     expect(resetCuesFromTransition(prev, next)).toEqual(['P1']);
   });
+
+  it('hears an extra chain respawn from the parked shape when the flag is absent', () => {
+    const prev = duel();
+    prev.gameStarted = true;
+    prev.tickCount = 3;
+    prev.resetCueP1 = undefined;
+    prev.resetCueP2 = undefined;
+    prev.extraSnakes = [
+      {
+        snake: moving([8, 20], [9, 20], 'Left'),
+        teamId: 1,
+        color: 0x2a2a2a,
+        name: 'Ghost',
+        score: 1000,
+        aiTier: 'stacker',
+        humanControlled: true,
+        spawnHead: [46, 20],
+        spawnDir: 'Left',
+      },
+    ];
+    const next = duel();
+    next.tickCount = 4;
+    next.gameStarted = true;
+    next.resetCueP1 = undefined;
+    next.resetCueP2 = undefined;
+    next.extraSnakes = [
+      {
+        ...prev.extraSnakes[0]!,
+        snake: parked([46, 20], [47, 20], 'Left'),
+      },
+    ];
+    expect(resetCuesFromTransition(prev, next)).toEqual(['P3']);
+  });
 });
 
 describe('reset cue on the live step', () => {
@@ -163,5 +197,34 @@ describe('reset cue on the live step', () => {
 
     expect(state.resetCueP1).toBe(true);
     expect(state.p1.head).not.toEqual([6, 12]);
+  });
+
+  it('marks the ghost chain when it walks off the board', () => {
+    const state = createGameState({
+      p1Name: 'White',
+      p2Name: 'Black',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'FFA',
+      practiceMode: true,
+      teamMode: 'ffa',
+      p1Human: true,
+      p2Human: true,
+      p3Human: true,
+      p4Human: true,
+    });
+    state.gameStarted = true;
+    const ghost = state.extraSnakes[0]!;
+    ghost.snake.head = [0, 10];
+    ghost.snake.body = [[1, 10]];
+    ghost.snake.dir = 'Left';
+    ghost.snake.dirWanted = 'Left';
+
+    stepGame(state);
+
+    expect(state.resetCueExtra?.[0]).toBe(true);
+    expect(state.resetCueExtra?.[1]).toBe(false);
+    expect(ghost.snake.head).toEqual([46, 20]);
+    expect(resetCuesFromStep(state)).toContain('P3');
   });
 });

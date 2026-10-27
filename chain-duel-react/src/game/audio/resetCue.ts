@@ -1,4 +1,7 @@
-import type { GameState, PlayerId, SnakeState } from '@/game/engine/types';
+import type { GameState, SnakeState } from '@/game/engine/types';
+
+/** P3 is the first extra chain, P4 the second. Each plays its own crash sample. */
+export type ResetCue = 'P1' | 'P2' | 'P3' | 'P4';
 
 /**
  * A respawn parks the chain: direction cleared, still facing its spawn
@@ -19,11 +22,35 @@ export function didSnakeReset(prev: SnakeState, next: SnakeState): boolean {
   return !samePark;
 }
 
+function extraResetCues(state: GameState): ResetCue[] {
+  const cues: ResetCue[] = [];
+  state.resetCueExtra?.forEach((flag, index) => {
+    if (!flag) return;
+    if (index === 0) cues.push('P3');
+    else if (index === 1) cues.push('P4');
+  });
+  return cues;
+}
+
+function extraResetsFromShape(prev: GameState, next: GameState): ResetCue[] {
+  const cues: ResetCue[] = [];
+  const count = Math.max(prev.extraSnakes.length, next.extraSnakes.length);
+  for (let index = 0; index < count; index += 1) {
+    const before = prev.extraSnakes[index]?.snake;
+    const after = next.extraSnakes[index]?.snake;
+    if (!before || !after || !didSnakeReset(before, after)) continue;
+    if (index === 0) cues.push('P3');
+    else if (index === 1) cues.push('P4');
+  }
+  return cues;
+}
+
 /** Cues raised by the step that just ran. The engine clears them next step. */
-export function resetCuesFromStep(state: GameState): PlayerId[] {
-  const cues: PlayerId[] = [];
+export function resetCuesFromStep(state: GameState): ResetCue[] {
+  const cues: ResetCue[] = [];
   if (state.resetCueP1) cues.push('P1');
   if (state.resetCueP2) cues.push('P2');
+  cues.push(...extraResetCues(state));
   return cues;
 }
 
@@ -35,13 +62,17 @@ export function resetCuesFromStep(state: GameState): PlayerId[] {
 export function resetCuesFromTransition(
   prev: GameState,
   next: GameState
-): PlayerId[] {
-  if (next.resetCueP1 != null || next.resetCueP2 != null) {
+): ResetCue[] {
+  const flagged = next.resetCueP1 != null || next.resetCueP2 != null;
+  if (flagged) {
     if (next.tickCount === prev.tickCount) return [];
-    return resetCuesFromStep(next);
+    const cues = resetCuesFromStep(next);
+    if (next.resetCueExtra == null) cues.push(...extraResetsFromShape(prev, next));
+    return cues;
   }
-  const cues: PlayerId[] = [];
+  const cues: ResetCue[] = [];
   if (didSnakeReset(prev.p1, next.p1)) cues.push('P1');
   if (didSnakeReset(prev.p2, next.p2)) cues.push('P2');
+  cues.push(...extraResetsFromShape(prev, next));
   return cues;
 }
