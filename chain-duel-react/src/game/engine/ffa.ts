@@ -349,7 +349,10 @@ export function ffaApplyCaptureAmount(
     gainPos,
     lossPos,
     capturePercent,
-    captureRateLabel: captureRateLabel(state, winner, capturePercent),
+    captureRateLabel:
+      capturePercent == null
+        ? undefined
+        : captureRateLabel(state, winner, capturePercent),
     p1YOffsetPx: 0,
     p2YOffsetPx: 0,
     alpha: 1,

@@ -53,8 +53,8 @@ export function RulesSection({
   onTitleChange?: (title: {
     kicker: string;
     title: string;
-    phase?: SlidePhase;
-    dir?: SlideDir;
+    phase: SlidePhase;
+    dir: SlideDir;
   }) => void;
   onClose?: () => void;
   autoplay?: boolean;
@@ -79,8 +79,8 @@ function ClipRules({
   onTitleChange?: (title: {
     kicker: string;
     title: string;
-    phase?: SlidePhase;
-    dir?: SlideDir;
+    phase: SlidePhase;
+    dir: SlideDir;
   }) => void;
   onClose?: () => void;
   autoplay?: boolean;
