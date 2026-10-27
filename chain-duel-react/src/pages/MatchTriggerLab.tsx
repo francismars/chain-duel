@@ -4,7 +4,9 @@ import { useAudio } from '@/contexts/AudioContext';
 import { GameAudioSystem, reorgCaptureGap } from '@/game/audio/gameAudio';
 import {
   advanceStreakPops,
+  clearStreakPops,
   pushCaptureRatePop,
+  streakPops,
   subscribeTensionDebug,
   tensionDebugSnapshot,
   type TensionDebugSnapshot,
@@ -442,18 +444,23 @@ function stageWallCrash(state: GameState, rider: Rider): GridPos {
   const left = border?.left ?? 0;
   const top = border?.top ?? 0;
   const bottom = border?.bottom ?? state.rows - 1;
-  const right = border?.right ?? state.cols - 1;
-  const y = Math.min(bottom - 1, Math.max(top + 1, 12));
   const snake = rider === 'p1' ? state.p1 : state.p2;
   const other = rider === 'p1' ? state.p2 : state.p1;
+  // Leave the other chain where it is. Only the dying chain snaps home after
+  // the hit, so parking the other here used to leave it stranded.
+  const otherCells = new Set(
+    [other.head, ...other.body].map((cell) => `${cell[0]},${cell[1]}`)
+  );
+  let y = Math.min(bottom - 1, Math.max(top + 1, 12));
+  if (otherCells.has(`${left},${y}`) || otherCells.has(`${left + 1},${y}`)) {
+    y = Math.min(bottom - 1, Math.max(top + 1, y === 12 ? 10 : 12));
+  }
   placeSnake(snake, [left, y], 'Left', [[left + 1, y]]);
-  const parkX = Math.max(left + 4, right - 2);
-  placeSnake(other, [parkX, y], 'Left', [[Math.min(right, parkX + 1), y]]);
   return [left - 1, y];
 }
 
-/** Face both heads across one shared cell. The selected chain takes the step. */
-function stageHeadOn(state: GameState, rider: Rider): GridPos {
+/** Shared mid-board face-off used by Head to head and Head-on REORG. */
+function headOnCenter(state: GameState): { x: number; y: number } {
   const border = state.shrinkBorder;
   const top = border?.top ?? 0;
   const bottom = border?.bottom ?? state.rows - 1;
@@ -462,6 +469,12 @@ function stageHeadOn(state: GameState, rider: Rider): GridPos {
   const y = Math.min(bottom - 1, Math.max(top + 1, 12));
   let x = Math.floor((left + right) / 2) - 1;
   x = Math.max(left + 2, Math.min(right - 4, x));
+  return { x, y };
+}
+
+/** Face both heads across one shared cell. The selected chain takes the step. */
+function stageHeadOn(state: GameState, rider: Rider): GridPos {
+  const { x, y } = headOnCenter(state);
   const mover = rider === 'p1' ? state.p1 : state.p2;
   const other = rider === 'p1' ? state.p2 : state.p1;
   placeSnake(mover, [x, y], 'Right', [
@@ -473,6 +486,28 @@ function stageHeadOn(state: GameState, rider: Rider): GridPos {
     [x + 3, y],
   ]);
   return [x + 1, y];
+}
+
+/**
+ * Same center lineup as head-to-head, but white is long (16%+) and black is
+ * short (2%) so the next step is a REORG. The selected chain takes the step.
+ */
+function stageHeadOnReorg(
+  state: GameState,
+  rider: Rider,
+  recipe: MatchRecipe
+): GridPos {
+  const { x, y } = headOnCenter(state);
+  placeSnake(
+    state.p1,
+    [x, y],
+    'Right',
+    Array.from({ length: 7 }, (_, index) => [x - 1 - index, y] as GridPos)
+  );
+  placeSnake(state.p2, [x + 1, y], 'Left', [[x + 2, y]]);
+  state.currentCaptureP1 = labelFor(recipe, state.p1.body.length);
+  state.currentCaptureP2 = labelFor(recipe, state.p2.body.length);
+  return rider === 'p1' ? [x + 1, y] : [x, y];
 }
 
 function snapSnake(state: GameState, player: 'P1' | 'P2'): void {
@@ -525,6 +560,13 @@ function cellFromPointer(
 
 function labelFor(recipe: MatchRecipe, length: number): string {
   return `${capturePercentForLength(length, recipe.captureFrom, recipe.capturePercent)}%`;
+}
+
+/** Record positions without treating a lab teleport as a wall or clash. */
+function quietBaseline(audio: GameAudioSystem, state: GameState): void {
+  state.gameStarted = false;
+  audio.updateGameState(state);
+  state.gameStarted = true;
 }
 
 function pushSatsPop(
@@ -773,6 +815,7 @@ export default function MatchTriggerLab() {
     col: number;
     row: number;
     kind: 'wall' | 'clash' | 'reorg';
+    tone?: 'white' | 'black';
   } | null>(null);
   const mutedRef = useRef(isMuted);
   mutedRef.current = isMuted;
@@ -816,18 +859,23 @@ export default function MatchTriggerLab() {
       pathRef.current.shift();
       if (kind !== 'ok') {
         const recipe = draftRef.current;
-        const gap = reorgCaptureGap(
-          capturePercentForLength(
-            state.p1.body.length,
-            recipe.captureFrom,
-            recipe.capturePercent
-          ),
-          capturePercentForLength(
-            state.p2.body.length,
-            recipe.captureFrom,
-            recipe.capturePercent
-          )
+        const p1Percent = capturePercentForLength(
+          state.p1.body.length,
+          recipe.captureFrom,
+          recipe.capturePercent
         );
+        const p2Percent = capturePercentForLength(
+          state.p2.body.length,
+          recipe.captureFrom,
+          recipe.capturePercent
+        );
+        const captureGap = reorgCaptureGap(p1Percent, p2Percent);
+        const deadPercent = rider === 'p1' ? p1Percent : p2Percent;
+        const livePercent = rider === 'p1' ? p2Percent : p1Percent;
+        const gap =
+          kind === 'headon'
+            ? captureGap
+            : captureGap && deadPercent > livePercent;
         commitMove(snake, next, false);
         state.tickCount += 1;
         audio.updateGameState(state);
@@ -843,21 +891,19 @@ export default function MatchTriggerLab() {
         }
         pathRef.current = [];
         state.tickCount += 1;
+        // One mark from the detector only — a second lab CSS square on a
+        // different cell was reading as "different squares" on REORG.
         audio.updateGameState(state);
-        if (kind === 'wall' || kind === 'headon') {
-          setImpact((prev) => ({
-            id: (prev?.id ?? 0) + 1,
-            col: Math.max(0, Math.min(state.cols - 1, next[0])),
-            row: Math.max(0, Math.min(state.rows - 1, next[1])),
-            kind: kind === 'wall' ? 'wall' : gap ? 'reorg' : 'clash',
-          }));
-        }
         note(
           kind === 'headon'
-            ? 'Head-on · both reset'
-            : kind === 'wall'
-              ? `${player} hit the wall · reset`
-              : `${player} hit a body · reset`
+            ? gap
+              ? 'Head-on · REORG'
+              : 'Head-on · both reset'
+            : gap
+              ? `${player} reset · REORG`
+              : kind === 'wall'
+                ? `${player} hit the wall · reset`
+                : `${player} hit a body · reset`
         );
         bump();
         return;
@@ -1259,18 +1305,26 @@ export default function MatchTriggerLab() {
 
   const hitWall = () => {
     const current = stateRef.current;
-    if (!current || current.gameEnded) return;
+    const audio = audioRef.current;
+    if (!current || !audio || current.gameEnded) return;
     remember();
+    clearStreakPops();
+    setImpact(null);
     const fatal = stageWallCrash(current, riderRef.current);
+    quietBaseline(audio, current);
     const who = riderRef.current === 'p1' ? 'White' : 'Black';
     lineUp(fatal, `${who} lined up on the wall`);
   };
 
   const hitHeadOn = () => {
     const current = stateRef.current;
-    if (!current || current.gameEnded) return;
+    const audio = audioRef.current;
+    if (!current || !audio || current.gameEnded) return;
     remember();
+    clearStreakPops();
+    setImpact(null);
     const fatal = stageHeadOn(current, riderRef.current);
+    quietBaseline(audio, current);
     lineUp(fatal, 'Chains lined up · next step is head to head');
   };
 
@@ -1280,11 +1334,46 @@ export default function MatchTriggerLab() {
     if (!current || !audio || current.gameEnded) return;
     remember();
     pathRef.current = [];
+    clearStreakPops();
+    setImpact(null);
+    const dying = player === 'P1' ? current.p1 : current.p2;
+    const living = player === 'P1' ? current.p2 : current.p1;
+    const head: GridPos = [dying.head[0], dying.head[1]];
+    const recipe = draftRef.current;
+    const deadPercent = capturePercentForLength(
+      dying.body.length,
+      recipe.captureFrom,
+      recipe.capturePercent
+    );
+    const livePercent = capturePercentForLength(
+      living.body.length,
+      recipe.captureFrom,
+      recipe.capturePercent
+    );
+    // Solo reorg: the long chain dies. Short deaths are ordinary WALL.
+    const isReorg =
+      deadPercent > livePercent && reorgCaptureGap(deadPercent, livePercent);
+    const markAt: GridPos = head;
     audio.playReset(player);
     snapSnake(current, player);
     current.tickCount += 1;
+    // Same path as free play: one detector mark. Only force a pop when the
+    // chain was already on spawn so the teleport never registers.
     audio.updateGameState(current);
-    note(`${player} reset to spawn · ${player === 'P1' ? 'P1-HWAC' : 'P2-HWAC'}`);
+    const want = isReorg ? 'REORG' : 'WALL';
+    if (!streakPops().some((pop) => pop.text === want)) {
+      pushCaptureRatePop(
+        markAt,
+        want,
+        true,
+        isReorg ? 'gold' : player === 'P1' ? 'white' : 'black'
+      );
+    }
+    note(
+      isReorg
+        ? `${player} reset · REORG · ${player === 'P1' ? 'P1-HWAC' : 'P2-HWAC'}`
+        : `${player} reset to spawn · ${player === 'P1' ? 'P1-HWAC' : 'P2-HWAC'}`
+    );
     bump();
   };
 
@@ -1293,39 +1382,12 @@ export default function MatchTriggerLab() {
     const audio = audioRef.current;
     if (!current || !audio || current.gameEnded) return;
     remember();
-    pathRef.current = [];
-    current.p1.head = [20, 12];
-    current.p1.body = [[19, 12]];
-    current.p2.head = [21, 12];
-    current.p2.body = [
-      [22, 12],
-      [23, 12],
-      [24, 12],
-      [25, 12],
-      [26, 12],
-      [27, 12],
-    ];
-    current.tickCount += 1;
-    audio.updateGameState(current);
-    current.p1.head = [6, 12];
-    current.p1.body = [[5, 12]];
-    current.p2.head = [44, 12];
-    current.p2.body = [[45, 12]];
-    current.tickCount += 1;
-    audio.playReset('P1');
-    audio.playReset('P2');
-    audio.updateGameState(current);
-    // The detector marks the crash cell, which is empty once both chains
-    // snap home. Keep a second word on the long chain so it stays visible.
-    pushCaptureRatePop(current.p2.head, 'REORG', true);
-    setImpact((prev) => ({
-      id: (prev?.id ?? 0) + 1,
-      col: 20,
-      row: 12,
-      kind: 'reorg',
-    }));
-    note('Head-on · both reset sounds · REORG floats on the long chain');
-    bump();
+    clearStreakPops();
+    setImpact(null);
+    // Same timing as Head to head: line up, then the step pump takes the crash.
+    const fatal = stageHeadOnReorg(current, riderRef.current, draftRef.current);
+    quietBaseline(audio, current);
+    lineUp(fatal, 'Lined up · long white vs short black · next step is REORG');
   };
 
   const selectedHead = () => {
@@ -1482,15 +1544,18 @@ export default function MatchTriggerLab() {
             {impact && state ? (
               <div
                 key={impact.id}
-                className={`match-lab__impact is-${impact.kind}`}
+                className={[
+                  'match-lab__impact',
+                  `is-${impact.kind}`,
+                  impact.tone ? `is-${impact.tone}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 style={{
                   left: `${((impact.col + 0.5) / state.cols) * 100}%`,
                   top: `${((impact.row + 0.5) / state.rows) * 100}%`,
                 }}
-                onAnimationEnd={(event) => {
-                  if (event.animationName.includes('ring')) return;
-                  setImpact(null);
-                }}
+                onAnimationEnd={() => setImpact(null)}
               />
             ) : null}
             {state?.gameEnded ? (
