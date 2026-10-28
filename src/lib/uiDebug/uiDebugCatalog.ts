@@ -50,6 +50,37 @@ export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
     ],
   },
   {
+    title: 'P2P finish',
+    links: [
+      { label: 'Winner', href: '/game?preview=p2p&side=winner' },
+      { label: 'Loser', href: '/game?preview=p2p&side=loser' },
+      {
+        label: 'Nostr, winner',
+        href: '/game?preview=p2p&nostr=1&side=winner',
+      },
+      {
+        label: 'Nostr, loser',
+        href: '/game?preview=p2p&nostr=1&side=loser',
+      },
+      {
+        label: 'Double or nothing, winner',
+        href: '/game?preview=p2p&don=2&side=winner',
+      },
+      {
+        label: 'Double or nothing, loser',
+        href: '/game?preview=p2p&don=2&side=loser',
+      },
+      {
+        label: 'Nostr double or nothing, winner',
+        href: '/game?preview=p2p&nostr=1&don=2&side=winner',
+      },
+      {
+        label: 'Nostr double or nothing, loser',
+        href: '/game?preview=p2p&nostr=1&don=2&side=loser',
+      },
+    ],
+  },
+  {
     title: 'Online lobby',
     links: [
       { label: 'One seat filling', href: '/preview/online-seat' },

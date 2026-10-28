@@ -838,7 +838,8 @@ export default function Game() {
     if (
       endPreviewNow === 'local' ||
       endPreviewNow === 'freeplay' ||
-      endPreviewNow === 'h2h'
+      endPreviewNow === 'h2h' ||
+      endPreviewNow === 'p2p'
     ) {
       setLoading(false);
       return;
@@ -1611,11 +1612,25 @@ export default function Game() {
   if (
     endPreview === 'local' ||
     endPreview === 'freeplay' ||
-    endPreview === 'h2h'
+    endPreview === 'h2h' ||
+    endPreview === 'p2p'
   ) {
     const h2h = endPreview === 'h2h';
-    const previewLoser =
-      new URLSearchParams(window.location.search).get('side') === 'loser';
+    const p2p = endPreview === 'p2p';
+    const previewParams = new URLSearchParams(window.location.search);
+    const previewLoser = previewParams.get('side') === 'loser';
+    const p2pNostr =
+      previewParams.get('nostr') === '1' ||
+      previewParams.get('nostr') === 'true';
+    const p2pDon = previewParams.get('don');
+    const p2pDonMark =
+      p2pDon === '4' ? '*4' : p2pDon === '2' || p2pDon === '1' ? '*2' : '';
+    const p2pSats =
+      p2pDonMark === '*4'
+        ? '200,000 SATS'
+        : p2pDonMark === '*2'
+          ? '100,000 SATS'
+          : '50,000 SATS';
     return (
       <div className="match-end-layer">
         {previewLoser ? null : (
@@ -1628,12 +1643,20 @@ export default function Game() {
         <div className="match-end-card">
           <Sponsorship id="sponsorship-match-end" />
           <p className="match-end-card__kicker">
-            {h2h
-              ? 'HUMAN VS HUMAN / MATCH COMPLETE'
-              : 'PRACTICE · 1v1 · CVG / MATCH COMPLETE'}
+            {p2p
+              ? `${p2pNostr ? 'P2PNOSTR' : 'P2P'}${p2pDonMark} / MATCH COMPLETE`
+              : h2h
+                ? 'HUMAN VS HUMAN / MATCH COMPLETE'
+                : 'PRACTICE · 1v1 · CVG / MATCH COMPLETE'}
           </p>
           <p className="match-end-card__name">
-            {previewLoser ? 'PLAYER 2' : 'PLAYER 1'}
+            {p2p
+              ? previewLoser
+                ? 'HAL'
+                : 'SATOSHI'
+              : previewLoser
+                ? 'PLAYER 2'
+                : 'PLAYER 1'}
           </p>
           <p className="match-end-card__wins">WINS</p>
           {endPreview === 'freeplay' ? (
@@ -1643,7 +1666,7 @@ export default function Game() {
             </div>
           ) : (
             <p className="match-end-card__sats">
-              {h2h ? '200,000 SATS' : '2,000 SATS'}
+              {p2p ? p2pSats : h2h ? '200,000 SATS' : '2,000 SATS'}
             </p>
           )}
           {endPreview !== 'freeplay' ? (
