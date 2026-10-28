@@ -3,7 +3,10 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
-import { GameSetupLayout } from '@/components/layout/GameSetupLayout';
+import {
+  GameSetupLayout,
+  PreviewRulesButtonSlot,
+} from '@/components/layout/GameSetupLayout';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useAudio, SFX } from '@/contexts/AudioContext';
@@ -1130,6 +1133,7 @@ export default function GameMenu({
                   sats qualifies for the ledger
                 </p>
               </div>
+              {preview ? <PreviewRulesButtonSlot /> : null}
             </div>
 
             <div
