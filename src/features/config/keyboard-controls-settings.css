@@ -153,7 +153,9 @@
 
 .keyboard-controls-settings__player-title {
   margin: 0;
+  font-family: 'Inter', sans-serif;
   font-size: 0.78rem;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.86);
@@ -204,7 +206,7 @@
 
 .keyboard-controls-settings__bind-key-label {
   font-family: 'Inter', sans-serif;
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.03em;

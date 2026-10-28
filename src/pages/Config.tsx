@@ -199,6 +199,8 @@ export default function Config() {
   const keepTesterNavRef = useRef(false);
   const testerUpStreakRef = useRef(0);
   const testerUpHeldRef = useRef(false);
+  const testerDownStreakRef = useRef(0);
+  const testerDownHeldRef = useRef(false);
   testerModeRef.current = testerMode;
   playSfxRef.current = playSfx;
 
@@ -229,6 +231,7 @@ export default function Config() {
     if (!testerTab) {
       setTesterMode(false);
       testerUpStreakRef.current = 0;
+      testerDownStreakRef.current = 0;
       return;
     }
     if (keepTesterNavRef.current) {
@@ -238,6 +241,7 @@ export default function Config() {
     }
     setTesterMode(true);
     testerUpStreakRef.current = 0;
+    testerDownStreakRef.current = 0;
   }, [testerTab, configTab]);
 
   useEffect(() => {
@@ -771,6 +775,7 @@ export default function Config() {
         if (isUp && !e.repeat && !testerUpHeldRef.current) {
           testerUpHeldRef.current = true;
           testerUpStreakRef.current += 1;
+          testerDownStreakRef.current = 0;
           if (testerUpStreakRef.current >= 3) {
             testerUpStreakRef.current = 0;
             testerUpHeldRef.current = false;
@@ -784,10 +789,24 @@ export default function Config() {
         } else if (!isUp) {
           testerUpStreakRef.current = 0;
         }
+        if (isDown && !e.repeat && !testerDownHeldRef.current) {
+          testerDownHeldRef.current = true;
+          testerDownStreakRef.current += 1;
+          if (testerDownStreakRef.current >= 3) {
+            testerDownStreakRef.current = 0;
+            testerDownHeldRef.current = false;
+            setTesterMode(false);
+            setNavFocus({ kind: 'mainMenu' });
+            playSfxRef.current(SFX.MENU_SELECT);
+          }
+        } else if (!isDown) {
+          testerDownStreakRef.current = 0;
+        }
         if (testerInput) return;
       } else if (onTesterTab && isDown && !e.repeat) {
         e.preventDefault();
         testerUpStreakRef.current = 0;
+        testerDownStreakRef.current = 0;
         setTesterMode(true);
         playSfxRef.current(SFX.MENU_SELECT);
         return;
@@ -840,6 +859,9 @@ export default function Config() {
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         testerUpHeldRef.current = false;
+      }
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        testerDownHeldRef.current = false;
       }
     };
 
@@ -911,7 +933,7 @@ export default function Config() {
             setNavFocus({ kind: 'section', index: 0 });
           }}
         >
-          Sign in
+          {nostrSignedIn ? 'Profile' : 'Sign in'}
         </button>
         <button
           type="button"
@@ -968,7 +990,7 @@ export default function Config() {
         <div className="config-panel">
         <div key={configTab} className="config-tab-panel">
       {configTab === 'signin' && !nostrSignedIn ? (
-        <>
+        <div className="config-signin-block">
           <p className="config-panel__lede">
             Choose a sign-in method. We link your pubkey to this game session
             and load your profile.
@@ -1094,10 +1116,11 @@ export default function Config() {
           </div>
 
           <div className="config-login-panel">
-            {loginTab === 'extension' ? (
+            {(
               <div
-                className="config-login-panel__block config-login-panel__block--center"
+                className={`config-login-panel__block config-login-panel__block--center${loginTab === 'extension' ? '' : ' config-login-panel__block--inactive'}`}
                 role="tabpanel"
+                aria-hidden={loginTab !== 'extension'}
               >
                 <p className="config-login-panel__lede config-login-panel__lede--muted">
                   NIP-07 · Alby, nos2x, and other browser extensions
@@ -1116,10 +1139,14 @@ export default function Config() {
                   </Button>
                 </div>
               </div>
-            ) : null}
+            )}
 
-            {loginTab === 'nip46' && !pendingNip46ServerLink ? (
-              <div className="config-login-panel__block" role="tabpanel">
+            {!pendingNip46ServerLink ? (
+              <div
+                className={`config-login-panel__block${loginTab === 'nip46' ? '' : ' config-login-panel__block--inactive'}`}
+                role="tabpanel"
+                aria-hidden={loginTab !== 'nip46'}
+              >
                 <p className="config-login-panel__lede config-nc-lede">
                   NIP-46: scan QR or open the link in your signer app — Amber,
                   Amethyst, etc.
@@ -1194,7 +1221,17 @@ export default function Config() {
                         <p className="config-nc-waiting" role="status">
                           {nip46Waiting ? (
                             <>
-                              <span className="config-nc-spinner" aria-hidden />
+                              <svg
+                                className="config-nc-spinner"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.4"
+                                strokeLinecap="round"
+                                aria-hidden
+                              >
+                                <path d="M12 3a9 9 0 1 1-6.36 2.64" />
+                              </svg>
                               Waiting for connection…
                             </>
                           ) : (
@@ -1257,8 +1294,12 @@ export default function Config() {
               </div>
             ) : null}
 
-            {loginTab === 'nsec' ? (
-              <div className="config-login-panel__block" role="tabpanel">
+            {(
+              <div
+                className={`config-login-panel__block${loginTab === 'nsec' ? '' : ' config-login-panel__block--inactive'}`}
+                role="tabpanel"
+                aria-hidden={loginTab !== 'nsec'}
+              >
                 <p className="config-nostr-warning">
                   Pasting an <strong>nsec</strong> gives this site the ability
                   to sign as you. Only use on a device you trust. The key is
@@ -1295,9 +1336,9 @@ export default function Config() {
                   </Button>
                 </div>
               </div>
-            ) : null}
+            )}
           </div>
-        </>
+        </div>
       ) : null}
 
       {configTab === 'signin' && nostrSignedIn ? (
@@ -1725,7 +1766,17 @@ export default function Config() {
                 <p className="config-nc-qr-modal__hint" role="status">
                   {nip46Waiting ? (
                     <>
-                      <span className="config-nc-spinner" aria-hidden />
+                      <svg
+                        className="config-nc-spinner"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        aria-hidden
+                      >
+                        <path d="M12 3a9 9 0 1 1-6.36 2.64" />
+                      </svg>
                       Waiting for connection…
                     </>
                   ) : (
