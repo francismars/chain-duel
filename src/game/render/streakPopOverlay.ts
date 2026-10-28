@@ -6,12 +6,14 @@ const BLACK = 0x111111;
 
 type RingSpec = { life: number; from: number; to: number; peak: number };
 
-/** WALL and CLASH: quiet ack — small, short, little expand. */
-const HIT_RING: RingSpec = { life: 1, from: 0.72, to: 0.98, peak: 0.72 };
-/** REORG: story beat — clearly bigger, still brief. */
-const REORG_RING: RingSpec = { life: 1, from: 0.58, to: 1.02, peak: 0.82 };
+/** WALL and CLASH: quiet ack — small, short, little expand. Starts half opaque. */
+const HIT_RING: RingSpec = { life: 1, from: 0.72, to: 0.98, peak: 0.5 };
+/** REORG: story beat — clearly bigger, still brief. Same half-opaque start. */
+const REORG_RING: RingSpec = { life: 1, from: 0.58, to: 1.02, peak: 0.5 };
 /** Soft home flash after a reset. */
-const SPAWN_RING: RingSpec = { life: 1, from: 0.85, to: 1.05, peak: 0.55 };
+const SPAWN_RING: RingSpec = { life: 1, from: 0.85, to: 1.05, peak: 0.45 };
+/** Wipe line, as a fraction of the death square's opacity. */
+const WIPE_ALPHA = 0.45;
 
 function ringColor(pop: StreakPop): { fill: number; css: string } {
   const tone =
@@ -205,7 +207,7 @@ function paintMark(
       .stroke({
         width: Math.max(1, cell * 0.04),
         color,
-        alpha: drawn.alpha * 0.35,
+        alpha: drawn.alpha * WIPE_ALPHA,
       });
   }
   if (pop.text === 'WIPE') return;
@@ -255,7 +257,7 @@ export function drawStreakPopsCanvas(
     if (pop.text !== 'SPAWN' && wipe) {
       const travel = Math.min(1, life * 1.35);
       ctx.strokeStyle = css;
-      ctx.globalAlpha = drawn.alpha * 0.35;
+      ctx.globalAlpha = drawn.alpha * WIPE_ALPHA;
       ctx.lineWidth = Math.max(1, cell * 0.04);
       ctx.beginPath();
       ctx.moveTo(x + wipe.from.x, y + wipe.from.y);
