@@ -583,12 +583,12 @@ function placeSnake(
   snake.dirWanted = dir;
 }
 
-/** Park the selected chain one cell inside the left edge, facing out. */
+/** Park the selected chain on the top row, centered, facing out. */
 function stageWallCrash(state: GameState, rider: Rider): GridPos {
   const border = state.shrinkBorder;
   const left = border?.left ?? 0;
+  const right = border?.right ?? state.cols - 1;
   const top = border?.top ?? 0;
-  const bottom = border?.bottom ?? state.rows - 1;
   const snake = labSnake(state, rider);
   const otherCells = new Set<string>();
   for (const entry of SEATS) {
@@ -599,12 +599,13 @@ function stageWallCrash(state: GameState, rider: Rider): GridPos {
     otherCells.add(`${other.head[0]},${other.head[1]}`);
     for (const cell of other.body) otherCells.add(`${cell[0]},${cell[1]}`);
   }
-  let y = Math.min(bottom - 1, Math.max(top + 1, 12));
-  if (otherCells.has(`${left},${y}`) || otherCells.has(`${left + 1},${y}`)) {
-    y = Math.min(bottom - 1, Math.max(top + 1, y === 12 ? 10 : 12));
+  let x = Math.floor((left + right) / 2);
+  x = Math.max(left, Math.min(right, x));
+  if (otherCells.has(`${x},${top}`) || otherCells.has(`${x},${top + 1}`)) {
+    x = x + 2 <= right ? x + 2 : Math.max(left, x - 2);
   }
-  placeSnake(snake, [left, y], 'Left', [[left + 1, y]]);
-  return [left - 1, y];
+  placeSnake(snake, [x, top], 'Up', [[x, top + 1]]);
+  return [x, top - 1];
 }
 
 /** Shared mid-board face-off used by Head to head and Head-on REORG. */
@@ -638,25 +639,69 @@ function stageHeadOn(state: GameState, rider: Rider): GridPos {
 }
 
 /**
- * Same center lineup as head-to-head, but white is long (16%+) and black is
- * short (2%) so the next step is a REORG. The selected chain takes the step.
+ * Same center lineup as head-to-head, but one chain is long (16%+) and the
+ * other is short (2%) so the next step is a REORG. The long chain stands on
+ * the left. The selected chain takes the step.
  */
 function stageHeadOnReorg(
   state: GameState,
   rider: Rider,
-  recipe: MatchRecipe
+  recipe: MatchRecipe,
+  rich: 'p1' | 'p2' = 'p1'
 ): GridPos {
   const { x, y } = headOnCenter(state);
-  placeSnake(
-    state.p1,
-    [x, y],
-    'Right',
-    Array.from({ length: 7 }, (_, index) => [x - 1 - index, y] as GridPos)
+  const longBody = Array.from(
+    { length: 7 },
+    (_, index) => [x - 1 - index, y] as GridPos
   );
-  placeSnake(state.p2, [x + 1, y], 'Left', [[x + 2, y]]);
+  const long = rich === 'p1' ? state.p1 : state.p2;
+  const short = rich === 'p1' ? state.p2 : state.p1;
+  placeSnake(long, [x, y], 'Right', longBody);
+  placeSnake(short, [x + 1, y], 'Left', [[x + 2, y]]);
   state.currentCaptureP1 = labelFor(recipe, state.p1.body.length);
   state.currentCaptureP2 = labelFor(recipe, state.p2.body.length);
-  return rider === 'p1' ? [x + 1, y] : [x, y];
+  const left: Rider = rich;
+  const right: Rider = rich === 'p1' ? 'p2' : 'p1';
+  if (rider === left) return [x + 1, y];
+  if (rider === right) return [x, y];
+  return [x + 1, y];
+}
+
+/** Long chain faces the top wall. Every other chain stays short, so the hit is a solo REORG. */
+function stageSoloReorg(
+  state: GameState,
+  rider: Rider,
+  recipe: MatchRecipe
+): GridPos {
+  const border = state.shrinkBorder;
+  const right = border?.right ?? state.cols - 1;
+  const bottom = border?.bottom ?? state.rows - 1;
+  const park: GridPos[] = [
+    [Math.min(right - 2, 30), Math.min(bottom - 1, 6)],
+    [Math.min(right - 2, 30), Math.max(2, bottom - 6)],
+    [Math.min(right - 2, 40), Math.min(bottom - 1, 6)],
+  ];
+  let spot = 0;
+  for (const entry of presentSeats(state)) {
+    if (entry.rider === rider) continue;
+    const head = park[spot] ?? park[0]!;
+    spot += 1;
+    placeSnake(labSnake(state, entry.rider), head, 'Left', [
+      [head[0] + 1, head[1]],
+    ]);
+  }
+  const fatal = stageWallCrash(state, rider);
+  const long = labSnake(state, rider);
+  const [hx, hy] = long.head;
+  placeSnake(
+    long,
+    [hx, hy],
+    'Up',
+    Array.from({ length: 7 }, (_, index) => [hx, hy + 1 + index] as GridPos)
+  );
+  state.currentCaptureP1 = labelFor(recipe, state.p1.body.length);
+  state.currentCaptureP2 = labelFor(recipe, state.p2.body.length);
+  return fatal;
 }
 
 function snapSnake(state: GameState, player: 'P1' | 'P2'): void {
@@ -1007,13 +1052,6 @@ export default function MatchTriggerLab() {
     intensity: number;
     id: number;
   } | null>(null);
-  const [impact, setImpact] = useState<{
-    id: number;
-    col: number;
-    row: number;
-    kind: 'wall' | 'clash' | 'reorg';
-    tone?: 'white' | 'black';
-  } | null>(null);
   const mutedRef = useRef(isMuted);
   mutedRef.current = isMuted;
   const mode = labMode(modeId);
@@ -1075,25 +1113,14 @@ export default function MatchTriggerLab() {
                 return head[0] === next[0] && head[1] === next[1];
               })
             : undefined;
-        const markAt: GridPos = inPlay(state, next)
-          ? next
-          : [snake.head[0], snake.head[1]];
         commitMove(snake, next, false);
         state.tickCount += 1;
-        audio.updateGameState(state);
         const seats = struck ? [player, struck.seat] : [player];
         for (const seat of seats) {
           snapSeat(state, seat);
           audio.playReset(seat);
         }
         pathRef.current = [];
-        setImpact({
-          id: performance.now(),
-          col: markAt[0],
-          row: markAt[1],
-          kind: kind === 'headon' ? (gap ? 'reorg' : 'clash') : 'wall',
-          tone: player === 'P1' ? 'white' : 'black',
-        });
         state.tickCount += 1;
         // One mark from the detector only — a second lab CSS square on a
         // different cell was reading as "different squares" on REORG.
@@ -1545,7 +1572,6 @@ export default function MatchTriggerLab() {
     if (!current || !audio || current.gameEnded) return;
     remember();
     clearStreakPops();
-    setImpact(null);
     const fatal = stageWallCrash(current, riderRef.current);
     quietBaseline(audio, current);
     const who = riderRef.current === 'p1' ? 'White' : 'Black';
@@ -1558,7 +1584,6 @@ export default function MatchTriggerLab() {
     if (!current || !audio || current.gameEnded) return;
     remember();
     clearStreakPops();
-    setImpact(null);
     const fatal = stageHeadOn(current, riderRef.current);
     quietBaseline(audio, current);
     lineUp(fatal, 'Chains lined up · next step is head to head');
@@ -1573,7 +1598,6 @@ export default function MatchTriggerLab() {
     remember();
     pathRef.current = [];
     clearStreakPops();
-    setImpact(null);
     const dyingRider =
       SEATS.find((entry) => entry.seat === player)?.rider ?? 'p1';
     const dying = labSnake(current, dyingRider);
@@ -1612,17 +1636,52 @@ export default function MatchTriggerLab() {
     bump();
   };
 
-  const fork = () => {
+  const useChain = (next: 'p1' | 'p2') => {
+    if (riderRef.current === 'p1' || riderRef.current === 'p2') return;
+    riderRef.current = next;
+    setRider(next);
+  };
+
+  const fork = (rich: 'p1' | 'p2') => {
     const current = stateRef.current;
     const audio = audioRef.current;
     if (!current || !audio || current.gameEnded) return;
     remember();
     clearStreakPops();
-    setImpact(null);
+    useChain(rich);
     // Same timing as Head to head: line up, then the step pump takes the crash.
-    const fatal = stageHeadOnReorg(current, riderRef.current, draftRef.current);
+    const fatal = stageHeadOnReorg(
+      current,
+      riderRef.current,
+      draftRef.current,
+      rich
+    );
     quietBaseline(audio, current);
-    lineUp(fatal, 'Lined up · long white vs short black · next step is REORG');
+    lineUp(
+      fatal,
+      rich === 'p1'
+        ? 'Lined up · long white vs short black · next step is REORG'
+        : 'Lined up · long black vs short white · next step is REORG'
+    );
+  };
+
+  const soloReorg = () => {
+    const current = stateRef.current;
+    const audio = audioRef.current;
+    if (!current || !audio || current.gameEnded) return;
+    remember();
+    clearStreakPops();
+    const dying: 'p1' | 'p2' = riderRef.current === 'p2' ? 'p2' : 'p1';
+    if (riderRef.current !== dying) {
+      riderRef.current = dying;
+      setRider(dying);
+    }
+    const fatal = stageSoloReorg(current, dying, draftRef.current);
+    quietBaseline(audio, current);
+    lineUp(
+      fatal,
+      `${dying === 'p1' ? 'White' : 'Black'} lined up · long chain hits the wall · next step is REORG`
+    );
   };
 
   const selectedHead = () => {
@@ -1782,23 +1841,6 @@ export default function MatchTriggerLab() {
             onPointerMove={onPointerMove}
           >
             <div className="match-lab__host" ref={hostRef} />
-            {impact && state ? (
-              <div
-                key={impact.id}
-                className={[
-                  'match-lab__impact',
-                  `is-${impact.kind}`,
-                  impact.tone ? `is-${impact.tone}` : null,
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                style={{
-                  left: `${((impact.col + 0.5) / state.cols) * 100}%`,
-                  top: `${((impact.row + 0.5) / state.rows) * 100}%`,
-                }}
-                onAnimationEnd={() => setImpact(null)}
-              />
-            ) : null}
             {state?.gameEnded ? (
               <div className="match-lab__over" role="status">
                 <strong>
@@ -1969,52 +2011,83 @@ export default function MatchTriggerLab() {
                   >
                     Eat one step
                   </button>
-                  {(mode.ffa ? SEATS : SEATS.slice(0, 2)).map((entry) => (
+                </div>
+                <div className="match-lab__moment-group">
+                  <p>Reset</p>
+                  <div className="match-lab__moments">
+                    {(mode.ffa ? SEATS : SEATS.slice(0, 2)).map((entry) => (
+                      <button
+                        key={entry.seat}
+                        type="button"
+                        disabled={ended}
+                        onClick={() => die(entry.seat)}
+                      >
+                        {entry.label} dies
+                      </button>
+                    ))}
+                    <button type="button" disabled={ended} onClick={hitWall}>
+                      Hit the wall
+                    </button>
+                    <button type="button" disabled={ended} onClick={hitHeadOn}>
+                      Head to head
+                    </button>
+                  </div>
+                </div>
+                <div className="match-lab__moment-group">
+                  <p>Reorg</p>
+                  <div className="match-lab__moments match-lab__moments--reorg">
                     <button
-                      key={entry.seat}
                       type="button"
                       disabled={ended}
-                      onClick={() => die(entry.seat)}
+                      onClick={() => fork('p1')}
                     >
-                      {entry.label} dies
+                      White
+                      <span>head-on</span>
                     </button>
-                  ))}
-                  <button type="button" disabled={ended} onClick={hitWall}>
-                    Hit the wall
-                  </button>
-                  <button type="button" disabled={ended} onClick={hitHeadOn}>
-                    Head to head
-                  </button>
-                  <button
-                    type="button"
-                    className="wide"
-                    disabled={ended}
-                    onClick={fork}
-                  >
-                    Head-on REORG
-                  </button>
-                  <button
-                    type="button"
-                    disabled={ended || !mode.powerups}
-                    onClick={powerUp}
-                  >
-                    Power-up
-                  </button>
-                  <button type="button" disabled={!mode.block} onClick={block}>
-                    New block
-                  </button>
-                  <button type="button" onClick={countdown}>
-                    Countdown
-                  </button>
-                  {ended && !state?.winnerPlayer ? (
-                    <button type="button" onClick={resume}>
-                      Resume
+                    <button
+                      type="button"
+                      disabled={ended}
+                      onClick={() => fork('p2')}
+                    >
+                      Black
+                      <span>head-on</span>
                     </button>
-                  ) : ended ? null : (
-                    <button type="button" onClick={endMatch}>
-                      End match
+                    <button type="button" disabled={ended} onClick={soloReorg}>
+                      Solo
+                      <span>one chain</span>
                     </button>
-                  )}
+                  </div>
+                </div>
+                <div className="match-lab__moment-group">
+                  <p>Match</p>
+                  <div className="match-lab__moments">
+                    <button
+                      type="button"
+                      disabled={ended || !mode.powerups}
+                      onClick={powerUp}
+                    >
+                      Power-up
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!mode.block}
+                      onClick={block}
+                    >
+                      New block
+                    </button>
+                    <button type="button" onClick={countdown}>
+                      Countdown
+                    </button>
+                    {ended && !state?.winnerPlayer ? (
+                      <button type="button" onClick={resume}>
+                        Resume
+                      </button>
+                    ) : ended ? null : (
+                      <button type="button" onClick={endMatch}>
+                        End match
+                      </button>
+                    )}
+                  </div>
                 </div>
               </section>
 
