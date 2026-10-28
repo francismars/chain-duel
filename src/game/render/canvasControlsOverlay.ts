@@ -13,6 +13,23 @@ import {
   type GameSeatIndex,
 } from '@/game/controllerTest';
 import {
+  GAMEPAD_SHELL,
+  GAMEPAD_VIEW,
+} from '@/features/config/gamepadDiagramGeometry';
+import {
+  paintMatchGamepadCanvas,
+  paintMatchGamepadPixi,
+} from '@/game/render/matchGamepadPaint';
+import {
+  connectedPreMatchPadIndices,
+  matchFaceFontPx,
+  matchFaceOffset,
+  matchPadActivity,
+  preMatchGamepadIndex,
+  readMatchPad,
+  type MatchPadReading,
+} from '@/game/render/preMatchGamepad';
+import {
   isPreMatchKeyHeld,
   preMatchKeyCapScale,
   type PreMatchKeyDir,
@@ -70,6 +87,8 @@ type SlotPad = {
   root: Container;
   slot: PlayerControlSlot;
   caps: KeyCap[];
+  gamepad: Graphics;
+  gamepadLabels: Text[];
 };
 
 function snakeHeadForSlot(state: GameState, slot: PlayerControlSlot): GridPos {
@@ -197,6 +216,26 @@ function computePadAnchor(
   };
 }
 
+function computeGamepadAnchor(
+  state: GameState,
+  slot: PlayerControlSlot,
+  width: number,
+  height: number
+): { x: number; y: number; scale: number } {
+  const capLayout = preMatchKeyCapLayout(width, height);
+  const keyAnchor = computePadAnchor(state, slot, width, height, capLayout);
+  const { keyPx, gap } = capLayout;
+  const { aboveAnchor } = padExtents(keyPx, gap);
+  const shellW = GAMEPAD_SHELL.right - GAMEPAD_SHELL.left;
+  const scale = (aboveAnchor * 2 + keyPx + gap) / shellW;
+  const keyboardTop = keyAnchor.y - aboveAnchor;
+  return {
+    x: keyAnchor.x,
+    y: keyboardTop + (GAMEPAD_VIEW.cy - GAMEPAD_SHELL.top) * scale,
+    scale,
+  };
+}
+
 export class CanvasControlsOverlay {
   readonly container = new Container();
 
@@ -221,8 +260,29 @@ export class CanvasControlsOverlay {
         root.addChild(capRoot);
         caps.push({ root: capRoot, border, label, dir });
       }
+      const gamepad = new Graphics();
+      gamepad.visible = false;
+      root.addChild(gamepad);
+      const gamepadLabels: Text[] = [];
+      for (const letter of ['B', 'A', 'X']) {
+        const face = new Text({
+          text: letter,
+          style: new TextStyle({
+            fontFamily: KEY_FONT,
+            fill: '#ffffff',
+            fontSize: 11,
+            fontWeight: '700',
+            align: 'center',
+          }),
+        });
+        face.anchor.set(0.5);
+        face.resolution = pixiTextResolution();
+        face.visible = false;
+        root.addChild(face);
+        gamepadLabels.push(face);
+      }
       this.container.addChild(root);
-      this.pads.push({ root, slot: 'p1', caps });
+      this.pads.push({ root, slot: 'p1', caps, gamepad, gamepadLabels });
     }
     this.container.visible = false;
     this.container.alpha = 0;
@@ -270,10 +330,14 @@ export class CanvasControlsOverlay {
         return `${labelSlot}:${labels.up}${labels.down}${labels.left}${labels.right}${confirm}`;
       })
       .join('|');
-    const token = `${width}x${height}:${state.cols}x${state.rows}:${headsKey}:${bindingsKey}`;
+    const connected = connectedPreMatchPadIndices();
+    const modes = slots.map((slot) =>
+      preMatchGamepadIndex(slot, slots, connected)
+    );
+    const token = `${width}x${height}:${state.cols}x${state.rows}:${headsKey}:${bindingsKey}:${modes.join(',')}`;
     if (token !== this.layoutKey) {
       this.layoutKey = token;
-      this.applyLayout(state, width, height, slots, layout, labelSlots);
+      this.applyLayout(state, width, height, slots, layout, labelSlots, modes);
     }
 
     const now = performance.now();
@@ -281,11 +345,15 @@ export class CanvasControlsOverlay {
       const pad = this.pads[i];
       const slot = slots[i];
       if (!slot) continue;
-      for (const cap of pad.caps) {
-        const scale = preMatchKeyCapScale(slot, cap.dir, now);
-        cap.root.scale.set(scale);
-        this.paintCap(cap, slot);
+      const reading =
+        modes[i] === null || modes[i] === undefined
+          ? null
+          : readMatchPad(modes[i]!);
+      if (reading) {
+        this.showGamepad(pad, reading);
+        continue;
       }
+      this.showKeys(pad, slot, now);
     }
 
     const elapsed =
@@ -305,7 +373,8 @@ export class CanvasControlsOverlay {
     height: number,
     slots: readonly PlayerControlSlot[],
     layout: ReturnType<typeof readKeyboardLayoutId>,
-    labelSlots?: readonly PlayerControlSlot[]
+    labelSlots: readonly PlayerControlSlot[] | undefined,
+    modes: readonly (number | null)[]
   ): void {
     const capLayout = preMatchKeyCapLayout(width, height);
     const { keyPx, fontPx, gap } = capLayout;
@@ -320,6 +389,23 @@ export class CanvasControlsOverlay {
         continue;
       }
       pad.slot = slot;
+      pad.root.visible = true;
+
+      if (modes[i] != null) {
+        const { x, y, scale } = computeGamepadAnchor(
+          state,
+          slot,
+          width,
+          height
+        );
+        pad.root.position.set(x, y);
+        pad.gamepad.scale.set(scale);
+        pad.gamepad.position.set(
+          -GAMEPAD_VIEW.cx * scale,
+          -GAMEPAD_VIEW.cy * scale
+        );
+        continue;
+      }
 
       const labelSlot = labelSlots?.[i] ?? slot;
       const labels = slotBindingLabels(labelSlot, layout);
@@ -334,7 +420,6 @@ export class CanvasControlsOverlay {
 
       const dpad = buildDpadSpecs(labels, confirm, keyPx, gap);
 
-      pad.root.visible = true;
       pad.root.position.set(anchorX, anchorY);
 
       const textStyle = new TextStyle({
@@ -354,6 +439,38 @@ export class CanvasControlsOverlay {
         cap.root.position.set(spec.x, spec.y);
         this.paintCap(cap, slot);
       }
+    }
+  }
+
+  private showKeys(pad: SlotPad, slot: PlayerControlSlot, now: number): void {
+    pad.gamepad.visible = false;
+    for (const label of pad.gamepadLabels) label.visible = false;
+    for (const cap of pad.caps) {
+      cap.root.visible = true;
+      const scale = preMatchKeyCapScale(slot, cap.dir, now);
+      cap.root.scale.set(scale);
+      this.paintCap(cap, slot);
+    }
+  }
+
+  private showGamepad(pad: SlotPad, reading: MatchPadReading): void {
+    for (const cap of pad.caps) cap.root.visible = false;
+    const scale = pad.gamepad.scale.x || 1;
+    pad.gamepad.visible = true;
+    paintMatchGamepadPixi(pad.gamepad, reading, scale);
+    const activity = matchPadActivity(reading);
+    const fontPx = matchFaceFontPx(scale);
+    for (let i = 0; i < pad.gamepadLabels.length; i += 1) {
+      const face = activity.faces[i];
+      const label = pad.gamepadLabels[i];
+      if (!face || !label) continue;
+      label.visible = true;
+      label.text = face.label;
+      const offset = matchFaceOffset(face, scale);
+      label.position.set(offset.x, offset.y);
+      label.style.fontSize = fontPx;
+      label.style.fill = '#ffffff';
+      label.alpha = face.active ? 0.9 : 0.72;
     }
   }
 
@@ -400,15 +517,35 @@ export function drawCanvasControlsFallback(
   const now = performance.now();
   const cornerR = keyCapCornerRadius(keyPx);
 
+  const connected = connectedPreMatchPadIndices();
+
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `600 ${Math.floor(fontPx)}px Inter, system-ui, sans-serif`;
   ctx.lineWidth = 1;
 
   for (let i = 0; i < slots.length; i += 1) {
     const slot = slots[i]!;
+    const padIndex = preMatchGamepadIndex(slot, slots, connected);
+    const reading = padIndex === null ? null : readMatchPad(padIndex);
+    if (reading) {
+      const { x, y, scale } = computeGamepadAnchor(state, slot, width, height);
+      paintMatchGamepadCanvas(ctx, reading, x, y, scale);
+      const activity = matchPadActivity(reading);
+      ctx.font = `700 ${matchFaceFontPx(scale)}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const face of activity.faces) {
+        const offset = matchFaceOffset(face, scale);
+        ctx.fillStyle = face.active
+          ? 'rgba(255,255,255,0.9)'
+          : 'rgba(255,255,255,0.72)';
+        ctx.fillText(face.label, x + offset.x, y + offset.y);
+      }
+      continue;
+    }
+
     const labelSlot = labelSlots?.[i] ?? slot;
     const labels = slotBindingLabels(labelSlot, layout);
     const confirm = confirmKeyLabel(labelSlot, layout);
@@ -421,6 +558,7 @@ export function drawCanvasControlsFallback(
     );
 
     const dpad = buildDpadSpecs(labels, confirm, keyPx, gap);
+    ctx.font = `600 ${Math.floor(fontPx)}px Inter, system-ui, sans-serif`;
 
     for (const spec of dpad) {
       const scale = preMatchKeyCapScale(slot, spec.dir, now);
