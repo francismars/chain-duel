@@ -1650,7 +1650,7 @@ export default function MatchTriggerLab() {
     bump();
   };
 
-  const useChain = (next: 'p1' | 'p2') => {
+  const selectChain = (next: 'p1' | 'p2') => {
     if (riderRef.current === 'p1' || riderRef.current === 'p2') return;
     riderRef.current = next;
     setRider(next);
@@ -1662,7 +1662,7 @@ export default function MatchTriggerLab() {
     if (!current || !audio || current.gameEnded) return;
     remember();
     clearStreakPops();
-    useChain(rich);
+    selectChain(rich);
     // Same timing as Head to head: line up, then the step pump takes the crash.
     const fatal = stageHeadOnReorg(
       current,
