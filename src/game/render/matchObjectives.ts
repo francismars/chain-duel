@@ -193,7 +193,7 @@ export function localStartPromptWords(
     if (gamepad?.[slot]) return START_PROMPT_WORDS;
     return slot === 'p1' ? PRESS_SPACE_TO_START : PRESS_ENTER_TO_START;
   };
-  const lines: readonly string[][] = [];
+  const lines: (readonly string[])[] = [];
   if (p1Human) lines.push(lineFor('p1'));
   if (p2Human) lines.push(lineFor('p2'));
   if (lines.length === 0) return { words: START_PROMPT_WORDS };

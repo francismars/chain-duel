@@ -413,7 +413,7 @@ export class GameAudioSystem {
       (deathAt?.[reorged.index] ??
         (reorgPartner ? deathAt?.[reorgPartner.before.index] : undefined))
     );
-    const reorgCell = !reorged
+    const reorgCell: GridPos | null = !reorged
       ? null
       : reorgFromImpact
         ? reorgPartner
