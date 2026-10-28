@@ -116,6 +116,9 @@ type PadPollState = {
   /** Game mode: face was already held when polling began; wait for release. */
   synthFaceBlocked: boolean;
   synthControlHeld: boolean;
+  /** Game mode: west face (Xbox X) → keyboard X (solo seat switch). */
+  synthWestHeld: boolean;
+  synthWestBlocked: boolean;
 };
 
 function createPadPollState(): PadPollState {
@@ -131,6 +134,8 @@ function createPadPollState(): PadPollState {
     synthFaceHeld: false,
     synthFaceBlocked: true,
     synthControlHeld: false,
+    synthWestHeld: false,
+    synthWestBlocked: true,
   };
 }
 
@@ -319,10 +324,25 @@ function pollPlayerPad(
   faceKey: string,
   controlCode: 'ControlLeft' | 'ControlRight'
 ) {
+  const westDown = !!pad.buttons[2]?.pressed;
+  if (mode === 'game') {
+    // Xbox X / PlayStation Square. Keyboard X swaps the solo human seat
+    // before the match; other face buttons still confirm / start.
+    if (state.synthWestBlocked) {
+      if (!westDown) state.synthWestBlocked = false;
+    } else if (westDown && !state.synthWestHeld) {
+      dispatchKey('keydown', { key: 'x', code: 'KeyX' });
+      state.synthWestHeld = true;
+    } else if (!westDown && state.synthWestHeld) {
+      dispatchKey('keyup', { key: 'x', code: 'KeyX' });
+      state.synthWestHeld = false;
+    }
+  }
+
   const faceDown =
     !!pad.buttons[0]?.pressed ||
     !!pad.buttons[1]?.pressed ||
-    !!pad.buttons[2]?.pressed ||
+    (mode === 'menu' && westDown) ||
     !!pad.buttons[3]?.pressed;
   fireFace(mode, state, now, faceDown, faceKey);
 
