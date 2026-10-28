@@ -336,9 +336,12 @@
     border 0.25s ease-in-out;
 }
 
-/* Hold Control (or L1/L2): scale QR in place – layout unchanged, player info stays visible */
+/* Hold Control (or L1/L2): scale QR in place – layout unchanged, player info stays visible.
+   .qr-raised outlasts .expanded through the scale-down so the code stays on top. */
 .gamemenu-page #player1card.expanded .qrcodeContainer,
-.gamemenu-page #player2card.expanded .qrcodeContainer {
+.gamemenu-page #player2card.expanded .qrcodeContainer,
+.gamemenu-page #player1card.qr-raised .qrcodeContainer,
+.gamemenu-page #player2card.qr-raised .qrcodeContainer {
   z-index: 50;
 }
 

@@ -16,6 +16,7 @@ import type { MenuParseResult } from '@/lib/menuAdapters';
 import type { WindowTimeout } from '@/shared/utils/timer';
 import { useSessionPersistence } from '@/shared/hooks/useSessionPersistence';
 import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
+import { useQrRaised } from '@/features/setup-menu/hooks/useQrRaised';
 import { useLnurlCompatibleQrHold } from '@/features/setup-menu/hooks/useLnurlCompatibleQrHold';
 import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
 import { createLogger } from '@/shared/utils/logger';
@@ -110,6 +111,8 @@ export default function GameMenu({
   const [startBlockedHint, setStartBlockedHint] = useState<string | null>(null);
   const [player1CardExpanded, setPlayer1CardExpanded] = useState(false);
   const [player2CardExpanded, setPlayer2CardExpanded] = useState(false);
+  const player1QrRaised = useQrRaised(player1CardExpanded);
+  const player2QrRaised = useQrRaised(player2CardExpanded);
   const [qrBackdropVisible, setQrBackdropVisible] = useState(false);
   const [highlightP1, setHighlightP1] = useState<HighlightPart>(false);
   const [highlightP2, setHighlightP2] = useState<HighlightPart>(false);
@@ -1026,7 +1029,12 @@ export default function GameMenu({
           <>
             <div
               id="player1card"
-              className={player1CardExpanded ? 'expanded' : ''}
+              className={[
+                player1CardExpanded ? 'expanded' : '',
+                player1QrRaised ? 'qr-raised' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
             >
               <div
                 id="qrcodeContainer1"
@@ -1129,7 +1137,12 @@ export default function GameMenu({
 
             <div
               id="player2card"
-              className={player2CardExpanded ? 'expanded' : ''}
+              className={[
+                player2CardExpanded ? 'expanded' : '',
+                player2QrRaised ? 'qr-raised' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
             >
               <div id="player2cardinfo" className="player-card-info">
                 <div
