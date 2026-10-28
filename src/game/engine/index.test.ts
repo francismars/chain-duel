@@ -97,7 +97,7 @@ describe('game engine parity behavior', () => {
     expect(getHudState(state).captureP1).toBe('4%');
     expect(state.pointChanges[0]?.captureRateLabel).toBe('4%');
     expect(state.pointChanges[0]?.value).toBe(
-      Math.floor((state.totalPoints * 4) / 100)
+      Math.floor((state.totalPoints * 2) / 100)
     );
   });
 

@@ -11,6 +11,7 @@ import {
   isFfaMode,
   is2v1Mode,
   multiplayerPlayerCount,
+  get2v1TeamCapturePercent,
 } from '@/game/engine/ffa';
 import {
   capturePercentForLength,
@@ -266,7 +267,7 @@ export function checkPowerUpPickup(state: GameState): void {
 
 /**
  * Body length once this eat's new block is on the chain.
- * The rules count that block: 2 blocks is 2%, and the first eat makes 3 blocks, which is 4%.
+ * The capture-rate label uses this. The sats use the length before the block is added.
  */
 function lengthAfterEat(
   state: GameState,
@@ -311,8 +312,12 @@ export function capturePercentForCoinbase(
   playerIndex: PowerUpPlayerIndex,
   cb: Coinbase
 ): number {
+  const snake = getSnakeByIndex(state, playerIndex);
   const basePercent =
-    cb.reward ?? capturePercentByLength(lengthAfterEat(state, playerIndex));
+    cb.reward ??
+    (is2v1Mode(state) && (playerIndex === 1 || playerIndex === 2)
+      ? get2v1TeamCapturePercent(state)
+      : capturePercentByLength(snake.body.length));
   return withAmplifier(state, playerIndex, basePercent);
 }
 
