@@ -25,10 +25,11 @@
 
 .ui-debug-menu__head {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.35rem 0.75rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
   margin-bottom: 0.7rem;
+  padding-right: 2rem;
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -38,17 +39,46 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .ui-debug-menu__head p {
-  flex-basis: 100%;
   margin: 0;
+  max-width: 42rem;
   color: #9a9a9a;
   font-size: 0.68rem;
   letter-spacing: 0.02em;
   line-height: 1.35;
   text-transform: none;
+}
+
+.ui-debug-menu__close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.06);
+  color: #eee;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.ui-debug-menu__close svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.ui-debug-menu__close:hover,
+.ui-debug-menu__close:focus-visible {
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+  border-color: #fff;
 }
 
 .ui-debug-menu__head a,
@@ -64,12 +94,16 @@
 }
 
 .ui-debug-menu__head-links a,
-.ui-debug-menu__head button {
+.ui-debug-menu__head button.ui-debug-menu__off {
+  display: inline-flex;
+  align-items: center;
   align-self: center;
-  padding: 0.28rem 0.5rem;
+  min-height: 1.7rem;
+  padding: 0.28rem 0.55rem;
   border: 1px solid rgb(255 255 255 / 0.35);
   background: rgb(255 255 255 / 0.06);
   line-height: 1;
+  box-sizing: border-box;
 }
 
 .ui-debug-menu__head-links a:hover,
@@ -79,14 +113,14 @@
   border-color: #fff;
 }
 
-.ui-debug-menu__head button {
+.ui-debug-menu__head button.ui-debug-menu__off {
   border-color: rgb(255 180 180 / 0.7);
   background: rgb(255 80 80 / 0.12);
   color: #ffb4b4;
 }
 
-.ui-debug-menu__head button:hover,
-.ui-debug-menu__head button:focus-visible {
+.ui-debug-menu__head button.ui-debug-menu__off:hover,
+.ui-debug-menu__head button.ui-debug-menu__off:focus-visible {
   background: rgb(255 80 80 / 0.28);
   color: #fff;
   border-color: #ffb4b4;

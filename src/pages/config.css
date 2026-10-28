@@ -114,7 +114,10 @@ header#brand:has(+ .config-page) #duel {
 }
 
 .config-section-tab + .config-section-tab {
-  border-left: none;
+  /* Width and style only. The `border-left` shorthand would reset the color to
+     currentColor, so a selected tab's restored left edge paints solid white. */
+  border-left-width: 0;
+  border-left-style: none;
 }
 
 .config-section-tab:hover {
@@ -143,18 +146,14 @@ header#brand:has(+ .config-page) #duel {
 .config-panel {
   width: 100%;
   box-sizing: border-box;
-  min-height: 36rem;
+  /* Fixed, not a minimum: a taller tab was recentering the page by a pixel. */
+  height: 36rem;
+  display: flex;
+  flex-direction: column;
   padding: 0.9rem 1rem 1rem;
   background: rgb(0 0 0 / 0.72);
   border: 1px solid rgb(255 255 255 / 0.2);
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.45);
-}
-
-.config-panel:has(.config-profile-card),
-.config-panel:has(.config-nwc-block),
-.config-panel:has(.config-signin-block) {
-  display: flex;
-  flex-direction: column;
 }
 
 .config-panel:has(.config-profile-card) {
@@ -162,12 +161,15 @@ header#brand:has(+ .config-page) #duel {
   padding-top: 0;
 }
 
-.config-panel:has(.config-profile-card) > .config-tab-panel,
-.config-panel:has(.config-nwc-block) > .config-tab-panel,
-.config-panel:has(.config-signin-block) > .config-tab-panel {
+.config-panel > .config-tab-panel {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.config-panel:has(.config-nwc-block) > .config-tab-panel,
+.config-panel:has(.config-signin-block) > .config-tab-panel {
   justify-content: center;
 }
 
@@ -399,7 +401,8 @@ header#brand:has(+ .config-page) #duel {
 }
 
 .config-login-tab + .config-login-tab {
-  border-left: none;
+  border-left-width: 0;
+  border-left-style: none;
 }
 
 .config-login-tab:hover {
@@ -415,7 +418,7 @@ header#brand:has(+ .config-page) #duel {
 }
 
 /* Later tabs drop the shared left edge. Paint the selected or focused tab above
-   its neighbor so that edge is visible again. */
+   its neighbor, and hide that neighbor's right border so the seam is one line. */
 .config-section-tab.config-section-tab--active,
 .config-section-tab.config-kbd-focus,
 .config-login-tab.config-login-tab--active,
@@ -424,6 +427,13 @@ header#brand:has(+ .config-page) #duel {
   z-index: 2;
   border-left-width: 1px;
   border-left-style: solid;
+}
+
+.config-section-tab:has(+ .config-section-tab--active),
+.config-section-tab:has(+ .config-section-tab.config-kbd-focus),
+.config-login-tab:has(+ .config-login-tab--active),
+.config-login-tab:has(+ .config-login-tab.config-kbd-focus) {
+  border-right-color: transparent;
 }
 
 .config-login-panel {
@@ -1934,7 +1944,8 @@ a.config-nc-signer-btn.config-kbd-focus {
   position: relative;
   width: 100%;
   max-width: 100%;
-  min-height: calc(36rem - 1.9rem);
+  flex: 1;
+  min-height: 0;
   margin: 0;
   border: none;
   padding: 0;
