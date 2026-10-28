@@ -46,6 +46,10 @@ const ANIMATION_MODES: readonly string[] = ['full', 'reduced', 'off'];
 const NO_HUD_FLASH_CLASS = 'graphics-no-hud-flash';
 /** On <html> while shadows & transparency are off; game.css flattens the board and HUD. */
 const FLAT_CLASS = 'graphics-flat';
+
+export function isGraphicsFlat(): boolean {
+  return document.documentElement.classList.contains(FLAT_CLASS);
+}
 /** On <html> while animations are off; game.css jumps game-page animations to their end. */
 const NO_ANIM_CLASS = 'graphics-anim-off';
 

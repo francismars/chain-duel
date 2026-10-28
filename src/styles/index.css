@@ -150,6 +150,7 @@ h3 {
   --button-glow-bg-peak: rgb(255 255 255 / 30%);
   --button-glow-shadow-peak: 0 0 35px rgb(255 255 255);
   --button-glow-border: #fff;
+  --button-glow-fg: inherit;
 }
 
 @keyframes glowing {
@@ -158,12 +159,49 @@ h3 {
     background-color: var(--button-glow-bg-low);
     box-shadow: var(--button-glow-shadow-low);
     border-color: var(--button-glow-border);
+    color: var(--button-glow-fg);
   }
   50% {
     background-color: var(--button-glow-bg-peak);
     box-shadow: var(--button-glow-shadow-peak);
     border-color: var(--button-glow-border);
+    color: var(--button-glow-fg);
   }
+}
+
+/* Shadows & transparency off: keep keyboard/hover selection as a solid invert,
+   not a see-through glow (which disappears when opacity is flattened). */
+html.graphics-flat {
+  --button-glow-bg-low: #fff;
+  --button-glow-bg-peak: #fff;
+  --button-glow-shadow-low: none;
+  --button-glow-shadow-peak: none;
+  --button-glow-border: #fff;
+  --button-glow-fg: #000;
+}
+
+html.graphics-flat .button {
+  --button-glow-bg-low: #fff;
+  --button-glow-bg-peak: #fff;
+  --button-glow-shadow-low: none;
+  --button-glow-shadow-peak: none;
+  --button-glow-border: #fff;
+  --button-glow-fg: #000;
+}
+
+html.graphics-flat .config-section-tab.config-kbd-focus,
+html.graphics-flat .config-login-tab.config-kbd-focus,
+html.graphics-flat .config-section-tab--active.config-kbd-focus,
+html.graphics-flat .rules-modal__close--selected,
+html.graphics-flat .rules-modal__actions .rules-slider__arrow--selected,
+html.graphics-flat .practice-start--focused,
+html.graphics-flat .graphics-settings__action:hover:not(:disabled),
+html.graphics-flat .graphics-settings__action:focus-visible:not(:disabled) {
+  animation: none !important;
+  background-color: #fff;
+  color: #000;
+  box-shadow: none;
+  border-color: #fff;
 }
 
 #root {

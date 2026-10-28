@@ -16,7 +16,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={`button ${className}`}
+        className={`button${glowing === true ? ' button--glow-active' : ''}${className ? ` ${className}` : ''}`}
         style={animationStyle}
         {...props}
       >
