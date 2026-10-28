@@ -105,6 +105,32 @@ export function keyFromCode(code: string): string {
   return code;
 }
 
+/**
+ * A finger-driven key. Some mobile browsers construct a KeyboardEvent whose
+ * `code` and `key` stay blank, so the match never sees the turn.
+ */
+export function createStickKeyEvent(
+  type: 'keydown' | 'keyup',
+  code: string
+): Event {
+  const key = keyFromCode(code);
+  const KeyboardEventCtor = globalThis.KeyboardEvent;
+  if (typeof KeyboardEventCtor === 'function') {
+    const event = new KeyboardEventCtor(type, {
+      bubbles: true,
+      cancelable: true,
+      key,
+      code,
+    });
+    if (event.code === code && event.key === key) return event;
+  }
+  const fallback = new Event(type, { bubbles: true, cancelable: true });
+  Object.defineProperty(fallback, 'code', { value: code });
+  Object.defineProperty(fallback, 'key', { value: key });
+  Object.defineProperty(fallback, 'repeat', { value: false });
+  return fallback;
+}
+
 const INTERACTIVE_SELECTOR = [
   'button',
   'a',

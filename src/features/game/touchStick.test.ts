@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   StickSession,
+  createStickKeyEvent,
   keyFromCode,
   stickAxes,
   type StickAxis,
@@ -50,6 +51,15 @@ describe('keyFromCode', () => {
     expect(keyFromCode('Enter')).toBe('Enter');
     expect(keyFromCode('ArrowUp')).toBe('ArrowUp');
     expect(keyFromCode('NumpadEnter')).toBe('Enter');
+  });
+});
+
+describe('createStickKeyEvent', () => {
+  it('keeps the code and key the match reads', () => {
+    const event = createStickKeyEvent('keydown', 'KeyD');
+    expect(event.type).toBe('keydown');
+    expect((event as KeyboardEvent).code).toBe('KeyD');
+    expect((event as KeyboardEvent).key).toBe('d');
   });
 });
 

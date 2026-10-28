@@ -9,8 +9,8 @@ import { confirmKeyCode, slotBindings } from '@/lib/controls/playerControls';
 import {
   StickSession,
   TOUCH_GESTURE_EVENT,
+  createStickKeyEvent,
   isStickBlockedTarget,
-  keyFromCode,
   type StickVisual,
 } from '@/features/game/touchStick';
 import './touchMatchFrame.css';
@@ -64,14 +64,15 @@ function placeRing(
 }
 
 function dispatchStickKey(type: 'keydown' | 'keyup', code: string): void {
-  window.dispatchEvent(
-    new KeyboardEvent(type, {
-      code,
-      key: keyFromCode(code),
-      bubbles: true,
-      cancelable: true,
-    })
-  );
+  window.dispatchEvent(createStickKeyEvent(type, code));
+}
+
+function touchById(list: TouchList, id: number): Touch | null {
+  for (let i = 0; i < list.length; i += 1) {
+    const touch = list.item(i);
+    if (touch && touch.identifier === id) return touch;
+  }
+  return null;
 }
 
 function useStickPointer(
@@ -83,8 +84,8 @@ function useStickPointer(
     if (mode !== 'landscape') return;
 
     let session: StickSession | null = null;
+    let touchId: number | null = null;
     let pointerId: number | null = null;
-    let fullscreenTried = false;
 
     const onVisual = (visual: StickVisual | null) => {
       const ring = ringRef.current;
@@ -93,52 +94,110 @@ function useStickPointer(
       placeRing(ring, puck, visual);
     };
 
-    const onDown = (event: PointerEvent) => {
-      window.dispatchEvent(new Event(TOUCH_GESTURE_EVENT));
-      if (event.pointerType === 'mouse' || event.button !== 0) return;
-      if (!fullscreenTried) {
-        fullscreenTried = true;
-        void document.documentElement.requestFullscreen?.().catch(() => {});
-      }
-      if (isStickBlockedTarget(event.target) || session) return;
+    const begin = (x: number, y: number) => {
       session = new StickSession(
         slotBindings('p1'),
         confirmKeyCode('p1'),
         dispatchStickKey,
         onVisual
       );
-      pointerId = event.pointerId;
-      session.begin(event.clientX, event.clientY);
+      session.begin(x, y);
+    };
+
+    const endTouch = (tap: boolean) => {
+      if (!session) return;
+      if (tap) session.end();
+      else session.cancel();
+      session = null;
+      touchId = null;
+      pointerId = null;
+    };
+
+    // Fingers use touch events. Phones often pointercancel the gesture as soon
+    // as the finger moves (scroll, fullscreen), which was dropping the stick.
+    const onTouchStart = (event: TouchEvent) => {
+      window.dispatchEvent(new Event(TOUCH_GESTURE_EVENT));
+      if (isStickBlockedTarget(event.target) || session) return;
+      const touch = event.changedTouches.item(0);
+      if (!touch) return;
+      touchId = touch.identifier;
+      begin(touch.clientX, touch.clientY);
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!session || touchId == null) return;
+      const touch = touchById(event.touches, touchId);
+      if (!touch) return;
+      session.move(touch.clientX, touch.clientY);
       event.preventDefault();
     };
 
-    const onMove = (event: PointerEvent) => {
+    const onTouchEnd = (event: TouchEvent) => {
+      if (!session || touchId == null) return;
+      if (touchById(event.touches, touchId)) return;
+      endTouch(true);
+    };
+
+    const onTouchCancel = (event: TouchEvent) => {
+      if (!session || touchId == null) return;
+      if (touchById(event.touches, touchId)) return;
+      endTouch(false);
+    };
+
+    // Pens don't emit touch events. A finger's pointer stream is ignored so a
+    // pointercancel cannot end the stick while the touch is still down.
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'touch' || event.pointerType === 'mouse') {
+        return;
+      }
+      if (event.button !== 0 || session) return;
+      window.dispatchEvent(new Event(TOUCH_GESTURE_EVENT));
+      if (isStickBlockedTarget(event.target)) return;
+      pointerId = event.pointerId;
+      begin(event.clientX, event.clientY);
+      const target = event.target;
+      if (target instanceof Element) {
+        try {
+          target.setPointerCapture(event.pointerId);
+        } catch {
+          // The pointer can already be gone on some phones.
+        }
+      }
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
       if (!session || event.pointerId !== pointerId) return;
       session.move(event.clientX, event.clientY);
       event.preventDefault();
     };
 
-    const finish = (event: PointerEvent, tap: boolean) => {
-      if (!session || event.pointerId !== pointerId) return;
-      if (tap) session.end();
-      else session.cancel();
-      session = null;
-      pointerId = null;
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerId !== pointerId) return;
+      endTouch(true);
     };
 
-    const onUp = (event: PointerEvent) => finish(event, true);
-    const onCancel = (event: PointerEvent) => finish(event, false);
-
-    window.addEventListener('pointerdown', onDown, { passive: false });
-    window.addEventListener('pointermove', onMove, { passive: false });
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onCancel);
+    document.addEventListener('touchstart', onTouchStart, {
+      passive: false,
+      capture: true,
+    });
+    document.addEventListener('touchmove', onTouchMove, {
+      passive: false,
+      capture: true,
+    });
+    document.addEventListener('touchend', onTouchEnd, true);
+    document.addEventListener('touchcancel', onTouchCancel, true);
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove, { passive: false });
+    window.addEventListener('pointerup', onPointerUp);
     return () => {
       session?.cancel();
-      window.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onCancel);
+      document.removeEventListener('touchstart', onTouchStart, true);
+      document.removeEventListener('touchmove', onTouchMove, true);
+      document.removeEventListener('touchend', onTouchEnd, true);
+      document.removeEventListener('touchcancel', onTouchCancel, true);
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
     };
   }, [mode, puckRef, ringRef]);
 }

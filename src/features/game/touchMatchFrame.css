@@ -4,6 +4,12 @@ body.game-page.touch-match-active {
   overflow: hidden;
   background: #000;
   background-image: none;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+body.game-page.touch-match-active * {
+  touch-action: none;
 }
 
 .touch-match-root {
