@@ -18,6 +18,7 @@ import {
   POINT_CHANGE_RISE_PX,
 } from '@/game/engine/constants';
 import { runAStar } from '@/game/engine/astar';
+import { visibleDeathCell } from '@/game/engine/deathCell';
 import { captureRateLabel } from '@/game/engine/captureRateLabel';
 import {
   capturePercentForLength,
@@ -550,6 +551,7 @@ export function stepGame(state: GameState): TickResult {
     state.resetCueP1 = false;
     state.resetCueP2 = false;
     state.resetCueExtra = state.extraSnakes.map(() => false);
+    state.deathAt = undefined;
 
     // Convergence: shrink border
     if (state.meta.convergenceMode && state.shrinkBorder) {
@@ -1208,7 +1210,25 @@ export function getCaptureLabel(length: number): string {
 // Reset
 // ============================================================================
 
+function noteDeath(
+  state: GameState,
+  index: number,
+  head: GridPos,
+  dir: Direction
+): void {
+  if (!state.deathAt) state.deathAt = [];
+  if (state.deathAt[index]) return;
+  state.deathAt[index] = visibleDeathCell(head, dir, state.cols, state.rows);
+}
+
 function resetSnake(state: GameState, player: PlayerId): void {
+  const dying = player === 'P1' ? state.p1 : state.p2;
+  noteDeath(
+    state,
+    player === 'P1' ? 0 : 1,
+    dying.head,
+    dying.dir || dying.dirWanted
+  );
   if (player === 'P1') state.resetCueP1 = true;
   else state.resetCueP2 = true;
   const retainSpeed = player === 'P2' && state.meta.powerupMode;
@@ -1423,6 +1443,15 @@ function ffaExtraSpawnLayout(
 }
 
 function resetExtraSnake(extra: ExtraSnake, state: GameState): void {
+  const listed = state.extraSnakes.indexOf(extra);
+  if (listed >= 0) {
+    noteDeath(
+      state,
+      listed + 2,
+      extra.snake.head,
+      extra.snake.dir || extra.snake.dirWanted
+    );
+  }
   const teamMode = state.meta.teamMode ?? 'solo';
   let head: GridPos;
   let dirWanted: Direction;
@@ -1442,7 +1471,6 @@ function resetExtraSnake(extra: ExtraSnake, state: GameState): void {
   extra.snake.body = body;
   extra.snake.dir = '';
   extra.snake.dirWanted = dirWanted;
-  const listed = state.extraSnakes.indexOf(extra);
   if (listed >= 0) {
     if (!state.resetCueExtra) state.resetCueExtra = [];
     state.resetCueExtra[listed] = true;

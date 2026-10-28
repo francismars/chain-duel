@@ -1,4 +1,4 @@
-import type { GameState, PlayerId } from '@/game/engine/types';
+import type { GameState, GridPos, PlayerId } from '@/game/engine/types';
 import type { ResetCue } from '@/game/audio/resetCue';
 import {
   captureClipForLength,
@@ -118,11 +118,30 @@ function reorgedLongChain(
   return null;
 }
 
+function impactOf(
+  cells: readonly (GridPos | undefined)[] | undefined,
+  index: number,
+  fallback: GridPos
+): GridPos {
+  const cell = cells?.[index];
+  return cell ? [cell[0], cell[1]] : [fallback[0], fallback[1]];
+}
+
+/** One cell when both chains died there. Otherwise the point between the two impacts. */
+function sharedImpact(a: GridPos, b: GridPos): GridPos {
+  if (a[0] === b[0] && a[1] === b[1]) return [a[0], a[1]];
+  return [
+    Math.round((a[0] + b[0]) / 2),
+    Math.round((a[1] + b[1]) / 2),
+  ];
+}
+
 /** Two resets whose last heads were close enough to be one meeting. */
 function meetingCell(
-  resets: { before: TensionPlayer; after: TensionPlayer }[]
+  resets: { before: TensionPlayer; after: TensionPlayer }[],
+  deathAt: readonly (GridPos | undefined)[] | undefined
 ): {
-  cell: TensionPlayer['head'];
+  cell: GridPos;
   a: { before: TensionPlayer; after: TensionPlayer };
   b: { before: TensionPlayer; after: TensionPlayer };
 } | null {
@@ -134,13 +153,18 @@ function meetingCell(
         Math.abs(a.before.head[0] - b.before.head[0]) +
         Math.abs(a.before.head[1] - b.before.head[1]);
       if (apart > 2) continue;
+      const aCell = impactOf(deathAt, a.before.index, a.before.head);
+      const bCell = impactOf(deathAt, b.before.index, b.before.head);
+      const recorded = deathAt?.[a.before.index] ?? deathAt?.[b.before.index];
       return {
         a,
         b,
-        cell: [
-          Math.round((a.before.head[0] + b.before.head[0]) / 2),
-          Math.round((a.before.head[1] + b.before.head[1]) / 2),
-        ],
+        cell: recorded
+          ? sharedImpact(aCell, bCell)
+          : [
+              Math.round((a.before.head[0] + b.before.head[0]) / 2),
+              Math.round((a.before.head[1] + b.before.head[1]) / 2),
+            ],
       };
     }
   }
@@ -372,6 +396,8 @@ export class GameAudioSystem {
       return;
     }
 
+    const deathAt = state.deathAt;
+    state.deathAt = undefined;
     const reorged = reorgedLongChain(previous, players);
     const toneFor = (index: number): 'white' | 'black' =>
       index === 0 ? 'white' : 'black';
@@ -382,11 +408,33 @@ export class GameAudioSystem {
       if (player.length > before.length) return [];
       return [{ before, after: player }];
     });
+    const reorgPartner = reorged
+      ? resets.find((entry) => entry.before.index !== reorged.index)
+      : undefined;
+    const reorgFromImpact = Boolean(
+      reorged &&
+        (deathAt?.[reorged.index] ??
+          (reorgPartner ? deathAt?.[reorgPartner.before.index] : undefined))
+    );
+    const reorgCell = !reorged
+      ? null
+      : reorgFromImpact
+        ? reorgPartner
+          ? sharedImpact(
+              impactOf(deathAt, reorged.index, reorged.head),
+              impactOf(
+                deathAt,
+                reorgPartner.before.index,
+                reorgPartner.before.head
+              )
+            )
+          : impactOf(deathAt, reorged.index, reorged.head)
+        : [reorged.head[0], reorged.head[1]];
     const lined = new Set<number>();
-    const meeting = reorged ? null : meetingCell(resets);
-    if (reorged) {
+    const meeting = reorged ? null : meetingCell(resets, deathAt);
+    if (reorged && reorgCell) {
       pushCaptureRatePop(
-        reorged.head,
+        reorgCell,
         'REORG',
         true,
         toneFor(reorged.index),
@@ -420,9 +468,9 @@ export class GameAudioSystem {
     }
     for (const { before, after } of resets) {
       if (lined.has(before.index)) continue;
-      if (reorged) {
+      if (reorged && reorgCell) {
         pushCaptureRatePop(
-          before.head,
+          reorgFromImpact ? reorgCell : before.head,
           'WIPE',
           true,
           toneFor(before.index),
@@ -433,7 +481,7 @@ export class GameAudioSystem {
       }
       // One square in that chain's color, on the cell where it died.
       pushCaptureRatePop(
-        before.head,
+        impactOf(deathAt, before.index, before.head),
         'WALL',
         true,
         toneFor(before.index),

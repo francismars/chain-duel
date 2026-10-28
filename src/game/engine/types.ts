@@ -151,6 +151,12 @@ export interface GameState {
   resetCueP2?: boolean;
   /** Parallel to `extraSnakes`. Set for the tick that chain respawns. */
   resetCueExtra?: boolean[];
+  /**
+   * Cell each chain died on this tick, indexed like players (0–3).
+   * Past the outer edge of the board, the last cell still on the grid.
+   * Set before the head snaps home. Cleared on the next step.
+   */
+  deathAt?: (GridPos | undefined)[];
   powerUpItems: PowerUpItem[];
   activePowerUps: ActivePowerUp[];
   obstacleWalls: ObstacleWall[];

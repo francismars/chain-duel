@@ -14,6 +14,7 @@ import {
 } from '@/game/audio/tensionDebug';
 import { lostPlayablePercent } from '@/game/audio/tension';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
+import { visibleDeathCell } from '@/game/engine/deathCell';
 import { captureRateLabel } from '@/game/engine/captureRateLabel';
 import {
   advancePointChanges,
@@ -1117,6 +1118,19 @@ export default function MatchTriggerLab() {
         state.tickCount += 1;
         const seats = struck ? [player, struck.seat] : [player];
         for (const seat of seats) {
+          const dyingRider =
+            SEATS.find((entry) => entry.seat === seat)?.rider ?? rider;
+          const dying = labSnake(state, dyingRider);
+          if (!state.deathAt) state.deathAt = [];
+          const index = seatIndex(seat);
+          if (!state.deathAt[index]) {
+            state.deathAt[index] = visibleDeathCell(
+              dying.head,
+              dying.dir || dying.dirWanted,
+              state.cols,
+              state.rows
+            );
+          }
           snapSeat(state, seat);
           audio.playReset(seat);
         }

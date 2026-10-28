@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { P2_SNAKE_COLOR } from '@/game/engine/constants';
 import { createGameState } from '@/game/engine';
 import { GameAudioSystem, reorgCaptureGap } from './gameAudio';
-import { streakPops, tensionDebugSnapshot } from './tensionDebug';
+import {
+  clearStreakPops,
+  streakPops,
+  tensionDebugSnapshot,
+} from './tensionDebug';
 import { getTensionLevel, wallsClosedLostPercent } from './tension';
 
 function match() {
@@ -376,6 +380,85 @@ describe('game tension', () => {
     expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({
       tone: 'white',
     });
+    audio.stopAll();
+  });
+
+  it('draws the death square on the cell the chain stepped into', () => {
+    clearStreakPops();
+    const audio = new GameAudioSystem();
+    const wall = match();
+    wall.p1.head = [10, 10];
+    wall.p1.body = [[9, 10]];
+    wall.p2.head = [30, 10];
+    wall.p2.body = [[31, 10]];
+    audio.updateGameState(wall);
+    wall.deathAt = [[11, 10]];
+    wall.p1.head = [6, 12];
+    wall.p1.body = [[5, 12]];
+    audio.updateGameState(wall);
+    expect(streakPops().find((pop) => pop.text === 'WALL')).toMatchObject({
+      col: 11,
+      row: 10,
+      toCol: 6,
+      toRow: 12,
+      tone: 'white',
+    });
+
+    clearStreakPops();
+    const clash = match();
+    clash.p1.head = [10, 10];
+    clash.p1.body = [[9, 10]];
+    clash.p2.head = [11, 10];
+    clash.p2.body = [[12, 10]];
+    audio.updateGameState(clash);
+    clash.deathAt = [
+      [10, 10],
+      [10, 10],
+    ];
+    clash.p1.head = [6, 12];
+    clash.p1.body = [[5, 12]];
+    clash.p2.head = [44, 12];
+    clash.p2.body = [[45, 12]];
+    audio.updateGameState(clash);
+    expect(streakPops().find((pop) => pop.text === 'CLASH')).toMatchObject({
+      col: 10,
+      row: 10,
+    });
+    expect(streakPops().filter((pop) => pop.text === 'WIPE')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ col: 10, row: 10, toCol: 6, toRow: 12 }),
+        expect.objectContaining({ col: 10, row: 10, toCol: 44, toRow: 12 }),
+      ])
+    );
+
+    clearStreakPops();
+    const reorg = match();
+    reorg.p1.head = [10, 10];
+    reorg.p1.body = Array(7).fill([9, 10]);
+    reorg.p2.head = [11, 10];
+    reorg.p2.body = [[12, 10]];
+    audio.updateGameState(reorg);
+    reorg.deathAt = [
+      [11, 10],
+      [11, 10],
+    ];
+    reorg.p1.head = [6, 12];
+    reorg.p1.body = [[5, 12]];
+    reorg.p2.head = [44, 12];
+    reorg.p2.body = [[45, 12]];
+    audio.updateGameState(reorg);
+    expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({
+      col: 11,
+      row: 10,
+      fill: 0xffffff,
+      fillInner: P2_SNAKE_COLOR,
+    });
+    expect(streakPops().filter((pop) => pop.text === 'WIPE')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ col: 11, row: 10, toCol: 6, toRow: 12 }),
+        expect.objectContaining({ col: 11, row: 10, toCol: 44, toRow: 12 }),
+      ])
+    );
     audio.stopAll();
   });
 
