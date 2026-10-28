@@ -1278,9 +1278,9 @@ export default function MatchTriggerLab() {
     };
     frame = window.requestAnimationFrame(loop);
 
-    const board = boardRef.current;
     const observer = new ResizeObserver(() => rendererRef.current?.resize());
-    if (board) observer.observe(board);
+    const observed = host ?? boardRef.current;
+    if (observed) observer.observe(observed);
 
     return () => {
       cancelled = true;

@@ -314,7 +314,12 @@ export default function OnlineGame({
       renderer.resize();
       const onResize = () => renderer.resize();
       window.addEventListener('resize', onResize);
-      detachResize = () => window.removeEventListener('resize', onResize);
+      const ro = new ResizeObserver(onResize);
+      ro.observe(hostEl);
+      detachResize = () => {
+        window.removeEventListener('resize', onResize);
+        ro.disconnect();
+      };
     });
     let raf = 0;
     let lastPaintedSnapshot: OnlineRoomSnapshot | null = null;

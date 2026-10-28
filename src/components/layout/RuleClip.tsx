@@ -431,11 +431,24 @@ export function RuleClip({ id }: { id: RuleClipId }) {
       state.coinbases = coins;
     };
 
+    let detachResize: (() => void) | undefined;
+    let sizeChanged = false;
     void renderer.mount(host).then(() => {
       if (stopped) {
         renderer.destroy();
         return;
       }
+      const onResize = () => {
+        renderer.resize();
+        sizeChanged = true;
+      };
+      window.addEventListener('resize', onResize);
+      const ro = new ResizeObserver(onResize);
+      ro.observe(host);
+      detachResize = () => {
+        window.removeEventListener('resize', onResize);
+        ro.disconnect();
+      };
       paint();
       let last = performance.now();
       let carry = 0;
@@ -451,7 +464,10 @@ export function RuleClip({ id }: { id: RuleClipId }) {
           stepped = true;
         }
         advancePointChanges(state, delta);
-        if (stepped || (state.pointChanges?.length ?? 0) > 0) paint();
+        if (stepped || (state.pointChanges?.length ?? 0) > 0 || sizeChanged) {
+          sizeChanged = false;
+          paint();
+        }
         frame = window.requestAnimationFrame(loop);
       };
       frame = window.requestAnimationFrame(loop);
@@ -459,6 +475,7 @@ export function RuleClip({ id }: { id: RuleClipId }) {
 
     return () => {
       stopped = true;
+      detachResize?.();
       window.cancelAnimationFrame(frame);
       renderer.destroy();
     };

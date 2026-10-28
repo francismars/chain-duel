@@ -147,7 +147,7 @@ export class PixiGameRenderer {
   private readonly textResolution = pixiTextResolution();
   /** Time inside Pixi's app.render() (draw calls and uploads) on the last paint; Show FPS reads it. */
   lastSubmitMs = 0;
-  /** Last `game-result-active` value, when per-frame DOM work is off. */
+  /** Last `game-result-active` value applied to the board. */
   private resultActiveApplied: boolean | null = null;
 
   constructor() {
@@ -485,11 +485,7 @@ export class PixiGameRenderer {
   }
 
   render(state: GameState, opts?: PixiRenderOpts): void {
-    if (this.graphics.measureEveryFrame) {
-      this.host
-        ?.closest('#gameCanvas')
-        ?.classList.toggle('game-result-active', state.gameEnded);
-    } else if (this.resultActiveApplied !== state.gameEnded) {
+    if (this.resultActiveApplied !== state.gameEnded) {
       this.resultActiveApplied = state.gameEnded;
       this.host
         ?.closest('#gameCanvas')
@@ -504,22 +500,16 @@ export class PixiGameRenderer {
       this.renderFallback(state, opts);
       return;
     }
-    // The ResizeObserver keeps lastResize* current, so skipping the read
-    // avoids forcing a style + layout pass every frame.
-    const useCachedSize =
-      !this.graphics.measureEveryFrame &&
-      this.lastResizeWidth > 0 &&
-      this.lastResizeHeight > 0;
-    let width = useCachedSize
-      ? this.lastResizeWidth
-      : (this.host?.clientWidth ?? renderer.width);
-    let height = useCachedSize
-      ? this.lastResizeHeight
-      : (this.host?.clientHeight ?? renderer.height);
-    if (width <= 0 || height <= 0) {
+    // Host ResizeObserver and the window resize listener keep lastResize*
+    // current. Reading clientWidth here would force a layout pass every paint.
+    if (this.lastResizeWidth <= 0 || this.lastResizeHeight <= 0) {
       this.resize();
-      width = this.host?.clientWidth ?? renderer.width;
-      height = this.host?.clientHeight ?? renderer.height;
+    }
+    let width = this.lastResizeWidth;
+    let height = this.lastResizeHeight;
+    if (width <= 0 || height <= 0) {
+      width = renderer.width;
+      height = renderer.height;
     }
     if (width > 0 && height > 0) {
       this.lastOverlayWidth = width;

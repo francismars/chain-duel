@@ -15,8 +15,6 @@ export type AnimationMode = 'full' | 'reduced' | 'off';
 export interface GraphicsSettings {
   /** WebGL MSAA. Off saves a resolve pass each frame. */
   antialias: boolean;
-  /** Read the board size from the DOM every frame. Off trusts the ResizeObserver size and skips the forced layout. */
-  measureEveryFrame: boolean;
   /** Blurred text shadows (countdown, start words, hints), coin halo, and see-through board/HUD layers. */
   shadowsAndTransparency: boolean;
   /** The +/- sats numbers over the chains after a capture. */
@@ -31,7 +29,6 @@ export interface GraphicsSettings {
 
 export const DEFAULT_GRAPHICS_SETTINGS: GraphicsSettings = {
   antialias: true,
-  measureEveryFrame: true,
   shadowsAndTransparency: true,
   pointPopups: 'full',
   animations: 'full',
@@ -74,8 +71,6 @@ export function readGraphicsSettings(): GraphicsSettings {
     const merged = { ...DEFAULT_GRAPHICS_SETTINGS };
     if (typeof parsed.antialias === 'boolean')
       merged.antialias = parsed.antialias;
-    if (typeof parsed.measureEveryFrame === 'boolean')
-      merged.measureEveryFrame = parsed.measureEveryFrame;
     if (typeof parsed.shadowsAndTransparency === 'boolean')
       merged.shadowsAndTransparency = parsed.shadowsAndTransparency;
     if (typeof parsed.showFps === 'boolean') merged.showFps = parsed.showFps;
@@ -122,7 +117,6 @@ export function performanceGraphicsSettings(
 ): GraphicsSettings {
   return {
     antialias: false,
-    measureEveryFrame: false,
     shadowsAndTransparency: false,
     pointPopups: 'simple',
     animations: 'reduced',
