@@ -61,15 +61,19 @@ export function MatchEndCard({
   getState,
   suppressedRef,
   continueLabelRef,
+  instantRef,
   hidden = false,
 }: {
   getState: () => GameState | null;
   suppressedRef?: MutableRefObject<boolean>;
   continueLabelRef?: MutableRefObject<string | null>;
+  /** Snap the card to its finished frame. A confirm press sets this during the hold. */
+  instantRef?: MutableRefObject<boolean>;
   hidden?: boolean;
 }) {
   const [copy, setCopy] = useState<EndCopy | null>(null);
   const [viewerLost, setViewerLost] = useState(false);
+  const [instant, setInstant] = useState(false);
   const getStateRef = useRef(getState);
   getStateRef.current = getState;
 
@@ -88,6 +92,10 @@ export function MatchEndCard({
         !hidden &&
         !suppressedRef?.current &&
         (state.winnerName.length > 0 || state.winnerPlayer)
+      );
+      const wantInstant = Boolean(show && instantRef?.current);
+      setInstant((current) =>
+        current === wantInstant ? current : wantInstant
       );
       if (!show) {
         if (key) {
@@ -108,7 +116,7 @@ export function MatchEndCard({
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [continueLabelRef, hidden, suppressedRef]);
+  }, [continueLabelRef, hidden, instantRef, suppressedRef]);
 
   if (!copy) return null;
 
@@ -117,7 +125,9 @@ export function MatchEndCard({
       {!viewerLost
         ? createPortal(
             <SoloZapRadiatingLines
-              className="end-screen-rays end-screen-rays--burst"
+              className={`end-screen-rays end-screen-rays--burst${
+                instant ? ' end-screen-rays--burst-done' : ''
+              }`}
               tone="burst"
             />,
             document.body
@@ -127,11 +137,15 @@ export function MatchEndCard({
         <div className="match-end-layer">
           {viewerLost ? null : (
             <SoloZapRadiatingLines
-              className="end-screen-rays match-end-layer__rays"
+              className={`end-screen-rays match-end-layer__rays${
+                instant ? ' match-end-layer__rays--instant' : ''
+              }`}
               tone="calm"
             />
           )}
-          <div className="match-end-card">
+          <div
+            className={`match-end-card${instant ? ' match-end-card--instant' : ''}`}
+          >
             <Sponsorship id="sponsorship-match-end" />
             <p className="match-end-card__kicker">{copy.kicker}</p>
             <p className="match-end-card__name">{copy.winner.toUpperCase()}</p>

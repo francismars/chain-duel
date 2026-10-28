@@ -13,6 +13,11 @@
   animation: match-end-burst-out 0.7s ease 1.05s forwards;
 }
 
+.end-screen-rays--burst-done {
+  opacity: 0;
+  animation: none;
+}
+
 body:has(.end-screen-rays--burst)
   :is(
     #gameCanvas,

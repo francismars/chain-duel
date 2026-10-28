@@ -47,7 +47,11 @@ import { MatchStartPrompt } from '@/features/game/MatchStartPrompt';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { createNewCoinbase } from '@/game/engine';
 import type { BlockInfo } from '@/game/io/mempool';
-import { useGamepad } from '@/hooks/useGamepad';
+import {
+  isGamepadFaceHeld,
+  isGamepadSyntheticKey,
+  useGamepad,
+} from '@/hooks/useGamepad';
 import { useSocket } from '@/hooks/useSocket';
 import { useAudio } from '@/contexts/AudioContext';
 import { PlayerRole } from '@/types/socket';
@@ -257,7 +261,14 @@ export default function Game() {
   const [freePlayEndFocus, setFreePlayEndFocus] =
     useState<FreePlayEndFocus>('again');
   const freePlayEndPendingRef = useRef(false);
+  const freePlayEndVisibleRef = useRef(false);
+  const freePlayEndTimerRef = useRef(0);
+  /** Confirm that opened the choices is ignored until that button is released. */
+  const freePlaySkipLatchRef = useRef(false);
+  const freePlaySkipFromPadRef = useRef(false);
+  const endCardInstantRef = useRef(false);
   const suppressVictoryOverlayRef = useRef(false);
+  freePlayEndVisibleRef.current = freePlayEnd;
   const [soloZapOverlayVisible, setSoloZapOverlayVisible] = useState(false);
   const [showExitOverlay, setShowExitOverlay] = useState(false);
   const [exitOverlayFocus, setExitOverlayFocus] = useState<'abort' | 'confirm'>(
@@ -1004,6 +1015,9 @@ export default function Game() {
         quickMatchStartedAtRef.current = Date.now();
         quickMatchCompletedRef.current = false;
         freePlayEndPendingRef.current = false;
+        freePlaySkipLatchRef.current = false;
+        freePlaySkipFromPadRef.current = false;
+        endCardInstantRef.current = false;
         suppressVictoryOverlayRef.current = false;
         setFreePlayEnd(false);
         setFreePlayEndFocus('again');
@@ -1173,9 +1187,11 @@ export default function Game() {
       blockChallengeContinueRef.current = true;
       suppressVictoryOverlayRef.current = false;
       endTimer = window.setTimeout(() => {
+        freePlayEndTimerRef.current = 0;
         setFreePlayEndFocus('again');
         setFreePlayEnd(true);
       }, endOverlayActionsDelayMs(state.convergenceWallClosed));
+      freePlayEndTimerRef.current = endTimer;
 
       const won =
         state.winnerPlayer === 'P1' ||
@@ -1192,6 +1208,7 @@ export default function Game() {
     return () => {
       window.clearInterval(poll);
       window.clearTimeout(endTimer);
+      freePlayEndTimerRef.current = 0;
     };
   }, [loading, socket, stateRef]);
 
@@ -1436,14 +1453,78 @@ export default function Game() {
     navigate(practiceHubExitPath(readSessionGameConfig()));
   }, [navigate]);
 
+  const revealFreePlayChoices = useCallback(() => {
+    window.clearTimeout(freePlayEndTimerRef.current);
+    freePlayEndTimerRef.current = 0;
+    endCardInstantRef.current = true;
+    setFreePlayEndFocus('again');
+    setFreePlayEnd(true);
+  }, []);
+
   const replayFreePlay = useCallback(() => {
     freePlayEndPendingRef.current = false;
+    freePlaySkipLatchRef.current = false;
+    freePlaySkipFromPadRef.current = false;
+    endCardInstantRef.current = false;
     suppressVictoryOverlayRef.current = false;
     blockChallengeContinueRef.current = false;
     setFreePlayEnd(false);
     localBootRef.current = false;
     bootstrapLocalGame();
   }, [bootstrapLocalGame]);
+
+  useEffect(() => {
+    const isConfirm = (event: KeyboardEvent) =>
+      event.key === 'Enter' || event.key === ' ';
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!isConfirm(event)) return;
+      if (freePlaySkipLatchRef.current) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (
+        !freePlayEndPendingRef.current ||
+        freePlayEndVisibleRef.current ||
+        event.repeat
+      ) {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      freePlaySkipLatchRef.current = true;
+      freePlaySkipFromPadRef.current = isGamepadSyntheticKey(event);
+      revealFreePlayChoices();
+    };
+
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (!isConfirm(event) || freePlaySkipFromPadRef.current) return;
+      freePlaySkipLatchRef.current = false;
+    };
+
+    let frame = 0;
+    const watchPadRelease = () => {
+      if (
+        freePlaySkipLatchRef.current &&
+        freePlaySkipFromPadRef.current &&
+        !isGamepadFaceHeld()
+      ) {
+        freePlaySkipLatchRef.current = false;
+        freePlaySkipFromPadRef.current = false;
+      }
+      frame = window.requestAnimationFrame(watchPadRelease);
+    };
+    frame = window.requestAnimationFrame(watchPadRelease);
+
+    window.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('keyup', onKeyUp, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('keyup', onKeyUp, true);
+    };
+  }, [revealFreePlayChoices]);
 
   useEffect(() => {
     if (!freePlayEnd) return;
@@ -1469,6 +1550,11 @@ export default function Game() {
         return;
       }
       if (event.key === 'Enter' || event.key === ' ') {
+        if (freePlaySkipLatchRef.current) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return;
+        }
         event.preventDefault();
         event.stopImmediatePropagation();
         if (freePlayEndFocus === 'menu') confirmExitToMenu();
@@ -1973,6 +2059,7 @@ export default function Game() {
               getState={() => stateRef.current}
               suppressedRef={suppressVictoryOverlayRef}
               continueLabelRef={challengeContinueLabelRef}
+              instantRef={endCardInstantRef}
               hidden={soloZapOverlayVisible}
             />
           </div>
