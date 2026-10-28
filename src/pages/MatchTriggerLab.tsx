@@ -222,9 +222,17 @@ const SOLO_CLIPS: SoloClip[] = [
     inMode: () => true,
   },
   {
+    id: 'warn',
+    name: 'Wall warning',
+    src: '/sound/chain_duel_warn.wav',
+    loop: false,
+    where: 'Border lights, the second before a step',
+    inMode: (mode) => mode.convergence,
+  },
+  {
     id: 'shrink',
     name: 'Shrink',
-    src: '/sound/chain_duel_shrink.m4a',
+    src: '/sound/chain_duel_shrink.wav',
     loop: false,
     where: 'Walls step in',
     inMode: (mode) => mode.convergence,

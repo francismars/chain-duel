@@ -166,12 +166,13 @@ A stem holds 1 second after its mark drops, then fades over 2.5 seconds. The bed
 
 Other cues, all silenced by full mute:
 
-- **Shrink** (`chain_duel_shrink.m4a`) on a real border contraction. Warning flashes are silent.
+- **Wall warning** (`chain_duel_warn.wav`) for the second the border is lit, before it steps.
+- **Shrink** (`chain_duel_shrink.wav`) when the border actually steps in.
 - **Reset** when a chain respawns.
 - **End** (`chain_duel_end.wav`) as results take over and pressure stems stop. Menu music keeps its place. Playing again restarts the game bed.
 - **Block found** (`MAINNET_BLOCK.aac`) is separate from the ending cue.
 
-Rebuild stems with `python3 scripts/audio/create-game-cues.py`. `--end-only` rebuilds the ending cue. `python3 scripts/audio/create-shrink-cue.py` rebuilds the shrink sweep.
+Rebuild stems with `python3 scripts/audio/create-game-cues.py`. `--end-only` rebuilds the ending cue. `python3 scripts/audio/create-shrink-cue.py` rebuilds the shrink cue.
 
 `/preview` and `/preview/match-triggers` are local labs for this layer. They are not shipped modes.
 

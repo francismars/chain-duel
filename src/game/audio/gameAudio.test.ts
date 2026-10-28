@@ -627,7 +627,7 @@ describe('game tension', () => {
 });
 
 describe('board contraction audio', () => {
-  it('plays once per contraction, ignoring warnings, resets and repeated snapshots', () => {
+  it('warns while the edge is lit, then closes once per contraction', () => {
     const audio = new GameAudioSystem();
     const state = match();
     state.shrinkBorder = {
@@ -640,12 +640,15 @@ describe('board contraction audio', () => {
     audio.updateGameState(state);
     state.shrinkBorder.warningActive = true;
     audio.updateGameState(state);
+    audio.updateGameState(state);
+    expect(cue('chain_duel_warn').play).toHaveBeenCalledTimes(1);
     expect(cue('chain_duel_shrink').play).not.toHaveBeenCalled();
     state.shrinkBorder.left++;
     state.shrinkBorder.right--;
     audio.updateGameState(state);
     audio.updateGameState(structuredClone(state));
     expect(cue('chain_duel_shrink').play).toHaveBeenCalledTimes(1);
+    expect(cue('chain_duel_warn').play).toHaveBeenCalledTimes(1);
     state.shrinkBorder.top++;
     audio.updateGameState(state);
     expect(cue('chain_duel_shrink').play).toHaveBeenCalledTimes(2);
