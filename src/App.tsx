@@ -9,6 +9,7 @@ import { AudioProvider } from './contexts/AudioContext';
 import { NostrSessionProvider } from './contexts/NostrSessionContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { CornerControls } from './components/ui/CornerControls';
+import { TouchMatchFrame } from './features/game/TouchMatchFrame';
 import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import { useClientTelemetry } from './hooks/useClientTelemetry';
 import { useKeyboardLayoutAutodetect } from './hooks/useKeyboardLayoutAutodetect';
@@ -57,7 +58,14 @@ function AppRoutes() {
         {/* Home & game flow */}
         <Route path="/" element={<Index />} />
         <Route path="/gamemenu" element={<GameMenu />} />
-        <Route path="/game" element={<Game />} />
+        <Route
+          path="/game"
+          element={
+            <TouchMatchFrame>
+              <Game />
+            </TouchMatchFrame>
+          }
+        />
         <Route path="/postgame" element={<PostGame />} />
 
         {/* Practice hub: canonical /practice; legacy aliases */}

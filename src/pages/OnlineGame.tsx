@@ -23,6 +23,7 @@ import type {
 import { useGamepad } from '@/hooks/useGamepad';
 import { canContinueOnlineAfterGame } from '@/game/engine';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
+import { useTouchGestureAudio } from '@/features/game/useTouchGestureAudio';
 import { resetCuesFromTransition } from '@/game/audio/resetCue';
 import { advanceStreakPops, streakPops } from '@/game/audio/tensionDebug';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
@@ -174,6 +175,7 @@ export default function OnlineGame({
   if (!audioRef.current) {
     audioRef.current = new GameAudioSystem();
   }
+  useTouchGestureAudio(audioRef);
   const prevGameStateRef = useRef<GameState | null>(null);
   const gameMusicStartedRef = useRef(false);
   const continueNavigatedRef = useRef(false);

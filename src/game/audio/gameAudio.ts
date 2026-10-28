@@ -299,6 +299,12 @@ export class GameAudioSystem {
     this.playMusicLayers();
   }
 
+  /** Call from a touch. A play() that ran before the gesture stays blocked on iOS. */
+  resumeFromGesture(): void {
+    if (!this.musicShouldPlay || this.appMusicMuted) return;
+    this.playMusicLayers();
+  }
+
   stopAll(): void {
     if (this.endingPlayed) saveMenuMusicPosition(this.menuMusic.currentTime);
     this.musicShouldPlay = false;

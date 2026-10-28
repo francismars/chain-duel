@@ -39,6 +39,7 @@ import { initRunRng, clearRunRng } from '@/game/engine/runRng';
 import type { GameState } from '@/game/engine/types';
 import { normalizeAiTier } from '@/game/engine/types';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
+import { useTouchGestureAudio } from '@/features/game/useTouchGestureAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { endOverlayActionsDelayMs } from '@/game/render/endGameOverlay';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
@@ -195,6 +196,7 @@ export default function Game() {
   if (!audioRef.current) {
     audioRef.current = new GameAudioSystem();
   }
+  useTouchGestureAudio(audioRef);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const winnerSentRef = useRef(false);
   const quickMatchStartedAtRef = useRef<number | null>(null);
