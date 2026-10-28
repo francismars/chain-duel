@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router';
 import { UI_DEBUG_GROUPS } from '@/lib/uiDebug/uiDebugCatalog';
 import {
@@ -83,50 +84,53 @@ export function UiDebugMenu() {
           <path d="M4 7h16M4 12h16M4 17h10" />
         </svg>
       </button>
-      {open ? (
-        <div className="ui-debug-menu__panel" role="menu">
-          <div className="ui-debug-menu__head">
-            <div className="ui-debug-menu__head-links">
-              <Link to="/" onClick={() => setOpen(false)}>
-                Home
-              </Link>
-              <Link to="/preview" onClick={() => setOpen(false)}>
-                All test pages
-              </Link>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                writeUiDebugEnabled(false);
-              }}
-            >
-              Turn off debug
-            </button>
-            <p>
-              To turn it back on, type debug, press Ctrl+Shift+D, or open a URL
-              like /?debug.
-            </p>
-          </div>
-          <div className="ui-debug-menu__groups">
-            {UI_DEBUG_GROUPS.map((group) => (
-              <section key={group.title}>
-                <p>{group.title}</p>
-                <ul>
-                  {group.links.map((link) => (
-                    <li key={link.href}>
-                      <Link to={link.href} onClick={() => setOpen(false)}>
-                        {link.variant ? <span>{link.variant}</span> : null}
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      {open
+        ? createPortal(
+            <div className="ui-debug-menu__panel" role="menu">
+              <div className="ui-debug-menu__head">
+                <div className="ui-debug-menu__head-links">
+                  <Link to="/" onClick={() => setOpen(false)}>
+                    Home
+                  </Link>
+                  <Link to="/preview" onClick={() => setOpen(false)}>
+                    All test pages
+                  </Link>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    writeUiDebugEnabled(false);
+                  }}
+                >
+                  Turn off debug
+                </button>
+                <p>
+                  To turn it back on, type debug, press Ctrl+Shift+D, or open a
+                  URL like /?debug.
+                </p>
+              </div>
+              <div className="ui-debug-menu__groups">
+                {UI_DEBUG_GROUPS.map((group) => (
+                  <section key={group.title}>
+                    <p>{group.title}</p>
+                    <ul>
+                      {group.links.map((link) => (
+                        <li key={link.href}>
+                          <Link to={link.href} onClick={() => setOpen(false)}>
+                            {link.variant ? <span>{link.variant}</span> : null}
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }

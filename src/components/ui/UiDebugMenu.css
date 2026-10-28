@@ -8,11 +8,11 @@
 }
 
 .ui-debug-menu__panel {
-  /* .corner-controls is transform-centered, so fixed is relative to that box. */
   position: fixed;
-  left: calc(100% + 0.6rem);
-  top: calc(1rem - 50vh + 50%);
-  width: min(54rem, calc(100vw - 5rem));
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(54rem, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);
   overflow: auto;
   padding: 0.75rem 0.85rem 0.9rem;
@@ -20,7 +20,7 @@
   border: 1px solid rgb(255 255 255 / 0.28);
   color: #eee;
   text-align: left;
-  z-index: 120;
+  z-index: 11001;
 }
 
 .ui-debug-menu__head {
@@ -38,7 +38,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem 0.9rem;
+  gap: 0.4rem;
 }
 
 .ui-debug-menu__head p {
@@ -63,13 +63,26 @@
   text-decoration: none;
 }
 
+.ui-debug-menu__head-links a,
 .ui-debug-menu__head button {
   align-self: center;
   padding: 0.28rem 0.5rem;
-  border: 1px solid rgb(255 180 180 / 0.7);
+  border: 1px solid rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.06);
+  line-height: 1;
+}
+
+.ui-debug-menu__head-links a:hover,
+.ui-debug-menu__head-links a:focus-visible {
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+  border-color: #fff;
+}
+
+.ui-debug-menu__head button {
+  border-color: rgb(255 180 180 / 0.7);
   background: rgb(255 80 80 / 0.12);
   color: #ffb4b4;
-  line-height: 1;
 }
 
 .ui-debug-menu__head button:hover,
@@ -126,8 +139,8 @@
 }
 
 html.tv-safe-inset .ui-debug-menu__panel {
-  top: calc(var(--tv-safe-padding) + 0.5rem - 50vh + 50%);
-  max-height: calc(100vh - var(--tv-safe-padding) - 1.5rem);
+  width: min(54rem, calc(100vw - (var(--tv-safe-padding) * 2) - 1rem));
+  max-height: calc(100vh - (var(--tv-safe-padding) * 2) - 1rem);
 }
 
 .ui-debug-index {
