@@ -3,8 +3,6 @@ import { streakPops, type StreakPop } from '@/game/audio/tensionDebug';
 
 const WHITE = 0xffffff;
 const BLACK = 0x111111;
-/** Same gold as the old REORG word. Clash and reorg both use it. */
-const GOLD = 0xf0c14d;
 
 type RingSpec = { life: number; from: number; to: number; peak: number };
 
@@ -18,12 +16,9 @@ const SPAWN_RING: RingSpec = { life: 1, from: 0.85, to: 1.05, peak: 0.55 };
 function ringColor(pop: StreakPop): { fill: number; css: string } {
   const tone =
     pop.tone ??
-    (pop.text === 'CLASH' || pop.text === 'REORG'
-      ? 'gold'
-      : pop.text === 'WALL' || pop.text === 'SPAWN'
-        ? 'white'
-        : 'black');
-  if (tone === 'gold') return { fill: GOLD, css: '#f0c14d' };
+    (pop.text === 'CLASH' || pop.text === 'REORG' || pop.text === 'WALL' || pop.text === 'SPAWN'
+      ? 'white'
+      : 'black');
   if (pop.fill != null) {
     return {
       fill: pop.fill,
@@ -152,7 +147,7 @@ function paintMark(
   }
   if (pop.text === 'WIPE') return;
 
-  // REORG: two close gold squares — same stroke as WALL/CLASH; double ring is the cue.
+  // REORG: two close squares — same stroke as WALL/CLASH; double ring is the cue.
   if (pop.text === 'REORG') {
     const innerHalf = half * 0.72;
     strokeSquare(mark.ring, half, width, color, drawn.alpha * 0.85);

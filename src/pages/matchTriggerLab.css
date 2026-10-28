@@ -106,11 +106,12 @@
   position: relative;
   margin-top: 0;
   width: 100%;
-  aspect-ratio: 51 / 25;
+  aspect-ratio: 1055 / 527;
   background-color: #6969698f;
   background-image: url('/images/game_bg.png');
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
+  background-repeat: no-repeat;
   cursor: crosshair;
   touch-action: none;
 }
@@ -135,7 +136,7 @@
   border: 1px solid currentColor;
   pointer-events: none;
   transform: translate(-50%, -50%) scale(0.72);
-  animation: match-lab-impact 0.35s ease-out forwards;
+  animation: match-lab-impact 0.5s ease-out forwards;
 }
 
 .match-lab__impact.is-wall.is-white {
@@ -147,14 +148,18 @@
 }
 
 .match-lab__impact.is-clash {
-  color: #f0c14d;
+  color: #fff;
+}
+
+.match-lab__impact.is-black {
+  box-shadow: 0 0 0 1px #fff;
 }
 
 .match-lab__impact.is-reorg {
   width: 6.5%;
   border-width: 1px;
-  color: #f0c14d;
-  animation-duration: 0.5s;
+  color: #fff;
+  animation-duration: 0.6s;
 }
 
 .match-lab__impact.is-reorg::after {
@@ -166,11 +171,11 @@
 
 @keyframes match-lab-impact {
   0% {
-    opacity: 0.72;
+    opacity: 0.95;
     transform: translate(-50%, -50%) scale(0.72);
   }
-  35% {
-    opacity: 0.55;
+  70% {
+    opacity: 0.85;
   }
   100% {
     opacity: 0;

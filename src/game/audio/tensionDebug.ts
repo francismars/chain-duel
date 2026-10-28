@@ -37,8 +37,8 @@ export interface StreakPop {
   alpha: number;
   /** True when the capture rate went up. */
   up: boolean;
-  /** Wall uses the chain's color. Clash and reorg use gold. */
-  tone?: 'white' | 'black' | 'gold';
+  /** Wall, clash, and reorg are white or black. */
+  tone?: 'white' | 'black';
   /** On-board fill for a wall or spawn. Gold marks ignore it. */
   fill?: number;
   /** Spawn cell for a thin death→home wipe. */
@@ -149,7 +149,7 @@ export function pushCaptureRatePop(
   head: GridPos,
   label: string,
   up: boolean,
-  tone?: 'white' | 'black' | 'gold',
+  tone?: 'white' | 'black',
   home?: GridPos,
   fill?: number
 ): void {

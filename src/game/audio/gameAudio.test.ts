@@ -206,7 +206,7 @@ describe('game tension', () => {
     expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({
       col: 10,
       row: 10,
-      tone: 'gold',
+      tone: 'white',
       toCol: undefined,
       toRow: undefined,
     });
@@ -248,7 +248,7 @@ describe('game tension', () => {
       true
     );
     expect(streakPops().slice(before).find((pop) => pop.text === 'REORG')).toMatchObject({
-      tone: 'gold',
+      tone: 'white',
       col: 10,
       row: 10,
     });
@@ -317,7 +317,7 @@ describe('game tension', () => {
       true
     );
     expect(streakPops().slice(closeBefore).find((pop) => pop.text === 'CLASH')).toMatchObject({
-      tone: 'gold',
+      tone: 'white',
     });
     const clashWipes = streakPops()
       .slice(closeBefore)
@@ -329,7 +329,7 @@ describe('game tension', () => {
       ])
     );
     expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({
-      tone: 'gold',
+      tone: 'white',
     });
     audio.stopAll();
   });

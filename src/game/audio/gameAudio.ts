@@ -371,9 +371,8 @@ export class GameAudioSystem {
     });
     const lined = new Set<number>();
     if (reorged) {
-      // Gold marks the crash. The line home is the chain's own color, below.
-      pushCaptureRatePop(reorged.head, 'REORG', true, 'gold');
-    } else if (clash) pushCaptureRatePop(clash, 'CLASH', true, 'gold');
+      pushCaptureRatePop(reorged.head, 'REORG', true, toneFor(reorged.index));
+    } else if (clash) pushCaptureRatePop(clash, 'CLASH', true, 'white');
     else {
       for (const { before, after } of resets) {
         // Wall, own body, or another body: one ordinary square in that chain's color.

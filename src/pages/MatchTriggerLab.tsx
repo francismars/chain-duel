@@ -1034,6 +1034,7 @@ export default function MatchTriggerLab() {
                 return head[0] === next[0] && head[1] === next[1];
               })
             : undefined;
+        const markAt: GridPos = inPlay(state, next) ? next : [snake.head[0], snake.head[1]];
         commitMove(snake, next, false);
         state.tickCount += 1;
         audio.updateGameState(state);
@@ -1043,6 +1044,13 @@ export default function MatchTriggerLab() {
           audio.playReset(seat);
         }
         pathRef.current = [];
+        setImpact({
+          id: performance.now(),
+          col: markAt[0],
+          row: markAt[1],
+          kind: kind === 'headon' ? (gap ? 'reorg' : 'clash') : 'wall',
+          tone: player === 'P1' ? 'white' : 'black',
+        });
         state.tickCount += 1;
         // One mark from the detector only — a second lab CSS square on a
         // different cell was reading as "different squares" on REORG.
@@ -1530,7 +1538,7 @@ export default function MatchTriggerLab() {
     // when the chain was already on spawn so the teleport never registers.
     audio.updateGameState(current);
     const want = isReorg ? 'REORG' : 'WALL';
-    const tone = isReorg ? 'gold' : player === 'P1' ? 'white' : 'black';
+    const tone = player === 'P1' ? 'white' : 'black';
     const home: GridPos = [dying.head[0], dying.head[1]];
     if (!streakPops().some((pop) => pop.text === want)) {
       pushCaptureRatePop(markAt, want, true, tone, isReorg ? undefined : home);
