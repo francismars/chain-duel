@@ -591,11 +591,11 @@ export default function TournamentBracket() {
     setFocusedBtn('left');
   }, [playConfirm]);
 
-  function handleBackToPayment() {
+  const handleBackToPayment = useCallback(() => {
     playSelect();
     setPanelView('payment');
     setFocusedBtn('left');
-  }
+  }, [playSelect]);
 
   const handleConfirmCancel = useCallback(() => {
     playConfirm();
@@ -718,6 +718,7 @@ export default function TournamentBracket() {
       playConfirm,
       playSelect,
       preStartReady,
+      handleBackToPayment,
       handleCancel,
       handleConfirmCancel,
       handleStartNextGame,

@@ -385,6 +385,9 @@ export const PracticeChallengesPanel = forwardRef<
   const { socket, connected } = useSocket();
 
   const [challenges, setChallenges] = useState<Challenge[]>(DEFAULT_CHALLENGES);
+  /** Latest catalog for callbacks and listeners that should not resubscribe when it loads. */
+  const challengesRef = useRef(challenges);
+  challengesRef.current = challenges;
 
   useEffect(() => {
     if (!socket) return;
@@ -619,6 +622,9 @@ export const PracticeChallengesPanel = forwardRef<
           }
         });
     },
+    // pubkey is not read, but a new identity must produce a new callback so
+    // the eligibility effects refetch for the account that just signed in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [socket, connected, nostrSession.signedIn, nostrSession.pubkey]
   );
 
@@ -848,7 +854,7 @@ export const PracticeChallengesPanel = forwardRef<
   }, [activeCheckAction, closeCheckOverlay, overlayKeyboardFocus, playSfx]);
 
   const animateLockedRowBounty = useCallback((rowIndex: number) => {
-    const target = challenges[rowIndex]?.bounty;
+    const target = challengesRef.current[rowIndex]?.bounty;
     if (target == null) return;
 
     const existing = lockedBountyRafRefs.current[rowIndex];
@@ -896,7 +902,7 @@ export const PracticeChallengesPanel = forwardRef<
       cancelAnimationFrame(bountyRafRef.current);
     if (!nostrSession.signedIn) return;
 
-    const target = challenges[selected].bounty;
+    const target = challengesRef.current[selected].bounty;
     const duration = 520;
     const start = performance.now();
 
@@ -930,7 +936,7 @@ export const PracticeChallengesPanel = forwardRef<
     }
 
     if (panelJustEntered) {
-      challenges.forEach((_, i) => animateLockedRowBounty(i));
+      challengesRef.current.forEach((_, i) => animateLockedRowBounty(i));
     }
 
     return cancelLockedBountyAnimations;
@@ -1314,7 +1320,7 @@ export const PracticeChallengesPanel = forwardRef<
       focusGateAction();
       return;
     }
-    const lastIdx = challenges.length - 1;
+    const lastIdx = challengesRef.current.length - 1;
     const idx = hasPickedChallengeRef.current ? selected : lastIdx;
     focusRowAt(idx);
   }, [challengesLocked, focusGateAction, focusRowAt, selected]);
@@ -1431,7 +1437,7 @@ export const PracticeChallengesPanel = forwardRef<
         setSelected((prev) => {
           const from = onRow ? focusedRowIndex : prev;
           const next = from + CHALLENGE_GRID_COLS;
-          if (next < challenges.length) {
+          if (next < challengesRef.current.length) {
             playSfx(SFX.MENU_SELECT);
             hasPickedChallengeRef.current = true;
             return next;
@@ -1546,7 +1552,7 @@ export const PracticeChallengesPanel = forwardRef<
         playSfx(SFX.MENU_SELECT);
         hasPickedChallengeRef.current = true;
         if (from % CHALLENGE_GRID_COLS === 0) {
-          setSelected(challenges.length - 1);
+          setSelected(challengesRef.current.length - 1);
         } else {
           setSelected(from - 1);
         }
@@ -1594,7 +1600,7 @@ export const PracticeChallengesPanel = forwardRef<
         hasPickedChallengeRef.current = true;
         if (onRightCol) {
           const next = from + 1;
-          setSelected(next < challenges.length ? next : 0);
+          setSelected(next < challengesRef.current.length ? next : 0);
         } else {
           setSelected(from + 1);
         }

@@ -1607,7 +1607,7 @@ export default function OnlineRoomLobby({
       buyin: room.buyin,
       lobbyUrl: lobbyInviteUrl,
     });
-  }, [room?.roomCode, room?.buyin, lobbyInviteUrl]);
+  }, [room?.roomCode, room?.buyin, lobbyInviteUrl, roomId]);
 
   // Default keyboard focus: Leave room; pre-highlight Sign in when Nostr session exists
   useEffect(() => {

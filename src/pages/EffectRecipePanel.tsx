@@ -61,6 +61,8 @@ export function EffectRecipePanel({
   page: 'music' | 'eat';
   liveTick: number;
 }) {
+  // liveTick is the signal that the shared recipe changed; gameRecipe() reads it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const live = useMemo(() => gameRecipe(), [liveTick]);
 
   const patch = (next: Partial<MatchRecipe>) => onChange({ ...draft, ...next });
@@ -270,6 +272,8 @@ export function RecipeBar({
   liveTick: number;
   onBump: () => void;
 }) {
+  // liveTick is the signal that the shared recipe changed; gameRecipe() reads it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const live = useMemo(() => gameRecipe(), [liveTick]);
   const diffs = countRecipeDiffs(draft, live);
   const dirty = diffs > 0;

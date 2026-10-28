@@ -15,5 +15,17 @@ module.exports = {
       { allowConstantExport: true },
     ],
     '@typescript-eslint/no-explicit-any': 'warn',
+    // A leading underscore marks a deliberately unused binding.
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+      },
+    ],
+    // `while (true)` loops with an explicit break are intended.
+    'no-constant-condition': ['error', { checkLoops: false }],
   },
 };

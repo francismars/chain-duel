@@ -163,8 +163,9 @@ function ClipRules({
       if (down) setFocus('close');
       if (up && focus === 'close') setFocus('prev');
       if (confirm) {
-        if (focus === 'prev') prev();
-        if (focus === 'next') next();
+        // goRef, not prev/next: those are new every render and would be stale here.
+        if (focus === 'prev') goRef.current(-1);
+        if (focus === 'next') goRef.current(1);
         if (focus === 'close') onClose();
       }
     };

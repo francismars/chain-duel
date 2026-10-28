@@ -376,7 +376,7 @@ export default function PostGame() {
       socket.off('prizeWithdrawn', onPrizeWithdrawn);
       socket.off('resCreateWithdrawalPostGame', onCreateWithdrawal);
     };
-  }, [socket, navigate, updateHighscores]);
+  }, [socket, navigate, updateHighscores, gameMode]);
 
   const feeBase =
     gameMode === 'TOURNAMENT' || gameMode === 'TOURNAMENTNOSTR'

@@ -262,6 +262,8 @@ export default function OnlineGame({
       });
     }
     prevCaptureRef.current = { p1: hud.captureP1, p2: hud.captureP2 };
+    // Fire on capture-tier changes only, not on every HUD snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     replayMode,
     snapshot?.hud?.captureP1,
@@ -592,6 +594,9 @@ export default function OnlineGame({
       socket.off('connect', refreshLocalIdentity);
       socket.off('connect', requestRoomSync);
     };
+    // setSearchParams changes identity with the URL; depending on it would
+    // tear down and resubscribe every room listener on each query change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [replayMatchRound, replayMode, roomId, socket]);
 
   useEffect(() => {
@@ -652,7 +657,13 @@ export default function OnlineGame({
       window.clearTimeout(t1);
       window.clearTimeout(t2);
     };
-  }, [replayBlockEvents, replayIndex, replayFrames.length, replayMode]);
+  }, [
+    replayBlockEvents,
+    replayIndex,
+    replayFrames.length,
+    replayMode,
+    setFooterHighlight,
+  ]);
 
   useEffect(() => {
     if (!socket || replayMode || !roomId) {
@@ -692,7 +703,7 @@ export default function OnlineGame({
     return () => {
       socket.off('onlineBitcoinBlock', onBitcoinBlock);
     };
-  }, [socket, replayMode, roomId]);
+  }, [socket, replayMode, roomId, setFooterHighlight]);
 
   useEffect(() => {
     if (!socket || !roomId) {

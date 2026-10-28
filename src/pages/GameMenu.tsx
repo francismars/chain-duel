@@ -524,7 +524,7 @@ export default function GameMenu({
     };
     // Stable subscription: prevWinner/nostrNote1 must not be deps — updating them used to
     // re-run cleanup and cancel the highlight timeout while highlight state stayed true.
-  }, [applySerializedPlayers, socket, logger, useNostrFromQuery]);
+  }, [applySerializedPlayers, socket, logger, useNostrFromQuery, preview]);
 
   useSessionPersistence(socket);
 

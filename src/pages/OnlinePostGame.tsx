@@ -118,7 +118,7 @@ export type OnlinePostGameProps = {
 };
 
 export default function OnlinePostGame({
-  embedded: _embedded = false,
+  embedded = false,
   roomId: roomIdProp,
   roomCode,
   onReadyChange,
@@ -608,7 +608,7 @@ export default function OnlinePostGame({
       }
       setVotes(parsed.votes);
       setRequiredVotes(parsed.required);
-      if (parsed.agreed && !_embedded && roomCode) {
+      if (parsed.agreed && !embedded && roomCode) {
         navigate(onlineRoomUrl(roomCode));
       }
     };
@@ -670,7 +670,7 @@ export default function OnlinePostGame({
       socket.off('resCreateOnlineNostrPayout', onNostrPayout);
       socket.off('onlinePinInvalid', onInvalid);
     };
-  }, [isPreview, navigate, onReadyChange, roomId, socket]);
+  }, [embedded, isPreview, navigate, onReadyChange, roomCode, roomId, socket]);
 
   const withdrawalValue = useMemo(() => {
     if (lnurlw) {
