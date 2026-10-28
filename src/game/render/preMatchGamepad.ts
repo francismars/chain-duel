@@ -12,7 +12,7 @@ export type MatchPadReading = {
   axes: readonly number[];
 };
 
-export type MatchFaceId = 'b' | 'a' | 'x';
+export type MatchFaceId = 'b' | 'a' | 'x' | 'y';
 
 export type MatchPadActivity = {
   dpad: { up: boolean; down: boolean; left: boolean; right: boolean };
@@ -29,11 +29,12 @@ export type MatchPadActivity = {
 const MATCH_FACES: {
   id: MatchFaceId;
   label: string;
-  key: 'b' | 'a' | 'x';
+  key: MatchFaceId;
 }[] = [
   { id: 'b', label: 'B', key: 'b' },
   { id: 'a', label: 'A', key: 'a' },
   { id: 'x', label: 'X', key: 'x' },
+  { id: 'y', label: 'Y', key: 'y' },
 ];
 
 function buttonDown(pad: MatchPadReading, index: number): boolean {
@@ -42,7 +43,7 @@ function buttonDown(pad: MatchPadReading, index: number): boolean {
   return buttonIsActive(button.value, button.pressed);
 }
 
-/** D-pad, left stick, and the three face buttons that confirm. */
+/** D-pad, left stick, and the face buttons shown before the match. */
 export function matchPadActivity(pad: MatchPadReading): MatchPadActivity {
   const stick = gamepadStickDot(
     pad.axes[0] ?? 0,

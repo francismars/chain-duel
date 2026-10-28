@@ -50,11 +50,23 @@ describe('matchPadActivity', () => {
       right: false,
     });
     expect(activity.stick.active).toBe(true);
-    expect(activity.faces.map((face) => face.label)).toEqual(['B', 'A', 'X']);
+    expect(activity.faces.map((face) => face.label)).toEqual([
+      'B',
+      'A',
+      'X',
+      'Y',
+    ]);
     expect(activity.faces.map((face) => face.active)).toEqual([
       true,
       false,
       false,
+      true,
     ]);
+  });
+
+  it('lights X on the top face, the solo seat switch', () => {
+    const activity = matchPadActivity(pad([3]));
+    const x = activity.faces.find((face) => face.id === 'x');
+    expect(x).toMatchObject({ cx: 324, cy: 88, active: true });
   });
 });
