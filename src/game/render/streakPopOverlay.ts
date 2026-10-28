@@ -32,6 +32,9 @@ function ringColor(pop: StreakPop): { fill: number; css: string } {
   return { fill: BLACK, css: '#111111' };
 }
 
+/** Each nested square, as a fraction of the one outside it. Head-to-head and reorg share this gap. */
+const CLASH_INNER = 0.74;
+
 /** Half-side in cells. Wall and clash match. Reorg is a bit larger, double-ring. */
 function baseRadiusCells(pop: StreakPop): number {
   if (pop.text === 'REORG') return 1.85;
@@ -150,10 +153,20 @@ function paintMark(
   }
   if (pop.text === 'WIPE') return;
 
-  // REORG: two close squares — same stroke as WALL/CLASH; double ring is the cue.
+  // Head-to-head: one square, both chain colors, on the cell where they meet.
+  if (pop.text === 'CLASH' && pop.fillInner != null) {
+    const innerHalf = half * CLASH_INNER;
+    strokeSquare(mark.ring, half, width, color, drawn.alpha);
+    strokeSquare(mark.ring, innerHalf, width, pop.fillInner, drawn.alpha);
+    return;
+  }
+  // REORG: three squares. Solo is one color. Head-on puts the shorter chain in the middle.
   if (pop.text === 'REORG') {
-    const innerHalf = half * 0.72;
-    strokeSquare(mark.ring, half, width, color, drawn.alpha * 0.85);
+    const midHalf = half * CLASH_INNER;
+    const innerHalf = midHalf * CLASH_INNER;
+    const mid = pop.fillInner ?? color;
+    strokeSquare(mark.ring, half, width, color, drawn.alpha);
+    strokeSquare(mark.ring, midHalf, width, mid, drawn.alpha);
     strokeSquare(mark.ring, innerHalf, width, color, drawn.alpha);
     return;
   }
@@ -199,11 +212,34 @@ export function drawStreakPopsCanvas(
       ctx.lineWidth = width;
     }
     if (pop.text === 'WIPE') continue;
-    if (pop.text === 'REORG') {
-      const innerHalf = half * 0.72;
-      ctx.globalAlpha = drawn.alpha * 0.85;
-      ctx.strokeRect(x - half, y - half, half * 2, half * 2);
+    if (pop.text === 'CLASH' && pop.fillInner != null) {
+      const innerHalf = half * CLASH_INNER;
+      const inner = `#${pop.fillInner.toString(16).padStart(6, '0')}`;
       ctx.globalAlpha = drawn.alpha;
+      ctx.strokeStyle = css;
+      ctx.strokeRect(x - half, y - half, half * 2, half * 2);
+      ctx.strokeStyle = inner;
+      ctx.strokeRect(
+        x - innerHalf,
+        y - innerHalf,
+        innerHalf * 2,
+        innerHalf * 2
+      );
+      continue;
+    }
+    if (pop.text === 'REORG') {
+      const midHalf = half * CLASH_INNER;
+      const innerHalf = midHalf * CLASH_INNER;
+      const mid =
+        pop.fillInner == null
+          ? css
+          : `#${pop.fillInner.toString(16).padStart(6, '0')}`;
+      ctx.globalAlpha = drawn.alpha;
+      ctx.strokeStyle = css;
+      ctx.strokeRect(x - half, y - half, half * 2, half * 2);
+      ctx.strokeStyle = mid;
+      ctx.strokeRect(x - midHalf, y - midHalf, midHalf * 2, midHalf * 2);
+      ctx.strokeStyle = css;
       ctx.strokeRect(
         x - innerHalf,
         y - innerHalf,

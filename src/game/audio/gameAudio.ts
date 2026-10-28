@@ -42,13 +42,20 @@ export function reorgCaptureGap(percentA: number, percentB: number): boolean {
 
 /**
  * A reorg mark sits on the richer chain's last head.
- * Head-to-head: both reset on the same tick with heads close.
- * Solo death: the long chain dies while a shorter one keeps going with the gap.
+ * Head-to-head: both reset on the same tick with heads close. The middle
+ * square is the poorer chain; the outer two are the richer chain.
+ * Solo death: the long chain dies while a shorter one keeps going. All three
+ * squares are that chain's own color.
  */
 function reorgedLongChain(
   previous: TensionPlayer[],
   players: TensionPlayer[]
-): TensionPlayer | null {
+): {
+  head: TensionPlayer['head'];
+  index: number;
+  color: number;
+  midColor?: number;
+} | null {
   const pairs = players.flatMap((player) => {
     const before = previous.find((entry) => entry.index === player.index);
     return before ? [{ before, after: player }] : [];
@@ -78,7 +85,14 @@ function reorgedLongChain(
           Math.abs(a.before.head[0] - b.before.head[0]) +
           Math.abs(a.before.head[1] - b.before.head[1]);
         if (apart > 2) continue;
-        return a.percent >= b.percent ? a.before : b.before;
+        const richer = a.percent >= b.percent ? a : b;
+        const poorer = richer === a ? b : a;
+        return {
+          head: richer.before.head,
+          index: richer.before.index,
+          color: richer.before.color,
+          midColor: poorer.before.color,
+        };
       }
     }
     return null;
@@ -95,39 +109,39 @@ function reorgedLongChain(
     // Solo reorg: the long chain dies; a short death is an ordinary WALL.
     if (deadPercent <= livePercent) continue;
     if (!reorgCaptureGap(deadPercent, livePercent)) continue;
-    return dead.before;
+    return {
+      head: dead.before.head,
+      index: dead.before.index,
+      color: dead.before.color,
+    };
   }
   return null;
 }
 
-/** Head-to-head with no capture-rate gap. The mark sits between the two heads. */
-function clashedHeads(
-  previous: TensionPlayer[],
-  players: TensionPlayer[]
-): TensionPlayer['head'] | null {
-  const pairs = players.flatMap((player) => {
-    const before = previous.find((entry) => entry.index === player.index);
-    return before ? [{ before, after: player }] : [];
-  });
-  const reset = pairs.filter(
-    (pair) =>
-      !pair.before.eliminated &&
-      !pair.after.eliminated &&
-      headTravel(pair.before, pair.after) > 1 &&
-      pair.after.length <= pair.before.length
-  );
-  for (let i = 0; i < reset.length; i += 1) {
-    for (let j = i + 1; j < reset.length; j += 1) {
-      const a = reset[i]!;
-      const b = reset[j]!;
+/** Two resets whose last heads were close enough to be one meeting. */
+function meetingCell(
+  resets: { before: TensionPlayer; after: TensionPlayer }[]
+): {
+  cell: TensionPlayer['head'];
+  a: { before: TensionPlayer; after: TensionPlayer };
+  b: { before: TensionPlayer; after: TensionPlayer };
+} | null {
+  for (let i = 0; i < resets.length; i += 1) {
+    for (let j = i + 1; j < resets.length; j += 1) {
+      const a = resets[i]!;
+      const b = resets[j]!;
       const apart =
         Math.abs(a.before.head[0] - b.before.head[0]) +
         Math.abs(a.before.head[1] - b.before.head[1]);
       if (apart > 2) continue;
-      return [
-        Math.round((a.before.head[0] + b.before.head[0]) / 2),
-        Math.round((a.before.head[1] + b.before.head[1]) / 2),
-      ];
+      return {
+        a,
+        b,
+        cell: [
+          Math.round((a.before.head[0] + b.before.head[0]) / 2),
+          Math.round((a.before.head[1] + b.before.head[1]) / 2),
+        ],
+      };
     }
   }
   return null;
@@ -359,7 +373,6 @@ export class GameAudioSystem {
     }
 
     const reorged = reorgedLongChain(previous, players);
-    const clash = reorged ? null : clashedHeads(previous, players);
     const toneFor = (index: number): 'white' | 'black' =>
       index === 0 ? 'white' : 'black';
     const resets = players.flatMap((player) => {
@@ -370,29 +383,58 @@ export class GameAudioSystem {
       return [{ before, after: player }];
     });
     const lined = new Set<number>();
+    const meeting = reorged ? null : meetingCell(resets);
     if (reorged) {
-      pushCaptureRatePop(reorged.head, 'REORG', true, toneFor(reorged.index));
-    } else if (clash) pushCaptureRatePop(clash, 'CLASH', true, 'white');
-    else {
-      for (const { before, after } of resets) {
-        // Wall, own body, or another body: one ordinary square in that chain's color.
+      pushCaptureRatePop(
+        reorged.head,
+        'REORG',
+        true,
+        toneFor(reorged.index),
+        undefined,
+        reorged.color,
+        reorged.midColor
+      );
+    } else if (meeting) {
+      // One square on the cell where the two heads meet. Both colors live there,
+      // and both lines home leave that same square.
+      pushCaptureRatePop(
+        meeting.cell,
+        'CLASH',
+        true,
+        'white',
+        undefined,
+        meeting.a.before.color,
+        meeting.b.before.color
+      );
+      for (const side of [meeting.a, meeting.b]) {
+        lined.add(side.before.index);
+        pushCaptureRatePop(
+          meeting.cell,
+          'WIPE',
+          true,
+          toneFor(side.before.index),
+          side.after.head,
+          side.before.color
+        );
+      }
+    }
+    for (const { before, after } of resets) {
+      if (lined.has(before.index)) continue;
+      if (reorged) {
         pushCaptureRatePop(
           before.head,
-          'WALL',
+          'WIPE',
           true,
           toneFor(before.index),
           after.head,
           before.color
         );
-        lined.add(before.index);
+        continue;
       }
-    }
-    for (const { before, after } of resets) {
-      if (lined.has(before.index)) continue;
-      // Clash and REORG squares have no destination. The wipe is this chain's color.
+      // One square in that chain's color, on the cell where it died.
       pushCaptureRatePop(
         before.head,
-        'WIPE',
+        'WALL',
         true,
         toneFor(before.index),
         after.head,

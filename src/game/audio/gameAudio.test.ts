@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { P2_SNAKE_COLOR } from '@/game/engine/constants';
 import { createGameState } from '@/game/engine';
 import { GameAudioSystem, reorgCaptureGap } from './gameAudio';
 import { streakPops, tensionDebugSnapshot } from './tensionDebug';
@@ -210,6 +211,8 @@ describe('game tension', () => {
       col: 10,
       row: 10,
       tone: 'white',
+      fill: 0xffffff,
+      fillInner: P2_SNAKE_COLOR,
       toCol: undefined,
       toRow: undefined,
     });
@@ -258,6 +261,8 @@ describe('game tension', () => {
       tone: 'white',
       col: 10,
       row: 10,
+      fill: 0xffffff,
+      fillInner: undefined,
     });
 
     const soloShort = match();
@@ -335,14 +340,17 @@ describe('game tension', () => {
     expect(
       streakPops()
         .slice(closeBefore)
-        .some((pop) => pop.text === 'CLASH')
-    ).toBe(true);
+        .filter((pop) => pop.text === 'WALL')
+    ).toEqual([]);
     expect(
       streakPops()
         .slice(closeBefore)
         .find((pop) => pop.text === 'CLASH')
     ).toMatchObject({
-      tone: 'white',
+      col: 11,
+      row: 10,
+      toCol: undefined,
+      toRow: undefined,
     });
     const clashWipes = streakPops()
       .slice(closeBefore)
@@ -350,14 +358,14 @@ describe('game tension', () => {
     expect(clashWipes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          col: 10,
+          col: 11,
           row: 10,
           toCol: 4,
           toRow: 12,
           tone: 'white',
         }),
         expect.objectContaining({
-          col: 12,
+          col: 11,
           row: 10,
           toCol: 44,
           toRow: 12,
