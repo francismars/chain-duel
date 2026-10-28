@@ -19,7 +19,10 @@ import {
 } from '@/game/engine/constants';
 import { runAStar } from '@/game/engine/astar';
 import { visibleDeathCell } from '@/game/engine/deathCell';
-import { captureRateLabel } from '@/game/engine/captureRateLabel';
+import {
+  captureRateLabel,
+  resetCaptureRate,
+} from '@/game/engine/captureRateLabel';
 import {
   capturePercentForLength,
   gameRecipe,
@@ -60,6 +63,7 @@ import {
   clearSurgeForPlayer,
   computeCaptureChangeForIndex,
   capturePercentForCoinbase,
+  captureRatePercentForEat,
   getPlayerHead,
   getSnakeByIndex,
   hasPowerUp,
@@ -1163,7 +1167,8 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
       state,
       index as FfaPlayerIndex,
       safeChange,
-      capturePercent
+      capturePercent,
+      captureRatePercentForEat(state, index)
     );
     return;
   }
@@ -1178,7 +1183,11 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
     gainPos: player === 'P1' ? p1Pos : p2Pos,
     lossPos: player === 'P1' ? p2Pos : p1Pos,
     capturePercent,
-    captureRateLabel: captureRateLabel(state, index, capturePercent),
+    captureRateLabel: captureRateLabel(
+      state,
+      index,
+      captureRatePercentForEat(state, index)
+    ),
     p1YOffsetPx: 0,
     p2YOffsetPx: 0,
     alpha: 1,
@@ -1274,6 +1283,7 @@ function resetSnake(state: GameState, player: PlayerId): void {
     state.p1.dir = '';
     state.p1.dirWanted = 'Right';
     state.currentCaptureP1 = '2%';
+    resetCaptureRate(state, 0);
     clearPowerUpsForPlayer(state, 0);
     return;
   }
@@ -1303,6 +1313,7 @@ function resetSnake(state: GameState, player: PlayerId): void {
   state.p2.dir = '';
   state.p2.dirWanted = 'Left';
   state.currentCaptureP2 = '2%';
+  resetCaptureRate(state, 1);
   if (getAiTierForPlayer(state, 1) === 'stacker') {
     markStackerCaution(state, 1);
   }
@@ -1476,7 +1487,10 @@ function resetExtraSnake(extra: ExtraSnake, state: GameState): void {
     state.resetCueExtra[listed] = true;
   }
   const extraIndex = (listed + 2) as PowerUpPlayerIndex;
-  if (extraIndex >= 2) clearPowerUpsForPlayer(state, extraIndex);
+  if (extraIndex >= 2) {
+    resetCaptureRate(state, extraIndex);
+    clearPowerUpsForPlayer(state, extraIndex);
+  }
 }
 
 /** A* path-finding that avoids an explicit set of extra blocked positions. */
@@ -1540,7 +1554,13 @@ function captureExtraSnakeCoinbases(state: GameState): void {
           extraIndex as PowerUpPlayerIndex,
           cb
         );
-        ffaApplyCaptureAmount(state, extraIndex, safeChange, capturePercent);
+        ffaApplyCaptureAmount(
+          state,
+          extraIndex,
+          safeChange,
+          capturePercent,
+          captureRatePercentForEat(state, extraIndex as PowerUpPlayerIndex)
+        );
       } else {
         const reward = cb.reward ?? 2;
         if (extra.teamId === 0)

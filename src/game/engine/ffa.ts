@@ -290,7 +290,8 @@ export function ffaApplyCaptureAmount(
   state: GameState,
   winner: FfaPlayerIndex,
   safeChange: number,
-  capturePercent?: number
+  capturePercent?: number,
+  ratePercent?: number
 ): void {
   const scores = getFfaScores(state);
   const count = multiplayerPlayerCount(state);
@@ -355,9 +356,9 @@ export function ffaApplyCaptureAmount(
     lossPos,
     capturePercent,
     captureRateLabel:
-      capturePercent == null
+      ratePercent == null
         ? undefined
-        : captureRateLabel(state, winner, capturePercent),
+        : captureRateLabel(state, winner, ratePercent),
     p1YOffsetPx: 0,
     p2YOffsetPx: 0,
     alpha: 1,
