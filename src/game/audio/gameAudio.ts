@@ -130,10 +130,7 @@ function impactOf(
 /** One cell when both chains died there. Otherwise the point between the two impacts. */
 function sharedImpact(a: GridPos, b: GridPos): GridPos {
   if (a[0] === b[0] && a[1] === b[1]) return [a[0], a[1]];
-  return [
-    Math.round((a[0] + b[0]) / 2),
-    Math.round((a[1] + b[1]) / 2),
-  ];
+  return [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2)];
 }
 
 /** Two resets whose last heads were close enough to be one meeting. */
@@ -413,8 +410,8 @@ export class GameAudioSystem {
       : undefined;
     const reorgFromImpact = Boolean(
       reorged &&
-        (deathAt?.[reorged.index] ??
-          (reorgPartner ? deathAt?.[reorgPartner.before.index] : undefined))
+      (deathAt?.[reorged.index] ??
+        (reorgPartner ? deathAt?.[reorgPartner.before.index] : undefined))
     );
     const reorgCell = !reorged
       ? null
