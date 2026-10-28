@@ -110,7 +110,9 @@ export function readLayoutSource(): 'auto' | 'manual' {
 
 function dispatchControlsEvent(name: string, detail?: unknown): void {
   if (typeof window === 'undefined') return;
-  window.dispatchEvent(new CustomEvent(name, detail != null ? { detail } : undefined));
+  window.dispatchEvent(
+    new CustomEvent(name, detail != null ? { detail } : undefined)
+  );
 }
 
 export function writeKeyboardLayoutId(
@@ -141,7 +143,10 @@ function writeStoredBindings(bindings: StoredBindings): void {
     if (Object.keys(bindings).length === 0) {
       localStorage.removeItem(STORAGE_KEY_PLAYER_BINDINGS);
     } else {
-      localStorage.setItem(STORAGE_KEY_PLAYER_BINDINGS, JSON.stringify(bindings));
+      localStorage.setItem(
+        STORAGE_KEY_PLAYER_BINDINGS,
+        JSON.stringify(bindings)
+      );
     }
   } catch {
     /* ignore */
@@ -248,8 +253,7 @@ export function slotHasCustomBindings(slot: PlayerControlSlot): boolean {
     }
   }
   return (
-    stored.confirm != null &&
-    stored.confirm !== DEFAULT_CONFIRM_BINDINGS[slot]
+    stored.confirm != null && stored.confirm !== DEFAULT_CONFIRM_BINDINGS[slot]
   );
 }
 
@@ -436,19 +440,23 @@ export function resolveMovementForStateFromCode(
   }
   if (state.meta.p1Human) {
     const direction = resolveDirectionForCode(code, 'p1');
-    if (direction) return { slot: 'p1', direction: toEngineDirection(direction) };
+    if (direction)
+      return { slot: 'p1', direction: toEngineDirection(direction) };
   }
   if (state.meta.p2Human) {
     const direction = resolveDirectionForCode(code, 'p2');
-    if (direction) return { slot: 'p2', direction: toEngineDirection(direction) };
+    if (direction)
+      return { slot: 'p2', direction: toEngineDirection(direction) };
   }
   if (state.extraSnakes[0]?.humanControlled) {
     const direction = resolveDirectionForCode(code, 'p3');
-    if (direction) return { slot: 'p3', direction: toEngineDirection(direction) };
+    if (direction)
+      return { slot: 'p3', direction: toEngineDirection(direction) };
   }
   if (state.extraSnakes[1]?.humanControlled) {
     const direction = resolveDirectionForCode(code, 'p4');
-    if (direction) return { slot: 'p4', direction: toEngineDirection(direction) };
+    if (direction)
+      return { slot: 'p4', direction: toEngineDirection(direction) };
   }
   return null;
 }
@@ -463,26 +471,33 @@ export function resolveMovementForStateFromKeyboardEvent(
   const key = event.key.length === 1 ? event.key.toUpperCase() : event.key;
   const soloTarget = soloHumanControlSlot(state);
   if (soloTarget && state.meta.soloInputSlot) {
-    const direction = resolveDirectionForLegacyKey(key, state.meta.soloInputSlot);
+    const direction = resolveDirectionForLegacyKey(
+      key,
+      state.meta.soloInputSlot
+    );
     if (direction) {
       return { slot: soloTarget, direction: toEngineDirection(direction) };
     }
   }
   if (state.meta.p1Human) {
     const direction = resolveDirectionForLegacyKey(key, 'p1');
-    if (direction) return { slot: 'p1', direction: toEngineDirection(direction) };
+    if (direction)
+      return { slot: 'p1', direction: toEngineDirection(direction) };
   }
   if (state.meta.p2Human) {
     const direction = resolveDirectionForLegacyKey(key, 'p2');
-    if (direction) return { slot: 'p2', direction: toEngineDirection(direction) };
+    if (direction)
+      return { slot: 'p2', direction: toEngineDirection(direction) };
   }
   if (state.extraSnakes[0]?.humanControlled) {
     const direction = resolveDirectionForLegacyKey(key, 'p3');
-    if (direction) return { slot: 'p3', direction: toEngineDirection(direction) };
+    if (direction)
+      return { slot: 'p3', direction: toEngineDirection(direction) };
   }
   if (state.extraSnakes[1]?.humanControlled) {
     const direction = resolveDirectionForLegacyKey(key, 'p4');
-    if (direction) return { slot: 'p4', direction: toEngineDirection(direction) };
+    if (direction)
+      return { slot: 'p4', direction: toEngineDirection(direction) };
   }
   return null;
 }

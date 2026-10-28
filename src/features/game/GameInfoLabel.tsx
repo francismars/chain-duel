@@ -27,7 +27,9 @@ export function readChallengeHudFromConfig(
   const rankFromConfig = Number(cfg.challengeRank);
   return {
     id,
-    name: getChallengeClientName(id) ?? String(cfg.soloChallengeName ?? 'CHALLENGE'),
+    name:
+      getChallengeClientName(id) ??
+      String(cfg.soloChallengeName ?? 'CHALLENGE'),
     rank:
       Number.isFinite(rankFromConfig) &&
       rankFromConfig >= 1 &&

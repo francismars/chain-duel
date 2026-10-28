@@ -23,7 +23,11 @@ function clamp(value: number, min: number, max: number): number {
 
 export function parseCapturePercent(label: string): number {
   const n = Number.parseInt(String(label).replace('%', ''), 10);
-  return clamp(Number.isFinite(n) ? n : MIN_CAPTURE_PERCENT, MIN_CAPTURE_PERCENT, MAX_CAPTURE_PERCENT);
+  return clamp(
+    Number.isFinite(n) ? n : MIN_CAPTURE_PERCENT,
+    MIN_CAPTURE_PERCENT,
+    MAX_CAPTURE_PERCENT
+  );
 }
 
 /**

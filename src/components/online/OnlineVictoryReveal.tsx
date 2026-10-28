@@ -118,9 +118,7 @@ export function OnlineVictoryReveal({
       aria-label={ariaLabel}
     >
       {data.viewerRole === 'loser' ? null : (
-        <SoloZapRadiatingLines
-          className="end-screen-rays match-end-layer__rays match-end-layer__rays--instant"
-        />
+        <SoloZapRadiatingLines className="end-screen-rays match-end-layer__rays match-end-layer__rays--instant" />
       )}
       <div className="match-end-card match-end-card--instant">
         <p className="match-end-card__kicker">
@@ -128,9 +126,7 @@ export function OnlineVictoryReveal({
         </p>
         <p className="match-end-card__name">{winner.name.toUpperCase()}</p>
         <p className="match-end-card__wins">WINS</p>
-        <p className="match-end-card__sats">
-          {netPrize.toLocaleString()} SATS
-        </p>
+        <p className="match-end-card__sats">{netPrize.toLocaleString()} SATS</p>
         <p className="match-end-card__note">
           {winner.score.toLocaleString()} / {loser.score.toLocaleString()} ·{' '}
           {loser.name.toUpperCase()}

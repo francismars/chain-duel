@@ -1445,10 +1445,18 @@ export class PixiGameRenderer {
 
     // Standard coinbase
     if (this.graphics.shadowsAndTransparency) {
-      target.circle(cx, cy, radius * 2.05).fill({ color: 0xffffff, alpha: 0.05 });
-      target.circle(cx, cy, radius * 1.7).fill({ color: 0xffffff, alpha: 0.08 });
-      target.circle(cx, cy, radius * 1.35).fill({ color: 0xffffff, alpha: 0.14 });
-      target.circle(cx, cy, radius * 1.1).fill({ color: 0xffffff, alpha: 0.22 });
+      target
+        .circle(cx, cy, radius * 2.05)
+        .fill({ color: 0xffffff, alpha: 0.05 });
+      target
+        .circle(cx, cy, radius * 1.7)
+        .fill({ color: 0xffffff, alpha: 0.08 });
+      target
+        .circle(cx, cy, radius * 1.35)
+        .fill({ color: 0xffffff, alpha: 0.14 });
+      target
+        .circle(cx, cy, radius * 1.1)
+        .fill({ color: 0xffffff, alpha: 0.22 });
     }
     target.circle(cx, cy, radius * 0.9).fill({ color: 0xffffff, alpha: 1 });
 

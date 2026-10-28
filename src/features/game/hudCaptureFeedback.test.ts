@@ -34,17 +34,27 @@ describe('hudCaptureFeedback', () => {
     expect(
       ambientCaptureIntensity({ captureP1: '16%', captureP2: '4%' })
     ).toBeCloseTo(0.75);
-    expect(
-      ambientCaptureIntensity({ captureP1: '8%', captureP2: '32%' })
-    ).toBe(1);
+    expect(ambientCaptureIntensity({ captureP1: '8%', captureP2: '32%' })).toBe(
+      1
+    );
   });
 
   it('spreads bar hit intensity across capture tiers', () => {
-    expect(satsCaptureBarIntensity('P1', { captureP1: '2%', captureP2: '2%' })).toBeCloseTo(0.18);
-    expect(satsCaptureBarIntensity('P1', { captureP1: '4%', captureP2: '2%' })).toBeCloseTo(0.385);
-    expect(satsCaptureBarIntensity('P1', { captureP1: '8%', captureP2: '2%' })).toBeCloseTo(0.59);
-    expect(satsCaptureBarIntensity('P1', { captureP1: '16%', captureP2: '2%' })).toBeCloseTo(0.795);
-    expect(satsCaptureBarIntensity('P2', { captureP1: '32%', captureP2: '32%' })).toBe(1);
+    expect(
+      satsCaptureBarIntensity('P1', { captureP1: '2%', captureP2: '2%' })
+    ).toBeCloseTo(0.18);
+    expect(
+      satsCaptureBarIntensity('P1', { captureP1: '4%', captureP2: '2%' })
+    ).toBeCloseTo(0.385);
+    expect(
+      satsCaptureBarIntensity('P1', { captureP1: '8%', captureP2: '2%' })
+    ).toBeCloseTo(0.59);
+    expect(
+      satsCaptureBarIntensity('P1', { captureP1: '16%', captureP2: '2%' })
+    ).toBeCloseTo(0.795);
+    expect(
+      satsCaptureBarIntensity('P2', { captureP1: '32%', captureP2: '32%' })
+    ).toBe(1);
   });
 
   it('exports css vars from tier-based intensity', () => {

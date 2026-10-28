@@ -88,13 +88,16 @@ describe('game tension', () => {
     [1799, 2],
     [1800, 4],
     [1900, 4],
-  ])('warns when %s / 2000 leaves a quarter, and goes critical at a tenth', (leader, level) => {
-    const state = match();
-    state.score = [leader, 2000 - leader];
-    expect(getTensionLevel(state)).toBe(level);
-    state.score = [(2000 - leader) * 10, leader * 10];
-    expect(getTensionLevel(state)).toBe(level);
-  });
+  ])(
+    'warns when %s / 2000 leaves a quarter, and goes critical at a tenth',
+    (leader, level) => {
+      const state = match();
+      state.score = [leader, 2000 - leader];
+      expect(getTensionLevel(state)).toBe(level);
+      state.score = [(2000 - leader) * 10, leader * 10];
+      expect(getTensionLevel(state)).toBe(level);
+    }
+  );
 
   it('lets a drained score speak while both chains are short, and a long chain speak over a mild drain', () => {
     const state = match();
@@ -210,9 +213,7 @@ describe('game tension', () => {
       toCol: undefined,
       toRow: undefined,
     });
-    expect(
-      streakPops().filter((pop) => pop.text === 'SPAWN')
-    ).toHaveLength(2);
+    expect(streakPops().filter((pop) => pop.text === 'SPAWN')).toHaveLength(2);
     const reorgWipes = streakPops().filter((pop) => pop.text === 'WIPE');
     expect(reorgWipes).toEqual(
       expect.arrayContaining([
@@ -244,10 +245,16 @@ describe('game tension', () => {
     soloLong.p1.body = [[3, 12]];
     audio.updateGameState(soloLong);
     // Solo death of the long chain while a short chain lives: REORG on the long head.
-    expect(streakPops().slice(before).some((pop) => pop.text === 'REORG')).toBe(
-      true
-    );
-    expect(streakPops().slice(before).find((pop) => pop.text === 'REORG')).toMatchObject({
+    expect(
+      streakPops()
+        .slice(before)
+        .some((pop) => pop.text === 'REORG')
+    ).toBe(true);
+    expect(
+      streakPops()
+        .slice(before)
+        .find((pop) => pop.text === 'REORG')
+    ).toMatchObject({
       tone: 'white',
       col: 10,
       row: 10,
@@ -264,13 +271,21 @@ describe('game tension', () => {
     soloShort.p2.body = [[45, 12]];
     audio.updateGameState(soloShort);
     // Short chain dies: ordinary WALL, even when a long chain is alive.
-    expect(streakPops().slice(soloBefore).some((pop) => pop.text === 'REORG')).toBe(
-      false
-    );
-    expect(streakPops().slice(soloBefore).some((pop) => pop.text === 'WALL')).toBe(
-      true
-    );
-    expect(streakPops().slice(soloBefore).find((pop) => pop.text === 'WALL')).toMatchObject({
+    expect(
+      streakPops()
+        .slice(soloBefore)
+        .some((pop) => pop.text === 'REORG')
+    ).toBe(false);
+    expect(
+      streakPops()
+        .slice(soloBefore)
+        .some((pop) => pop.text === 'WALL')
+    ).toBe(true);
+    expect(
+      streakPops()
+        .slice(soloBefore)
+        .find((pop) => pop.text === 'WALL')
+    ).toMatchObject({
       tone: 'black',
       col: 20,
       row: 10,
@@ -291,9 +306,11 @@ describe('game tension', () => {
     four.p2.head = [44, 12];
     four.p2.body = [[45, 12]];
     audio.updateGameState(four);
-    expect(streakPops().slice(fourBefore).some((pop) => pop.text === 'REORG')).toBe(
-      true
-    );
+    expect(
+      streakPops()
+        .slice(fourBefore)
+        .some((pop) => pop.text === 'REORG')
+    ).toBe(true);
 
     const close = match();
     close.p1.head = [10, 10];
@@ -310,13 +327,21 @@ describe('game tension', () => {
     close.p2.head = [44, 12];
     close.p2.body = [[45, 12]];
     audio.updateGameState(close);
-    expect(streakPops().slice(closeBefore).some((pop) => pop.text === 'REORG')).toBe(
-      false
-    );
-    expect(streakPops().slice(closeBefore).some((pop) => pop.text === 'CLASH')).toBe(
-      true
-    );
-    expect(streakPops().slice(closeBefore).find((pop) => pop.text === 'CLASH')).toMatchObject({
+    expect(
+      streakPops()
+        .slice(closeBefore)
+        .some((pop) => pop.text === 'REORG')
+    ).toBe(false);
+    expect(
+      streakPops()
+        .slice(closeBefore)
+        .some((pop) => pop.text === 'CLASH')
+    ).toBe(true);
+    expect(
+      streakPops()
+        .slice(closeBefore)
+        .find((pop) => pop.text === 'CLASH')
+    ).toMatchObject({
       tone: 'white',
     });
     const clashWipes = streakPops()
@@ -324,8 +349,20 @@ describe('game tension', () => {
       .filter((pop) => pop.text === 'WIPE');
     expect(clashWipes).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ col: 10, row: 10, toCol: 4, toRow: 12, tone: 'white' }),
-        expect.objectContaining({ col: 12, row: 10, toCol: 44, toRow: 12, tone: 'black' }),
+        expect.objectContaining({
+          col: 10,
+          row: 10,
+          toCol: 4,
+          toRow: 12,
+          tone: 'white',
+        }),
+        expect.objectContaining({
+          col: 12,
+          row: 10,
+          toCol: 44,
+          toRow: 12,
+          tone: 'black',
+        }),
       ])
     );
     expect(streakPops().find((pop) => pop.text === 'REORG')).toMatchObject({

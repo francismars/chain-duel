@@ -13,7 +13,15 @@
   animation: match-end-burst-out 0.7s ease 1.05s forwards;
 }
 
-body:has(.end-screen-rays--burst) :is(#gameCanvas, .players, .points, .game-hud-ffa-wrap, .game-hud-2v1-wrap, #powerUpKey) {
+body:has(.end-screen-rays--burst)
+  :is(
+    #gameCanvas,
+    .players,
+    .points,
+    .game-hud-ffa-wrap,
+    .game-hud-2v1-wrap,
+    #powerUpKey
+  ) {
   z-index: 10002;
 }
 
@@ -172,14 +180,15 @@ body:has(.match-end-layer) header#brand {
   animation: none;
 }
 
-.match-end-card--instant :is(
-  .match-end-card__kicker,
-  .match-end-card__name,
-  .match-end-card__wins,
-  .match-end-card__sats,
-  .match-end-card__note,
-  .match-end-card__prompt
-) {
+.match-end-card--instant
+  :is(
+    .match-end-card__kicker,
+    .match-end-card__name,
+    .match-end-card__wins,
+    .match-end-card__sats,
+    .match-end-card__note,
+    .match-end-card__prompt
+  ) {
   animation: none;
   opacity: 1;
   transform: none;

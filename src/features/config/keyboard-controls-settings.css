@@ -123,7 +123,8 @@
   background: transparent;
 }
 
-.keyboard-controls-settings__player-card + .keyboard-controls-settings__player-card {
+.keyboard-controls-settings__player-card
+  + .keyboard-controls-settings__player-card {
   border-left: 1px solid rgb(255 255 255 / 0.14);
 }
 
@@ -219,8 +220,10 @@
   color: rgba(255, 255, 255, 0.55);
 }
 
-.keyboard-controls-settings__bind-key--held .keyboard-controls-settings__bind-key-hint,
-.keyboard-controls-settings__bind-key--listening .keyboard-controls-settings__bind-key-hint {
+.keyboard-controls-settings__bind-key--held
+  .keyboard-controls-settings__bind-key-hint,
+.keyboard-controls-settings__bind-key--listening
+  .keyboard-controls-settings__bind-key-hint {
   color: rgba(16, 16, 18, 0.62);
 }
 
@@ -253,8 +256,10 @@
   color: rgb(16 16 18);
 }
 
-.keyboard-controls-settings__bind-start--held .keyboard-controls-settings__bind-key-hint,
-.keyboard-controls-settings__bind-start--listening .keyboard-controls-settings__bind-key-hint {
+.keyboard-controls-settings__bind-start--held
+  .keyboard-controls-settings__bind-key-hint,
+.keyboard-controls-settings__bind-start--listening
+  .keyboard-controls-settings__bind-key-hint {
   color: rgba(16, 16, 18, 0.62);
 }
 

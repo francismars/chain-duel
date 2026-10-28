@@ -4,10 +4,7 @@ interface MenuModeMeta {
   mode?: string;
   winnersCount?: number;
   winners?: string[];
-  players?: Record<
-    string,
-    { name?: string; value?: number; picture?: string }
-  >;
+  players?: Record<string, { name?: string; value?: number; picture?: string }>;
 }
 
 interface NostrMeta {
@@ -106,7 +103,10 @@ export function parseMenuResponse(body: unknown): MenuParseResult {
     | {
         mode?: string;
         winners?: unknown[];
-        players?: Record<string, { name?: string; value?: number; picture?: string }>;
+        players?: Record<
+          string,
+          { name?: string; value?: number; picture?: string }
+        >;
       }
     | undefined;
 

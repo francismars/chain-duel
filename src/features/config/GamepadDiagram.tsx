@@ -86,7 +86,10 @@ const MIRROR = 'translate(440 0) scale(-1 1)';
 const L_STICK = { cx: 176, cy: 158 };
 const R_STICK = { cx: 264, cy: 158 };
 
-const FACE: Record<'x' | 'y' | 'a' | 'b', { cx: number; cy: number; index: number }> = {
+const FACE: Record<
+  'x' | 'y' | 'a' | 'b',
+  { cx: number; cy: number; index: number }
+> = {
   x: { cx: 324, cy: 88, index: 3 },
   y: { cx: 300, cy: 112, index: 2 },
   a: { cx: 348, cy: 112, index: 1 },
@@ -150,15 +153,44 @@ export function GamepadDiagram({ pad }: GamepadDiagramProps) {
           className="config-gp-diagram__dpad-outline"
           d="M 16 4 Q 16 0 20 0 H 28 Q 32 0 32 4 V 16 H 44 Q 48 16 48 20 V 28 Q 48 32 44 32 H 32 V 44 Q 32 48 28 48 H 20 Q 16 48 16 44 V 32 H 4 Q 0 32 0 28 V 20 Q 0 16 4 16 H 16 Z"
         />
-        <circle className="config-gp-diagram__dpad-hub" cx="24" cy="24" r="5.5" />
+        <circle
+          className="config-gp-diagram__dpad-hub"
+          cx="24"
+          cy="24"
+          r="5.5"
+        />
       </g>
 
-      <rect className={metaClass(8)} x="188" y="100" width="28" height="12" rx="6" />
-      <rect className={metaClass(9)} x="224" y="100" width="28" height="12" rx="6" />
-      <text className="config-gp-diagram__meta-caption" x="202" y="124" textAnchor="middle">
+      <rect
+        className={metaClass(8)}
+        x="188"
+        y="100"
+        width="28"
+        height="12"
+        rx="6"
+      />
+      <rect
+        className={metaClass(9)}
+        x="224"
+        y="100"
+        width="28"
+        height="12"
+        rx="6"
+      />
+      <text
+        className="config-gp-diagram__meta-caption"
+        x="202"
+        y="124"
+        textAnchor="middle"
+      >
         select
       </text>
-      <text className="config-gp-diagram__meta-caption" x="238" y="124" textAnchor="middle">
+      <text
+        className="config-gp-diagram__meta-caption"
+        x="238"
+        y="124"
+        textAnchor="middle"
+      >
         start
       </text>
 
@@ -192,8 +224,19 @@ export function GamepadDiagram({ pad }: GamepadDiagramProps) {
         );
       })}
 
-      <g className={b(10).active ? 'config-gp-diagram__stick config-gp-diagram__stick--active' : 'config-gp-diagram__stick'}>
-        <circle className="config-gp-diagram__stick-well" cx={L_STICK.cx} cy={L_STICK.cy} r="22" />
+      <g
+        className={
+          b(10).active
+            ? 'config-gp-diagram__stick config-gp-diagram__stick--active'
+            : 'config-gp-diagram__stick'
+        }
+      >
+        <circle
+          className="config-gp-diagram__stick-well"
+          cx={L_STICK.cx}
+          cy={L_STICK.cy}
+          r="22"
+        />
         <circle
           className="config-gp-diagram__stick-cap"
           cx={L_STICK.cx}
@@ -207,8 +250,19 @@ export function GamepadDiagram({ pad }: GamepadDiagramProps) {
           r="2.4"
         />
       </g>
-      <g className={b(11).active ? 'config-gp-diagram__stick config-gp-diagram__stick--active' : 'config-gp-diagram__stick'}>
-        <circle className="config-gp-diagram__stick-well" cx={R_STICK.cx} cy={R_STICK.cy} r="22" />
+      <g
+        className={
+          b(11).active
+            ? 'config-gp-diagram__stick config-gp-diagram__stick--active'
+            : 'config-gp-diagram__stick'
+        }
+      >
+        <circle
+          className="config-gp-diagram__stick-well"
+          cx={R_STICK.cx}
+          cy={R_STICK.cy}
+          r="22"
+        />
         <circle
           className="config-gp-diagram__stick-cap"
           cx={R_STICK.cx}
@@ -224,7 +278,12 @@ export function GamepadDiagram({ pad }: GamepadDiagramProps) {
       </g>
 
       <circle className="config-gp-diagram__star" cx="128" cy="176" r="7" />
-      <text className="config-gp-diagram__star-icon" x="128" y="179" textAnchor="middle">
+      <text
+        className="config-gp-diagram__star-icon"
+        x="128"
+        y="179"
+        textAnchor="middle"
+      >
         ★
       </text>
       <circle

@@ -6,7 +6,10 @@ import type { HeldInputState } from '@/lib/controls/heldDirectionSteering';
 import { isFfaMode } from '@/game/engine/ffa';
 import type { FfaHudPlayer, GameState } from '@/game/engine/types';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
-import type { PixiGameRenderer, PixiRenderOpts } from '@/game/render/pixiRenderer';
+import type {
+  PixiGameRenderer,
+  PixiRenderOpts,
+} from '@/game/render/pixiRenderer';
 import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
 import type { GameAudioSystem } from '@/game/audio/gameAudio';
 import { resetCuesFromStep } from '@/game/audio/resetCue';
@@ -172,7 +175,8 @@ export function useGameRenderBridge({
       const label = challengeContinueLabelRef?.current;
       // Empty string hides the continue prompt (e.g. free-play action buttons).
       if (label != null) opts.challengeContinueLabel = label;
-      if (suppressVictoryOverlayRef?.current) opts.suppressVictoryOverlay = true;
+      if (suppressVictoryOverlayRef?.current)
+        opts.suppressVictoryOverlay = true;
       return opts;
     };
 
@@ -308,8 +312,7 @@ export function useGameRenderBridge({
         if (state.p2.body.length > prevP2Len)
           audio?.playCapture(state.p2.body.length);
         const extraLen = state.extraSnakes[0]?.snake.body.length ?? 1;
-        if (extraLen > prevExtraLen)
-          audio?.playCapture(extraLen);
+        if (extraLen > prevExtraLen) audio?.playCapture(extraLen);
 
         for (const player of resetCuesFromStep(state)) {
           audio?.playReset(player);

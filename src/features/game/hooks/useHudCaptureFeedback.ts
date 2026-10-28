@@ -27,7 +27,9 @@ export function useHudCaptureFeedback() {
 
   const [captureP1Highlight, setCaptureP1Highlight] = useState(false);
   const [captureP2Highlight, setCaptureP2Highlight] = useState(false);
-  const [captureRowFlash, setCaptureRowFlash] = useState<CaptureSide | null>(null);
+  const [captureRowFlash, setCaptureRowFlash] = useState<CaptureSide | null>(
+    null
+  );
   const [satsSurge, setSatsSurge] = useState<CaptureSide | null>(null);
   const [barCaptureHit, setBarCaptureHit] = useState<{
     side: CaptureSide;

@@ -1,4 +1,8 @@
-import { PlayerRole, type OnlineRoomState, type OnlineSeatState } from '@/types/socket';
+import {
+  PlayerRole,
+  type OnlineRoomState,
+  type OnlineSeatState,
+} from '@/types/socket';
 
 export const DEBUG_P1_SESSION = 'debug-p1';
 export const DEBUG_P2_SESSION = 'debug-p2';

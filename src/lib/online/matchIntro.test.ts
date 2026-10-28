@@ -92,9 +92,9 @@ describe('shouldShowMatchIntro', () => {
   });
 
   it('returns false in replay mode', () => {
-    expect(
-      shouldShowMatchIntro({ room: baseRoom(), replayMode: true })
-    ).toBe(false);
+    expect(shouldShowMatchIntro({ room: baseRoom(), replayMode: true })).toBe(
+      false
+    );
   });
 
   it('returns false when game already started', () => {

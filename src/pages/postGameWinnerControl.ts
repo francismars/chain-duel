@@ -30,7 +30,9 @@ function isHorizontalMenuKey(key: string): boolean {
 }
 
 function isPlayer1ControlKey(key: string): boolean {
-  return key === ' ' || key === 'w' || key === 'W' || key === 's' || key === 'S';
+  return (
+    key === ' ' || key === 'w' || key === 'W' || key === 's' || key === 'S'
+  );
 }
 
 function isPlayer2ControlKey(key: string): boolean {

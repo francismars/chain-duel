@@ -13,7 +13,10 @@ import {
   onlineReplayRoomUrl,
   onlineRoomUrl,
 } from '@/shared/constants/onlineRoutes';
-import { isOnlineMatchPlayer, isOnlineVictoryWinner } from '@/lib/online/isOnlineVictoryWinner';
+import {
+  isOnlineMatchPlayer,
+  isOnlineVictoryWinner,
+} from '@/lib/online/isOnlineVictoryWinner';
 import {
   DEBUG_P1_SESSION,
   DEBUG_P2_SESSION,
@@ -23,7 +26,6 @@ import {
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
-
 
 type PostGameNav =
   | { type: 'replay'; index: number } // round replay buttons
@@ -59,18 +61,18 @@ interface OnlinePostGameInfo {
   rematchNote1?: string;
   rematchWaitingForSessionID?: string;
   doubleOrNothingVotes: number;
-    matchRounds?: Array<{
-      matchRound: number;
-      finishedAt: number;
-      winnerName: string;
-      p1Name: string;
-      p2Name: string;
-      p1Score: number;
-      p2Score: number;
-      netPrize: number;
-      winnerRole?: 'Player 1' | 'Player 2';
-      replayAvailable?: boolean;
-    }>;
+  matchRounds?: Array<{
+    matchRound: number;
+    finishedAt: number;
+    winnerName: string;
+    p1Name: string;
+    p2Name: string;
+    p1Score: number;
+    p2Score: number;
+    netPrize: number;
+    winnerRole?: 'Player 1' | 'Player 2';
+    replayAvailable?: boolean;
+  }>;
 }
 
 const PLACEHOLDER_LNURL =
@@ -132,7 +134,7 @@ export default function OnlinePostGame({
     isDonHistory;
   const roomId = isPreview
     ? 'preview'
-    : roomIdProp ?? searchParams.get('roomId') ?? '';
+    : (roomIdProp ?? searchParams.get('roomId') ?? '');
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );

@@ -54,15 +54,24 @@ export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
     links: [
       { label: 'One seat filling', href: '/preview/online-seat' },
       { label: 'One seat paid', href: '/online/r/DEBUG?preview=seat' },
-      { label: 'Both seated, intro held', href: '/online/r/DEBUG?preview=loading' },
+      {
+        label: 'Both seated, intro held',
+        href: '/online/r/DEBUG?preview=loading',
+      },
     ],
   },
   {
     title: 'Online finish',
     links: [
       { label: 'Celebration, spectator', href: '/preview/online-finish' },
-      { label: 'Celebration, winner', href: '/preview/online-finish?side=winner' },
-      { label: 'Celebration, loser', href: '/preview/online-finish?side=loser' },
+      {
+        label: 'Celebration, winner',
+        href: '/preview/online-finish?side=winner',
+      },
+      {
+        label: 'Celebration, loser',
+        href: '/preview/online-finish?side=loser',
+      },
       { label: 'Results, spectator', href: '/preview/online-results' },
       { label: 'Results, winner', href: '/preview/online-results?side=winner' },
       { label: 'Results, loser', href: '/preview/online-results?side=loser' },

@@ -1,4 +1,5 @@
-export type ConfigTab = 'signin' | 'nwc' | 'keyboard' | 'gamepad' | 'performance';
+export type ConfigTab =
+  'signin' | 'nwc' | 'keyboard' | 'gamepad' | 'performance';
 export type LoginTab = 'extension' | 'nip46' | 'nsec';
 
 export type ConfigFocus =
@@ -113,8 +114,7 @@ export function moveConfigFocus(
     if (focus.kind === 'nip46Inline' && nip46InlineRow) {
       return {
         kind: 'nip46Inline',
-        index:
-          (focus.index + delta + NIP46_INLINE_COUNT) % NIP46_INLINE_COUNT,
+        index: (focus.index + delta + NIP46_INLINE_COUNT) % NIP46_INLINE_COUNT,
       };
     }
     return focus;

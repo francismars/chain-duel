@@ -28,7 +28,10 @@ type PreMatchKeyCapLayout = {
   gap: number;
 };
 
-function preMatchKeyCapLayout(width: number, height: number): PreMatchKeyCapLayout {
+function preMatchKeyCapLayout(
+  width: number,
+  height: number
+): PreMatchKeyCapLayout {
   const compact = width < 560 || height < 260;
   const keyPx = compact
     ? Math.max(14, width * 0.029)
@@ -82,7 +85,10 @@ function snakeHeadForSlot(state: GameState, slot: PlayerControlSlot): GridPos {
   }
 }
 
-function snakeBodyForSlot(state: GameState, slot: PlayerControlSlot): GridPos | null {
+function snakeBodyForSlot(
+  state: GameState,
+  slot: PlayerControlSlot
+): GridPos | null {
   switch (slot) {
     case 'p1':
       return state.p1.body[0] ?? null;
@@ -103,7 +109,10 @@ type DpadSpec = {
   wide?: boolean;
 };
 
-function padExtents(keyPx: number, gap: number): {
+function padExtents(
+  keyPx: number,
+  gap: number
+): {
   aboveAnchor: number;
   belowAnchor: number;
 } {
@@ -420,7 +429,9 @@ export function drawCanvasControlsFallback(
       const x = anchorX + spec.x;
       const y = anchorY + spec.y;
       const active = isPreMatchKeyHeld(slot, spec.dir);
-      ctx.strokeStyle = active ? 'rgba(255,255,255,0.48)' : 'rgba(255,255,255,0.42)';
+      ctx.strokeStyle = active
+        ? 'rgba(255,255,255,0.48)'
+        : 'rgba(255,255,255,0.42)';
       ctx.lineWidth = active ? 1.2 : 1;
       if (active) {
         ctx.fillStyle = 'rgba(255,255,255,0.05)';

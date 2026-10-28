@@ -38,13 +38,15 @@ import { MatchEndCard } from '@/features/game/MatchEndCard';
 import { MatchStartPrompt } from '@/features/game/MatchStartPrompt';
 import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
 import { useHudCaptureFeedback } from '@/features/game/hooks/useHudCaptureFeedback';
-import { captureFeedbackStyleFromCtx, captureHitStyleVars, distributionTrackFeedbackStyle } from '@/features/game/hudCaptureFeedback';
+import {
+  captureFeedbackStyleFromCtx,
+  captureHitStyleVars,
+  distributionTrackFeedbackStyle,
+} from '@/features/game/hudCaptureFeedback';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { withLocalOnlineControllerTest } from '@/game/controllerTest';
 import { applyPreMatchAxisHeld } from '@/game/render/preMatchKeyHighlight';
-import {
-  resolveDirectionFromKeyboardEvent,
-} from '@/lib/controls/playerControls';
+import { resolveDirectionFromKeyboardEvent } from '@/lib/controls/playerControls';
 import type { PlayerControlSlot } from '@/lib/controls/playerControls';
 import type { GameState } from '@/game/engine/types';
 import {
@@ -58,12 +60,7 @@ import '@/styles/pages/onlineGame.css';
 
 const REPLAY_SPEEDS = [0.25, 0.5, 1, 1.5, 2, 4, 8, 16, 32, 64] as const;
 
-type ReplayNavFocus =
-  | 'slider'
-  | 'play'
-  | 'restart'
-  | 'victory'
-  | 'speed';
+type ReplayNavFocus = 'slider' | 'play' | 'restart' | 'victory' | 'speed';
 
 const REPLAY_BTN_ORDER: ReplayNavFocus[] = [
   'play',
@@ -340,24 +337,23 @@ export default function OnlineGame({
         const hadStreakPop = streakPops().length > 0;
         advanceStreakPops();
         const popCount = renderState.pointChanges?.length ?? 0;
-        const pointPopTail =
-          popCount > 0 || prevPointPopCountRef.current > 0;
+        const pointPopTail = popCount > 0 || prevPointPopCountRef.current > 0;
         prevPointPopCountRef.current = popCount;
         const snapshotChanged = snap !== lastPaintedSnapshot;
         const animActive = rendererRef.current.needsPaint(renderState);
-      if (snapshotChanged || animActive || pointPopTail || hadStreakPop) {
-        try {
-          rendererRef.current.render(renderState, {
-            replayView: replayViewRef.current,
-            suppressVictoryOverlay: victoryHandoffRef.current,
-            canvasObjectives: canvasObjectivesRef.current,
-          });
-          lastPaintedSnapshot = snap;
-        } catch {
-          rendererRef.current?.destroy();
-          rendererRef.current = null;
+        if (snapshotChanged || animActive || pointPopTail || hadStreakPop) {
+          try {
+            rendererRef.current.render(renderState, {
+              replayView: replayViewRef.current,
+              suppressVictoryOverlay: victoryHandoffRef.current,
+              canvasObjectives: canvasObjectivesRef.current,
+            });
+            lastPaintedSnapshot = snap;
+          } catch {
+            rendererRef.current?.destroy();
+            rendererRef.current = null;
+          }
         }
-      }
       }
       raf = window.requestAnimationFrame(frame);
     };
@@ -527,10 +523,7 @@ export default function OnlineGame({
           replayFetchInFlightRef.current = false;
           setReplayError(frames.length === 0 ? 'Replay has no frames.' : '');
           const first = frames[0] ?? null;
-          resetReplayPointAnims(
-            pointAnimationsRef,
-            prevPointCountByKeyRef
-          );
+          resetReplayPointAnims(pointAnimationsRef, prevPointCountByKeyRef);
           if (first) {
             ingestOnlinePointChanges(
               first,
@@ -776,12 +769,7 @@ export default function OnlineGame({
       lastAxisRef.current = axis;
       const slot = role.isP1 ? 'p1' : role.isP2 ? 'p2' : null;
       const preState = snapshotRef.current?.state as GameState | undefined;
-      if (
-        slot &&
-        preState &&
-        !preState.gameStarted &&
-        !preState.gameEnded
-      ) {
+      if (slot && preState && !preState.gameStarted && !preState.gameEnded) {
         applyPreMatchAxisHeld(slot, keysHeldRef.current);
       }
       emitHeldInput(axis);
@@ -802,12 +790,7 @@ export default function OnlineGame({
       const role = localRoleRef.current;
       const slot = role.isP1 ? 'p1' : role.isP2 ? 'p2' : null;
       const preState = snapshotRef.current?.state as GameState | undefined;
-      if (
-        slot &&
-        preState &&
-        !preState.gameStarted &&
-        !preState.gameEnded
-      ) {
+      if (slot && preState && !preState.gameStarted && !preState.gameEnded) {
         applyPreMatchAxisHeld(slot, keysHeldRef.current);
       }
       emitHeldInput();
@@ -890,12 +873,15 @@ export default function OnlineGame({
   }, [replayLoaded, replayMode]);
 
   useEffect(() => {
-    if (!replayMode || !replayLoaded || replayStartedReportedRef.current) return;
+    if (!replayMode || !replayLoaded || replayStartedReportedRef.current)
+      return;
     if (replayFrames.length === 0) return;
     replayStartedReportedRef.current = true;
     replayStartedAtRef.current = Date.now();
     const code = roomInfo?.roomCode ?? _roomCodeProp;
-    reportClientEvent(socket, 'client.online.replay_started', { roomCode: code });
+    reportClientEvent(socket, 'client.online.replay_started', {
+      roomCode: code,
+    });
   }, [
     replayMode,
     replayLoaded,
@@ -1103,8 +1089,7 @@ export default function OnlineGame({
   const replayPositionSec =
     replayFrames.length > 0 ? (replayIndex * replayTickMs) / 1000 : 0;
   canvasObjectivesRef.current = {
-    controlSlots:
-      onlineControlSlot && !replayMode ? [onlineControlSlot] : [],
+    controlSlots: onlineControlSlot && !replayMode ? [onlineControlSlot] : [],
     ...(preMatchStart
       ? {
           startPromptWords: ONLINE_START_PROMPT_WORDS,
@@ -1164,147 +1149,141 @@ export default function OnlineGame({
               captureP2: hud?.captureP2 ?? '2%',
             })}
           >
-          <div className="gameState">
-            <div id="capturing">
-              <div
-                id="capturingP1"
-                className={
-                  captureRowFlash === 'P1' ? 'capture-row--flash' : undefined
-                }
-              >
-                <span
-                  className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}
+            <div className="gameState">
+              <div id="capturing">
+                <div
+                  id="capturingP1"
+                  className={
+                    captureRowFlash === 'P1' ? 'capture-row--flash' : undefined
+                  }
                 >
-                  {hud?.captureP1 ?? '2%'}
-                </span>{' '}
-                capture
-                {!replayMode && roomInfo?.p1PingMs != null ? (
                   <span
-                    className={`online-game-ping-badge online-game-ping online-game-ping--${onlinePingAccent(
-                      roomInfo.p1PingMs
-                    )}`}
-                    title="Player 1 round-trip to server"
+                    className={`capturingAmount ${captureP1Highlight ? 'highlight' : ''}`}
                   >
-                    {roomInfo.p1PingMs}ms
+                    {hud?.captureP1 ?? '2%'}
+                  </span>{' '}
+                  capture
+                  {!replayMode && roomInfo?.p1PingMs != null ? (
+                    <span
+                      className={`online-game-ping-badge online-game-ping online-game-ping--${onlinePingAccent(
+                        roomInfo.p1PingMs
+                      )}`}
+                      title="Player 1 round-trip to server"
+                    >
+                      {roomInfo.p1PingMs}ms
+                    </span>
+                  ) : null}
+                  {isP1 && !replayMode ? (
+                    <span className="online-game-you-tag online-game-you-tag--trail">
+                      YOU
+                    </span>
+                  ) : null}
+                </div>
+                <div
+                  id="capturingP2"
+                  className={
+                    captureRowFlash === 'P2' ? 'capture-row--flash' : undefined
+                  }
+                >
+                  {isP2 && !replayMode ? (
+                    <span className="online-game-you-tag online-game-you-tag--lead">
+                      YOU
+                    </span>
+                  ) : null}
+                  {!replayMode && roomInfo?.p2PingMs != null ? (
+                    <span
+                      className={`online-game-ping-badge online-game-ping-badge--mirror online-game-ping online-game-ping--${onlinePingAccent(
+                        roomInfo.p2PingMs
+                      )}`}
+                      title="Player 2 round-trip to server"
+                    >
+                      {roomInfo.p2PingMs}ms
+                    </span>
+                  ) : null}
+                  capture{' '}
+                  <span
+                    className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}
+                  >
+                    {hud?.captureP2 ?? '2%'}
                   </span>
-                ) : null}
-                {isP1 && !replayMode ? (
-                  <span className="online-game-you-tag online-game-you-tag--trail">
-                    YOU
-                  </span>
-                ) : null}
+                </div>
               </div>
-              <div
-                id="capturingP2"
-                className={
-                  captureRowFlash === 'P2' ? 'capture-row--flash' : undefined
-                }
-              >
-                {isP2 && !replayMode ? (
-                  <span className="online-game-you-tag online-game-you-tag--lead">
-                    YOU
-                  </span>
-                ) : null}
-                {!replayMode && roomInfo?.p2PingMs != null ? (
-                  <span
-                    className={`online-game-ping-badge online-game-ping-badge--mirror online-game-ping online-game-ping--${onlinePingAccent(
-                      roomInfo.p2PingMs
-                    )}`}
-                    title="Player 2 round-trip to server"
-                  >
-                    {roomInfo.p2PingMs}ms
-                  </span>
-                ) : null}
-                capture{' '}
-                <span
-                  className={`capturingAmount ${captureP2Highlight ? 'highlight' : ''}`}
+
+              <div id="distributions">
+                <div
+                  id="currentDistribution"
+                  className={`distributionBarOutter${
+                    barCaptureHit?.side === 'P1'
+                      ? ' distribution-track--p1-outer-glow'
+                      : ''
+                  }`}
+                  style={distributionTrackFeedbackStyle(
+                    {
+                      captureP1: hud?.captureP1 ?? '2%',
+                      captureP2: hud?.captureP2 ?? '2%',
+                    },
+                    hud?.currentWidthP1 ?? 50
+                  )}
                 >
-                  {hud?.captureP2 ?? '2%'}
+                  <div
+                    id="currentDistributionP1"
+                    className={`distributionBar${
+                      barCaptureHit?.side === 'P1'
+                        ? ' distribution-bar--capture-hit'
+                        : ''
+                    }`}
+                    style={{
+                      width: `${hud?.currentWidthP1 ?? 50}%`,
+                      ...(barCaptureHit?.side === 'P1'
+                        ? captureHitStyleVars(barCaptureHit.intensity)
+                        : {}),
+                    }}
+                  />
+                  <div
+                    id="currentDistributionP2"
+                    className={`distributionBar${
+                      barCaptureHit?.side === 'P2'
+                        ? ' distribution-bar--capture-hit'
+                        : ''
+                    }`}
+                    style={{
+                      width: `${hud?.currentWidthP2 ?? 50}%`,
+                      ...(barCaptureHit?.side === 'P2'
+                        ? captureHitStyleVars(barCaptureHit.intensity)
+                        : {}),
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex points">
+              <div
+                className={`player-sats player-sats-p1${
+                  satsSurge === 'P1' ? ' player-sats--surge' : ''
+                }`}
+              >
+                <span id="p1Points" className="condensed">
+                  {Math.floor(
+                    hud?.p1Points ?? roomInfo?.p1Paid ?? roomInfo?.buyin ?? 0
+                  ).toLocaleString()}
+                </span>{' '}
+                <span className="grey">sats</span>
+              </div>
+              <Sponsorship id="sponsorshipGame" showLabel={false} />
+              <div
+                className={`player-sats player-sats-p2${
+                  satsSurge === 'P2' ? ' player-sats--surge' : ''
+                }`}
+              >
+                <span className="grey">sats</span>{' '}
+                <span id="p2Points" className="condensed">
+                  {Math.floor(
+                    hud?.p2Points ?? roomInfo?.p2Paid ?? roomInfo?.buyin ?? 0
+                  ).toLocaleString()}
                 </span>
               </div>
             </div>
-
-            <div id="distributions">
-              <div
-                id="currentDistribution"
-                className={`distributionBarOutter${
-                  barCaptureHit?.side === 'P1'
-                    ? ' distribution-track--p1-outer-glow'
-                    : ''
-                }`}
-                style={distributionTrackFeedbackStyle(
-                  {
-                    captureP1: hud?.captureP1 ?? '2%',
-                    captureP2: hud?.captureP2 ?? '2%',
-                  },
-                  hud?.currentWidthP1 ?? 50
-                )}
-              >
-                <div
-                  id="currentDistributionP1"
-                  className={`distributionBar${
-                    barCaptureHit?.side === 'P1'
-                      ? ' distribution-bar--capture-hit'
-                      : ''
-                  }`}
-                  style={{
-                    width: `${hud?.currentWidthP1 ?? 50}%`,
-                    ...(barCaptureHit?.side === 'P1'
-                      ? captureHitStyleVars(barCaptureHit.intensity)
-                      : {}),
-                  }}
-                />
-                <div
-                  id="currentDistributionP2"
-                  className={`distributionBar${
-                    barCaptureHit?.side === 'P2'
-                      ? ' distribution-bar--capture-hit'
-                      : ''
-                  }`}
-                  style={{
-                    width: `${hud?.currentWidthP2 ?? 50}%`,
-                    ...(barCaptureHit?.side === 'P2'
-                      ? captureHitStyleVars(barCaptureHit.intensity)
-                      : {}),
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex points">
-            <div
-              className={`player-sats player-sats-p1${
-                satsSurge === 'P1' ? ' player-sats--surge' : ''
-              }`}
-            >
-              <span id="p1Points" className="condensed">
-                {Math.floor(
-                  hud?.p1Points ??
-                    roomInfo?.p1Paid ??
-                    roomInfo?.buyin ??
-                    0
-                ).toLocaleString()}
-              </span>{' '}
-              <span className="grey">sats</span>
-            </div>
-            <Sponsorship id="sponsorshipGame" showLabel={false} />
-            <div
-              className={`player-sats player-sats-p2${
-                satsSurge === 'P2' ? ' player-sats--surge' : ''
-              }`}
-            >
-              <span className="grey">sats</span>{' '}
-              <span id="p2Points" className="condensed">
-                {Math.floor(
-                  hud?.p2Points ??
-                    roomInfo?.p2Paid ??
-                    roomInfo?.buyin ??
-                    0
-                ).toLocaleString()}
-              </span>
-            </div>
-          </div>
           </div>
 
           <div id="gameCanvas" className={canvasHighlight ? 'highlight' : ''}>
@@ -1804,16 +1783,10 @@ type LiveOnlineSnapshotCtx = {
   pointAnimationsRef: MutableRefObject<OnlinePointAnim[]>;
   prevPointCountByKeyRef: MutableRefObject<Map<string, number>>;
   handleSatsCapturedRef: MutableRefObject<
-    (
-      side: 'P1' | 'P2',
-      ctx: { captureP1: string; captureP2: string }
-    ) => void
+    (side: 'P1' | 'P2', ctx: { captureP1: string; captureP2: string }) => void
   >;
   handleCaptureTierChangedRef: MutableRefObject<
-    (
-      side: 'P1' | 'P2',
-      ctx: { captureP1: string; captureP2: string }
-    ) => void
+    (side: 'P1' | 'P2', ctx: { captureP1: string; captureP2: string }) => void
   >;
   prevCaptureRef: MutableRefObject<{ p1: string; p2: string }>;
   prevGameStateRef: MutableRefObject<GameState | null>;

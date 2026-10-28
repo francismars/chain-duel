@@ -74,7 +74,9 @@ describe('match recipe', () => {
     expect(capturePercentForLength(6)).toBe(8);
     expect(capturePercentForLength(10)).toBe(16);
     expect(capturePercentForLength(11)).toBe(32);
-    expect(capturePercentForLength(8, [1, 3, 5, 9, 12], [2, 5, 9, 20, 40])).toBe(9);
+    expect(
+      capturePercentForLength(8, [1, 3, 5, 9, 12], [2, 5, 9, 20, 40])
+    ).toBe(9);
   });
 
   it('plays the eat clip for the capture percent of that length', () => {
@@ -84,7 +86,11 @@ describe('match recipe', () => {
     expect(captureClipForLength(10)).toBe(16);
     expect(captureClipForLength(11)).toBe(32);
     expect(captureClipForLength(36)).toBe(32);
-    expect(captureClipForLength(10, [1, 3, 5, 9, 12], [2, 5, 9, 20, 40])).toBe(16);
-    expect(captureClipForLength(12, [1, 3, 5, 9, 12], [2, 5, 9, 20, 40])).toBe(32);
+    expect(captureClipForLength(10, [1, 3, 5, 9, 12], [2, 5, 9, 20, 40])).toBe(
+      16
+    );
+    expect(captureClipForLength(12, [1, 3, 5, 9, 12], [2, 5, 9, 20, 40])).toBe(
+      32
+    );
   });
 });

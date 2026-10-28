@@ -57,11 +57,7 @@ export interface PointChange {
 }
 
 export type PowerUpType =
-  | 'SURGE'
-  | 'FREEZE'
-  | 'PHANTOM'
-  | 'AMPLIFIER'
-  | 'DECOY';
+  'SURGE' | 'FREEZE' | 'PHANTOM' | 'AMPLIFIER' | 'DECOY';
 
 export interface PowerUpItem {
   pos: GridPos;

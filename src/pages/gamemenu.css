@@ -1285,8 +1285,12 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
   width: auto;
 }
 
-.gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer span:not(.sats-label),
-.gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer span:not(.sats-label) {
+.gamemenu-page.gamemenu-preview.is-nostr
+  #player1satsContainer
+  span:not(.sats-label),
+.gamemenu-page.gamemenu-preview.is-nostr
+  #player2satsContainer
+  span:not(.sats-label) {
   font-size: 2cqw;
 }
 

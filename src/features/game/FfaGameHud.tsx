@@ -81,9 +81,7 @@ function DistributionBar({
       >
         {players.map((player) => {
           const width = player[shareKey];
-          const isHit =
-            live &&
-            barCaptureHit?.playerIndex === player.index;
+          const isHit = live && barCaptureHit?.playerIndex === player.index;
           const segment = (
             <div
               key={`${player.index}-${isHit ? barCaptureHit!.generation : 'idle'}`}

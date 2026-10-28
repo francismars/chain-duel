@@ -13,7 +13,8 @@ export type SoloSeatSwapResult = {
 /** True when exactly one of P1/P2 is human and solo seat switch is enabled. */
 export function canSwapSoloHumanSeat(state: GameState): boolean {
   if (!state.meta.soloInputSlot) return false;
-  if (state.gameStarted || state.countdownStart || state.gameEnded) return false;
+  if (state.gameStarted || state.countdownStart || state.gameEnded)
+    return false;
   if (state.meta.teamMode !== 'solo') return false;
   return state.meta.p1Human !== state.meta.p2Human;
 }

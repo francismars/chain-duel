@@ -51,12 +51,16 @@ export class RadiatingField {
   }
 
   resize(width: number, height: number): void {
-    if (width === this.width && height === this.height && this.lines.length) return;
+    if (width === this.width && height === this.height && this.lines.length)
+      return;
     this.width = width;
     this.height = height;
     this.maxRadius = Math.hypot(width, height) * 0.54;
     const divisor = this.tone === 'calm' ? 42 : 16;
-    const count = Math.max(this.tone === 'calm' ? 22 : 48, Math.floor((width + height) / divisor));
+    const count = Math.max(
+      this.tone === 'calm' ? 22 : 48,
+      Math.floor((width + height) / divisor)
+    );
     this.lines = Array.from({ length: count }, () => ({
       angle: Math.random() * Math.PI * 2,
       progress: Math.random(),
@@ -80,7 +84,8 @@ export class RadiatingField {
     accentStrong: Rgb = [255, 255, 255]
   ): void {
     if (!this.lines.length) return;
-    const intro = this.tone === 'calm' ? 0 : introIntensity(now - this.startedAt);
+    const intro =
+      this.tone === 'calm' ? 0 : introIntensity(now - this.startedAt);
     const speedMul = 1 + intro * 4.5;
     const alphaMul = (1 + intro * 2.2) * (this.tone === 'calm' ? 0.42 : 1);
     const segMul = 1 + intro * 0.75;
@@ -106,7 +111,8 @@ export class RadiatingField {
       if (line.progress > 1) {
         line.progress = 0;
         line.angle = Math.random() * Math.PI * 2;
-        line.speed = intro > 0.1 ? 0.005 + Math.random() * 0.012 : this.calmSpeed();
+        line.speed =
+          intro > 0.1 ? 0.005 + Math.random() * 0.012 : this.calmSpeed();
         line.segLen = 40 + Math.random() * 90;
         line.baseAlpha = 0.14 + Math.random() * 0.16;
         line.width = 0.75 + Math.random() * 1.35;
@@ -123,7 +129,10 @@ export class RadiatingField {
       const ty = cy + sin * tailR;
       const centerFade = Math.min(1, line.progress * 5.5);
       const edgeFade = Math.min(1, (1 - line.progress) * 5);
-      const alpha = Math.min(0.72, line.baseAlpha * alphaMul * centerFade * edgeFade);
+      const alpha = Math.min(
+        0.72,
+        line.baseAlpha * alphaMul * centerFade * edgeFade
+      );
       if (alpha < 0.015) continue;
 
       const gradient = ctx.createLinearGradient(tx, ty, hx, hy);

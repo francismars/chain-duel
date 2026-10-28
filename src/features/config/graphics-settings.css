@@ -70,7 +70,9 @@
   border-radius: 999px;
   background: rgb(0 0 0 / 0.5);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .graphics-settings__switch::after {
@@ -83,7 +85,9 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.6);
   transform: translateY(-50%);
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
 .graphics-settings__switch:checked {

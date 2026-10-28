@@ -72,10 +72,7 @@ function AppRoutes() {
 
         {/* P2P tournament (paid entry + lobby + bracket) */}
         <Route path="/p2p" element={<P2pEntry />} />
-        <Route
-          path="/testnet-entry"
-          element={<Navigate to="/p2p" replace />}
-        />
+        <Route path="/testnet-entry" element={<Navigate to="/p2p" replace />} />
         <Route path="/tournlobby" element={<TournamentLobby />} />
         <Route path="/tournbracket" element={<TournamentBracket />} />
 
@@ -89,18 +86,21 @@ function AppRoutes() {
         <Route path="/online/r/:roomCode" element={<OnlineRoom />} />
         <Route path="/preview" element={<UiDebugIndex />} />
         <Route path="/preview/match-triggers" element={<MatchTriggerLab />} />
-        <Route path="/preview/p2p-settings-b" element={<P2pSettingsPreviewB />} />
+        <Route
+          path="/preview/p2p-settings-b"
+          element={<P2pSettingsPreviewB />}
+        />
         <Route
           path="/preview/freeplay-settings-b"
           element={<FreePlaySettingsPreviewB />}
         />
         <Route path="/preview/p2p-payment-b" element={<P2pPaymentPreviewB />} />
-        <Route path="/preview/online-finish" element={<OnlineFinishPreview />} />
-        <Route path="/preview/online-seat" element={<OnlineSeatPreview />} />
         <Route
-          path="/preview/online-results"
-          element={<OnlinePostGame />}
+          path="/preview/online-finish"
+          element={<OnlineFinishPreview />}
         />
+        <Route path="/preview/online-seat" element={<OnlineSeatPreview />} />
+        <Route path="/preview/online-results" element={<OnlinePostGame />} />
         <Route path="/preview/online-don" element={<OnlinePostGame />} />
         <Route path="/network/*" element={<LegacyNetworkRedirect />} />
       </Route>

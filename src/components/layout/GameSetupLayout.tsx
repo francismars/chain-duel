@@ -330,8 +330,12 @@ export function GameSetupLayout({
                         : `rules-modal__title rules-modal__title--${rulesTitle.phase} rules-modal__title--${rulesTitle.dir}`
                     }
                   >
-                    <span className="rules-modal__kicker">{rulesTitle.kicker}</span>
-                    <span className="rules-modal__heading">{rulesTitle.title}</span>
+                    <span className="rules-modal__kicker">
+                      {rulesTitle.kicker}
+                    </span>
+                    <span className="rules-modal__heading">
+                      {rulesTitle.title}
+                    </span>
                   </p>
                 </div>
                 <RulesSection

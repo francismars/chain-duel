@@ -89,7 +89,9 @@ export function relaysForNostrConnectQr(relays?: readonly string[]): string[] {
  * Normalize relays returned by the bunker (switch_relays / bunker pointer).
  * Does not inject client defaults — signer list wins.
  */
-export function normalizeSignerRelays(signerRelays: readonly string[]): string[] {
+export function normalizeSignerRelays(
+  signerRelays: readonly string[]
+): string[] {
   const cleaned = filterAllowedRelays(signerRelays);
   if (cleaned.length > 0) {
     return cleaned.slice(0, MAX_STORED_SIGNER_RELAYS);

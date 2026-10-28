@@ -26,13 +26,13 @@ export function isOnlineVictoryWinner(
   if (role === 'Player 1') {
     return Boolean(
       (info.p1SessionID && sessionID && info.p1SessionID === sessionID) ||
-        (info.p1SocketID && socketID && info.p1SocketID === socketID)
+      (info.p1SocketID && socketID && info.p1SocketID === socketID)
     );
   }
   if (role === 'Player 2') {
     return Boolean(
       (info.p2SessionID && sessionID && info.p2SessionID === sessionID) ||
-        (info.p2SocketID && socketID && info.p2SocketID === socketID)
+      (info.p2SocketID && socketID && info.p2SocketID === socketID)
     );
   }
   return false;
@@ -49,8 +49,8 @@ export function isOnlineMatchPlayer(
   }
   return Boolean(
     (info.p1SessionID && sessionID && info.p1SessionID === sessionID) ||
-      (info.p1SocketID && socketID && info.p1SocketID === socketID) ||
-      (info.p2SessionID && sessionID && info.p2SessionID === sessionID) ||
-      (info.p2SocketID && socketID && info.p2SocketID === socketID)
+    (info.p1SocketID && socketID && info.p1SocketID === socketID) ||
+    (info.p2SessionID && sessionID && info.p2SessionID === sessionID) ||
+    (info.p2SocketID && socketID && info.p2SocketID === socketID)
   );
 }

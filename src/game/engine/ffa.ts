@@ -4,7 +4,10 @@ import {
 } from '@/game/engine/constants';
 import type { GameState, GridPos, PlayerId } from '@/game/engine/types';
 import { captureRateLabel } from '@/game/engine/captureRateLabel';
-import { capturePercentForLength as percentForLength, gameRecipe } from '@/game/effects/matchRecipe';
+import {
+  capturePercentForLength as percentForLength,
+  gameRecipe,
+} from '@/game/effects/matchRecipe';
 import type { FfaHudPlayer } from '@/game/engine/types';
 
 export type FfaPlayerIndex = 0 | 1 | 2 | 3;

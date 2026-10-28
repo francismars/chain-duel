@@ -73,7 +73,13 @@ export function UiDebugMenu() {
         data-tooltip="UI debug"
         onClick={() => setOpen((value) => !value)}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden
+        >
           <path d="M4 7h16M4 12h16M4 17h10" />
         </svg>
       </button>
@@ -98,7 +104,8 @@ export function UiDebugMenu() {
               Turn off debug
             </button>
             <p>
-              To turn it back on, type debug, press Ctrl+Shift+D, or open a URL like /?debug.
+              To turn it back on, type debug, press Ctrl+Shift+D, or open a URL
+              like /?debug.
             </p>
           </div>
           <div className="ui-debug-menu__groups">

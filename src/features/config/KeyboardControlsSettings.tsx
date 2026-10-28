@@ -285,12 +285,15 @@ export function KeyboardControlsSettings({
         : `${DIRECTION_LABELS[listening.direction]} for ${SLOT_TITLES[listening.slot]}`;
 
   return (
-    <section className="keyboard-controls-settings" aria-label="Keyboard controls">
+    <section
+      className="keyboard-controls-settings"
+      aria-label="Keyboard controls"
+    >
       <div className="keyboard-controls-settings__header">
         <div>
           <p className="keyboard-controls-settings__copy">
-            Click a direction or Start, then press the key you want. Labels follow
-            your keyboard layout automatically.
+            Click a direction or Start, then press the key you want. Labels
+            follow your keyboard layout automatically.
           </p>
         </div>
         <div className="keyboard-controls-settings__layout-bar">
@@ -312,8 +315,8 @@ export function KeyboardControlsSettings({
       <details className="keyboard-controls-settings__advanced">
         <summary>Layout override</summary>
         <p className="keyboard-controls-settings__advanced-copy">
-          Only needed if auto-detect is wrong. Hints use this to show the letter on
-          your key cap.
+          Only needed if auto-detect is wrong. Hints use this to show the letter
+          on your key cap.
         </p>
         <div className="keyboard-controls-settings__layout-pills">
           {(['qwerty', 'azerty', 'qwertz'] as KeyboardLayoutId[]).map((id) => (
@@ -338,7 +341,10 @@ export function KeyboardControlsSettings({
 
       <div className="keyboard-controls-settings__players">
         {CONFIG_SLOTS.map((slot) => (
-          <article key={slot} className="keyboard-controls-settings__player-card">
+          <article
+            key={slot}
+            className="keyboard-controls-settings__player-card"
+          >
             <div className="keyboard-controls-settings__player-head">
               <h3 className="keyboard-controls-settings__player-title">
                 {SLOT_TITLES[slot]}
@@ -379,7 +385,10 @@ export function KeyboardControlsSettings({
       </div>
 
       {listening && listenLabel ? (
-        <div className="keyboard-controls-settings__listen-banner" role="status">
+        <div
+          className="keyboard-controls-settings__listen-banner"
+          role="status"
+        >
           Press a key for {listenLabel} — Esc to cancel
         </div>
       ) : null}

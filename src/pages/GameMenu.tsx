@@ -46,7 +46,10 @@ import {
   relayHintsFromNevent,
   relayUrlToDisplayHost,
 } from '@/lib/nostr/probeRelaysForEvent';
-import { clearClientGameConfig, markSocketDuelSession } from '@/pages/practiceHubModes';
+import {
+  clearClientGameConfig,
+  markSocketDuelSession,
+} from '@/pages/practiceHubModes';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './gamemenu.css';
 
@@ -131,19 +134,11 @@ export default function GameMenu({
   const lastKnownP2SatsRef = useRef(0);
   const prevWinnerRef = useRef<string | null>(null);
   const nostrNote1Ref = useRef('');
-  const highlightTimeoutP1Ref = useRef<WindowTimeout | null>(
-    null
-  );
-  const highlightTimeoutP2Ref = useRef<WindowTimeout | null>(
-    null
-  );
+  const highlightTimeoutP1Ref = useRef<WindowTimeout | null>(null);
+  const highlightTimeoutP2Ref = useRef<WindowTimeout | null>(null);
   const setupMenuKeyGraceUntilRef = useRef(0);
-  const startShakeTimeoutRef = useRef<WindowTimeout | null>(
-    null
-  );
-  const startHintTimeoutRef = useRef<WindowTimeout | null>(
-    null
-  );
+  const startShakeTimeoutRef = useRef<WindowTimeout | null>(null);
+  const startHintTimeoutRef = useRef<WindowTimeout | null>(null);
 
   useGamepad(true, { lnurlCompatScan: !isNostrMode });
   const { compatibleP1, compatibleP2 } = useLnurlCompatibleQrHold(!isNostrMode);
@@ -708,8 +703,7 @@ export default function GameMenu({
       if (document.querySelector('.rules-modal')) {
         return;
       }
-      const down =
-        e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
+      const down = e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
       const up = e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W';
       if (preview && up && !showCancelOverlay) {
         if (
@@ -722,12 +716,7 @@ export default function GameMenu({
           setButtonSelected('rules');
         }
       }
-      if (
-        preview &&
-        down &&
-        !showCancelOverlay &&
-        buttonSelected === 'rules'
-      ) {
+      if (preview && down && !showCancelOverlay && buttonSelected === 'rules') {
         playSfx(SFX.MENU_SELECT);
         setButtonSelected('mainMenuButton');
       }
@@ -818,7 +807,9 @@ export default function GameMenu({
         }`}
         mainMenuDisabled={false}
         canStart={canStart}
-        mainMenuLabel={prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'}
+        mainMenuLabel={
+          prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'
+        }
         cancelOverlayTitle={
           prevWinner
             ? 'Return to claim screen?'

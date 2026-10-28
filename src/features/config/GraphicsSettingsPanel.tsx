@@ -11,7 +11,9 @@ import {
 import './graphics-settings.css';
 
 type BooleanKey = {
-  [K in keyof GraphicsSettings]: GraphicsSettings[K] extends boolean ? K : never;
+  [K in keyof GraphicsSettings]: GraphicsSettings[K] extends boolean
+    ? K
+    : never;
 }[keyof GraphicsSettings];
 
 type ToggleSpec = {

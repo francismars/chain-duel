@@ -57,7 +57,9 @@ export function applyGraphicsDocumentClasses(settings: GraphicsSettings): void {
   root.toggle(NO_ANIM_CLASS, settings.animations === 'off');
 }
 
-type StoredGraphicsSettings = Partial<Record<keyof GraphicsSettings, unknown>> & {
+type StoredGraphicsSettings = Partial<
+  Record<keyof GraphicsSettings, unknown>
+> & {
   /** Earlier builds stored these as switches; mapped onto the three-way modes. */
   popupGlow?: unknown;
   smoothChainEffects?: unknown;
@@ -70,7 +72,8 @@ export function readGraphicsSettings(): GraphicsSettings {
     if (!raw) return { ...DEFAULT_GRAPHICS_SETTINGS };
     const parsed = JSON.parse(raw) as StoredGraphicsSettings;
     const merged = { ...DEFAULT_GRAPHICS_SETTINGS };
-    if (typeof parsed.antialias === 'boolean') merged.antialias = parsed.antialias;
+    if (typeof parsed.antialias === 'boolean')
+      merged.antialias = parsed.antialias;
     if (typeof parsed.measureEveryFrame === 'boolean')
       merged.measureEveryFrame = parsed.measureEveryFrame;
     if (typeof parsed.shadowsAndTransparency === 'boolean')

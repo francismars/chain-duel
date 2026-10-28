@@ -1,10 +1,5 @@
 export type ChallengeId =
-  | 'normie'
-  | 'stacker'
-  | 'noderunner'
-  | 'gauntlet'
-  | 'ffa'
-  | 'sovereign-stack';
+  'normie' | 'stacker' | 'noderunner' | 'gauntlet' | 'ffa' | 'sovereign-stack';
 
 export type ChallengeRank = 1 | 2 | 3 | 4 | 5 | 6;
 

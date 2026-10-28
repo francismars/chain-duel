@@ -54,7 +54,10 @@ export function planCaptureAnims(
 export const TAIL_GROW_MS = 250;
 
 /** Grows from nothing to the cell. The scale stays inside the cell. */
-export function tailGrowScale(elapsedMs: number, durationMs = TAIL_GROW_MS): number {
+export function tailGrowScale(
+  elapsedMs: number,
+  durationMs = TAIL_GROW_MS
+): number {
   const t = Math.max(0, Math.min(1, elapsedMs / durationMs));
   return 1 - (1 - t) ** 2;
 }
@@ -76,7 +79,8 @@ export function retainFreshCoins(
       (prevCoin) =>
         prevCoin.pos[0] === coin.pos[0] && prevCoin.pos[1] === coin.pos[1]
     );
-    if (!known) next.push({ pos: [coin.pos[0], coin.pos[1]], reward: coin.reward });
+    if (!known)
+      next.push({ pos: [coin.pos[0], coin.pos[1]], reward: coin.reward });
   }
   return next;
 }

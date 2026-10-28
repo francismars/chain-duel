@@ -5,7 +5,9 @@ import {
 } from '@/lib/controls/playerControls';
 
 export function useKeyboardLayout(): KeyboardLayoutId {
-  const [layout, setLayout] = useState<KeyboardLayoutId>(() => readKeyboardLayoutId());
+  const [layout, setLayout] = useState<KeyboardLayoutId>(() =>
+    readKeyboardLayoutId()
+  );
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
@@ -13,7 +15,8 @@ export function useKeyboardLayout(): KeyboardLayoutId {
       setLayout(readKeyboardLayoutId());
     };
     const onCustom = (event: Event) => {
-      const detail = (event as CustomEvent<{ layout?: KeyboardLayoutId }>).detail;
+      const detail = (event as CustomEvent<{ layout?: KeyboardLayoutId }>)
+        .detail;
       if (detail?.layout) {
         setLayout(detail.layout);
         return;
@@ -21,10 +24,16 @@ export function useKeyboardLayout(): KeyboardLayoutId {
       setLayout(readKeyboardLayoutId());
     };
     window.addEventListener('storage', onStorage);
-    window.addEventListener('chainduel:keyboard-layout', onCustom as EventListener);
+    window.addEventListener(
+      'chainduel:keyboard-layout',
+      onCustom as EventListener
+    );
     return () => {
       window.removeEventListener('storage', onStorage);
-      window.removeEventListener('chainduel:keyboard-layout', onCustom as EventListener);
+      window.removeEventListener(
+        'chainduel:keyboard-layout',
+        onCustom as EventListener
+      );
     };
   }, []);
 

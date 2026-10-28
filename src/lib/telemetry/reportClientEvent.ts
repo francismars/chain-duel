@@ -1,5 +1,8 @@
 import type { Socket } from 'socket.io-client';
-import type { ClientToServerEvents, ServerToClientEvents } from '@/types/socket';
+import type {
+  ClientToServerEvents,
+  ServerToClientEvents,
+} from '@/types/socket';
 
 export type ClientTelemetrySocket = Socket<
   ServerToClientEvents,
@@ -83,7 +86,10 @@ function buildPayload(
   };
 }
 
-function emitPayload(socket: ClientTelemetrySocket, payload: QueuedPayload): void {
+function emitPayload(
+  socket: ClientTelemetrySocket,
+  payload: QueuedPayload
+): void {
   socket.emit('reportClientEvent', payload);
 }
 

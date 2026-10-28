@@ -23,10 +23,7 @@ export function onlineRoomUrl(
 }
 
 /** Open replay viewer. Omits `round` for match 1; room code in the path is enough to bootstrap. */
-export function onlineReplayRoomUrl(
-  roomCode: string,
-  round?: number
-): string {
+export function onlineReplayRoomUrl(roomCode: string, round?: number): string {
   const query: Record<string, string | undefined> = { replay: '1' };
   if (round != null && round > 1) {
     query.round = String(round);

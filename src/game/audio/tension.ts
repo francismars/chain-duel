@@ -16,7 +16,8 @@ import {
 /** Shares use the current pool, so stake size and block bonuses don't change thresholds. */
 export type TensionLevel = 0 | 1 | 2 | 3 | 4;
 
-export type TensionTrack = 'off' | 'build' | 'pressure' | 'tension' | 'critical';
+export type TensionTrack =
+  'off' | 'build' | 'pressure' | 'tension' | 'critical';
 
 export const TENSION_TRACKS: readonly TensionTrack[] = [
   'off',
@@ -192,9 +193,7 @@ export function getTensionBreakdown(
     )
   );
   const capture =
-    rates.length > 0
-      ? captureGapTension(Math.max(...rates), recipe)
-      : 0;
+    rates.length > 0 ? captureGapTension(Math.max(...rates), recipe) : 0;
   const scores =
     state.meta.teamMode === '2v1'
       ? [state.score[0], state.score[1] + (state.extraSnakes[0]?.score ?? 0)]

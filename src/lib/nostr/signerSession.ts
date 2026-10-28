@@ -700,10 +700,7 @@ export async function connectNostrConnect(
 
     let pubkey: string;
     try {
-      pubkey = await rawNip46GetPublicKey(
-        { clientSk, bp: bpForRpc },
-        10_000
-      );
+      pubkey = await rawNip46GetPublicKey({ clientSk, bp: bpForRpc }, 10_000);
     } catch {
       pubkey = normalizeNostrPubkeyHex(finishedBp.pubkey);
     }
@@ -711,7 +708,10 @@ export async function connectNostrConnect(
     localStorage.setItem(STORED_NOSTR_PUBKEY_KEY, pubkey);
     localStorage.setItem(SIGNER_MODE_KEY, 'nip46');
     localStorage.setItem(NIP46_CLIENT_SK_KEY, bytesToHex(clientSk));
-    localStorage.setItem(NIP46_BP_KEY, JSON.stringify(ensureSession()?.bp ?? finishedBp));
+    localStorage.setItem(
+      NIP46_BP_KEY,
+      JSON.stringify(ensureSession()?.bp ?? finishedBp)
+    );
 
     return pubkey;
   } catch (err) {

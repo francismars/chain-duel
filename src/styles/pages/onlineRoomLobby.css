@@ -814,7 +814,8 @@
   background: #00000098;
   text-align: center;
   pointer-events: none;
-  animation: online-lobby-room-full-in 720ms cubic-bezier(0.16, 1.2, 0.32, 1) both;
+  animation: online-lobby-room-full-in 720ms cubic-bezier(0.16, 1.2, 0.32, 1)
+    both;
 }
 
 @keyframes online-lobby-room-full-in {
@@ -836,7 +837,8 @@
   font-size: clamp(3.4rem, 12vw, 9rem);
   line-height: 0.82;
   letter-spacing: -0.045em;
-  animation: online-lobby-room-full-pin 720ms cubic-bezier(0.16, 1.2, 0.32, 1) both;
+  animation: online-lobby-room-full-pin 720ms cubic-bezier(0.16, 1.2, 0.32, 1)
+    both;
 }
 
 @keyframes online-lobby-room-full-pin {
@@ -879,7 +881,8 @@
   object-fit: cover;
   border-radius: 50%;
   border: 1px solid rgb(255 255 255 / 0.28);
-  animation: online-lobby-full-room-pic 780ms cubic-bezier(0.16, 1.16, 0.3, 1) both;
+  animation: online-lobby-full-room-pic 780ms cubic-bezier(0.16, 1.16, 0.3, 1)
+    both;
 }
 
 .online-lobby-full-room-players .online-lobby-full-room-player:first-child img {
@@ -897,7 +900,8 @@
   letter-spacing: 0.03em;
   line-height: 1;
   text-transform: uppercase;
-  animation: online-lobby-full-room-name 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: online-lobby-full-room-name 620ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
 }
 
 .online-lobby-full-room-players .online-lobby-full-room-player:first-child p {
@@ -1922,7 +1926,9 @@
   gap: 0.35rem;
 }
 
-.online-lobby-pay-zone-inner--invite .online-lobby-invite-actions .online-lobby-action {
+.online-lobby-pay-zone-inner--invite
+  .online-lobby-invite-actions
+  .online-lobby-action {
   flex: 1 1 0;
   min-width: 0;
   width: auto;

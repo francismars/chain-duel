@@ -19,8 +19,7 @@ function isHexPubkey64(s: string): boolean {
  */
 export function formatHudPlayerName(
   row:
-    | { name?: string; fallbackLabel?: string; nostrPubkey?: string }
-    | undefined,
+    { name?: string; fallbackLabel?: string; nostrPubkey?: string } | undefined,
   roleFallback: string
 ): string {
   if (!row) return roleFallback;

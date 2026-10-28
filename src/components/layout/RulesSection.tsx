@@ -98,7 +98,9 @@ function ClipRules({
     if (phaseRef.current === 'hide') return;
     phaseRef.current = 'hide';
     const nextDir: SlideDir = delta > 0 ? 'next' : 'prev';
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
     if (reduced) {
       phaseRef.current = 'idle';
       setDir(nextDir);

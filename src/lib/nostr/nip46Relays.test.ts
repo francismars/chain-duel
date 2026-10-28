@@ -41,7 +41,9 @@ describe('normalizeSignerRelays', () => {
   it('preserves signer order and does not merge QR defaults', () => {
     const signer = ['wss://relay.nsec.app', 'wss://relay.damus.io'];
     expect(normalizeSignerRelays(signer)).toEqual(signer);
-    expect(normalizeSignerRelays(signer)).not.toContain('wss://relay.primal.net');
+    expect(normalizeSignerRelays(signer)).not.toContain(
+      'wss://relay.primal.net'
+    );
   });
 
   it('falls back to QR defaults when signer list is empty', () => {

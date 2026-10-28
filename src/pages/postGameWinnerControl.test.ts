@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { postGameConfirmGate, postGameWinnerAllowsKey } from './postGameWinnerControl';
+import {
+  postGameConfirmGate,
+  postGameWinnerAllowsKey,
+} from './postGameWinnerControl';
 
 describe('postGameWinnerAllowsKey', () => {
   it('lets only Player 1 confirm and move on menus 1–2', () => {
@@ -59,20 +62,20 @@ describe('postGameWinnerAllowsKey', () => {
 
 describe('postGameConfirmGate', () => {
   it('ignores confirms until the GAME OVER hold is released', () => {
-    expect(
-      postGameConfirmGate(' ', { repeat: false, armed: false })
-    ).toBe('ignore');
+    expect(postGameConfirmGate(' ', { repeat: false, armed: false })).toBe(
+      'ignore'
+    );
   });
 
   it('ignores key-repeat while Space is still held from GAME OVER', () => {
-    expect(
-      postGameConfirmGate('Enter', { repeat: true, armed: true })
-    ).toBe('ignore');
+    expect(postGameConfirmGate('Enter', { repeat: true, armed: true })).toBe(
+      'ignore'
+    );
   });
 
   it('accepts a new claim press after the continue button is released', () => {
-    expect(
-      postGameConfirmGate(' ', { repeat: false, armed: true })
-    ).toBe('accept');
+    expect(postGameConfirmGate(' ', { repeat: false, armed: true })).toBe(
+      'accept'
+    );
   });
 });

@@ -19,7 +19,10 @@ import {
 } from '@/game/engine/constants';
 import { runAStar } from '@/game/engine/astar';
 import { captureRateLabel } from '@/game/engine/captureRateLabel';
-import { capturePercentForLength, gameRecipe } from '@/game/effects/matchRecipe';
+import {
+  capturePercentForLength,
+  gameRecipe,
+} from '@/game/effects/matchRecipe';
 import { gameRandom } from '@/game/engine/runRng';
 import type {
   AiTier,
@@ -384,7 +387,8 @@ export function getHudState(state: GameState): HudState {
   const total = state.totalPoints || 1;
 
   if (is2v1Mode(state)) {
-    const { p1Score, aiScore, p1Initial, aiInitial } = get2v1HudTeamScores(state);
+    const { p1Score, aiScore, p1Initial, aiInitial } =
+      get2v1HudTeamScores(state);
     const hud: HudState = {
       p1Points: p1Score,
       p2Points: aiScore,
@@ -584,7 +588,10 @@ export function stepGame(state: GameState): TickResult {
     } else if (isFfaMode(state)) {
       const plan = getFfaEconomyPlan(state);
       const aiOrder: PowerUpPlayerIndex[] = [];
-      if (plan.humanContester != null && isPlayerActive(state, plan.humanContester)) {
+      if (
+        plan.humanContester != null &&
+        isPlayerActive(state, plan.humanContester)
+      ) {
         aiOrder.push(plan.humanContester);
       }
       if (
@@ -1150,7 +1157,12 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
   const capturePercent = capturePercentForCoinbase(state, index, cb);
 
   if (isEliminationMode(state)) {
-    ffaApplyCaptureAmount(state, index as FfaPlayerIndex, safeChange, capturePercent);
+    ffaApplyCaptureAmount(
+      state,
+      index as FfaPlayerIndex,
+      safeChange,
+      capturePercent
+    );
     return;
   }
 
@@ -1181,7 +1193,11 @@ function changeScore(state: GameState, player: PlayerId, cb: Coinbase): void {
 
 function capturePercentByLength(length: number): number {
   const recipe = gameRecipe();
-  return capturePercentForLength(length, recipe.captureFrom, recipe.capturePercent);
+  return capturePercentForLength(
+    length,
+    recipe.captureFrom,
+    recipe.capturePercent
+  );
 }
 
 export function getCaptureLabel(length: number): string {
@@ -1207,10 +1223,7 @@ function resetSnake(state: GameState, player: PlayerId): void {
       if (conv && sb) {
         const spawnX = Math.max(TEAM_2V1_P1_SPAWN_X, sb.left + 2);
         const centerY = Math.floor((sb.top + sb.bottom) / 2);
-        const spawnY = Math.max(
-          sb.top + 2,
-          Math.min(sb.bottom - 2, centerY)
-        );
+        const spawnY = Math.max(sb.top + 2, Math.min(sb.bottom - 2, centerY));
         head = [spawnX, spawnY];
         body = [[Math.max(sb.left + 1, spawnX - 1), spawnY]];
       }
@@ -1477,8 +1490,7 @@ function findPathGeneric(
 
 function captureExtraSnakeCoinbases(state: GameState): void {
   for (const extra of state.extraSnakes) {
-    const extraIndex = (state.extraSnakes.indexOf(extra) +
-      2) as FfaPlayerIndex;
+    const extraIndex = (state.extraSnakes.indexOf(extra) + 2) as FfaPlayerIndex;
     if (!isPlayerActive(state, extraIndex as PowerUpPlayerIndex)) continue;
     for (let i = 0; i < state.coinbases.length; i += 1) {
       const cb = state.coinbases[i];
@@ -1748,10 +1760,7 @@ function chooseTeamCoinFor2v1(state: GameState): GridPos | null {
   return best;
 }
 
-function isHumanContestingTeamCoin(
-  state: GameState,
-  coin: GridPos
-): boolean {
+function isHumanContestingTeamCoin(state: GameState, coin: GridPos): boolean {
   if (!isPlayerActive(state, 0)) return false;
   const dHuman = pathStepsToCoin(state, 0, coin);
   const minAi = Math.min(
@@ -2089,21 +2098,11 @@ function decideSovereign2v1Coordinated(
   }
 
   if (plan.supportMode === 'block' && plan.coinTarget) {
-    decide2v1SupportBlock(
-      state,
-      botIndex,
-      plan.coinTarget,
-      plan.capturer
-    );
+    decide2v1SupportBlock(state, botIndex, plan.coinTarget, plan.capturer);
     return;
   }
 
-  decide2v1SupportPosition(
-    state,
-    botIndex,
-    plan.coinTarget,
-    plan.capturer
-  );
+  decide2v1SupportPosition(state, botIndex, plan.coinTarget, plan.capturer);
 }
 
 const POWER_UP_CHASE_RANGE = 6;
@@ -2271,10 +2270,7 @@ function expectedSatsForFood(
   _cb: Coinbase
 ): number {
   let lenAfter = snakeLengthForPlayer(state, playerIndex) + 1;
-  if (
-    is2v1Mode(state) &&
-    (playerIndex === 1 || playerIndex === 2)
-  ) {
+  if (is2v1Mode(state) && (playerIndex === 1 || playerIndex === 2)) {
     const p2Len = isPlayerActive(state, 1) ? state.p2.body.length : 0;
     const p3Len =
       isPlayerActive(state, 2) && state.extraSnakes[0]
@@ -2399,7 +2395,10 @@ const stackerCautionUntil = new WeakMap<
   Map<PowerUpPlayerIndex, number>
 >();
 
-function markStackerCaution(state: GameState, playerIndex: PowerUpPlayerIndex): void {
+function markStackerCaution(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex
+): void {
   let map = stackerCautionUntil.get(state);
   if (!map) {
     map = new Map();
@@ -2407,9 +2406,7 @@ function markStackerCaution(state: GameState, playerIndex: PowerUpPlayerIndex): 
   }
   map.set(
     playerIndex,
-    state.tickCount +
-      STACKER_CAUTION_TICKS +
-      Math.floor(gameRandom() * 2)
+    state.tickCount + STACKER_CAUTION_TICKS + Math.floor(gameRandom() * 2)
   );
 }
 
@@ -2718,9 +2715,7 @@ function computeFfaEconomyPlan(state: GameState): FfaEconomyPlan {
 
 function scoreFfaEconomyPlan(state: GameState): FfaEconomyPlan {
   const bots = activeFfaAiBots(state);
-  const coins = state.coinbases
-    .filter((cb) => !cb.isDecoy)
-    .map((cb) => cb.pos);
+  const coins = state.coinbases.filter((cb) => !cb.isDecoy).map((cb) => cb.pos);
   const humanCoin = pickFfaHumanCoin(state);
   const allContestHuman =
     updateFfaSnowballBreaker(state) &&
@@ -2749,13 +2744,7 @@ function scoreFfaEconomyPlan(state: GameState): FfaEconomyPlan {
   } else {
     coinByBot =
       coins.length > 0
-        ? assignFfaCoins(
-            state,
-            bots,
-            humanContester,
-            humanFlanker,
-            coins
-          )
+        ? assignFfaCoins(state, bots, humanContester, humanFlanker, coins)
         : new Map<FfaAiBotIndex, GridPos | null>();
   }
 
@@ -2899,11 +2888,7 @@ function decideFfaEconomyCoordinated(
   const plan = getFfaEconomyPlan(state);
   const aiBot = botIndex as FfaAiBotIndex;
 
-  if (
-    plan.allContestHuman &&
-    plan.humanCoin &&
-    isPlayerActive(state, 0)
-  ) {
+  if (plan.allContestHuman && plan.humanCoin && isPlayerActive(state, 0)) {
     if (aiBot === plan.humanContester) {
       if (decideFfaHumanBlock(state, botIndex, plan.humanCoin)) return;
       decideFfaFlankHuman(state, botIndex, plan.humanCoin);
@@ -3011,11 +2996,7 @@ function decideEconomyChaseForPlayer(
     (isEliminationMode(state) &&
       playerIndex !== 0 &&
       snakeLengthForPlayer(state, 0) >= 6);
-  const bestCoinbase = chooseBestCoinbaseForPlayer(
-    state,
-    playerIndex,
-    contest
-  );
+  const bestCoinbase = chooseBestCoinbaseForPlayer(state, playerIndex, contest);
   if (
     bestCoinbase &&
     getAiTierForPlayer(state, playerIndex) === 'noderunner' &&
@@ -3551,16 +3532,12 @@ function isSovereignWallTrapped(state: GameState): boolean {
   );
 }
 
-function shouldCommitHeadTrade(
-  state: GameState,
-  coinTarget: GridPos
-): boolean {
+function shouldCommitHeadTrade(state: GameState, coinTarget: GridPos): boolean {
   if (botLengthVsP1(state) < SOVEREIGN_HEAD_TRADE_LEN_ADVANTAGE) return false;
   if (!playerStillContestingCoin(state, coinTarget)) return false;
   const p1Path = findPlayerFoodPath(state, coinTarget);
   if (p1Path.length <= 1) return false;
-  const tradeCell =
-    p1Path[Math.min(4, Math.max(1, p1Path.length - 1))]!;
+  const tradeCell = p1Path[Math.min(4, Math.max(1, p1Path.length - 1))]!;
   const start = state.p2.head;
   const tradePath = findPath(state, start, tradeCell, 'body-only');
   const coinPath = findPath(state, start, coinTarget, 'body-only');

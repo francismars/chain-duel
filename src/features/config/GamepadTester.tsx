@@ -1,8 +1,5 @@
 import { GamepadDiagram } from './GamepadDiagram';
-import {
-  useGamepadSnapshot,
-  type GamepadSnapshot,
-} from './useGamepadSnapshot';
+import { useGamepadSnapshot, type GamepadSnapshot } from './useGamepadSnapshot';
 
 type GamepadTesterProps = {
   active: boolean;
@@ -50,7 +47,10 @@ function GamepadSlotPanel({
       <header className="config-gp-slot__header">
         <div className="config-gp-slot__identity">
           <h3 className="config-gp-slot__title">{title}</h3>
-          <p className="config-gp-slot__device" title={connected ? pad?.id : undefined}>
+          <p
+            className="config-gp-slot__device"
+            title={connected ? pad?.id : undefined}
+          >
             {connected ? pad?.id || 'Gamepad' : 'No controller'}
           </p>
         </div>
@@ -71,7 +71,9 @@ function GamepadSlotPanel({
           {connected ? 'Connected' : 'Disconnected'}
         </span>
         <div
-          className={connected ? undefined : 'config-gp-slot__diagram-wrap--muted'}
+          className={
+            connected ? undefined : 'config-gp-slot__diagram-wrap--muted'
+          }
         >
           <GamepadDiagram pad={diagramPad} />
         </div>
@@ -97,7 +99,8 @@ export function GamepadTester({ active }: GamepadTesterProps) {
             <span
               className={`config-gp-tester__count${connectedCount > 0 ? ' config-gp-tester__count--on' : ''}`}
             >
-              {connectedCount} controller{connectedCount === 1 ? '' : 's'} detected
+              {connectedCount} controller{connectedCount === 1 ? '' : 's'}{' '}
+              detected
             </span>
           </div>
         </div>

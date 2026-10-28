@@ -54,7 +54,8 @@ export function MatchStartPrompt({
       const fromState = Boolean(
         state && !state.gameStarted && !state.gameEnded && !state.countdownStart
       );
-      const nextShown = fromState || Boolean(board?.classList.contains('is-prematch'));
+      const nextShown =
+        fromState || Boolean(board?.classList.contains('is-prematch'));
       if (nextShown !== shown) {
         shown = nextShown;
         setVisible(nextShown);

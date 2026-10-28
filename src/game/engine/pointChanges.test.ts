@@ -27,16 +27,23 @@ describe('advancePointChanges', () => {
     const at60 = stateWith(change());
     const at120 = stateWith(change());
     const half = POINT_CHANGE_LIFE_MS / 2;
-    for (let t = 0; t < half; t += 1000 / 60) advancePointChanges(at60, 1000 / 60);
-    for (let t = 0; t < half; t += 1000 / 120) advancePointChanges(at120, 1000 / 120);
-    expect(at60.pointChanges[0]!.alpha).toBeCloseTo(at120.pointChanges[0]!.alpha, 1);
+    for (let t = 0; t < half; t += 1000 / 60)
+      advancePointChanges(at60, 1000 / 60);
+    for (let t = 0; t < half; t += 1000 / 120)
+      advancePointChanges(at120, 1000 / 120);
+    expect(at60.pointChanges[0]!.alpha).toBeCloseTo(
+      at120.pointChanges[0]!.alpha,
+      1
+    );
     expect(at60.pointChanges[0]!.alpha).toBeCloseTo(0.5, 1);
   });
 
   it('rises the full distance over its life and is then dropped', () => {
     const state = stateWith(change());
     advancePointChanges(state, POINT_CHANGE_LIFE_MS * 0.99);
-    expect(state.pointChanges[0]!.p1YOffsetPx).toBeCloseTo(-POINT_CHANGE_RISE_PX * 0.99);
+    expect(state.pointChanges[0]!.p1YOffsetPx).toBeCloseTo(
+      -POINT_CHANGE_RISE_PX * 0.99
+    );
     advancePointChanges(state, POINT_CHANGE_LIFE_MS * 0.02);
     expect(state.pointChanges).toHaveLength(0);
   });

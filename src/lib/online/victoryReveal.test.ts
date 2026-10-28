@@ -8,7 +8,9 @@ import {
   MATCH_REVEAL_SKIP_AFTER_MS,
 } from './matchRevealTiming';
 
-function postGameRoom(overrides: Partial<OnlineRoomState> = {}): OnlineRoomState {
+function postGameRoom(
+  overrides: Partial<OnlineRoomState> = {}
+): OnlineRoomState {
   return {
     roomId: 'room-1',
     roomCode: 'ABCD',

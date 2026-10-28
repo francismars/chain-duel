@@ -101,7 +101,14 @@ export function keepPopOnBoard(
   const top = box.minY ?? box.y;
   const right = box.maxX ?? left + box.width;
   const bottom = box.maxY ?? top + box.height;
-  const { dx, dy } = shiftToFit(left, top, right, bottom, boardWidth, boardHeight);
+  const { dx, dy } = shiftToFit(
+    left,
+    top,
+    right,
+    bottom,
+    boardWidth,
+    boardHeight
+  );
   if (dx !== 0) node.position.x += dx;
   if (dy !== 0) node.position.y += dy;
 }
@@ -306,11 +313,9 @@ function resolveGainLossPos(change: PointChange): {
   loss: GridPos;
 } {
   const gain =
-    change.gainPos ??
-    (change.player === 'P1' ? change.p1Pos : change.p2Pos);
+    change.gainPos ?? (change.player === 'P1' ? change.p1Pos : change.p2Pos);
   const loss =
-    change.lossPos ??
-    (change.player === 'P1' ? change.p2Pos : change.p1Pos);
+    change.lossPos ?? (change.player === 'P1' ? change.p2Pos : change.p1Pos);
   return { gain, loss };
 }
 
@@ -536,11 +541,12 @@ export class PointChangeOverlay {
         // edge kept the word off the board. Measure the string instead.
         const rowW = this.simple
           ? mainW
-          : mainW + fontSize * 0.12 + measurePopTextWidth(spec.labelText, labelStyle);
+          : mainW +
+            fontSize * 0.12 +
+            measurePopTextWidth(spec.labelText, labelStyle);
         const glow = this.glow ? 14 : 2;
         const halfW = (Math.max(rowW, rateW) / 2 + glow) * scale;
-        const halfH =
-          (fontSize * (rateW > 0 ? 1.55 : 0.7) + glow) * scale;
+        const halfH = (fontSize * (rateW > 0 ? 1.55 : 0.7) + glow) * scale;
         const placed = placeOnBoard(
           Math.round(spec.x + pointChangeDriftX(spec.alpha, spec.drift)),
           Math.round(spec.y),

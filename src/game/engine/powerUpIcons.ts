@@ -54,9 +54,7 @@ function mapRadius(size: number, r: number): number {
   return (r / VIEW) * size;
 }
 
-function drawSurgeIcon(
-  drawPoly: (points: number[]) => void
-): void {
+function drawSurgeIcon(drawPoly: (points: number[]) => void): void {
   drawPoly([10, 2, 4, 9, 9, 9, 6, 14, 14, 7, 9, 7, 10, 2]);
 }
 
@@ -215,7 +213,12 @@ export function drawPowerUpIconCanvas(
     ctx.stroke();
   };
 
-  const drawCircle = (x: number, y: number, radius: number, doFill: boolean) => {
+  const drawCircle = (
+    x: number,
+    y: number,
+    radius: number,
+    doFill: boolean
+  ) => {
     const [mx, my] = mapPoint(cx, cy, size, x, y);
     const mr = mapRadius(size, radius);
     ctx.beginPath();
@@ -233,10 +236,7 @@ export function drawPowerUpIconCanvas(
   const drawDashedCircle = (x: number, y: number, radius: number) => {
     const [mx, my] = mapPoint(cx, cy, size, x, y);
     const mr = mapRadius(size, radius);
-    ctx.setLineDash([
-      Math.max(1.5, size * 0.12),
-      Math.max(1.5, size * 0.08),
-    ]);
+    ctx.setLineDash([Math.max(1.5, size * 0.12), Math.max(1.5, size * 0.08)]);
     ctx.beginPath();
     ctx.arc(mx, my, mr, 0, Math.PI * 2);
     ctx.strokeStyle = stroke;

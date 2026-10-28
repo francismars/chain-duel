@@ -463,7 +463,9 @@ export class GameAudioSystem {
       const audible = this.audibleLevel();
       const target =
         audible === theme.level ? this.recipe.stemVolumes[theme.level - 1]! : 0;
-      const fadeMs = Number.isFinite(this.recipe.fadeMs) ? this.recipe.fadeMs : 2500;
+      const fadeMs = Number.isFinite(this.recipe.fadeMs)
+        ? this.recipe.fadeMs
+        : 2500;
       const step =
         fadeMs <= 0 ? 1 : (50 / fadeMs) * (audio.volume < target ? 2 : 1);
       audio.volume +=

@@ -29,7 +29,9 @@ export function useMempoolFeed(
 ): UseMempoolFeedResult {
   const { enabled = true, onNewBlock } = options;
   const { socket } = useSocket();
-  const [bitcoin, setBitcoin] = useState<BitcoinDetails>(DEFAULT_BITCOIN_DETAILS);
+  const [bitcoin, setBitcoin] = useState<BitcoinDetails>(
+    DEFAULT_BITCOIN_DETAILS
+  );
   const [footerHighlight, setFooterHighlight] = useState(false);
   const latestTimestampRef = useRef(0);
   const onNewBlockRef = useRef(onNewBlock);

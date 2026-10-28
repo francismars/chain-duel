@@ -16,7 +16,10 @@ const SPAWN_RING: RingSpec = { life: 1, from: 0.85, to: 1.05, peak: 0.55 };
 function ringColor(pop: StreakPop): { fill: number; css: string } {
   const tone =
     pop.tone ??
-    (pop.text === 'CLASH' || pop.text === 'REORG' || pop.text === 'WALL' || pop.text === 'SPAWN'
+    (pop.text === 'CLASH' ||
+    pop.text === 'REORG' ||
+    pop.text === 'WALL' ||
+    pop.text === 'SPAWN'
       ? 'white'
       : 'black');
   if (pop.fill != null) {
@@ -201,7 +204,12 @@ export function drawStreakPopsCanvas(
       ctx.globalAlpha = drawn.alpha * 0.85;
       ctx.strokeRect(x - half, y - half, half * 2, half * 2);
       ctx.globalAlpha = drawn.alpha;
-      ctx.strokeRect(x - innerHalf, y - innerHalf, innerHalf * 2, innerHalf * 2);
+      ctx.strokeRect(
+        x - innerHalf,
+        y - innerHalf,
+        innerHalf * 2,
+        innerHalf * 2
+      );
       continue;
     }
     ctx.globalAlpha = drawn.alpha;
