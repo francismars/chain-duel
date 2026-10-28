@@ -800,7 +800,9 @@
   grid-column: 3;
 }
 
-.practice-hub-page--challenges .sc-gate__setup-actions .sc-gate__config-link--setup {
+.practice-hub-page--challenges
+  .sc-gate__setup-actions
+  .sc-gate__config-link--setup {
   width: 100%;
   box-sizing: border-box;
   text-align: center;

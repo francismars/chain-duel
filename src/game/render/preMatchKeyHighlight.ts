@@ -8,8 +8,9 @@ import type { GameState } from '@/game/engine/types';
 
 export type PreMatchKeyDir = 'up' | 'down' | 'left' | 'right' | 'confirm';
 
-const held: Partial<Record<PlayerControlSlot, Partial<Record<PreMatchKeyDir, boolean>>>> =
-  {};
+const held: Partial<
+  Record<PlayerControlSlot, Partial<Record<PreMatchKeyDir, boolean>>>
+> = {};
 const pressAt: Partial<Record<string, number>> = {};
 
 function keyId(slot: PlayerControlSlot, dir: PreMatchKeyDir): string {

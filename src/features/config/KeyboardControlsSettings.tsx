@@ -8,6 +8,8 @@ import {
   resetAllPlayerBindings,
   resetSlotBindings,
   slotBindingLabels,
+  confirmKeyCode,
+  slotBindings,
   slotHasCustomBindings,
   writeConfirmBinding,
   writeKeyboardLayoutId,
@@ -45,12 +47,16 @@ function BindingPad({
   slot,
   layout,
   listening,
+  heldDirections,
+  heldConfirm,
   onPick,
   onPickConfirm,
 }: {
   slot: PlayerControlSlot;
   layout: KeyboardLayoutId;
   listening: ListeningState | null;
+  heldDirections: ReadonlySet<AxisDirection>;
+  heldConfirm: boolean;
   onPick: (direction: AxisDirection) => void;
   onPickConfirm: () => void;
 }) {
@@ -72,6 +78,9 @@ function BindingPad({
           'keyboard-controls-settings__bind-key',
           className,
           isListening ? 'keyboard-controls-settings__bind-key--listening' : '',
+          heldDirections.has(direction)
+            ? 'keyboard-controls-settings__bind-key--held'
+            : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -106,6 +115,7 @@ function BindingPad({
           isListeningConfirm
             ? 'keyboard-controls-settings__bind-start--listening'
             : '',
+          heldConfirm ? 'keyboard-controls-settings__bind-start--held' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -138,6 +148,12 @@ export function KeyboardControlsSettings({
 
   const [listening, setListening] = useState<ListeningState | null>(null);
   const [detecting, setDetecting] = useState(false);
+  const [heldBySlot, setHeldBySlot] = useState<
+    Partial<Record<PlayerControlSlot, AxisDirection[]>>
+  >({});
+  const [heldConfirm, setHeldConfirm] = useState<
+    Partial<Record<PlayerControlSlot, boolean>>
+  >({});
   const layoutSource = readLayoutSource();
 
   const cancelListening = useCallback(() => setListening(null), []);
@@ -149,6 +165,78 @@ export function KeyboardControlsSettings({
       bindListeningRef.current = false;
     };
   }, [listening, bindListeningRef]);
+
+  useEffect(() => {
+    const directionsFor = (code: string, slot: PlayerControlSlot) => {
+      const bindings = slotBindings(slot);
+      return (['up', 'down', 'left', 'right'] as const).filter(
+        (direction) => bindings[direction] === code
+      );
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (listening) return;
+      let changed = false;
+      const next: Partial<Record<PlayerControlSlot, AxisDirection[]>> = {};
+      const nextConfirm: Partial<Record<PlayerControlSlot, boolean>> = {};
+      for (const slot of CONFIG_SLOTS) {
+        const directions = directionsFor(event.code, slot);
+        if (directions.length > 0) {
+          next[slot] = directions;
+          changed = true;
+        }
+        if (confirmKeyCode(slot) === event.code) {
+          nextConfirm[slot] = true;
+          changed = true;
+        }
+      }
+      if (!changed) return;
+      event.preventDefault();
+      if (Object.keys(next).length > 0) {
+        setHeldBySlot((prev) => ({ ...prev, ...next }));
+      }
+      if (Object.keys(nextConfirm).length > 0) {
+        setHeldConfirm((prev) => ({ ...prev, ...nextConfirm }));
+      }
+    };
+
+    const onKeyUp = (event: KeyboardEvent) => {
+      setHeldBySlot((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const slot of CONFIG_SLOTS) {
+          const directions = next[slot];
+          if (!directions) continue;
+          const remaining = directions.filter(
+            (direction) => slotBindings(slot)[direction] !== event.code
+          );
+          if (remaining.length === directions.length) continue;
+          changed = true;
+          if (remaining.length === 0) delete next[slot];
+          else next[slot] = remaining;
+        }
+        return changed ? next : prev;
+      });
+      setHeldConfirm((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const slot of CONFIG_SLOTS) {
+          if (!next[slot]) continue;
+          if (confirmKeyCode(slot) !== event.code) continue;
+          delete next[slot];
+          changed = true;
+        }
+        return changed ? next : prev;
+      });
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [listening]);
 
   useEffect(() => {
     if (!listening) return;
@@ -197,15 +285,15 @@ export function KeyboardControlsSettings({
         : `${DIRECTION_LABELS[listening.direction]} for ${SLOT_TITLES[listening.slot]}`;
 
   return (
-    <section className="keyboard-controls-settings" aria-labelledby="keyboard-controls-title">
+    <section
+      className="keyboard-controls-settings"
+      aria-label="Keyboard controls"
+    >
       <div className="keyboard-controls-settings__header">
         <div>
-          <h2 id="keyboard-controls-title" className="keyboard-controls-settings__title">
-            Keyboard controls
-          </h2>
           <p className="keyboard-controls-settings__copy">
-            Click a direction or Start, then press the key you want. Labels follow
-            your keyboard layout automatically.
+            Click a direction or Start, then press the key you want. Labels
+            follow your keyboard layout automatically.
           </p>
         </div>
         <div className="keyboard-controls-settings__layout-bar">
@@ -227,8 +315,8 @@ export function KeyboardControlsSettings({
       <details className="keyboard-controls-settings__advanced">
         <summary>Layout override</summary>
         <p className="keyboard-controls-settings__advanced-copy">
-          Only needed if auto-detect is wrong. Hints use this to show the letter on
-          your key cap.
+          Only needed if auto-detect is wrong. Hints use this to show the letter
+          on your key cap.
         </p>
         <div className="keyboard-controls-settings__layout-pills">
           {(['qwerty', 'azerty', 'qwertz'] as KeyboardLayoutId[]).map((id) => (
@@ -253,7 +341,10 @@ export function KeyboardControlsSettings({
 
       <div className="keyboard-controls-settings__players">
         {CONFIG_SLOTS.map((slot) => (
-          <article key={slot} className="keyboard-controls-settings__player-card">
+          <article
+            key={slot}
+            className="keyboard-controls-settings__player-card"
+          >
             <div className="keyboard-controls-settings__player-head">
               <h3 className="keyboard-controls-settings__player-title">
                 {SLOT_TITLES[slot]}
@@ -272,6 +363,8 @@ export function KeyboardControlsSettings({
               slot={slot}
               layout={layout}
               listening={listening}
+              heldDirections={new Set(heldBySlot[slot] ?? [])}
+              heldConfirm={Boolean(heldConfirm[slot])}
               onPick={(direction) =>
                 setListening({ kind: 'move', slot, direction })
               }
@@ -292,7 +385,10 @@ export function KeyboardControlsSettings({
       </div>
 
       {listening && listenLabel ? (
-        <div className="keyboard-controls-settings__listen-banner" role="status">
+        <div
+          className="keyboard-controls-settings__listen-banner"
+          role="status"
+        >
           Press a key for {listenLabel} — Esc to cancel
         </div>
       ) : null}

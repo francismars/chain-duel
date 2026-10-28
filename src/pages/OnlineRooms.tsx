@@ -7,9 +7,7 @@ import { useGamepad } from '@/hooks/useGamepad';
 import { useMenuSfx } from '@/hooks/useMenuSfx';
 import { useSocket } from '@/hooks/useSocket';
 import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
-import {
-  onlineRoomUrl,
-} from '@/shared/constants/onlineRoutes';
+import { onlineRoomUrl } from '@/shared/constants/onlineRoutes';
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import { OnlineRoomListItem, PlayerRole } from '@/types/socket';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';

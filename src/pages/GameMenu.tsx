@@ -3,7 +3,10 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
-import { GameSetupLayout } from '@/components/layout/GameSetupLayout';
+import {
+  GameSetupLayout,
+  PreviewRulesButtonSlot,
+} from '@/components/layout/GameSetupLayout';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useAudio, SFX } from '@/contexts/AudioContext';
@@ -13,6 +16,7 @@ import type { MenuParseResult } from '@/lib/menuAdapters';
 import type { WindowTimeout } from '@/shared/utils/timer';
 import { useSessionPersistence } from '@/shared/hooks/useSessionPersistence';
 import { useQrExpandState } from '@/features/setup-menu/hooks/useQrExpandState';
+import { useQrRaised } from '@/features/setup-menu/hooks/useQrRaised';
 import { useLnurlCompatibleQrHold } from '@/features/setup-menu/hooks/useLnurlCompatibleQrHold';
 import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
 import { createLogger } from '@/shared/utils/logger';
@@ -43,7 +47,10 @@ import {
   relayHintsFromNevent,
   relayUrlToDisplayHost,
 } from '@/lib/nostr/probeRelaysForEvent';
-import { clearClientGameConfig, markSocketDuelSession } from '@/pages/practiceHubModes';
+import {
+  clearClientGameConfig,
+  markSocketDuelSession,
+} from '@/pages/practiceHubModes';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './gamemenu.css';
 
@@ -104,6 +111,8 @@ export default function GameMenu({
   const [startBlockedHint, setStartBlockedHint] = useState<string | null>(null);
   const [player1CardExpanded, setPlayer1CardExpanded] = useState(false);
   const [player2CardExpanded, setPlayer2CardExpanded] = useState(false);
+  const player1QrRaised = useQrRaised(player1CardExpanded);
+  const player2QrRaised = useQrRaised(player2CardExpanded);
   const [qrBackdropVisible, setQrBackdropVisible] = useState(false);
   const [highlightP1, setHighlightP1] = useState<HighlightPart>(false);
   const [highlightP2, setHighlightP2] = useState<HighlightPart>(false);
@@ -128,19 +137,11 @@ export default function GameMenu({
   const lastKnownP2SatsRef = useRef(0);
   const prevWinnerRef = useRef<string | null>(null);
   const nostrNote1Ref = useRef('');
-  const highlightTimeoutP1Ref = useRef<WindowTimeout | null>(
-    null
-  );
-  const highlightTimeoutP2Ref = useRef<WindowTimeout | null>(
-    null
-  );
+  const highlightTimeoutP1Ref = useRef<WindowTimeout | null>(null);
+  const highlightTimeoutP2Ref = useRef<WindowTimeout | null>(null);
   const setupMenuKeyGraceUntilRef = useRef(0);
-  const startShakeTimeoutRef = useRef<WindowTimeout | null>(
-    null
-  );
-  const startHintTimeoutRef = useRef<WindowTimeout | null>(
-    null
-  );
+  const startShakeTimeoutRef = useRef<WindowTimeout | null>(null);
+  const startHintTimeoutRef = useRef<WindowTimeout | null>(null);
 
   useGamepad(true, { lnurlCompatScan: !isNostrMode });
   const { compatibleP1, compatibleP2 } = useLnurlCompatibleQrHold(!isNostrMode);
@@ -526,7 +527,7 @@ export default function GameMenu({
     };
     // Stable subscription: prevWinner/nostrNote1 must not be deps — updating them used to
     // re-run cleanup and cancel the highlight timeout while highlight state stayed true.
-  }, [applySerializedPlayers, socket, logger, useNostrFromQuery]);
+  }, [applySerializedPlayers, socket, logger, useNostrFromQuery, preview]);
 
   useSessionPersistence(socket);
 
@@ -705,8 +706,7 @@ export default function GameMenu({
       if (document.querySelector('.rules-modal')) {
         return;
       }
-      const down =
-        e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
+      const down = e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
       const up = e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W';
       if (preview && up && !showCancelOverlay) {
         if (
@@ -719,12 +719,7 @@ export default function GameMenu({
           setButtonSelected('rules');
         }
       }
-      if (
-        preview &&
-        down &&
-        !showCancelOverlay &&
-        buttonSelected === 'rules'
-      ) {
+      if (preview && down && !showCancelOverlay && buttonSelected === 'rules') {
         playSfx(SFX.MENU_SELECT);
         setButtonSelected('mainMenuButton');
       }
@@ -815,7 +810,9 @@ export default function GameMenu({
         }`}
         mainMenuDisabled={false}
         canStart={canStart}
-        mainMenuLabel={prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'}
+        mainMenuLabel={
+          prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'
+        }
         cancelOverlayTitle={
           prevWinner
             ? 'Return to claim screen?'
@@ -1032,7 +1029,12 @@ export default function GameMenu({
           <>
             <div
               id="player1card"
-              className={player1CardExpanded ? 'expanded' : ''}
+              className={[
+                player1CardExpanded ? 'expanded' : '',
+                player1QrRaised ? 'qr-raised' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
             >
               <div
                 id="qrcodeContainer1"
@@ -1130,11 +1132,17 @@ export default function GameMenu({
                   sats qualifies for the ledger
                 </p>
               </div>
+              {preview ? <PreviewRulesButtonSlot /> : null}
             </div>
 
             <div
               id="player2card"
-              className={player2CardExpanded ? 'expanded' : ''}
+              className={[
+                player2CardExpanded ? 'expanded' : '',
+                player2QrRaised ? 'qr-raised' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
             >
               <div id="player2cardinfo" className="player-card-info">
                 <div

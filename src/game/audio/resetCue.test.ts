@@ -8,11 +8,19 @@ import {
   resetCuesFromTransition,
 } from '@/game/audio/resetCue';
 
-function parked(head: SnakeState['head'], tail: SnakeState['head'], facing: SnakeState['dirWanted']): SnakeState {
+function parked(
+  head: SnakeState['head'],
+  tail: SnakeState['head'],
+  facing: SnakeState['dirWanted']
+): SnakeState {
   return { head, body: [tail], dir: '', dirWanted: facing };
 }
 
-function moving(head: SnakeState['head'], tail: SnakeState['head'], dir: SnakeState['dir']): SnakeState {
+function moving(
+  head: SnakeState['head'],
+  tail: SnakeState['head'],
+  dir: SnakeState['dir']
+): SnakeState {
   return { head, body: [tail], dir, dirWanted: dir };
 }
 
@@ -31,12 +39,19 @@ describe('didSnakeReset', () => {
 
   it('does not repeat a chain that is already parked', () => {
     const home = parked([6, 12], [5, 12], 'Right');
-    expect(didSnakeReset(home, { ...home, head: [6, 12], body: [[5, 12]] })).toBe(false);
+    expect(
+      didSnakeReset(home, { ...home, head: [6, 12], body: [[5, 12]] })
+    ).toBe(false);
   });
 
   it('ignores an elimination', () => {
     const prev = moving([8, 4], [7, 4], 'Right');
-    const next: SnakeState = { head: [-1, -1], body: [], dir: '', dirWanted: '' };
+    const next: SnakeState = {
+      head: [-1, -1],
+      body: [],
+      dir: '',
+      dirWanted: '',
+    };
     expect(didSnakeReset(prev, next)).toBe(false);
   });
 });

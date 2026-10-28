@@ -135,7 +135,9 @@ export function buildVictoryRevealData(
     name: pg.winnerName.trim() || (winnerIsP1 ? p1Name : p2Name),
     picture:
       pg.winnerPicture ??
-      (winnerIsP1 ? p1Seat?.picture ?? pg.p1Picture : p2Seat?.picture ?? pg.p2Picture),
+      (winnerIsP1
+        ? (p1Seat?.picture ?? pg.p1Picture)
+        : (p2Seat?.picture ?? pg.p2Picture)),
     score: winnerIsP1 ? p1Score : p2Score,
   };
 
@@ -143,8 +145,8 @@ export function buildVictoryRevealData(
     side: loserSide,
     name: winnerIsP1 ? p2Name : p1Name,
     picture: winnerIsP1
-      ? p2Seat?.picture ?? pg.p2Picture
-      : p1Seat?.picture ?? pg.p1Picture,
+      ? (p2Seat?.picture ?? pg.p2Picture)
+      : (p1Seat?.picture ?? pg.p1Picture),
     score: winnerIsP1 ? p2Score : p1Score,
   };
 

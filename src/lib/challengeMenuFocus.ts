@@ -16,9 +16,7 @@ export function saveChallengeMenuFocus(
   won: boolean
 ): void {
   const current = challengeIdToIndex(challengeId);
-  const focusIdx = won
-    ? (current + 1) % CHALLENGE_ICON_IDS.length
-    : current;
+  const focusIdx = won ? (current + 1) % CHALLENGE_ICON_IDS.length : current;
   try {
     sessionStorage.setItem(STORAGE_KEY, String(focusIdx));
   } catch {
@@ -35,11 +33,7 @@ export function peekChallengeMenuFocus(): number | null {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw === null) return null;
     const idx = Number.parseInt(raw, 10);
-    if (
-      !Number.isFinite(idx) ||
-      idx < 0 ||
-      idx >= CHALLENGE_ICON_IDS.length
-    ) {
+    if (!Number.isFinite(idx) || idx < 0 || idx >= CHALLENGE_ICON_IDS.length) {
       return null;
     }
     return idx;

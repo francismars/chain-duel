@@ -12,10 +12,9 @@ import {
   tensionDebugSnapshot,
   type TensionDebugSnapshot,
 } from '@/game/audio/tensionDebug';
-import {
-  lostPlayablePercent,
-} from '@/game/audio/tension';
+import { lostPlayablePercent } from '@/game/audio/tension';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
+import { visibleDeathCell } from '@/game/engine/deathCell';
 import { captureRateLabel } from '@/game/engine/captureRateLabel';
 import {
   advancePointChanges,
@@ -60,7 +59,8 @@ const POT = 10000;
 const MAX_CHAIN = 36;
 const MAX_INSET = 8;
 
-type LabModeId = 'freeplay' | 'p2p' | 'tournament' | 'online' | 'challenge' | 'ffa';
+type LabModeId =
+  'freeplay' | 'p2p' | 'tournament' | 'online' | 'challenge' | 'ffa';
 
 type LabMode = {
   id: LabModeId;
@@ -104,7 +104,8 @@ const LAB_MODES: LabMode[] = [
   {
     id: 'tournament',
     label: 'Tournament',
-    summary: 'Same board as P2P. The bracket and the payment sit outside the match.',
+    summary:
+      'Same board as P2P. The bracket and the payment sit outside the match.',
     convergence: false,
     powerups: false,
     block: true,
@@ -335,7 +336,8 @@ const SOLO_CLIPS: SoloClip[] = [
 ];
 
 const OTHER_CLIPS = SOLO_CLIPS.filter(
-  (clip) => !['game', 'build', 'pressure', 'tension', 'critical'].includes(clip.id)
+  (clip) =>
+    !['game', 'build', 'pressure', 'tension', 'critical'].includes(clip.id)
 );
 
 function labMode(id: LabModeId): LabMode {
@@ -349,7 +351,13 @@ const COUNTDOWN = [
   { tick: 31, label: 'LFG', clip: 'Beep2' },
 ] as const;
 
-const TRACK_NAME = ['off', 'warning', 'warning', 'critical', 'critical'] as const;
+const TRACK_NAME = [
+  'off',
+  'warning',
+  'warning',
+  'critical',
+  'critical',
+] as const;
 
 type Seat = 'P1' | 'P2' | 'P3' | 'P4';
 
@@ -383,7 +391,11 @@ function presentSeats(state: GameState) {
   });
 }
 
-function chainPercent(state: GameState, rider: Rider, recipe: MatchRecipe): number {
+function chainPercent(
+  state: GameState,
+  rider: Rider,
+  recipe: MatchRecipe
+): number {
   if (!presentSeats(state).some((entry) => entry.rider === rider)) return 0;
   return capturePercentForLength(
     labSnake(state, rider).body.length,
@@ -448,7 +460,8 @@ function readScore(state: GameState, index: number): number {
 function writeScore(state: GameState, index: number, value: number): void {
   if (index === 0) state.score[0] = value;
   else if (index === 1) state.score[1] = value;
-  else if (state.extraSnakes[index - 2]) state.extraSnakes[index - 2]!.score = value;
+  else if (state.extraSnakes[index - 2])
+    state.extraSnakes[index - 2]!.score = value;
 }
 
 /** Selected chain takes `share` of the pot. The other three split what remains. */
@@ -499,12 +512,32 @@ function placeBody(state: GameState, snake: SnakeState, length: number): void {
   const facing = snake.dir || snake.dirWanted || 'Right';
   const steps: GridPos[] =
     facing === 'Left'
-      ? [[1, 0], [0, 1], [0, -1], [-1, 0]]
+      ? [
+          [1, 0],
+          [0, 1],
+          [0, -1],
+          [-1, 0],
+        ]
       : facing === 'Up'
-        ? [[0, 1], [1, 0], [-1, 0], [0, -1]]
+        ? [
+            [0, 1],
+            [1, 0],
+            [-1, 0],
+            [0, -1],
+          ]
         : facing === 'Down'
-          ? [[0, -1], [1, 0], [-1, 0], [0, 1]]
-          : [[-1, 0], [0, 1], [0, -1], [1, 0]];
+          ? [
+              [0, -1],
+              [1, 0],
+              [-1, 0],
+              [0, 1],
+            ]
+          : [
+              [-1, 0],
+              [0, 1],
+              [0, -1],
+              [1, 0],
+            ];
   const body: GridPos[] = [];
   let x = snake.head[0];
   let y = snake.head[1];
@@ -551,12 +584,12 @@ function placeSnake(
   snake.dirWanted = dir;
 }
 
-/** Park the selected chain one cell inside the left edge, facing out. */
+/** Park the selected chain on the top row, centered, facing out. */
 function stageWallCrash(state: GameState, rider: Rider): GridPos {
   const border = state.shrinkBorder;
   const left = border?.left ?? 0;
+  const right = border?.right ?? state.cols - 1;
   const top = border?.top ?? 0;
-  const bottom = border?.bottom ?? state.rows - 1;
   const snake = labSnake(state, rider);
   const otherCells = new Set<string>();
   for (const entry of SEATS) {
@@ -567,12 +600,13 @@ function stageWallCrash(state: GameState, rider: Rider): GridPos {
     otherCells.add(`${other.head[0]},${other.head[1]}`);
     for (const cell of other.body) otherCells.add(`${cell[0]},${cell[1]}`);
   }
-  let y = Math.min(bottom - 1, Math.max(top + 1, 12));
-  if (otherCells.has(`${left},${y}`) || otherCells.has(`${left + 1},${y}`)) {
-    y = Math.min(bottom - 1, Math.max(top + 1, y === 12 ? 10 : 12));
+  let x = Math.floor((left + right) / 2);
+  x = Math.max(left, Math.min(right, x));
+  if (otherCells.has(`${x},${top}`) || otherCells.has(`${x},${top + 1}`)) {
+    x = x + 2 <= right ? x + 2 : Math.max(left, x - 2);
   }
-  placeSnake(snake, [left, y], 'Left', [[left + 1, y]]);
-  return [left - 1, y];
+  placeSnake(snake, [x, top], 'Up', [[x, top + 1]]);
+  return [x, top - 1];
 }
 
 /** Shared mid-board face-off used by Head to head and Head-on REORG. */
@@ -606,25 +640,69 @@ function stageHeadOn(state: GameState, rider: Rider): GridPos {
 }
 
 /**
- * Same center lineup as head-to-head, but white is long (16%+) and black is
- * short (2%) so the next step is a REORG. The selected chain takes the step.
+ * Same center lineup as head-to-head, but one chain is long (16%+) and the
+ * other is short (2%) so the next step is a REORG. The long chain stands on
+ * the left. The selected chain takes the step.
  */
 function stageHeadOnReorg(
   state: GameState,
   rider: Rider,
-  recipe: MatchRecipe
+  recipe: MatchRecipe,
+  rich: 'p1' | 'p2' = 'p1'
 ): GridPos {
   const { x, y } = headOnCenter(state);
-  placeSnake(
-    state.p1,
-    [x, y],
-    'Right',
-    Array.from({ length: 7 }, (_, index) => [x - 1 - index, y] as GridPos)
+  const longBody = Array.from(
+    { length: 7 },
+    (_, index) => [x - 1 - index, y] as GridPos
   );
-  placeSnake(state.p2, [x + 1, y], 'Left', [[x + 2, y]]);
+  const long = rich === 'p1' ? state.p1 : state.p2;
+  const short = rich === 'p1' ? state.p2 : state.p1;
+  placeSnake(long, [x, y], 'Right', longBody);
+  placeSnake(short, [x + 1, y], 'Left', [[x + 2, y]]);
   state.currentCaptureP1 = labelFor(recipe, state.p1.body.length);
   state.currentCaptureP2 = labelFor(recipe, state.p2.body.length);
-  return rider === 'p1' ? [x + 1, y] : [x, y];
+  const left: Rider = rich;
+  const right: Rider = rich === 'p1' ? 'p2' : 'p1';
+  if (rider === left) return [x + 1, y];
+  if (rider === right) return [x, y];
+  return [x + 1, y];
+}
+
+/** Long chain faces the top wall. Every other chain stays short, so the hit is a solo REORG. */
+function stageSoloReorg(
+  state: GameState,
+  rider: Rider,
+  recipe: MatchRecipe
+): GridPos {
+  const border = state.shrinkBorder;
+  const right = border?.right ?? state.cols - 1;
+  const bottom = border?.bottom ?? state.rows - 1;
+  const park: GridPos[] = [
+    [Math.min(right - 2, 30), Math.min(bottom - 1, 6)],
+    [Math.min(right - 2, 30), Math.max(2, bottom - 6)],
+    [Math.min(right - 2, 40), Math.min(bottom - 1, 6)],
+  ];
+  let spot = 0;
+  for (const entry of presentSeats(state)) {
+    if (entry.rider === rider) continue;
+    const head = park[spot] ?? park[0]!;
+    spot += 1;
+    placeSnake(labSnake(state, entry.rider), head, 'Left', [
+      [head[0] + 1, head[1]],
+    ]);
+  }
+  const fatal = stageWallCrash(state, rider);
+  const long = labSnake(state, rider);
+  const [hx, hy] = long.head;
+  placeSnake(
+    long,
+    [hx, hy],
+    'Up',
+    Array.from({ length: 7 }, (_, index) => [hx, hy + 1 + index] as GridPos)
+  );
+  state.currentCaptureP1 = labelFor(recipe, state.p1.body.length);
+  state.currentCaptureP2 = labelFor(recipe, state.p2.body.length);
+  return fatal;
 }
 
 function snapSnake(state: GameState, player: 'P1' | 'P2'): void {
@@ -746,7 +824,11 @@ function transferToP2(state: GameState, amount: number): number {
   return gain;
 }
 
-function transferToExtra(state: GameState, rider: Rider, amount: number): number {
+function transferToExtra(
+  state: GameState,
+  rider: Rider,
+  amount: number
+): number {
   const index = seatIndex(seatOf(rider));
   let richest = -1;
   let richestScore = 0;
@@ -778,7 +860,8 @@ function musicReason(tension: TensionDebugSnapshot): string {
   const ended = tension.layers.some(
     (layer) => layer.name === 'end' || layer.name === 'menu'
   );
-  if (ended) return 'Match over. The end cue plays once, then the menu loop continues.';
+  if (ended)
+    return 'Match over. The end cue plays once, then the menu loop continues.';
   if (tension.level === 0) return 'Bed only.';
   const name = tension.level >= 4 ? 'Critical' : 'Warning';
   const causes = (
@@ -823,7 +906,10 @@ function ScoreHud({
             {state?.p1Name ?? 'White'}
           </div>
         </div>
-        <GameInfoLabel id="gameInfo" gameInfo={state?.meta.modeLabel || modeLabel} />
+        <GameInfoLabel
+          id="gameInfo"
+          gameInfo={state?.meta.modeLabel || modeLabel}
+        />
         <div id="player2info" className="condensed">
           <div className="inline" id="player2name">
             {state?.p2Name ?? 'Black'}
@@ -942,9 +1028,8 @@ export default function MatchTriggerLab() {
   const growRef = useRef(false);
   const endedRef = useRef(false);
   const countdownGen = useRef(0);
-  const [tension, setTension] = useState<TensionDebugSnapshot>(
-    tensionDebugSnapshot
-  );
+  const [tension, setTension] =
+    useState<TensionDebugSnapshot>(tensionDebugSnapshot);
   const [revision, setRevision] = useState(0);
   const [log, setLog] = useState<string[]>([]);
   const [ended, setEnded] = useState(false);
@@ -967,13 +1052,6 @@ export default function MatchTriggerLab() {
     side: CaptureSide;
     intensity: number;
     id: number;
-  } | null>(null);
-  const [impact, setImpact] = useState<{
-    id: number;
-    col: number;
-    row: number;
-    kind: 'wall' | 'clash' | 'reorg';
-    tone?: 'white' | 'black';
   } | null>(null);
   const mutedRef = useRef(isMuted);
   mutedRef.current = isMuted;
@@ -1024,7 +1102,9 @@ export default function MatchTriggerLab() {
         );
         const captureGap = reorgCaptureGap(deadPercent, livePercent);
         const gap =
-          kind === 'headon' ? captureGap : captureGap && deadPercent > livePercent;
+          kind === 'headon'
+            ? captureGap
+            : captureGap && deadPercent > livePercent;
         const player = seatOf(rider);
         const struck =
           kind === 'headon'
@@ -1036,9 +1116,21 @@ export default function MatchTriggerLab() {
             : undefined;
         commitMove(snake, next, false);
         state.tickCount += 1;
-        audio.updateGameState(state);
         const seats = struck ? [player, struck.seat] : [player];
         for (const seat of seats) {
+          const dyingRider =
+            SEATS.find((entry) => entry.seat === seat)?.rider ?? rider;
+          const dying = labSnake(state, dyingRider);
+          if (!state.deathAt) state.deathAt = [];
+          const index = seatIndex(seat);
+          if (!state.deathAt[index]) {
+            state.deathAt[index] = visibleDeathCell(
+              dying.head,
+              dying.dir || dying.dirWanted,
+              state.cols,
+              state.rows
+            );
+          }
           snapSeat(state, seat);
           audio.playReset(seat);
         }
@@ -1068,7 +1160,10 @@ export default function MatchTriggerLab() {
       const eating = (grow || coinIndex >= 0) && snake.body.length < MAX_CHAIN;
       commitMove(snake, next, eating);
       const respawn =
-        Boolean(eaten) && !eaten!.reward && !eaten!.isDecoy && !baitRef.current.has(eaten!);
+        Boolean(eaten) &&
+        !eaten!.reward &&
+        !eaten!.isDecoy &&
+        !baitRef.current.has(eaten!);
       if (respawn) createNewCoinbase(state);
       if (coinIndex >= 0) state.coinbases.splice(coinIndex, 1);
       state.currentCaptureP1 = labelFor(draftRef.current, state.p1.body.length);
@@ -1092,7 +1187,9 @@ export default function MatchTriggerLab() {
         const side: CaptureSide = rider === 'p2' ? 'P2' : 'P1';
         if (gained > 0 && (rider === 'p1' || rider === 'p2')) {
           pushSatsPop(state, side, gained, percent, rate);
-          const intensity = satsCaptureBarIntensityFromLabel(labelFor(draftRef.current, length));
+          const intensity = satsCaptureBarIntensityFromLabel(
+            labelFor(draftRef.current, length)
+          );
           setBarHit((prev) => ({ side, intensity, id: (prev?.id ?? 0) + 1 }));
           window.clearTimeout(hitClearRef.current);
           hitClearRef.current = window.setTimeout(() => setBarHit(null), 900);
@@ -1370,7 +1467,10 @@ export default function MatchTriggerLab() {
     stateRef.current = next;
     setModeId(id);
     setEnded(false);
-    if (!nextMode.ffa && (riderRef.current === 'p3' || riderRef.current === 'p4')) {
+    if (
+      !nextMode.ffa &&
+      (riderRef.current === 'p3' || riderRef.current === 'p4')
+    ) {
       riderRef.current = 'p1';
       setRider('p1');
     }
@@ -1387,7 +1487,8 @@ export default function MatchTriggerLab() {
   const setWalls = (nextInset: number) => {
     const current = stateRef.current;
     const audio = audioRef.current;
-    if (!current || !audio || current.gameEnded || !current.shrinkBorder) return;
+    if (!current || !audio || current.gameEnded || !current.shrinkBorder)
+      return;
     const before = current.shrinkBorder?.left ?? 0;
     applyInset(current, nextInset);
     audio.updateGameState(current);
@@ -1405,14 +1506,18 @@ export default function MatchTriggerLab() {
     const audio = audioRef.current;
     if (!current || !audio || current.gameEnded) return;
     current.gameStarted = false;
-    if (current.meta.teamMode === 'ffa') applyFfaShare(current, riderRef.current, nextShare);
+    if (current.meta.teamMode === 'ffa')
+      applyFfaShare(current, riderRef.current, nextShare);
     else applyWhiteShare(current, nextShare);
     audio.updateGameState(current);
     current.gameStarted = true;
     audio.updateGameState(current);
     if (current.meta.teamMode === 'ffa') {
-      const label = SEATS.find((entry) => entry.rider === riderRef.current)?.label ?? 'Chain';
-      const share = Math.round(selectedShare(current, riderRef.current) * 1000) / 10;
+      const label =
+        SEATS.find((entry) => entry.rider === riderRef.current)?.label ??
+        'Chain';
+      const share =
+        Math.round(selectedShare(current, riderRef.current) * 1000) / 10;
       note(
         `${label} holds ${share}% of the pot. Warning at 12.5%, critical at 5%.`
       );
@@ -1453,7 +1558,8 @@ export default function MatchTriggerLab() {
     stateRef.current = snap.state;
     baitRef.current = new WeakSet();
     for (const coin of snap.state.coinbases) {
-      if (snap.bait.includes(`${coin.pos[0]},${coin.pos[1]}`)) baitRef.current.add(coin);
+      if (snap.bait.includes(`${coin.pos[0]},${coin.pos[1]}`))
+        baitRef.current.add(coin);
     }
     setHistoryCount(historyRef.current.length);
     setEnded(snap.state.gameEnded);
@@ -1480,7 +1586,6 @@ export default function MatchTriggerLab() {
     if (!current || !audio || current.gameEnded) return;
     remember();
     clearStreakPops();
-    setImpact(null);
     const fatal = stageWallCrash(current, riderRef.current);
     quietBaseline(audio, current);
     const who = riderRef.current === 'p1' ? 'White' : 'Black';
@@ -1493,7 +1598,6 @@ export default function MatchTriggerLab() {
     if (!current || !audio || current.gameEnded) return;
     remember();
     clearStreakPops();
-    setImpact(null);
     const fatal = stageHeadOn(current, riderRef.current);
     quietBaseline(audio, current);
     lineUp(fatal, 'Chains lined up · next step is head to head');
@@ -1508,8 +1612,8 @@ export default function MatchTriggerLab() {
     remember();
     pathRef.current = [];
     clearStreakPops();
-    setImpact(null);
-    const dyingRider = SEATS.find((entry) => entry.seat === player)?.rider ?? 'p1';
+    const dyingRider =
+      SEATS.find((entry) => entry.seat === player)?.rider ?? 'p1';
     const dying = labSnake(current, dyingRider);
     const head: GridPos = [dying.head[0], dying.head[1]];
     const recipe = draftRef.current;
@@ -1530,7 +1634,7 @@ export default function MatchTriggerLab() {
     // when the chain was already on spawn so the teleport never registers.
     audio.updateGameState(current);
     const want = isReorg ? 'REORG' : 'WALL';
-    const tone = isReorg ? 'gold' : player === 'P1' ? 'white' : 'black';
+    const tone = player === 'P1' ? 'white' : 'black';
     const home: GridPos = [dying.head[0], dying.head[1]];
     if (!streakPops().some((pop) => pop.text === want)) {
       pushCaptureRatePop(markAt, want, true, tone, isReorg ? undefined : home);
@@ -1546,17 +1650,52 @@ export default function MatchTriggerLab() {
     bump();
   };
 
-  const fork = () => {
+  const useChain = (next: 'p1' | 'p2') => {
+    if (riderRef.current === 'p1' || riderRef.current === 'p2') return;
+    riderRef.current = next;
+    setRider(next);
+  };
+
+  const fork = (rich: 'p1' | 'p2') => {
     const current = stateRef.current;
     const audio = audioRef.current;
     if (!current || !audio || current.gameEnded) return;
     remember();
     clearStreakPops();
-    setImpact(null);
+    useChain(rich);
     // Same timing as Head to head: line up, then the step pump takes the crash.
-    const fatal = stageHeadOnReorg(current, riderRef.current, draftRef.current);
+    const fatal = stageHeadOnReorg(
+      current,
+      riderRef.current,
+      draftRef.current,
+      rich
+    );
     quietBaseline(audio, current);
-    lineUp(fatal, 'Lined up · long white vs short black · next step is REORG');
+    lineUp(
+      fatal,
+      rich === 'p1'
+        ? 'Lined up · long white vs short black · next step is REORG'
+        : 'Lined up · long black vs short white · next step is REORG'
+    );
+  };
+
+  const soloReorg = () => {
+    const current = stateRef.current;
+    const audio = audioRef.current;
+    if (!current || !audio || current.gameEnded) return;
+    remember();
+    clearStreakPops();
+    const dying: 'p1' | 'p2' = riderRef.current === 'p2' ? 'p2' : 'p1';
+    if (riderRef.current !== dying) {
+      riderRef.current = dying;
+      setRider(dying);
+    }
+    const fatal = stageSoloReorg(current, dying, draftRef.current);
+    quietBaseline(audio, current);
+    lineUp(
+      fatal,
+      `${dying === 'p1' ? 'White' : 'Black'} lined up · long chain hits the wall · next step is REORG`
+    );
   };
 
   const selectedHead = () => {
@@ -1604,8 +1743,14 @@ export default function MatchTriggerLab() {
     if (!current || current.gameEnded) return;
     const snake = snakeOf(current);
     placeBody(current, snake, length);
-    current.currentCaptureP1 = labelFor(draftRef.current, current.p1.body.length);
-    current.currentCaptureP2 = labelFor(draftRef.current, current.p2.body.length);
+    current.currentCaptureP1 = labelFor(
+      draftRef.current,
+      current.p1.body.length
+    );
+    current.currentCaptureP2 = labelFor(
+      draftRef.current,
+      current.p2.body.length
+    );
     const who = riderRef.current === 'p1' ? 'White' : 'Black';
     note(
       `${who} length ${snake.body.length} · ${labelFor(draftRef.current, snake.body.length)}`
@@ -1637,7 +1782,8 @@ export default function MatchTriggerLab() {
   const powerUp = () => {
     const current = stateRef.current;
     const audio = audioRef.current;
-    if (!current || !audio || current.gameEnded || !current.meta.powerupMode) return;
+    if (!current || !audio || current.gameEnded || !current.meta.powerupMode)
+      return;
     if (current.powerUpItems.length === 0) {
       current.powerUpItems = [{ pos: [25, 8], type: 'SURGE' }];
       note('Surge power-up is on the board. Click again to collect it.');
@@ -1655,7 +1801,10 @@ export default function MatchTriggerLab() {
     if (!labMode(modeId).block) return;
     audioRef.current?.playBlockFound();
     boardRef.current?.classList.add('is-block');
-    window.setTimeout(() => boardRef.current?.classList.remove('is-block'), 1000);
+    window.setTimeout(
+      () => boardRef.current?.classList.remove('is-block'),
+      1000
+    );
     note('New block · MAINNET_BLOCK · board flashes');
   };
 
@@ -1698,11 +1847,7 @@ export default function MatchTriggerLab() {
           </p>
         </header>
         <div className="match-lab__match">
-          <ScoreHud
-            state={state}
-            modeLabel={mode.modeLabel}
-            barHit={barHit}
-          />
+          <ScoreHud state={state} modeLabel={mode.modeLabel} barHit={barHit} />
           <div
             className="match-lab__board"
             ref={boardRef}
@@ -1710,23 +1855,6 @@ export default function MatchTriggerLab() {
             onPointerMove={onPointerMove}
           >
             <div className="match-lab__host" ref={hostRef} />
-            {impact && state ? (
-              <div
-                key={impact.id}
-                className={[
-                  'match-lab__impact',
-                  `is-${impact.kind}`,
-                  impact.tone ? `is-${impact.tone}` : null,
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                style={{
-                  left: `${((impact.col + 0.5) / state.cols) * 100}%`,
-                  top: `${((impact.row + 0.5) / state.rows) * 100}%`,
-                }}
-                onAnimationEnd={() => setImpact(null)}
-              />
-            ) : null}
             {state?.gameEnded ? (
               <div className="match-lab__over" role="status">
                 <strong>
@@ -1787,179 +1915,237 @@ export default function MatchTriggerLab() {
         <div className="match-lab__sheet">
           {desk === 'board' ? (
             <>
-        <section>
-          <h2>Mode</h2>
-          <div className="match-lab__ride">
-            {LAB_MODES.map((entry) => (
-              <button
-                key={entry.id}
-                type="button"
-                aria-pressed={entry.id === modeId}
-                onClick={() => switchMode(entry.id)}
-              >
-                {entry.label}
-              </button>
-            ))}
-          </div>
-          <p className="match-lab__note">{mode.summary}</p>
-        </section>
+              <section>
+                <h2>Mode</h2>
+                <div className="match-lab__ride">
+                  {LAB_MODES.map((entry) => (
+                    <button
+                      key={entry.id}
+                      type="button"
+                      aria-pressed={entry.id === modeId}
+                      onClick={() => switchMode(entry.id)}
+                    >
+                      {entry.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="match-lab__note">{mode.summary}</p>
+              </section>
 
-        <section>
-          <h2>Drive</h2>
-          <div className="match-lab__ride">
-            {(mode.ffa ? SEATS : SEATS.slice(0, 2)).map((entry) => (
-              <button
-                key={entry.rider}
-                type="button"
-                aria-pressed={rider === entry.rider}
-                onClick={() => setRider(entry.rider)}
-              >
-                {entry.label}
-              </button>
-            ))}
-            <label className="match-lab__check">
-              <input
-                type="checkbox"
-                checked={growOn}
-                onChange={(event) => setGrowOn(event.target.checked)}
-              />
-              Grow
-            </label>
-            <button type="button" disabled={historyCount === 0} onClick={undoMove}>
-              Undo
-            </button>
-          </div>
-          <p className="match-lab__note">
-            Drag the selected chain. Grow turns each new cell into an eat.
-          </p>
-        </section>
+              <section>
+                <h2>Drive</h2>
+                <div className="match-lab__ride">
+                  {(mode.ffa ? SEATS : SEATS.slice(0, 2)).map((entry) => (
+                    <button
+                      key={entry.rider}
+                      type="button"
+                      aria-pressed={rider === entry.rider}
+                      onClick={() => setRider(entry.rider)}
+                    >
+                      {entry.label}
+                    </button>
+                  ))}
+                  <label className="match-lab__check">
+                    <input
+                      type="checkbox"
+                      checked={growOn}
+                      onChange={(event) => setGrowOn(event.target.checked)}
+                    />
+                    Grow
+                  </label>
+                  <button
+                    type="button"
+                    disabled={historyCount === 0}
+                    onClick={undoMove}
+                  >
+                    Undo
+                  </button>
+                </div>
+                <p className="match-lab__note">
+                  Drag the selected chain. Grow turns each new cell into an eat.
+                </p>
+              </section>
 
-        <section>
-          <h2>Score and walls</h2>
-          <label className="slider">
-            <span>
-              {mode.ffa
-                ? `${driven.label} ${Math.round(whiteShare * 100)}% of the pot`
-                : `White ${Math.round(whiteShare * 100)}% · Black ${100 - Math.round(whiteShare * 100)}%`}
-            </span>
-            <input
-              type="range"
-              min={1}
-              max={99}
-              value={Math.min(99, Math.max(1, Math.round(whiteShare * 100)))}
-              disabled={ended}
-              aria-label="Score split"
-              onChange={(event) => setScoreShare(Number(event.target.value) / 100)}
-            />
-          </label>
-          <label className="slider">
-            <span>Wall inset {inset}</span>
-            <input
-              type="range"
-              min={0}
-              max={MAX_INSET}
-              value={inset}
-              disabled={ended || !mode.convergence}
-              aria-label="Wall inset"
-              onChange={(event) => setWalls(Number(event.target.value))}
-            />
-          </label>
-          {mode.convergence ? null : (
-            <p className="match-lab__note">Walls stay open in {mode.label}.</p>
-          )}
-          {mode.ffa ? (
-            <p className="match-lab__note">
-              Four equal chains stay on the bed. This slider gives the selected
-              chain that share. Warning at 12.5%, critical at 5%.
-            </p>
-          ) : null}
-        </section>
+              <section>
+                <h2>Score and walls</h2>
+                <label className="slider">
+                  <span>
+                    {mode.ffa
+                      ? `${driven.label} ${Math.round(whiteShare * 100)}% of the pot`
+                      : `White ${Math.round(whiteShare * 100)}% · Black ${100 - Math.round(whiteShare * 100)}%`}
+                  </span>
+                  <input
+                    type="range"
+                    min={1}
+                    max={99}
+                    value={Math.min(
+                      99,
+                      Math.max(1, Math.round(whiteShare * 100))
+                    )}
+                    disabled={ended}
+                    aria-label="Score split"
+                    onChange={(event) =>
+                      setScoreShare(Number(event.target.value) / 100)
+                    }
+                  />
+                </label>
+                <label className="slider">
+                  <span>Wall inset {inset}</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={MAX_INSET}
+                    value={inset}
+                    disabled={ended || !mode.convergence}
+                    aria-label="Wall inset"
+                    onChange={(event) => setWalls(Number(event.target.value))}
+                  />
+                </label>
+                {mode.convergence ? null : (
+                  <p className="match-lab__note">
+                    Walls stay open in {mode.label}.
+                  </p>
+                )}
+                {mode.ffa ? (
+                  <p className="match-lab__note">
+                    Four equal chains stay on the bed. This slider gives the
+                    selected chain that share. Warning at 12.5%, critical at 5%.
+                  </p>
+                ) : null}
+              </section>
 
-        <section>
-          <h2>Moments</h2>
-          <div className="match-lab__moments">
-            <button type="button" className="wide" disabled={ended} onClick={eatOne}>
-              Eat one step
-            </button>
-            {(mode.ffa ? SEATS : SEATS.slice(0, 2)).map((entry) => (
-              <button
-                key={entry.seat}
-                type="button"
-                disabled={ended}
-                onClick={() => die(entry.seat)}
-              >
-                {entry.label} dies
-              </button>
-            ))}
-            <button type="button" disabled={ended} onClick={hitWall}>
-              Hit the wall
-            </button>
-            <button type="button" disabled={ended} onClick={hitHeadOn}>
-              Head to head
-            </button>
-            <button type="button" className="wide" disabled={ended} onClick={fork}>
-              Head-on REORG
-            </button>
-            <button
-              type="button"
-              disabled={ended || !mode.powerups}
-              onClick={powerUp}
-            >
-              Power-up
-            </button>
-            <button type="button" disabled={!mode.block} onClick={block}>
-              New block
-            </button>
-            <button type="button" onClick={countdown}>
-              Countdown
-            </button>
-            {ended && !state?.winnerPlayer ? (
-              <button type="button" onClick={resume}>
-                Resume
-              </button>
-            ) : ended ? null : (
-              <button type="button" onClick={endMatch}>
-                End match
-              </button>
-            )}
-          </div>
-        </section>
-
-        <section>
-          <h2>Heard now</h2>
-          {tension.layers.length === 0 ? (
-            <p className="match-lab__note">
-              Nothing audible yet. Click the board once if the browser blocked
-              the bed.
-            </p>
-          ) : (
-            <>
-              <p className="match-lab__why">{musicReason(tension)}</p>
-              <div className="match-lab__layers">
-                {tension.layers.map((layer) => (
-                  <div className="match-lab__layer" key={layer.name}>
-                    <span>{layerLabel(layer.name)}</span>
-                    <b>
-                      <i style={{ width: `${Math.round(layer.volume * 100)}%` }} />
-                    </b>
-                    <span>{layer.volume.toFixed(2)}</span>
+              <section>
+                <h2>Moments</h2>
+                <div className="match-lab__moments">
+                  <button
+                    type="button"
+                    className="wide"
+                    disabled={ended}
+                    onClick={eatOne}
+                  >
+                    Eat one step
+                  </button>
+                </div>
+                <div className="match-lab__moment-group">
+                  <p>Reset</p>
+                  <div className="match-lab__moments">
+                    {(mode.ffa ? SEATS : SEATS.slice(0, 2)).map((entry) => (
+                      <button
+                        key={entry.seat}
+                        type="button"
+                        disabled={ended}
+                        onClick={() => die(entry.seat)}
+                      >
+                        {entry.label} dies
+                      </button>
+                    ))}
+                    <button type="button" disabled={ended} onClick={hitWall}>
+                      Hit the wall
+                    </button>
+                    <button type="button" disabled={ended} onClick={hitHeadOn}>
+                      Head to head
+                    </button>
                   </div>
-                ))}
-              </div>
-            </>
-          )}
-        </section>
+                </div>
+                <div className="match-lab__moment-group">
+                  <p>Reorg</p>
+                  <div className="match-lab__moments match-lab__moments--reorg">
+                    <button
+                      type="button"
+                      disabled={ended}
+                      onClick={() => fork('p1')}
+                    >
+                      White
+                      <span>head-on</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={ended}
+                      onClick={() => fork('p2')}
+                    >
+                      Black
+                      <span>head-on</span>
+                    </button>
+                    <button type="button" disabled={ended} onClick={soloReorg}>
+                      Solo
+                      <span>one chain</span>
+                    </button>
+                  </div>
+                </div>
+                <div className="match-lab__moment-group">
+                  <p>Match</p>
+                  <div className="match-lab__moments">
+                    <button
+                      type="button"
+                      disabled={ended || !mode.powerups}
+                      onClick={powerUp}
+                    >
+                      Power-up
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!mode.block}
+                      onClick={block}
+                    >
+                      New block
+                    </button>
+                    <button type="button" onClick={countdown}>
+                      Countdown
+                    </button>
+                    {ended && !state?.winnerPlayer ? (
+                      <button type="button" onClick={resume}>
+                        Resume
+                      </button>
+                    ) : ended ? null : (
+                      <button type="button" onClick={endMatch}>
+                        End match
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </section>
 
-        <section>
-          <h2>Last events</h2>
-          <div className="match-lab__log">
-            {log.length === 0 ? (
-              <p>Drag the board, or eat one step.</p>
-            ) : (
-              log.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)
-            )}
-          </div>
-        </section>
+              <section>
+                <h2>Heard now</h2>
+                {tension.layers.length === 0 ? (
+                  <p className="match-lab__note">
+                    Nothing audible yet. Click the board once if the browser
+                    blocked the bed.
+                  </p>
+                ) : (
+                  <>
+                    <p className="match-lab__why">{musicReason(tension)}</p>
+                    <div className="match-lab__layers">
+                      {tension.layers.map((layer) => (
+                        <div className="match-lab__layer" key={layer.name}>
+                          <span>{layerLabel(layer.name)}</span>
+                          <b>
+                            <i
+                              style={{
+                                width: `${Math.round(layer.volume * 100)}%`,
+                              }}
+                            />
+                          </b>
+                          <span>{layer.volume.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </section>
+
+              <section>
+                <h2>Last events</h2>
+                <div className="match-lab__log">
+                  {log.length === 0 ? (
+                    <p>Drag the board, or eat one step.</p>
+                  ) : (
+                    log.map((line, index) => (
+                      <p key={`${line}-${index}`}>{line}</p>
+                    ))
+                  )}
+                </div>
+              </section>
             </>
           ) : null}
           {desk === 'music' || desk === 'eat' ? (
@@ -1982,7 +2168,8 @@ export default function MatchTriggerLab() {
               onHearMix={hearMix}
               silenced={silenced}
               chainLength={
-                state && presentSeats(state).some((entry) => entry.rider === rider)
+                state &&
+                presentSeats(state).some((entry) => entry.rider === rider)
                   ? labSnake(state, rider).body.length
                   : (state?.p1.body.length ?? 1)
               }
@@ -2014,7 +2201,9 @@ export default function MatchTriggerLab() {
                   type="button"
                   aria-pressed={soloId === otherId}
                   onClick={() => {
-                    const clip = OTHER_CLIPS.find((entry) => entry.id === otherId);
+                    const clip = OTHER_CLIPS.find(
+                      (entry) => entry.id === otherId
+                    );
                     if (!clip) return;
                     if (soloId === clip.id) stopMusic();
                     else playAlone(clip);

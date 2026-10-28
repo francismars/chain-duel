@@ -131,13 +131,16 @@ export const PracticeFreePlayPanel = forwardRef<
     navFocus.kind === kind &&
     (idx === undefined || ('idx' in navFocus && navFocus.idx === idx));
 
-  const applyFormat = useCallback((next: MatchFormat) => {
-    setFormat(next);
-    if (next === 'ffa') {
-      setSlotHuman([...FFA_DEFAULT_SLOTS]);
-    }
-    if (flow === 'stepped') setStep('options');
-  }, [flow]);
+  const applyFormat = useCallback(
+    (next: MatchFormat) => {
+      setFormat(next);
+      if (next === 'ffa') {
+        setSlotHuman([...FFA_DEFAULT_SLOTS]);
+      }
+      if (flow === 'stepped') setStep('options');
+    },
+    [flow]
+  );
 
   const toggleSlot = useCallback(
     (idx: number) => {
@@ -201,11 +204,7 @@ export const PracticeFreePlayPanel = forwardRef<
 
     const modeLabel = format === 'ffa' ? 'ffa' : 'solo';
     const opponentType =
-      format === 'solo'
-        ? opponent === 'ai'
-          ? aiTier
-          : 'human'
-        : aiTier;
+      format === 'solo' ? (opponent === 'ai' ? aiTier : 'human') : aiTier;
 
     reportClientEvent(socket, 'client.quickmatch.configured', {
       mode: modeLabel,
@@ -450,542 +449,544 @@ export const PracticeFreePlayPanel = forwardRef<
       <div className="practice-free-play-panel__body">
         <div className="local-setup-top-row">
           {showFormat ? (
-          <section
-            className="practice-section local-format-section"
-            aria-labelledby="lh-format"
-          >
-            <div className="ph-picker-block">
-              <h3 id="lh-format" className="p2p-picker-group-label">
-                FORMAT
-              </h3>
-              <div
-                className="p2p-picker-row"
-                role="radiogroup"
-                aria-label="Match format"
-              >
-                {/* 1V1 — reuse duel card style + sword animation */}
-                <button
-                  ref={(el) => {
-                    formatRefs.current[0] = el;
-                  }}
-                  type="button"
-                  role="radio"
-                  aria-checked={format === 'solo'}
-                  tabIndex={hasPanelNavFocus('format', 0) ? 0 : -1}
-                  className={[
-                    'p2p-picker-card',
-                    'p2p-picker-card--compact-inline',
-                    'p2p-picker-card--duel',
-                    format === 'solo' ? 'p2p-picker-card--selected' : '',
-                    hasPanelNavFocus('format', 0)
-                      ? 'practice-focus-target'
-                      : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onClick={() => {
-                    setNavFocus({ kind: 'format', idx: 0 });
-                    playSfx(SFX.MENU_SELECT);
-                    applyFormat('solo');
-                  }}
-                >
-                  <svg
-                    className="p2p-picker-icon"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <g className="p2p-sword p2p-sword--1">
-                      <path
-                        d="M19 4L5 19"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M13 7L17 10"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                      />
-                    </g>
-                    <g className="p2p-sword p2p-sword--2">
-                      <path
-                        d="M5 4L19 19"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M7 10L11 7"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                      />
-                    </g>
-                  </svg>
-                  <span className="p2p-picker-label">One vs One</span>
-                  <span className="p2p-picker-sub">Head to head</span>
-                </button>
-
-                {/* FFA */}
-                <button
-                  ref={(el) => {
-                    formatRefs.current[1] = el;
-                  }}
-                  type="button"
-                  role="radio"
-                  aria-checked={format === 'ffa'}
-                  tabIndex={hasPanelNavFocus('format', 1) ? 0 : -1}
-                  className={[
-                    'p2p-picker-card',
-                    'p2p-picker-card--compact-inline',
-                    'p2p-picker-card--ffa',
-                    format === 'ffa' ? 'p2p-picker-card--selected' : '',
-                    hasPanelNavFocus('format', 1)
-                      ? 'practice-focus-target'
-                      : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onClick={() => {
-                    setNavFocus({ kind: 'format', idx: 1 });
-                    playSfx(SFX.MENU_SELECT);
-                    applyFormat('ffa');
-                  }}
-                >
-                  <svg
-                    className="p2p-picker-icon"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <g className="lh-ffa-icon">
-                      <rect
-                        x="2"
-                        y="2"
-                        width="7"
-                        height="7"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        fill="currentColor"
-                        fillOpacity="0.12"
-                      />
-                      <rect
-                        x="15"
-                        y="2"
-                        width="7"
-                        height="7"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        fill="currentColor"
-                        fillOpacity="0.12"
-                      />
-                      <rect
-                        x="2"
-                        y="15"
-                        width="7"
-                        height="7"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        fill="currentColor"
-                        fillOpacity="0.12"
-                      />
-                      <rect
-                        x="15"
-                        y="15"
-                        width="7"
-                        height="7"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        fill="currentColor"
-                        fillOpacity="0.12"
-                      />
-                      <path
-                        d="M9 5.5h6M18.5 9v6M15 18.5H9M5.5 15V9"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                      />
-                    </g>
-                  </svg>
-                  <span className="p2p-picker-label">Free for All</span>
-                  <span className="p2p-picker-sub">Four chains</span>
-                </button>
-              </div>
-            </div>
-          </section>
-          ) : null}
-
-          {showOptions ? (
-          <div className="local-mode-config-area">
-            {/* Solo / 1v1 section */}
             <section
-              className={`practice-section${format !== 'solo' ? ' local-mode-inactive' : ''}`}
-              aria-hidden={format !== 'solo'}
+              className="practice-section local-format-section"
+              aria-labelledby="lh-format"
             >
-              <div className="ph-picker-block local-mode-config-block">
-                <h3 className="p2p-picker-group-label">OPPONENT</h3>
+              <div className="ph-picker-block">
+                <h3 id="lh-format" className="p2p-picker-group-label">
+                  FORMAT
+                </h3>
                 <div
                   className="p2p-picker-row"
                   role="radiogroup"
-                  aria-label="Opponent type"
+                  aria-label="Match format"
                 >
-                  {/* AI */}
+                  {/* 1V1 — reuse duel card style + sword animation */}
                   <button
                     ref={(el) => {
-                      opponentRefs.current[0] = el;
+                      formatRefs.current[0] = el;
                     }}
                     type="button"
                     role="radio"
-                    aria-checked={opponent === 'ai'}
-                    tabIndex={hasPanelNavFocus('opponent', 0) ? 0 : -1}
+                    aria-checked={format === 'solo'}
+                    tabIndex={hasPanelNavFocus('format', 0) ? 0 : -1}
                     className={[
                       'p2p-picker-card',
                       'p2p-picker-card--compact-inline',
-                      'p2p-picker-card--ai',
-                      opponent === 'ai' ? 'p2p-picker-card--selected' : '',
-                      hasPanelNavFocus('opponent', 0)
+                      'p2p-picker-card--duel',
+                      format === 'solo' ? 'p2p-picker-card--selected' : '',
+                      hasPanelNavFocus('format', 0)
                         ? 'practice-focus-target'
                         : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}
                     onClick={() => {
-                      setNavFocus({ kind: 'opponent', idx: 0 });
+                      setNavFocus({ kind: 'format', idx: 0 });
                       playSfx(SFX.MENU_SELECT);
-                      setOpponent('ai');
+                      applyFormat('solo');
                     }}
                   >
                     <svg
-                      className="p2p-picker-icon p2p-picker-icon--ai"
+                      className="p2p-picker-icon"
                       viewBox="0 0 24 24"
                       fill="none"
                       aria-hidden="true"
                     >
-                      <rect
-                        x="6"
-                        y="8"
-                        width="12"
-                        height="10"
-                        rx="1"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        fill="currentColor"
-                        fillOpacity="0.12"
-                      />
-                      <circle
-                        cx="9.5"
-                        cy="12"
-                        r="1.5"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        fill="currentColor"
-                        fillOpacity="0.3"
-                      />
-                      <circle
-                        cx="14.5"
-                        cy="12"
-                        r="1.5"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        fill="currentColor"
-                        fillOpacity="0.3"
-                      />
-                      <path
-                        d="M9 18v2M15 18v2"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M12 4v4"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                      />
-                      <circle
-                        cx="12"
-                        cy="3.5"
-                        r="1"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                      />
-                      <path
-                        d="M6 13H3M21 13h-3"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                      />
+                      <g className="p2p-sword p2p-sword--1">
+                        <path
+                          d="M19 4L5 19"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M13 7L17 10"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                        />
+                      </g>
+                      <g className="p2p-sword p2p-sword--2">
+                        <path
+                          d="M5 4L19 19"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M7 10L11 7"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                        />
+                      </g>
                     </svg>
-                    <span className="p2p-picker-label">AI</span>
-                    <span className="p2p-picker-sub">vs bot</span>
+                    <span className="p2p-picker-label">One vs One</span>
+                    <span className="p2p-picker-sub">Head to head</span>
                   </button>
 
-                  {/* HUMANS */}
+                  {/* FFA */}
                   <button
                     ref={(el) => {
-                      opponentRefs.current[1] = el;
+                      formatRefs.current[1] = el;
                     }}
                     type="button"
                     role="radio"
-                    aria-checked={opponent === 'humans'}
-                    tabIndex={hasPanelNavFocus('opponent', 1) ? 0 : -1}
+                    aria-checked={format === 'ffa'}
+                    tabIndex={hasPanelNavFocus('format', 1) ? 0 : -1}
                     className={[
                       'p2p-picker-card',
                       'p2p-picker-card--compact-inline',
-                      'p2p-picker-card--humans',
-                      opponent === 'humans' ? 'p2p-picker-card--selected' : '',
-                      hasPanelNavFocus('opponent', 1)
+                      'p2p-picker-card--ffa',
+                      format === 'ffa' ? 'p2p-picker-card--selected' : '',
+                      hasPanelNavFocus('format', 1)
                         ? 'practice-focus-target'
                         : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}
                     onClick={() => {
-                      setNavFocus({ kind: 'opponent', idx: 1 });
+                      setNavFocus({ kind: 'format', idx: 1 });
                       playSfx(SFX.MENU_SELECT);
-                      setOpponent('humans');
+                      applyFormat('ffa');
                     }}
                   >
                     <svg
-                      className="p2p-picker-icon p2p-picker-icon--people"
+                      className="p2p-picker-icon"
                       viewBox="0 0 24 24"
                       fill="none"
                       aria-hidden="true"
                     >
-                      <circle
-                        cx="8"
-                        cy="7"
-                        r="2.5"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        fill="currentColor"
-                        fillOpacity="0.15"
-                      />
-                      <path
-                        d="M3 18a5 4 0 0 1 10 0"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                        fill="none"
-                      />
-                      <circle
-                        cx="16"
-                        cy="7"
-                        r="2.5"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        fill="currentColor"
-                        fillOpacity="0.15"
-                      />
-                      <path
-                        d="M11 18a5 4 0 0 1 10 0"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                        fill="none"
-                      />
+                      <g className="lh-ffa-icon">
+                        <rect
+                          x="2"
+                          y="2"
+                          width="7"
+                          height="7"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          fill="currentColor"
+                          fillOpacity="0.12"
+                        />
+                        <rect
+                          x="15"
+                          y="2"
+                          width="7"
+                          height="7"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          fill="currentColor"
+                          fillOpacity="0.12"
+                        />
+                        <rect
+                          x="2"
+                          y="15"
+                          width="7"
+                          height="7"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          fill="currentColor"
+                          fillOpacity="0.12"
+                        />
+                        <rect
+                          x="15"
+                          y="15"
+                          width="7"
+                          height="7"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          fill="currentColor"
+                          fillOpacity="0.12"
+                        />
+                        <path
+                          d="M9 5.5h6M18.5 9v6M15 18.5H9M5.5 15V9"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                        />
+                      </g>
                     </svg>
-                    <span className="p2p-picker-label">HUMAN</span>
-                    <span className="p2p-picker-sub">Local play</span>
+                    <span className="p2p-picker-label">Free for All</span>
+                    <span className="p2p-picker-sub">Four chains</span>
                   </button>
                 </div>
-
-                {opponent === 'humans' && (
-                  <button
-                    ref={p2pLinkRef}
-                    type="button"
-                    className={[
-                      'button',
-                      'local-human-p2p-link',
-                      hasPanelNavFocus('p2pLink')
-                        ? 'practice-focus-target'
-                        : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    tabIndex={hasPanelNavFocus('p2pLink') ? 0 : -1}
-                    onClick={() => {
-                      playSfx(SFX.MENU_CONFIRM);
-                      navigate('/p2p');
-                    }}
-                  >
-                    Play for sats? Go to P2P
-                  </button>
-                )}
-
-                {opponent === 'ai' && (
-                  <>
-                    <h3 className="p2p-picker-group-label">DIFFICULTY</h3>
-                    <div
-                      className="local-tier-grid"
-                      role="radiogroup"
-                      aria-label="AI difficulty"
-                    >
-                      {AI_TIER_PRESETS.map((p, i) => (
-                        <button
-                          key={p.id}
-                          ref={(el) => {
-                            tierRefs.current[i] = el;
-                          }}
-                          type="button"
-                          role="radio"
-                          aria-checked={aiTier === p.id}
-                          data-tier={p.id}
-                          tabIndex={hasPanelNavFocus('tier', i) ? 0 : -1}
-                          className={[
-                            'p2p-duel-format__card',
-                            'local-tier-card',
-                            aiTier === p.id
-                              ? 'p2p-duel-format__card--active'
-                              : '',
-                            hasPanelNavFocus('tier', i)
-                              ? 'practice-focus-target'
-                              : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                          onClick={() => {
-                            setNavFocus({
-                              kind: 'tier',
-                              idx: i as 0 | 1 | 2 | 3,
-                            });
-                            playSfx(SFX.MENU_SELECT);
-                            setAiTier(p.id);
-                          }}
-                        >
-                          <span className="p2p-duel-format__label">
-                            {p.name}
-                          </span>
-                          <div className="local-tier-pips" aria-hidden="true">
-                            {Array.from({ length: 4 }, (_, j) => (
-                              <span
-                                key={j}
-                                className={`local-tier-pip${j < p.rank ? ' local-tier-pip--filled' : ''}`}
-                              />
-                            ))}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
               </div>
             </section>
+          ) : null}
 
-            {/* FFA section */}
-            <section
-              className={`practice-section${format !== 'ffa' ? ' local-mode-inactive' : ''}`}
-              aria-hidden={format !== 'ffa'}
-            >
-              <div className="ph-picker-block local-mode-config-block">
-                <h3 className="p2p-picker-group-label">PLAYERS</h3>
-                <div
-                  className="practice-four-slot"
-                  role="group"
-                  aria-label="P1 through P4"
-                >
-                  {(['P1', 'P2', 'P3', 'P4'] as const).map((label, idx) => (
+          {showOptions ? (
+            <div className="local-mode-config-area">
+              {/* Solo / 1v1 section */}
+              <section
+                className={`practice-section${format !== 'solo' ? ' local-mode-inactive' : ''}`}
+                aria-hidden={format !== 'solo'}
+              >
+                <div className="ph-picker-block local-mode-config-block">
+                  <h3 className="p2p-picker-group-label">OPPONENT</h3>
+                  <div
+                    className="p2p-picker-row"
+                    role="radiogroup"
+                    aria-label="Opponent type"
+                  >
+                    {/* AI */}
                     <button
-                      key={label}
                       ref={(el) => {
-                        slotRefs.current[idx] = el;
+                        opponentRefs.current[0] = el;
                       }}
                       type="button"
-                      tabIndex={hasPanelNavFocus('slot', idx) ? 0 : -1}
-                      className={`practice-slot-btn ${slotHuman[idx] ? 'human' : 'ai'}${hasPanelNavFocus('slot', idx) ? ' practice-focus-target' : ''}`}
+                      role="radio"
+                      aria-checked={opponent === 'ai'}
+                      tabIndex={hasPanelNavFocus('opponent', 0) ? 0 : -1}
+                      className={[
+                        'p2p-picker-card',
+                        'p2p-picker-card--compact-inline',
+                        'p2p-picker-card--ai',
+                        opponent === 'ai' ? 'p2p-picker-card--selected' : '',
+                        hasPanelNavFocus('opponent', 0)
+                          ? 'practice-focus-target'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
                       onClick={() => {
-                        setNavFocus({
-                          kind: 'slot',
-                          idx: idx as 0 | 1 | 2 | 3,
-                        });
-                        toggleSlot(idx);
+                        setNavFocus({ kind: 'opponent', idx: 0 });
+                        playSfx(SFX.MENU_SELECT);
+                        setOpponent('ai');
                       }}
                     >
-                      <span className="practice-slot-id">{label}</span>
-                      <span className="practice-slot-role">
-                        {slotHuman[idx] ? 'HUMAN' : 'AI'}
-                      </span>
+                      <svg
+                        className="p2p-picker-icon p2p-picker-icon--ai"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <rect
+                          x="6"
+                          y="8"
+                          width="12"
+                          height="10"
+                          rx="1"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          fill="currentColor"
+                          fillOpacity="0.12"
+                        />
+                        <circle
+                          cx="9.5"
+                          cy="12"
+                          r="1.5"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          fill="currentColor"
+                          fillOpacity="0.3"
+                        />
+                        <circle
+                          cx="14.5"
+                          cy="12"
+                          r="1.5"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          fill="currentColor"
+                          fillOpacity="0.3"
+                        />
+                        <path
+                          d="M9 18v2M15 18v2"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M12 4v4"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                        />
+                        <circle
+                          cx="12"
+                          cy="3.5"
+                          r="1"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                        />
+                        <path
+                          d="M6 13H3M21 13h-3"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span className="p2p-picker-label">AI</span>
+                      <span className="p2p-picker-sub">vs bot</span>
                     </button>
-                  ))}
-                </div>
 
-                {!allFourHuman && (
-                  <>
-                    <h3 className="p2p-picker-group-label">DIFFICULTY</h3>
-                    <div
-                      className="local-tier-grid"
-                      role="radiogroup"
-                      aria-label="AI difficulty"
+                    {/* HUMANS */}
+                    <button
+                      ref={(el) => {
+                        opponentRefs.current[1] = el;
+                      }}
+                      type="button"
+                      role="radio"
+                      aria-checked={opponent === 'humans'}
+                      tabIndex={hasPanelNavFocus('opponent', 1) ? 0 : -1}
+                      className={[
+                        'p2p-picker-card',
+                        'p2p-picker-card--compact-inline',
+                        'p2p-picker-card--humans',
+                        opponent === 'humans'
+                          ? 'p2p-picker-card--selected'
+                          : '',
+                        hasPanelNavFocus('opponent', 1)
+                          ? 'practice-focus-target'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      onClick={() => {
+                        setNavFocus({ kind: 'opponent', idx: 1 });
+                        playSfx(SFX.MENU_SELECT);
+                        setOpponent('humans');
+                      }}
                     >
-                      {AI_TIER_PRESETS.map((p, i) => (
-                        <button
-                          key={p.id}
-                          ref={(el) => {
-                            tierRefs.current[i] = el;
-                          }}
-                          type="button"
-                          role="radio"
-                          aria-checked={aiTier === p.id}
-                          data-tier={p.id}
-                          tabIndex={hasPanelNavFocus('tier', i) ? 0 : -1}
-                          className={[
-                            'p2p-duel-format__card',
-                            'local-tier-card',
-                            aiTier === p.id
-                              ? 'p2p-duel-format__card--active'
-                              : '',
-                            hasPanelNavFocus('tier', i)
-                              ? 'practice-focus-target'
-                              : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                          onClick={() => {
-                            setNavFocus({
-                              kind: 'tier',
-                              idx: i as 0 | 1 | 2 | 3,
-                            });
-                            playSfx(SFX.MENU_SELECT);
-                            setAiTier(p.id);
-                          }}
-                        >
-                          <span className="p2p-duel-format__label">
-                            {p.name}
-                          </span>
-                          <div className="local-tier-pips" aria-hidden="true">
-                            {Array.from({ length: 4 }, (_, j) => (
-                              <span
-                                key={j}
-                                className={`local-tier-pip${j < p.rank ? ' local-tier-pip--filled' : ''}`}
-                              />
-                            ))}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </section>
-          </div>
+                      <svg
+                        className="p2p-picker-icon p2p-picker-icon--people"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          cx="8"
+                          cy="7"
+                          r="2.5"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          fill="currentColor"
+                          fillOpacity="0.15"
+                        />
+                        <path
+                          d="M3 18a5 4 0 0 1 10 0"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                          fill="none"
+                        />
+                        <circle
+                          cx="16"
+                          cy="7"
+                          r="2.5"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          fill="currentColor"
+                          fillOpacity="0.15"
+                        />
+                        <path
+                          d="M11 18a5 4 0 0 1 10 0"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                          fill="none"
+                        />
+                      </svg>
+                      <span className="p2p-picker-label">HUMAN</span>
+                      <span className="p2p-picker-sub">Local play</span>
+                    </button>
+                  </div>
+
+                  {opponent === 'humans' && (
+                    <button
+                      ref={p2pLinkRef}
+                      type="button"
+                      className={[
+                        'button',
+                        'local-human-p2p-link',
+                        hasPanelNavFocus('p2pLink')
+                          ? 'practice-focus-target'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      tabIndex={hasPanelNavFocus('p2pLink') ? 0 : -1}
+                      onClick={() => {
+                        playSfx(SFX.MENU_CONFIRM);
+                        navigate('/p2p');
+                      }}
+                    >
+                      Play for sats? Go to P2P
+                    </button>
+                  )}
+
+                  {opponent === 'ai' && (
+                    <>
+                      <h3 className="p2p-picker-group-label">DIFFICULTY</h3>
+                      <div
+                        className="local-tier-grid"
+                        role="radiogroup"
+                        aria-label="AI difficulty"
+                      >
+                        {AI_TIER_PRESETS.map((p, i) => (
+                          <button
+                            key={p.id}
+                            ref={(el) => {
+                              tierRefs.current[i] = el;
+                            }}
+                            type="button"
+                            role="radio"
+                            aria-checked={aiTier === p.id}
+                            data-tier={p.id}
+                            tabIndex={hasPanelNavFocus('tier', i) ? 0 : -1}
+                            className={[
+                              'p2p-duel-format__card',
+                              'local-tier-card',
+                              aiTier === p.id
+                                ? 'p2p-duel-format__card--active'
+                                : '',
+                              hasPanelNavFocus('tier', i)
+                                ? 'practice-focus-target'
+                                : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                            onClick={() => {
+                              setNavFocus({
+                                kind: 'tier',
+                                idx: i as 0 | 1 | 2 | 3,
+                              });
+                              playSfx(SFX.MENU_SELECT);
+                              setAiTier(p.id);
+                            }}
+                          >
+                            <span className="p2p-duel-format__label">
+                              {p.name}
+                            </span>
+                            <div className="local-tier-pips" aria-hidden="true">
+                              {Array.from({ length: 4 }, (_, j) => (
+                                <span
+                                  key={j}
+                                  className={`local-tier-pip${j < p.rank ? ' local-tier-pip--filled' : ''}`}
+                                />
+                              ))}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+
+              {/* FFA section */}
+              <section
+                className={`practice-section${format !== 'ffa' ? ' local-mode-inactive' : ''}`}
+                aria-hidden={format !== 'ffa'}
+              >
+                <div className="ph-picker-block local-mode-config-block">
+                  <h3 className="p2p-picker-group-label">PLAYERS</h3>
+                  <div
+                    className="practice-four-slot"
+                    role="group"
+                    aria-label="P1 through P4"
+                  >
+                    {(['P1', 'P2', 'P3', 'P4'] as const).map((label, idx) => (
+                      <button
+                        key={label}
+                        ref={(el) => {
+                          slotRefs.current[idx] = el;
+                        }}
+                        type="button"
+                        tabIndex={hasPanelNavFocus('slot', idx) ? 0 : -1}
+                        className={`practice-slot-btn ${slotHuman[idx] ? 'human' : 'ai'}${hasPanelNavFocus('slot', idx) ? ' practice-focus-target' : ''}`}
+                        onClick={() => {
+                          setNavFocus({
+                            kind: 'slot',
+                            idx: idx as 0 | 1 | 2 | 3,
+                          });
+                          toggleSlot(idx);
+                        }}
+                      >
+                        <span className="practice-slot-id">{label}</span>
+                        <span className="practice-slot-role">
+                          {slotHuman[idx] ? 'HUMAN' : 'AI'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {!allFourHuman && (
+                    <>
+                      <h3 className="p2p-picker-group-label">DIFFICULTY</h3>
+                      <div
+                        className="local-tier-grid"
+                        role="radiogroup"
+                        aria-label="AI difficulty"
+                      >
+                        {AI_TIER_PRESETS.map((p, i) => (
+                          <button
+                            key={p.id}
+                            ref={(el) => {
+                              tierRefs.current[i] = el;
+                            }}
+                            type="button"
+                            role="radio"
+                            aria-checked={aiTier === p.id}
+                            data-tier={p.id}
+                            tabIndex={hasPanelNavFocus('tier', i) ? 0 : -1}
+                            className={[
+                              'p2p-duel-format__card',
+                              'local-tier-card',
+                              aiTier === p.id
+                                ? 'p2p-duel-format__card--active'
+                                : '',
+                              hasPanelNavFocus('tier', i)
+                                ? 'practice-focus-target'
+                                : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                            onClick={() => {
+                              setNavFocus({
+                                kind: 'tier',
+                                idx: i as 0 | 1 | 2 | 3,
+                              });
+                              playSfx(SFX.MENU_SELECT);
+                              setAiTier(p.id);
+                            }}
+                          >
+                            <span className="p2p-duel-format__label">
+                              {p.name}
+                            </span>
+                            <div className="local-tier-pips" aria-hidden="true">
+                              {Array.from({ length: 4 }, (_, j) => (
+                                <span
+                                  key={j}
+                                  className={`local-tier-pip${j < p.rank ? ' local-tier-pip--filled' : ''}`}
+                                />
+                              ))}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+            </div>
           ) : null}
         </div>
 
         {showOptions ? (
-        <GameModifiersSection
-          powerups={{
-            enabled: powerup,
-            focused: hasPanelNavFocus('rulePowerup'),
-            buttonRef: powerupRef,
-            onToggle: () => {
-              setNavFocus({ kind: 'rulePowerup' });
-              playSfx(SFX.MENU_SELECT);
-              setPowerup((v) => !v);
-            },
-          }}
-        />
+          <GameModifiersSection
+            powerups={{
+              enabled: powerup,
+              focused: hasPanelNavFocus('rulePowerup'),
+              buttonRef: powerupRef,
+              onToggle: () => {
+                setNavFocus({ kind: 'rulePowerup' });
+                playSfx(SFX.MENU_SELECT);
+                setPowerup((v) => !v);
+              },
+            }}
+          />
         ) : null}
       </div>
     </div>

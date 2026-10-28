@@ -23,7 +23,7 @@ export const GAMEPAD_BUTTON_LABELS: readonly string[] = [
 export const CHAIN_DUEL_P1_HINTS: Partial<Record<number, string>> = {
   0: 'Space (confirm)',
   1: 'Space (confirm)',
-  2: 'Space (confirm)',
+  2: 'X (switch side before solo start)',
   3: 'Space (confirm)',
   4: 'LNURL QR (solo pad)',
   5: 'LNURL QR P2 (solo pad)',
@@ -38,7 +38,7 @@ export const CHAIN_DUEL_P1_HINTS: Partial<Record<number, string>> = {
 export const CHAIN_DUEL_P2_HINTS: Partial<Record<number, string>> = {
   0: 'Enter (confirm)',
   1: 'Enter (confirm)',
-  2: 'Enter (confirm)',
+  2: 'X (switch side before solo start)',
   3: 'Enter (confirm)',
   4: 'LNURL QR (dual pad)',
   6: 'Pause',

@@ -56,12 +56,7 @@ export function clearCanvasTextDropShadow(ctx: CanvasRenderingContext2D): void {
   ctx.shadowOffsetY = 0;
 }
 
-export const START_PROMPT_WORDS = [
-  'PRESS',
-  'BUTTON',
-  'TO',
-  'START',
-] as const;
+export const START_PROMPT_WORDS = ['PRESS', 'BUTTON', 'TO', 'START'] as const;
 
 export const PRESS_SPACE_TO_START = ['PRESS', 'SPACE', 'TO', 'START'] as const;
 export const PRESS_ENTER_TO_START = ['PRESS', 'ENTER', 'TO', 'START'] as const;
@@ -152,8 +147,7 @@ export function measureStartWordWidth(
   fontSize: number,
   measured = 0
 ): number {
-  const estimate =
-    fontSize * word.length * START_PROMPT_CHAR_WIDTH_RATIO;
+  const estimate = fontSize * word.length * START_PROMPT_CHAR_WIDTH_RATIO;
   const minWidth = fontSize * 0.32;
   if (measured > 0) {
     return Math.max(measured, minWidth);
@@ -186,21 +180,27 @@ export type CanvasObjectivesOpts = {
   startPromptSubtext?: string;
 };
 
-/** Space for white, Enter for black. Both humans alternate the two lines. */
-export function localStartPromptWords(p1Human: boolean, p2Human: boolean): {
+/** Space for white, Enter for black. A connected pad says Button, since B, A, and X all start. */
+export function localStartPromptWords(
+  p1Human: boolean,
+  p2Human: boolean,
+  gamepad?: { p1?: boolean; p2?: boolean }
+): {
   words: readonly string[];
   altWords?: readonly string[];
 } {
-  if (p1Human && p2Human) {
-    return { words: PRESS_SPACE_TO_START, altWords: PRESS_ENTER_TO_START };
-  }
-  if (p2Human && !p1Human) {
-    return { words: PRESS_ENTER_TO_START };
-  }
-  if (p1Human) {
-    return { words: PRESS_SPACE_TO_START };
-  }
-  return { words: START_PROMPT_WORDS };
+  const lineFor = (slot: 'p1' | 'p2'): readonly string[] => {
+    if (gamepad?.[slot]) return START_PROMPT_WORDS;
+    return slot === 'p1' ? PRESS_SPACE_TO_START : PRESS_ENTER_TO_START;
+  };
+  const lines: readonly string[][] = [];
+  if (p1Human) lines.push(lineFor('p1'));
+  if (p2Human) lines.push(lineFor('p2'));
+  if (lines.length === 0) return { words: START_PROMPT_WORDS };
+  const words = lines[0]!;
+  const alt = lines[1];
+  if (!alt || alt.join(' ') === words.join(' ')) return { words };
+  return { words, altWords: alt };
 }
 
 export function resolveStartPromptWords(
@@ -238,10 +238,7 @@ export function instructionBlockHeight(
 
 export function startPromptVisualReach(startFontSize: number): number {
   return (
-    startFontSize * 0.5 +
-    START_WORD_SHADOW_PAD +
-    START_WORD_SHADOW_BLUR +
-    20
+    startFontSize * 0.5 + START_WORD_SHADOW_PAD + START_WORD_SHADOW_BLUR + 20
   );
 }
 
@@ -273,7 +270,10 @@ export function computeCanvasObjectivesLayout(
     Math.max(72, startFontSize * 1.85),
     Math.max(48, height * 0.2)
   );
-  const stackTopInset = Math.min(START_WORD_SHADOW_PAD, Math.max(6, height * 0.04));
+  const stackTopInset = Math.min(
+    START_WORD_SHADOW_PAD,
+    Math.max(6, height * 0.04)
+  );
   const stackBottomInset = Math.min(20, Math.max(4, height * 0.03));
   const stackHeight =
     stackTopInset +
@@ -349,7 +349,10 @@ export function startPromptRevealElapsedMs(
   return Math.max(0, now - startRevealTime - START_PROMPT_STAGGER_DELAY_MS);
 }
 
-export function startPromptWordRevealAlpha(revealElapsedMs: number, wordIndex: number): number {
+export function startPromptWordRevealAlpha(
+  revealElapsedMs: number,
+  wordIndex: number
+): number {
   const t = Math.max(
     0,
     Math.min(
@@ -365,7 +368,8 @@ export function computeStartPromptPulse(
   revealElapsedMs: number,
   wordCount: number = START_PROMPT_WORDS.length
 ): number {
-  const lastWordStart = Math.max(0, wordCount - 1) * START_PROMPT_WORD_STAGGER_MS;
+  const lastWordStart =
+    Math.max(0, wordCount - 1) * START_PROMPT_WORD_STAGGER_MS;
   const revealCompleteAt = lastWordStart + START_PROMPT_WORD_DURATION_MS;
   if (revealElapsedMs < revealCompleteAt) {
     return 1;
@@ -373,7 +377,8 @@ export function computeStartPromptPulse(
 
   const pulseElapsed = revealElapsedMs - revealCompleteAt;
   const phase =
-    (pulseElapsed % START_PROMPT_PULSE_PERIOD_MS) / START_PROMPT_PULSE_PERIOD_MS;
+    (pulseElapsed % START_PROMPT_PULSE_PERIOD_MS) /
+    START_PROMPT_PULSE_PERIOD_MS;
   // Single smooth breath per cycle — synced across the whole line.
   const raw = (1 - Math.cos(phase * Math.PI * 2)) / 2;
   const beat = smoothstep(raw);
@@ -387,8 +392,7 @@ export function computeInstructionCycleFrame(
   cycleMs = INSTRUCTION_CYCLE_MS
 ): InstructionCycleFrame {
   const cycleElapsed = Math.max(0, elapsedMs);
-  const index =
-    Math.floor(cycleElapsed / cycleMs) % MATCH_OBJECTIVES.length;
+  const index = Math.floor(cycleElapsed / cycleMs) % MATCH_OBJECTIVES.length;
   const phase = (cycleElapsed % cycleMs) / cycleMs;
   const phaseMs = cycleElapsed % cycleMs;
   const revealEnd = INSTRUCTION_REVEAL_FRAC;
@@ -403,8 +407,7 @@ export function computeInstructionCycleFrame(
     const titleScale = 0.94 + pop * 0.06;
     const titleOffsetY = (1 - alpha) * 8;
     const bodyDelay = 0.32;
-    const bodyT =
-      t <= bodyDelay ? 0 : (t - bodyDelay) / (1 - bodyDelay);
+    const bodyT = t <= bodyDelay ? 0 : (t - bodyDelay) / (1 - bodyDelay);
     const bodyAlpha = easeOutCubic(bodyT);
     const bodyOffsetY = (1 - bodyAlpha) * 6;
     return {

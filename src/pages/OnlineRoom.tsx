@@ -125,7 +125,9 @@ export default function OnlineRoom() {
     if (bootstrapRoomId) {
       socket.emit('getOnlineRoomState', {
         roomId: bootstrapRoomId,
-        ...(bootstrapMatchRound != null ? { matchRound: bootstrapMatchRound } : {}),
+        ...(bootstrapMatchRound != null
+          ? { matchRound: bootstrapMatchRound }
+          : {}),
       });
       return;
     }
@@ -323,12 +325,12 @@ export default function OnlineRoom() {
     const introPendingForRoom = (liveRoom: OnlineRoomState | null) =>
       Boolean(
         liveRoom &&
-          !replayMode &&
-          shouldShowMatchIntro({
-            room: liveRoom,
-            replayMode,
-            alreadyShownKeys: introShownKeysRef.current,
-          })
+        !replayMode &&
+        shouldShowMatchIntro({
+          room: liveRoom,
+          replayMode,
+          alreadyShownKeys: introShownKeysRef.current,
+        })
       );
 
     if (!bootstrappedRef.current) {

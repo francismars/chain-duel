@@ -271,8 +271,7 @@ export default function PostGame() {
       const p2 = players['Player 2'];
       const winners = info.winners ?? [];
       const winnerP = (winners[winners.length - 1] ?? 'Player 1') as
-        | 'Player 1'
-        | 'Player 2';
+        'Player 1' | 'Player 2';
       setWinnerPlayer(winnerP);
 
       if (info.mode === 'TOURNAMENT' || info.mode === 'TOURNAMENTNOSTR') {
@@ -377,7 +376,7 @@ export default function PostGame() {
       socket.off('prizeWithdrawn', onPrizeWithdrawn);
       socket.off('resCreateWithdrawalPostGame', onCreateWithdrawal);
     };
-  }, [socket, navigate, updateHighscores]);
+  }, [socket, navigate, updateHighscores, gameMode]);
 
   const feeBase =
     gameMode === 'TOURNAMENT' || gameMode === 'TOURNAMENTNOSTR'
@@ -527,27 +526,27 @@ export default function PostGame() {
         <div className="postgame-scrim" aria-hidden />
         {practiceMode ? null : <Sponsorship id="sponsorship-postgame" />}
         <div className="postgame-stage">
-        <div className="flex match-result-heading">
-          <h2 id="gameOver">MATCH COMPLETE</h2>
-          <div className="playerInfoGroup">
-            <img
-              className={`playerImg ${winnerPicture ? '' : 'hide'}`}
-              id="playerImg"
-              src={winnerPicture || '/images/loading.gif'}
-              alt=""
-            />
-            <h1
-              id="winner"
-              style={{ display: practiceMode ? 'none' : undefined }}
-            >
-              {winnerName} WINS
-            </h1>
+          <div className="flex match-result-heading">
+            <h2 id="gameOver">MATCH COMPLETE</h2>
+            <div className="playerInfoGroup">
+              <img
+                className={`playerImg ${winnerPicture ? '' : 'hide'}`}
+                id="playerImg"
+                src={winnerPicture || '/images/loading.gif'}
+                alt=""
+              />
+              <h1
+                id="winner"
+                style={{ display: practiceMode ? 'none' : undefined }}
+              >
+                {winnerName} WINS
+              </h1>
+            </div>
           </div>
-        </div>
 
-        <h1 id="prize">
-          {totalPrize.toLocaleString()} SATS{prizeClaimed ? ' CLAIMED' : ''}
-        </h1>
+          <h1 id="prize">
+            {totalPrize.toLocaleString()} SATS{prizeClaimed ? ' CLAIMED' : ''}
+          </h1>
         </div>
         <div
           className={`postgame-claim-row${menu === 3 ? ' postgame-claim-row--menu3' : ''}`}
@@ -623,55 +622,57 @@ export default function PostGame() {
               marginTop: menu === 3 ? '16cqw' : undefined,
             }}
           >
-          <Button
-            ref={claimButtonRef}
-            id="claimbutton"
-            style={{
-              marginLeft: menu === 3 ? '0px' : undefined,
-              marginRight: menu === 3 ? '0px' : undefined,
-            }}
-            onClick={onClaim}
-          >
-            {claimButtonText}
-          </Button>
-          {menu === 3 || tournamentMode ? null : (
-            <div className="don-section">
-              <Button
-                ref={doubleOrNothingRef}
-                id="doubleornotthingbutton"
-                className={canDoubleOrNothing ? '' : 'disabled'}
-                disabled={!canDoubleOrNothing}
-                onClick={onDoubleOrNothing}
-              >
-                {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
-              </Button>
-              {!practiceMode ? (
-                <p className="don-subtitle">Play again for double the prize</p>
-              ) : null}
-            </div>
-          )}
-          {menu === 3 ? (
             <Button
-              ref={mainMenuButtonRef}
-              id="startnewbutton"
+              ref={claimButtonRef}
+              id="claimbutton"
               style={{
-                display: 'block',
-                marginLeft: '0px',
-                marginRight: '0px',
+                marginLeft: menu === 3 ? '0px' : undefined,
+                marginRight: menu === 3 ? '0px' : undefined,
               }}
-              onClick={onMainMenu}
+              onClick={onClaim}
             >
-              RETURN TO MAIN MENU
+              {claimButtonText}
             </Button>
-          ) : (
-            <Button
-              id="startnewbutton"
-              style={{ display: 'none' }}
-              onClick={onMainMenu}
-            >
-              RETURN TO MAIN MENU
-            </Button>
-          )}
+            {menu === 3 || tournamentMode ? null : (
+              <div className="don-section">
+                <Button
+                  ref={doubleOrNothingRef}
+                  id="doubleornotthingbutton"
+                  className={canDoubleOrNothing ? '' : 'disabled'}
+                  disabled={!canDoubleOrNothing}
+                  onClick={onDoubleOrNothing}
+                >
+                  {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
+                </Button>
+                {!practiceMode ? (
+                  <p className="don-subtitle">
+                    Play again for double the prize
+                  </p>
+                ) : null}
+              </div>
+            )}
+            {menu === 3 ? (
+              <Button
+                ref={mainMenuButtonRef}
+                id="startnewbutton"
+                style={{
+                  display: 'block',
+                  marginLeft: '0px',
+                  marginRight: '0px',
+                }}
+                onClick={onMainMenu}
+              >
+                RETURN TO MAIN MENU
+              </Button>
+            ) : (
+              <Button
+                id="startnewbutton"
+                style={{ display: 'none' }}
+                onClick={onMainMenu}
+              >
+                RETURN TO MAIN MENU
+              </Button>
+            )}
           </div>
         </div>
         <div id="socialFollow">

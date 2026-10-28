@@ -1,4 +1,4 @@
-import type { GameState, PlayerId } from '@/game/engine/types';
+import type { GameState, GridPos, PlayerId } from '@/game/engine/types';
 import type { ResetCue } from '@/game/audio/resetCue';
 import {
   captureClipForLength,
@@ -20,6 +20,7 @@ import {
   resetTensionDebug,
 } from './tensionDebug';
 import { saveMenuMusicPosition } from './resultMusicHandoff';
+import { readGraphicsSettings } from '@/lib/graphicsSettings';
 
 function headTravel(before: TensionPlayer, after: TensionPlayer): number {
   return (
@@ -41,13 +42,20 @@ export function reorgCaptureGap(percentA: number, percentB: number): boolean {
 
 /**
  * A reorg mark sits on the richer chain's last head.
- * Head-to-head: both reset on the same tick with heads close.
- * Solo death: the long chain dies while a shorter one keeps going with the gap.
+ * Head-to-head: both reset on the same tick with heads close. The middle
+ * square is the poorer chain; the outer two are the richer chain.
+ * Solo death: the long chain dies while a shorter one keeps going. All three
+ * squares are that chain's own color.
  */
 function reorgedLongChain(
   previous: TensionPlayer[],
   players: TensionPlayer[]
-): TensionPlayer | null {
+): {
+  head: TensionPlayer['head'];
+  index: number;
+  color: number;
+  midColor?: number;
+} | null {
   const pairs = players.flatMap((player) => {
     const before = previous.find((entry) => entry.index === player.index);
     return before ? [{ before, after: player }] : [];
@@ -77,7 +85,14 @@ function reorgedLongChain(
           Math.abs(a.before.head[0] - b.before.head[0]) +
           Math.abs(a.before.head[1] - b.before.head[1]);
         if (apart > 2) continue;
-        return a.percent >= b.percent ? a.before : b.before;
+        const richer = a.percent >= b.percent ? a : b;
+        const poorer = richer === a ? b : a;
+        return {
+          head: richer.before.head,
+          index: richer.before.index,
+          color: richer.before.color,
+          midColor: poorer.before.color,
+        };
       }
     }
     return null;
@@ -94,39 +109,60 @@ function reorgedLongChain(
     // Solo reorg: the long chain dies; a short death is an ordinary WALL.
     if (deadPercent <= livePercent) continue;
     if (!reorgCaptureGap(deadPercent, livePercent)) continue;
-    return dead.before;
+    return {
+      head: dead.before.head,
+      index: dead.before.index,
+      color: dead.before.color,
+    };
   }
   return null;
 }
 
-/** Head-to-head with no capture-rate gap. The mark sits between the two heads. */
-function clashedHeads(
-  previous: TensionPlayer[],
-  players: TensionPlayer[]
-): TensionPlayer['head'] | null {
-  const pairs = players.flatMap((player) => {
-    const before = previous.find((entry) => entry.index === player.index);
-    return before ? [{ before, after: player }] : [];
-  });
-  const reset = pairs.filter(
-    (pair) =>
-      !pair.before.eliminated &&
-      !pair.after.eliminated &&
-      headTravel(pair.before, pair.after) > 1 &&
-      pair.after.length <= pair.before.length
-  );
-  for (let i = 0; i < reset.length; i += 1) {
-    for (let j = i + 1; j < reset.length; j += 1) {
-      const a = reset[i]!;
-      const b = reset[j]!;
+function impactOf(
+  cells: readonly (GridPos | undefined)[] | undefined,
+  index: number,
+  fallback: GridPos
+): GridPos {
+  const cell = cells?.[index];
+  return cell ? [cell[0], cell[1]] : [fallback[0], fallback[1]];
+}
+
+/** One cell when both chains died there. Otherwise the point between the two impacts. */
+function sharedImpact(a: GridPos, b: GridPos): GridPos {
+  if (a[0] === b[0] && a[1] === b[1]) return [a[0], a[1]];
+  return [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2)];
+}
+
+/** Two resets whose last heads were close enough to be one meeting. */
+function meetingCell(
+  resets: { before: TensionPlayer; after: TensionPlayer }[],
+  deathAt: readonly (GridPos | undefined)[] | undefined
+): {
+  cell: GridPos;
+  a: { before: TensionPlayer; after: TensionPlayer };
+  b: { before: TensionPlayer; after: TensionPlayer };
+} | null {
+  for (let i = 0; i < resets.length; i += 1) {
+    for (let j = i + 1; j < resets.length; j += 1) {
+      const a = resets[i]!;
+      const b = resets[j]!;
       const apart =
         Math.abs(a.before.head[0] - b.before.head[0]) +
         Math.abs(a.before.head[1] - b.before.head[1]);
       if (apart > 2) continue;
-      return [
-        Math.round((a.before.head[0] + b.before.head[0]) / 2),
-        Math.round((a.before.head[1] + b.before.head[1]) / 2),
-      ];
+      const aCell = impactOf(deathAt, a.before.index, a.before.head);
+      const bCell = impactOf(deathAt, b.before.index, b.before.head);
+      const recorded = deathAt?.[a.before.index] ?? deathAt?.[b.before.index];
+      return {
+        a,
+        b,
+        cell: recorded
+          ? sharedImpact(aCell, bCell)
+          : [
+              Math.round((a.before.head[0] + b.before.head[0]) / 2),
+              Math.round((a.before.head[1] + b.before.head[1]) / 2),
+            ],
+      };
     }
   }
   return null;
@@ -165,6 +201,11 @@ export class GameAudioSystem {
   private mixTimer: ReturnType<typeof setInterval> | null = null;
   private endingPlayed = false;
   private previousBorder: GameState['shrinkBorder'] = null;
+  /**
+   * Config → Graphics → Sound effects & tension. Off skips every effect sound
+   * plus the tension / streak / shrink tracking; music and the end jingle stay.
+   */
+  private readonly extras = readGraphicsSettings().soundAndTension;
 
   constructor() {
     for (const { audio } of this.themes) audio.volume = 0;
@@ -243,7 +284,9 @@ export class GameAudioSystem {
 
   startMusic(): void {
     this.musicShouldPlay = true;
-    if (this.mixTimer === null) {
+    // Without tension the layers never rise above 0, so skip the 20 Hz mix
+    // (volume ramps plus seeks to keep five tracks in sync).
+    if (this.mixTimer === null && this.extras) {
       this.mixTimer = setInterval(() => this.updateMix(), 50);
     }
     if (this.appMusicMuted) {
@@ -280,7 +323,7 @@ export class GameAudioSystem {
         this.stopAll();
         this.menuMusic.currentTime = 0;
         this.startMusic();
-        this.play(this.ending);
+        this.play(this.ending, true);
       }
       return;
     }
@@ -290,6 +333,11 @@ export class GameAudioSystem {
       this.menuMusic.pause();
       this.music.currentTime = 0;
       this.startMusic();
+    }
+    // Collision squares and wipe lines are board graphics. The tension mix is optional.
+    if (!this.extras) {
+      this.trackStreak(state);
+      return;
     }
     const border = state.gameStarted ? state.shrinkBorder : null;
     const previous = this.previousBorder;
@@ -345,8 +393,9 @@ export class GameAudioSystem {
       return;
     }
 
+    const deathAt = state.deathAt;
+    state.deathAt = undefined;
     const reorged = reorgedLongChain(previous, players);
-    const clash = reorged ? null : clashedHeads(previous, players);
     const toneFor = (index: number): 'white' | 'black' =>
       index === 0 ? 'white' : 'black';
     const resets = players.flatMap((player) => {
@@ -356,31 +405,81 @@ export class GameAudioSystem {
       if (player.length > before.length) return [];
       return [{ before, after: player }];
     });
+    const reorgPartner = reorged
+      ? resets.find((entry) => entry.before.index !== reorged.index)
+      : undefined;
+    const reorgFromImpact = Boolean(
+      reorged &&
+      (deathAt?.[reorged.index] ??
+        (reorgPartner ? deathAt?.[reorgPartner.before.index] : undefined))
+    );
+    const reorgCell = !reorged
+      ? null
+      : reorgFromImpact
+        ? reorgPartner
+          ? sharedImpact(
+              impactOf(deathAt, reorged.index, reorged.head),
+              impactOf(
+                deathAt,
+                reorgPartner.before.index,
+                reorgPartner.before.head
+              )
+            )
+          : impactOf(deathAt, reorged.index, reorged.head)
+        : [reorged.head[0], reorged.head[1]];
     const lined = new Set<number>();
-    if (reorged) {
-      // Gold marks the crash. The line home is the chain's own color, below.
-      pushCaptureRatePop(reorged.head, 'REORG', true, 'gold');
-    } else if (clash) pushCaptureRatePop(clash, 'CLASH', true, 'gold');
-    else {
-      for (const { before, after } of resets) {
-        // Wall, own body, or another body: one ordinary square in that chain's color.
+    const meeting = reorged ? null : meetingCell(resets, deathAt);
+    if (reorged && reorgCell) {
+      pushCaptureRatePop(
+        reorgCell,
+        'REORG',
+        true,
+        toneFor(reorged.index),
+        undefined,
+        reorged.color,
+        reorged.midColor
+      );
+    } else if (meeting) {
+      // One square on the cell where the two heads meet. Both colors live there,
+      // and both lines home leave that same square.
+      pushCaptureRatePop(
+        meeting.cell,
+        'CLASH',
+        true,
+        'white',
+        undefined,
+        meeting.a.before.color,
+        meeting.b.before.color
+      );
+      for (const side of [meeting.a, meeting.b]) {
+        lined.add(side.before.index);
         pushCaptureRatePop(
-          before.head,
-          'WALL',
+          meeting.cell,
+          'WIPE',
+          true,
+          toneFor(side.before.index),
+          side.after.head,
+          side.before.color
+        );
+      }
+    }
+    for (const { before, after } of resets) {
+      if (lined.has(before.index)) continue;
+      if (reorged && reorgCell) {
+        pushCaptureRatePop(
+          reorgFromImpact ? reorgCell : before.head,
+          'WIPE',
           true,
           toneFor(before.index),
           after.head,
           before.color
         );
-        lined.add(before.index);
+        continue;
       }
-    }
-    for (const { before, after } of resets) {
-      if (lined.has(before.index)) continue;
-      // Clash and REORG squares have no destination. The wipe is this chain's color.
+      // One square in that chain's color, on the cell where it died.
       pushCaptureRatePop(
-        before.head,
-        'WIPE',
+        impactOf(deathAt, before.index, before.head),
+        'WALL',
         true,
         toneFor(before.index),
         after.head,
@@ -432,6 +531,7 @@ export class GameAudioSystem {
     }
     this.music.muted = false;
     void this.music.play().catch(() => undefined);
+    if (!this.extras) return;
     for (const { audio } of this.themes) {
       audio.muted = false;
       audio.currentTime = this.music.currentTime;
@@ -450,7 +550,9 @@ export class GameAudioSystem {
       const audible = this.audibleLevel();
       const target =
         audible === theme.level ? this.recipe.stemVolumes[theme.level - 1]! : 0;
-      const fadeMs = Number.isFinite(this.recipe.fadeMs) ? this.recipe.fadeMs : 2500;
+      const fadeMs = Number.isFinite(this.recipe.fadeMs)
+        ? this.recipe.fadeMs
+        : 2500;
       const step =
         fadeMs <= 0 ? 1 : (50 / fadeMs) * (audio.volume < target ? 2 : 1);
       audio.volume +=
@@ -585,8 +687,9 @@ export class GameAudioSystem {
     this.play(this.powerUp);
   }
 
-  private play(audio: HTMLAudioElement): void {
-    if (this.appSfxMuted) {
+  /** `always` keeps the end jingle when sound effects are turned off in Config. */
+  private play(audio: HTMLAudioElement, always = false): void {
+    if (this.appSfxMuted || (!this.extras && !always)) {
       return;
     }
     audio.pause();

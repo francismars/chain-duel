@@ -1,4 +1,5 @@
-export type ConfigTab = 'signin' | 'nwc' | 'keyboard' | 'gamepad';
+export type ConfigTab =
+  'signin' | 'nwc' | 'keyboard' | 'gamepad' | 'performance';
 export type LoginTab = 'extension' | 'nip46' | 'nsec';
 
 export type ConfigFocus =
@@ -8,7 +9,7 @@ export type ConfigFocus =
   | { kind: 'action' }
   | { kind: 'mainMenu' };
 
-const SECTION_COUNT = 4;
+const SECTION_COUNT = 5;
 const LOGIN_COUNT = 3;
 const NIP46_INLINE_COUNT = 2;
 
@@ -24,7 +25,12 @@ function hasLoginRow(ctx: ConfigNavContext): boolean {
 }
 
 function hasActionRow(ctx: ConfigNavContext): boolean {
-  if (ctx.configTab === 'gamepad' || ctx.configTab === 'keyboard') return false;
+  if (
+    ctx.configTab === 'gamepad' ||
+    ctx.configTab === 'keyboard' ||
+    ctx.configTab === 'performance'
+  )
+    return false;
   if (ctx.configTab === 'signin' && ctx.signedIn) return true;
   if (ctx.configTab === 'signin' && !ctx.signedIn) return true;
   if (ctx.configTab === 'nwc') return true;
@@ -44,6 +50,7 @@ export function sectionIndex(tab: ConfigTab): number {
   if (tab === 'nwc') return 1;
   if (tab === 'keyboard') return 2;
   if (tab === 'gamepad') return 3;
+  if (tab === 'performance') return 4;
   return 0;
 }
 
@@ -53,10 +60,25 @@ export function loginIndex(tab: LoginTab): number {
   return 0;
 }
 
+const CONFIG_TABS: readonly ConfigTab[] = [
+  'signin',
+  'nwc',
+  'keyboard',
+  'gamepad',
+  'performance',
+];
+
+export function tabFromHash(hash: string): ConfigTab | null {
+  const id = hash.replace(/^#/, '');
+  if (id === 'graphics') return 'performance';
+  return CONFIG_TABS.includes(id as ConfigTab) ? (id as ConfigTab) : null;
+}
+
 export function tabFromSectionIndex(index: number): ConfigTab {
   if (index === 1) return 'nwc';
   if (index === 2) return 'keyboard';
   if (index === 3) return 'gamepad';
+  if (index === 4) return 'performance';
   return 'signin';
 }
 
@@ -92,8 +114,7 @@ export function moveConfigFocus(
     if (focus.kind === 'nip46Inline' && nip46InlineRow) {
       return {
         kind: 'nip46Inline',
-        index:
-          (focus.index + delta + NIP46_INLINE_COUNT) % NIP46_INLINE_COUNT,
+        index: (focus.index + delta + NIP46_INLINE_COUNT) % NIP46_INLINE_COUNT,
       };
     }
     return focus;

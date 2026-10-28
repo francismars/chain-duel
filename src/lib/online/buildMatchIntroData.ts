@@ -81,10 +81,8 @@ export function buildMatchIntroData(
   }
 
   const state = room.snapshot?.state as GameState | undefined;
-  const p1Name =
-    seatName(p1Seat, state?.p1Name?.trim() || 'Player 1');
-  const p2Name =
-    seatName(p2Seat, state?.p2Name?.trim() || 'Player 2');
+  const p1Name = seatName(p1Seat, state?.p1Name?.trim() || 'Player 1');
+  const p2Name = seatName(p2Seat, state?.p2Name?.trim() || 'Player 2');
 
   const buyinEach = Math.floor(
     p1Seat.paidAmount ?? p2Seat.paidAmount ?? room.buyin ?? 0
@@ -92,8 +90,7 @@ export function buildMatchIntroData(
   const totalPot = buyinEach * 2;
   const netPrize = Math.floor(totalPot * ONLINE_FEE_MULTIPLIER);
   const matchRound = room.matchRound ?? 1;
-  const kicker =
-    matchRound > 1 ? 'REMATCH LOCKED IN' : 'DUEL LOCKED IN';
+  const kicker = matchRound > 1 ? 'REMATCH LOCKED IN' : 'DUEL LOCKED IN';
 
   const sessionID = viewer.sessionID ?? '';
   const socketID = viewer.socketID ?? '';

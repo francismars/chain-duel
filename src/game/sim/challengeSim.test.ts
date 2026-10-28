@@ -12,7 +12,11 @@ import {
   setFfaScores,
   stepGame,
 } from '@/game/engine';
-import { ffaApplyCaptureAmount, getFfaScores, checkFfaGameEnd } from '@/game/engine/ffa';
+import {
+  ffaApplyCaptureAmount,
+  getFfaScores,
+  checkFfaGameEnd,
+} from '@/game/engine/ffa';
 import { initRunRng, clearRunRng } from '@/game/engine/runRng';
 
 describe('challengeSim harness', () => {
@@ -47,7 +51,9 @@ describe('challengeSim harness', () => {
   }, 60_000);
 
   it('sovereign gauntlet resists head-on bait better than free wins', () => {
-    const gauntlet = CHALLENGE_SIM_PRESETS.find((p) => p.id === 'gauntlet')!.config;
+    const gauntlet = CHALLENGE_SIM_PRESETS.find(
+      (p) => p.id === 'gauntlet'
+    )!.config;
     const bait = measureWinRate({
       config: gauntlet,
       strategy: 'head_on_bait',

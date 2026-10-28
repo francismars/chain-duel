@@ -44,10 +44,7 @@ describe('playerControls', () => {
   it('resolves movement by keyboard code regardless of layout character', () => {
     expect(resolveDirectionForCode('KeyW', 'p1')).toBe('up');
     expect(
-      resolveDirectionFromKeyboardEvent(
-        { code: 'KeyW', key: 'z' },
-        'p1'
-      )
+      resolveDirectionFromKeyboardEvent({ code: 'KeyW', key: 'z' }, 'p1')
     ).toBe('up');
   });
 

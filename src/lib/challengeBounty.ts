@@ -104,7 +104,10 @@ export function fetchChallengeEligibility(
   return waitFor(
     socket,
     'resChallengeEligibility',
-    () => socket.emit('getChallengeEligibility', { refresh: options?.refresh === true }),
+    () =>
+      socket.emit('getChallengeEligibility', {
+        refresh: options?.refresh === true,
+      }),
     (p) => SocketBoundaryParsers.resChallengeEligibility(p)
   );
 }

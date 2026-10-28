@@ -61,6 +61,8 @@ export function EffectRecipePanel({
   page: 'music' | 'eat';
   liveTick: number;
 }) {
+  // liveTick is the signal that the shared recipe changed; gameRecipe() reads it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const live = useMemo(() => gameRecipe(), [liveTick]);
 
   const patch = (next: Partial<MatchRecipe>) => onChange({ ...draft, ...next });
@@ -75,7 +77,11 @@ export function EffectRecipePanel({
           that layer comes in.
         </p>
         <div className="match-lab__actions">
-          <button type="button" aria-pressed={!silenced && playing == null} onClick={onHearMix}>
+          <button
+            type="button"
+            aria-pressed={!silenced && playing == null}
+            onClick={onHearMix}
+          >
             Hear the mix
           </button>
           <button type="button" onClick={onStopMusic}>
@@ -110,7 +116,12 @@ export function EffectRecipePanel({
             playing={playing === draft.stemFiles[index]}
             onPlay={() => onPlay(draft.stemFiles[index]!)}
             onFile={(file) => {
-              const stemFiles = [...draft.stemFiles] as [string, string, string, string];
+              const stemFiles = [...draft.stemFiles] as [
+                string,
+                string,
+                string,
+                string,
+              ];
               stemFiles[index] = file;
               patch({ stemFiles });
             }}
@@ -189,8 +200,8 @@ export function EffectRecipePanel({
     <section className="recipe">
       <h2>When a chain eats</h2>
       <p className="recipe__hint">
-        The chain animation and the words that float off the heads. Each
-        button shows one thing.
+        The chain animation and the words that float off the heads. Each button
+        shows one thing.
       </p>
       <button
         type="button"
@@ -261,6 +272,8 @@ export function RecipeBar({
   liveTick: number;
   onBump: () => void;
 }) {
+  // liveTick is the signal that the shared recipe changed; gameRecipe() reads it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const live = useMemo(() => gameRecipe(), [liveTick]);
   const diffs = countRecipeDiffs(draft, live);
   const dirty = diffs > 0;
@@ -307,7 +320,6 @@ export function RecipeBar({
     </div>
   );
 }
-
 
 function layerName(level: TensionLevel): string {
   return level >= 4 ? 'Critical' : level >= 2 ? 'Warning' : 'Quiet';
@@ -457,7 +469,9 @@ function SoundRow({
 }) {
   const fileDiffers = file !== matchFile;
   const volumeDiffers =
-    volume != null && matchVolume != null && Math.abs(volume - matchVolume) >= 0.005;
+    volume != null &&
+    matchVolume != null &&
+    Math.abs(volume - matchVolume) >= 0.005;
   return (
     <div className="recipe__sound">
       <div className="recipe__sound-head">
@@ -465,7 +479,9 @@ function SoundRow({
           {label}
           {detail ? <em> {detail}</em> : null}
           {fileDiffers ? <em> match {matchFile}</em> : null}
-          {enabled != null && matchEnabled != null && enabled !== matchEnabled ? (
+          {enabled != null &&
+          matchEnabled != null &&
+          enabled !== matchEnabled ? (
             <em> match {matchEnabled ? 'on' : 'off'}</em>
           ) : null}
         </span>
@@ -480,11 +496,7 @@ function SoundRow({
             Plays
           </label>
         ) : null}
-        <button
-          type="button"
-          aria-pressed={playing}
-          onClick={onPlay}
-        >
+        <button type="button" aria-pressed={playing} onClick={onPlay}>
           {playing ? 'Stop' : 'Play'}
         </button>
       </div>
@@ -667,7 +679,8 @@ function CaptureLadder({
   }, [active]);
   const band = picked >= 0 && picked < 5 ? picked : 0;
   const differ =
-    from.join(',') !== matchFrom.join(',') || percent.join(',') !== matchPercent.join(',');
+    from.join(',') !== matchFrom.join(',') ||
+    percent.join(',') !== matchPercent.join(',');
   const bandStart = from[band]!;
   const bandEnd = band === 4 ? null : from[band + 1]! - 1;
   const bandRange =
@@ -709,7 +722,8 @@ function CaptureLadder({
         {from.map((start, index) => {
           const end = index === 4 ? max : from[index + 1]!;
           const width = ((end - start) / span) * 100;
-          const here = length >= start && (index === 4 ? length <= max : length < end);
+          const here =
+            length >= start && (index === 4 ? length <= max : length < end);
           const chosen = index === band;
           return (
             <button
@@ -726,7 +740,9 @@ function CaptureLadder({
         })}
         <span
           className="recipe__now"
-          style={{ left: `${((Math.min(max, Math.max(min, length)) - min) / span) * 100}%` }}
+          style={{
+            left: `${((Math.min(max, Math.max(min, length)) - min) / span) * 100}%`,
+          }}
         />
       </div>
       <div className="recipe__rail" ref={railRef}>

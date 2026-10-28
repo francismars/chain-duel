@@ -32,5 +32,7 @@ export function onlineSeatStartMeta(
   if (seat.disconnectedAt) {
     return 'Paid · Offline';
   }
-  return phase === 'playing' ? 'Paid · Press Space or Enter' : 'Paid · Not ready';
+  return phase === 'playing'
+    ? 'Paid · Press Space or Enter'
+    : 'Paid · Not ready';
 }

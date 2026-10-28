@@ -60,7 +60,10 @@ function clientReplay(
       teamMode: isFfa ? 'ffa' : is2v1 ? '2v1' : 'solo',
     });
     startCountdown(state);
-    const inputsByStep = new Map<number, Array<{ tick: number; dir: string }>>();
+    const inputsByStep = new Map<
+      number,
+      Array<{ tick: number; dir: string }>
+    >();
     for (const entry of inputLog) {
       const list = inputsByStep.get(entry.tick) ?? [];
       list.push(entry);

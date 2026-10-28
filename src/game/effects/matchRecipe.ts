@@ -166,7 +166,9 @@ function five(
   if (!Array.isArray(value) || value.length !== 5) return [...fallback];
   const next = value.map((mark, index) => {
     const n = Number(mark);
-    return Number.isFinite(n) ? clamp(Math.round(n), min, max) : fallback[index]!;
+    return Number.isFinite(n)
+      ? clamp(Math.round(n), min, max)
+      : fallback[index]!;
   }) as Five;
   if (!spread) return next;
   next.sort((a, b) => a - b);
@@ -222,7 +224,9 @@ function steps(
   if (!Array.isArray(value) || value.length !== count) return [...fallback];
   const next = value.map((mark, index) => {
     const n = Number(mark);
-    return Number.isFinite(n) ? clamp(Math.round(n), min, max) : fallback[index]!;
+    return Number.isFinite(n)
+      ? clamp(Math.round(n), min, max)
+      : fallback[index]!;
   });
   next.sort((a, b) => a - b);
   return next;
@@ -259,7 +263,8 @@ function soundFiles(
 }
 
 export function sanitizeRecipe(value: unknown): MatchRecipe {
-  const raw = value && typeof value === 'object' ? (value as Partial<MatchRecipe>) : {};
+  const raw =
+    value && typeof value === 'object' ? (value as Partial<MatchRecipe>) : {};
   const shipped = SHIPPED_RECIPE;
   return {
     chainMarks: marks(raw.chainMarks, 1, 40, shipped.chainMarks),
@@ -278,12 +283,27 @@ export function sanitizeRecipe(value: unknown): MatchRecipe {
       : shipped.fadeMs,
     stemEnabled: flags(raw.stemEnabled, shipped.stemEnabled),
     captureFrom: five(raw.captureFrom, 1, 36, shipped.captureFrom, true),
-    capturePercent: five(raw.capturePercent, 1, 100, shipped.capturePercent, false),
-    gapLeader: steps(raw.gapLeader, 2, 1, 100, shipped.gapLeader) as [number, number],
-    drainMarks: steps(raw.drainMarks, 2, 1, 100, shipped.drainMarks) as [number, number],
-    animGrow: typeof raw.animGrow === 'boolean' ? raw.animGrow : shipped.animGrow,
-    animTint: typeof raw.animTint === 'boolean' ? raw.animTint : shipped.animTint,
-    animScale: typeof raw.animScale === 'boolean' ? raw.animScale : shipped.animScale,
+    capturePercent: five(
+      raw.capturePercent,
+      1,
+      100,
+      shipped.capturePercent,
+      false
+    ),
+    gapLeader: steps(raw.gapLeader, 2, 1, 100, shipped.gapLeader) as [
+      number,
+      number,
+    ],
+    drainMarks: steps(raw.drainMarks, 2, 1, 100, shipped.drainMarks) as [
+      number,
+      number,
+    ],
+    animGrow:
+      typeof raw.animGrow === 'boolean' ? raw.animGrow : shipped.animGrow,
+    animTint:
+      typeof raw.animTint === 'boolean' ? raw.animTint : shipped.animTint,
+    animScale:
+      typeof raw.animScale === 'boolean' ? raw.animScale : shipped.animScale,
     bedFile: soundFile(raw.bedFile, shipped.bedFile),
     stemFiles: soundFiles(raw.stemFiles, shipped.stemFiles),
   };
@@ -310,10 +330,15 @@ export function restoreShippedRecipe(): void {
 }
 
 export function recipesEqual(a: MatchRecipe, b: MatchRecipe): boolean {
-  return JSON.stringify(sanitizeRecipe(a)) === JSON.stringify(sanitizeRecipe(b));
+  return (
+    JSON.stringify(sanitizeRecipe(a)) === JSON.stringify(sanitizeRecipe(b))
+  );
 }
 
-export function countRecipeDiffs(draft: MatchRecipe, live: MatchRecipe): number {
+export function countRecipeDiffs(
+  draft: MatchRecipe,
+  live: MatchRecipe
+): number {
   const left = sanitizeRecipe(draft);
   const right = sanitizeRecipe(live);
   const keys = Object.keys(left) as (keyof MatchRecipe)[];

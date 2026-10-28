@@ -876,7 +876,8 @@
   min-height: var(--online-hit-md);
   padding: clamp(0.35rem, 0.55vw, 0.65rem) 0;
   gap: clamp(0.2rem, 0.35vw, 0.45rem) clamp(0.35rem, 0.6vw, 0.65rem);
-  grid-template-columns: minmax(clamp(7rem, 12vw, 9rem), clamp(8rem, 14vw, 10rem))
+  grid-template-columns:
+    minmax(clamp(7rem, 12vw, 9rem), clamp(8rem, 14vw, 10rem))
     minmax(0, 1fr) auto;
   align-items: center;
 }

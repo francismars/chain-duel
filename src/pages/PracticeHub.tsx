@@ -176,7 +176,10 @@ export default function PracticeHub({
 
   useEffect(() => {
     if (!challengeLaunching) return;
-    const timer = window.setTimeout(() => setChallengeLaunchSlowHint(true), 2500);
+    const timer = window.setTimeout(
+      () => setChallengeLaunchSlowHint(true),
+      2500
+    );
     return () => window.clearTimeout(timer);
   }, [challengeLaunching]);
 
@@ -476,202 +479,203 @@ export default function PracticeHub({
 
       <div className="practice-panel" role="main" aria-label="Practice play">
         {showStyle ? (
-        <section
-          className="practice-section practice-play-style-section"
-          aria-label="Play style"
-        >
-          <div className="ph-picker-block">
-            <div
-              className={[
-                'p2p-picker-row',
-                pickerRowRevealed ? 'ph-picker-row--revealed' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              role="radiogroup"
-              aria-label="Play style"
-            >
-              <button
-                ref={(el) => {
-                  playStyleRefs.current[0] = el;
-                }}
-                type="button"
-                role="radio"
-                aria-checked={playStyle === 'free'}
-                tabIndex={
-                  hubFocus.zone === 'playStyle' && hubFocus.idx === 0 ? 0 : -1
-                }
+          <section
+            className="practice-section practice-play-style-section"
+            aria-label="Play style"
+          >
+            <div className="ph-picker-block">
+              <div
                 className={[
-                  'p2p-picker-card',
-                  'p2p-picker-card--lightning',
-                  playStyle === 'free' ? 'p2p-picker-card--selected' : '',
-                  playStyleFocusClass(0),
+                  'p2p-picker-row',
+                  pickerRowRevealed ? 'ph-picker-row--revealed' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                onClick={() => {
-                  setHubFocus({ zone: 'playStyle', idx: 0 });
-                  activatePlayStyle(0);
-                  if (stepped) openSetup('free');
-                }}
+                role="radiogroup"
+                aria-label="Play style"
               >
-                <svg
-                  className="p2p-picker-icon p2p-picker-icon--people"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
+                <button
+                  ref={(el) => {
+                    playStyleRefs.current[0] = el;
+                  }}
+                  type="button"
+                  role="radio"
+                  aria-checked={playStyle === 'free'}
+                  tabIndex={
+                    hubFocus.zone === 'playStyle' && hubFocus.idx === 0 ? 0 : -1
+                  }
+                  className={[
+                    'p2p-picker-card',
+                    'p2p-picker-card--lightning',
+                    playStyle === 'free' ? 'p2p-picker-card--selected' : '',
+                    playStyleFocusClass(0),
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={() => {
+                    setHubFocus({ zone: 'playStyle', idx: 0 });
+                    activatePlayStyle(0);
+                    if (stepped) openSetup('free');
+                  }}
                 >
-                  <circle
-                    cx="8"
-                    cy="7"
-                    r="2.5"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    fill="currentColor"
-                    fillOpacity="0.15"
-                  />
-                  <path
-                    d="M3 18a5 4 0 0 1 10 0"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    strokeLinecap="round"
+                  <svg
+                    className="p2p-picker-icon p2p-picker-icon--people"
+                    viewBox="0 0 24 24"
                     fill="none"
-                  />
-                  <circle
-                    cx="16"
-                    cy="7"
-                    r="2.5"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    fill="currentColor"
-                    fillOpacity="0.15"
-                  />
-                  <path
-                    d="M11 18a5 4 0 0 1 10 0"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    strokeLinecap="round"
-                    fill="none"
-                  />
-                </svg>
-                <span className="p2p-picker-label">QUICK MATCH</span>
-                <span className="p2p-picker-sub">
-                  1v1 or 4-player: humans, bots, or both
-                </span>
-              </button>
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="8"
+                      cy="7"
+                      r="2.5"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      fill="currentColor"
+                      fillOpacity="0.15"
+                    />
+                    <path
+                      d="M3 18a5 4 0 0 1 10 0"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                    <circle
+                      cx="16"
+                      cy="7"
+                      r="2.5"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      fill="currentColor"
+                      fillOpacity="0.15"
+                    />
+                    <path
+                      d="M11 18a5 4 0 0 1 10 0"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                  </svg>
+                  <span className="p2p-picker-label">QUICK MATCH</span>
+                  <span className="p2p-picker-sub">
+                    1v1 or 4-player: humans, bots, or both
+                  </span>
+                </button>
 
-              <button
-                ref={(el) => {
-                  playStyleRefs.current[1] = el;
-                }}
-                type="button"
-                role="radio"
-                aria-checked={playStyle === 'challenges'}
-                tabIndex={
-                  hubFocus.zone === 'playStyle' && hubFocus.idx === 1 ? 0 : -1
-                }
-                className={[
-                  'p2p-picker-card',
-                  'p2p-picker-card--nostr',
-                  playStyle === 'challenges' ? 'p2p-picker-card--selected' : '',
-                  playStyleFocusClass(1),
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => {
-                  setHubFocus({ zone: 'playStyle', idx: 1 });
-                  activatePlayStyle(1);
-                  if (stepped) openSetup('challenges');
-                }}
-              >
-                <svg
-                  className="p2p-picker-icon p2p-picker-icon--challenges"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
+                <button
+                  ref={(el) => {
+                    playStyleRefs.current[1] = el;
+                  }}
+                  type="button"
+                  role="radio"
+                  aria-checked={playStyle === 'challenges'}
+                  tabIndex={
+                    hubFocus.zone === 'playStyle' && hubFocus.idx === 1 ? 0 : -1
+                  }
+                  className={[
+                    'p2p-picker-card',
+                    'p2p-picker-card--nostr',
+                    playStyle === 'challenges'
+                      ? 'p2p-picker-card--selected'
+                      : '',
+                    playStyleFocusClass(1),
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={() => {
+                    setHubFocus({ zone: 'playStyle', idx: 1 });
+                    activatePlayStyle(1);
+                    if (stepped) openSetup('challenges');
+                  }}
                 >
-                  <path
-                    d="M13.5 8.5 V20.5"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M13.5 8.5 H21 V13.5 H13.5 Z"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    strokeLinejoin="round"
-                    fill="currentColor"
-                    fillOpacity="0.15"
-                  />
-                  <path
-                    d="M7 14.5 C4 11.8 2.5 8.2 2.5 4.8 V2.8 L7 1.2 L11.5 2.8 V4.8 C11.5 8.2 10 11.8 7 14.5 Z"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    strokeLinejoin="round"
-                    fill="currentColor"
-                    fillOpacity="0.12"
-                  />
-                </svg>
-                <span className="p2p-picker-label">CHALLENGES</span>
-                <span className="p2p-picker-sub">
-                  Beat the bots: win sats on Nostr
-                </span>
-              </button>
+                  <svg
+                    className="p2p-picker-icon p2p-picker-icon--challenges"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M13.5 8.5 V20.5"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M13.5 8.5 H21 V13.5 H13.5 Z"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeLinejoin="round"
+                      fill="currentColor"
+                      fillOpacity="0.15"
+                    />
+                    <path
+                      d="M7 14.5 C4 11.8 2.5 8.2 2.5 4.8 V2.8 L7 1.2 L11.5 2.8 V4.8 C11.5 8.2 10 11.8 7 14.5 Z"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeLinejoin="round"
+                      fill="currentColor"
+                      fillOpacity="0.12"
+                    />
+                  </svg>
+                  <span className="p2p-picker-label">CHALLENGES</span>
+                  <span className="p2p-picker-sub">
+                    Beat the bots: win sats on Nostr
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
         ) : null}
 
         {showSetup ? (
-        <div
-          className="practice-play-style-area"
-          ref={playStyleAreaRef}
-        >
-          <div
-            ref={freePlayPanelShellRef}
-            className={[
-              'practice-play-style-panel',
-              playStyle !== 'free' ? 'practice-play-style-inactive' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            aria-hidden={playStyle !== 'free'}
-          >
-            <PracticeFreePlayPanel
-              ref={freePlayPanelRef}
-              isActive={showSetup && playStyle === 'free'}
-              menuZone={playStyle === 'free' ? hubFocus.zone : 'playStyle'}
-              footerBackRef={footerBackRef}
-              footerStartRef={footerStartRef}
-              onExitToPlayStyle={enterPlayStyle}
-              onEnterFooter={enterFooter}
-            />
+          <div className="practice-play-style-area" ref={playStyleAreaRef}>
+            <div
+              ref={freePlayPanelShellRef}
+              className={[
+                'practice-play-style-panel',
+                playStyle !== 'free' ? 'practice-play-style-inactive' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-hidden={playStyle !== 'free'}
+            >
+              <PracticeFreePlayPanel
+                ref={freePlayPanelRef}
+                isActive={showSetup && playStyle === 'free'}
+                menuZone={playStyle === 'free' ? hubFocus.zone : 'playStyle'}
+                footerBackRef={footerBackRef}
+                footerStartRef={footerStartRef}
+                onExitToPlayStyle={enterPlayStyle}
+                onEnterFooter={enterFooter}
+              />
+            </div>
+            <div
+              ref={challengesPanelShellRef}
+              className={[
+                'practice-play-style-panel',
+                playStyle !== 'challenges'
+                  ? 'practice-play-style-inactive'
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-hidden={playStyle !== 'challenges'}
+            >
+              <PracticeChallengesPanel
+                ref={challengesPanelRef}
+                isActive={showSetup && playStyle === 'challenges'}
+                menuZone={
+                  playStyle === 'challenges' ? hubFocus.zone : 'playStyle'
+                }
+                footerBackRef={footerBackRef}
+                footerStartRef={footerStartRef}
+                onExitToPlayStyle={enterPlayStyle}
+                onEnterFooter={enterFooter}
+                onLaunchStateChange={handleChallengeLaunchStateChange}
+              />
+            </div>
           </div>
-          <div
-            ref={challengesPanelShellRef}
-            className={[
-              'practice-play-style-panel',
-              playStyle !== 'challenges' ? 'practice-play-style-inactive' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            aria-hidden={playStyle !== 'challenges'}
-          >
-            <PracticeChallengesPanel
-              ref={challengesPanelRef}
-              isActive={showSetup && playStyle === 'challenges'}
-              menuZone={
-                playStyle === 'challenges' ? hubFocus.zone : 'playStyle'
-              }
-              footerBackRef={footerBackRef}
-              footerStartRef={footerStartRef}
-              onExitToPlayStyle={enterPlayStyle}
-              onEnterFooter={enterFooter}
-              onLaunchStateChange={handleChallengeLaunchStateChange}
-            />
-          </div>
-        </div>
         ) : null}
 
         <div className="practice-actions practice-hub-panel-footer">
@@ -696,26 +700,26 @@ export default function PracticeHub({
             {stepped && hubStep === 'setup' ? 'BACK' : 'MAIN MENU'}
           </Button>
           {!(stepped && hubStep === 'style') ? (
-          <Button
-            ref={footerStartRef}
-            tabIndex={footerStartFocused ? 0 : -1}
-            disabled={playStyle === 'challenges' && challengeLaunching}
-            className={[
-              'practice-start',
-              footerStartFocused ? 'practice-start--focused' : '',
-              challengeLaunching ? 'practice-start--launching' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onFocus={() => enterFooter('start')}
-            onClick={startFooterPrimary}
-          >
-            {playStyle === 'free'
-              ? 'START QUICK MATCH'
-              : challengeLaunching
-                ? 'STARTING CHALLENGE…'
-                : 'START CHALLENGE'}
-          </Button>
+            <Button
+              ref={footerStartRef}
+              tabIndex={footerStartFocused ? 0 : -1}
+              disabled={playStyle === 'challenges' && challengeLaunching}
+              className={[
+                'practice-start',
+                footerStartFocused ? 'practice-start--focused' : '',
+                challengeLaunching ? 'practice-start--launching' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onFocus={() => enterFooter('start')}
+              onClick={startFooterPrimary}
+            >
+              {playStyle === 'free'
+                ? 'START QUICK MATCH'
+                : challengeLaunching
+                  ? 'STARTING CHALLENGE…'
+                  : 'START CHALLENGE'}
+            </Button>
           ) : null}
         </div>
       </div>

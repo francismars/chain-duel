@@ -66,10 +66,15 @@ function steerToward(snake: GameState['p1'], target: GridPos): void {
     (snake.dir === 'Down' && next === 'Up');
   if (horizontal && !backsInto(horizontal)) snake.dirWanted = horizontal;
   else if (vertical && !backsInto(vertical)) snake.dirWanted = vertical;
-  else if (snake.dir === 'Left' || snake.dir === 'Right') snake.dirWanted = 'Up';
+  else if (snake.dir === 'Left' || snake.dir === 'Right')
+    snake.dirWanted = 'Up';
 }
 
-function trail(head: GridPos, dir: 'left' | 'right' | 'up', length: number): GridPos[] {
+function trail(
+  head: GridPos,
+  dir: 'left' | 'right' | 'up',
+  length: number
+): GridPos[] {
   const body: GridPos[] = [];
   for (let i = 1; i <= length; i += 1) {
     if (dir === 'left') body.push([head[0] - i, head[1]]);
@@ -109,7 +114,8 @@ function makeClip(id: RuleClipId): GameState {
     p1Name: 'Player 1',
     p2Name: 'Player 2',
     p1Points: id === 'stake' || id === 'block' ? 8000 : 4000,
-    p2Points: id === 'stake' || id === 'block' ? 8000 : id === 'chain' ? 24000 : 2000,
+    p2Points:
+      id === 'stake' || id === 'block' ? 8000 : id === 'chain' ? 24000 : 2000,
     modeLabel: 'P2P',
     p1Human: id !== 'stake',
     p2Human: id === 'chain' || id === 'reset' || id === 'block',
@@ -274,8 +280,10 @@ export function RuleClip({ id }: { id: RuleClipId }) {
           blackStep += 1;
         }
         const flashing =
-          (ticks >= BLOCK_FLASH_AT && ticks < BLOCK_FLASH_AT + BLOCK_FLASH_LEN) ||
-          (ticks >= BLOCK_SECOND_AT && ticks < BLOCK_SECOND_AT + BLOCK_FLASH_LEN);
+          (ticks >= BLOCK_FLASH_AT &&
+            ticks < BLOCK_FLASH_AT + BLOCK_FLASH_LEN) ||
+          (ticks >= BLOCK_SECOND_AT &&
+            ticks < BLOCK_SECOND_AT + BLOCK_FLASH_LEN);
         setBlockFlash(flashing);
       }
       if (id === 'reset') {
@@ -293,10 +301,16 @@ export function RuleClip({ id }: { id: RuleClipId }) {
           state.p2.dir = zig;
           state.p2.dirWanted = zig;
           zigSteps += 1;
-        } else if (resetPhase === 'reorg' && state.p2.head[1] < state.p1.head[1]) {
+        } else if (
+          resetPhase === 'reorg' &&
+          state.p2.head[1] < state.p1.head[1]
+        ) {
           state.p2.dir = 'Down';
           state.p2.dirWanted = 'Down';
-        } else if (resetPhase === 'reorg' && state.p2.head[1] > state.p1.head[1]) {
+        } else if (
+          resetPhase === 'reorg' &&
+          state.p2.head[1] > state.p1.head[1]
+        ) {
           state.p2.dir = 'Up';
           state.p2.dirWanted = 'Up';
         } else {
@@ -316,7 +330,11 @@ export function RuleClip({ id }: { id: RuleClipId }) {
         stepGame(state);
         const p1Hit = jumped(beforeP1, state.p1.head);
         const p2Hit = jumped(beforeP2, state.p2.head);
-        const flash = (kind: 'wall' | 'clash' | 'reorg', col: number, row: number) => {
+        const flash = (
+          kind: 'wall' | 'clash' | 'reorg',
+          col: number,
+          row: number
+        ) => {
           impactId += 1;
           setImpact({
             id: impactId,
@@ -386,7 +404,10 @@ export function RuleClip({ id }: { id: RuleClipId }) {
 
     const paint = () => {
       if (!holdQr) {
-        renderer.render(state, { replayView: true, suppressVictoryOverlay: true });
+        renderer.render(state, {
+          replayView: true,
+          suppressVictoryOverlay: true,
+        });
         return;
       }
       const p1Head = state.p1.head;
@@ -399,7 +420,10 @@ export function RuleClip({ id }: { id: RuleClipId }) {
       state.p2.head = [-8, -8];
       state.p2.body = [];
       state.coinbases = [];
-      renderer.render(state, { replayView: true, suppressVictoryOverlay: true });
+      renderer.render(state, {
+        replayView: true,
+        suppressVictoryOverlay: true,
+      });
       state.p1.head = p1Head;
       state.p1.body = p1Body;
       state.p2.head = p2Head;
@@ -426,7 +450,7 @@ export function RuleClip({ id }: { id: RuleClipId }) {
           tick();
           stepped = true;
         }
-        advancePointChanges(state);
+        advancePointChanges(state, delta);
         if (stepped || (state.pointChanges?.length ?? 0) > 0) paint();
         frame = window.requestAnimationFrame(loop);
       };
@@ -447,56 +471,56 @@ export function RuleClip({ id }: { id: RuleClipId }) {
         <span style={{ width: `${bar.p2}%` }} />
       </div>
       <div className={blockFlash ? 'rule-clip rule-clip--flash' : 'rule-clip'}>
-      <div className="rule-clip__stage" ref={hostRef} />
-      {impact ? (
-        <div
-          key={impact.id}
-          className={`rule-clip__impact rule-clip__impact--${impact.kind}`}
-          style={{ left: `${impact.left}%`, top: `${impact.top}%` }}
-          onAnimationEnd={() => setImpact(null)}
-        />
-      ) : null}
-      {id === 'stake' && showQr ? (
-        <div className="rule-clip__qr">
-          {(
-            [
-              ['Player 1', STAKE_INVOICE_P1, stake.p1],
-              ['Player 2', STAKE_INVOICE_P2, stake.p2],
-            ] as const
-          ).map(([name, invoice, amount]) => {
-            const paid = amount >= STAKE_TARGET;
-            return (
-              <div className="rule-clip__qr-player" key={name}>
-                <div className="rule-clip__qr-card">
-                  <QRCodeSVG
-                    value={invoice}
-                    size={78}
-                    bgColor="#ffffff"
-                    fgColor="#111111"
-                    aria-label={`${name} deposit`}
-                  />
-                  <img
-                    className={
-                      paid
-                        ? 'rule-clip__qr-bolt'
-                        : 'rule-clip__qr-bolt rule-clip__qr-bolt--hide'
-                    }
-                    src="/images/qr_lightning.gif"
-                    alt=""
-                  />
+        <div className="rule-clip__stage" ref={hostRef} />
+        {impact ? (
+          <div
+            key={impact.id}
+            className={`rule-clip__impact rule-clip__impact--${impact.kind}`}
+            style={{ left: `${impact.left}%`, top: `${impact.top}%` }}
+            onAnimationEnd={() => setImpact(null)}
+          />
+        ) : null}
+        {id === 'stake' && showQr ? (
+          <div className="rule-clip__qr">
+            {(
+              [
+                ['Player 1', STAKE_INVOICE_P1, stake.p1],
+                ['Player 2', STAKE_INVOICE_P2, stake.p2],
+              ] as const
+            ).map(([name, invoice, amount]) => {
+              const paid = amount >= STAKE_TARGET;
+              return (
+                <div className="rule-clip__qr-player" key={name}>
+                  <div className="rule-clip__qr-card">
+                    <QRCodeSVG
+                      value={invoice}
+                      size={78}
+                      bgColor="#ffffff"
+                      fgColor="#111111"
+                      aria-label={`${name} deposit`}
+                    />
+                    <img
+                      className={
+                        paid
+                          ? 'rule-clip__qr-bolt'
+                          : 'rule-clip__qr-bolt rule-clip__qr-bolt--hide'
+                      }
+                      src="/images/qr_lightning.gif"
+                      alt=""
+                    />
+                  </div>
+                  <p className="rule-clip__qr-label">{name}</p>
+                  <p className="rule-clip__qr-amount">
+                    {paid ? 'Paid' : `${amount.toLocaleString()} sats`}
+                  </p>
                 </div>
-                <p className="rule-clip__qr-label">{name}</p>
-                <p className="rule-clip__qr-amount">
-                  {paid ? 'Paid' : `${amount.toLocaleString()} sats`}
-                </p>
-              </div>
-            );
-          })}
-          {stake.p1 >= STAKE_TARGET && stake.p2 >= STAKE_TARGET ? (
-            <p className="rule-clip__qr-ready">Ready</p>
-          ) : null}
-        </div>
-      ) : null}
+              );
+            })}
+            {stake.p1 >= STAKE_TARGET && stake.p2 >= STAKE_TARGET ? (
+              <p className="rule-clip__qr-ready">Ready</p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -26,7 +26,10 @@ import {
   type ChallengeEligibilityResponse,
 } from '@/lib/challengeBounty';
 import { clearPendingChallengeClaim } from '@/lib/pendingChallengeClaim';
-import { consumeChallengeMenuFocus, peekChallengeMenuFocus } from '@/lib/challengeMenuFocus';
+import {
+  consumeChallengeMenuFocus,
+  peekChallengeMenuFocus,
+} from '@/lib/challengeMenuFocus';
 import {
   countGateEligibilityChecks,
   formatGateEligibilityChecks,
@@ -63,12 +66,7 @@ const DEFAULT_CHALLENGES: Challenge[] = (
   rank: CHALLENGE_CLIENT_RANK[id],
   name: CHALLENGE_CLIENT_NAMES[id],
   tagline: CHALLENGE_CLIENT_TAGLINES[id],
-  format:
-    id === 'ffa'
-      ? '4P FFA'
-      : id === 'sovereign-stack'
-        ? '2v1'
-        : '1v1',
+  format: id === 'ffa' ? '4P FFA' : id === 'sovereign-stack' ? '2v1' : '1v1',
   aiTier:
     id === 'normie'
       ? 'normie'
@@ -253,8 +251,7 @@ const CHECK_DESCRIPTIONS: Record<
 };
 
 type GateCheckOverlayAction =
-  | { type: 'button'; label: string; disabled?: boolean }
-  | { type: 'ln-form' };
+  { type: 'button'; label: string; disabled?: boolean } | { type: 'ln-form' };
 
 function getGateCheckOverlayAction(
   key: Exclude<EligibilityCheckKey, 'appSession'>,
@@ -388,6 +385,9 @@ export const PracticeChallengesPanel = forwardRef<
   const { socket, connected } = useSocket();
 
   const [challenges, setChallenges] = useState<Challenge[]>(DEFAULT_CHALLENGES);
+  /** Latest catalog for callbacks and listeners that should not resubscribe when it loads. */
+  const challengesRef = useRef(challenges);
+  challengesRef.current = challenges;
 
   useEffect(() => {
     if (!socket) return;
@@ -458,20 +458,20 @@ export const PracticeChallengesPanel = forwardRef<
     });
   }, [eligibility, eligibilityLoading, socket]);
 
-  const [selected, setSelected] = useState(
-    () => peekChallengeMenuFocus() ?? 0
-  );
+  const [selected, setSelected] = useState(() => peekChallengeMenuFocus() ?? 0);
   const [hoveredChallenge, setHoveredChallenge] = useState<number | null>(null);
   const [nostrProfilePicBroken, setNostrProfilePicBroken] = useState(false);
 
-  const [displayBounty, setDisplayBounty] = useState(DEFAULT_CHALLENGES[0].bounty);
+  const [displayBounty, setDisplayBounty] = useState(
+    DEFAULT_CHALLENGES[0].bounty
+  );
   const [lockedBountyDisplays, setLockedBountyDisplays] = useState<number[]>(
     () => DEFAULT_CHALLENGES.map(() => 0)
   );
   const [gateActionFocused, setGateActionFocused] = useState(false);
-  const [gateSetupFocus, setGateSetupFocus] = useState<'config' | 'refresh' | null>(
-    null
-  );
+  const [gateSetupFocus, setGateSetupFocus] = useState<
+    'config' | 'refresh' | null
+  >(null);
   const [listRevealed, setListRevealed] = useState(false);
   const [listRevealKey, setListRevealKey] = useState(0);
   const [activeCheckOverlay, setActiveCheckOverlay] = useState<Exclude<
@@ -622,6 +622,9 @@ export const PracticeChallengesPanel = forwardRef<
           }
         });
     },
+    // pubkey is not read, but a new identity must produce a new callback so
+    // the eligibility effects refetch for the account that just signed in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [socket, connected, nostrSession.signedIn, nostrSession.pubkey]
   );
 
@@ -796,16 +799,14 @@ export const PracticeChallengesPanel = forwardRef<
       const isRight = e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
       const isActivate = e.key === 'Enter' || e.key === ' ';
 
-      if (
-        !(
-          isDown ||
-          isUp ||
-          isLeft ||
-          isRight ||
-          isActivate ||
-          e.key === 'Escape'
-        )
-      ) {
+      if (!(
+        isDown ||
+        isUp ||
+        isLeft ||
+        isRight ||
+        isActivate ||
+        e.key === 'Escape'
+      )) {
         return;
       }
 
@@ -853,7 +854,7 @@ export const PracticeChallengesPanel = forwardRef<
   }, [activeCheckAction, closeCheckOverlay, overlayKeyboardFocus, playSfx]);
 
   const animateLockedRowBounty = useCallback((rowIndex: number) => {
-    const target = challenges[rowIndex]?.bounty;
+    const target = challengesRef.current[rowIndex]?.bounty;
     if (target == null) return;
 
     const existing = lockedBountyRafRefs.current[rowIndex];
@@ -901,7 +902,7 @@ export const PracticeChallengesPanel = forwardRef<
       cancelAnimationFrame(bountyRafRef.current);
     if (!nostrSession.signedIn) return;
 
-    const target = challenges[selected].bounty;
+    const target = challengesRef.current[selected].bounty;
     const duration = 520;
     const start = performance.now();
 
@@ -935,7 +936,7 @@ export const PracticeChallengesPanel = forwardRef<
     }
 
     if (panelJustEntered) {
-      challenges.forEach((_, i) => animateLockedRowBounty(i));
+      challengesRef.current.forEach((_, i) => animateLockedRowBounty(i));
     }
 
     return cancelLockedBountyAnimations;
@@ -996,16 +997,19 @@ export const PracticeChallengesPanel = forwardRef<
     [challenges, claimedChallengeIds]
   );
 
-  const focusRowAt = useCallback((idx: number) => {
-    setSelected(idx);
-    const challenge = challenges[idx];
-    if (challenge) {
-      reportClientEvent(socket, 'client.challenge.card_clicked', {
-        challengeId: challenge.id,
-      });
-    }
-    rowRefs.current[idx]?.focus({ preventScroll: true });
-  }, [challenges, socket]);
+  const focusRowAt = useCallback(
+    (idx: number) => {
+      setSelected(idx);
+      const challenge = challenges[idx];
+      if (challenge) {
+        reportClientEvent(socket, 'client.challenge.card_clicked', {
+          challengeId: challenge.id,
+        });
+      }
+      rowRefs.current[idx]?.focus({ preventScroll: true });
+    },
+    [challenges, socket]
+  );
 
   const launchChallenge = useCallback(
     async (idx?: number, fromEligibilityResume = false) => {
@@ -1077,8 +1081,10 @@ export const PracticeChallengesPanel = forwardRef<
             return;
           }
           const runReasonMessages: Record<string, string> = {
-            not_eligible: 'Complete all requirements before starting a challenge',
-            nostr_sign_in_required: 'Sign in with Nostr to start a bounty challenge',
+            not_eligible:
+              'Complete all requirements before starting a challenge',
+            nostr_sign_in_required:
+              'Sign in with Nostr to start a bounty challenge',
             rate_limited: 'Too many attempts — wait a moment and try again',
           };
           setLaunchError(
@@ -1091,7 +1097,10 @@ export const PracticeChallengesPanel = forwardRef<
 
         const isFfa = challenge.format === '4P FFA';
         const is2v1 = challenge.format === '2v1';
-        const parts: string[] = ['PRACTICE', isFfa ? 'FFA' : is2v1 ? '2v1' : '1v1'];
+        const parts: string[] = [
+          'PRACTICE',
+          isFfa ? 'FFA' : is2v1 ? '2v1' : '1v1',
+        ];
         if (challenge.powerup) parts.push('PWR');
 
         const config: Record<string, unknown> = {
@@ -1113,7 +1122,9 @@ export const PracticeChallengesPanel = forwardRef<
           p3Human: false,
           p4Human: false,
           p1Name: nostrSession.displayName?.trim() || 'Player 1',
-          ...(nostrSession.pubkey ? { p1NostrPubkey: nostrSession.pubkey } : {}),
+          ...(nostrSession.pubkey
+            ? { p1NostrPubkey: nostrSession.pubkey }
+            : {}),
           ...(nostrProfilePic?.trim()
             ? { p1Picture: nostrProfilePic.trim() }
             : {}),
@@ -1128,7 +1139,9 @@ export const PracticeChallengesPanel = forwardRef<
         savePracticeGameConfig(config);
         navigate('/game');
       } catch {
-        setLaunchError('Could not start challenge — check connection and try again');
+        setLaunchError(
+          'Could not start challenge — check connection and try again'
+        );
         playSfx(SFX.MENU_SELECT);
         abortLaunch();
       } finally {
@@ -1178,8 +1191,7 @@ export const PracticeChallengesPanel = forwardRef<
 
   const hasReturningChallengeFocus = useCallback(
     () =>
-      pendingMenuFocusRef.current !== null ||
-      peekChallengeMenuFocus() !== null,
+      pendingMenuFocusRef.current !== null || peekChallengeMenuFocus() !== null,
     []
   );
 
@@ -1220,7 +1232,13 @@ export const PracticeChallengesPanel = forwardRef<
     }
     const idx = hasPickedChallengeRef.current ? selected : 0;
     focusRowAt(idx);
-  }, [challengesLocked, focusGateAction, focusRowAt, hasReturningChallengeFocus, selected]);
+  }, [
+    challengesLocked,
+    focusGateAction,
+    focusRowAt,
+    hasReturningChallengeFocus,
+    selected,
+  ]);
 
   useEffect(() => {
     const idx = peekChallengeMenuFocus();
@@ -1302,7 +1320,7 @@ export const PracticeChallengesPanel = forwardRef<
       focusGateAction();
       return;
     }
-    const lastIdx = challenges.length - 1;
+    const lastIdx = challengesRef.current.length - 1;
     const idx = hasPickedChallengeRef.current ? selected : lastIdx;
     focusRowAt(idx);
   }, [challengesLocked, focusGateAction, focusRowAt, selected]);
@@ -1419,7 +1437,7 @@ export const PracticeChallengesPanel = forwardRef<
         setSelected((prev) => {
           const from = onRow ? focusedRowIndex : prev;
           const next = from + CHALLENGE_GRID_COLS;
-          if (next < challenges.length) {
+          if (next < challengesRef.current.length) {
             playSfx(SFX.MENU_SELECT);
             hasPickedChallengeRef.current = true;
             return next;
@@ -1534,7 +1552,7 @@ export const PracticeChallengesPanel = forwardRef<
         playSfx(SFX.MENU_SELECT);
         hasPickedChallengeRef.current = true;
         if (from % CHALLENGE_GRID_COLS === 0) {
-          setSelected(challenges.length - 1);
+          setSelected(challengesRef.current.length - 1);
         } else {
           setSelected(from - 1);
         }
@@ -1582,7 +1600,7 @@ export const PracticeChallengesPanel = forwardRef<
         hasPickedChallengeRef.current = true;
         if (onRightCol) {
           const next = from + 1;
-          setSelected(next < challenges.length ? next : 0);
+          setSelected(next < challengesRef.current.length ? next : 0);
         } else {
           setSelected(from + 1);
         }
@@ -1906,7 +1924,9 @@ export const PracticeChallengesPanel = forwardRef<
                         type="button"
                         className={[
                           'sc-gate__config-link sc-gate__config-link--setup',
-                          gateSetupFocus === 'config' ? 'practice-focus-target' : '',
+                          gateSetupFocus === 'config'
+                            ? 'practice-focus-target'
+                            : '',
                         ]
                           .filter(Boolean)
                           .join(' ')}
@@ -1939,7 +1959,9 @@ export const PracticeChallengesPanel = forwardRef<
                         type="button"
                         className={[
                           'sc-gate__config-link sc-gate__config-link--setup',
-                          gateSetupFocus === 'refresh' ? 'practice-focus-target' : '',
+                          gateSetupFocus === 'refresh'
+                            ? 'practice-focus-target'
+                            : '',
                         ]
                           .filter(Boolean)
                           .join(' ')}

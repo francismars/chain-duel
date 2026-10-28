@@ -17,9 +17,13 @@ export type UseGamepadOptions = {
 };
 
 const JOYSTICK_DEADZONE = 0.6;
+/** Stick must fall back inside this before it can register a new press (hysteresis vs jitter). */
+const JOYSTICK_RELEASE = 0.35;
 /** Legacy menus polled gamepads at 10 Hz; delay before hold-repeat kicks in. */
 const MENU_REPEAT_DELAY_MS = 350;
 const MENU_REPEAT_INTERVAL_MS = 100;
+/** Ignore a new menu confirm this soon after the last one (button bounce / double taps). */
+const MENU_FACE_MIN_GAP_MS = 180;
 
 const KEY_TO_CODE: Record<string, string> = {
   w: 'KeyW',
@@ -34,38 +38,59 @@ const KEY_TO_CODE: Record<string, string> = {
   Enter: 'Enter',
 };
 
+const gamepadSyntheticKeys = new WeakSet<Event>();
+
+/** True for keyboard events synthesized from a controller, not a physical key. */
+export function isGamepadSyntheticKey(event: Event): boolean {
+  return gamepadSyntheticKeys.has(event);
+}
+
 function dispatchKey(
   type: 'keydown' | 'keyup',
   init: { key?: string; code?: string }
 ) {
   const code = init.code ?? (init.key ? KEY_TO_CODE[init.key] : undefined);
-  window.dispatchEvent(
-    new KeyboardEvent(type, {
-      ...init,
-      ...(code ? { code } : {}),
-      bubbles: true,
-    })
-  );
+  const event = new KeyboardEvent(type, {
+    ...init,
+    ...(code ? { code } : {}),
+    bubbles: true,
+  });
+  gamepadSyntheticKeys.add(event);
+  window.dispatchEvent(event);
 }
 
-/** Per-key press / hold-repeat (menu mode only). */
+/**
+ * Per-key press / hold-repeat (menu mode only).
+ * Starts blocked: a button already held when polling begins (carried over from the
+ * previous page or from game mode) must be released before it can fire.
+ */
 class KeyRepeater {
+  private blocked = true;
   private held = false;
   private heldSince = 0;
-  private lastFire = 0;
+  private lastFire = Number.NEGATIVE_INFINITY;
+
+  constructor(
+    private readonly repeat = true,
+    private readonly minGapMs = 0
+  ) {}
 
   tick(down: boolean, now: number, fire: () => void): void {
     if (!down) {
+      this.blocked = false;
       this.held = false;
       return;
     }
+    if (this.blocked) return;
     if (!this.held) {
       this.held = true;
       this.heldSince = now;
+      if (now - this.lastFire < this.minGapMs) return;
       this.lastFire = now;
       fire();
       return;
     }
+    if (!this.repeat) return;
     if (now - this.heldSince < MENU_REPEAT_DELAY_MS) return;
     if (now - this.lastFire >= MENU_REPEAT_INTERVAL_MS) {
       this.lastFire = now;
@@ -83,10 +108,17 @@ type PadPollState = {
   right: KeyRepeater;
   face: KeyRepeater;
   axis9: number | undefined;
+  /** Analog stick latch per direction (press past deadzone, release inside JOYSTICK_RELEASE). */
+  stick: Record<'up' | 'down' | 'left' | 'right', boolean>;
   /** Keys we synthesized via game-mode polling (edge-triggered keyup). */
   synthHeld: Partial<Record<'up' | 'down' | 'left' | 'right', boolean>>;
   synthFaceHeld: boolean;
+  /** Game mode: face was already held when polling began; wait for release. */
+  synthFaceBlocked: boolean;
   synthControlHeld: boolean;
+  /** Game mode: west face (Xbox X) → keyboard X (solo seat switch). */
+  synthWestHeld: boolean;
+  synthWestBlocked: boolean;
 };
 
 function createPadPollState(): PadPollState {
@@ -95,12 +127,20 @@ function createPadPollState(): PadPollState {
     down: new KeyRepeater(),
     left: new KeyRepeater(),
     right: new KeyRepeater(),
-    face: new KeyRepeater(),
+    face: new KeyRepeater(false, MENU_FACE_MIN_GAP_MS),
     axis9: undefined,
+    stick: { up: false, down: false, left: false, right: false },
     synthHeld: {},
     synthFaceHeld: false,
+    synthFaceBlocked: true,
     synthControlHeld: false,
+    synthWestHeld: false,
+    synthWestBlocked: true,
   };
+}
+
+function latchStick(held: boolean, value: number): boolean {
+  return held ? value > JOYSTICK_RELEASE : value > JOYSTICK_DEADZONE;
 }
 
 function fireDirection(
@@ -133,6 +173,10 @@ function fireFace(
   key: string
 ) {
   if (mode === 'game') {
+    if (state.synthFaceBlocked) {
+      if (!down) state.synthFaceBlocked = false;
+      return;
+    }
     if (down && !state.synthFaceHeld) {
       dispatchKey('keydown', { key });
       state.synthFaceHeld = true;
@@ -280,20 +324,39 @@ function pollPlayerPad(
   faceKey: string,
   controlCode: 'ControlLeft' | 'ControlRight'
 ) {
+  const westDown = !!pad.buttons[2]?.pressed;
+  if (mode === 'game') {
+    // Xbox X / PlayStation Square. Keyboard X swaps the solo human seat
+    // before the match; other face buttons still confirm / start.
+    if (state.synthWestBlocked) {
+      if (!westDown) state.synthWestBlocked = false;
+    } else if (westDown && !state.synthWestHeld) {
+      dispatchKey('keydown', { key: 'x', code: 'KeyX' });
+      state.synthWestHeld = true;
+    } else if (!westDown && state.synthWestHeld) {
+      dispatchKey('keyup', { key: 'x', code: 'KeyX' });
+      state.synthWestHeld = false;
+    }
+  }
+
   const faceDown =
     !!pad.buttons[0]?.pressed ||
     !!pad.buttons[1]?.pressed ||
-    !!pad.buttons[2]?.pressed ||
+    (mode === 'menu' && westDown) ||
     !!pad.buttons[3]?.pressed;
   fireFace(mode, state, now, faceDown, faceKey);
 
-  const upDown = !!pad.buttons[12]?.pressed || pad.axes[1] < -JOYSTICK_DEADZONE;
-  const downDown =
-    !!pad.buttons[13]?.pressed || pad.axes[1] > JOYSTICK_DEADZONE;
-  const leftDown =
-    !!pad.buttons[14]?.pressed || pad.axes[0] < -JOYSTICK_DEADZONE;
-  const rightDown =
-    !!pad.buttons[15]?.pressed || pad.axes[0] > JOYSTICK_DEADZONE;
+  const ax = pad.axes[0] ?? 0;
+  const ay = pad.axes[1] ?? 0;
+  state.stick.up = latchStick(state.stick.up, -ay);
+  state.stick.down = latchStick(state.stick.down, ay);
+  state.stick.left = latchStick(state.stick.left, -ax);
+  state.stick.right = latchStick(state.stick.right, ax);
+
+  const upDown = !!pad.buttons[12]?.pressed || state.stick.up;
+  const downDown = !!pad.buttons[13]?.pressed || state.stick.down;
+  const leftDown = !!pad.buttons[14]?.pressed || state.stick.left;
+  const rightDown = !!pad.buttons[15]?.pressed || state.stick.right;
 
   if (mode === 'game') {
     const axisActive =
@@ -453,8 +516,15 @@ export function useGamepad(
       );
     };
 
+    let lastMode: GamepadInputMode | undefined;
+
     const tick = () => {
       const mode = optsRef.current?.inputMode ?? 'menu';
+      if (lastMode !== undefined && mode !== lastMode) {
+        // Fresh state starts blocked, so whatever is held at the switch must be released first.
+        sessionRef.current = createPollSessionState();
+      }
+      lastMode = mode;
       pollGamepads(mode, sessionRef.current);
 
       const compatEnabled = optsRef.current?.lnurlCompatScan === true;

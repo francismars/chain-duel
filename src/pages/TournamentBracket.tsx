@@ -21,7 +21,10 @@ import {
 } from '@/shared/constants/payment';
 import { createLogger } from '@/shared/utils/logger';
 import { navigateToPostGame } from '@/shared/constants/menuNavigation';
-import { clearClientGameConfig, markSocketDuelSession } from '@/pages/practiceHubModes';
+import {
+  clearClientGameConfig,
+  markSocketDuelSession,
+} from '@/pages/practiceHubModes';
 import { npubEncode } from 'nostr-tools/nip19';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
@@ -135,7 +138,12 @@ export default function TournamentBracket() {
       setLoading(false);
       setShowPaymentPanel(false);
     }
-  }, [urlDeposit, numberOfPlayersFromUrl, isNostrTournament, isFinishedPreview]);
+  }, [
+    urlDeposit,
+    numberOfPlayersFromUrl,
+    isNostrTournament,
+    isFinishedPreview,
+  ]);
 
   // Displayed buy-in follows URL by default, then backend min when provided.
   const finalPrize = computeFinalPrize(numberOfPlayers, deposit);
@@ -583,11 +591,11 @@ export default function TournamentBracket() {
     setFocusedBtn('left');
   }, [playConfirm]);
 
-  function handleBackToPayment() {
+  const handleBackToPayment = useCallback(() => {
     playSelect();
     setPanelView('payment');
     setFocusedBtn('left');
-  }
+  }, [playSelect]);
 
   const handleConfirmCancel = useCallback(() => {
     playConfirm();
@@ -710,6 +718,7 @@ export default function TournamentBracket() {
       playConfirm,
       playSelect,
       preStartReady,
+      handleBackToPayment,
       handleCancel,
       handleConfirmCancel,
       handleStartNextGame,

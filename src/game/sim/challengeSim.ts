@@ -169,7 +169,10 @@ export const CHALLENGE_SIM_PRESETS: Array<{
   config: ChallengeSimConfig;
 }> = [
   { id: 'normie', config: { format: '1v1', aiTier: 'normie', powerup: false } },
-  { id: 'stacker', config: { format: '1v1', aiTier: 'stacker', powerup: false } },
+  {
+    id: 'stacker',
+    config: { format: '1v1', aiTier: 'stacker', powerup: false },
+  },
   {
     id: 'noderunner',
     config: { format: '1v1', aiTier: 'noderunner', powerup: true },

@@ -2,6 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { STORAGE_KEY_TV_SAFE_INSET } from './shared/constants/storageKeys';
+import {
+  applyGraphicsDocumentClasses,
+  readGraphicsSettings,
+} from './lib/graphicsSettings';
 import './styles/index.css';
 
 try {
@@ -12,6 +16,7 @@ try {
 } catch {
   /* ignore */
 }
+applyGraphicsDocumentClasses(readGraphicsSettings());
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

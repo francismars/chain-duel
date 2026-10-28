@@ -65,13 +65,12 @@ body:has(.online-reveal) {
 .online-reveal__vignette {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(
-      ellipse 70% 55% at 50% 45%,
-      rgb(255 255 255 / 0.04) 0%,
-      rgb(0 0 0 / 0.35) 68%,
-      rgb(0 0 0 / 0.55) 100%
-    );
+  background: radial-gradient(
+    ellipse 70% 55% at 50% 45%,
+    rgb(255 255 255 / 0.04) 0%,
+    rgb(0 0 0 / 0.35) 68%,
+    rgb(0 0 0 / 0.55) 100%
+  );
   opacity: 1;
 }
 
@@ -122,7 +121,8 @@ body:has(.online-reveal) {
   border-radius: 0;
   opacity: 0;
   transform: translateY(20px) scale(0.94);
-  animation: online-reveal-player-in 0.55s cubic-bezier(0.34, 1.12, 0.64, 1) forwards;
+  animation: online-reveal-player-in 0.55s cubic-bezier(0.34, 1.12, 0.64, 1)
+    forwards;
 }
 
 .online-reveal__player--left {
@@ -308,7 +308,8 @@ body:has(.online-reveal) {
     rgb(255 255 255 / 0.35) 0%,
     rgb(255 230 180 / 0.85) 100%
   );
-  animation: online-reveal-progress var(--reveal-exit-ms, 1500ms) linear forwards;
+  animation: online-reveal-progress var(--reveal-exit-ms, 1500ms) linear
+    forwards;
 }
 
 .online-reveal__skip {

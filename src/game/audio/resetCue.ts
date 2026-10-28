@@ -67,7 +67,8 @@ export function resetCuesFromTransition(
   if (flagged) {
     if (next.tickCount === prev.tickCount) return [];
     const cues = resetCuesFromStep(next);
-    if (next.resetCueExtra == null) cues.push(...extraResetsFromShape(prev, next));
+    if (next.resetCueExtra == null)
+      cues.push(...extraResetsFromShape(prev, next));
     return cues;
   }
   const cues: ResetCue[] = [];

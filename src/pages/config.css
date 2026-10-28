@@ -67,8 +67,9 @@ header#brand:has(+ .config-page) #duel {
 }
 
 .config-nostr-warning {
-  width: min(90vw, 40rem);
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   margin: 0 auto 0.45rem;
   padding: 0.45rem 0.65rem;
   text-align: left;
@@ -91,11 +92,17 @@ header#brand:has(+ .config-page) #duel {
 
 .config-section-tab {
   flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
-  padding: 0.48rem 0.5rem;
-  font-size: clamp(0.62rem, 1.1vw, 0.72rem);
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.1rem;
+  white-space: nowrap;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.42);
@@ -107,7 +114,10 @@ header#brand:has(+ .config-page) #duel {
 }
 
 .config-section-tab + .config-section-tab {
-  border-left: none;
+  /* Width and style only. The `border-left` shorthand would reset the color to
+     currentColor, so a selected tab's restored left edge paints solid white. */
+  border-left-width: 0;
+  border-left-style: none;
 }
 
 .config-section-tab:hover {
@@ -123,7 +133,7 @@ header#brand:has(+ .config-page) #duel {
 }
 
 .config-shell {
-  width: min(92vw, 34rem);
+  width: min(94vw, 58rem);
   max-width: 100%;
   margin: 0 auto;
 }
@@ -136,10 +146,35 @@ header#brand:has(+ .config-page) #duel {
 .config-panel {
   width: 100%;
   box-sizing: border-box;
+  /* Fixed, not a minimum: a taller tab was recentering the page by a pixel. */
+  height: 36rem;
+  display: flex;
+  flex-direction: column;
   padding: 0.9rem 1rem 1rem;
   background: rgb(0 0 0 / 0.72);
   border: 1px solid rgb(255 255 255 / 0.2);
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.45);
+}
+
+.config-panel:has(.config-profile-card) {
+  container-type: inline-size;
+  padding-top: 0;
+}
+
+.config-panel > .config-tab-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.config-panel:has(.config-nwc-block) > .config-tab-panel,
+.config-panel:has(.config-signin-block) > .config-tab-panel {
+  justify-content: center;
+}
+
+.config-panel:has(.config-profile-card) > .config-tab-panel {
+  justify-content: flex-start;
 }
 
 .config-tab-panel {
@@ -171,12 +206,49 @@ header#brand:has(+ .config-page) #duel {
 }
 
 .config-shell__footer .button {
-  margin: 0;
-  width: 100%;
-  min-height: 2.65rem;
-  padding: 0 1rem;
-  font-size: clamp(0.72rem, 1.2vw, 0.82rem);
+  margin: 0 auto;
+  width: 28vw;
+  max-width: 100%;
+  min-width: 0;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
   letter-spacing: 0.1rem;
+}
+
+/* Same box as the home menu .button (28vw × 3vw, 0.8cqw). */
+.config-shell__footer #backButton.button,
+.config-page #nostrSignOut.button {
+  margin: 0 auto;
+  width: 28vw;
+  max-width: 100%;
+  min-width: 0;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
+  white-space: nowrap;
+}
+
+/* Sign out lives inside the profile panel container, so cqw shrinks the
+   label. Match Main Menu, whose 0.8cqw resolves against the viewport. */
+.config-page #nostrSignOut.button {
+  font-size: 0.8svw;
+}
+
+.config-page #nostrSignInNsec.button {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
+  white-space: nowrap;
 }
 
 .config-panel .config-nostr-hint,
@@ -186,26 +258,50 @@ header#brand:has(+ .config-page) #duel {
 .config-panel .config-login-panel,
 .config-panel .config-profile-card,
 .config-panel .config-profile-skeleton,
-.config-panel .config-nwc-block,
 .config-panel .config-gp-tester {
   width: 100%;
   max-width: 100%;
 }
 
-.config-panel .config-gp-tester,
-.config-panel .config-nwc-block {
+.config-panel .config-gp-tester {
   margin: 0;
   padding: 0;
   border: none;
   background: transparent;
 }
 
-.config-panel .config-gp-tester__lede,
+.config-panel .config-signin-block {
+  width: min(100%, 34rem);
+  max-width: 34rem;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.config-panel .config-nwc-block {
+  width: min(100%, 26rem);
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+}
+
 .config-panel .config-panel__lede {
   text-align: left;
 }
 
+.config-signin-block .config-panel__lede {
+  text-align: center;
+}
+
 .config-panel .config-profile-card {
+  width: min(100%, 26rem);
+  max-width: 26rem;
+  margin-inline: auto;
   border: none;
   background: transparent;
 }
@@ -224,8 +320,13 @@ header#brand:has(+ .config-page) #duel {
 
 .config-page__actions--fill .button {
   width: 100%;
-  max-width: none;
+  max-width: 100%;
   min-width: 0;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
 }
 
 .config-kbd-focus {
@@ -233,11 +334,33 @@ header#brand:has(+ .config-page) #duel {
   box-shadow: 0 0 16px rgb(255 255 255 / 0.22);
 }
 
-.config-section-tab.config-kbd-focus,
+.config-section-tab:focus,
+.config-section-tab:focus-visible,
+.config-login-tab:focus,
+.config-login-tab:focus-visible {
+  outline: none;
+}
+
+.config-section-tab.config-kbd-focus {
+  color: #fff;
+  z-index: 2;
+  position: relative;
+  /* Shared edges are collapsed (no left / no bottom). Restore a full stroke so
+     keyboard focus reads as a closed rectangle on every side. */
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgb(255 255 255 / 0.88);
+  animation: glowing 2s ease-in-out infinite;
+}
+
 .config-login-tab.config-kbd-focus {
   color: #fff;
-  z-index: 1;
+  z-index: 2;
   position: relative;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgb(255 255 255 / 0.88);
+  animation: glowing 2s ease-in-out infinite;
 }
 
 .config-nwc-block__disconnect-btn.config-kbd-focus {
@@ -257,11 +380,17 @@ header#brand:has(+ .config-page) #duel {
 
 .config-login-tab {
   flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
-  padding: 0.38rem 0.4rem;
-  font-size: clamp(0.58rem, 1vw, 0.68rem);
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1rem;
+  white-space: nowrap;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.42);
@@ -272,7 +401,8 @@ header#brand:has(+ .config-page) #duel {
 }
 
 .config-login-tab + .config-login-tab {
-  border-left: none;
+  border-left-width: 0;
+  border-left-style: none;
 }
 
 .config-login-tab:hover {
@@ -287,14 +417,47 @@ header#brand:has(+ .config-page) #duel {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1);
 }
 
+/* Later tabs drop the shared left edge. Paint the selected or focused tab above
+   its neighbor, and hide that neighbor's right border so the seam is one line. */
+.config-section-tab.config-section-tab--active,
+.config-section-tab.config-kbd-focus,
+.config-login-tab.config-login-tab--active,
+.config-login-tab.config-kbd-focus {
+  position: relative;
+  z-index: 2;
+  border-left-width: 1px;
+  border-left-style: solid;
+}
+
+.config-section-tab:has(+ .config-section-tab--active),
+.config-section-tab:has(+ .config-section-tab.config-kbd-focus),
+.config-login-tab:has(+ .config-login-tab--active),
+.config-login-tab:has(+ .config-login-tab.config-kbd-focus) {
+  border-right-color: transparent;
+}
+
 .config-login-panel {
+  display: grid;
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   margin: 0;
 }
 
 .config-login-panel__block {
+  grid-area: 1 / 1;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   text-align: left;
+  position: relative;
+  z-index: 1;
+}
+
+.config-login-panel__block--inactive {
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .config-login-panel__lede {
@@ -340,19 +503,24 @@ header#brand:has(+ .config-page) #duel {
 }
 
 .config-page__actions--inline {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
   margin-top: 0.15rem;
 }
 
 .config-page__actions--inline .button {
   margin: 0;
-  width: auto;
-  min-width: 11rem;
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
-  height: auto;
-  min-height: 2.5rem;
-  padding: 0 1rem;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
   font-size: 0.8cqw;
   letter-spacing: 0.1rem;
+  box-sizing: border-box;
 }
 
 .config-page__actions--regen {
@@ -371,9 +539,11 @@ header#brand:has(+ .config-page) #duel {
 /* Nostr Connect — compact row + Chain Duel glass / outline */
 .config-nc-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.45rem 0.65rem;
   align-items: start;
+  width: 100%;
+  min-width: 0;
   margin-bottom: 0.35rem;
 }
 
@@ -397,14 +567,12 @@ header#brand:has(+ .config-page) #duel {
 .config-nc-qr-wrap {
   display: flex;
   justify-content: center;
-  padding: 0.45rem;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
   width: fit-content;
   max-width: 100%;
   margin: 0 auto;
-  box-shadow: none;
 }
 
 @media (min-width: 36rem) {
@@ -437,12 +605,14 @@ header#brand:has(+ .config-page) #duel {
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 16rem;
-  min-height: 2.35rem;
-  padding: 0.4rem 0.85rem;
-  font-size: clamp(0.65rem, 1.2vw, 0.74rem);
+  max-width: 100%;
+  box-sizing: border-box;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1rem;
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
   text-decoration: none;
@@ -476,17 +646,24 @@ a.config-nc-signer-btn:not([href]) {
 
 .config-nc-signer-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
   gap: 0.55rem;
   width: 100%;
-  max-width: 24rem;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .config-nc-signer-row .config-nc-signer-btn {
-  flex: 1 1 7.5rem;
-  width: auto;
-  max-width: none;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
 }
 
 button.config-nc-signer-btn {
@@ -608,17 +785,22 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-nc-waiting {
   margin: 0;
+  max-width: 100%;
   font-size: clamp(0.7rem, 1.25vw, 0.8rem);
   line-height: 1.3;
   color: rgba(255, 255, 255, 0.48);
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
-.config-nc-waiting:has(.config-nc-spinner) {
-  align-items: center;
+.config-nc-spinner {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 0.4rem;
+  vertical-align: -0.1em;
+  color: rgb(255 255 255 / 0.72);
+  animation: config-nc-spin 0.75s linear infinite;
 }
 
 .config-nc-hint-muted {
@@ -629,51 +811,43 @@ a.config-nc-signer-btn.config-kbd-focus {
   letter-spacing: 0.04em;
 }
 
-.config-nc-spinner {
-  width: 0.55rem;
-  height: 0.75rem;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-radius: 0;
-  flex-shrink: 0;
-  animation: config-nc-spinner-pulse 0.85s ease-in-out infinite;
-}
-
-@keyframes config-nc-spinner-pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 .config-nc-uri-row {
   display: flex;
-  align-items: stretch;
-  gap: 0.3rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  max-width: 100%;
   margin: 0;
   padding: 0.35rem 0.45rem;
+  box-sizing: border-box;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0;
+  position: relative;
+  z-index: 0;
 }
 
 .config-nc-uri-text {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: clamp(0.68rem, 1.25vw, 0.78rem);
   line-height: 1.35;
-  word-break: break-all;
   color: rgba(255, 255, 255, 0.82);
 }
 
 .config-nc-copy-btn {
-  flex-shrink: 0;
-  padding: 0.25rem 0.55rem;
-  font-size: clamp(0.65rem, 1.2vw, 0.72rem);
+  flex: 0 0 auto;
+  width: auto;
+  height: 3vw;
+  min-height: 0;
+  padding: 0 0.75rem;
+  font-size: 0.8cqw;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1rem;
   font-family: inherit;
   color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.08);
@@ -728,11 +902,15 @@ a.config-nc-signer-btn.config-kbd-focus {
 .config-nc-bunker-row .button {
   flex: 0 0 auto;
   margin: 0;
-  align-self: stretch;
-  height: auto;
-  min-height: 2.15rem;
-  padding-left: 0.85rem;
-  padding-right: 0.85rem;
+  align-self: center;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -748,8 +926,9 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-nip46-auth-banner {
-  width: min(90vw, 40rem);
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
   margin: 0.2rem auto 0.35rem;
   padding: 0.55rem 0.65rem;
   display: flex;
@@ -794,13 +973,13 @@ a.config-nc-signer-btn.config-kbd-focus {
   align-items: center;
   justify-content: center;
   width: auto;
-  min-width: 8.5rem;
+  min-width: 0;
   max-width: 100%;
-  height: auto;
-  min-height: 2.35rem;
-  padding: 0.4rem 0.75rem;
-  font-size: clamp(0.58rem, 1.05vw, 0.72rem);
-  letter-spacing: 0.07em;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
   white-space: nowrap;
   line-height: 1.2;
 }
@@ -829,7 +1008,13 @@ a.config-nc-signer-btn.config-kbd-focus {
 .config-row button,
 .config-row .button {
   margin-right: 0;
-  height: 2.5vw;
+  width: 28vw;
+  max-width: 100%;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
+  font-size: 0.8cqw;
+  letter-spacing: 0.1rem;
 }
 
 .config-page__actions {
@@ -840,12 +1025,19 @@ a.config-nc-signer-btn.config-kbd-focus {
   justify-content: center;
 }
 
+.config-signin-block .config-page__actions .button {
+  width: 100%;
+  max-width: 100%;
+}
+
 .config-page__actions .button {
   margin: 0;
-  width: min(88vw, 22rem);
+  width: 28vw;
+  max-width: 100%;
+  min-width: 0;
   height: 3vw;
-  min-height: 2.5rem;
-  padding: 0;
+  min-height: 0;
+  padding: 1%;
   white-space: nowrap;
   font-size: 0.8cqw;
   letter-spacing: 0.1rem;
@@ -932,7 +1124,7 @@ a.config-nc-signer-btn.config-kbd-focus {
   font-size: clamp(1.1rem, 3.2vw, 1.65rem);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  margin-bottom: 0.1rem;
+  margin-bottom: 1rem;
   color: rgba(255, 255, 255, 0.96);
   text-shadow: none;
 }
@@ -953,7 +1145,7 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-profile-card__banner {
-  height: clamp(5rem, 14vw, 8.5rem);
+  height: 6.25rem;
   background-size: cover;
   background-position: center top;
   background-color: rgba(255, 255, 255, 0.04);
@@ -961,13 +1153,22 @@ a.config-nc-signer-btn.config-kbd-focus {
   overflow: hidden;
 }
 
+/* Span the panel’s inner left and right edges. Top sits on the border (padding-top is 0). */
+.config-panel .config-profile-card__banner {
+  width: calc(100cqw + 2rem);
+  margin-left: calc(50% - 50cqw - 1rem);
+}
+
 .config-profile-card__main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(1.4rem, 1.5vw, 2.65rem);
-  padding: 0 clamp(0.75rem, 2vw, 1.15rem) clamp(0.6rem, 1.5vw, 0.95rem);
-  margin-top: clamp(-8rem, -15vw, -6rem);
+  gap: 0.85rem;
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+  padding: 0 0 0.85rem;
+  margin-top: -3.75rem;
   position: relative;
 }
 
@@ -997,8 +1198,8 @@ a.config-nc-signer-btn.config-kbd-focus {
 /* No bio — table spans full width */
 .config-profile-card__body > .config-profile-card__fields:only-child {
   grid-column: 1 / -1;
-  margin: 0 auto;
-  max-width: 26rem;
+  margin: 0;
+  max-width: none;
 }
 
 @media (max-width: 30rem) {
@@ -1008,8 +1209,8 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-profile-card__avatar {
-  width: clamp(3.5rem, 8vw, 5rem);
-  height: clamp(3.5rem, 8vw, 5rem);
+  width: clamp(5rem, 14vw, 7.5rem);
+  height: clamp(5rem, 14vw, 7.5rem);
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.75);
@@ -1083,7 +1284,7 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-profile-card__field {
   display: grid;
-  grid-template-columns: minmax(4.5rem, 30%) 1fr;
+  grid-template-columns: 7.25rem 1fr;
   gap: 0 0.55rem;
   align-items: center;
   min-height: 1.7rem;
@@ -1168,57 +1369,71 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-signer-ping {
   display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-top: 0.6rem;
-  padding: 0.45rem 0.6rem;
-  font-size: clamp(0.62rem, 0.75vw, 0.78rem);
-  letter-spacing: 0.04em;
-  border-left: 2px solid;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  margin: 0.85rem auto 0;
+  padding: 0.28rem 0.65rem;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.58rem, 0.7vw, 0.72rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid;
 }
 
 .config-signer-ping--pending {
-  color: rgb(255 255 255 / 0.35);
-  border-left-color: rgb(255 255 255 / 0.15);
+  color: rgb(255 255 255 / 0.4);
+  border-color: rgb(255 255 255 / 0.16);
+  background: rgb(255 255 255 / 0.04);
 }
 
 .config-signer-ping--ok {
-  color: rgb(160 230 175 / 0.85);
-  border-left-color: rgb(120 200 140 / 0.5);
+  color: rgb(120 220 150 / 0.95);
+  border-color: rgb(100 200 130 / 0.35);
+  background: rgb(60 160 90 / 0.08);
 }
 
 .config-signer-ping--timeout,
 .config-signer-ping--unavailable {
-  color: rgb(255 160 100 / 0.9);
-  border-left-color: rgb(255 130 70 / 0.55);
-  background: rgb(255 100 30 / 0.04);
+  color: rgb(255 170 120 / 0.95);
+  border-color: rgb(255 140 80 / 0.4);
+  background: rgb(255 100 30 / 0.06);
 }
 
 .config-signer-ping__icon {
   flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  margin-top: 0.05em;
+  width: 12px;
+  height: 12px;
 }
 
 .config-signer-ping__text {
-  line-height: 1.45;
+  line-height: 1;
 }
 
 .config-profile-card__actions {
-  margin-top: 0.75rem;
+  margin-top: 0.35rem;
+  width: 100%;
   display: flex;
   justify-content: center;
 }
 
 .config-profile-card__actions .button {
   margin: 0;
-  width: min(88vw, 22rem);
+  width: 28vw;
+  max-width: 100%;
   height: 3vw;
-  min-height: 2.5rem;
-  padding: 0;
+  min-height: 0;
+  padding: 1%;
   font-size: 0.8cqw;
   letter-spacing: 0.1rem;
+  color: #ff5a5a;
+  border-color: rgb(255 90 90 / 55%);
+  --button-glow-bg-peak: rgb(255 90 90 / 30%);
+  --button-glow-shadow-peak: 0 0 35px rgb(255 90 90);
+  --button-glow-border: #ff5a5a;
+  --button-glow-bg-low: rgb(255 90 90 / 15%);
+  --button-glow-shadow-low: 0 0 15px rgb(255 90 90);
 }
 
 .config-profile-card__detail-col {
@@ -1277,8 +1492,8 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-profile-skeleton__avatar {
   position: relative;
-  width: clamp(3.5rem, 8vw, 5rem);
-  height: clamp(3.5rem, 8vw, 5rem);
+  width: clamp(5rem, 14vw, 7.5rem);
+  height: clamp(5rem, 14vw, 7.5rem);
   border-radius: 50%;
   flex-shrink: 0;
   background: rgb(255 255 255 / 0.05);
@@ -1595,30 +1810,32 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 /* ── Nostr Wallet Connect block ── */
 .config-nwc-block {
-  width: min(90vw, 44rem);
-  max-width: 100%;
-  margin: 0.35rem auto 0;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  padding: 1rem 1.25rem 1.1rem;
-  background: rgb(0 0 0 / 28%);
+  width: min(100%, 26rem);
+  max-width: 26rem;
+  margin: 0 auto;
+  border: none;
+  padding: 0;
+  background: transparent;
 }
 
 .config-nwc-block__title {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(0.55rem, 0.65vw, 0.72rem);
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.14em;
   color: rgb(255 255 255 / 0.45);
   text-transform: uppercase;
-  margin: 0 0 0.5rem;
+  text-align: center;
+  margin: 0;
 }
 
 .config-nwc-block__lede {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(0.68rem, 0.82vw, 0.85rem);
+  font-size: 0.82rem;
   color: rgb(255 255 255 / 0.5);
   line-height: 1.5;
-  margin: 0 0 0.85rem;
+  text-align: center;
+  margin: 0;
 }
 
 .config-nwc-block__lede code {
@@ -1629,30 +1846,31 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-nwc-block__input-row {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.65rem;
   align-items: stretch;
 }
 
 .config-nwc-block__input-row .button {
-  margin: 0;
-  width: auto;
-  min-width: 6rem;
-  height: auto;
-  min-height: 2.5rem;
-  padding: 0 1.2rem;
+  margin: 0 auto;
+  width: 28vw;
+  max-width: 100%;
+  height: 3vw;
+  min-height: 0;
+  padding: 1%;
   font-size: 0.8cqw;
   letter-spacing: 0.1rem;
-  align-self: stretch;
 }
 
 .config-nwc-block__input {
   flex: 1;
   min-width: 0;
+  min-height: 2.5rem;
   background: rgb(255 255 255 / 0.05);
   border: 1px solid rgb(255 255 255 / 0.2);
   color: #fff;
   font-family: 'Courier New', monospace;
-  font-size: clamp(0.62rem, 0.72vw, 0.78rem);
+  font-size: 0.78rem;
   padding: 0.45rem 0.65rem;
   outline: none;
   transition: border-color 0.15s;
@@ -1668,6 +1886,7 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-nwc-block__saved-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 0.75rem;
 }
@@ -1722,8 +1941,11 @@ a.config-nc-signer-btn.config-kbd-focus {
 /* ── Gamepad tester ── */
 
 .config-gp-tester {
+  position: relative;
   width: 100%;
   max-width: 100%;
+  flex: 1;
+  min-height: 0;
   margin: 0;
   border: none;
   padding: 0;
@@ -1735,17 +1957,27 @@ a.config-nc-signer-btn.config-kbd-focus {
     both;
 }
 
+.config-gp-tester__intro {
+  grid-column: 1 / -1;
+  margin-bottom: 0.85rem;
+}
+
 .config-gp-tester__lede {
-  margin: 0 0 0.65rem;
+  margin: 0 0 0.45rem;
   font-family: 'Inter', sans-serif;
   font-size: clamp(0.65rem, 0.78vw, 0.76rem);
   line-height: 1.4;
   color: rgb(255 255 255 / 0.45);
-  text-align: left;
+  text-align: center;
 }
 
 .config-gp-tester__status {
-  margin-bottom: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-bottom: 0;
 }
 
 .config-gp-tester__count {
@@ -1770,14 +2002,43 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-gp-slots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: grid;
-  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+}
+
+@media (max-width: 720px) {
+  .config-gp-tester {
+    min-height: 0;
+  }
+
+  .config-gp-slots {
+    position: static;
+    transform: none;
+    grid-template-columns: 1fr;
+  }
+
+  .config-gp-slot + .config-gp-slot {
+    border-left: none;
+    border-top: 1px solid rgb(255 255 255 / 0.14);
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+  }
 }
 
 .config-gp-slot {
-  border: 1px solid rgb(255 255 255 / 0.12);
-  background: rgb(0 0 0 / 22%);
-  padding: 0.75rem 0.8rem 0.85rem;
+  border: none;
+  background: transparent;
+  padding: 0.75rem 1.15rem 0.85rem;
+}
+
+.config-gp-slot + .config-gp-slot {
+  border-left: 1px solid rgb(255 255 255 / 0.14);
 }
 
 .config-gp-slot--empty {
@@ -1785,11 +2046,8 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-gp-slot__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.65rem;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.35rem;
+  text-align: center;
 }
 
 .config-gp-slot__identity {
@@ -1798,8 +2056,8 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-gp-slot__title {
   margin: 0;
-  font-family: 'BureauGrotesque', 'Inter', sans-serif;
-  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.68rem, 1.2vw, 0.78rem);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.94);
@@ -1807,7 +2065,7 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-gp-slot__device {
   margin: 0.2rem 0 0;
-  font-family: ui-monospace, 'Courier New', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: clamp(0.62rem, 0.72vw, 0.74rem);
   color: rgb(255 255 255 / 0.42);
   white-space: nowrap;
@@ -1816,7 +2074,11 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-gp-slot__badge {
-  flex-shrink: 0;
+  position: absolute;
+  top: 0.85rem;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
   font-family: 'Inter', sans-serif;
   font-size: clamp(0.58rem, 0.68vw, 0.7rem);
   font-weight: 600;
@@ -1833,8 +2095,13 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-gp-slot__badge--off {
-  color: rgb(255 255 255 / 0.38);
-  border-color: rgb(255 255 255 / 0.14);
+  color: rgb(255 140 140 / 0.95);
+  border-color: rgb(220 80 80 / 0.55);
+  background: rgb(180 40 40 / 0.12);
+}
+
+.config-gp-slot__diagram-wrap--muted {
+  opacity: 0.16;
 }
 
 .config-gp-slot__empty-text {
@@ -1847,11 +2114,12 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-gp-slot__mapping {
-  margin: 0 0 0.65rem;
+  margin: 0 0 0.45rem;
   font-family: 'Inter', sans-serif;
   font-size: clamp(0.62rem, 0.72vw, 0.74rem);
   letter-spacing: 0.04em;
   color: rgb(255 255 255 / 0.42);
+  text-align: center;
 }
 
 .config-gp-slot__mapping-sep {
@@ -1860,31 +2128,23 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-gp-slot__diagram-wrap {
-  padding: 0.85rem 0.65rem 0.55rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background:
-    radial-gradient(
-      ellipse 80% 55% at 50% 100%,
-      rgb(255 255 255 / 0.04) 0%,
-      transparent 70%
-    ),
-    rgb(0 0 0 / 35%);
+  position: relative;
+  padding: 0.2rem 0.65rem 0.55rem;
+  border: none;
+  background: transparent;
 }
 
 .config-gp-diagram {
   display: block;
   width: 100%;
-  max-width: 20rem;
+  max-width: 24rem;
   margin: 0 auto;
-  aspect-ratio: 400 / 220;
-}
-
-.config-gp-diagram__shadow {
-  fill: rgb(0 0 0 / 0.45);
+  aspect-ratio: 440 / 230;
 }
 
 .config-gp-diagram__body {
-  stroke: rgb(255 255 255 / 0.2);
+  fill: none;
+  stroke: rgb(255 255 255);
   stroke-width: 1.5;
 }
 
@@ -1893,102 +2153,113 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .config-gp-diagram__shoulder {
-  fill: rgb(70 70 76);
-  stroke: rgb(255 255 255 / 0.14);
-  stroke-width: 1;
-  transition: fill 0.1s ease;
+  fill: none;
+  stroke: rgb(255 255 255);
+  stroke-width: 1.25;
+  transition: stroke 0.1s ease;
 }
 
 .config-gp-diagram__shoulder--active {
-  fill: rgb(230 230 235);
-  stroke: rgb(255 255 255 / 0.85);
-  filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.35));
+  fill: rgb(255 255 255 / 0.12);
+  stroke: rgb(255 255 255);
 }
 
 .config-gp-diagram__meta {
-  fill: rgb(58 58 64);
-  stroke: rgb(255 255 255 / 0.16);
-  stroke-width: 1;
-  transition: fill 0.1s ease;
+  fill: none;
+  stroke: rgb(255 255 255);
+  stroke-width: 1.15;
+  transition: stroke 0.1s ease;
 }
 
 .config-gp-diagram__meta--active {
-  fill: rgb(220 220 228);
-  stroke: rgb(255 255 255 / 0.8);
+  fill: rgb(255 255 255 / 0.12);
+  stroke: rgb(255 255 255);
 }
 
 .config-gp-diagram__meta-caption {
   font-family: 'Inter', sans-serif;
   font-size: 7px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   fill: rgb(255 255 255 / 0.38);
   text-transform: uppercase;
   pointer-events: none;
 }
 
+.config-gp-diagram__dpad-cross {
+  fill: none;
+}
+
+.config-gp-diagram__dpad-outline {
+  fill: none;
+  stroke: rgb(255 255 255);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
 .config-gp-diagram__dpad-arm {
-  fill: rgb(34 34 38);
-  stroke: rgb(255 255 255 / 0.12);
-  stroke-width: 0.8;
+  fill: transparent;
+  stroke: none;
   transition: fill 0.1s ease;
 }
 
 .config-gp-diagram__dpad-arm--active {
-  fill: rgb(210 210 218);
-  stroke: rgb(255 255 255 / 0.75);
+  fill: rgb(230 230 235);
 }
 
 .config-gp-diagram__dpad-hub {
-  fill: rgb(24 24 28);
+  fill: none;
+  stroke: rgb(255 255 255);
+  stroke-width: 1.1;
   pointer-events: none;
 }
 
 .config-gp-diagram__face-btn {
-  stroke: rgb(255 255 255 / 0.22);
-  stroke-width: 1.2;
+  fill: none;
+  stroke: rgb(255 255 255);
+  stroke-width: 1.25;
   transition:
-    stroke 0.1s ease,
-    filter 0.1s ease;
+    fill 0.1s ease,
+    stroke 0.1s ease;
 }
 
 .config-gp-diagram__face-btn--active {
-  stroke: rgb(255 255 255 / 0.9);
-  stroke-width: 2;
+  fill: rgb(255 255 255 / 0.9);
+  stroke: rgb(255 255 255);
+  stroke-width: 1.4;
 }
 
 .config-gp-diagram__face-label {
   font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  fill: rgb(255 255 255 / 0.75);
+  fill: rgb(255 255 255 / 0.72);
   pointer-events: none;
 }
 
 .config-gp-diagram__face-label--active {
-  fill: #fff;
+  fill: rgb(18 18 20);
 }
 
 .config-gp-diagram__stick-well {
-  fill: rgb(14 14 18);
-  stroke: rgb(255 255 255 / 0.12);
-  stroke-width: 1.2;
+  fill: none;
+  stroke: rgb(255 255 255);
+  stroke-width: 1.25;
 }
 
-.config-gp-diagram__stick-groove {
-  fill: none;
-  stroke: rgb(255 255 255 / 0.06);
-  stroke-width: 1;
-  pointer-events: none;
+.config-gp-diagram__stick--active .config-gp-diagram__stick-well {
+  stroke: rgb(255 255 255);
 }
 
 .config-gp-diagram__stick-cap {
-  stroke: rgb(255 255 255 / 0.1);
-  stroke-width: 1;
+  fill: none;
+  stroke: rgb(255 255 255);
+  stroke-width: 1.25;
 }
 
 .config-gp-diagram__stick-dot {
-  fill: rgb(255 255 255 / 0.28);
+  fill: rgb(255 255 255 / 0.85);
 }
 
 .config-gp-diagram__stick-dot--active {
@@ -1997,21 +2268,21 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-gp-diagram__star,
 .config-gp-diagram__home {
-  fill: rgb(58 58 64);
-  stroke: rgb(255 255 255 / 0.14);
-  stroke-width: 1;
+  fill: none;
+  stroke: rgb(255 255 255);
+  stroke-width: 1.15;
 }
 
 .config-gp-diagram__star-icon {
   font-family: 'Inter', sans-serif;
-  font-size: 7px;
+  font-size: 8px;
   fill: rgb(255 255 255 / 0.45);
   pointer-events: none;
 }
 
 .config-gp-diagram__home--active {
-  fill: rgb(220 220 228);
-  stroke: rgb(255 255 255 / 0.85);
+  fill: rgb(255 255 255 / 0.12);
+  stroke: rgb(255 255 255);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -98,7 +98,9 @@ function ClipRules({
     if (phaseRef.current === 'hide') return;
     phaseRef.current = 'hide';
     const nextDir: SlideDir = delta > 0 ? 'next' : 'prev';
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
     if (reduced) {
       phaseRef.current = 'idle';
       setDir(nextDir);
@@ -161,8 +163,9 @@ function ClipRules({
       if (down) setFocus('close');
       if (up && focus === 'close') setFocus('prev');
       if (confirm) {
-        if (focus === 'prev') prev();
-        if (focus === 'next') next();
+        // goRef, not prev/next: those are new every render and would be stale here.
+        if (focus === 'prev') goRef.current(-1);
+        if (focus === 'next') goRef.current(1);
         if (focus === 'close') onClose();
       }
     };

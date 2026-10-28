@@ -5,8 +5,18 @@ import {
   POWERUP_RESPAWN_COOLDOWN_TICKS,
   POWERUP_SURGE_DURATION_TICKS,
 } from '@/game/engine/constants';
-import { isEliminationMode, isFfaPlayerAlive, isFfaMode, is2v1Mode, multiplayerPlayerCount, get2v1TeamCapturePercent } from '@/game/engine/ffa';
-import { capturePercentForLength, gameRecipe } from '@/game/effects/matchRecipe';
+import {
+  isEliminationMode,
+  isFfaPlayerAlive,
+  isFfaMode,
+  is2v1Mode,
+  multiplayerPlayerCount,
+  get2v1TeamCapturePercent,
+} from '@/game/engine/ffa';
+import {
+  capturePercentForLength,
+  gameRecipe,
+} from '@/game/effects/matchRecipe';
 import { gameRandom } from '@/game/engine/runRng';
 import type {
   ActivePowerUp,
@@ -31,7 +41,10 @@ export function activePlayerCount(state: GameState): number {
   return 2;
 }
 
-export function isPlayerActive(state: GameState, index: PowerUpPlayerIndex): boolean {
+export function isPlayerActive(
+  state: GameState,
+  index: PowerUpPlayerIndex
+): boolean {
   if (!isEliminationMode(state)) return true;
   return isFfaPlayerAlive(state, index);
 }
@@ -293,7 +306,11 @@ export function computeCaptureChangeForIndex(
 
 function capturePercentByLength(length: number): number {
   const recipe = gameRecipe();
-  return capturePercentForLength(length, recipe.captureFrom, recipe.capturePercent);
+  return capturePercentForLength(
+    length,
+    recipe.captureFrom,
+    recipe.capturePercent
+  );
 }
 
 export function wrapSnakeHeadRef(state: GameState, snake: SnakeState): void {

@@ -20,7 +20,8 @@
   );
   opacity: 0;
   transform: scale(0.35);
-  animation: online-reveal-intro-pulse 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards;
+  animation: online-reveal-intro-pulse 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s
+    forwards;
 }
 
 @keyframes online-reveal-intro-pulse {

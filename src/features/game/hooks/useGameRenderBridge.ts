@@ -6,10 +6,15 @@ import type { HeldInputState } from '@/lib/controls/heldDirectionSteering';
 import { isFfaMode } from '@/game/engine/ffa';
 import type { FfaHudPlayer, GameState } from '@/game/engine/types';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
-import type { PixiGameRenderer, PixiRenderOpts } from '@/game/render/pixiRenderer';
+import type {
+  PixiGameRenderer,
+  PixiRenderOpts,
+} from '@/game/render/pixiRenderer';
 import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
 import type { GameAudioSystem } from '@/game/audio/gameAudio';
 import { resetCuesFromStep } from '@/game/audio/resetCue';
+import { readGraphicsSettings } from '@/lib/graphicsSettings';
+import { createFpsReadout } from '@/game/render/fpsReadout';
 
 interface HudSnapshot {
   p1Points: number;
@@ -170,7 +175,8 @@ export function useGameRenderBridge({
       const label = challengeContinueLabelRef?.current;
       // Empty string hides the continue prompt (e.g. free-play action buttons).
       if (label != null) opts.challengeContinueLabel = label;
-      if (suppressVictoryOverlayRef?.current) opts.suppressVictoryOverlay = true;
+      if (suppressVictoryOverlayRef?.current)
+        opts.suppressVictoryOverlay = true;
       return opts;
     };
 
@@ -306,8 +312,7 @@ export function useGameRenderBridge({
         if (state.p2.body.length > prevP2Len)
           audio?.playCapture(state.p2.body.length);
         const extraLen = state.extraSnakes[0]?.snake.body.length ?? 1;
-        if (extraLen > prevExtraLen)
-          audio?.playCapture(extraLen);
+        if (extraLen > prevExtraLen) audio?.playCapture(extraLen);
 
         for (const player of resetCuesFromStep(state)) {
           audio?.playReset(player);
@@ -335,22 +340,44 @@ export function useGameRenderBridge({
       return steps;
     };
 
+    const fps = readGraphicsSettings().showFps ? createFpsReadout() : null;
+
     let frameRef = 0;
+    /** Last state the audio saw; tension and streaks only change when the game does. */
+    let audioState: GameState | null = null;
     const frame = (now: number) => {
       if (!mounted) return;
       const state = stateRef.current;
+      fps?.frame(now, now - lastFrameMs);
       const deltaMs = Math.min(100, Math.max(0, now - lastFrameMs));
       lastFrameMs = now;
 
       if (mountReady && state) {
+        // Section timings feed Show FPS; performance.now() is cheap enough to leave on.
+        let mark = performance.now();
+        const lap = (section: 'sim' | 'audio' | 'scene') => {
+          const t = performance.now();
+          fps?.add(section, t - mark);
+          mark = t;
+        };
+        // Includes effect sounds fired on a step (capture, power-up, reset).
         const simSteps = runSimulation(state, deltaMs);
-        audio?.updateGameState(state);
         if (state.meta?.modeLabel !== 'ONLINE') {
-          advancePointChanges(state);
+          advancePointChanges(state, deltaMs);
         }
         advanceStreakPops();
+        lap('sim');
+        if (simSteps > 0 || state !== audioState) {
+          audio?.updateGameState(state);
+          audioState = state;
+        }
+        lap('audio');
         if (simSteps > 0 || renderer.needsPaint(state)) {
           renderer.render(state, renderOpts());
+          lap('scene');
+          // render() includes app.render(); move that share to submit.
+          fps?.add('scene', -renderer.lastSubmitMs);
+          fps?.add('submit', renderer.lastSubmitMs);
         }
       }
 
@@ -363,6 +390,7 @@ export function useGameRenderBridge({
       cancelled = true;
       if (detachResize) detachResize();
       window.cancelAnimationFrame(frameRef);
+      fps?.remove();
       rendererRef.current = null;
       renderer.destroy();
       audio?.stopAll();

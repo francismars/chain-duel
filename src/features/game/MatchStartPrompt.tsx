@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import type { GameState } from '@/game/engine/types';
 import {
+  connectedPreMatchPadIndices,
+  preMatchGamepadIndex,
+} from '@/game/render/preMatchGamepad';
+import {
+  localStartPromptWords,
   MATCH_OBJECTIVES,
   resolveStartPromptWords,
   type CanvasObjectivesOpts,
@@ -13,7 +18,40 @@ type PromptCopy = {
   stakesHint: string;
 };
 
+function isKeyboardStartLine(words: readonly string[] | undefined): boolean {
+  if (!words || words.length === 0) return true;
+  const line = words.join(' ');
+  return (
+    line === 'PRESS SPACE TO START' ||
+    line === 'PRESS ENTER TO START' ||
+    line === 'PRESS BUTTON TO START'
+  );
+}
+
 function readCopy(opts: CanvasObjectivesOpts | undefined): PromptCopy {
+  const slots = opts?.controlSlots ?? [];
+  const seated = slots.includes('p1') || slots.includes('p2');
+  const localLine =
+    isKeyboardStartLine(opts?.startPromptWords) &&
+    isKeyboardStartLine(opts?.startPromptAltWords);
+  if (seated && localLine) {
+    const connected = connectedPreMatchPadIndices();
+    const prompt = localStartPromptWords(
+      slots.includes('p1'),
+      slots.includes('p2'),
+      {
+        p1: preMatchGamepadIndex('p1', slots, connected) !== null,
+        p2: preMatchGamepadIndex('p2', slots, connected) !== null,
+      }
+    );
+    return {
+      words: prompt.words,
+      altWords:
+        prompt.altWords && prompt.altWords.length > 0 ? prompt.altWords : null,
+      subtext: opts?.startPromptSubtext?.trim() ?? '',
+      stakesHint: opts?.stakesHint?.trim() ?? '',
+    };
+  }
   const alt = opts?.startPromptAltWords;
   return {
     words: resolveStartPromptWords(opts),
@@ -54,7 +92,8 @@ export function MatchStartPrompt({
       const fromState = Boolean(
         state && !state.gameStarted && !state.gameEnded && !state.countdownStart
       );
-      const nextShown = fromState || Boolean(board?.classList.contains('is-prematch'));
+      const nextShown =
+        fromState || Boolean(board?.classList.contains('is-prematch'));
       if (nextShown !== shown) {
         shown = nextShown;
         setVisible(nextShown);

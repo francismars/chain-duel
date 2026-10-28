@@ -65,7 +65,9 @@
   align-items: center;
   gap: 12px;
 }
-.solo-zap-overlay[data-rank] .solo-zap-profile--winner .solo-zap-profile__avatar {
+.solo-zap-overlay[data-rank]
+  .solo-zap-profile--winner
+  .solo-zap-profile__avatar {
   width: 72px;
   height: 72px;
   flex-shrink: 0;
@@ -152,7 +154,9 @@
   border-top: none;
 }
 .solo-zap-overlay[data-rank] .solo-zap-card .button.solo-zap-post-btn,
-.solo-zap-overlay[data-rank] .solo-zap-card .button.solo-zap-footer-btn--subtle {
+.solo-zap-overlay[data-rank]
+  .solo-zap-card
+  .button.solo-zap-footer-btn--subtle {
   color: #fff;
   background-color: transparent;
   border: 1px solid rgba(255, 255, 255, 0.34);
@@ -566,7 +570,11 @@
 .online-postgame-page
   .button.online-postgame-btn.online-postgame-btn-don:not(:disabled):not(
     .disabled
-  ):not(.online-postgame-btn-back):is(:hover, :focus-visible, .online-selected) {
+  ):not(.online-postgame-btn-back):is(
+    :hover,
+    :focus-visible,
+    .online-selected
+  ) {
   outline: none;
   outline-offset: 0;
   box-shadow: none;

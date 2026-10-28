@@ -336,9 +336,12 @@
     border 0.25s ease-in-out;
 }
 
-/* Hold Control (or L1/L2): scale QR in place – layout unchanged, player info stays visible */
+/* Hold Control (or L1/L2): scale QR in place – layout unchanged, player info stays visible.
+   .qr-raised outlasts .expanded through the scale-down so the code stays on top. */
 .gamemenu-page #player1card.expanded .qrcodeContainer,
-.gamemenu-page #player2card.expanded .qrcodeContainer {
+.gamemenu-page #player2card.expanded .qrcodeContainer,
+.gamemenu-page #player1card.qr-raised .qrcodeContainer,
+.gamemenu-page #player2card.qr-raised .qrcodeContainer {
   z-index: 50;
 }
 
@@ -643,22 +646,36 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 
 .gamemenu-preview-rules-btn {
   display: block;
-  margin: 0.15rem auto 0;
-  padding: 0.1rem 0.4rem;
-  border: none;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.48);
-  font-size: 0.72rem;
+  width: fit-content;
+  margin: 0.7rem auto 0;
+  height: 3vw;
+  padding: 0 1.05rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.8cqw;
   font-weight: 400;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.1rem;
+  line-height: 1;
   text-transform: uppercase;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .gamemenu-preview-rules-btn:hover,
 .gamemenu-preview-rules-btn:focus-visible {
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #fff;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.45);
   outline: none;
+}
+
+.gamemenu-preview-rules-btn:active {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .rules-modal-backdrop {
@@ -756,6 +773,10 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   margin: 0 auto;
 }
 
+.rules-modal .rules-slider {
+  width: min(86vw, calc(54svh * 51 / 25));
+}
+
 .rules-slider__card {
   text-align: center;
 }
@@ -812,20 +833,23 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 .rule-clip--flash,
 .rule-clip--flash .rule-clip__stage {
   background-image: url('/images/chainduel_bg_anim.png');
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
+  background-repeat: no-repeat;
 }
 
 .rule-clip {
   position: relative;
   width: 100%;
-  aspect-ratio: 51 / 25;
+  container-type: inline-size;
+  aspect-ratio: 1055 / 527;
   margin-bottom: 0;
   overflow: hidden;
   background-color: #4a4a4a;
   background-image: url('/images/game_bg.png');
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
+  background-repeat: no-repeat;
 }
 
 .rule-clip__qr {
@@ -862,6 +886,11 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   line-height: 0;
 }
 
+.rule-clip__qr-card svg {
+  width: 28cqw;
+  height: auto;
+}
+
 .rule-clip__qr-bolt {
   height: auto;
   width: 100%;
@@ -881,7 +910,7 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 .rule-clip__qr-ready {
   margin: 0;
   color: #fff;
-  font-size: 0.68rem;
+  font-size: clamp(0.68rem, 3.4cqw, 1.15rem);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -1150,6 +1179,12 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
   transform-origin: center right;
 }
 
+/* Scale 4 fills the gap between the two stations. Stay smaller so they don't meet. */
+.gamemenu-page.gamemenu-preview #player1card.expanded .qrcodeContainer .qrcode,
+.gamemenu-page.gamemenu-preview #player2card.expanded .qrcodeContainer .qrcode {
+  transform: scale(3.15);
+}
+
 /* B preview: border lives on the QR so Control-scale grows it. Black inverts to a white frame. */
 .gamemenu-page.gamemenu-preview
   #player1card
@@ -1253,8 +1288,12 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
   width: auto;
 }
 
-.gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer span:not(.sats-label),
-.gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer span:not(.sats-label) {
+.gamemenu-page.gamemenu-preview.is-nostr
+  #player1satsContainer
+  span:not(.sats-label),
+.gamemenu-page.gamemenu-preview.is-nostr
+  #player2satsContainer
+  span:not(.sats-label) {
   font-size: 2cqw;
 }
 

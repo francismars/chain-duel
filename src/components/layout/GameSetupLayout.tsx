@@ -3,8 +3,10 @@
  * Template: top = header brand, middle = game setup (rules + buttons), bottom = bottom info (player/prize).
  */
 import {
+  createContext,
   RefObject,
   ReactNode,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -59,6 +61,13 @@ export interface GameSetupLayoutProps {
   cancelGameConfirmRef?: RefObject<HTMLButtonElement>;
   /** Bottom panel: player card(s), prize, etc. */
   children: ReactNode;
+}
+
+const PreviewRulesButtonContext = createContext<ReactNode>(null);
+
+/** Preview menu places the Rules control under the ledger line. */
+export function PreviewRulesButtonSlot() {
+  return useContext(PreviewRulesButtonContext);
 }
 
 export function GameSetupLayout({
@@ -227,24 +236,26 @@ export function GameSetupLayout({
               <h2 id="gameMenuTitle" className="hero-outline condensed">
                 {title}
               </h2>
-              {previewSwap ? (
-                <button
-                  ref={rulesButtonRef}
-                  id="gamemenu-rules"
-                  type="button"
-                  className="gamemenu-preview-rules-btn"
-                  onClick={() => setRulesOpen(true)}
-                >
-                  Rules
-                </button>
-              ) : (
-                <p id="titleslogan">Rules</p>
-              )}
+              {previewSwap ? null : <p id="titleslogan">Rules</p>}
             </div>
 
             {previewSwap ? (
               <div id="bottomInfo" className="game-setup-bottom">
-                {children}
+                <PreviewRulesButtonContext.Provider
+                  value={
+                    <button
+                      ref={rulesButtonRef}
+                      id="gamemenu-rules"
+                      type="button"
+                      className="gamemenu-preview-rules-btn"
+                      onClick={() => setRulesOpen(true)}
+                    >
+                      Rules
+                    </button>
+                  }
+                >
+                  {children}
+                </PreviewRulesButtonContext.Provider>
               </div>
             ) : (
               <RulesSection />
@@ -319,8 +330,12 @@ export function GameSetupLayout({
                         : `rules-modal__title rules-modal__title--${rulesTitle.phase} rules-modal__title--${rulesTitle.dir}`
                     }
                   >
-                    <span className="rules-modal__kicker">{rulesTitle.kicker}</span>
-                    <span className="rules-modal__heading">{rulesTitle.title}</span>
+                    <span className="rules-modal__kicker">
+                      {rulesTitle.kicker}
+                    </span>
+                    <span className="rules-modal__heading">
+                      {rulesTitle.title}
+                    </span>
                   </p>
                 </div>
                 <RulesSection

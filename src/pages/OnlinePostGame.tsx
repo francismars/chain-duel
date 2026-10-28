@@ -13,7 +13,10 @@ import {
   onlineReplayRoomUrl,
   onlineRoomUrl,
 } from '@/shared/constants/onlineRoutes';
-import { isOnlineMatchPlayer, isOnlineVictoryWinner } from '@/lib/online/isOnlineVictoryWinner';
+import {
+  isOnlineMatchPlayer,
+  isOnlineVictoryWinner,
+} from '@/lib/online/isOnlineVictoryWinner';
 import {
   DEBUG_P1_SESSION,
   DEBUG_P2_SESSION,
@@ -23,7 +26,6 @@ import {
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
-
 
 type PostGameNav =
   | { type: 'replay'; index: number } // round replay buttons
@@ -59,18 +61,18 @@ interface OnlinePostGameInfo {
   rematchNote1?: string;
   rematchWaitingForSessionID?: string;
   doubleOrNothingVotes: number;
-    matchRounds?: Array<{
-      matchRound: number;
-      finishedAt: number;
-      winnerName: string;
-      p1Name: string;
-      p2Name: string;
-      p1Score: number;
-      p2Score: number;
-      netPrize: number;
-      winnerRole?: 'Player 1' | 'Player 2';
-      replayAvailable?: boolean;
-    }>;
+  matchRounds?: Array<{
+    matchRound: number;
+    finishedAt: number;
+    winnerName: string;
+    p1Name: string;
+    p2Name: string;
+    p1Score: number;
+    p2Score: number;
+    netPrize: number;
+    winnerRole?: 'Player 1' | 'Player 2';
+    replayAvailable?: boolean;
+  }>;
 }
 
 const PLACEHOLDER_LNURL =
@@ -116,7 +118,7 @@ export type OnlinePostGameProps = {
 };
 
 export default function OnlinePostGame({
-  embedded: _embedded = false,
+  embedded = false,
   roomId: roomIdProp,
   roomCode,
   onReadyChange,
@@ -132,7 +134,7 @@ export default function OnlinePostGame({
     isDonHistory;
   const roomId = isPreview
     ? 'preview'
-    : roomIdProp ?? searchParams.get('roomId') ?? '';
+    : (roomIdProp ?? searchParams.get('roomId') ?? '');
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );
@@ -606,7 +608,7 @@ export default function OnlinePostGame({
       }
       setVotes(parsed.votes);
       setRequiredVotes(parsed.required);
-      if (parsed.agreed && !_embedded && roomCode) {
+      if (parsed.agreed && !embedded && roomCode) {
         navigate(onlineRoomUrl(roomCode));
       }
     };
@@ -668,7 +670,7 @@ export default function OnlinePostGame({
       socket.off('resCreateOnlineNostrPayout', onNostrPayout);
       socket.off('onlinePinInvalid', onInvalid);
     };
-  }, [isPreview, navigate, onReadyChange, roomId, socket]);
+  }, [embedded, isPreview, navigate, onReadyChange, roomCode, roomId, socket]);
 
   const withdrawalValue = useMemo(() => {
     if (lnurlw) {

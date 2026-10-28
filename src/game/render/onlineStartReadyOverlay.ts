@@ -1,4 +1,10 @@
-import { CanvasTextMetrics, Container, Graphics, Text, TextStyle } from 'pixi.js';
+import {
+  CanvasTextMetrics,
+  Container,
+  Graphics,
+  Text,
+  TextStyle,
+} from 'pixi.js';
 import type { GridPos, SnakeState } from '@/game/engine/types';
 import type { OnlineStartReadyState } from '@/game/render/matchObjectives';
 import { pixiTextResolution } from '@/game/render/pixiTextResolution';
@@ -240,18 +246,8 @@ export class OnlineStartReadyOverlay {
 
     const metrics = chainHeadLabelMetrics(colSize, rowSize);
 
-    layoutSeat(
-      this.p1,
-      metrics,
-      state.p1Ready,
-      state.localSlot === 'p1'
-    );
-    layoutSeat(
-      this.p2,
-      metrics,
-      state.p2Ready,
-      state.localSlot === 'p2'
-    );
+    layoutSeat(this.p1, metrics, state.p1Ready, state.localSlot === 'p1');
+    layoutSeat(this.p2, metrics, state.p2Ready, state.localSlot === 'p2');
 
     const p1Pos = chainBodyLabelScreenPos(
       snakeSegments(p1Snake),

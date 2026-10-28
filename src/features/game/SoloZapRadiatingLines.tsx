@@ -55,7 +55,10 @@ export function SoloZapRadiatingLines({
         const board = document.getElementById('gameCanvas');
         if (board) {
           const rect = board.getBoundingClientRect();
-          field.setOrigin(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          field.setOrigin(
+            rect.left + rect.width / 2,
+            rect.top + rect.height / 2
+          );
           field.setHole(rect.left, rect.top, rect.width, rect.height);
         }
       }

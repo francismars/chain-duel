@@ -269,17 +269,11 @@ export default function OnlineRoomLobby({
   const [currentSocketID, setCurrentSocketID] = useState('');
   const [nostrUriQrOpen, setNostrUriQrOpen] = useState(false);
   const [nostrUriCopied, setNostrUriCopied] = useState(false);
-  const nostrUriCopyResetRef = useRef<WindowTimeout | null>(
-    null
-  );
+  const nostrUriCopyResetRef = useRef<WindowTimeout | null>(null);
   const [lightningUriCopied, setLightningUriCopied] = useState(false);
-  const lightningUriCopyResetRef = useRef<WindowTimeout | null>(
-    null
-  );
+  const lightningUriCopyResetRef = useRef<WindowTimeout | null>(null);
   const [joinPinCopied, setJoinPinCopied] = useState(false);
-  const joinPinCopyResetRef = useRef<WindowTimeout | null>(
-    null
-  );
+  const joinPinCopyResetRef = useRef<WindowTimeout | null>(null);
   const paymentCardsRef = useRef<HTMLDivElement | null>(null);
   const paymentPanelRef = useRef<HTMLDivElement | null>(null);
   const [kind1PostEvent, setKind1PostEvent] = useState<Kind1PostLoaded | null>(
@@ -1064,7 +1058,8 @@ export default function OnlineRoomLobby({
   );
 
   const flashInviteCopy = (which: 'link' | 'text' | 'share') => {
-    if (inviteCopyResetRef.current) window.clearTimeout(inviteCopyResetRef.current);
+    if (inviteCopyResetRef.current)
+      window.clearTimeout(inviteCopyResetRef.current);
     setInviteCopyFeedback(which);
     inviteCopyResetRef.current = window.setTimeout(() => {
       setInviteCopyFeedback(null);
@@ -1565,15 +1560,18 @@ export default function OnlineRoomLobby({
     return false;
   }, [enterPaymentPanel]);
 
-  const selectPaymentNav = useCallback((index: number) => {
-    playSelect();
-    const clamped =
-      ((index % PAYMENT_MODES.length) + PAYMENT_MODES.length) %
-      PAYMENT_MODES.length;
-    lastPaymentNavIndexRef.current = clamped;
-    setLobbyNavFocus({ type: 'payment', index: clamped });
-    setPaymentMode(PAYMENT_MODES[clamped]);
-  }, [playSelect]);
+  const selectPaymentNav = useCallback(
+    (index: number) => {
+      playSelect();
+      const clamped =
+        ((index % PAYMENT_MODES.length) + PAYMENT_MODES.length) %
+        PAYMENT_MODES.length;
+      lastPaymentNavIndexRef.current = clamped;
+      setLobbyNavFocus({ type: 'payment', index: clamped });
+      setPaymentMode(PAYMENT_MODES[clamped]);
+    },
+    [playSelect]
+  );
 
   const triggerFinishedAction = useCallback(
     (index: number) => {
@@ -1595,9 +1593,9 @@ export default function OnlineRoomLobby({
 
   const showInviteFinder = Boolean(
     room &&
-      !rematchPending &&
-      !isMatchEnded &&
-      ((hasPaidMySeat && paidSeats < 2) || isSpectatingFullRoom)
+    !rematchPending &&
+    !isMatchEnded &&
+    ((hasPaidMySeat && paidSeats < 2) || isSpectatingFullRoom)
   );
   const lobbyInviteUrl = room?.roomCode
     ? buildOnlineRoomShareUrl(room.roomCode)
@@ -1609,7 +1607,7 @@ export default function OnlineRoomLobby({
       buyin: room.buyin,
       lobbyUrl: lobbyInviteUrl,
     });
-  }, [room?.roomCode, room?.buyin, lobbyInviteUrl]);
+  }, [room?.roomCode, room?.buyin, lobbyInviteUrl, roomId]);
 
   // Default keyboard focus: Leave room; pre-highlight Sign in when Nostr session exists
   useEffect(() => {
@@ -2309,7 +2307,11 @@ export default function OnlineRoomLobby({
     return () => {
       cancelled = true;
     };
-  }, [kind1PostEvent?.pubkey, kind1PostEvent?.authorNip05, kind1PostEvent?.authorLud16]);
+  }, [
+    kind1PostEvent?.pubkey,
+    kind1PostEvent?.authorNip05,
+    kind1PostEvent?.authorLud16,
+  ]);
 
   useEffect(() => {
     setNostrUriQrOpen(false);
@@ -2330,8 +2332,7 @@ export default function OnlineRoomLobby({
     if (rematchPending) return 'DOUBLE OR NOTHING';
     if (isPostgame) return 'ROUND OVER';
     if (room?.phase === 'playing' && paidSeats === 2) {
-      const readyCount =
-        (p1IsReady ? 1 : 0) + (p2IsReady ? 1 : 0);
+      const readyCount = (p1IsReady ? 1 : 0) + (p2IsReady ? 1 : 0);
       if (readyCount === 2) return 'BOTH READY';
       if (readyCount === 1) return '1 OF 2 READY';
       return 'CONFIRM START';
@@ -2678,7 +2679,9 @@ export default function OnlineRoomLobby({
                   <p className="online-lobby-pin">LOCKED IN</p>
                   <p className="online-lobby-full-room-prize">
                     {totalPrizeSats.toLocaleString()}{' '}
-                    <span className="online-lobby-full-room-prize-unit">sats</span>
+                    <span className="online-lobby-full-room-prize-unit">
+                      sats
+                    </span>
                   </p>
                 </div>
               </div>
@@ -2731,7 +2734,9 @@ export default function OnlineRoomLobby({
                   onClick={() => {
                     const code = room?.roomCode?.trim().toUpperCase();
                     if (code) {
-                      navigate(onlineReplayRoomUrl(code, room?.matchRound ?? 1));
+                      navigate(
+                        onlineReplayRoomUrl(code, room?.matchRound ?? 1)
+                      );
                     }
                   }}
                 >
@@ -3017,7 +3022,8 @@ export default function OnlineRoomLobby({
                                     className="online-lobby-action online-lobby-nostr-zap-btn"
                                     disabled={
                                       (lightningBusy && !lightningPay) ||
-                                      (isRematchLoserPay && !rematchPaymentReady)
+                                      (isRematchLoserPay &&
+                                        !rematchPaymentReady)
                                     }
                                     onClick={payAnonymouslyFromPost}
                                   >

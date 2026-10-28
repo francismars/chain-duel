@@ -1,7 +1,13 @@
-import type { Direction, GameState, GridPos, SnakeState } from '@/game/engine/types';
+import type {
+  Direction,
+  GameState,
+  GridPos,
+  SnakeState,
+} from '@/game/engine/types';
 
 export type Rider = 'p1' | 'p2' | 'p3' | 'p4';
-export type StepKind = 'ok' | 'blocked' | 'wall' | 'self' | 'opponent' | 'headon';
+export type StepKind =
+  'ok' | 'blocked' | 'wall' | 'self' | 'opponent' | 'headon';
 
 const SEARCH_CAP = 8000;
 
@@ -34,7 +40,9 @@ export function inPlay(state: GameState, pos: GridPos): boolean {
       pos[1] <= border.bottom
     );
   }
-  return pos[0] >= 0 && pos[1] >= 0 && pos[0] < state.cols && pos[1] < state.rows;
+  return (
+    pos[0] >= 0 && pos[1] >= 0 && pos[0] < state.cols && pos[1] < state.rows
+  );
 }
 
 export function cloneSnake(snake: SnakeState): SnakeState {
@@ -67,7 +75,11 @@ export function appendTail(snake: SnakeState): void {
 }
 
 /** Slide one cell, then grow, matching moveSnake then increaseBody. */
-export function commitMove(snake: SnakeState, next: GridPos, grow: boolean): void {
+export function commitMove(
+  snake: SnakeState,
+  next: GridPos,
+  grow: boolean
+): void {
   const [hx, hy] = snake.head;
   const dir = face(snake.head, next);
   snake.dir = dir;
@@ -103,7 +115,10 @@ export function classifyStep(
   snake: SnakeState,
   next: GridPos
 ): StepKind {
-  if (Math.abs(next[0] - snake.head[0]) + Math.abs(next[1] - snake.head[1]) !== 1) {
+  if (
+    Math.abs(next[0] - snake.head[0]) + Math.abs(next[1] - snake.head[1]) !==
+    1
+  ) {
     return 'blocked';
   }
   const dir = face(snake.head, next);
