@@ -113,6 +113,65 @@ function strokeSquare(
   ring.rect(-half, -half, half * 2, half * 2).stroke({ width, color, alpha });
 }
 
+function outerHalfPx(pop: StreakPop, cell: number): number {
+  const spec = specFor(pop.text);
+  const drawn = ringAlpha(1 - pop.alpha, spec);
+  return baseRadiusCells(pop) * cell * (drawn?.scale ?? spec.to);
+}
+
+/** Offset from a square's center to the edge facing (dx, dy). */
+function squareEdge(
+  dx: number,
+  dy: number,
+  half: number
+): { x: number; y: number } {
+  const span = Math.max(Math.abs(dx), Math.abs(dy));
+  if (span < 1e-4 || half <= 0) return { x: 0, y: 0 };
+  const t = half / span;
+  return { x: dx * t, y: dy * t };
+}
+
+/**
+ * Death→spawn line in pixels relative to the death cell center.
+ * It leaves the death square's outer edge and stops at the spawn square's outer edge.
+ */
+function wipeSegment(
+  pop: StreakPop,
+  colSize: number,
+  rowSize: number,
+  cell: number
+): { from: { x: number; y: number }; to: { x: number; y: number } } | null {
+  if (pop.toCol === undefined || pop.toRow === undefined) return null;
+  const dx = (pop.toCol - pop.col) * colSize;
+  const dy = (pop.toRow - pop.row) * rowSize;
+  const death =
+    pop.text === 'WALL' || pop.text === 'CLASH' || pop.text === 'REORG'
+      ? pop
+      : streakPops().find(
+          (other) =>
+            other.col === pop.col &&
+            other.row === pop.row &&
+            (other.text === 'REORG' ||
+              other.text === 'CLASH' ||
+              other.text === 'WALL')
+        );
+  const spawn = streakPops().find(
+    (other) =>
+      other.text === 'SPAWN' &&
+      other.col === pop.toCol &&
+      other.row === pop.toRow
+  );
+  const start = squareEdge(dx, dy, death ? outerHalfPx(death, cell) : 0);
+  const inset = squareEdge(
+    dx,
+    dy,
+    spawn ? outerHalfPx(spawn, cell) : 0.9 * cell * SPAWN_RING.to
+  );
+  const end = { x: dx - inset.x, y: dy - inset.y };
+  if ((end.x - start.x) * dx + (end.y - start.y) * dy <= 0) return null;
+  return { from: start, to: end };
+}
+
 function paintMark(
   mark: Mark,
   pop: StreakPop,
@@ -134,17 +193,15 @@ function paintMark(
   const half = base * drawn.scale;
   const width = Math.max(1, cell * 0.06);
 
-  if (
-    pop.text !== 'SPAWN' &&
-    pop.toCol !== undefined &&
-    pop.toRow !== undefined
-  ) {
-    const dx = (pop.toCol - pop.col) * colSize;
-    const dy = (pop.toRow - pop.row) * rowSize;
+  const wipe = wipeSegment(pop, colSize, rowSize, cell);
+  if (pop.text !== 'SPAWN' && wipe) {
     const travel = Math.min(1, life * 1.35);
     mark.ring
-      .moveTo(0, 0)
-      .lineTo(dx * travel, dy * travel)
+      .moveTo(wipe.from.x, wipe.from.y)
+      .lineTo(
+        wipe.from.x + (wipe.to.x - wipe.from.x) * travel,
+        wipe.from.y + (wipe.to.y - wipe.from.y) * travel
+      )
       .stroke({
         width: Math.max(1, cell * 0.04),
         color,
@@ -194,20 +251,18 @@ export function drawStreakPopsCanvas(
     const width = Math.max(1, cell * 0.06);
     ctx.strokeStyle = css;
     ctx.lineWidth = width;
-    if (
-      pop.text !== 'SPAWN' &&
-      pop.toCol !== undefined &&
-      pop.toRow !== undefined
-    ) {
-      const tx = pop.toCol * colSize + colSize / 2;
-      const ty = pop.toRow * rowSize + rowSize / 2;
+    const wipe = wipeSegment(pop, colSize, rowSize, cell);
+    if (pop.text !== 'SPAWN' && wipe) {
       const travel = Math.min(1, life * 1.35);
       ctx.strokeStyle = css;
       ctx.globalAlpha = drawn.alpha * 0.35;
       ctx.lineWidth = Math.max(1, cell * 0.04);
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + (tx - x) * travel, y + (ty - y) * travel);
+      ctx.moveTo(x + wipe.from.x, y + wipe.from.y);
+      ctx.lineTo(
+        x + wipe.from.x + (wipe.to.x - wipe.from.x) * travel,
+        y + wipe.from.y + (wipe.to.y - wipe.from.y) * travel
+      );
       ctx.stroke();
       ctx.lineWidth = width;
     }
