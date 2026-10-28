@@ -20,6 +20,7 @@ import {
   resetTensionDebug,
 } from './tensionDebug';
 import { saveMenuMusicPosition } from './resultMusicHandoff';
+import { readGraphicsSettings } from '@/lib/graphicsSettings';
 
 function headTravel(before: TensionPlayer, after: TensionPlayer): number {
   return (
@@ -165,6 +166,11 @@ export class GameAudioSystem {
   private mixTimer: ReturnType<typeof setInterval> | null = null;
   private endingPlayed = false;
   private previousBorder: GameState['shrinkBorder'] = null;
+  /**
+   * Config → Graphics → Sound effects & tension. Off skips every effect sound
+   * plus the tension / streak / shrink tracking; music and the end jingle stay.
+   */
+  private readonly extras = readGraphicsSettings().soundAndTension;
 
   constructor() {
     for (const { audio } of this.themes) audio.volume = 0;
@@ -243,7 +249,9 @@ export class GameAudioSystem {
 
   startMusic(): void {
     this.musicShouldPlay = true;
-    if (this.mixTimer === null) {
+    // Without tension the layers never rise above 0, so skip the 20 Hz mix
+    // (volume ramps plus seeks to keep five tracks in sync).
+    if (this.mixTimer === null && this.extras) {
       this.mixTimer = setInterval(() => this.updateMix(), 50);
     }
     if (this.appMusicMuted) {
@@ -280,7 +288,7 @@ export class GameAudioSystem {
         this.stopAll();
         this.menuMusic.currentTime = 0;
         this.startMusic();
-        this.play(this.ending);
+        this.play(this.ending, true);
       }
       return;
     }
@@ -290,6 +298,11 @@ export class GameAudioSystem {
       this.menuMusic.pause();
       this.music.currentTime = 0;
       this.startMusic();
+    }
+    // Collision squares and wipe lines are board graphics. The tension mix is optional.
+    if (!this.extras) {
+      this.trackStreak(state);
+      return;
     }
     const border = state.gameStarted ? state.shrinkBorder : null;
     const previous = this.previousBorder;
@@ -432,6 +445,7 @@ export class GameAudioSystem {
     }
     this.music.muted = false;
     void this.music.play().catch(() => undefined);
+    if (!this.extras) return;
     for (const { audio } of this.themes) {
       audio.muted = false;
       audio.currentTime = this.music.currentTime;
@@ -585,8 +599,9 @@ export class GameAudioSystem {
     this.play(this.powerUp);
   }
 
-  private play(audio: HTMLAudioElement): void {
-    if (this.appSfxMuted) {
+  /** `always` keeps the end jingle when sound effects are turned off in Config. */
+  private play(audio: HTMLAudioElement, always = false): void {
+    if (this.appSfxMuted || (!this.extras && !always)) {
       return;
     }
     audio.pause();
