@@ -347,11 +347,14 @@
   z-index: 0;
   margin: 0 var(--game-board-margin-x);
   width: var(--game-board-width);
-  height: 35vw;
+  /* Match game_bg.png (1055×527) so its frame lines sit on the container edge. */
+  height: auto;
+  aspect-ratio: 1055 / 527;
   background-color: #6969698f;
   background-image: url('/images/game_bg.png');
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
+  background-repeat: no-repeat;
   isolation: isolate;
 }
 
@@ -2296,11 +2299,14 @@
   }
 
   #gameCanvas {
-    margin: 0.35rem var(--game-board-margin-x) 0.75rem;
-    width: var(--game-board-width);
+    /* Shrink width with the height cap so the frame isn't cropped. */
+    margin: 0.35rem auto 0.75rem;
+    width: min(
+      var(--game-board-width),
+      calc(min(46vw, 44dvh) * 1055 / 527)
+    );
     height: auto;
-    aspect-ratio: 2 / 1;
-    max-height: min(46vw, 44dvh);
+    aspect-ratio: 1055 / 527;
   }
 
   #gameCanvas:has(+ #powerUpKey) {
@@ -2557,4 +2563,75 @@
 /* Hide the live player labels and scores once the result repeats them centrally. */
 #gameContainer:has(#gameCanvas.game-result-active) :is(.players, .points, .ffa-hud-names, .ffa-hud-sats-row) {
   visibility: hidden;
+}
+
+/* Config → Graphics → Show FPS (element is appended to body by fpsReadout.ts). */
+.graphics-fps-readout {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  z-index: 12000;
+  padding: 2px 6px;
+  font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #6fd4a8;
+  background: rgb(0 0 0 / 0.7);
+  pointer-events: none;
+  white-space: pre;
+}
+
+/* Config → Graphics → HUD capture flash off: same as reduced motion for the sats bar. */
+html.graphics-no-hud-flash #currentDistributionP1.distribution-bar--capture-hit,
+html.graphics-no-hud-flash #currentDistributionP2.distribution-bar--capture-hit,
+html.graphics-no-hud-flash .ffa-distribution-segment--capture-hit-light,
+html.graphics-no-hud-flash .ffa-distribution-segment--capture-hit-dark {
+  animation: none !important;
+}
+
+/* Config → Graphics → Shadows & transparency off: solid board, no blurred or
+   see-through layers on the game page. The result dimmer stays (it is the end screen). */
+html.graphics-flat body.game-page {
+  background-image: none;
+}
+
+html.graphics-flat #gameCanvas {
+  background-color: #2a2a2a;
+  background-image: none;
+}
+
+html.graphics-flat #game-bg-overlay {
+  display: none;
+}
+
+html.graphics-flat body.game-page
+  :is(#gameContainer, #gameContainer *):not(#gameCanvas.game-result-active) {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Config → Graphics → Animations off. Collapse rather than remove animations so
+   anything that fades in from opacity 0 still lands on its final frame. */
+html.graphics-anim-off body.game-page *,
+html.graphics-anim-off body.game-page *::before,
+html.graphics-anim-off body.game-page *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition: none !important;
+}
+
+/* The start hints cycle forever from opacity 0; show the first card still, as reduced motion does. */
+html.graphics-anim-off .match-start__title,
+html.graphics-anim-off .match-start__body,
+html.graphics-anim-off .match-start__word,
+html.graphics-anim-off .match-start__sub {
+  animation: none !important;
+  opacity: 1;
+  transform: none;
+}
+
+html.graphics-anim-off .match-start__card:nth-child(n + 2) {
+  display: none;
 }

@@ -1,6 +1,7 @@
 import { CanvasTextMetrics, Container, Text, TextStyle } from 'pixi.js';
 import type { GridPos, PointChange } from '@/game/engine/types';
 import { pixiTextResolution } from '@/game/render/pixiTextResolution';
+import type { PointPopupMode } from '@/lib/graphicsSettings';
 
 const GAIN_FILL = 0x6fd4a8;
 const LOSS_FILL = 0xe85a4a;
@@ -165,7 +166,8 @@ function makePointChangeStyle(
   fontSize: number,
   tier: GlowTier,
   isGain: boolean,
-  label = false
+  label = false,
+  glow = true
 ): TextStyle {
   return new TextStyle({
     fontFamily: 'Inter, system-ui, sans-serif',
@@ -173,7 +175,8 @@ function makePointChangeStyle(
     fontWeight: label ? '600' : '700',
     fill: isGain ? GAIN_FILL : LOSS_FILL,
     padding: label ? 4 : 6,
-    dropShadow: {
+    // The glow is a canvas shadowBlur at rasterize time, slow in Safari.
+    dropShadow: glow && {
       color: isGain ? GAIN_GLOW : LOSS_GLOW,
       alpha: label ? 0.35 : isGain ? 0.7 : 0.58,
       blur: label ? glowBlur(tier, isGain) * 0.45 : glowBlur(tier, isGain),
@@ -193,8 +196,21 @@ function yOffsetForPop(change: PointChange, pos: GridPos): number {
   return change.p1YOffsetPx;
 }
 
+/** Styles are cached per overlay, so the TextStyle object identifies the font. */
+let popWidthCache = new WeakMap<TextStyle, Map<string, number>>();
+
 function measurePopTextWidth(text: string, style: TextStyle): number {
-  return CanvasTextMetrics.measureText(text, style).width;
+  let widths = popWidthCache.get(style);
+  if (!widths) {
+    widths = new Map();
+    popWidthCache.set(style, widths);
+  }
+  let width = widths.get(text);
+  if (width === undefined) {
+    width = CanvasTextMetrics.measureText(text, style).width;
+    widths.set(text, width);
+  }
+  return width;
 }
 
 /** Left edge X for main/label in a centered pop row. */
@@ -412,11 +428,54 @@ export class PointChangeOverlay {
 
   private pool: PopSlot[] = [];
   private styleCache = new Map<string, TextStyle>();
+  /** Slots claimed during the current render() call. */
+  private claimed = new Set<PopSlot>();
+
+  private readonly glow: boolean;
+  private readonly simple: boolean;
+
+  /** Config → Graphics → Point popups. */
+  constructor(private readonly mode: PointPopupMode = 'full') {
+    this.glow = mode === 'full';
+    this.simple = mode === 'simple';
+  }
+
+  private style(
+    fontSize: number,
+    tier: GlowTier,
+    isGain: boolean,
+    label: boolean
+  ): TextStyle {
+    const key = styleCacheKey(fontSize, tier, isGain, label);
+    let style = this.styleCache.get(key);
+    if (!style) {
+      style = makePointChangeStyle(fontSize, tier, isGain, label, this.glow);
+      this.styleCache.set(key, style);
+    }
+    return style;
+  }
 
   hide(): void {
     for (const slot of this.pool) {
       slot.root.visible = false;
     }
+  }
+
+  /**
+   * Every popup has faded: free the pooled Texts (and their GPU textures) and
+   * the measured widths, instead of holding them for the rest of the match.
+   */
+  release(): void {
+    if (this.pool.length === 0) return;
+    for (const slot of this.pool) {
+      boundText.delete(slot.main);
+      boundText.delete(slot.label);
+      boundText.delete(slot.rate);
+      slot.root.destroy({ children: true });
+    }
+    this.pool = [];
+    this.claimed.clear();
+    popWidthCache = new WeakMap();
   }
 
   render(
@@ -426,39 +485,25 @@ export class PointChangeOverlay {
     boardWidth = Number.POSITIVE_INFINITY,
     boardHeight = Number.POSITIVE_INFINITY
   ): void {
-    if (changes.length === 0) {
-      this.hide();
+    if (changes.length === 0 || this.mode === 'off') {
+      this.release();
       return;
     }
 
     const cellSize = Math.min(colSize, rowSize);
-    let used = 0;
+    this.claimed.clear();
 
     for (const change of changes) {
       for (const spec of buildPopSpecs(change, colSize, rowSize)) {
-        const slot = this.acquire(used);
-        used += 1;
-
         const fontSize = Math.round(
           pointChangeFontSize(spec.value, cellSize) *
             (spec.isGain ? GAIN_SIZE_SCALE : LOSS_SIZE_SCALE)
         );
         const labelSize = Math.max(9, Math.round(fontSize * LABEL_SIZE_RATIO));
         const tier = glowTier(spec.value);
-
-        const mainKey = styleCacheKey(fontSize, tier, spec.isGain, false);
-        let mainStyle = this.styleCache.get(mainKey);
-        if (!mainStyle) {
-          mainStyle = makePointChangeStyle(fontSize, tier, spec.isGain, false);
-          this.styleCache.set(mainKey, mainStyle);
-        }
-
-        const labelKey = styleCacheKey(labelSize, tier, spec.isGain, true);
-        let labelStyle = this.styleCache.get(labelKey);
-        if (!labelStyle) {
-          labelStyle = makePointChangeStyle(labelSize, tier, spec.isGain, true);
-          this.styleCache.set(labelKey, labelStyle);
-        }
+        const mainStyle = this.style(fontSize, tier, spec.isGain, false);
+        const labelStyle = this.style(labelSize, tier, spec.isGain, true);
+        const slot = this.acquire(mainStyle, spec.mainText);
 
         layoutPopTexts(
           slot.main,
@@ -469,16 +514,14 @@ export class PointChangeOverlay {
           spec.labelText,
           fontSize
         );
-        slot.label.visible = true;
+        // Simple: the number alone, centred, without the "sats" word or tier line.
+        slot.label.visible = !this.simple;
+        const mainW = measurePopTextWidth(spec.mainText, mainStyle);
+        if (this.simple) slot.main.position.set(-mainW / 2, 0);
         let rateW = 0;
-        if (spec.rateText && spec.isGain) {
+        if (spec.rateText && spec.isGain && !this.simple) {
           const rateSize = Math.max(10, Math.round(fontSize * 0.72));
-          const rateKey = styleCacheKey(rateSize, tier, true, false);
-          let rateStyle = this.styleCache.get(rateKey);
-          if (!rateStyle) {
-            rateStyle = makePointChangeStyle(rateSize, tier, true, false);
-            this.styleCache.set(rateKey, rateStyle);
-          }
+          const rateStyle = this.style(rateSize, tier, true, false);
           bindText(slot.rate, rateStyle, spec.rateText);
           slot.rate.position.set(0, Math.round(-fontSize * 0.95));
           slot.rate.visible = true;
@@ -488,14 +531,13 @@ export class PointChangeOverlay {
           slot.rate.visible = false;
         }
 
-        const scale = pointChangePopScale(spec.alpha);
+        const scale = this.simple ? 1 : pointChangePopScale(spec.alpha);
         // Text.width stays 0 until Pixi uploads the texture, so a head at the
         // edge kept the word off the board. Measure the string instead.
-        const rowW =
-          measurePopTextWidth(spec.mainText, mainStyle) +
-          fontSize * 0.12 +
-          measurePopTextWidth(spec.labelText, labelStyle);
-        const glow = 14;
+        const rowW = this.simple
+          ? mainW
+          : mainW + fontSize * 0.12 + measurePopTextWidth(spec.labelText, labelStyle);
+        const glow = this.glow ? 14 : 2;
         const halfW = (Math.max(rowW, rateW) / 2 + glow) * scale;
         const halfH =
           (fontSize * (rateW > 0 ? 1.55 : 0.7) + glow) * scale;
@@ -518,14 +560,33 @@ export class PointChangeOverlay {
       }
     }
 
-    for (let i = used; i < this.pool.length; i += 1) {
-      this.pool[i].root.visible = false;
+    for (const slot of this.pool) {
+      if (!this.claimed.has(slot)) slot.root.visible = false;
     }
   }
 
-  private acquire(index: number): PopSlot {
-    if (index < this.pool.length) {
-      return this.pool[index];
+  /**
+   * Prefer a slot whose main text already shows this number. When the oldest
+   * pop expires the rest shift down the list; matching by index rebound every
+   * Text and re-rasterized its glow, which stalled Safari on each reward.
+   */
+  private acquire(mainStyle: TextStyle, mainText: string): PopSlot {
+    let fallback: PopSlot | null = null;
+    for (const slot of this.pool) {
+      if (this.claimed.has(slot)) continue;
+      const bound = boundText.get(slot.main);
+      if (bound && bound.style === mainStyle && bound.value === mainText) {
+        this.claimed.add(slot);
+        return slot;
+      }
+      // Hidden slots are free to reuse; visible ones may match a later pop.
+      if (!fallback || (fallback.root.visible && !slot.root.visible)) {
+        fallback = slot;
+      }
+    }
+    if (fallback && !fallback.root.visible) {
+      this.claimed.add(fallback);
+      return fallback;
     }
 
     const root = new Container();
@@ -556,6 +617,7 @@ export class PointChangeOverlay {
 
     const slot = { root, main, label, rate };
     this.pool.push(slot);
+    this.claimed.add(slot);
     return slot;
   }
 }

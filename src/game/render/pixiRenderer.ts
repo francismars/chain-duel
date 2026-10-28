@@ -54,6 +54,7 @@ import {
   endOverlayRevealDurationMs,
 } from './endGameOverlay';
 import { pixiTextResolution } from '@/game/render/pixiTextResolution';
+import { readGraphicsSettings } from '@/lib/graphicsSettings';
 
 type CapturePulse = { startMs: number; reward: number };
 
@@ -65,6 +66,8 @@ export type PixiRenderOpts = {
 };
 
 export class PixiGameRenderer {
+  /** Config → Graphics, read once per match. Declared first so overlays below can read it. */
+  private readonly graphics = readGraphicsSettings();
   private app: Application | null = null;
   private fallbackCanvas: HTMLCanvasElement | null = null;
   private fallbackCtx: CanvasRenderingContext2D | null = null;
@@ -107,10 +110,14 @@ export class PixiGameRenderer {
   private startWords: Text[] = [];
   private startWordsContainer: Container = new Container();
   private startPromptSubtext: Text;
-  private objectives = new CanvasObjectivesOverlay();
+  private objectives = new CanvasObjectivesOverlay(
+    this.graphics.shadowsAndTransparency
+  );
   private startReady = new OnlineStartReadyOverlay();
   private controls = new CanvasControlsOverlay();
-  private pointChangesOverlay = new PointChangeOverlay();
+  private pointChangesOverlay = new PointChangeOverlay(
+    this.graphics.pointPopups
+  );
   private streakPopOverlay = new StreakPopOverlay();
   private startRevealTime = -1;
   private boardRevealTime = -1;
@@ -138,6 +145,10 @@ export class PixiGameRenderer {
   /** Bumped on destroy / remount so in-flight async init cannot attach a stale canvas. */
   private mountGeneration = 0;
   private readonly textResolution = pixiTextResolution();
+  /** Time inside Pixi's app.render() (draw calls and uploads) on the last paint; Show FPS reads it. */
+  lastSubmitMs = 0;
+  /** Last `game-result-active` value, when per-frame DOM work is off. */
+  private resultActiveApplied: boolean | null = null;
 
   constructor() {
     const startWordStyle = new TextStyle({
@@ -146,7 +157,7 @@ export class PixiGameRenderer {
       fontSize: 64,
       fontWeight: '500',
       padding: 48,
-      dropShadow: {
+      dropShadow: this.graphics.shadowsAndTransparency && {
         color: '#000000',
         alpha: 0.95,
         blur: 44,
@@ -196,6 +207,7 @@ export class PixiGameRenderer {
   async mount(host: HTMLElement): Promise<void> {
     const generation = ++this.mountGeneration;
     this.host = host;
+    this.resultActiveApplied = null;
     host.innerHTML = '';
     await PixiGameRenderer.waitForHostLayout(host);
     // Load the brand faces before Pixi caches text metrics (also on direct game links).
@@ -212,7 +224,7 @@ export class PixiGameRenderer {
       const app = new Application();
       await app.init({
         backgroundAlpha: 0,
-        antialias: true,
+        antialias: this.graphics.antialias,
         width: initWidth,
         height: initHeight,
         preference: 'webgl',
@@ -290,8 +302,13 @@ export class PixiGameRenderer {
       return true;
     }
     if (state.gameStarted && !state.gameEnded) {
-      if ((state.pointChanges?.length ?? 0) > 0) return true;
-      if (streakPops().length > 0) return true;
+      if (
+        this.graphics.pointPopups !== 'off' &&
+        (state.pointChanges?.length ?? 0) > 0
+      )
+        return true;
+      if (this.graphics.animations !== 'off' && streakPops().length > 0)
+        return true;
       if ((state.powerUpItems?.length ?? 0) > 0) return true;
       if (this.p1Pulses.length > 0 || this.p2Pulses.length > 0) return true;
       if (this.growAnimating(performance.now())) return true;
@@ -371,7 +388,11 @@ export class PixiGameRenderer {
   }
 
   private animFlags(): CaptureAnimFlags {
-    return this.captureAnimOverride ?? captureAnimFlags();
+    if (this.captureAnimOverride) return this.captureAnimOverride;
+    if (this.graphics.animations === 'off') {
+      return { grow: false, tint: false, scale: false };
+    }
+    return captureAnimFlags();
   }
 
   /** Glow, grow, surge, and Amplifier are painted on the chain squares. */
@@ -458,13 +479,22 @@ export class PixiGameRenderer {
     ) {
       return true;
     }
+    // Without smooth effects, chains redraw only when the board itself changes.
+    if (this.graphics.animations !== 'full') return false;
     return this.chainMotionActive(state, now) || this.chainMotionWasActive;
   }
 
   render(state: GameState, opts?: PixiRenderOpts): void {
-    this.host
-      ?.closest('#gameCanvas')
-      ?.classList.toggle('game-result-active', state.gameEnded);
+    if (this.graphics.measureEveryFrame) {
+      this.host
+        ?.closest('#gameCanvas')
+        ?.classList.toggle('game-result-active', state.gameEnded);
+    } else if (this.resultActiveApplied !== state.gameEnded) {
+      this.resultActiveApplied = state.gameEnded;
+      this.host
+        ?.closest('#gameCanvas')
+        ?.classList.toggle('game-result-active', state.gameEnded);
+    }
     if (!this.app) {
       this.renderFallback(state, opts);
       return;
@@ -474,8 +504,18 @@ export class PixiGameRenderer {
       this.renderFallback(state, opts);
       return;
     }
-    let width = this.host?.clientWidth ?? renderer.width;
-    let height = this.host?.clientHeight ?? renderer.height;
+    // The ResizeObserver keeps lastResize* current, so skipping the read
+    // avoids forcing a style + layout pass every frame.
+    const useCachedSize =
+      !this.graphics.measureEveryFrame &&
+      this.lastResizeWidth > 0 &&
+      this.lastResizeHeight > 0;
+    let width = useCachedSize
+      ? this.lastResizeWidth
+      : (this.host?.clientWidth ?? renderer.width);
+    let height = useCachedSize
+      ? this.lastResizeHeight
+      : (this.host?.clientHeight ?? renderer.height);
     if (width <= 0 || height <= 0) {
       this.resize();
       width = this.host?.clientWidth ?? renderer.width;
@@ -509,7 +549,7 @@ export class PixiGameRenderer {
     // Infinity = fully visible (during gameplay / after reveal completes).
     // 800ms initial delay lets the CSS canvas scale-in finish first.
     const boardElapsed =
-      this.boardRevealTime !== -1
+      this.boardRevealTime !== -1 && this.graphics.animations !== 'off'
         ? Math.max(0, performance.now() - this.boardRevealTime - 800)
         : Infinity;
 
@@ -566,7 +606,11 @@ export class PixiGameRenderer {
 
       // Record surge trail positions each frame
       const FADE = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
-      if (state.gameStarted && !state.gameEnded) {
+      if (
+        state.gameStarted &&
+        !state.gameEnded &&
+        this.graphics.animations !== 'off'
+      ) {
         if (p1Surging)
           this.p1SurgeTrail.push({
             pos: [state.p1.head[0], state.p1.head[1]],
@@ -790,7 +834,11 @@ export class PixiGameRenderer {
     if (this.streakPopOverlay.container.parent !== this.overlay) {
       this.overlay.addChild(this.streakPopOverlay.container);
     }
-    this.streakPopOverlay.render(colSize, rowSize);
+    if (this.graphics.animations === 'off') {
+      this.streakPopOverlay.container.visible = false;
+    } else {
+      this.streakPopOverlay.render(colSize, rowSize);
+    }
 
     // Keep WebGL buffer in sync with layout (avoids stretched / nested-frame artifacts).
     const rw = this.app.renderer.width;
@@ -801,12 +849,14 @@ export class PixiGameRenderer {
       this.lastResizeHeight = height;
       this.gridCacheKey = '';
     }
+    const submitStart = performance.now();
     try {
       this.app.render();
       this.resizeDirty = false;
     } catch {
       this.destroy();
     }
+    this.lastSubmitMs = performance.now() - submitStart;
   }
 
   // ── Resolving blocks animation ─────────────────────────────────────────────
@@ -940,11 +990,11 @@ export class PixiGameRenderer {
         .fill({ color: voidColor, alpha: voidAlpha });
     }
 
-    // Amber gradient edge at the live boundary (warning glow)
+    // White edge at the live boundary (warning glow)
     const edgeAlpha = sb.warningActive ? 0.55 : 0.18;
     const colEdge = colSize;
     const rowEdge = rowSize;
-    const edgeColor = 0xc88820;
+    const edgeColor = 0xffffff;
 
     if (leftPx > 0) {
       this.deadZone
@@ -1394,10 +1444,12 @@ export class PixiGameRenderer {
     }
 
     // Standard coinbase
-    target.circle(cx, cy, radius * 2.05).fill({ color: 0xffffff, alpha: 0.05 });
-    target.circle(cx, cy, radius * 1.7).fill({ color: 0xffffff, alpha: 0.08 });
-    target.circle(cx, cy, radius * 1.35).fill({ color: 0xffffff, alpha: 0.14 });
-    target.circle(cx, cy, radius * 1.1).fill({ color: 0xffffff, alpha: 0.22 });
+    if (this.graphics.shadowsAndTransparency) {
+      target.circle(cx, cy, radius * 2.05).fill({ color: 0xffffff, alpha: 0.05 });
+      target.circle(cx, cy, radius * 1.7).fill({ color: 0xffffff, alpha: 0.08 });
+      target.circle(cx, cy, radius * 1.35).fill({ color: 0xffffff, alpha: 0.14 });
+      target.circle(cx, cy, radius * 1.1).fill({ color: 0xffffff, alpha: 0.22 });
+    }
     target.circle(cx, cy, radius * 0.9).fill({ color: 0xffffff, alpha: 1 });
 
     // Reward rings
@@ -1496,7 +1548,7 @@ export class PixiGameRenderer {
         align: 'center',
         stroke: { color: '#ffffff', width: 0 },
         padding: 48,
-        dropShadow: {
+        dropShadow: this.graphics.shadowsAndTransparency && {
           color: '#000000',
           alpha: 0.95,
           blur: 44,
@@ -1618,9 +1670,8 @@ export class PixiGameRenderer {
         height
       );
 
-      // Amber edge
       const edgeAlpha = sb.warningActive ? 0.5 : 0.15;
-      ctx.fillStyle = `rgba(200,136,32,${edgeAlpha})`;
+      ctx.fillStyle = `rgba(255,255,255,${edgeAlpha})`;
       ctx.fillRect(
         sb.left * colSize,
         sb.top * rowSize,

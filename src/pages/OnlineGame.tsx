@@ -47,6 +47,12 @@ import {
 } from '@/lib/controls/playerControls';
 import type { PlayerControlSlot } from '@/lib/controls/playerControls';
 import type { GameState } from '@/game/engine/types';
+import {
+  POINT_CHANGE_LIFE_MS,
+  POINT_CHANGE_RISE_PX,
+} from '@/game/engine/constants';
+import { readGraphicsSettings } from '@/lib/graphicsSettings';
+import { createFpsReadout } from '@/game/render/fpsReadout';
 import './game.css';
 import '@/styles/pages/onlineGame.css';
 
@@ -311,7 +317,11 @@ export default function OnlineGame({
     });
     let raf = 0;
     let lastPaintedSnapshot: OnlineRoomSnapshot | null = null;
-    const frame = () => {
+    const fps = readGraphicsSettings().showFps ? createFpsReadout() : null;
+    let lastFrameMs = performance.now();
+    const frame = (now: number) => {
+      fps?.frame(now, now - lastFrameMs);
+      lastFrameMs = now;
       const snap = snapshotRef.current;
       if (snap?.state && rendererRef.current) {
         let raw = snap.state as GameState;
@@ -356,6 +366,7 @@ export default function OnlineGame({
       cancelled = true;
       if (detachResize) detachResize();
       window.cancelAnimationFrame(raf);
+      fps?.remove();
       renderer.destroy();
     };
   }, [hostEl]);
@@ -1613,8 +1624,8 @@ type OnlinePointAnim = {
   startedAtMs: number;
 };
 
-const ONLINE_POINT_ANIM_MS = 2600;
-const ONLINE_POINT_RISE_PX = 52;
+const ONLINE_POINT_ANIM_MS = POINT_CHANGE_LIFE_MS;
+const ONLINE_POINT_RISE_PX = POINT_CHANGE_RISE_PX;
 
 function resetReplayPointAnims(
   pointAnimationsRef: { current: OnlinePointAnim[] },

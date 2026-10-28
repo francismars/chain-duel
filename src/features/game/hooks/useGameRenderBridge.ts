@@ -10,6 +10,8 @@ import type { PixiGameRenderer, PixiRenderOpts } from '@/game/render/pixiRendere
 import type { CanvasObjectivesOpts } from '@/game/render/matchObjectives';
 import type { GameAudioSystem } from '@/game/audio/gameAudio';
 import { resetCuesFromStep } from '@/game/audio/resetCue';
+import { readGraphicsSettings } from '@/lib/graphicsSettings';
+import { createFpsReadout } from '@/game/render/fpsReadout';
 
 interface HudSnapshot {
   p1Points: number;
@@ -335,22 +337,44 @@ export function useGameRenderBridge({
       return steps;
     };
 
+    const fps = readGraphicsSettings().showFps ? createFpsReadout() : null;
+
     let frameRef = 0;
+    /** Last state the audio saw; tension and streaks only change when the game does. */
+    let audioState: GameState | null = null;
     const frame = (now: number) => {
       if (!mounted) return;
       const state = stateRef.current;
+      fps?.frame(now, now - lastFrameMs);
       const deltaMs = Math.min(100, Math.max(0, now - lastFrameMs));
       lastFrameMs = now;
 
       if (mountReady && state) {
+        // Section timings feed Show FPS; performance.now() is cheap enough to leave on.
+        let mark = performance.now();
+        const lap = (section: 'sim' | 'audio' | 'scene') => {
+          const t = performance.now();
+          fps?.add(section, t - mark);
+          mark = t;
+        };
+        // Includes effect sounds fired on a step (capture, power-up, reset).
         const simSteps = runSimulation(state, deltaMs);
-        audio?.updateGameState(state);
         if (state.meta?.modeLabel !== 'ONLINE') {
-          advancePointChanges(state);
+          advancePointChanges(state, deltaMs);
         }
         advanceStreakPops();
+        lap('sim');
+        if (simSteps > 0 || state !== audioState) {
+          audio?.updateGameState(state);
+          audioState = state;
+        }
+        lap('audio');
         if (simSteps > 0 || renderer.needsPaint(state)) {
           renderer.render(state, renderOpts());
+          lap('scene');
+          // render() includes app.render(); move that share to submit.
+          fps?.add('scene', -renderer.lastSubmitMs);
+          fps?.add('submit', renderer.lastSubmitMs);
         }
       }
 
@@ -363,6 +387,7 @@ export function useGameRenderBridge({
       cancelled = true;
       if (detachResize) detachResize();
       window.cancelAnimationFrame(frameRef);
+      fps?.remove();
       rendererRef.current = null;
       renderer.destroy();
       audio?.stopAll();

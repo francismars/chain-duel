@@ -58,7 +58,8 @@ export class CanvasObjectivesOverlay {
   private bodyY = 0;
   private stakesY = 0;
 
-  constructor() {
+  /** `shadows` false drops the blurred drop shadow (Config → Graphics). */
+  constructor(private readonly shadows = true) {
     this.container.cullable = false;
     for (const item of MATCH_OBJECTIVES) {
       const root = new Container();
@@ -192,6 +193,10 @@ export class CanvasObjectivesOverlay {
       padding: START_WORD_SHADOW_PAD,
       dropShadow: { ...MATCH_OBJECTIVE_DROP_SHADOW },
     });
+    if (!this.shadows) {
+      titleStyle.dropShadow = false;
+      bodyStyle.dropShadow = false;
+    }
 
     for (const card of this.cards) {
       card.title.style = titleStyle;
