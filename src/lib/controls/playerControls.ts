@@ -149,6 +149,29 @@ function writeStoredBindings(bindings: StoredBindings): void {
   dispatchControlsEvent('chainduel:player-bindings');
 }
 
+const MOVEMENT_SLOTS: PlayerControlSlot[] = ['p1', 'p2', 'p3', 'p4'];
+
+/** True when this key is bound as Start for any player. */
+export function isConfirmBindingCode(code: string): boolean {
+  return MOVEMENT_SLOTS.some((slot) => confirmKeyCode(slot) === code);
+}
+
+/** True when this key is bound to a movement direction for any player. */
+export function isMovementBindingCode(code: string): boolean {
+  for (const slot of MOVEMENT_SLOTS) {
+    const bindings = slotBindings(slot);
+    if (
+      bindings.up === code ||
+      bindings.down === code ||
+      bindings.left === code ||
+      bindings.right === code
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function slotBindings(
   slot: PlayerControlSlot
 ): Record<AxisDirection, string> {

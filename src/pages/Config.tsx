@@ -12,8 +12,13 @@ import {
 } from '@/lib/nostr/fetchKind0Profile';
 import { fetchProfileFromServer } from '@/lib/nostr/fetchProfileFromServer';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
-import { useGamepad } from '@/hooks/useGamepad';
+import { isGamepadSyntheticKey, useGamepad } from '@/hooks/useGamepad';
+import {
+  isConfirmBindingCode,
+  isMovementBindingCode,
+} from '@/lib/controls/playerControls';
 import { useSocket } from '@/hooks/useSocket';
+import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import {
   CHAIN_DUEL_SUPPRESS_NEXT_MENU_CONFIRM,
@@ -44,6 +49,7 @@ import {
 } from '@/lib/nostr/nwcPay';
 import { GamepadTester } from '@/features/config/GamepadTester';
 import { KeyboardControlsSettings } from '@/features/config/KeyboardControlsSettings';
+import { GraphicsSettingsPanel } from '@/features/config/GraphicsSettingsPanel';
 import {
   type ConfigFocus,
   type ConfigTab,
@@ -52,6 +58,8 @@ import {
   loginTabFromIndex,
   loginIndex,
   moveConfigFocus,
+  sectionIndex,
+  tabFromHash,
   tabFromSectionIndex,
 } from './configNav';
 import './config.css';
@@ -82,6 +90,16 @@ type ConfigLocationState = { returnTo?: string };
 
 function kbdFocus(active: boolean): string {
   return active ? ' config-kbd-focus' : '';
+}
+
+function sectionTabFocused(
+  navFocus: ConfigFocus,
+  index: number,
+  testerMode: boolean
+): string {
+  return kbdFocus(
+    !testerMode && navFocus.kind === 'section' && navFocus.index === index
+  );
 }
 
 export default function Config() {
@@ -139,11 +157,13 @@ export default function Config() {
   const [avatarBroken, setAvatarBroken] = useState(false);
   const [nip05Ok, setNip05Ok] = useState<boolean | null>(null);
   const [nip05CheckPending, setNip05CheckPending] = useState(false);
-  const [configTab, setConfigTab] = useState<ConfigTab>('signin');
+  const [configTab, setConfigTab] = useState<ConfigTab>(
+    () => tabFromHash(window.location.hash) ?? 'signin'
+  );
   const [loginTab, setLoginTab] = useState<LoginTab>('extension');
-  const [navFocus, setNavFocus] = useState<ConfigFocus>({
-    kind: 'section',
-    index: 0,
+  const [navFocus, setNavFocus] = useState<ConfigFocus>(() => {
+    const tab = tabFromHash(window.location.hash) ?? 'signin';
+    return { kind: 'section', index: sectionIndex(tab) };
   });
   const [nsecInput, setNsecInput] = useState('');
   const [pendingAuthUrl, setPendingAuthUrl] = useState<string | null>(null);
@@ -173,9 +193,60 @@ export default function Config() {
   const nip46SignerRef = useRef<HTMLAnchorElement | null>(null);
   const profileEntrancePlayedRef = useRef(false);
   const keyboardBindListeningRef = useRef(false);
+  /** Keyboard and gamepad panels swallow menu arrows while this is on. */
+  const [testerMode, setTesterMode] = useState(false);
+  const testerModeRef = useRef(false);
+  const keepTesterNavRef = useRef(false);
+  const testerUpStreakRef = useRef(0);
+  const testerUpHeldRef = useRef(false);
+  testerModeRef.current = testerMode;
   playSfxRef.current = playSfx;
 
+  useEffect(() => {
+    const next = `#${configTab}`;
+    if (window.location.hash !== next) {
+      const url = `${window.location.pathname}${window.location.search}${next}`;
+      window.history.replaceState(null, '', url);
+    }
+  }, [configTab]);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const tab = tabFromHash(window.location.hash);
+      if (!tab) return;
+      setConfigTab(tab);
+      setNavFocus({ kind: 'section', index: sectionIndex(tab) });
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
   useGamepad(configTab === 'gamepad');
+
+  const testerTab = configTab === 'keyboard' || configTab === 'gamepad';
+
+  useEffect(() => {
+    if (!testerTab) {
+      setTesterMode(false);
+      testerUpStreakRef.current = 0;
+      return;
+    }
+    if (keepTesterNavRef.current) {
+      keepTesterNavRef.current = false;
+      setTesterMode(false);
+      return;
+    }
+    setTesterMode(true);
+    testerUpStreakRef.current = 0;
+  }, [testerTab, configTab]);
+
+  useEffect(() => {
+    if (!testerMode) return;
+    const el = document.activeElement;
+    if (el instanceof HTMLElement && el.closest('.config-section-tabs')) {
+      el.blur();
+    }
+  }, [testerMode, configTab]);
 
   useEffect(() => {
     if (!ncQrModalOpen) return;
@@ -587,6 +658,10 @@ export default function Config() {
     pendingNip46ServerLink,
   ]);
 
+  useEffect(() => {
+    setButtonGlow(backButtonRef.current, navFocus.kind === 'mainMenu');
+  }, [navFocus.kind]);
+
   const activateConfigNav = useCallback(() => {
     if (navFocus.kind === 'section') {
       setConfigTab(tabFromSectionIndex(navFocus.index));
@@ -655,6 +730,9 @@ export default function Config() {
       if (isTypingTarget(e.target)) return;
       if (keyboardBindListeningRef.current) return;
 
+      const onTesterTab = configTab === 'keyboard' || configTab === 'gamepad';
+      const testing = onTesterTab && testerModeRef.current;
+
       const isConfirm =
         e.key === 'Enter' || e.key === ' ' || e.code === 'NumpadEnter';
       const isUp =
@@ -680,6 +758,40 @@ export default function Config() {
       }
 
       if (!isConfirm && !isUp && !isDown && !isLeft && !isRight) return;
+
+      if (testing) {
+        const testerInput =
+          (configTab === 'gamepad' && isGamepadSyntheticKey(e)) ||
+          (configTab === 'keyboard' &&
+            (isMovementBindingCode(e.code) || isConfirmBindingCode(e.code))) ||
+          isUp ||
+          isDown ||
+          isLeft ||
+          isRight;
+        if (isUp && !e.repeat && !testerUpHeldRef.current) {
+          testerUpHeldRef.current = true;
+          testerUpStreakRef.current += 1;
+          if (testerUpStreakRef.current >= 3) {
+            testerUpStreakRef.current = 0;
+            testerUpHeldRef.current = false;
+            setTesterMode(false);
+            setNavFocus({
+              kind: 'section',
+              index: configTab === 'keyboard' ? 2 : 3,
+            });
+            playSfxRef.current(SFX.MENU_SELECT);
+          }
+        } else if (!isUp) {
+          testerUpStreakRef.current = 0;
+        }
+        if (testerInput) return;
+      } else if (onTesterTab && isDown && !e.repeat) {
+        e.preventDefault();
+        testerUpStreakRef.current = 0;
+        setTesterMode(true);
+        playSfxRef.current(SFX.MENU_SELECT);
+        return;
+      }
 
       if (isConfirm) {
         if (e.repeat) {
@@ -709,7 +821,14 @@ export default function Config() {
           pendingNip46ServerLink,
         });
         if (next.kind === 'section' && (dir === 'left' || dir === 'right')) {
-          setConfigTab(tabFromSectionIndex(next.index));
+          const nextTab = tabFromSectionIndex(next.index);
+          if (
+            (nextTab === 'keyboard' || nextTab === 'gamepad') &&
+            !testerModeRef.current
+          ) {
+            keepTesterNavRef.current = true;
+          }
+          setConfigTab(nextTab);
         }
         if (next.kind === 'login' && (dir === 'left' || dir === 'right')) {
           setLoginTab(loginTabFromIndex(next.index));
@@ -718,8 +837,18 @@ export default function Config() {
       });
     };
 
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        testerUpHeldRef.current = false;
+      }
+    };
+
     window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
+    window.addEventListener('keyup', onKeyUp, true);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('keyup', onKeyUp, true);
+    };
   }, [
     activateConfigNav,
     configTab,
@@ -776,7 +905,7 @@ export default function Config() {
           type="button"
           role="tab"
           aria-selected={configTab === 'signin'}
-          className={`config-section-tab${configTab === 'signin' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 0)}`}
+          className={`config-section-tab${configTab === 'signin' ? ' config-section-tab--active' : ''}${sectionTabFocused(navFocus, 0, testerMode)}`}
           onClick={() => {
             setConfigTab('signin');
             setNavFocus({ kind: 'section', index: 0 });
@@ -788,7 +917,7 @@ export default function Config() {
           type="button"
           role="tab"
           aria-selected={configTab === 'nwc'}
-          className={`config-section-tab${configTab === 'nwc' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 1)}`}
+          className={`config-section-tab${configTab === 'nwc' ? ' config-section-tab--active' : ''}${sectionTabFocused(navFocus, 1, testerMode)}`}
           onClick={() => {
             setConfigTab('nwc');
             setNavFocus({ kind: 'section', index: 1 });
@@ -800,10 +929,11 @@ export default function Config() {
           type="button"
           role="tab"
           aria-selected={configTab === 'keyboard'}
-          className={`config-section-tab${configTab === 'keyboard' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 2)}`}
+          className={`config-section-tab${configTab === 'keyboard' ? ' config-section-tab--active' : ''}${sectionTabFocused(navFocus, 2, testerMode)}`}
           onClick={() => {
             setConfigTab('keyboard');
             setNavFocus({ kind: 'section', index: 2 });
+            setTesterMode(true);
           }}
         >
           Keyboard
@@ -812,13 +942,26 @@ export default function Config() {
           type="button"
           role="tab"
           aria-selected={configTab === 'gamepad'}
-          className={`config-section-tab${configTab === 'gamepad' ? ' config-section-tab--active' : ''}${kbdFocus(navFocus.kind === 'section' && navFocus.index === 3)}`}
+          className={`config-section-tab${configTab === 'gamepad' ? ' config-section-tab--active' : ''}${sectionTabFocused(navFocus, 3, testerMode)}`}
           onClick={() => {
             setConfigTab('gamepad');
             setNavFocus({ kind: 'section', index: 3 });
+            setTesterMode(true);
           }}
         >
           Gamepad
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={configTab === 'performance'}
+          className={`config-section-tab${configTab === 'performance' ? ' config-section-tab--active' : ''}${sectionTabFocused(navFocus, 4, testerMode)}`}
+          onClick={() => {
+            setConfigTab('performance');
+            setNavFocus({ kind: 'section', index: 4 });
+          }}
+        >
+          Performance
         </button>
         </div>
 
@@ -1424,6 +1567,18 @@ export default function Config() {
                   className="config-signer-ping config-signer-ping--ok"
                   role="status"
                 >
+                  <svg
+                    className="config-signer-ping__icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
                   <span className="config-signer-ping__text">
                     Signer connected
                   </span>
@@ -1527,6 +1682,8 @@ export default function Config() {
       ) : null}
 
       {configTab === 'gamepad' ? <GamepadTester active={configTab === 'gamepad'} /> : null}
+
+      {configTab === 'performance' ? <GraphicsSettingsPanel /> : null}
         </div>
         </div>
 
@@ -1534,7 +1691,6 @@ export default function Config() {
           <Button
             id="backButton"
             ref={backButtonRef}
-            className={kbdFocus(navFocus.kind === 'mainMenu').trim()}
             onClick={() => {
               if (!returnTo || returnTo === '/') {
                 navigateToMainMenu(navigate);

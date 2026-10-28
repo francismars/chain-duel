@@ -1,4 +1,3 @@
-import { useId } from 'react';
 import type { GamepadSnapshot } from './useGamepadSnapshot';
 import { buttonIsActive } from './gamepadLabels';
 
@@ -15,7 +14,7 @@ function btn(
   return { active: buttonIsActive(b.value, b.pressed), value: b.value };
 }
 
-function stickPos(x: number, y: number, cx: number, cy: number, radius = 10) {
+function stickPos(x: number, y: number, cx: number, cy: number, radius = 7) {
   const clampedX = Math.max(-1, Math.min(1, x));
   const clampedY = Math.max(-1, Math.min(1, y));
   return {
@@ -25,84 +24,76 @@ function stickPos(x: number, y: number, cx: number, cy: number, radius = 10) {
   };
 }
 
-function FaceButton({
-  cx,
-  cy,
-  label,
-  active,
-  idleFill,
-  activeFill,
-  glowFilter,
-}: {
-  cx: number;
-  cy: number;
-  label: string;
-  active: boolean;
-  idleFill: string;
-  activeFill: string;
-  glowFilter: string;
-}) {
-  return (
-    <g className="config-gp-diagram__face-group">
-      <circle
-        className={`config-gp-diagram__face-btn${active ? ' config-gp-diagram__face-btn--active' : ''}`}
-        cx={cx}
-        cy={cy}
-        r="10"
-        fill={active ? activeFill : idleFill}
-        filter={active ? glowFilter : undefined}
-      />
-      <text
-        className={`config-gp-diagram__face-label${active ? ' config-gp-diagram__face-label--active' : ''}`}
-        x={cx}
-        y={cy + 3.5}
-        textAnchor="middle"
-      >
-        {label}
-      </text>
-    </g>
-  );
+/**
+ * SN30 Pro shell: two circular grips joined by a short waist.
+ * Left center (112, 130) r=70, right center (328, 130) r=70.
+ */
+const BODY_PATH = [
+  'M 112 60',
+  'A 70 70 0 1 0 151 188',
+  'L 289 188',
+  'A 70 70 0 1 0 328 60',
+  'L 112 60',
+  'Z',
+].join(' ');
+
+/** Point on a circle; angles in degrees, SVG y-down (270 = straight up). */
+function polar(cx: number, cy: number, r: number, deg: number): string {
+  const t = (deg * Math.PI) / 180;
+  return `${(cx + r * Math.cos(t)).toFixed(2)} ${(cy + r * Math.sin(t)).toFixed(2)}`;
 }
 
 /**
- * SN30 Pro silhouette — bulbous grips, pinched center waist top + bottom.
- * viewBox 400 × 220
+ * Left-side shoulder band that hugs the grip circle centred on (cx, cy):
+ * an arc from `startDeg` up to the top of the grip, then straight to `endX`.
+ * Corners are softened with radius `rc`. Mirror it for the right side.
  */
-const BODY_PATH = [
-  'M 200 52',
-  'C 168 56 136 62 104 64',
-  'C 52 64 16 92 16 118',
-  'C 16 144 44 176 88 176',
-  'C 116 176 138 164 154 156',
-  'C 170 164 186 170 200 170',
-  'C 214 170 230 164 246 156',
-  'C 262 164 284 176 312 176',
-  'C 356 176 384 144 384 118',
-  'C 384 92 348 64 296 64',
-  'C 264 62 232 56 200 52',
-  'Z',
-].join(' ');
+function shoulderBand(
+  cx: number,
+  cy: number,
+  ri: number,
+  ro: number,
+  startDeg: number,
+  endX: number,
+  rc = 3
+): string {
+  const degO = ((rc / ro) * 180) / Math.PI;
+  const degI = ((rc / ri) * 180) / Math.PI;
+  const top = cy - ro;
+  const bottom = cy - ri;
+  return [
+    `M ${polar(cx, cy, ro, startDeg + degO)}`,
+    `A ${ro} ${ro} 0 0 1 ${cx} ${top}`,
+    `L ${endX - rc} ${top}`,
+    `Q ${endX} ${top} ${endX} ${top + rc}`,
+    `L ${endX} ${bottom - rc}`,
+    `Q ${endX} ${bottom} ${endX - rc} ${bottom}`,
+    `L ${cx} ${bottom}`,
+    `A ${ri} ${ri} 0 0 0 ${polar(cx, cy, ri, startDeg + degI)}`,
+    `Q ${polar(cx, cy, ri, startDeg)} ${polar(cx, cy, ri + rc, startDeg)}`,
+    `L ${polar(cx, cy, ro - rc, startDeg)}`,
+    `Q ${polar(cx, cy, ro, startDeg)} ${polar(cx, cy, ro, startDeg + degO)}`,
+    'Z',
+  ].join(' ');
+}
 
-const BODY_RIM_PATH = [
-  'M 200 58',
-  'C 172 62 144 66 116 68',
-  'C 68 68 36 92 36 114',
-  'C 36 136 58 162 92 162',
-  'C 114 162 132 154 146 146',
-  'C 162 154 178 158 200 158',
-  'C 222 158 238 154 254 146',
-  'C 268 162 286 162 308 162',
-  'C 342 162 364 136 364 114',
-  'C 364 92 332 68 284 68',
-  'C 256 66 228 62 200 58',
-  'Z',
-].join(' ');
+/** L1 sits on the shell outline. L2 sits on L1's outer edge. */
+const L1_PATH = shoulderBand(112, 130, 70, 80, 220, 166);
+const L2_PATH = shoulderBand(112, 130, 80, 89, 234, 154);
+/** Mirror across the controller's centre line (x = 220). */
+const MIRROR = 'translate(440 0) scale(-1 1)';
 
-const L_STICK = { cx: 172, cy: 140 };
-const R_STICK = { cx: 228, cy: 140 };
+const L_STICK = { cx: 176, cy: 158 };
+const R_STICK = { cx: 264, cy: 158 };
+
+const FACE: Record<'x' | 'y' | 'a' | 'b', { cx: number; cy: number; index: number }> = {
+  x: { cx: 324, cy: 88, index: 3 },
+  y: { cx: 300, cy: 112, index: 2 },
+  a: { cx: 348, cy: 112, index: 1 },
+  b: { cx: 324, cy: 136, index: 0 },
+};
 
 export function GamepadDiagram({ pad }: GamepadDiagramProps) {
-  const uid = useId().replace(/:/g, '');
   const b = (i: number) => btn(pad, i);
   const lx = pad.axes[0] ?? 0;
   const ly = pad.axes[1] ?? 0;
@@ -120,175 +111,128 @@ export function GamepadDiagram({ pad }: GamepadDiagramProps) {
   const metaClass = (i: number) =>
     `config-gp-diagram__meta${b(i).active ? ' config-gp-diagram__meta--active' : ''}`;
 
-  const faceIdle = `url(#${uid}-face-idle)`;
-  const faceActive = `url(#${uid}-face-active)`;
-  const glowFilter = `url(#${uid}-glow)`;
-
   return (
     <svg
       className="config-gp-diagram"
-      viewBox="0 0 400 220"
+      viewBox="0 0 440 230"
       aria-label="Controller diagram"
     >
-      <defs>
-        <linearGradient id={`${uid}-body-top`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(54 54 58)" />
-          <stop offset="100%" stopColor="rgb(22 22 26)" />
-        </linearGradient>
-        <linearGradient id={`${uid}-body-rim`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(255 255 255 / 0.16)" />
-          <stop offset="100%" stopColor="rgb(255 255 255 / 0.02)" />
-        </linearGradient>
-        <radialGradient id={`${uid}-face-idle`} cx="35%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="rgb(200 60 130)" />
-          <stop offset="100%" stopColor="rgb(120 28 78)" />
-        </radialGradient>
-        <radialGradient id={`${uid}-face-active`} cx="35%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="rgb(255 120 190)" />
-          <stop offset="100%" stopColor="rgb(220 50 140)" />
-        </radialGradient>
-        <radialGradient id={`${uid}-stick-cap`} cx="38%" cy="32%" r="68%">
-          <stop offset="0%" stopColor="rgb(118 118 126)" />
-          <stop offset="100%" stopColor="rgb(48 48 54)" />
-        </radialGradient>
-        <filter id={`${uid}-glow`} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2.5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
+      <path className="config-gp-diagram__body" d={BODY_PATH} />
 
-      <ellipse
-        className="config-gp-diagram__shadow"
-        cx="200"
-        cy="196"
-        rx="138"
-        ry="8"
-      />
+      {/* L2 / R2 share an edge with L1 / R1, and L1 / R1 share the shell outline. */}
+      <path className={shoulderClass(6)} d={L2_PATH} />
+      <path className={shoulderClass(4)} d={L1_PATH} />
+      <path className={shoulderClass(7)} d={L2_PATH} transform={MIRROR} />
+      <path className={shoulderClass(5)} d={L1_PATH} transform={MIRROR} />
 
-      <path
-        className="config-gp-diagram__body"
-        fill={`url(#${uid}-body-top)`}
-        d={BODY_PATH}
-      />
-      <path
-        className="config-gp-diagram__body-rim"
-        fill={`url(#${uid}-body-rim)`}
-        d={BODY_RIM_PATH}
-      />
+      <g className="config-gp-diagram__dpad" transform="translate(94 90)">
+        <path
+          className="config-gp-diagram__dpad-cross"
+          d="M 16 4 Q 16 0 20 0 H 28 Q 32 0 32 4 V 16 H 44 Q 48 16 48 20 V 28 Q 48 32 44 32 H 32 V 44 Q 32 48 28 48 H 20 Q 16 48 16 44 V 32 H 4 Q 0 32 0 28 V 20 Q 0 16 4 16 H 16 Z"
+        />
+        <path
+          className={dpadClass(12)}
+          d="M 16 18 V 4 Q 16 0 20 0 H 28 Q 32 0 32 4 V 18 Z"
+        />
+        <path
+          className={dpadClass(13)}
+          d="M 16 30 V 44 Q 16 48 20 48 H 28 Q 32 48 32 44 V 30 Z"
+        />
+        <path
+          className={dpadClass(14)}
+          d="M 18 16 H 4 Q 0 16 0 20 V 28 Q 0 32 4 32 H 18 Z"
+        />
+        <path
+          className={dpadClass(15)}
+          d="M 30 16 H 44 Q 48 16 48 20 V 28 Q 48 32 44 32 H 30 Z"
+        />
+        <path
+          className="config-gp-diagram__dpad-outline"
+          d="M 16 4 Q 16 0 20 0 H 28 Q 32 0 32 4 V 16 H 44 Q 48 16 48 20 V 28 Q 48 32 44 32 H 32 V 44 Q 32 48 28 48 H 20 Q 16 48 16 44 V 32 H 4 Q 0 32 0 28 V 20 Q 0 16 4 16 H 16 Z"
+        />
+        <circle className="config-gp-diagram__dpad-hub" cx="24" cy="24" r="5.5" />
+      </g>
 
-      {/* Shoulders — molded into grip tops */}
-      <path
-        className={shoulderClass(6)}
-        d="M 42 50 C 42 42 58 38 82 38 C 98 38 106 44 106 50 L 106 56 C 106 60 42 60 42 56 Z"
-      />
-      <path
-        className={shoulderClass(4)}
-        d="M 46 56 C 46 52 60 48 80 48 L 100 48 C 106 50 106 54 106 58 L 106 64 C 106 66 46 66 46 62 Z"
-      />
-      <path
-        className={shoulderClass(7)}
-        d="M 358 50 C 358 42 342 38 318 38 C 302 38 294 44 294 50 L 294 56 C 294 60 358 60 358 56 Z"
-      />
-      <path
-        className={shoulderClass(5)}
-        d="M 354 56 C 354 52 340 48 320 48 L 300 48 C 294 50 294 54 294 58 L 294 64 C 294 66 354 66 354 62 Z"
-      />
-
-      <rect className={metaClass(8)} x="178" y="88" width="20" height="8" rx="4" />
-      <rect className={metaClass(9)} x="202" y="88" width="20" height="8" rx="4" />
-      <text className="config-gp-diagram__meta-caption" x="188" y="106" textAnchor="middle">
+      <rect className={metaClass(8)} x="188" y="100" width="28" height="12" rx="6" />
+      <rect className={metaClass(9)} x="224" y="100" width="28" height="12" rx="6" />
+      <text className="config-gp-diagram__meta-caption" x="202" y="124" textAnchor="middle">
         select
       </text>
-      <text className="config-gp-diagram__meta-caption" x="212" y="106" textAnchor="middle">
+      <text className="config-gp-diagram__meta-caption" x="238" y="124" textAnchor="middle">
         start
       </text>
 
-      <g className="config-gp-diagram__dpad" transform="translate(52 108)">
-        <rect className={dpadClass(12)} x="12" y="0" width="11" height="13" rx="1.5" />
-        <rect className={dpadClass(13)} x="12" y="24" width="11" height="13" rx="1.5" />
-        <rect className={dpadClass(14)} x="0" y="12" width="13" height="11" rx="1.5" />
-        <rect className={dpadClass(15)} x="23" y="12" width="13" height="11" rx="1.5" />
-        <circle className="config-gp-diagram__dpad-hub" cx="17.5" cy="18.5" r="5" />
-      </g>
-
-      <circle className="config-gp-diagram__star" cx="96" cy="154" r="5.5" />
-      <text className="config-gp-diagram__star-icon" x="96" y="157" textAnchor="middle">
-        ★
-      </text>
-
-      <FaceButton
-        cx={308}
-        cy={96}
-        label="Y"
-        active={b(3).active}
-        idleFill={faceIdle}
-        activeFill={faceActive}
-        glowFilter={glowFilter}
-      />
-      <FaceButton
-        cx={286}
-        cy={116}
-        label="X"
-        active={b(2).active}
-        idleFill={faceIdle}
-        activeFill={faceActive}
-        glowFilter={glowFilter}
-      />
-      <FaceButton
-        cx={330}
-        cy={116}
-        label="A"
-        active={b(0).active}
-        idleFill={faceIdle}
-        activeFill={faceActive}
-        glowFilter={glowFilter}
-      />
-      <FaceButton
-        cx={308}
-        cy={136}
-        label="B"
-        active={b(1).active}
-        idleFill={faceIdle}
-        activeFill={faceActive}
-        glowFilter={glowFilter}
-      />
-
-      <circle
-        className={`config-gp-diagram__home${b(16).active ? ' config-gp-diagram__home--active' : ''}`}
-        cx="342"
-        cy="78"
-        r="5.5"
-        filter={b(16).active ? glowFilter : undefined}
-      />
-
       {(
         [
-          { stick: leftStick, ...L_STICK },
-          { stick: rightStick, ...R_STICK },
+          ['x', 'X'],
+          ['y', 'Y'],
+          ['a', 'A'],
+          ['b', 'B'],
         ] as const
-      ).map(({ stick, cx, cy }, i) => (
-        <g key={i} className="config-gp-diagram__stick">
-          <circle className="config-gp-diagram__stick-well" cx={cx} cy={cy} r="20" />
-          <circle className="config-gp-diagram__stick-groove" cx={cx} cy={cy} r="17" />
-          <circle
-            className="config-gp-diagram__stick-cap"
-            cx={cx}
-            cy={cy}
-            r="13"
-            fill={`url(#${uid}-stick-cap)`}
-          />
-          <circle
-            className={`config-gp-diagram__stick-dot${stick.active ? ' config-gp-diagram__stick-dot--active' : ''}`}
-            cx={stick.cx}
-            cy={stick.cy}
-            r="4.5"
-            filter={stick.active ? glowFilter : undefined}
-          />
-        </g>
-      ))}
+      ).map(([key, label]) => {
+        const face = FACE[key];
+        const active = b(face.index).active;
+        return (
+          <g key={key}>
+            <circle
+              className={`config-gp-diagram__face-btn${active ? ' config-gp-diagram__face-btn--active' : ''}`}
+              cx={face.cx}
+              cy={face.cy}
+              r="12"
+            />
+            <text
+              className={`config-gp-diagram__face-label${active ? ' config-gp-diagram__face-label--active' : ''}`}
+              x={face.cx}
+              y={face.cy + 4}
+              textAnchor="middle"
+            >
+              {label}
+            </text>
+          </g>
+        );
+      })}
+
+      <g className={b(10).active ? 'config-gp-diagram__stick config-gp-diagram__stick--active' : 'config-gp-diagram__stick'}>
+        <circle className="config-gp-diagram__stick-well" cx={L_STICK.cx} cy={L_STICK.cy} r="22" />
+        <circle
+          className="config-gp-diagram__stick-cap"
+          cx={L_STICK.cx}
+          cy={L_STICK.cy}
+          r="16"
+        />
+        <circle
+          className={`config-gp-diagram__stick-dot${leftStick.active ? ' config-gp-diagram__stick-dot--active' : ''}`}
+          cx={leftStick.cx}
+          cy={leftStick.cy}
+          r="2.4"
+        />
+      </g>
+      <g className={b(11).active ? 'config-gp-diagram__stick config-gp-diagram__stick--active' : 'config-gp-diagram__stick'}>
+        <circle className="config-gp-diagram__stick-well" cx={R_STICK.cx} cy={R_STICK.cy} r="22" />
+        <circle
+          className="config-gp-diagram__stick-cap"
+          cx={R_STICK.cx}
+          cy={R_STICK.cy}
+          r="16"
+        />
+        <circle
+          className={`config-gp-diagram__stick-dot${rightStick.active ? ' config-gp-diagram__stick-dot--active' : ''}`}
+          cx={rightStick.cx}
+          cy={rightStick.cy}
+          r="2.4"
+        />
+      </g>
+
+      <circle className="config-gp-diagram__star" cx="128" cy="176" r="7" />
+      <text className="config-gp-diagram__star-icon" x="128" y="179" textAnchor="middle">
+        ★
+      </text>
+      <circle
+        className={`config-gp-diagram__home${b(16).active ? ' config-gp-diagram__home--active' : ''}`}
+        cx="312"
+        cy="176"
+        r="7"
+      />
 
       <title>
         {`L stick ${lx.toFixed(2)}, ${ly.toFixed(2)} · R stick ${rx.toFixed(2)}, ${ry.toFixed(2)}`}
