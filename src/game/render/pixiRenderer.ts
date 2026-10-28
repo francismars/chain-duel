@@ -1,4 +1,12 @@
-import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
+import {
+  Application,
+  Container,
+  Graphics,
+  Sprite,
+  Text,
+  TextStyle,
+  Texture,
+} from 'pixi.js';
 import type { GameState, GridPos, PowerUpType } from '@/game/engine/types';
 import { P2_SNAKE_COLOR, POWERUP_COLORS } from '@/game/engine/constants';
 import {
@@ -54,6 +62,18 @@ import {
   endOverlayRevealDurationMs,
 } from './endGameOverlay';
 import { pixiTextResolution } from '@/game/render/pixiTextResolution';
+import {
+  cellsForSnakes,
+  diffCells,
+  marksForSnakes,
+  QUIET_BODY_ALPHA,
+  QUIET_HEAD_ALPHA,
+  QUIET_PHANTOM_BODY_ALPHA,
+  QUIET_PHANTOM_HEAD_ALPHA,
+  type CellPaint,
+  type QuietMark,
+  type QuietSnake,
+} from '@/game/render/quietChainCells';
 import { readGraphicsSettings } from '@/lib/graphicsSettings';
 
 type CapturePulse = { startMs: number; reward: number };
@@ -76,6 +96,15 @@ export class PixiGameRenderer {
   private deadZone: Graphics = new Graphics();
   private grid: Graphics = new Graphics();
   private scene: Graphics = new Graphics();
+  /**
+   * Quiet-step picture. Walls and coins stay put. Chain fills are sprites that
+   * share one texture, so they batch into one draw. Strokes (outlines, frozen
+   * rings) sit in one Graphics above those fills.
+   */
+  private wallsLayer: Graphics = new Graphics();
+  private coinLayer: Graphics = new Graphics();
+  private chainCells: Container = new Container();
+  private chainMarks: Graphics = new Graphics();
   /** Icons and decoys. Redrawn on their own so a pulse does not rebuild the chains. */
   private powerUpLayer: Graphics = new Graphics();
   private overlay: Container = new Container();
@@ -149,8 +178,22 @@ export class PixiGameRenderer {
   lastSubmitMs = 0;
   /** Last `game-result-active` value applied to the board. */
   private resultActiveApplied: boolean | null = null;
+  /** True while the quiet sprite picture is what the player sees. */
+  private quietCellsOn = false;
+  private stillBoardKey = '';
+  private deadZoneKey = '';
+  private cellGeom = '';
+  private marksKey = '';
+  private liveCells = new Map<string, { sprite: Sprite; paint: CellPaint }>();
+  private spritePool: Sprite[] = [];
+  private cellTexture: Texture | null = null;
 
   constructor() {
+    this.wallsLayer.visible = false;
+    this.coinLayer.visible = false;
+    this.chainCells.visible = false;
+    this.chainCells.sortableChildren = true;
+    this.chainMarks.visible = false;
     const startWordStyle = new TextStyle({
       fontFamily: 'BureauGrotesque',
       fill: '#ffffff',
@@ -240,7 +283,11 @@ export class PixiGameRenderer {
       host.appendChild(app.canvas);
       this.root.addChild(this.deadZone);
       this.root.addChild(this.grid);
+      this.root.addChild(this.wallsLayer);
+      this.root.addChild(this.chainCells);
+      this.root.addChild(this.chainMarks);
       this.root.addChild(this.scene);
+      this.root.addChild(this.coinLayer);
       this.root.addChild(this.powerUpLayer);
       this.overlay.addChild(this.startWordsContainer);
       this.overlay.addChild(this.startPromptSubtext);
@@ -484,6 +531,302 @@ export class PixiGameRenderer {
     return this.chainMotionActive(state, now) || this.chainMotionWasActive;
   }
 
+  /**
+   * Quiet steps reuse the cells that did not move. A capture pulse, grow,
+   * surge, or Amplifier still takes the full scene redraw.
+   */
+  private canIncrementChains(
+    state: GameState,
+    width: number,
+    height: number,
+    now: number
+  ): boolean {
+    const playing =
+      state.gameStarted && !state.gameEnded && !state.countdownStart;
+    if (!playing || this.resizeDirty) return false;
+    const view = this.app?.renderer;
+    if (
+      view &&
+      (Math.abs(view.width - width) > 1 || Math.abs(view.height - height) > 1)
+    ) {
+      return false;
+    }
+    if (this.chainMotionActive(state, now) || this.chainMotionWasActive) {
+      return false;
+    }
+    return true;
+  }
+
+  private syncGridAndDeadZone(
+    state: GameState,
+    width: number,
+    height: number,
+    colSize: number,
+    rowSize: number
+  ): void {
+    const gridAlpha = 0.05;
+    const cacheKey = `${Math.round(width)}|${Math.round(height)}|${state.cols}|${state.rows}|${gridAlpha}`;
+    if (cacheKey !== this.gridCacheKey) {
+      this.rebuildStaticGrid(state, colSize, rowSize, gridAlpha);
+      this.gridCacheKey = cacheKey;
+    }
+    const sb = state.shrinkBorder;
+    const dz = sb
+      ? `${Math.round(width)}x${Math.round(height)}:${sb.left},${sb.top},${sb.right},${sb.bottom},${sb.warningActive ? 1 : 0}`
+      : '';
+    if (dz === this.deadZoneKey) return;
+    this.deadZoneKey = dz;
+    this.deadZone.clear();
+    if (sb) this.renderDeadZone(state, width, height, colSize, rowSize);
+  }
+
+  private hideQuietBoard(): void {
+    this.quietCellsOn = false;
+    this.wallsLayer.visible = false;
+    this.coinLayer.visible = false;
+    this.chainCells.visible = false;
+    this.chainMarks.visible = false;
+    this.scene.visible = true;
+  }
+
+  private paintQuietBoard(
+    state: GameState,
+    colSize: number,
+    rowSize: number,
+    width: number,
+    height: number,
+    pictureChanged: boolean
+  ): void {
+    if (!this.quietCellsOn) {
+      this.scene.clear();
+      this.scene.visible = false;
+      this.quietCellsOn = true;
+      this.stillBoardKey = '';
+      this.cellGeom = '';
+      this.marksKey = '';
+      this.host?.closest('#gameCanvas')?.classList.remove('is-prematch');
+      if (this.preMatchOverlayVisible()) this.finishPreMatchDismiss();
+    }
+    // Countdown hides on the full redraw. The first playing frame is quiet,
+    // so LFG would otherwise stay until the next capture effect.
+    if (this.lastCountdownPhase !== null) this.hideCountdownOverlay();
+    this.wallsLayer.visible = true;
+    this.coinLayer.visible = true;
+    this.chainCells.visible = true;
+    if (!pictureChanged) return;
+
+    const geom = `${colSize}|${rowSize}`;
+    const geomChanged = geom !== this.cellGeom;
+    this.cellGeom = geom;
+
+    const still = this.stillKey(state, width, height);
+    if (still !== this.stillBoardKey) {
+      this.stillBoardKey = still;
+      this.wallsLayer.clear();
+      this.drawWalls(this.wallsLayer, state, colSize, rowSize);
+      this.coinLayer.clear();
+      for (const cb of state.coinbases ?? []) {
+        if (cb.isDecoy) continue;
+        this.drawCoinbase(
+          cb.pos,
+          colSize,
+          rowSize,
+          { reward: cb.reward, isDecoy: false },
+          Infinity,
+          this.coinLayer
+        );
+      }
+    }
+
+    const snakes = this.quietSnakes(state);
+    this.syncQuietSprites(
+      cellsForSnakes(snakes),
+      colSize,
+      rowSize,
+      geomChanged
+    );
+    this.syncQuietMarks(marksForSnakes(snakes), colSize, rowSize);
+  }
+
+  private stillKey(state: GameState, width: number, height: number): string {
+    let key = `${Math.round(width)}x${Math.round(height)}:${state.cols}x${state.rows}:`;
+    for (const wall of state.obstacleWalls ?? []) {
+      key += `w${wall.pos[0]},${wall.pos[1]};`;
+    }
+    for (const cb of state.coinbases ?? []) {
+      if (cb.isDecoy) continue;
+      key += `c${cb.pos[0]},${cb.pos[1]},${cb.reward ?? 0};`;
+    }
+    return key;
+  }
+
+  private drawWalls(
+    target: Graphics,
+    state: GameState,
+    colSize: number,
+    rowSize: number
+  ): void {
+    for (const wall of state.obstacleWalls ?? []) {
+      const px = wall.pos[0] * colSize;
+      const py = wall.pos[1] * rowSize;
+      target
+        .rect(px, py, colSize, rowSize)
+        .fill({ color: 0xffffff, alpha: 0.8 });
+      target
+        .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
+        .stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
+    }
+  }
+
+  private quietSnakes(state: GameState): QuietSnake[] {
+    const snakes: QuietSnake[] = [];
+    const extras = state.extraSnakes ?? [];
+    for (let i = 0; i < extras.length; i += 1) {
+      const extra = extras[i]!;
+      const effects = getSnakeEffects(state, (i + 2) as PowerUpPlayerIndex);
+      snakes.push({
+        id: `e${i}`,
+        z: i,
+        color: extra.color,
+        head: extra.snake.head,
+        body: extra.snake.body,
+        phantom: Boolean(effects.phantom),
+        frozen: Boolean(effects.frozen),
+        outline: extra.outline,
+      });
+    }
+    const p1 = getSnakeEffects(state, 0);
+    snakes.push({
+      id: 'p1',
+      z: 20,
+      color: 0xffffff,
+      head: state.p1.head,
+      body: state.p1.body,
+      phantom: Boolean(p1.phantom),
+      frozen: Boolean(p1.frozen),
+    });
+    const p2 = getSnakeEffects(state, 1);
+    snakes.push({
+      id: 'p2',
+      z: 30,
+      color: P2_SNAKE_COLOR,
+      head: state.p2.head,
+      body: state.p2.body,
+      phantom: Boolean(p2.phantom),
+      frozen: Boolean(p2.frozen),
+    });
+    return snakes;
+  }
+
+  private syncQuietSprites(
+    cells: readonly CellPaint[],
+    col: number,
+    row: number,
+    geomChanged: boolean
+  ): void {
+    const prev = new Map<string, CellPaint>();
+    for (const [key, live] of this.liveCells) prev.set(key, live.paint);
+    const diff = diffCells(prev, cells);
+    for (const key of diff.removed) {
+      const live = this.liveCells.get(key);
+      if (!live) continue;
+      live.sprite.removeFromParent();
+      this.spritePool.push(live.sprite);
+      this.liveCells.delete(key);
+    }
+    for (const cell of diff.updated) {
+      const live = this.liveCells.get(cell.key);
+      if (!live) continue;
+      live.paint = cell;
+      live.sprite.zIndex = cell.z;
+      this.placeCell(live.sprite, cell, col, row);
+    }
+    for (const cell of diff.added) {
+      const sprite = this.takeCellSprite();
+      sprite.zIndex = cell.z;
+      this.placeCell(sprite, cell, col, row);
+      this.chainCells.addChild(sprite);
+      this.liveCells.set(cell.key, { sprite, paint: cell });
+    }
+    if (!geomChanged) return;
+    for (const live of this.liveCells.values()) {
+      this.placeCell(live.sprite, live.paint, col, row);
+    }
+  }
+
+  private syncQuietMarks(
+    marks: readonly QuietMark[],
+    col: number,
+    row: number
+  ): void {
+    let key = `${col}|${row}|`;
+    for (const mark of marks) {
+      key += `${mark.kind}:${mark.id}:${mark.gx},${mark.gy}:${mark.color};`;
+    }
+    this.chainMarks.visible = marks.length > 0;
+    if (key === this.marksKey) return;
+    this.marksKey = key;
+    this.chainMarks.clear();
+    const lw = Math.max(1.5, Math.min(col, row) * 0.1);
+    for (const mark of marks) {
+      if (mark.kind === 'frozen') {
+        this.chainMarks
+          .rect(mark.gx * col - 2, mark.gy * row - 2, col + 4, row + 4)
+          .stroke({ width: 2, color: mark.color, alpha: 0.7 });
+        continue;
+      }
+      this.chainMarks
+        .rect(
+          mark.gx * col + lw / 2,
+          mark.gy * row + lw / 2,
+          col - lw,
+          row - lw
+        )
+        .stroke({ width: lw, color: mark.color, alpha: 0.85 });
+    }
+  }
+
+  private placeCell(
+    sprite: Sprite,
+    cell: CellPaint,
+    col: number,
+    row: number
+  ): void {
+    sprite.position.set(cell.gx * col, cell.gy * row);
+    sprite.width = col;
+    sprite.height = row;
+    sprite.tint = cell.color;
+    sprite.alpha = cell.alpha;
+  }
+
+  private takeCellSprite(): Sprite {
+    const pooled = this.spritePool.pop();
+    if (pooled) {
+      pooled.visible = true;
+      return pooled;
+    }
+    return new Sprite({ texture: this.ensureCellTexture() });
+  }
+
+  /** Crisp cell quads. Scaling Texture.WHITE with a linear filter softens the edges. */
+  private ensureCellTexture(): Texture {
+    if (this.cellTexture) return this.cellTexture;
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 2;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      this.cellTexture = Texture.WHITE;
+      return this.cellTexture;
+    }
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 2, 2);
+    const texture = Texture.from(canvas);
+    texture.source.scaleMode = 'nearest';
+    this.cellTexture = texture;
+    return texture;
+  }
+
   render(state: GameState, opts?: PixiRenderOpts): void {
     if (this.resultActiveApplied !== state.gameEnded) {
       this.resultActiveApplied = state.gameEnded;
@@ -544,43 +887,26 @@ export class PixiGameRenderer {
         : Infinity;
 
     const boardKey = this.boardDrawKey(state, width, height);
-    const rebuildBoard = this.shouldRebuildBoard(
-      state,
-      width,
-      height,
-      now,
-      boardKey
-    );
+    this.syncGridAndDeadZone(state, width, height, colSize, rowSize);
 
-    if (rebuildBoard) {
-      // ── Dead zone / convergence overlay ─────────────────────────────────────
-      this.deadZone.clear();
-      if (state.shrinkBorder) {
-        this.renderDeadZone(state, width, height, colSize, rowSize);
-      }
-
-      // ── Grid (cached; rebuild only on size change) ──
-      const gridAlpha = 0.05;
-      const cacheKey = `${width}|${height}|${state.cols}|${state.rows}|${gridAlpha.toFixed(3)}`;
-      if (cacheKey !== this.gridCacheKey) {
-        this.rebuildStaticGrid(state, colSize, rowSize, gridAlpha);
-        this.gridCacheKey = cacheKey;
-      }
+    // A quiet step only moves a head and a tail. Effects keep the full redraw.
+    if (this.canIncrementChains(state, width, height, now)) {
+      const entering = !this.quietCellsOn;
+      this.paintQuietBoard(
+        state,
+        colSize,
+        rowSize,
+        width,
+        height,
+        entering || boardKey !== this.boardPaintKey
+      );
+      this.boardPaintKey = boardKey;
+    } else if (this.shouldRebuildBoard(state, width, height, now, boardKey)) {
+      this.hideQuietBoard();
 
       // ── Scene ─────────────────────────────────────────────────────────────────
       this.scene.clear();
-
-      // Obstacle walls
-      for (const wall of state.obstacleWalls ?? []) {
-        const px = wall.pos[0] * colSize;
-        const py = wall.pos[1] * rowSize;
-        this.scene
-          .rect(px, py, colSize, rowSize)
-          .fill({ color: 0xffffff, alpha: 0.8 });
-        this.scene
-          .rect(px + 1, py + 1, colSize - 2, rowSize - 2)
-          .stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
-      }
+      this.drawWalls(this.scene, state, colSize, rowSize);
 
       // Snakes
       const p1Effects = getSnakeEffects(state, 0);
@@ -1039,8 +1365,12 @@ export class PixiGameRenderer {
       const t = Math.max(0, Math.min(1, (boardElapsed - segIdx * 80) / 700));
       return 1 - Math.pow(1 - t, 3); // cubic ease-out
     };
-    const headAlpha = (effects.phantom ? 0.5 : 1) * segReveal(0);
-    const baseBodyAlpha = effects.phantom ? 0.25 : 0.6;
+    const headAlpha =
+      (effects.phantom ? QUIET_PHANTOM_HEAD_ALPHA : QUIET_HEAD_ALPHA) *
+      segReveal(0);
+    const baseBodyAlpha = effects.phantom
+      ? QUIET_PHANTOM_BODY_ALPHA
+      : QUIET_BODY_ALPHA;
     const totalLen = 1 + snake.body.length;
     const isLight = color === 0xffffff;
 
@@ -1523,10 +1853,17 @@ export class PixiGameRenderer {
     this.gridCacheKey = '';
     this.lastResizeWidth = 0;
     this.lastResizeHeight = 0;
+    for (const sprite of this.spritePool) sprite.destroy();
+    this.spritePool = [];
     if (this.app) {
       this.app.destroy(true, { children: true });
       this.app = null;
+    } else {
+      for (const live of this.liveCells.values()) live.sprite.destroy();
     }
+    this.liveCells.clear();
+    this.cellTexture?.destroy(true);
+    this.cellTexture = null;
     if (this.fallbackCanvas && this.host) {
       this.host.removeChild(this.fallbackCanvas);
     }
