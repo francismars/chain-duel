@@ -455,6 +455,32 @@ export function get2v1AiTeamCaptureLabel(state: GameState): string {
   return `${get2v1TeamCapturePercent(state)}%`;
 }
 
+/**
+ * Score and capture label are the readout that changes during a step.
+ * Bar width follows the score, and "OUT" is the capture label.
+ */
+export function ffaHudReadoutSame(
+  prev: readonly FfaHudPlayer[],
+  next: readonly FfaHudPlayer[]
+): boolean {
+  if (prev.length !== next.length) return false;
+  for (let i = 0; i < next.length; i += 1) {
+    const before = prev[i];
+    const after = next[i];
+    if (
+      !before ||
+      !after ||
+      before.index !== after.index ||
+      before.score !== after.score ||
+      before.capture !== after.capture ||
+      before.name !== after.name
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function buildFfaHud(state: GameState): FfaHudPlayer[] {
   const count = multiplayerPlayerCount(state);
   const initial = state.ffaInitialScores ?? getFfaScores(state);

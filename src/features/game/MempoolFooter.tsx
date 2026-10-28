@@ -1,7 +1,13 @@
-import type { BitcoinDetails } from '@/game/io/mempool';
+import type { BlockInfo } from '@/game/io/mempool';
+import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
 
 interface MempoolFooterProps {
-  bitcoin: BitcoinDetails;
+  /** Fired for a new block height, not the once-a-second "time ago" tick. */
+  onNewBlock?: (block: BlockInfo) => void;
+  /**
+   * Extra flash from the match (online block, replay). The live tip flash
+   * stays inside the footer so the clock does not re-render the page.
+   */
   highlight?: boolean;
   /** Game page uses element ids for highlight CSS animations. */
   withGameElementIds?: boolean;
@@ -9,20 +15,23 @@ interface MempoolFooterProps {
 }
 
 export function MempoolFooter({
-  bitcoin,
+  onNewBlock,
   highlight = false,
   withGameElementIds = false,
   showMiner = false,
 }: MempoolFooterProps) {
+  const feed = useMempoolFeed({ onNewBlock });
+  const lit = highlight || feed.footerHighlight;
+
   return (
-    <div id="bitcoinDetails" className={highlight ? 'highlight' : ''}>
+    <div id="bitcoinDetails" className={lit ? 'highlight' : ''}>
       <div className="detail">
         <div className="label">Latest Block</div>
         <div
           className="value"
           id={withGameElementIds ? 'bitcoinblockHeight' : undefined}
         >
-          {bitcoin.height}
+          {feed.bitcoin.height}
         </div>
       </div>
       <div className="detail">
@@ -31,7 +40,7 @@ export function MempoolFooter({
           className="value"
           id={withGameElementIds ? 'bitcoinblockTimeAgo' : undefined}
         >
-          {bitcoin.timeAgo}
+          {feed.bitcoin.timeAgo}
         </div>
       </div>
       <div className="detail">
@@ -40,7 +49,7 @@ export function MempoolFooter({
           className="value"
           id={withGameElementIds ? 'bitcoinblockSize' : undefined}
         >
-          {bitcoin.size}
+          {feed.bitcoin.size}
         </div>
       </div>
       <div className="detail">
@@ -49,7 +58,7 @@ export function MempoolFooter({
           className="value"
           id={withGameElementIds ? 'bitcoinblockTXcount' : undefined}
         >
-          {bitcoin.txCount}
+          {feed.bitcoin.txCount}
         </div>
       </div>
       <div className={`detail${showMiner ? '' : ' hide'}`}>
@@ -58,7 +67,7 @@ export function MempoolFooter({
           className="value"
           id={withGameElementIds ? 'bitcoinblockMiner' : undefined}
         >
-          {bitcoin.miner}
+          {feed.bitcoin.miner}
         </div>
       </div>
       <div className="detail">
@@ -67,7 +76,7 @@ export function MempoolFooter({
           className="value"
           id={withGameElementIds ? 'bitcoinAvgFee' : undefined}
         >
-          {bitcoin.medianFee}
+          {feed.bitcoin.medianFee}
         </div>
       </div>
     </div>

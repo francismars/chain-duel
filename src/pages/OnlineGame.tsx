@@ -37,7 +37,6 @@ import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapsh
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
 import { MatchEndCard } from '@/features/game/MatchEndCard';
 import { MatchStartPrompt } from '@/features/game/MatchStartPrompt';
-import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
 import { useHudCaptureFeedback } from '@/features/game/hooks/useHudCaptureFeedback';
 import {
   captureFeedbackStyleFromCtx,
@@ -122,7 +121,7 @@ export default function OnlineGame({
   const pointAnimationsRef = useRef<OnlinePointAnim[]>([]);
   const prevPointPopCountRef = useRef(0);
   const prevPointCountByKeyRef = useRef<Map<string, number>>(new Map());
-  const { bitcoin, footerHighlight, setFooterHighlight } = useMempoolFeed();
+  const [footerHighlight, setFooterHighlight] = useState(false);
   const [roomInfo, setRoomInfo] = useState<{
     hostSessionID?: string;
     roomCode?: string;
@@ -1435,7 +1434,7 @@ export default function OnlineGame({
             </div>
           ) : null}
 
-          <MempoolFooter bitcoin={bitcoin} highlight={footerHighlight} />
+          <MempoolFooter highlight={footerHighlight} />
         </div>
       </div>
 

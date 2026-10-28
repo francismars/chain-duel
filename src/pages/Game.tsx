@@ -42,7 +42,6 @@ import { GameAudioSystem } from '@/game/audio/gameAudio';
 import { useTouchGestureAudio } from '@/features/game/useTouchGestureAudio';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { endOverlayActionsDelayMs } from '@/game/render/endGameOverlay';
-import { useMempoolFeed } from '@/features/game/hooks/useMempoolFeed';
 import { MatchEndCard } from '@/features/game/MatchEndCard';
 import { MatchStartPrompt } from '@/features/game/MatchStartPrompt';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
@@ -92,6 +91,7 @@ import {
   GameInfoLabel,
   readChallengeHudFromConfig,
 } from '@/features/game/GameInfoLabel';
+import { ffaHudReadoutSame } from '@/game/engine/ffa';
 import type { FfaHudPlayer } from '@/game/engine/types';
 import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { navigateToPostGame } from '@/shared/constants/menuNavigation';
@@ -294,9 +294,6 @@ export default function Game() {
     },
     [practiceSession.isChallenge]
   );
-  const { bitcoin, footerHighlight } = useMempoolFeed({
-    onNewBlock: handleMempoolNewBlock,
-  });
   const [noteState, setNoteState] = useState<
     'idle' | 'posting' | 'posted' | 'error' | 'zapping'
   >('idle');
@@ -1385,7 +1382,10 @@ export default function Game() {
       setCurrentP1Width(hud.currentWidthP1);
       setCurrentP2Width(hud.currentWidthP2);
       if (hud.ffa?.players) {
-        setFfaPlayers(hud.ffa.players);
+        const nextPlayers = hud.ffa.players;
+        setFfaPlayers((prev) =>
+          ffaHudReadoutSame(prev, nextPlayers) ? prev : nextPlayers
+        );
         if (!is2v1) {
           const prev = ffaCapturePrevRef.current;
           const flashes = hud.ffa.players.map((p, i) => p.capture !== prev[i]);
@@ -2069,8 +2069,7 @@ export default function Game() {
           {isPowerupMode && <PowerUpLegend />}
 
           <MempoolFooter
-            bitcoin={bitcoin}
-            highlight={footerHighlight}
+            onNewBlock={handleMempoolNewBlock}
             withGameElementIds
           />
         </div>
