@@ -990,28 +990,30 @@ export class PixiGameRenderer {
         .fill({ color: voidColor, alpha: voidAlpha });
     }
 
-    // White edge at the live boundary (warning glow)
+    // White edge at the live boundary. The first warning is still flush with
+    // the board, so there is no dead zone yet — draw that edge anyway.
     const edgeAlpha = sb.warningActive ? 0.55 : 0.18;
     const colEdge = colSize;
     const rowEdge = rowSize;
     const edgeColor = 0xffffff;
+    const lit = sb.warningActive;
 
-    if (leftPx > 0) {
+    if (leftPx > 0 || lit) {
       this.deadZone
         .rect(leftPx, topPx, colEdge, bottomPx - topPx)
         .fill({ color: edgeColor, alpha: edgeAlpha });
     }
-    if (rightPx < width) {
+    if (rightPx < width || lit) {
       this.deadZone
         .rect(rightPx - colEdge, topPx, colEdge, bottomPx - topPx)
         .fill({ color: edgeColor, alpha: edgeAlpha });
     }
-    if (topPx > 0) {
+    if (topPx > 0 || lit) {
       this.deadZone
         .rect(leftPx, topPx, rightPx - leftPx, rowEdge)
         .fill({ color: edgeColor, alpha: edgeAlpha });
     }
-    if (bottomPx < height) {
+    if (bottomPx < height || lit) {
       this.deadZone
         .rect(leftPx, bottomPx - rowEdge, rightPx - leftPx, rowEdge)
         .fill({ color: edgeColor, alpha: edgeAlpha });
