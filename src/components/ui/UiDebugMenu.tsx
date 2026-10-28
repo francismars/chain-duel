@@ -80,9 +80,14 @@ export function UiDebugMenu() {
       {open ? (
         <div className="ui-debug-menu__panel" role="menu">
           <div className="ui-debug-menu__head">
-            <Link to="/preview" onClick={() => setOpen(false)}>
-              All test pages
-            </Link>
+            <div className="ui-debug-menu__head-links">
+              <Link to="/" onClick={() => setOpen(false)}>
+                Home
+              </Link>
+              <Link to="/preview" onClick={() => setOpen(false)}>
+                All test pages
+              </Link>
+            </div>
             <button
               type="button"
               onClick={() => {
