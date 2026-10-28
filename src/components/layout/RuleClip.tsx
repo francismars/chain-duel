@@ -426,7 +426,7 @@ export function RuleClip({ id }: { id: RuleClipId }) {
           tick();
           stepped = true;
         }
-        advancePointChanges(state);
+        advancePointChanges(state, delta);
         if (stepped || (state.pointChanges?.length ?? 0) > 0) paint();
         frame = window.requestAnimationFrame(loop);
       };

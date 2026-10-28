@@ -84,3 +84,8 @@ export const POWERUP_SPAWN_WEIGHTS: Record<string, number> = {
 
 export const AI_WANDERER_RANDOM_CHANCE = 60;
 export const AI_TACTICIAN_THREAT_INTERVAL = 3;
+
+/** How long a +/- sats popup stays on screen after a capture (local and online). */
+export const POINT_CHANGE_LIFE_MS = 1400;
+/** How far a +/- sats popup rises over its life, in px. */
+export const POINT_CHANGE_RISE_PX = 36;

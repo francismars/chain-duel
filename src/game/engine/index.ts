@@ -14,6 +14,8 @@ import {
   FFA_GHOST_COLOR,
   FFA_SPECTER_COLOR,
   FFA_BOT_NAMES,
+  POINT_CHANGE_LIFE_MS,
+  POINT_CHANGE_RISE_PX,
 } from '@/game/engine/constants';
 import { runAStar } from '@/game/engine/astar';
 import { captureRateLabel } from '@/game/engine/captureRateLabel';
@@ -660,16 +662,28 @@ export function stepGame(state: GameState): TickResult {
   };
 }
 
-/** Fade and rise floating +/- sats popups (local / practice / challenge sim). */
-export function advancePointChanges(state: GameState): void {
-  state.pointChanges = state.pointChanges
-    .map((change) => ({
-      ...change,
-      p1YOffsetPx: change.p1YOffsetPx - 0.25,
-      p2YOffsetPx: change.p2YOffsetPx - 0.25,
-      alpha: change.alpha - 0.1 / 24,
-    }))
-    .filter((change) => change.alpha >= 0);
+/**
+ * Fade and rise floating +/- sats popups (local / practice / challenge sim).
+ * Time-based, so a popup lasts POINT_CHANGE_LIFE_MS at any frame rate; faded
+ * popups are dropped from the array so nothing keeps them alive.
+ */
+export function advancePointChanges(
+  state: GameState,
+  deltaMs: number = 1000 / 60
+): void {
+  if (state.pointChanges.length === 0) return;
+  const fade = Math.max(0, deltaMs) / POINT_CHANGE_LIFE_MS;
+  const rise = fade * POINT_CHANGE_RISE_PX;
+  let kept = 0;
+  for (const change of state.pointChanges) {
+    change.alpha -= fade;
+    if (change.alpha <= 0) continue;
+    change.p1YOffsetPx -= rise;
+    change.p2YOffsetPx -= rise;
+    state.pointChanges[kept] = change;
+    kept += 1;
+  }
+  state.pointChanges.length = kept;
 }
 
 // ============================================================================
