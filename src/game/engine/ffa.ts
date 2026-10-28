@@ -206,9 +206,11 @@ export function ffaSnakeHead(state: GameState, index: FfaPlayerIndex): GridPos {
     case 1:
       return [state.p2.head[0], state.p2.head[1]];
     case 2:
-      return state.extraSnakes[0]?.snake.head ?? [-1, -1];
-    case 3:
-      return state.extraSnakes[1]?.snake.head ?? [-1, -1];
+    case 3: {
+      // Copy: heads move in place, and a popup holding the live array rode the tip.
+      const head = state.extraSnakes[index - 2]?.snake.head;
+      return head ? [head[0], head[1]] : [-1, -1];
+    }
   }
 }
 

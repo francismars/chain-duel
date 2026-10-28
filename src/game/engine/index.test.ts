@@ -18,6 +18,7 @@ import {
   hasPowerUp,
 } from '@/game/engine/powerups';
 import { TEAM_2V1_P1_SPAWN_Y } from '@/game/engine/constants';
+import { ffaApplyCaptureAmount } from '@/game/engine/ffa';
 
 describe('game engine parity behavior', () => {
   it('paid duel preserves zero sats and locks to winner on refresh', () => {
@@ -106,6 +107,31 @@ describe('game engine parity behavior', () => {
     const hud = getHudState(state);
     expect(hud.initialWidthP1).toBe(25);
     expect(hud.initialWidthP2).toBe(75);
+  });
+
+  it('FFA popups for chains 3 and 4 stay where the capture happened', () => {
+    const state = createGameState({
+      p1Name: 'Alpha',
+      p2Name: 'Beta',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'FFA',
+      practiceMode: true,
+      teamMode: 'ffa',
+    });
+    const p3 = state.extraSnakes[0]!.snake;
+    const p4 = state.extraSnakes[1]!.snake;
+    const p3At = [p3.head[0], p3.head[1]];
+    ffaApplyCaptureAmount(state, 2, 40);
+    ffaApplyCaptureAmount(state, 3, 40);
+    // Heads move in place; a popup holding the live array followed the tip.
+    p3.head[0] += 3;
+    p4.head[1] += 3;
+    const [byP3, byP4] = state.pointChanges;
+    expect(byP3!.gainPos).toEqual(p3At);
+    expect(byP3!.gainPos).not.toBe(p3.head);
+    expect(byP4!.gainPos).not.toBe(p4.head);
+    expect(byP4!.lossPos).not.toBe(p4.head);
   });
 
   it('FFA splits pot four ways and exposes four-player HUD', () => {
