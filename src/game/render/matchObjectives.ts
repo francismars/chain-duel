@@ -180,24 +180,27 @@ export type CanvasObjectivesOpts = {
   startPromptSubtext?: string;
 };
 
-/** Space for white, Enter for black. Both humans alternate the two lines. */
+/** Space for white, Enter for black. A connected pad says Button, since B, A, and X all start. */
 export function localStartPromptWords(
   p1Human: boolean,
-  p2Human: boolean
+  p2Human: boolean,
+  gamepad?: { p1?: boolean; p2?: boolean }
 ): {
   words: readonly string[];
   altWords?: readonly string[];
 } {
-  if (p1Human && p2Human) {
-    return { words: PRESS_SPACE_TO_START, altWords: PRESS_ENTER_TO_START };
-  }
-  if (p2Human && !p1Human) {
-    return { words: PRESS_ENTER_TO_START };
-  }
-  if (p1Human) {
-    return { words: PRESS_SPACE_TO_START };
-  }
-  return { words: START_PROMPT_WORDS };
+  const lineFor = (slot: 'p1' | 'p2'): readonly string[] => {
+    if (gamepad?.[slot]) return START_PROMPT_WORDS;
+    return slot === 'p1' ? PRESS_SPACE_TO_START : PRESS_ENTER_TO_START;
+  };
+  const lines: readonly string[][] = [];
+  if (p1Human) lines.push(lineFor('p1'));
+  if (p2Human) lines.push(lineFor('p2'));
+  if (lines.length === 0) return { words: START_PROMPT_WORDS };
+  const words = lines[0]!;
+  const alt = lines[1];
+  if (!alt || alt.join(' ') === words.join(' ')) return { words };
+  return { words, altWords: alt };
 }
 
 export function resolveStartPromptWords(
