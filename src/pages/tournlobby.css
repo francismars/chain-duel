@@ -181,3 +181,17 @@
 .tournlobby-page #proceedButton {
   animation: glowing 0ms infinite;
 }
+
+/* Phones: Start above Cancel, full width — same order as every other footer. */
+@media (max-width: 640px) {
+  .tournlobby-page .tournlobby-buttons {
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
+
+  .tournlobby-page .tournlobby-buttons .button {
+    width: 100%;
+    margin: 0;
+  }
+}

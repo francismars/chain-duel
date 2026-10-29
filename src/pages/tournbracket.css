@@ -733,9 +733,9 @@
   }
 
   /* Phones are usually scanning with another device: give the QR room. */
-  .tournbracket-page .bracketPayment .qr-code-stack > svg,
-  .tournbracket-page .bracketPayment .qr-code-stack > canvas {
+  .tournbracket-page .bracketPayment .qrCodeDiv canvas.qrcode,
+  .tournbracket-page .bracketPayment .qrCodeDiv svg.qrcode {
     width: min(64vw, 240px) !important;
-    height: auto !important;
+    height: min(64vw, 240px) !important;
   }
 }
