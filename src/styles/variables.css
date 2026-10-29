@@ -6,15 +6,52 @@
     rgba(0, 0, 0, 0.7),
     rgba(0, 0, 0, 0.2)
   );
+  --line: rgb(255 255 255 / 34%);
+  --line-strong: rgb(255 255 255 / 72%);
 
   /* Typography */
   --font-chainduel: 'BureauGrotesque', sans-serif;
   --font-body: 'Inter', sans-serif;
 
+  /* Type scale — clamped so text never collapses on phones or balloons on TVs. */
+  --fs-xs: clamp(11px, 0.7vw, 16px);
+  --fs-sm: clamp(12px, 0.85vw, 19px);
+  --fs-md: clamp(14px, 1vw, 22px);
+  --fs-lg: clamp(17px, 1.4vw, 30px);
+  --fs-xl: clamp(22px, 2.2vw, 46px);
+
   /* Spacing */
   --margin-horizontal: 15%;
+  --space-1: clamp(4px, 0.3vw, 8px);
+  --space-2: clamp(8px, 0.6vw, 14px);
+  --space-3: clamp(12px, 1vw, 22px);
+  --space-4: clamp(16px, 1.4vw, 30px);
+  --space-5: clamp(24px, 2vw, 44px);
+  --space-6: clamp(32px, 3vw, 64px);
+
+  /* Buttons — one size system shared by every <Button>. */
+  --tap-min: 44px;
+  --btn-h-sm: clamp(36px, 2.4vw, 52px);
+  --btn-h-md: clamp(44px, 3vw, 64px);
+  --btn-h-lg: clamp(52px, 3.6vw, 76px);
+  --btn-w: min(100%, clamp(14rem, 28vw, 22rem));
+  --btn-letter-spacing: 0.1em;
+
+  /* Device safe areas (notch, home indicator). Needs viewport-fit=cover. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 
   /* Game */
   --game-cols: 51;
   --game-rows: 25;
 }
+
+/*
+ * Breakpoints (custom properties can't be used in @media, so use these literals):
+ *   phone   @media (max-width: 640px)
+ *   tablet  @media (max-width: 1024px)
+ *   touch   @media (pointer: coarse)   — touch-specific UI (bigger targets, touch controls)
+ *   hover   @media (hover: hover)      — wrap :hover styles so glows don't stick after a tap
+ */

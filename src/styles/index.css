@@ -115,7 +115,7 @@ h3 {
 
 .full {
   width: 100vw;
-  min-height: calc(100vh - 2vw);
+  min-height: calc(100dvh - 2vw);
 }
 
 .flex.inline {
@@ -206,7 +206,7 @@ html.graphics-flat .graphics-settings__action:focus-visible:not(:disabled) {
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Overscan / fullscreen TV crop: optional inset from corner controls */
