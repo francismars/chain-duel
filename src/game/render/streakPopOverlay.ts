@@ -310,8 +310,7 @@ export function drawStreakPopsCanvas(
     const x = pop.col * colSize + colSize / 2;
     const y = pop.row * rowSize + rowSize / 2;
     const width = Math.max(1, cell * 0.06);
-    const alphaFor = (color: number) =>
-      inkAlpha(color, drawn.alpha, spec.peak);
+    const alphaFor = (color: number) => inkAlpha(color, drawn.alpha, spec.peak);
     ctx.strokeStyle = css;
     ctx.lineWidth = width;
     const wipe = wipeSegment(pop, colSize, rowSize, cell);
