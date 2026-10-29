@@ -630,6 +630,71 @@ function headOnCenter(state: GameState): { x: number; y: number } {
   return { x, y };
 }
 
+/** Another chain that is actually on the board. */
+function otherRider(state: GameState, rider: Rider): Rider {
+  return (
+    presentSeats(state).find((entry) => entry.rider !== rider)?.rider ??
+    (rider === 'p1' ? 'p2' : 'p1')
+  );
+}
+
+/**
+ * Selected chain faces the other chain's body, one step away.
+ * The next step lands on that body, not the head.
+ */
+function stageBodyHit(state: GameState, rider: Rider): GridPos {
+  const { x, y } = headOnCenter(state);
+  const mover = labSnake(state, rider);
+  const other = labSnake(state, otherRider(state, rider));
+  placeSnake(mover, [x, y], 'Right', [
+    [x - 1, y],
+    [x - 2, y],
+  ]);
+  placeSnake(other, [x + 1, y - 1], 'Down', [
+    [x + 1, y],
+    [x + 1, y + 1],
+  ]);
+  return [x + 1, y];
+}
+
+/**
+ * Selected chain faces its own body, one step away.
+ * The cell ahead is a middle segment, not the tail, so the step is a self hit.
+ */
+function stageSelfHit(state: GameState, rider: Rider): GridPos {
+  const { x, y } = headOnCenter(state);
+  const border = state.shrinkBorder;
+  const right = border?.right ?? state.cols - 1;
+  const bottom = border?.bottom ?? state.rows - 1;
+  const parks: GridPos[] = [
+    [Math.min(right - 2, 40), Math.min(bottom - 1, 4)],
+    [Math.min(right - 2, 40), Math.max(2, bottom - 4)],
+    [Math.max((border?.left ?? 0) + 2, 4), Math.min(bottom - 1, 4)],
+  ];
+  let spot = 0;
+  for (const entry of presentSeats(state)) {
+    if (entry.rider === rider) continue;
+    const head = parks[spot] ?? parks[0]!;
+    spot += 1;
+    // Length 3 is 4%. The loop below is 8%, which is not a reorg against 4%.
+    placeSnake(labSnake(state, entry.rider), head, 'Left', [
+      [head[0] + 1, head[1]],
+      [head[0] + 2, head[1]],
+      [head[0] + 3, head[1]],
+    ]);
+  }
+  // The cell ahead is in the body and is not the tail, so the step is a self hit.
+  placeSnake(labSnake(state, rider), [x, y], 'Right', [
+    [x - 1, y],
+    [x - 1, y + 1],
+    [x, y + 1],
+    [x + 1, y + 1],
+    [x + 1, y],
+    [x + 2, y],
+  ]);
+  return [x + 1, y];
+}
+
 /** Face both heads across one shared cell. The selected chain takes the step. */
 function stageHeadOn(state: GameState, rider: Rider): GridPos {
   const { x, y } = headOnCenter(state);
@@ -656,23 +721,20 @@ function stageHeadOnReorg(
   state: GameState,
   rider: Rider,
   recipe: MatchRecipe,
-  rich: 'p1' | 'p2' = 'p1'
+  rich: Rider
 ): GridPos {
   const { x, y } = headOnCenter(state);
+  const poor = otherRider(state, rich);
   const longBody = Array.from(
     { length: 7 },
     (_, index) => [x - 1 - index, y] as GridPos
   );
-  const long = rich === 'p1' ? state.p1 : state.p2;
-  const short = rich === 'p1' ? state.p2 : state.p1;
-  placeSnake(long, [x, y], 'Right', longBody);
-  placeSnake(short, [x + 1, y], 'Left', [[x + 2, y]]);
+  placeSnake(labSnake(state, rich), [x, y], 'Right', longBody);
+  placeSnake(labSnake(state, poor), [x + 1, y], 'Left', [[x + 2, y]]);
   state.currentCaptureP1 = labelFor(recipe, state.p1.body.length);
   state.currentCaptureP2 = labelFor(recipe, state.p2.body.length);
-  const left: Rider = rich;
-  const right: Rider = rich === 'p1' ? 'p2' : 'p1';
-  if (rider === left) return [x + 1, y];
-  if (rider === right) return [x, y];
+  if (rider === rich) return [x + 1, y];
+  if (rider === poor) return [x, y];
   return [x + 1, y];
 }
 
@@ -1156,7 +1218,9 @@ export default function MatchTriggerLab() {
               ? `${player} reset · REORG`
               : kind === 'wall'
                 ? `${player} hit the wall · reset`
-                : `${player} hit a body · reset`
+                : kind === 'self'
+                  ? `${player} hit himself · reset`
+                  : `${player} hit a body · reset`
         );
         bump();
         return;
@@ -1611,6 +1675,32 @@ export default function MatchTriggerLab() {
     lineUp(fatal, 'Chains lined up · next step is head to head');
   };
 
+  const hitBody = () => {
+    const current = stateRef.current;
+    const audio = audioRef.current;
+    if (!current || !audio || current.gameEnded) return;
+    remember();
+    clearStreakPops();
+    const fatal = stageBodyHit(current, riderRef.current);
+    quietBaseline(audio, current);
+    const who =
+      SEATS.find((entry) => entry.rider === riderRef.current)?.label ?? 'Chain';
+    lineUp(fatal, `${who} lined up on a body`);
+  };
+
+  const hitSelf = () => {
+    const current = stateRef.current;
+    const audio = audioRef.current;
+    if (!current || !audio || current.gameEnded) return;
+    remember();
+    clearStreakPops();
+    const fatal = stageSelfHit(current, riderRef.current);
+    quietBaseline(audio, current);
+    const who =
+      SEATS.find((entry) => entry.rider === riderRef.current)?.label ?? 'Chain';
+    lineUp(fatal, `${who} lined up to hit himself`);
+  };
+
   const die = (player: Seat) => {
     const current = stateRef.current;
     const audio = audioRef.current;
@@ -1658,32 +1748,23 @@ export default function MatchTriggerLab() {
     bump();
   };
 
-  const selectChain = (next: 'p1' | 'p2') => {
-    if (riderRef.current === 'p1' || riderRef.current === 'p2') return;
-    riderRef.current = next;
-    setRider(next);
-  };
-
-  const fork = (rich: 'p1' | 'p2') => {
+  const hitHeadOnReorg = () => {
     const current = stateRef.current;
     const audio = audioRef.current;
     if (!current || !audio || current.gameEnded) return;
     remember();
     clearStreakPops();
-    selectChain(rich);
+    const rich = riderRef.current;
     // Same timing as Head to head: line up, then the step pump takes the crash.
-    const fatal = stageHeadOnReorg(
-      current,
-      riderRef.current,
-      draftRef.current,
-      rich
-    );
+    const fatal = stageHeadOnReorg(current, rich, draftRef.current, rich);
     quietBaseline(audio, current);
+    const who = SEATS.find((entry) => entry.rider === rich)?.label ?? 'Chain';
+    const other =
+      SEATS.find((entry) => entry.rider === otherRider(current, rich))?.label ??
+      'the other';
     lineUp(
       fatal,
-      rich === 'p1'
-        ? 'Lined up · long white vs short black · next step is REORG'
-        : 'Lined up · long black vs short white · next step is REORG'
+      `Lined up · long ${who.toLowerCase()} vs short ${other.toLowerCase()} · next step is REORG`
     );
   };
 
@@ -2053,6 +2134,12 @@ export default function MatchTriggerLab() {
                     <button type="button" disabled={ended} onClick={hitHeadOn}>
                       Head to head
                     </button>
+                    <button type="button" disabled={ended} onClick={hitBody}>
+                      Hit a body
+                    </button>
+                    <button type="button" disabled={ended} onClick={hitSelf}>
+                      Hit himself
+                    </button>
                   </div>
                 </div>
                 <div className="match-lab__moment-group">
@@ -2061,18 +2148,10 @@ export default function MatchTriggerLab() {
                     <button
                       type="button"
                       disabled={ended}
-                      onClick={() => fork('p1')}
+                      onClick={hitHeadOnReorg}
                     >
-                      White
-                      <span>head-on</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={ended}
-                      onClick={() => fork('p2')}
-                    >
-                      Black
-                      <span>head-on</span>
+                      Head-on
+                      <span>selected chain</span>
                     </button>
                     <button type="button" disabled={ended} onClick={soloReorg}>
                       Solo
