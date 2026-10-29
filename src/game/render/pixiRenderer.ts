@@ -33,6 +33,7 @@ import {
   CanvasControlsOverlay,
   drawCanvasControlsFallback,
 } from '@/game/render/canvasControlsOverlay';
+import { isCoarsePointer } from '@/shared/utils/inputMode';
 import {
   OnlineStartReadyOverlay,
   drawOnlineStartReadyFallback,
@@ -777,7 +778,8 @@ export class PixiGameRenderer {
           state,
           width,
           height,
-          objOpts.controlSlots ?? [],
+          // Touch devices steer by swipe; key caps would point at keys they don't have.
+          isCoarsePointer() ? [] : (objOpts.controlSlots ?? []),
           this.startRevealTime,
           objOpts.controlLabelSlots
         );
@@ -2171,7 +2173,7 @@ export class PixiGameRenderer {
         state,
         width,
         height,
-        objOpts.controlSlots ?? [],
+        isCoarsePointer() ? [] : (objOpts.controlSlots ?? []),
         1,
         objOpts.controlLabelSlots
       );

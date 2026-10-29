@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import type { GameState } from '@/game/engine/types';
+import { isCoarsePointer } from '@/shared/utils/inputMode';
 import {
   connectedPreMatchPadIndices,
   preMatchGamepadIndex,
@@ -18,6 +19,8 @@ type PromptCopy = {
   stakesHint: string;
 };
 
+const TAP_TO_START = ['TAP', 'TO', 'START'] as const;
+
 function isKeyboardStartLine(words: readonly string[] | undefined): boolean {
   if (!words || words.length === 0) return true;
   const line = words.join(' ');
@@ -34,6 +37,18 @@ function readCopy(opts: CanvasObjectivesOpts | undefined): PromptCopy {
   const localLine =
     isKeyboardStartLine(opts?.startPromptWords) &&
     isKeyboardStartLine(opts?.startPromptAltWords);
+  if (seated && localLine && isCoarsePointer()) {
+    // Phones / tablets start with a tap (TouchControls sends the confirm key).
+    return {
+      words: TAP_TO_START,
+      altWords: null,
+      // Keyboard-only hints ("PRESS X TO SWITCH…") don't apply to a finger.
+      subtext: /^PRESS\b/i.test(opts?.startPromptSubtext?.trim() ?? '')
+        ? ''
+        : (opts?.startPromptSubtext?.trim() ?? ''),
+      stakesHint: opts?.stakesHint?.trim() ?? '',
+    };
+  }
   if (seated && localLine) {
     const connected = connectedPreMatchPadIndices();
     const prompt = localStartPromptWords(

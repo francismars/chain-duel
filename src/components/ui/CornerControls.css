@@ -223,3 +223,19 @@
 .corner-controls--touch .corner-controls__toggle::after {
   content: none;
 }
+
+/* During a touch match the header row is HUD: park the toggle bottom-left
+   (D-pad lives bottom-right) and open the panel upward. */
+html.touch-play .corner-controls--touch {
+  top: auto;
+  bottom: calc(var(--safe-bottom) + var(--space-2));
+  left: calc(var(--safe-left) + var(--space-2));
+  flex-direction: column-reverse;
+}
+
+html.touch-play
+  .corner-controls--touch.corner-controls--open
+  .corner-controls__panel {
+  margin-top: 0;
+  margin-bottom: var(--space-1);
+}

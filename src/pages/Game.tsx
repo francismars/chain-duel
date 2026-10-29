@@ -81,6 +81,7 @@ import {
   humanControlSlotsFromConfig,
   humanControlSlotsFromState,
   type PlayerControlSlot,
+  touchControlSlotForState,
 } from '@/lib/controls/playerControls';
 import {
   canSwapSoloHumanSeat,
@@ -109,6 +110,7 @@ import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './game.css';
 import '@/styles/components/matchResults.css';
 import { BrandHeader } from '@/components/layout/BrandHeader';
+import { TouchControls } from '@/features/game/touch/TouchControls';
 
 interface ZapMessage {
   id: string;
@@ -1781,6 +1783,16 @@ export default function Game() {
     <>
       <div id="game-bg-overlay" aria-hidden="true" />
       <BrandHeader />
+      <TouchControls
+        active={!loading && !showExitOverlay && !soloResultNav}
+        getSlot={() =>
+          stateRef.current ? touchControlSlotForState(stateRef.current) : null
+        }
+        canTapConfirm={() => {
+          const state = stateRef.current;
+          return !!state && (!state.gameStarted || state.gameEnded);
+        }}
+      />
 
       <h1 id="tournament-name" className="hero-outline in-game hide">
         The Merkle Tree

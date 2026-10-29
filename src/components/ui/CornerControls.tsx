@@ -5,6 +5,11 @@ import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
 import { UiDebugMenu } from '@/components/ui/UiDebugMenu';
 import { useCoarsePointer } from '@/shared/utils/inputMode';
+import {
+  readTouchDpad,
+  TOUCH_DPAD_EVENT,
+  writeTouchDpad,
+} from '@/features/game/touch/touchInput';
 import './CornerControls.css';
 
 function getStoredTvSafeInset(): boolean {
@@ -24,6 +29,13 @@ export function CornerControls() {
   const [tvSafeInset, setTvSafeInset] = useState(getStoredTvSafeInset);
   const touch = useCoarsePointer();
   const [touchOpen, setTouchOpen] = useState(false);
+  const [touchDpad, setTouchDpad] = useState(readTouchDpad);
+
+  useEffect(() => {
+    const sync = () => setTouchDpad(readTouchDpad());
+    window.addEventListener(TOUCH_DPAD_EVENT, sync);
+    return () => window.removeEventListener(TOUCH_DPAD_EVENT, sync);
+  }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const canFullscreen =
     typeof document !== 'undefined' && document.fullscreenEnabled === true;
@@ -262,6 +274,26 @@ export function CornerControls() {
             </svg>
           )}
         </button>
+        {touch ? (
+          <button
+            type="button"
+            className={`corner-btn ${touchDpad ? 'corner-btn--tv-safe-on' : ''}`}
+            onClick={() => writeTouchDpad(!touchDpad)}
+            aria-pressed={touchDpad}
+            aria-label="On-screen D-pad"
+            data-tooltip={touchDpad ? 'D-pad on' : 'D-pad off'}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden
+            >
+              <path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" />
+            </svg>
+          </button>
+        ) : null}
         <UiDebugMenu />
       </div>
     </div>

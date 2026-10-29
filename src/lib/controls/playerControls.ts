@@ -5,7 +5,7 @@ export type PlayerControlSlot = 'p1' | 'p2' | 'p3' | 'p4';
 
 export type KeyboardLayoutId = 'qwerty' | 'azerty' | 'qwertz';
 
-type AxisDirection = 'up' | 'down' | 'left' | 'right';
+export type AxisDirection = 'up' | 'down' | 'left' | 'right';
 type EngineDirection = Exclude<Direction, ''>;
 
 function toEngineDirection(direction: AxisDirection): EngineDirection {
@@ -545,4 +545,20 @@ export function onlineSlotForLocalSeat(
   if (isP1) return 'p1';
   if (isP2) return 'p2';
   return null;
+}
+
+/**
+ * Which keyboard slot a single on-screen (touch) player drives, or null when
+ * several local humans share the game — one phone screen can't split that.
+ */
+export function touchControlSlotForState(
+  state: GameState
+): PlayerControlSlot | null {
+  if (state.meta.soloInputSlot) return state.meta.soloInputSlot;
+  const humans: PlayerControlSlot[] = [];
+  if (state.meta.p1Human) humans.push('p1');
+  if (state.meta.p2Human) humans.push('p2');
+  if (state.extraSnakes[0]?.humanControlled) humans.push('p3');
+  if (state.extraSnakes[1]?.humanControlled) humans.push('p4');
+  return humans.length === 1 ? humans[0] : null;
 }

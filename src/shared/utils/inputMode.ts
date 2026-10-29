@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 
 const COARSE_POINTER_QUERY = '(pointer: coarse)';
 
-/** True when the primary pointer is a finger (phones, tablets). */
+let coarseQuery: MediaQueryList | null = null;
+
+/** True when the primary pointer is a finger (phones, tablets). Cheap enough per frame. */
 export function isCoarsePointer(): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) return false;
-  return window.matchMedia(COARSE_POINTER_QUERY).matches;
+  coarseQuery ??= window.matchMedia(COARSE_POINTER_QUERY);
+  return coarseQuery.matches;
 }
 
 /** Re-renders when the primary pointer switches between touch and mouse. */

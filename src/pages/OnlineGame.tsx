@@ -58,6 +58,7 @@ import { createFpsReadout } from '@/game/render/fpsReadout';
 import './game.css';
 import '@/styles/pages/onlineGame.css';
 import { BrandHeader } from '@/components/layout/BrandHeader';
+import { TouchControls } from '@/features/game/touch/TouchControls';
 
 const REPLAY_SPEEDS = [0.25, 0.5, 1, 1.5, 2, 4, 8, 16, 32, 64] as const;
 
@@ -1119,6 +1120,18 @@ export default function OnlineGame({
   return (
     <>
       <BrandHeader />
+      <TouchControls
+        active={!replayMode && !matchIntroActive}
+        getSlot={() => {
+          const role = localRoleRef.current;
+          // Online accepts P1 bindings for either seat.
+          return role.isP1 || role.isP2 ? 'p1' : null;
+        }}
+        canTapConfirm={() => {
+          const state = snapshotRef.current?.state as GameState | undefined;
+          return !!state && (!state.gameStarted || state.gameEnded);
+        }}
+      />
 
       <div id="gameContainer" className="flex full game">
         <div>
