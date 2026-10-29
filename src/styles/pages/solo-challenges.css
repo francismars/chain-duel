@@ -2205,6 +2205,13 @@
   }
 }
 
+@media (max-width: 640px) {
+  .sc-list,
+  .practice-hub-page--challenges .sc-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ── Staggered page-reveal (motion-safe only) ── */
 @media (prefers-reduced-motion: no-preference) {
   /* Header fades in first */

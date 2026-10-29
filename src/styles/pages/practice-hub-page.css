@@ -2599,4 +2599,9 @@
   .practice-hub-page .p2p-modifiers-section .ph-picker-block .p2p-duel-format {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .practice-hub-page--challenges .sc-list,
+  .solo-challenges-panel .sc-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

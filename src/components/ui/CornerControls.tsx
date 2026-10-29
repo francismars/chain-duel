@@ -4,6 +4,7 @@ import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
 import { UiDebugMenu } from '@/components/ui/UiDebugMenu';
+import { useFloatingDock } from './useFloatingDock';
 import {
   PHONE_QUERY,
   useCoarsePointer,
@@ -25,6 +26,9 @@ function getStoredTvSafeInset(): boolean {
   }
 }
 
+/** Diameter of the floating quick-settings button (px). */
+const FAB_SIZE = 48;
+
 export function CornerControls() {
   const navigate = useNavigate();
   const { isMusicMuted, isMuted, toggleMusicMute, toggleMute } = useAudio();
@@ -36,6 +40,7 @@ export function CornerControls() {
   const narrow = useMediaQuery(PHONE_QUERY);
   const compact = touch || narrow;
   const [touchOpen, setTouchOpen] = useState(false);
+  const fab = useFloatingDock(FAB_SIZE, compact);
   const [touchDpad, setTouchDpad] = useState(readTouchDpad);
 
   useEffect(() => {
@@ -91,33 +96,46 @@ export function CornerControls() {
     'corner-controls',
     compact && 'corner-controls--touch',
     compact && touchOpen && 'corner-controls--open',
+    compact && `corner-controls--dock-${fab.side}`,
+    compact && fab.opensUp && 'corner-controls--opens-up',
+    compact && fab.dragging && 'corner-controls--dragging',
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <div className={rootClass} ref={rootRef}>
+    <div
+      className={rootClass}
+      ref={rootRef}
+      style={
+        compact
+          ? {
+              transform: `translate3d(${fab.point.x}px, ${fab.point.y}px, 0)`,
+            }
+          : undefined
+      }
+    >
       {compact ? (
         <button
           type="button"
-          className="corner-btn corner-controls__toggle"
+          className="corner-controls__fab"
           aria-expanded={touchOpen}
           aria-label={touchOpen ? 'Close quick settings' : 'Quick settings'}
-          onClick={() => setTouchOpen((v) => !v)}
+          {...fab.handlers}
+          onPointerMove={(event) => {
+            fab.handlers.onPointerMove(event);
+            if (fab.dragging && touchOpen) setTouchOpen(false);
+          }}
+          onClick={() => {
+            if (fab.consumeDrag()) return;
+            setTouchOpen((v) => !v);
+          }}
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden
-          >
-            {touchOpen ? (
-              <path d="M6 6l12 12M18 6L6 18" />
-            ) : (
-              <path d="M4 7h16M4 12h16M4 17h16" />
-            )}
-          </svg>
+          <span className="corner-controls__fab-icon" aria-hidden>
+            <span />
+            <span />
+            <span />
+          </span>
         </button>
       ) : null}
       <div className="corner-controls__panel">

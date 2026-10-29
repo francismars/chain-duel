@@ -151,91 +151,284 @@
   }
 }
 
-/* ── Touch: one 44px toggle under CHAIN that opens a labelled panel ── */
+/* ── Compact (touch / phone width): a floating, draggable circle ──────────
+   The root is positioned by JS (translate3d), snaps to the nearest side
+   edge on release, and opens its panel toward the middle of the screen. */
 
 .corner-controls--touch {
-  /* Sits in the brand row, just right of CHAIN, so it never covers page content. */
-  top: calc(var(--safe-top) + 0.1rem);
-  left: calc(max(var(--safe-left), var(--space-3)) + 4.4rem);
-  transform: none;
+  --fab-size: 48px;
+  --fab-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  top: 0;
+  left: 0;
+  width: var(--fab-size);
+  height: var(--fab-size);
   gap: 0;
+  z-index: 11000;
+  transition: transform 0.42s var(--fab-ease);
+  will-change: transform;
 }
 
-.corner-controls--touch .corner-btn {
-  width: var(--tap-min);
-  height: var(--tap-min);
-  padding: 11px;
+.corner-controls--touch.corner-controls--dragging {
+  transition: none;
 }
 
-.corner-controls--touch .corner-controls__toggle {
-  width: 40px;
-  height: 40px;
-  padding: 9px;
-  background: rgb(0 0 0 / 55%);
-  color: rgba(255, 255, 255, 0.8);
-  border-color: rgba(255, 255, 255, 0.3);
+.corner-controls__fab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fab-size);
+  height: var(--fab-size);
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / 22%);
+  background: rgb(18 18 18 / 32%);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 28%);
+  color: rgb(255 255 255 / 88%);
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0.6;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s var(--fab-ease),
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
+.corner-controls__fab:focus {
+  outline: none;
+}
+
+.corner-controls__fab:focus-visible,
+.corner-controls--open .corner-controls__fab,
+.corner-controls--dragging .corner-controls__fab {
+  opacity: 1;
+  border-color: rgb(255 255 255 / 45%);
+  background: rgb(18 18 18 / 55%);
+}
+
+@media (hover: hover) {
+  .corner-controls__fab:hover {
+    opacity: 1;
+  }
+}
+
+.corner-controls__fab:active,
+.corner-controls--dragging .corner-controls__fab {
+  cursor: grabbing;
+  transform: scale(1.08);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
+}
+
+/* Three bars that fold into an X. */
+.corner-controls__fab-icon {
+  position: relative;
+  width: 18px;
+  height: 12px;
+}
+
+.corner-controls__fab-icon > span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transition:
+    transform 0.32s var(--fab-ease),
+    opacity 0.2s ease;
+}
+
+.corner-controls__fab-icon > span:nth-child(1) {
+  top: 0;
+}
+.corner-controls__fab-icon > span:nth-child(2) {
+  top: 5.25px;
+}
+.corner-controls__fab-icon > span:nth-child(3) {
+  top: 10.5px;
+}
+
+.corner-controls--open .corner-controls__fab-icon > span:nth-child(1) {
+  transform: translateY(5.25px) rotate(45deg);
+}
+.corner-controls--open .corner-controls__fab-icon > span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0.2);
+}
+.corner-controls--open .corner-controls__fab-icon > span:nth-child(3) {
+  transform: translateY(-5.25px) rotate(-45deg);
+}
+
+/* Panel: always mounted so it can animate out. Grows from the button's corner. */
 .corner-controls--touch .corner-controls__panel {
-  display: none;
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 13rem;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  background: rgb(14 14 14 / 72%);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 45%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.82);
+  transition:
+    opacity 0.16s ease,
+    transform 0.2s ease,
+    visibility 0s linear 0.2s;
+}
+
+.corner-controls--dock-left .corner-controls__panel {
+  left: calc(var(--fab-size) + 10px);
+  transform-origin: top left;
+}
+
+.corner-controls--dock-right .corner-controls__panel {
+  right: calc(var(--fab-size) + 10px);
+  transform-origin: top right;
+}
+
+.corner-controls--opens-up .corner-controls__panel {
+  top: auto;
+  bottom: 0;
+}
+.corner-controls--dock-left.corner-controls--opens-up .corner-controls__panel {
+  transform-origin: bottom left;
+}
+.corner-controls--dock-right.corner-controls--opens-up .corner-controls__panel {
+  transform-origin: bottom right;
 }
 
 .corner-controls--touch.corner-controls--open .corner-controls__panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin-top: var(--space-1);
-  padding: var(--space-1);
-  background: rgb(0 0 0 / 88%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: scale(1);
+  transition:
+    opacity 0.22s ease,
+    transform 0.34s var(--fab-ease),
+    visibility 0s;
 }
 
-/* Inside the panel each control is a full row: icon + its label. */
+/* Rows: icon + label, sliding in one after another. */
 .corner-controls--touch .corner-controls__panel .corner-btn {
-  width: auto;
+  width: 100%;
+  height: var(--tap-min);
+  padding: 0 10px;
   justify-content: flex-start;
-  gap: var(--space-2);
-  color: rgba(255, 255, 255, 0.85);
+  gap: 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: rgb(255 255 255 / 85%);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease,
+    background 0.15s ease;
+}
+
+.corner-controls--dock-right .corner-controls__panel .corner-btn {
+  transform: translateX(6px);
+}
+
+.corner-controls--touch.corner-controls--open
+  .corner-controls__panel
+  .corner-btn {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.24s ease,
+    transform 0.32s var(--fab-ease),
+    background 0.15s ease;
+}
+
+.corner-controls--open .corner-controls__panel .corner-btn:nth-child(1) {
+  transition-delay: 40ms;
+}
+.corner-controls--open .corner-controls__panel .corner-btn:nth-child(2) {
+  transition-delay: 70ms;
+}
+.corner-controls--open .corner-controls__panel .corner-btn:nth-child(3) {
+  transition-delay: 100ms;
+}
+.corner-controls--open .corner-controls__panel .corner-btn:nth-child(4) {
+  transition-delay: 130ms;
+}
+.corner-controls--open .corner-controls__panel .corner-btn:nth-child(5) {
+  transition-delay: 160ms;
+}
+.corner-controls--open .corner-controls__panel .corner-btn:nth-child(6) {
+  transition-delay: 190ms;
+}
+
+.corner-controls--touch .corner-controls__panel .corner-btn:active,
+.corner-controls--touch .corner-controls__panel .corner-btn:focus-visible {
+  background: rgb(255 255 255 / 10%);
+}
+
+@media (hover: hover) {
+  .corner-controls--touch .corner-controls__panel .corner-btn:hover {
+    background: rgb(255 255 255 / 8%);
+  }
+}
+
+.corner-controls--touch .corner-controls__panel .corner-btn--muted {
+  color: rgb(255 255 255 / 45%);
+}
+
+.corner-controls--touch .corner-controls__panel .corner-btn--tv-safe-on {
+  color: #fff;
 }
 
 .corner-controls--touch .corner-controls__panel .corner-btn svg,
 .corner-controls--touch .corner-controls__panel .corner-btn__nostr-avatar {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
 }
 
 .corner-controls--touch .corner-controls__panel .corner-btn--nostr-signed-in {
-  border-radius: 0;
-  padding: 11px;
+  border-radius: 9px;
+  overflow: visible;
 }
 
+.corner-controls--touch .corner-controls__panel .corner-btn__nostr-avatar {
+  border-radius: 50%;
+}
+
+/* The tooltip text becomes the row label. */
 .corner-controls--touch .corner-btn::after {
   position: static;
   transform: none;
   opacity: 1;
   background: none;
   border: 0;
-  padding: 0 var(--space-1) 0 0;
+  padding: 0;
   font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  transition: none;
 }
 
-.corner-controls--touch .corner-controls__toggle::after {
-  content: none;
-}
-
-/* During a touch match the header row is HUD: park the toggle bottom-left
-   (D-pad lives bottom-right) and open the panel upward. */
-html.touch-play .corner-controls--touch {
-  top: auto;
-  bottom: calc(var(--safe-bottom) + var(--space-2));
-  left: calc(var(--safe-left) + var(--space-2));
-  flex-direction: column-reverse;
-}
-
-html.touch-play
-  .corner-controls--touch.corner-controls--open
-  .corner-controls__panel {
-  margin-top: 0;
-  margin-bottom: var(--space-1);
+@media (prefers-reduced-motion: reduce) {
+  .corner-controls--touch,
+  .corner-controls__fab,
+  .corner-controls__fab-icon > span,
+  .corner-controls--touch .corner-controls__panel,
+  .corner-controls--touch .corner-controls__panel .corner-btn {
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
 }
