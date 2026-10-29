@@ -11,18 +11,30 @@ export function isCoarsePointer(): boolean {
   return coarseQuery.matches;
 }
 
-/** Re-renders when the primary pointer switches between touch and mouse. */
-export function useCoarsePointer(): boolean {
-  const [coarse, setCoarse] = useState(isCoarsePointer);
+/** Live result of a CSS media query; re-renders when it flips. */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia
+      ? window.matchMedia(query).matches
+      : false
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
-    const query = window.matchMedia(COARSE_POINTER_QUERY);
-    const onChange = () => setCoarse(query.matches);
+    const list = window.matchMedia(query);
+    const onChange = () => setMatches(list.matches);
     onChange();
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
-  }, []);
+    list.addEventListener('change', onChange);
+    return () => list.removeEventListener('change', onChange);
+  }, [query]);
 
-  return coarse;
+  return matches;
 }
+
+/** Re-renders when the primary pointer switches between touch and mouse. */
+export function useCoarsePointer(): boolean {
+  return useMediaQuery(COARSE_POINTER_QUERY);
+}
+
+/** Phone-width layout (matches the 640px CSS breakpoint). */
+export const PHONE_QUERY = '(max-width: 640px)';

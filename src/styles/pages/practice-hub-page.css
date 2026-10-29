@@ -2561,6 +2561,7 @@
     max-height: none;
     overflow: visible;
     grid-template-rows: auto auto auto auto;
+    align-content: start;
     gap: var(--space-3);
     padding: calc(var(--safe-top) + 3.25rem)
       calc(var(--safe-right) + var(--space-3)) 0

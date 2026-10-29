@@ -48,6 +48,14 @@
   --game-rows: 25;
 }
 
+/* Phones: every default-width button fills its column, so footers, forms and
+   lists all line up the same way. Pages provide the side gutter. */
+@media (max-width: 640px) {
+  :root {
+    --btn-w: 100%;
+  }
+}
+
 /*
  * Breakpoints (custom properties can't be used in @media, so use these literals):
  *   phone   @media (max-width: 640px)

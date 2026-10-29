@@ -170,3 +170,105 @@
   justify-content: center;
   box-sizing: border-box;
 }
+
+/* ── Phones: each match is a two-line row — rank | winner / vs loser | prize ── */
+@media (max-width: 640px) {
+  #highscoresList {
+    width: 100%;
+    padding: 0 calc(var(--safe-left) + var(--space-3)) var(--space-3)
+      calc(var(--safe-right) + var(--space-3));
+  }
+
+  #page-title {
+    margin-top: calc(var(--safe-top) + 3rem);
+  }
+
+  .score-row {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+    grid-template-areas:
+      'rank winner prize'
+      'rank loser prize';
+    column-gap: var(--space-2);
+    row-gap: 2px;
+    padding: var(--space-2) 0;
+  }
+
+  .score-row .rankStyle {
+    grid-area: rank;
+    width: auto;
+    font-size: 28px;
+  }
+
+  .score-row .tournStyle,
+  .score-row .VSLabelStyle,
+  .score-row .sponsor {
+    display: none;
+  }
+
+  .score-row .winnerInfo,
+  .score-row .loserinfo {
+    width: auto;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    overflow: hidden;
+  }
+
+  .score-row .winnerInfo {
+    grid-area: winner;
+  }
+
+  .score-row .loserinfo {
+    grid-area: loser;
+  }
+
+  .score-row .loserinfo::before {
+    content: 'vs';
+    color: grey;
+    font-size: var(--fs-xs);
+  }
+
+  .score-row .winnerNameStyle,
+  .score-row .loserNameStyle,
+  .score-row .tournNameStyle {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .score-row .winnerNameStyle {
+    font-size: 20px;
+  }
+
+  .score-row .winnerSatsStyle,
+  .score-row .loserSatsStyle,
+  .score-row .tournNameStyle {
+    margin: 0;
+    font-size: var(--fs-xs);
+    white-space: nowrap;
+  }
+
+  .score-row .loserNameStyle {
+    font-size: var(--fs-sm);
+  }
+
+  .score-row .prizeinfo {
+    grid-area: prize;
+    width: auto;
+    align-self: center;
+  }
+
+  .score-row .prizeSatsStyle {
+    font-size: 22px;
+  }
+
+  .highscores-footer {
+    width: auto;
+    margin: 0 calc(var(--safe-left) + var(--space-3)) var(--space-4)
+      calc(var(--safe-right) + var(--space-3));
+    gap: var(--space-2);
+  }
+}

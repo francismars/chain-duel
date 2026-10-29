@@ -21,8 +21,6 @@
   right: 0;
   width: 100%;
   box-sizing: border-box;
-  padding-left: 1%;
-  padding-right: 1%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -235,25 +233,79 @@
   -webkit-text-stroke-color: white;
 }
 
-/* ── Phones: the setup page scrolls top-to-bottom instead of fitting one screen ── */
+/* ── Phones: one scrolling column in the order a player needs it —
+   title, prize, deposit QR codes, actions (sticky), then the rules. ── */
 @media (max-width: 640px) {
   .game-setup-page {
     height: auto;
     min-height: 100dvh;
     overflow: visible;
-  }
-
-  .game-setup-page .game-setup-middle {
-    flex: 0 0 auto;
-    max-height: none;
-    padding: calc(var(--safe-top) + 3.25rem)
+    gap: var(--space-4);
+    padding: calc(var(--safe-top) + 3.5rem)
       calc(var(--safe-right) + var(--space-3)) 0
       calc(var(--safe-left) + var(--space-3));
+    box-sizing: border-box;
   }
 
-  #centerSection {
+  /* Flatten the desktop wrappers so their children can be re-ordered. */
+  .game-setup-page .game-setup-middle,
+  .game-setup-page .game-setup-main {
+    display: contents;
+  }
+
+  .game-setup-page .game-setup-main > div:first-child {
+    order: 0;
+  }
+
+  /* index.css pins #bottomInfo to the viewport bottom; here it follows the content. */
+  .game-setup-page #bottomInfo.game-setup-bottom {
+    order: 1;
+    position: static;
+    margin: 0;
+    padding: 0;
+  }
+
+  .game-setup-page .game-setup-status {
+    order: 2;
+    margin: 0;
+  }
+
+  #gameButtons {
+    order: 3;
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    width: auto;
+    margin: 0 calc(-1 * var(--space-3));
+    padding: var(--space-4) var(--space-3)
+      calc(var(--safe-bottom) + var(--space-3));
+    background: linear-gradient(to top, #000 72%, rgb(0 0 0 / 0));
+  }
+
+  #gameButtons .button,
+  #gameButtons .game-setup-start-wrap {
+    width: 100%;
+  }
+
+  /* Rules move below the actions with their own heading. */
+  #titleslogan {
+    display: none;
+  }
+
+  .game-setup-page #centerSection {
+    order: 4;
     flex-direction: column;
     gap: var(--space-3);
+    padding-bottom: calc(var(--safe-bottom) + var(--space-5));
+  }
+
+  .game-setup-page #centerSection::before {
+    content: 'Rules';
+    text-align: center;
+    font-size: var(--fs-lg);
+    font-weight: 300;
   }
 
   #gameCard {
@@ -263,24 +315,5 @@
 
   .rewards {
     width: min(100%, 16rem);
-  }
-
-  #gameButtons {
-    flex-direction: column-reverse;
-    gap: var(--space-2);
-    width: 100%;
-    padding-top: var(--space-3);
-  }
-
-  #gameButtons .button {
-    width: 100%;
-  }
-
-  /* index.css pins #bottomInfo to the viewport bottom; here it follows the content. */
-  .game-setup-page #bottomInfo.game-setup-bottom {
-    position: static;
-    padding: var(--space-4) calc(var(--safe-right) + var(--space-3))
-      calc(var(--safe-bottom) + var(--space-3))
-      calc(var(--safe-left) + var(--space-3));
   }
 }

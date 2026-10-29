@@ -1447,3 +1447,72 @@
     width: var(--online-empty-icon);
   }
 }
+
+/* Keyboard hint means nothing to a finger. */
+@media (pointer: coarse) {
+  .online-tab-enter-hint {
+    display: none;
+  }
+}
+
+/* ── Phones: the page scrolls, the list grows, buy-in stacks above Create ── */
+@media (max-width: 640px) {
+  .online-rooms-page {
+    max-height: none;
+    overflow: visible;
+    grid-template-rows: auto;
+    align-content: start;
+    padding: calc(var(--safe-top) + 3.25rem)
+      calc(var(--safe-right) + var(--space-3))
+      calc(var(--safe-bottom) + var(--space-3))
+      calc(var(--safe-left) + var(--space-3));
+  }
+
+  .online-rooms-page .sponsorship,
+  .online-rooms-page .online-header,
+  .online-rooms-page .online-room-list-panel,
+  .online-rooms-page .online-action-card,
+  .online-rooms-page .online-footer-controls {
+    grid-row: auto;
+  }
+
+  .online-tab-enter-hint {
+    display: none;
+  }
+
+  .online-room-list {
+    height: auto;
+    max-height: none;
+    min-height: 8rem;
+    overflow: visible;
+  }
+
+  .online-room-card .button {
+    flex-shrink: 0;
+  }
+
+  .online-action-card-body {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-2);
+  }
+
+  .online-buyin-field,
+  .online-code-input {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
+  .online-create-btn-wrap {
+    grid-column: 1 !important;
+    grid-row: 3;
+    width: 100%;
+  }
+
+  .online-footer-controls {
+    width: 100%;
+  }
+
+  .online-footer-controls .button {
+    width: 100%;
+  }
+}

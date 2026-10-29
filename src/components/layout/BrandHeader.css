@@ -7,8 +7,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: calc(var(--safe-top) + 0.5rem) max(var(--safe-right), 1%) 0
-    max(var(--safe-left), 1%);
+  padding: calc(var(--safe-top) + 0.5rem) max(var(--safe-right), var(--space-3))
+    0 max(var(--safe-left), var(--space-3));
   pointer-events: none;
 }
 

@@ -1379,6 +1379,27 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
     height: auto;
   }
 
+  /* Desktop mirrors player 2 ("sats 0", name before square); on phones both
+     cards read left-to-right the same way. */
+  .gamemenu-page #player2satsContainer,
+  .gamemenu-page #player2cardinfo .condensed {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.35em;
+  }
+
+  /* QR has to be scannable from another phone. */
+  .gamemenu-page .qrcodeContainer {
+    align-self: center;
+  }
+
+  .gamemenu-page .qrcodeContainer .qrcode {
+    width: min(32vw, 128px);
+    height: min(32vw, 128px);
+  }
+
   .gamemenu-page #player1cardinfo,
   .gamemenu-page #player2cardinfo {
     flex: 1 1 auto;

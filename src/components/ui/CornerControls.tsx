@@ -4,7 +4,11 @@ import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
 import { UiDebugMenu } from '@/components/ui/UiDebugMenu';
-import { useCoarsePointer } from '@/shared/utils/inputMode';
+import {
+  PHONE_QUERY,
+  useCoarsePointer,
+  useMediaQuery,
+} from '@/shared/utils/inputMode';
 import {
   readTouchDpad,
   TOUCH_DPAD_EVENT,
@@ -28,6 +32,9 @@ export function CornerControls() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [tvSafeInset, setTvSafeInset] = useState(getStoredTvSafeInset);
   const touch = useCoarsePointer();
+  // Collapse into one toggle on touch screens and on any phone-width window.
+  const narrow = useMediaQuery(PHONE_QUERY);
+  const compact = touch || narrow;
   const [touchOpen, setTouchOpen] = useState(false);
   const [touchDpad, setTouchDpad] = useState(readTouchDpad);
 
@@ -42,7 +49,7 @@ export function CornerControls() {
 
   // Touch panel: close on any tap outside it.
   useEffect(() => {
-    if (!touch || !touchOpen) return;
+    if (!compact || !touchOpen) return;
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setTouchOpen(false);
@@ -50,7 +57,7 @@ export function CornerControls() {
     };
     document.addEventListener('pointerdown', onPointerDown);
     return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [touch, touchOpen]);
+  }, [compact, touchOpen]);
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -82,15 +89,15 @@ export function CornerControls() {
 
   const rootClass = [
     'corner-controls',
-    touch && 'corner-controls--touch',
-    touch && touchOpen && 'corner-controls--open',
+    compact && 'corner-controls--touch',
+    compact && touchOpen && 'corner-controls--open',
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
     <div className={rootClass} ref={rootRef}>
-      {touch ? (
+      {compact ? (
         <button
           type="button"
           className="corner-btn corner-controls__toggle"

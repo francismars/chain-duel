@@ -280,3 +280,11 @@
     rgb(40 40 40) 94%
   );
 }
+
+@media (max-width: 640px) {
+  .index-page__main {
+    width: 100%;
+    padding: 0 calc(var(--safe-left) + var(--space-5)) 0
+      calc(var(--safe-right) + var(--space-5));
+  }
+}

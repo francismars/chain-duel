@@ -156,7 +156,7 @@
 .corner-controls--touch {
   /* Sits in the brand row, just right of CHAIN, so it never covers page content. */
   top: calc(var(--safe-top) + 0.1rem);
-  left: calc(max(var(--safe-left), 1%) + 4.4rem);
+  left: calc(max(var(--safe-left), var(--space-3)) + 4.4rem);
   transform: none;
   gap: 0;
 }
