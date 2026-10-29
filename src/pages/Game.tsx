@@ -1769,7 +1769,7 @@ export default function Game() {
               className="button"
               onClick={() => navigate('/practice')}
             >
-              Freeplay menu
+              Free play
             </Button>
           </div>
         ) : null}
@@ -2157,7 +2157,7 @@ export default function Game() {
               glowing={freePlayEndFocus === 'menu'}
               onClick={confirmExitToMenu}
             >
-              Freeplay menu
+              Free play
             </Button>
           </div>
         </div>

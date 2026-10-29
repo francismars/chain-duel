@@ -678,15 +678,13 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   background: rgba(255, 255, 255, 0.28);
 }
 
-.rules-modal-backdrop {
-  position: fixed;
-  inset: 0;
+.modal-backdrop.rules-modal-backdrop {
   z-index: 40;
-  display: flex;
+  padding: 0;
   background: transparent;
 }
 
-.rules-modal {
+.modal.rules-modal {
   width: 100%;
   height: 100%;
   max-height: none;
@@ -1355,33 +1353,46 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
 }
 
 @media (max-width: 640px) {
-  .gamemenu-preview #player1card,
-  .gamemenu-preview #player2card,
-  .gamemenu-preview .prizeinfocard {
+  /* Prize on top, then each player's QR + info as a full-width row. */
+  .gamemenu-page #bottomInfo {
+    flex-wrap: wrap;
+    row-gap: var(--space-4);
+  }
+
+  .gamemenu-page #player1card,
+  .gamemenu-page #player2card,
+  .gamemenu-page .prizeinfocard {
     flex: 1 0 100%;
     width: 100%;
     justify-content: center;
   }
 
-  .gamemenu-page.gamemenu-preview #player1cardinfo,
-  .gamemenu-page.gamemenu-preview #player2cardinfo {
-    flex: 0 1 auto;
-    align-items: flex-start;
-    text-align: left;
+  .gamemenu-page .prizeinfocard {
+    order: -1;
   }
 
-  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
-  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+  .gamemenu-page #player2card {
+    flex-direction: row-reverse;
+  }
+
+  .gamemenu-page .player-card-info {
+    height: auto;
+  }
+
+  .gamemenu-page #player1cardinfo,
+  .gamemenu-page #player2cardinfo {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: flex-start;
+    text-align: left;
+    padding: 0 var(--space-3);
+  }
+
+  .gamemenu-page #player2cardinfo #player2satsContainer,
+  .gamemenu-page #player2cardinfo .condensed,
+  .gamemenu-page #player2cardinfo .deposit-message {
     align-self: flex-start;
     justify-content: flex-start;
     text-align: left;
-  }
-
-  .gamemenu-preview #gameButtons {
-    flex-wrap: wrap;
-  }
-
-  .gamemenu-preview #gameButtons .button {
-    width: var(--btn-w);
   }
 }

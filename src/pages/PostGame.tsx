@@ -660,7 +660,7 @@ export default function PostGame() {
                 }}
                 onClick={onMainMenu}
               >
-                RETURN TO MAIN MENU
+                MAIN MENU
               </Button>
             ) : (
               <Button
@@ -668,7 +668,7 @@ export default function PostGame() {
                 style={{ display: 'none' }}
                 onClick={onMainMenu}
               >
-                RETURN TO MAIN MENU
+                MAIN MENU
               </Button>
             )}
           </div>

@@ -627,16 +627,10 @@ a.config-nc-signer-btn.config-kbd-focus {
   box-shadow: 0 0 16px rgb(255 255 255 / 0.22);
 }
 
-.config-nc-qr-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
+.modal.config-nc-qr-modal {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: min(4vw, 24px);
-  background: rgb(0 0 0 / 0.88);
-  backdrop-filter: blur(6px);
 }
 
 .config-nc-qr-modal__body {

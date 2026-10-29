@@ -2745,7 +2745,7 @@ export default function OnlineRoomLobby({
                   className="online-lobby-action"
                   onClick={leaveRoom}
                 >
-                  EXIT ROOM
+                  LEAVE ROOM
                 </Button>
               </>
             ) : null}

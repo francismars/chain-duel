@@ -1,5 +1,6 @@
 @import url('/fonts/Inter/inter.css');
 @import './variables.css';
+@import './components/dialog.css';
 
 @font-face {
   font-family: 'BureauGrotesque';

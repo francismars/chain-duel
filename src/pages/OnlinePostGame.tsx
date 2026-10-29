@@ -32,7 +32,7 @@ type PostGameNav =
   | { type: 'replay'; index: number } // round replay buttons
   | { type: 'don' } // double-or-nothing vote
   | { type: 'payout'; slot: 'withdraw' | 'nostr' } // payout row
-  | { type: 'exit' }; // EXIT ROOM
+  | { type: 'exit' }; // LEAVE ROOM
 
 interface OnlinePostGameInfo {
   roomId: string;
@@ -1154,7 +1154,7 @@ export default function OnlinePostGame({
               className={`online-postgame-btn online-postgame-btn-back${navFocus.type === 'exit' ? ' online-selected' : ''}`}
               onClick={exitRoom}
             >
-              EXIT ROOM
+              LEAVE ROOM
             </Button>
           </div>
 

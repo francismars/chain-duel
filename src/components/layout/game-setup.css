@@ -235,67 +235,52 @@
   -webkit-text-stroke-color: white;
 }
 
-/* Overlay and warning */
-.overlay {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  background: rgba(0, 0, 0, 0.8);
-  position: fixed;
-  top: 0;
-  left: 0;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.35s ease-in-out;
-  opacity: 1;
-  z-index: 10000;
-}
+/* ── Phones: the setup page scrolls top-to-bottom instead of fitting one screen ── */
+@media (max-width: 640px) {
+  .game-setup-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
 
-#loading.overlay img {
-  display: block;
-  width: 7vw;
-  height: 7vw;
-}
+  .game-setup-page .game-setup-middle {
+    flex: 0 0 auto;
+    max-height: none;
+    padding: calc(var(--safe-top) + 3.25rem)
+      calc(var(--safe-right) + var(--space-3)) 0
+      calc(var(--safe-left) + var(--space-3));
+  }
 
-#loading.overlay.hide {
-  opacity: 0;
-  pointer-events: none;
-}
+  #centerSection {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
 
-.overlay.hide {
-  opacity: 0;
-  pointer-events: none;
-}
+  #gameCard {
+    width: 100%;
+    margin: 0;
+  }
 
-.warning {
-  width: 30%;
-  background: #000;
-  text-align: center;
-  box-shadow: 0 0 5vw rgba(255, 255, 255, 0.42);
-}
+  .rewards {
+    width: min(100%, 16rem);
+  }
 
-.warning-inner {
-  padding: 8vw 6vw 6vw 6vw;
-}
+  #gameButtons {
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    width: 100%;
+    padding-top: var(--space-3);
+  }
 
-.warning-title {
-  font-size: max(18px, 3vw);
-}
+  #gameButtons .button {
+    width: 100%;
+  }
 
-.warning-text {
-  font-size: max(13px, 1.2vw);
-}
-
-.warning-actions {
-  display: flex;
-}
-
-.warning .button {
-  width: 100%;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.warning .button.half {
-  width: 50%;
+  /* index.css pins #bottomInfo to the viewport bottom; here it follows the content. */
+  .game-setup-page #bottomInfo.game-setup-bottom {
+    position: static;
+    padding: var(--space-4) calc(var(--safe-right) + var(--space-3))
+      calc(var(--safe-bottom) + var(--space-3))
+      calc(var(--safe-left) + var(--space-3));
+  }
 }
