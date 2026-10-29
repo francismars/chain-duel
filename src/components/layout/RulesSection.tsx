@@ -4,6 +4,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { RuleClip, type RuleClipId } from './RuleClip';
+import { Button } from '@/components/ui/Button';
 
 const RULES: Array<{
   id: RuleClipId;
@@ -245,18 +246,15 @@ function ClipRules({
           </button>
         </div>
         {onClose ? (
-          <button
-            type="button"
-            className={
-              focus === 'close'
-                ? 'rules-modal__close rules-modal__close--selected'
-                : 'rules-modal__close'
-            }
+          <Button
+            variant="secondary"
+            glowing={focus === 'close'}
+            className="rules-modal__close"
             onMouseEnter={() => setFocus('close')}
             onClick={onClose}
           >
             Close
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

@@ -39,13 +39,13 @@
   --ph-page-max-width: min(92vw, 68rem);
   --online-page-width: 100%;
   --online-fs-button: clamp(0.62rem, calc(0.32rem + 0.64vw), 0.75rem);
-  --online-hit-lg: clamp(2.35rem, 3vw, 2.85rem);
-  --online-hit-md: clamp(2.1rem, 2.8vw, 2.6rem);
-  --online-hit-sm: clamp(1.75rem, 2.2vw, 2.15rem);
+  --online-hit-lg: var(--btn-h-md);
+  --online-hit-md: var(--btn-h-md);
+  --online-hit-sm: var(--btn-h-sm);
   /* Match home .button (P2P / FREE PLAY — index menu-buttons @ 28vw) */
-  --online-rooms-btn-width: clamp(11rem, 28vw, 20rem);
-  --online-rooms-btn-height: clamp(2.15rem, 3vw, 2.65rem);
-  --online-rooms-btn-font: clamp(0.62rem, 0.8vw, 0.78rem);
+  --online-rooms-btn-width: var(--btn-w);
+  --online-rooms-btn-height: var(--btn-h-md);
+  --online-rooms-btn-font: var(--fs-sm);
   --online-avatar: clamp(1.35rem, 1.85vw, 1.75rem);
   --online-dot: clamp(0.28rem, 0.38vw, 0.42rem);
   --online-gap: clamp(0.45rem, 1.2vw, 0.85rem);
@@ -533,16 +533,10 @@
 .online-rooms-page .button.online-action,
 .online-rooms-page .button.online-create-btn,
 .online-rooms-page .button.online-back {
-  width: min(100%, var(--online-rooms-btn-width));
-  min-width: min(100%, var(--online-rooms-btn-width));
-  height: var(--online-rooms-btn-height);
-  min-height: unset;
-  padding: 1%;
+  width: var(--btn-w);
   margin: 0;
   font-family: 'Inter', sans-serif;
-  font-size: var(--online-rooms-btn-font);
   font-weight: 400;
-  letter-spacing: 0.1rem;
   text-transform: uppercase;
   color: #fff;
   background-color: transparent;
@@ -597,10 +591,6 @@
 .online-history-action-col .online-postgame-round-replay-btn.button {
   width: auto;
   min-width: 0;
-  height: var(--online-rooms-btn-height);
-  min-height: unset;
-  padding: 0 1.4vw;
-  font-size: var(--online-rooms-btn-font);
   animation: none !important;
 }
 
@@ -1430,11 +1420,6 @@
   .online-room-card--history .online-postgame-round-row-inner {
     min-height: var(--online-hit-md);
     padding: clamp(0.35rem, 0.65vw, 0.7rem) 0;
-  }
-
-  .online-history-action-col .online-postgame-round-replay-btn.button {
-    height: var(--online-rooms-btn-height);
-    padding: 0 clamp(0.75rem, 1.4vw, 1.1rem);
   }
 
   .online-action-card-body {

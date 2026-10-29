@@ -1033,6 +1033,7 @@ export default function OnlinePostGame({
               </div>
 
               <Button
+                variant="custom"
                 type="button"
                 className={[
                   'online-postgame-btn',
@@ -1087,6 +1088,7 @@ export default function OnlinePostGame({
                 </div>
                 <div className="online-postgame-payout-row">
                   <Button
+                    variant="custom"
                     type="button"
                     className={[
                       'online-postgame-btn online-postgame-btn-withdraw',
@@ -1114,6 +1116,7 @@ export default function OnlinePostGame({
                         : 'Withdraw via QR'}
                   </Button>
                   <Button
+                    variant="custom"
                     type="button"
                     className={[
                       winnerHasNostrLn && !donLocked ? '' : 'disabled',
@@ -1150,6 +1153,7 @@ export default function OnlinePostGame({
               </>
             ) : null}
             <Button
+              variant="custom"
               ref={exitBtnRef}
               type="button"
               className={`online-postgame-btn online-postgame-btn-back${navFocus.type === 'exit' ? ' online-selected' : ''}`}

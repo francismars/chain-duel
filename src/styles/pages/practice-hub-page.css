@@ -573,15 +573,10 @@
 .practice-hub-page .practice-hub-panel-footer .practice-back.button {
   flex: 1 1 0;
   width: auto;
-  height: 3vw;
-  min-height: 30px;
   margin: 0;
-  padding: 1%;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
   font-weight: 400;
-  letter-spacing: 0.1rem;
   text-transform: uppercase;
   color: #fff;
   background-color: transparent;
@@ -951,7 +946,7 @@
   .local-setup-top-row
   .practice-slot-role {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.1rem;
@@ -1158,20 +1153,14 @@
 .practice-hub-page .local-human-p2p-link.button {
   box-sizing: border-box;
   width: 100%;
-  height: auto;
-  min-height: unset;
   margin: 0;
-  padding: max(0.4rem, 0.55vw) var(--ph-content-inset);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
   font-weight: 400;
-  letter-spacing: 0.1rem;
   text-transform: uppercase;
-  line-height: 1;
   color: rgba(255, 255, 255, 0.62);
   background-color: transparent;
   border-color: rgba(255, 255, 255, 0.24);
@@ -1438,7 +1427,7 @@
   .p2p-picker-card--compact-inline
   .p2p-picker-sub {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.1rem;
@@ -1447,7 +1436,7 @@
 
 .practice-hub-page .local-tier-card .p2p-duel-format__label {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.1rem;
@@ -1456,7 +1445,7 @@
 
 .practice-hub-page .p2p-modifiers-section .p2p-duel-format__label {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.1rem;

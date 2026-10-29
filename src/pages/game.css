@@ -1964,19 +1964,14 @@
 .solo-zap-card .button.solo-zap-post-btn,
 .solo-zap-card .button.solo-zap-footer-btn {
   width: 100%;
-  height: 2.65vw;
-  min-height: 28px;
   margin: 0;
-  padding: clamp(6px, 0.75vw, 10px) clamp(20px, 2.2vw, 28px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
   font-weight: 400;
-  letter-spacing: 0.1rem;
   text-transform: uppercase;
   background-color: transparent;
   box-shadow: none;
@@ -2066,7 +2061,7 @@
   justify-content: center;
   box-sizing: border-box;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   letter-spacing: 0.1rem;
   text-transform: uppercase;
@@ -2076,7 +2071,7 @@
 .solo-zap-note-preview__actions .solo-zap-note-err--in-note {
   margin: clamp(4px, 0.45vw, 6px) 0 0;
   text-align: center;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
 }
 
 .solo-zap-card[data-rank] .solo-zap-note-preview {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Button } from '@/components/ui/Button';
 import {
   DEFAULT_GRAPHICS_SETTINGS,
   performanceGraphicsSettings,
@@ -162,22 +163,21 @@ export function GraphicsSettingsPanel() {
   return (
     <div className="graphics-settings">
       <div className="graphics-settings__actions">
-        <button
-          type="button"
+        <Button
           className="graphics-settings__action"
           disabled={sameSettings(settings, performance)}
           onClick={() => apply(performance)}
         >
           Performance mode
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           className="graphics-settings__action"
           disabled={sameSettings(settings, defaults)}
           onClick={() => apply(defaults)}
         >
           Restore defaults
-        </button>
+        </Button>
       </div>
 
       <ul className="graphics-settings__list">

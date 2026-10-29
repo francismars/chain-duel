@@ -67,7 +67,7 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 #fees {
   width: 100%;
   text-align: center;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   margin-top: 0.75cqw;
   margin-bottom: 0;
 }
@@ -120,16 +120,11 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 }
 
 #buttonsDiv .button {
-  width: 28vw;
-  min-width: min(16rem, 88vw);
+  width: var(--btn-w);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   box-sizing: border-box;
-  line-height: 1;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
 }
 
 #startnewbutton {

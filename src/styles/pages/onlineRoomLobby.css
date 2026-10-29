@@ -52,13 +52,13 @@
 
   --ph-page-max-width: min(92vw, 68rem);
   --online-page-width: 100%;
-  --online-hit-lg: clamp(2.35rem, 3vw, 2.85rem);
-  --online-hit-md: clamp(2.1rem, 2.8vw, 2.6rem);
-  --online-hit-sm: clamp(1.75rem, 2.2vw, 2.15rem);
+  --online-hit-lg: var(--btn-h-md);
+  --online-hit-md: var(--btn-h-md);
+  --online-hit-sm: var(--btn-h-sm);
   /* Match home .button (FREE PLAY — index menu-buttons @ 28vw) */
-  --online-lobby-btn-width: clamp(11rem, 28vw, 20rem);
-  --online-lobby-btn-height: clamp(2.15rem, 3vw, 2.65rem);
-  --online-lobby-btn-font: clamp(0.62rem, 0.8vw, 0.78rem);
+  --online-lobby-btn-width: var(--btn-w);
+  --online-lobby-btn-height: var(--btn-h-md);
+  --online-lobby-btn-font: var(--fs-sm);
   --online-kind1-cta-width: var(--online-lobby-btn-width);
   --online-kind1-cta-width-sm: var(--online-lobby-btn-width);
   --online-gap: clamp(0.45rem, 1.2vw, 0.85rem);
@@ -151,9 +151,9 @@
 .online-lobby-leave-btn,
 .online-lobby-seat-ready-btn {
   font-family: 'Inter', sans-serif;
-  font-size: var(--online-lobby-btn-font);
+  font-size: var(--fs-sm);
   font-weight: 400;
-  letter-spacing: 0.1rem;
+  letter-spacing: var(--btn-letter-spacing);
   text-transform: uppercase;
 }
 
@@ -1532,8 +1532,7 @@
 }
 
 .online-lobby-kind1-section--pending .online-lobby-action {
-  width: min(100%, var(--online-lobby-btn-width));
-  min-width: min(100%, var(--online-lobby-btn-width));
+  width: var(--btn-w);
 }
 
 .online-lobby-kind1-section--room-error {
@@ -1652,9 +1651,6 @@
 .online-lobby-action {
   margin: 0;
   width: auto;
-  min-width: 9vw;
-  height: var(--online-hit-lg);
-  padding: 0 1.4em;
 }
 
 /* Primary CTAs — same footprint as online-rooms MAIN MENU / CREATE (glow via setButtonGlow) */
@@ -1663,15 +1659,9 @@
 .online-lobby-action.online-lobby-wallet-btn,
 .online-lobby-action-buttons .button.online-lobby-action,
 .online-lobby-pay-btns > .online-lobby-btn-pop-wrap > .online-lobby-action {
-  width: min(100%, var(--online-lobby-btn-width));
-  min-width: min(100%, var(--online-lobby-btn-width));
-  height: var(--online-lobby-btn-height);
-  min-height: unset;
-  padding: 1%;
-  font-size: var(--online-lobby-btn-font);
+  width: var(--btn-w);
   font-family: 'Inter', sans-serif;
   font-weight: 400;
-  letter-spacing: 0.1rem;
   text-transform: uppercase;
   color: #fff;
   background-color: transparent;
@@ -1855,7 +1845,6 @@
 
 .online-lobby-invite-actions .online-lobby-action {
   width: auto;
-  min-width: min(100%, 11rem);
 }
 
 .online-lobby-invite-post-btn {
@@ -1932,10 +1921,7 @@
   flex: 1 1 0;
   min-width: 0;
   width: auto;
-  min-height: var(--online-hit-sm);
-  padding: 0.4rem 0.45rem;
   white-space: normal;
-  line-height: 1.25;
   text-align: center;
 }
 
@@ -2007,7 +1993,7 @@
 
 /* CTA buttons inside the left hero column — match home menu width */
 .online-lobby-kind1-qr-col .button {
-  width: min(100%, var(--online-lobby-btn-width));
+  width: var(--btn-w);
   align-self: flex-start;
 }
 
@@ -2564,9 +2550,6 @@
 .online-lobby-qr-split-details .online-lobby-pay-btns > .online-lobby-action {
   width: auto;
   min-width: 0;
-  height: auto;
-  min-height: 2.2vw;
-  padding: 0.35vw 1.1vw;
 }
 
 .online-lobby-nwc-pay-btn {
@@ -3743,8 +3726,6 @@
 
   .online-lobby-action {
     width: 100%;
-    min-height: var(--online-hit-lg);
-    font-size: var(--online-lobby-btn-font);
   }
 
   .online-lobby-action.online-lobby-leave-btn,
@@ -3752,11 +3733,7 @@
   .online-lobby-action.online-lobby-wallet-btn,
   .online-lobby-action-buttons .button.online-lobby-action,
   .online-lobby-pay-btns > .online-lobby-btn-pop-wrap > .online-lobby-action {
-    width: min(100%, var(--online-lobby-btn-width));
-    min-width: min(100%, var(--online-lobby-btn-width));
-    height: var(--online-lobby-btn-height);
-    min-height: unset;
-    padding: 1%;
+    width: var(--btn-w);
   }
 }
 
@@ -3790,11 +3767,6 @@
   .online-lobby-main {
     padding-left: clamp(1.5rem, 5vw, 4rem);
     padding-right: clamp(1.5rem, 5vw, 4rem);
-  }
-
-  .online-lobby-action {
-    height: var(--online-hit-lg);
-    padding: 0 2em;
   }
 }
 

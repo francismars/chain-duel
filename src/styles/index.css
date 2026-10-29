@@ -1,4 +1,5 @@
 @import url('/fonts/Inter/inter.css');
+@import './variables.css';
 
 @font-face {
   font-family: 'BureauGrotesque';
@@ -98,7 +99,7 @@ h3 {
   color: white;
   text-align: center;
   margin-bottom: 0px;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   text-transform: uppercase;
   letter-spacing: 0.03rem;
 }
@@ -127,9 +128,9 @@ h3 {
 .double-button {
   display: flex;
   margin: auto;
-  width: 25%;
+  width: var(--btn-w);
   justify-content: space-between;
-  height: 3vw;
+  min-height: var(--btn-h-md);
   gap: 2%;
 }
 
@@ -137,7 +138,6 @@ h3 {
   margin: 0;
   width: 49%;
   height: 100%;
-  padding: 3.5%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -192,11 +192,8 @@ html.graphics-flat .button {
 html.graphics-flat .config-section-tab.config-kbd-focus,
 html.graphics-flat .config-login-tab.config-kbd-focus,
 html.graphics-flat .config-section-tab--active.config-kbd-focus,
-html.graphics-flat .rules-modal__close--selected,
 html.graphics-flat .rules-modal__actions .rules-slider__arrow--selected,
-html.graphics-flat .practice-start--focused,
-html.graphics-flat .graphics-settings__action:hover:not(:disabled),
-html.graphics-flat .graphics-settings__action:focus-visible:not(:disabled) {
+html.graphics-flat .practice-start--focused {
   animation: none !important;
   background-color: #fff;
   color: #000;

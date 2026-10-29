@@ -483,10 +483,7 @@
 .practice-start {
   flex: 1;
   font-family: 'BureauGrotesque', sans-serif;
-  font-size: clamp(13px, 1.2vw, 16px);
   font-weight: 700;
-  letter-spacing: 0.18em;
-  padding: 14px 20px;
   cursor: pointer;
   text-transform: uppercase;
   color: var(--cd-gold);

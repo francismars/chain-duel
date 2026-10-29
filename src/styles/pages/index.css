@@ -34,7 +34,7 @@
 }
 
 .index-page__main .menu-buttons {
-  width: 28vw;
+  width: var(--btn-w);
   min-width: min(16rem, 88vw);
   margin-left: auto;
   margin-right: auto;
@@ -73,7 +73,7 @@
   flex-direction: column;
   align-items: stretch;
   gap: 0.55vw;
-  width: 28vw;
+  width: var(--btn-w);
   margin: 1.5rem auto 0;
 }
 
@@ -200,7 +200,7 @@
   margin-top: 0;
   text-align: center;
   color: grey;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   letter-spacing: 0.03rem;
   line-height: 1.4rem;
 }

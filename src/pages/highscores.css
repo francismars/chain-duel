@@ -177,7 +177,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: 25%;
+  width: var(--btn-w);
   margin-left: auto;
   margin-right: auto;
   gap: 0.4vw;
@@ -194,7 +194,5 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   box-sizing: border-box;
-  line-height: 1;
 }

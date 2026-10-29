@@ -1,31 +1,113 @@
-/* Button component styles - matching legacy */
+/*
+ * The one button. Size comes from tokens in styles/variables.css so every page
+ * gets the same footprint; pages should only set layout (width in a grid, margins).
+ */
 
 .button {
-  margin-top: 1%;
-  margin-bottom: 1%;
   display: block;
-  margin-left: auto;
-  margin-right: auto;
+  margin: var(--space-1) auto;
+  width: var(--btn-w);
+  min-height: var(--btn-h-md);
+  padding: var(--space-1) var(--space-3);
   color: white;
   background-color: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  width: 25%;
-  height: 3vw;
-  font-size: 0.8cqw;
-  padding: 1%;
-  letter-spacing: 0.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  line-height: 1.2;
+  letter-spacing: var(--btn-letter-spacing);
   text-transform: uppercase;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
+
+/* ── Sizes ─────────────────────────────────────────────── */
+
+.button--sm {
+  min-height: var(--btn-h-sm);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-xs);
+}
+
+.button--lg {
+  min-height: var(--btn-h-lg);
+  font-size: var(--fs-md);
+}
+
+.button--block {
+  width: 100%;
+}
+
+/* Fingers need 44px no matter how small the button is drawn. */
+@media (pointer: coarse) {
+  .button,
+  .button--sm {
+    min-height: var(--tap-min);
+  }
+}
+
+/* ── Variants ──────────────────────────────────────────── */
+
+.button--secondary {
+  color: rgb(255 255 255 / 78%);
+  border-color: rgb(255 255 255 / 20%);
+}
+
+.button--text {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-1) var(--space-1);
+  border-color: transparent;
+  color: rgb(255 255 255 / 72%);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.button--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--btn-h-sm);
+  min-width: var(--btn-h-sm);
+  height: var(--btn-h-sm);
+  min-height: var(--btn-h-sm);
+  margin: 0;
+  padding: 0;
+  font-size: var(--fs-md);
+  letter-spacing: 0;
+}
+
+@media (pointer: coarse) {
+  .button--text {
+    min-height: var(--tap-min);
+  }
+
+  .button--icon {
+    width: var(--tap-min);
+    min-width: var(--tap-min);
+    height: var(--tap-min);
+  }
+}
+
+/* ── States ────────────────────────────────────────────── */
 
 /* Hover / keyboard = same paint as @keyframes glowing 50% (pulse peak).
    Pause animation so the static style matches what the pulse hits at its brightest.
-   Online postgame buttons keep gradients — they use .online-postgame-btn* + local hover. */
-.button:hover:not([class*='online-postgame-btn']):not(:disabled):not(.disabled),
-.button:focus-visible:not([class*='online-postgame-btn']):not(:disabled):not(
-    .disabled
-  ) {
+   Hover is guarded so a tap on a touch screen doesn't leave the glow stuck on. */
+@media (hover: hover) {
+  .button:hover:not(.button--custom):not(:disabled):not(.disabled) {
+    animation: none !important;
+    background-color: var(--button-glow-bg-peak, rgb(255 255 255 / 30%));
+    box-shadow: var(--button-glow-shadow-peak, 0 0 35px rgb(255 255 255));
+    border-color: var(--button-glow-border, #fff);
+    color: var(--button-glow-fg, inherit);
+  }
+}
+
+.button:focus-visible:not(.button--custom):not(:disabled):not(.disabled) {
   animation: none !important;
   background-color: var(--button-glow-bg-peak, rgb(255 255 255 / 30%));
   box-shadow: var(--button-glow-shadow-peak, 0 0 35px rgb(255 255 255));
@@ -33,49 +115,43 @@
   color: var(--button-glow-fg, inherit);
 }
 
-/* Pressed ≈ glowing 0% / 100% trough */
-.button:active:not([class*='online-postgame-btn']):not(:disabled):not(
-    .disabled
-  ) {
+/* Pressed ≈ glowing 0% / 100% trough. Doubled class beats the hover rule above. */
+.button.button:active:not(.button--custom):not(:disabled):not(.disabled) {
   background-color: var(--button-glow-bg-low, rgb(255 255 255 / 15%));
   box-shadow: var(--button-glow-shadow-low, 0 0 15px rgb(255 255 255));
   border-color: var(--button-glow-border, #fff);
   color: var(--button-glow-fg, inherit);
 }
 
-/* Hover + active both match on click — need a compound selector so trough wins over peak */
-.button:hover:active:not([class*='online-postgame-btn']):not(:disabled):not(
-    .disabled
-  ) {
-  background-color: var(--button-glow-bg-low, rgb(255 255 255 / 15%));
-  box-shadow: var(--button-glow-shadow-low, 0 0 15px rgb(255 255 255));
-  border-color: var(--button-glow-border, #fff);
-  color: var(--button-glow-fg, inherit);
+.button--text:focus-visible:not(:disabled):not(.disabled),
+.button.button--text:active:not(:disabled):not(.disabled) {
+  box-shadow: none;
 }
 
 .button:focus {
   outline: none;
 }
 
-.button.disabled {
+.button.disabled,
+.button:disabled {
   opacity: 0.2;
   cursor: not-allowed;
 }
 
-.button.disabled:hover:not([class*='online-postgame-btn']),
-.button.disabled:focus-visible:not([class*='online-postgame-btn']) {
+.button.disabled:hover:not(.button--custom),
+.button.disabled:focus-visible:not(.button--custom) {
   background-color: transparent;
   box-shadow: none;
-  border-color: rgba(255, 255, 255, 0.34);
+  border-color: var(--line);
   animation: none !important;
 }
 
 /* Glow animation may be frozen (animations off). Keep a solid invert so the
    focused control is still obvious when shadows & transparency are off. */
 html.graphics-flat
-  .button.button--glow-active:not([class*='online-postgame-btn']):not(
-    :disabled
-  ):not(.disabled) {
+  .button.button--glow-active:not(.button--custom):not(:disabled):not(
+    .disabled
+  ) {
   animation: none !important;
   background-color: #fff;
   color: #000;
@@ -84,49 +160,30 @@ html.graphics-flat
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .button:hover:not([class*='online-postgame-btn']):not(:disabled):not(
-      .disabled
-    ),
-  .button:focus-visible:not([class*='online-postgame-btn']):not(:disabled):not(
-      .disabled
-    ) {
+  .button:hover:not(.button--custom):not(:disabled):not(.disabled),
+  .button:focus-visible:not(.button--custom):not(:disabled):not(.disabled) {
     animation: none !important;
     background-color: transparent;
     box-shadow: none;
-    border-color: rgba(255, 255, 255, 0.72);
+    border-color: var(--line-strong);
   }
 
-  .button:active:not([class*='online-postgame-btn']):not(:disabled):not(
-      .disabled
-    ),
-  .button:hover:active:not([class*='online-postgame-btn']):not(:disabled):not(
-      .disabled
-    ) {
+  .button.button:active:not(.button--custom):not(:disabled):not(.disabled) {
     background-color: transparent;
     box-shadow: none;
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: rgb(255 255 255 / 50%);
   }
 
   html.graphics-flat
-    .button:hover:not([class*='online-postgame-btn']):not(:disabled):not(
+    .button:hover:not(.button--custom):not(:disabled):not(.disabled),
+  html.graphics-flat
+    .button:focus-visible:not(.button--custom):not(:disabled):not(.disabled),
+  html.graphics-flat
+    .button.button:active:not(.button--custom):not(:disabled):not(.disabled),
+  html.graphics-flat
+    .button.button--glow-active:not(.button--custom):not(:disabled):not(
       .disabled
-    ),
-  html.graphics-flat
-    .button:focus-visible:not([class*='online-postgame-btn']):not(
-      :disabled
-    ):not(.disabled),
-  html.graphics-flat
-    .button:active:not([class*='online-postgame-btn']):not(:disabled):not(
-      .disabled
-    ),
-  html.graphics-flat
-    .button:hover:active:not([class*='online-postgame-btn']):not(:disabled):not(
-      .disabled
-    ),
-  html.graphics-flat
-    .button.button--glow-active:not([class*='online-postgame-btn']):not(
-      :disabled
-    ):not(.disabled) {
+    ) {
     background-color: #fff;
     color: #000;
     box-shadow: none;

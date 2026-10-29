@@ -2157,15 +2157,10 @@
 
 .solo-challenges-page .practice-back.button {
   flex: 0 1 100%;
-  height: 3vw;
-  min-height: 30px;
   margin: 0;
-  padding: 1%;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
   font-weight: 400;
-  letter-spacing: 0.1rem;
   color: #fff;
   border-color: rgba(255, 255, 255, 0.34);
   box-shadow: none;

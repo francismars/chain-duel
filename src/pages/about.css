@@ -131,9 +131,7 @@ img.inline-logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   box-sizing: border-box;
-  line-height: 1;
 }
 
 #prevButton {
