@@ -20,6 +20,7 @@ import { RulesSection } from './RulesSection';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import './game-setup.css';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 export interface GameSetupLayoutProps {
   /** Page title, e.g. "PRACTICE" or "P2P" */
@@ -223,10 +224,7 @@ export function GameSetupLayout({
     <>
       <div className={`game-setup-page ${pageClass}`}>
         {/* Top: header brand */}
-        <header id="brand" className="game-setup-header">
-          <h2 id="chain">CHAIN</h2>
-          <h2 id="duel">DUEL</h2>
-        </header>
+        <BrandHeader className="game-setup-header" />
 
         {/* Middle: game setup (rules, buttons) */}
         <div className="game-setup-middle">

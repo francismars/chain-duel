@@ -1,31 +1,3 @@
-/* Config page styles - matching legacy exactly */
-
-header#brand:has(+ .config-page) {
-  position: fixed;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 2;
-  pointer-events: none;
-}
-
-header#brand:has(+ .config-page) #chain {
-  color: white;
-  margin-top: 0%;
-  margin-left: 1%;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-header#brand:has(+ .config-page) #duel {
-  color: white;
-  margin-top: 0%;
-  text-align: right;
-  font-size: 2.5cqw;
-  margin-right: 1%;
-}
-
 .config-row {
   display: flex;
   width: min(90vw, 44rem);
@@ -986,7 +958,7 @@ a.config-nc-signer-btn.config-kbd-focus {
 }
 
 .value {
-  font-size: 1.5vw;
+  font-size: max(15px, 1.5vw);
 }
 
 .config-overlay {
@@ -2243,5 +2215,46 @@ a.config-nc-signer-btn.config-kbd-focus {
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;
+  }
+}
+
+/* Phones: section + login tabs become a swipeable strip instead of squeezing. */
+@media (max-width: 640px) {
+  .config-section-tabs,
+  .config-login-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .config-section-tabs::-webkit-scrollbar,
+  .config-login-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .config-section-tab,
+  .config-login-tab {
+    flex: 0 0 auto;
+    padding-inline: var(--space-3);
+    scroll-snap-align: start;
+  }
+
+  /* Fit the panel to the screen so MAIN MENU stays visible; the tab scrolls. */
+  .config-panel {
+    height: calc(100dvh - 11rem - var(--safe-top) - var(--safe-bottom));
+    min-height: 20rem;
+    padding: var(--space-2);
+  }
+
+  .config-panel > .config-tab-panel {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .config-page {
+    padding-top: calc(var(--safe-top) + 2.75rem);
+    padding-bottom: calc(var(--safe-bottom) + var(--space-2));
   }
 }

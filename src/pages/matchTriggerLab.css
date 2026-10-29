@@ -63,7 +63,7 @@
 .match-lab__match #player1info,
 .match-lab__match #player2info,
 .match-lab__match #gameInfo {
-  font-size: 3.57cqw;
+  font-size: max(22px, 3.57cqw);
 }
 
 .match-lab__match .playerSquare {
@@ -72,11 +72,11 @@
 }
 
 .match-lab__match .gameState {
-  font-size: 1cqw;
+  font-size: max(13px, 1cqw);
 }
 
 .match-lab__match .capturingAmount {
-  font-size: 1.43cqw;
+  font-size: max(15px, 1.43cqw);
 }
 
 .match-lab__match #currentDistribution.distributionBarOutter {
@@ -88,12 +88,12 @@
 }
 
 .match-lab__match .player-sats span {
-  font-size: 1.43cqw;
+  font-size: max(15px, 1.43cqw);
 }
 
 .match-lab__match #p1Points,
 .match-lab__match #p2Points {
-  font-size: 3.57cqw;
+  font-size: max(22px, 3.57cqw);
 }
 
 .match-lab__match .sponsored-img {

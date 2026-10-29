@@ -79,7 +79,7 @@
 #prizevaluesats {
   margin-top: 0;
   color: white;
-  font-size: 3cqw;
+  font-size: max(18px, 3cqw);
   text-align: center;
   margin-bottom: 0;
   display: inline-flex;
@@ -103,7 +103,7 @@
 #prizeinfosats {
   margin-top: 0;
   color: white;
-  font-size: 1.5cqw;
+  font-size: max(15px, 1.5cqw);
   text-align: center;
   margin-bottom: 0;
 }
@@ -211,14 +211,14 @@
 #player2sats,
 #player1sats {
   color: white;
-  font-size: 2cqw;
+  font-size: max(15px, 2cqw);
   padding-bottom: 0;
 }
 
 .player1info,
 .player2info {
   color: white;
-  font-size: 2.5cqw;
+  font-size: max(18px, 2.5cqw);
   padding-top: 0;
   margin-top: 0.2cqw;
   white-space: nowrap;
@@ -236,7 +236,7 @@
 }
 
 .sats-label {
-  font-size: 1.3cqw;
+  font-size: max(13px, 1.3cqw);
 }
 
 .gamemenu-page .qrcodeContainer {
@@ -423,7 +423,7 @@
   margin: auto;
   background: #fff;
   border-radius: 100px;
-  font-size: 0.7vw;
+  font-size: max(11px, 0.7vw);
   padding: 0.3vw 0.8vw;
   box-shadow: 0 0 10px #fff;
 }
@@ -543,7 +543,7 @@
   margin: 0;
   width: 100%;
   text-align: center;
-  font-size: 3.5cqw;
+  font-size: max(22px, 3.5cqw);
 }
 
 .gamemenu-page.is-nostr .nostr-zap-title-char {
@@ -584,7 +584,7 @@
 }
 
 .gamemenu-page.is-nostr #gameCodeNostr {
-  font-size: 2.1cqw;
+  font-size: max(15px, 2.1cqw);
   line-height: 1;
   text-align: center;
   width: 100%;
@@ -1278,17 +1278,17 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
 .gamemenu-page.gamemenu-preview.is-nostr
   #player2satsContainer
   span:not(.sats-label) {
-  font-size: 2cqw;
+  font-size: max(15px, 2cqw);
 }
 
 .gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer .sats-label,
 .gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer .sats-label {
-  font-size: 1.15cqw;
+  font-size: max(13px, 1.15cqw);
 }
 
 .gamemenu-page.gamemenu-preview.is-nostr .player1info,
 .gamemenu-page.gamemenu-preview.is-nostr .player2info {
-  font-size: 4cqw;
+  font-size: max(22px, 4cqw);
 }
 
 .gamemenu-page.gamemenu-preview.is-nostr .playerSquare,

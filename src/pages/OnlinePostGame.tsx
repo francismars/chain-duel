@@ -26,6 +26,7 @@ import {
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 type PostGameNav =
   | { type: 'replay'; index: number } // round replay buttons
@@ -690,10 +691,7 @@ export default function OnlinePostGame({
       return (
         <div className="online-postgame-page">
           <Sponsorship id="sponsorship-online-postgame" />
-          <header id="brand">
-            <h2 id="chain">CHAIN</h2>
-            <h2 id="duel">DUEL</h2>
-          </header>
+          <BrandHeader />
           <div className="online-postgame-card">
             <p className="online-postgame-error">
               {error || 'Could not load victory screen.'}
@@ -712,10 +710,7 @@ export default function OnlinePostGame({
       )}
       <div className="postgame-scrim" aria-hidden="true" />
       <Sponsorship id="sponsorship-online-postgame" />
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <div className="online-postgame-card">
         <div className="online-postgame-headline">

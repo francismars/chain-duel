@@ -15,6 +15,7 @@ import { computeFinalPrize } from '@/features/tournament/bracketModel';
 import { lightningUriHref } from '@/lib/lightning/lightningUriHref';
 import '@/components/ui/Button.css';
 import './tournlobby.css';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 type SelectState = 'backButton' | 'proceedButton' | 'none';
 
@@ -159,10 +160,7 @@ export default function TournamentLobby() {
 
   return (
     <div className="tournlobby-page">
-      <header id="brand" className="tournlobby-header">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader className="tournlobby-header" />
 
       <div className="tournlobby-middle">
         <div className="tournlobby-modal">

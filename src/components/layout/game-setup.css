@@ -16,7 +16,7 @@
   flex-shrink: 0;
   position: absolute;
   z-index: 2;
-  top: 1rem;
+  top: 0;
   left: 0;
   right: 0;
   width: 100%;
@@ -49,28 +49,12 @@
   flex-shrink: 0;
 }
 
-.game-setup-page #chain {
-  color: white;
-  margin-top: 0;
-  margin-left: 0;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-.game-setup-page #duel {
-  color: white;
-  margin-top: 0;
-  text-align: right;
-  font-size: 2.5cqw;
-  margin-right: 0;
-}
-
 #titleslogan {
   color: white;
   text-align: center;
   margin-bottom: 1%;
   margin-top: 1%;
-  font-size: 1.5cqw;
+  font-size: max(15px, 1.5cqw);
   font-weight: 300;
 }
 
@@ -97,7 +81,7 @@
 
 .gameDescription {
   text-align: center;
-  font-size: 0.9cqw;
+  font-size: max(12px, 0.9cqw);
 }
 
 .rewards {
@@ -132,7 +116,7 @@
   text-align: center;
   margin-top: 1rem;
   min-height: 1.5rem;
-  font-size: 0.9cqw;
+  font-size: max(12px, 0.9cqw);
 }
 
 #mainmenubutton,
@@ -206,7 +190,7 @@
   width: max-content;
   max-width: 28vw;
   text-align: center;
-  font-size: 0.75cqw;
+  font-size: max(12px, 0.75cqw);
   line-height: 1.35;
   color: rgba(255, 255, 255, 0.92);
   background: rgba(0, 0, 0, 0.88);
@@ -245,7 +229,7 @@
   position: static;
   margin-bottom: 1%;
   text-align: center;
-  font-size: 6cqw;
+  font-size: max(22px, 6cqw);
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: white;
@@ -295,11 +279,11 @@
 }
 
 .warning-title {
-  font-size: 3vw;
+  font-size: max(18px, 3vw);
 }
 
 .warning-text {
-  font-size: 1.2vw;
+  font-size: max(13px, 1.2vw);
 }
 
 .warning-actions {

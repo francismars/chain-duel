@@ -10,6 +10,7 @@ import {
   navigateToMainMenu,
   type MenuNavigationState,
 } from '@/shared/constants/menuNavigation';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 type ButtonSelected = 'mainMenuButton' | 'nextButton' | 'prevButton';
 
@@ -169,10 +170,7 @@ export default function Highscores() {
 
   return (
     <>
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <div className="flex full flex-center">
         <div>

@@ -63,6 +63,7 @@ import {
   tabFromSectionIndex,
 } from './configNav';
 import './config.css';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 function signerModeLabel(mode: StoredSignerMode | null): string {
   if (mode === 'nip46') return 'Nostr Connect';
@@ -914,10 +915,7 @@ export default function Config() {
 
   return (
     <>
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <div className="flex full flex-center config-page">
         <div className="config-shell">

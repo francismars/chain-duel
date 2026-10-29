@@ -35,7 +35,18 @@
   height: 100%;
 }
 
-.corner-btn:hover,
+.corner-controls__panel {
+  display: contents;
+}
+
+@media (hover: hover) {
+  .corner-btn:hover {
+    color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.07);
+  }
+}
+
 .corner-btn:focus-visible {
   color: rgba(255, 255, 255, 0.85);
   border-color: rgba(255, 255, 255, 0.5);
@@ -110,7 +121,13 @@
     transform 0.15s;
 }
 
-.corner-btn:hover::after,
+@media (hover: hover) {
+  .corner-btn:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
 .corner-btn:focus-visible::after {
   opacity: 1;
   transform: translateY(-50%) translateX(0);
@@ -132,4 +149,77 @@
     font-size: max(0.55rem, 1.1vmax);
     padding: 0.1rem 0.28rem;
   }
+}
+
+/* ── Touch: one 44px toggle under CHAIN that opens a labelled panel ── */
+
+.corner-controls--touch {
+  /* Sits in the brand row, just right of CHAIN, so it never covers page content. */
+  top: calc(var(--safe-top) + 0.1rem);
+  left: calc(max(var(--safe-left), 1%) + 4.4rem);
+  transform: none;
+  gap: 0;
+}
+
+.corner-controls--touch .corner-btn {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 11px;
+}
+
+.corner-controls--touch .corner-controls__toggle {
+  width: 40px;
+  height: 40px;
+  padding: 9px;
+  background: rgb(0 0 0 / 55%);
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.corner-controls--touch .corner-controls__panel {
+  display: none;
+}
+
+.corner-controls--touch.corner-controls--open .corner-controls__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  padding: var(--space-1);
+  background: rgb(0 0 0 / 88%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Inside the panel each control is a full row: icon + its label. */
+.corner-controls--touch .corner-controls__panel .corner-btn {
+  width: auto;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.corner-controls--touch .corner-controls__panel .corner-btn svg,
+.corner-controls--touch .corner-controls__panel .corner-btn__nostr-avatar {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+}
+
+.corner-controls--touch .corner-controls__panel .corner-btn--nostr-signed-in {
+  border-radius: 0;
+  padding: 11px;
+}
+
+.corner-controls--touch .corner-btn::after {
+  position: static;
+  transform: none;
+  opacity: 1;
+  background: none;
+  border: 0;
+  padding: 0 var(--space-1) 0 0;
+  font-size: var(--fs-sm);
+}
+
+.corner-controls--touch .corner-controls__toggle::after {
+  content: none;
 }

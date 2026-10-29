@@ -54,7 +54,7 @@
 .index-page #chainduel {
   text-align: center;
   color: rgba(255, 255, 255, 0.96);
-  font-size: 14cqw;
+  font-size: max(22px, 14cqw);
   letter-spacing: -0.03em;
   margin-bottom: 0px;
   margin-top: 0px;
@@ -65,7 +65,7 @@
   text-align: center;
   color: rgba(255, 255, 255, 0.48);
   letter-spacing: 0.14em;
-  font-size: 0.72cqw;
+  font-size: max(11px, 0.72cqw);
 }
 
 .menu-buttons {

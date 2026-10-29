@@ -1,0 +1,21 @@
+.brand-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(var(--safe-top) + 0.5rem) max(var(--safe-right), 1%) 0
+    max(var(--safe-left), 1%);
+  pointer-events: none;
+}
+
+.brand-header #chain,
+.brand-header #duel {
+  margin: 0;
+  color: white;
+  font-size: clamp(1.1rem, 2.5vw, 4rem);
+  line-height: 1;
+}

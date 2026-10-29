@@ -56,6 +56,7 @@ import { decodeBolt11ExpiresAt } from '@/lib/lightning/decodeBolt11ExpiresAt';
 import { lightningUriHref } from '@/lib/lightning/lightningUriHref';
 import '@/styles/pages/onlineRoomLobby.css';
 import './game.css';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 const PAYMENT_MODES = ['anon', 'nostr', 'pin-zap'] as const;
 const FINISHED_ACTION_COUNT = 3;
@@ -2352,10 +2353,7 @@ export default function OnlineRoomLobby({
 
   return (
     <div className="online-lobby-page">
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       {/* ── Main centering wrapper (Zones 1–4 + modal) ── */}
       <div className="online-lobby-main">

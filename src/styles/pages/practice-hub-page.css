@@ -21,19 +21,19 @@
 
 /* ── Fluid typography — scales proportionally with viewport width ── */
 .practice-hub-page.practice-hub--practice {
-  --ph-fs-soon: calc(0.2rem + 0.58vw);
-  --ph-fs-gate-check: calc(0.18rem + 0.52vw);
-  --ph-fs-gate-meta: calc(0.16rem + 0.48vw);
-  --ph-fs-play-style-sub: calc(0.2rem + 0.65vw);
-  --ph-fs-caption: calc(0.24rem + 0.78vw);
-  --ph-fs-body-sm: calc(0.28rem + 0.86vw);
-  --ph-fs-tier: calc(0.3rem + 0.82vw);
-  --ph-fs-body: calc(0.36rem + 0.98vw);
-  --ph-fs-ui: calc(0.4rem + 1.08vw);
-  --ph-fs-heading-sm: calc(0.46rem + 1.2vw);
-  --ph-fs-heading: calc(0.5rem + 1.38vw);
-  --ph-fs-display-sm: calc(0.58rem + 1.9vw);
-  --ph-fs-display: calc(0.72rem + 2.85vw);
+  --ph-fs-soon: max(10px, calc(0.2rem + 0.58vw));
+  --ph-fs-gate-check: max(10px, calc(0.18rem + 0.52vw));
+  --ph-fs-gate-meta: max(10px, calc(0.16rem + 0.48vw));
+  --ph-fs-play-style-sub: max(11px, calc(0.2rem + 0.65vw));
+  --ph-fs-caption: max(11px, calc(0.24rem + 0.78vw));
+  --ph-fs-body-sm: max(12px, calc(0.28rem + 0.86vw));
+  --ph-fs-tier: max(12px, calc(0.3rem + 0.82vw));
+  --ph-fs-body: max(13px, calc(0.36rem + 0.98vw));
+  --ph-fs-ui: max(14px, calc(0.4rem + 1.08vw));
+  --ph-fs-heading-sm: max(15px, calc(0.46rem + 1.2vw));
+  --ph-fs-heading: max(16px, calc(0.5rem + 1.38vw));
+  --ph-fs-display-sm: max(20px, calc(0.58rem + 1.9vw));
+  --ph-fs-display: max(24px, calc(0.72rem + 2.85vw));
   /* Panel caps — chrome reserve scales with viewport width */
   --ph-page-max-width: 88vw;
   --ph-chrome-vw: 22vw;
@@ -2549,5 +2549,53 @@
     display: grid;
     min-height: var(--ph-compact-card-min);
     height: auto;
+  }
+}
+
+/* ── Phones: one column, page scrolls, sticky footer with primary on top ── */
+@media (max-width: 640px) {
+  .practice-hub-page.practice-hub,
+  .practice-hub-page.practice-hub--practice,
+  .practice-hub-page.practice-hub--setup-pick {
+    max-width: 100%;
+    max-height: none;
+    overflow: visible;
+    grid-template-rows: auto auto auto auto;
+    gap: var(--space-3);
+    padding: calc(var(--safe-top) + 3.25rem)
+      calc(var(--safe-right) + var(--space-3)) 0
+      calc(var(--safe-left) + var(--space-3));
+  }
+
+  .practice-hub-page {
+    --ph-play-area-max-height: none;
+    --ph-panel-max-height: none;
+  }
+
+  .practice-free-play-panel__body .local-setup-top-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .practice-hub-page .local-tier-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .practice-hub-page .practice-hub-panel-footer {
+    position: sticky;
+    bottom: 0;
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    padding: var(--space-3) 0 calc(var(--safe-bottom) + var(--space-3));
+    background: linear-gradient(to top, #000 70%, rgb(0 0 0 / 0));
+  }
+
+  .practice-hub-page .practice-hub-panel-footer .button {
+    width: 100%;
+  }
+
+  .p2p-modifiers-section .p2p-duel-format,
+  .practice-hub-page .p2p-modifiers-section .ph-picker-block .p2p-duel-format {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

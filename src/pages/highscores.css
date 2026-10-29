@@ -1,31 +1,5 @@
-/* Highscores page styles - matching legacy exactly */
-
-#brand {
-  position: fixed;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#chain {
-  color: white;
-  margin-top: 0%;
-  margin-left: 1%;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-#duel {
-  color: white;
-  margin-top: 0%;
-  text-align: right;
-  font-size: 2.5cqw;
-  margin-right: 1%;
-}
-
 #page-title {
-  font-size: 3cqw;
+  font-size: max(18px, 3cqw);
 }
 
 #highscoresList {
@@ -35,7 +9,7 @@
 }
 
 .rankStyle {
-  font-size: 3.8vw;
+  font-size: max(22px, 3.8vw);
   margin: 0px;
   width: 7%;
   text-align: left;
@@ -70,7 +44,7 @@
 .satsLabelStyle {
   font-family: 'inter', sans-serif;
   text-transform: uppercase;
-  font-size: 0.7cqw;
+  font-size: max(11px, 0.7cqw);
   margin-left: 10px;
   color: grey;
 }
@@ -82,7 +56,7 @@
 
 .winnerNameStyle {
   text-align: left;
-  font-size: 2.4vw;
+  font-size: max(18px, 2.4vw);
   margin-bottom: 0px;
   letter-spacing: 0.03rem;
   white-space: nowrap;
@@ -91,7 +65,7 @@
 }
 
 .winnerSatsStyle {
-  font-size: 1.2vw;
+  font-size: max(13px, 1.2vw);
   margin: 0;
 }
 
@@ -101,7 +75,7 @@
 }
 
 .VSLabelStyle {
-  font-size: 2cqw;
+  font-size: max(15px, 2cqw);
   color: grey;
   width: 15%;
   margin: 0;
@@ -114,7 +88,7 @@
 
 .loserNameStyle {
   text-align: left;
-  font-size: 1.5cqw;
+  font-size: max(15px, 1.5cqw);
   color: grey;
   margin-bottom: 0;
   letter-spacing: 0.01rem;
@@ -124,7 +98,7 @@
 }
 
 .loserSatsStyle {
-  font-size: 1vw;
+  font-size: max(13px, 1vw);
   color: grey;
   margin: 0;
 }
@@ -136,7 +110,7 @@
 
 .prizeSatsStyle {
   margin-bottom: 0px;
-  font-size: 3vw;
+  font-size: max(18px, 3vw);
   margin-top: 2px;
 }
 
@@ -155,7 +129,7 @@
 }
 
 .sponsor span {
-  font-size: 0.8vw;
+  font-size: max(12px, 0.8vw);
   opacity: 0.5;
   margin: 0;
   display: block;
@@ -163,12 +137,12 @@
 
 .tournStyle {
   width: 11%;
-  font-size: 2vw;
+  font-size: max(15px, 2vw);
   margin: 0;
 }
 
 .tournNameStyle {
-  font-size: 1vw;
+  font-size: max(13px, 1vw);
   color: grey;
   margin: 0;
 }

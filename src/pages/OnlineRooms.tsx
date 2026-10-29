@@ -14,6 +14,7 @@ import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import '@/styles/pages/onlineRooms.css';
 import '@/styles/pages/onlinePostGame.css'; // shared card structure for history rows
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 type NavFocus =
   | { type: 'tab'; index: number } // tab row: 0=Active 1=Finished 2=HoF
@@ -750,10 +751,7 @@ export default function OnlineRooms() {
 
   return (
     <div className="online-rooms-page">
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <div className="online-rooms-body">
         <div className="online-rooms-left">

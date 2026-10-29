@@ -108,6 +108,7 @@ import {
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './game.css';
 import '@/styles/components/matchResults.css';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 interface ZapMessage {
   id: string;
@@ -1722,10 +1723,7 @@ export default function Game() {
         {previewLoser ? null : (
           <SoloZapRadiatingLines className="end-screen-rays match-end-layer__rays" />
         )}
-        <header id="brand">
-          <h2 id="chain">CHAIN</h2>
-          <h2 id="duel">DUEL</h2>
-        </header>
+        <BrandHeader />
         <div className="match-end-card">
           <Sponsorship id="sponsorship-match-end" />
           <p className="match-end-card__kicker">
@@ -1782,10 +1780,7 @@ export default function Game() {
   return (
     <>
       <div id="game-bg-overlay" aria-hidden="true" />
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <h1 id="tournament-name" className="hero-outline in-game hide">
         The Merkle Tree

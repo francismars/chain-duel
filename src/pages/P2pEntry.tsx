@@ -28,6 +28,7 @@ import '@/components/ui/Button.css';
 import './practiceHub.css';
 import '@/styles/pages/p2p-entry.css';
 import '@/styles/pages/onlinePostGame.css';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 type SessionKind = 'duel' | 'tournament';
 type PaymentKind = 'lightning' | 'nostr';
@@ -416,10 +417,7 @@ export default function P2pEntry({
     <div
       className={`practice-hub practice-hub--practice p2p-entry-page${stepped ? ' p2p-entry-page--stepped' : ''}`}
     >
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
       <header className="practice-hub-header">
         <h2 className="practice-hub-title">{pageTitle}</h2>
       </header>

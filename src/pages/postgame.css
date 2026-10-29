@@ -9,17 +9,6 @@ body {
   width: auto;
 }
 
-#brand {
-  position: fixed;
-  top: 0;
-  margin-top: 0.25rem;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  pointer-events: none;
-  z-index: 10;
-}
-
 html.tv-safe-inset header#brand:has(+ #postGame) {
   top: var(--tv-safe-padding);
   left: var(--tv-safe-padding);
@@ -28,28 +17,12 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
   margin-top: 0;
 }
 
-#chain {
-  color: white;
-  margin-top: 0%;
-  margin-left: 1%;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-#duel {
-  color: white;
-  margin-top: 0%;
-  text-align: right;
-  font-size: 2.5cqw;
-  margin-right: 1%;
-}
-
 #gameOver {
   position: static;
   margin-top: 0%;
   margin-bottom: 0%;
   text-align: center;
-  font-size: 3cqw;
+  font-size: max(18px, 3cqw);
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: white;
@@ -59,7 +32,7 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
   position: static;
   margin: 0;
   text-align: center;
-  font-size: 3cqw;
+  font-size: max(18px, 3cqw);
   color: white;
   padding: 0;
 }
@@ -87,14 +60,14 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 #claimReq1 {
   margin-top: 0.75cqw;
   margin-bottom: 0.75cqw;
-  font-size: 1cqw;
+  font-size: max(13px, 1cqw);
 }
 
 #prize {
   position: static;
   margin: 0.75rem 0 -0.65rem;
   text-align: center;
-  font-size: 8cqw;
+  font-size: max(22px, 8cqw);
   color: white;
   padding-top: 0%;
   text-shadow: 0 0 25px white;
@@ -103,7 +76,7 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 #claimText {
   position: static;
   text-align: center;
-  font-size: 1.5cqw;
+  font-size: max(15px, 1.5cqw);
   color: white;
   margin: 20px 0 0.75cqw 0;
 }
@@ -178,7 +151,7 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 }
 
 .don-subtitle {
-  font-size: 0.85cqw;
+  font-size: max(12px, 0.85cqw);
   color: rgb(255 175 85 / 0.65);
   letter-spacing: 0.04em;
   text-align: center;
@@ -268,7 +241,7 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
   align-items: center;
   justify-content: center;
   gap: clamp(8px, 0.75vw, 16px);
-  font-size: 3cqw;
+  font-size: max(18px, 3cqw);
   line-height: 0.95;
 }
 
@@ -289,7 +262,7 @@ html.tv-safe-inset header#brand:has(+ #postGame) {
 #socialFollow {
   margin-top: 4.6cqw;
   text-align: center;
-  font-size: 1.35cqw;
+  font-size: max(13px, 1.35cqw);
 }
 
 #socialFollow .social-follow-link {

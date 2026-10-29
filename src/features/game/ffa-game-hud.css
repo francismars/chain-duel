@@ -7,7 +7,7 @@
   margin: 0.35vw 15% 0.45vw;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.58vw;
+  font-size: max(11px, 0.58vw);
   box-sizing: border-box;
   --distribution-bar-gap: 0.65vw;
 }
@@ -19,7 +19,7 @@
 /* Match 1v1 #gameInfo — override the 33% width rule from game.css */
 .ffa-hud #gameInfo.ffa-hud-mode {
   width: auto;
-  font-size: 2.5cqw;
+  font-size: max(18px, 2.5cqw);
   line-height: 1;
   text-align: center;
   overflow: visible;
@@ -31,7 +31,7 @@
   position: relative;
   text-transform: uppercase;
   text-align: center;
-  font-size: 0.7vw;
+  font-size: max(11px, 0.7vw);
   letter-spacing: 0.05em;
   margin-top: var(--distribution-bar-gap);
   margin-bottom: var(--distribution-bar-gap);
@@ -50,7 +50,7 @@
   position: static;
   margin-bottom: 0.08vw;
   color: #828282;
-  font-size: 0.7vw;
+  font-size: max(11px, 0.7vw);
 }
 
 .ffa-hud-bars .ffa-distribution-title-in-bar {
@@ -62,7 +62,7 @@
   margin: 0;
   pointer-events: none;
   color: #848484;
-  font-size: 0.9vw;
+  font-size: max(12px, 0.9vw);
   line-height: 1;
   white-space: nowrap;
   background: transparent;
@@ -143,7 +143,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.42vw;
-  font-size: 1.5vw;
+  font-size: max(15px, 1.5vw);
   font-weight: 700;
   color: #fff;
   line-height: 1;
@@ -175,7 +175,7 @@
 
 .ffa-hud-capture {
   font-family: 'Inter', sans-serif;
-  font-size: 0.55vw;
+  font-size: max(11px, 0.55vw);
   color: #9a9a9a;
   letter-spacing: 0.05em;
   line-height: 1;
@@ -189,7 +189,7 @@
 
 .ffa-hud-capture .capturingAmount {
   font-weight: 900;
-  font-size: 0.62vw;
+  font-size: max(11px, 0.62vw);
   display: inline-block;
   transform: scale(1);
 }
@@ -211,7 +211,7 @@
 
 .ffa-hud-sats-slot {
   min-width: 0;
-  font-size: 0.65vw;
+  font-size: max(11px, 0.65vw);
   line-height: 1;
 }
 
@@ -226,12 +226,12 @@
 }
 
 .ffa-hud-sats-slot .condensed {
-  font-size: 1.35vw;
+  font-size: max(13px, 1.35vw);
   color: #fff;
 }
 
 .ffa-hud-sats-slot .grey {
-  font-size: 0.65vw;
+  font-size: max(11px, 0.65vw);
 }
 
 .ffa-hud-sponsor #sponsorshipGame {

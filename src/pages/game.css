@@ -22,29 +22,6 @@
   }
 }
 
-#brand {
-  position: fixed;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-}
-
-#chain {
-  color: white;
-  margin-top: 0%;
-  margin-left: 1%;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-#duel {
-  color: white;
-  margin-top: 0%;
-  text-align: right;
-  font-size: 2.5cqw;
-  margin-right: 1%;
-}
-
 .flex.full.game {
   display: flex;
   justify-content: center;
@@ -94,7 +71,7 @@
 #player1info,
 #player2info,
 #gameInfo {
-  font-size: 2.5cqw;
+  font-size: max(18px, 2.5cqw);
   width: 33.3333%;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -242,7 +219,7 @@
 }
 
 .player-sats span {
-  font-size: 1cqw;
+  font-size: max(13px, 1cqw);
 }
 
 #capturingP2.game-2v1-captures {
@@ -284,7 +261,7 @@
 }
 
 .game-2v1-ai-name {
-  font-size: 1.5vw;
+  font-size: max(15px, 1.5vw);
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -301,7 +278,7 @@
 
 .game-2v1-capture-row {
   font-family: 'Inter', sans-serif;
-  font-size: 0.55vw;
+  font-size: max(11px, 0.55vw);
   color: #9a9a9a;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -311,7 +288,7 @@
 
 .game-2v1-capture-row .capturingAmount {
   font-weight: 900;
-  font-size: 0.62vw;
+  font-size: max(11px, 0.62vw);
   display: inline-block;
   transform: scale(1);
   transform-origin: right center;
@@ -326,13 +303,13 @@
 #p1Points {
   color: white;
   margin-right: 0.1vw;
-  font-size: 2.5cqw;
+  font-size: max(18px, 2.5cqw);
 }
 
 #p2Points {
   color: white;
   margin-left: 0.1vw;
-  font-size: 2.5cqw;
+  font-size: max(18px, 2.5cqw);
 }
 
 /* Shared board strip width — canvas + power-up legend stay aligned */
@@ -636,7 +613,7 @@
   margin: 0vw 15% 0.65vw 15%;
   text-transform: uppercase;
   text-align: center;
-  font-size: 0.7vw;
+  font-size: max(11px, 0.7vw);
   letter-spacing: 0.05em;
   height: auto;
   --distribution-bar-gap: 0.65vw;
@@ -653,7 +630,7 @@
 
 .capturingAmount {
   font-weight: 900;
-  font-size: 1vw;
+  font-size: max(13px, 1vw);
   display: inline-block;
   transform: scale(1);
   transform-origin: center center;
@@ -758,7 +735,7 @@
   z-index: 1;
   margin-bottom: -1.38vw;
   color: #848484;
-  font-size: 0.9vw;
+  font-size: max(12px, 0.9vw);
 }
 
 .distributionBarOutter {
@@ -1097,7 +1074,7 @@
 }
 
 #bitcoinDetails .value {
-  font-size: 1vw;
+  font-size: max(13px, 1vw);
   text-align: center;
   width: 7vw;
   opacity: 0.4;
@@ -1230,12 +1207,12 @@
 .zapUser {
   font-weight: 900;
   text-transform: uppercase;
-  font-size: 0.5vw;
+  font-size: max(11px, 0.5vw);
 }
 
 .zapContent {
   letter-spacing: 0.01vw;
-  font-size: 1.3vw;
+  font-size: max(13px, 1.3vw);
   margin-top: 0.001vw;
   white-space: nowrap;
   overflow: hidden;
@@ -1244,7 +1221,7 @@
 }
 
 .zapAmount {
-  font-size: 0.5vw;
+  font-size: max(11px, 0.5vw);
 }
 
 #sponsorshipGame {
@@ -1289,7 +1266,7 @@
 }
 
 .bracketDetail .label {
-  font-size: 0.8vw;
+  font-size: max(12px, 0.8vw);
   text-transform: uppercase;
   opacity: 0.7;
 }
@@ -1308,7 +1285,7 @@
 }
 
 .bracketDetail .value h3 {
-  font-size: 2vw;
+  font-size: max(15px, 2vw);
   margin-bottom: 0;
 }
 
@@ -2191,18 +2168,6 @@
   #gameContainer {
     --game-board-width: 94vw;
     --game-board-margin-x: 3%;
-  }
-
-  #brand {
-    margin-top: 0.35rem;
-  }
-
-  #chain,
-  #duel {
-    font-size: clamp(1rem, 5.4vmin, 1.85rem);
-    letter-spacing: 0.02em;
-    max-width: 46%;
-    overflow: hidden;
   }
 
   .flex.full.game {
