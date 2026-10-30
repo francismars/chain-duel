@@ -248,7 +248,8 @@ html.tv-safe-inset #root {
 
 /* Route wrapper must match #root — `100vh` here overflows once body applies TV padding */
 html.tv-safe-inset .page-reveal-scope,
-html.tv-safe-inset .page-reveal-scope--gameplay {
+html.tv-safe-inset .page-reveal-scope--gameplay,
+html.tv-safe-inset .page-reveal-fallback {
   min-height: var(--tv-safe-height);
 }
 

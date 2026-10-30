@@ -1,3 +1,4 @@
+import { lazy, useEffect, type ComponentType } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -14,30 +15,48 @@ import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import { useClientTelemetry } from './hooks/useClientTelemetry';
 import { useKeyboardLayoutAutodetect } from './hooks/useKeyboardLayoutAutodetect';
 import Index from './pages/Index';
-import GameMenu from './pages/GameMenu';
-import PracticeHub from './pages/PracticeHub';
 import { LegacyPracticeRedirect } from './pages/LegacyPracticeRedirect';
-import P2pEntry from './pages/P2pEntry';
-import TournamentLobby from './pages/TournamentLobby';
-import TournamentBracket from './pages/TournamentBracket';
-import Game from './pages/Game';
-import PostGame from './pages/PostGame';
-import Highscores from './pages/Highscores';
-import About from './pages/About';
-import Config from './pages/Config';
-import OnlineRoom from './pages/OnlineRoom';
-import OnlineRooms from './pages/OnlineRooms';
-import OnlinePostGame from './pages/OnlinePostGame';
-import OnlineFinishPreview from './pages/OnlineFinishPreview';
-import OnlineSeatPreview from './pages/OnlineSeatPreview';
-import UiDebugIndex from './pages/UiDebugIndex';
-import MatchTriggerLab from './pages/MatchTriggerLab';
-import {
-  FreePlaySettingsPreviewB,
-  P2pPaymentPreviewB,
-  P2pSettingsPreviewB,
-} from './pages/uiDebugLayouts';
 import './styles/index.css';
+
+const loadPracticeHub = () => import('./pages/PracticeHub');
+const loadP2pEntry = () => import('./pages/P2pEntry');
+const loadOnlineRooms = () => import('./pages/OnlineRooms');
+
+const GameMenu = lazy(() => import('./pages/GameMenu'));
+const PracticeHub = lazy(loadPracticeHub);
+const P2pEntry = lazy(loadP2pEntry);
+const TournamentLobby = lazy(() => import('./pages/TournamentLobby'));
+const TournamentBracket = lazy(() => import('./pages/TournamentBracket'));
+const Game = lazy(() => import('./pages/Game'));
+const PostGame = lazy(() => import('./pages/PostGame'));
+const Highscores = lazy(() => import('./pages/Highscores'));
+const About = lazy(() => import('./pages/About'));
+const Config = lazy(() => import('./pages/Config'));
+const OnlineRoom = lazy(() => import('./pages/OnlineRoom'));
+const OnlineRooms = lazy(loadOnlineRooms);
+const OnlinePostGame = lazy(() => import('./pages/OnlinePostGame'));
+const OnlineFinishPreview = lazy(() => import('./pages/OnlineFinishPreview'));
+const OnlineSeatPreview = lazy(() => import('./pages/OnlineSeatPreview'));
+const UiDebugIndex = lazy(() => import('./pages/UiDebugIndex'));
+const MatchTriggerLab = lazy(() => import('./pages/MatchTriggerLab'));
+
+function lazyNamed<Module extends Record<string, ComponentType>>(
+  load: () => Promise<Module>,
+  name: keyof Module & string
+) {
+  return lazy(() => load().then((mod) => ({ default: mod[name] })));
+}
+
+const loadUiDebugLayouts = () => import('./pages/uiDebugLayouts');
+const P2pSettingsPreviewB = lazyNamed(
+  loadUiDebugLayouts,
+  'P2pSettingsPreviewB'
+);
+const FreePlaySettingsPreviewB = lazyNamed(
+  loadUiDebugLayouts,
+  'FreePlaySettingsPreviewB'
+);
+const P2pPaymentPreviewB = lazyNamed(loadUiDebugLayouts, 'P2pPaymentPreviewB');
 
 function LegacyNetworkRedirect() {
   const { pathname, search } = useLocation();
@@ -49,9 +68,29 @@ function LegacyNetworkRedirect() {
   );
 }
 
+/** Home's three primary buttons. Same loaders as the routes, so idle prefetch hits those chunks. */
+function usePrefetchHomeRoutes() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (pathname !== '/') return;
+    const run = () => {
+      void loadPracticeHub();
+      void loadP2pEntry();
+      void loadOnlineRooms();
+    };
+    if (typeof window.requestIdleCallback !== 'function') {
+      const timeoutId = window.setTimeout(run, 1);
+      return () => window.clearTimeout(timeoutId);
+    }
+    const idleId = window.requestIdleCallback(run, { timeout: 2000 });
+    return () => window.cancelIdleCallback(idleId);
+  }, [pathname]);
+}
+
 function AppRoutes() {
   useClientTelemetry();
   useKeyboardLayoutAutodetect();
+  usePrefetchHomeRoutes();
   return (
     <Routes>
       <Route element={<PageRevealOutlet />}>
