@@ -44,8 +44,8 @@
   --ph-glow-gutter: max(1.5rem, 2.5vw, calc(var(--ph-card-glow-blur) * 0.85));
   --ph-content-inset: max(0.45rem, calc(var(--ph-glow-gutter) * 0.35));
   --ph-section-gap: 1.1vw;
-  --ph-compact-card-min: calc(4.6vw);
-  --ph-compact-card-pad-y: 0.65vw;
+  --ph-compact-card-min: max(3.15rem, 4.6vw);
+  --ph-compact-card-pad-y: max(0.7rem, 0.65vw);
   --ph-compact-card-pad-x: calc(0.85vw + var(--ph-glow-gutter) * 0.12);
   --ph-compact-icon: 2.4vw;
 }
@@ -2603,5 +2603,16 @@
   .practice-hub-page--challenges .sc-list,
   .solo-challenges-panel .sc-list {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-card--lightning
+    .p2p-picker-sub,
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-card--nostr
+    .p2p-picker-sub {
+    display: none;
   }
 }
