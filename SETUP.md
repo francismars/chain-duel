@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 26 (current LTS)
 - **marspay** backend running (default port 3001) — required for paid modes, ONLINE, and challenge bounties
 
 ## Initial setup
