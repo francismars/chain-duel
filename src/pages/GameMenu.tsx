@@ -5,7 +5,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import {
   GameSetupLayout,
-  PreviewRulesButtonSlot,
 } from '@/components/layout/GameSetupLayout';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
@@ -827,6 +826,15 @@ export default function GameMenu({
         }`}
         mainMenuDisabled={false}
         canStart={canStart}
+        paySeat={
+          isNostrMode
+            ? null
+            : player1Sats === 0
+              ? 'p1'
+              : player2Sats === 0
+                ? 'p2'
+                : null
+        }
         mainMenuLabel={
           prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'
         }
@@ -1044,6 +1052,27 @@ export default function GameMenu({
           </>
         ) : (
           <>
+            <div className="prizeinfocard">
+              <div id="prizevaluesats" className="condensed">
+                <span id="prizevaluesatsAmount">{fmt(totalPrize)}</span>{' '}
+                <span className="grey sats-label">sats</span>
+              </div>
+              <div id="prizeinfosats">Total Prize</div>
+              {preview ? null : (
+                <div id="splits">
+                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
+                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
+                  <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
+                </div>
+              )}
+              <div id="leaderboard">
+                <p id="leaderboard-inner">
+                  <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span>{' '}
+                  sats qualifies for the ledger
+                </p>
+              </div>
+            </div>
+            <div className="player-cards-slider">
             <div
               id="player1card"
               className={[
@@ -1137,28 +1166,6 @@ export default function GameMenu({
               </div>
             </div>
 
-            <div className="prizeinfocard">
-              <div id="prizevaluesats" className="condensed">
-                <span id="prizevaluesatsAmount">{fmt(totalPrize)}</span>{' '}
-                <span className="grey sats-label">sats</span>
-              </div>
-              <div id="prizeinfosats">Total Prize</div>
-              {preview ? null : (
-                <div id="splits">
-                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
-                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
-                  <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
-                </div>
-              )}
-              <div id="leaderboard">
-                <p id="leaderboard-inner">
-                  <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span>{' '}
-                  sats qualifies for the ledger
-                </p>
-              </div>
-              {preview ? <PreviewRulesButtonSlot /> : null}
-            </div>
-
             <div
               id="player2card"
               className={[
@@ -1250,6 +1257,7 @@ export default function GameMenu({
                   onCopy={() => copyLnurl(p2PayLink.lnurlp, 'p2')}
                 />
               ) : null}
+            </div>
             </div>
             {preview ? (
               <>

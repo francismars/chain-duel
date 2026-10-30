@@ -110,6 +110,10 @@
   box-sizing: border-box;
 }
 
+.game-setup-scroll-exit {
+  display: none;
+}
+
 .game-setup-status {
   text-align: center;
   margin-top: 1rem;
@@ -236,31 +240,126 @@
 /* ── Phones: one scrolling column in the order a player needs it —
    title, prize, deposit QR codes, actions (sticky), then the rules. ── */
 @media (max-width: 640px) {
-  .game-setup-page {
+  .game-setup-page,
+  html.tv-safe-inset .game-setup-page {
     height: auto;
     min-height: 100dvh;
     overflow: visible;
     gap: var(--space-4);
-    padding: calc(var(--safe-top) + 3.5rem)
-      calc(var(--safe-right) + var(--space-3)) 0
+    padding: calc(var(--safe-top) + 2.15rem)
+      calc(var(--safe-right) + var(--space-3))
+      calc(var(--safe-bottom) + 6.5rem)
       calc(var(--safe-left) + var(--space-3));
     box-sizing: border-box;
   }
 
-  /* Flatten the desktop wrappers so their children can be re-ordered. */
+  html.tv-safe-inset .game-setup-page .game-setup-middle {
+    max-height: none;
+  }
+
+  /* The route reveal ends on a transform, and any transform makes
+     position:fixed stick to that box instead of the viewport. */
+  .page-reveal-scope:has(.game-setup-page) {
+    animation: none;
+    transform: none;
+  }
+
+  /* Absolute on desktop (the page does not scroll). On a phone the page
+     scrolls, so the wordmark has to stay with the viewport. */
+  .game-setup-page .game-setup-header,
+  html.tv-safe-inset .game-setup-page .game-setup-header {
+    position: fixed;
+    top: 0;
+    z-index: 5;
+    padding-bottom: 0.35rem;
+    background: linear-gradient(to bottom, rgb(0 0 0 / 0.45), rgb(0 0 0 / 0));
+  }
+
+  html.tv-safe-inset .game-setup-page #bottomInfo {
+    position: static;
+    bottom: auto;
+  }
+
+  /* Real boxes. display:contents drops position:fixed descendants in
+     Safari, which is why the action buttons vanished. */
   .game-setup-page .game-setup-middle,
+  html.tv-safe-inset .game-setup-page .game-setup-middle,
+  .gamemenu-preview.game-setup-page .game-setup-middle,
+  html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    max-height: none;
+    height: auto;
+    min-height: 0;
+    padding-top: 0;
+    justify-content: flex-start;
+    overflow: visible;
+    gap: var(--space-3);
+  }
+
   .game-setup-page .game-setup-main {
-    display: contents;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
   }
 
   .game-setup-page .game-setup-main > div:first-child {
-    order: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+  }
+
+  .game-setup-page #sponsorshipGameMenu {
+    margin: 0;
+  }
+
+  .game-setup-page #sponsorshipGameMenu .sponsored-by-label {
+    margin-bottom: 0.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+  }
+
+  .game-setup-page #sponsorshipGameMenu .sponsored-img {
+    max-width: 6.5rem;
+    max-height: 1.35rem;
+    margin: 0 auto;
+  }
+
+  #gameMenuTitle.hero-outline {
+    margin: 0.85rem 0 1rem;
+    font-size: clamp(2.25rem, 10vw, 3rem);
+    text-align: center;
+  }
+
+  .game-setup-page .prizeinfocard,
+  .gamemenu-preview .prizeinfocard {
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    flex: none;
+  }
+
+  .game-setup-page #prizevaluesats {
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
+  .game-setup-page #prizeinfosats {
+    font-size: 0.95rem;
   }
 
   /* index.css pins #bottomInfo to the viewport bottom; here it follows the content. */
-  .game-setup-page #bottomInfo.game-setup-bottom {
-    order: 1;
+  .game-setup-page #bottomInfo.game-setup-bottom,
+  html.tv-safe-inset .game-setup-page #bottomInfo {
+    order: 0;
     position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
     margin: 0;
     padding: 0;
   }
@@ -270,15 +369,18 @@
     margin: 0;
   }
 
+  /* Out of the scroll flow. A sticky bar sitting above the rules
+     kept the page from scrolling the rules clear of the buttons. */
   #gameButtons {
-    order: 3;
-    position: sticky;
+    position: fixed;
+    left: 0;
+    right: 0;
     bottom: 0;
-    z-index: 3;
+    z-index: 6;
     flex-direction: column-reverse;
     gap: var(--space-2);
     width: auto;
-    margin: 0 calc(-1 * var(--space-3));
+    margin: 0;
     padding: var(--space-4) var(--space-3)
       calc(var(--safe-bottom) + var(--space-3));
     background: linear-gradient(to top, #000 72%, rgb(0 0 0 / 0));
@@ -287,6 +389,20 @@
   #gameButtons .button,
   #gameButtons .game-setup-start-wrap {
     width: 100%;
+  }
+
+  /* One fixed action. Leave sits at the end of the page. */
+  .game-setup-page:not(.is-nostr) #gameButtons #mainmenubutton {
+    display: none;
+  }
+
+  .game-setup-page:not(.is-nostr) .game-setup-scroll-exit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: min(100%, 22rem);
+    margin: var(--space-5) auto 0;
   }
 
   /* Rules move below the actions with their own heading. */
@@ -298,7 +414,7 @@
     order: 4;
     flex-direction: column;
     gap: var(--space-3);
-    padding-bottom: calc(var(--safe-bottom) + var(--space-5));
+    padding-bottom: var(--space-5);
   }
 
   .game-setup-page #centerSection::before {
