@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
-import { UiDebugMenu } from '@/components/ui/UiDebugMenu';
 import { useFloatingDock } from './useFloatingDock';
 import {
   PHONE_QUERY,
@@ -23,6 +22,18 @@ function getStoredTvSafeInset(): boolean {
 
 /** Diameter of the floating quick-settings button (px). */
 const FAB_SIZE = 44;
+
+/** Same switch as the `/preview` routes in App.tsx. */
+const previewLabsEnabled =
+  import.meta.env.DEV || import.meta.env.VITE_ENABLE_PREVIEW === 'true';
+
+const UiDebugMenu = previewLabsEnabled
+  ? lazy(() =>
+      import('@/components/ui/UiDebugMenu').then((mod) => ({
+        default: mod.UiDebugMenu,
+      }))
+    )
+  : null;
 
 export function CornerControls() {
   const navigate = useNavigate();
@@ -287,7 +298,11 @@ export function CornerControls() {
             </svg>
           )}
         </button>
-        <UiDebugMenu />
+        {UiDebugMenu ? (
+          <Suspense fallback={null}>
+            <UiDebugMenu />
+          </Suspense>
+        ) : null}
       </div>
     </div>
   );

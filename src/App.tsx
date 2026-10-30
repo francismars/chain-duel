@@ -34,11 +34,14 @@ const About = lazy(() => import('./pages/About'));
 const Config = lazy(() => import('./pages/Config'));
 const OnlineRoom = lazy(() => import('./pages/OnlineRoom'));
 const OnlineRooms = lazy(loadOnlineRooms);
-const OnlinePostGame = lazy(() => import('./pages/OnlinePostGame'));
-const OnlineFinishPreview = lazy(() => import('./pages/OnlineFinishPreview'));
-const OnlineSeatPreview = lazy(() => import('./pages/OnlineSeatPreview'));
-const UiDebugIndex = lazy(() => import('./pages/UiDebugIndex'));
-const MatchTriggerLab = lazy(() => import('./pages/MatchTriggerLab'));
+
+/**
+ * UI labs (`/preview` and the debug menu). On for `npm run dev`.
+ * A production build includes them only when VITE_ENABLE_PREVIEW=true,
+ * so the lab chunks are left out of the deployed bundle otherwise.
+ */
+const previewLabsEnabled =
+  import.meta.env.DEV || import.meta.env.VITE_ENABLE_PREVIEW === 'true';
 
 function lazyNamed<Module extends Record<string, ComponentType>>(
   load: () => Promise<Module>,
@@ -47,16 +50,33 @@ function lazyNamed<Module extends Record<string, ComponentType>>(
   return lazy(() => load().then((mod) => ({ default: mod[name] })));
 }
 
-const loadUiDebugLayouts = () => import('./pages/uiDebugLayouts');
-const P2pSettingsPreviewB = lazyNamed(
-  loadUiDebugLayouts,
-  'P2pSettingsPreviewB'
-);
-const FreePlaySettingsPreviewB = lazyNamed(
-  loadUiDebugLayouts,
-  'FreePlaySettingsPreviewB'
-);
-const P2pPaymentPreviewB = lazyNamed(loadUiDebugLayouts, 'P2pPaymentPreviewB');
+const UiDebugIndex = previewLabsEnabled
+  ? lazy(() => import('./pages/UiDebugIndex'))
+  : null;
+const MatchTriggerLab = previewLabsEnabled
+  ? lazy(() => import('./pages/MatchTriggerLab'))
+  : null;
+const OnlineFinishPreview = previewLabsEnabled
+  ? lazy(() => import('./pages/OnlineFinishPreview'))
+  : null;
+const OnlineSeatPreview = previewLabsEnabled
+  ? lazy(() => import('./pages/OnlineSeatPreview'))
+  : null;
+const OnlinePostGame = previewLabsEnabled
+  ? lazy(() => import('./pages/OnlinePostGame'))
+  : null;
+const P2pSettingsPreviewB = previewLabsEnabled
+  ? lazyNamed(() => import('./pages/uiDebugLayouts'), 'P2pSettingsPreviewB')
+  : null;
+const FreePlaySettingsPreviewB = previewLabsEnabled
+  ? lazyNamed(
+      () => import('./pages/uiDebugLayouts'),
+      'FreePlaySettingsPreviewB'
+    )
+  : null;
+const P2pPaymentPreviewB = previewLabsEnabled
+  ? lazyNamed(() => import('./pages/uiDebugLayouts'), 'P2pPaymentPreviewB')
+  : null;
 
 function LegacyNetworkRedirect() {
   const { pathname, search } = useLocation();
@@ -131,24 +151,47 @@ function AppRoutes() {
         {/* Online (legacy /network/* redirects preserve query strings) */}
         <Route path="/online" element={<OnlineRooms />} />
         <Route path="/online/r/:roomCode" element={<OnlineRoom />} />
-        <Route path="/preview" element={<UiDebugIndex />} />
-        <Route path="/preview/match-triggers" element={<MatchTriggerLab />} />
-        <Route
-          path="/preview/p2p-settings-b"
-          element={<P2pSettingsPreviewB />}
-        />
-        <Route
-          path="/preview/freeplay-settings-b"
-          element={<FreePlaySettingsPreviewB />}
-        />
-        <Route path="/preview/p2p-payment-b" element={<P2pPaymentPreviewB />} />
-        <Route
-          path="/preview/online-finish"
-          element={<OnlineFinishPreview />}
-        />
-        <Route path="/preview/online-seat" element={<OnlineSeatPreview />} />
-        <Route path="/preview/online-results" element={<OnlinePostGame />} />
-        <Route path="/preview/online-don" element={<OnlinePostGame />} />
+        {UiDebugIndex &&
+        MatchTriggerLab &&
+        P2pSettingsPreviewB &&
+        FreePlaySettingsPreviewB &&
+        P2pPaymentPreviewB &&
+        OnlineFinishPreview &&
+        OnlineSeatPreview &&
+        OnlinePostGame ? (
+          <>
+            <Route path="/preview" element={<UiDebugIndex />} />
+            <Route
+              path="/preview/match-triggers"
+              element={<MatchTriggerLab />}
+            />
+            <Route
+              path="/preview/p2p-settings-b"
+              element={<P2pSettingsPreviewB />}
+            />
+            <Route
+              path="/preview/freeplay-settings-b"
+              element={<FreePlaySettingsPreviewB />}
+            />
+            <Route
+              path="/preview/p2p-payment-b"
+              element={<P2pPaymentPreviewB />}
+            />
+            <Route
+              path="/preview/online-finish"
+              element={<OnlineFinishPreview />}
+            />
+            <Route
+              path="/preview/online-seat"
+              element={<OnlineSeatPreview />}
+            />
+            <Route
+              path="/preview/online-results"
+              element={<OnlinePostGame />}
+            />
+            <Route path="/preview/online-don" element={<OnlinePostGame />} />
+          </>
+        ) : null}
         <Route path="/network/*" element={<LegacyNetworkRedirect />} />
       </Route>
     </Routes>
