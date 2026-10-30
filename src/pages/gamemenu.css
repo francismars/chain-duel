@@ -58,6 +58,10 @@
   flex-shrink: 0;
 }
 
+.gamemenu-page .gamemenu-lnurl-actions {
+  display: none;
+}
+
 .gamemenu-page .prizeinfocard {
   display: flex;
   width: 33%;
@@ -1400,6 +1404,35 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
     height: min(32vw, 128px);
   }
 
+  .gamemenu-page:not(.is-nostr) #player1card,
+  .gamemenu-page:not(.is-nostr) #player2card {
+    flex-wrap: wrap;
+    row-gap: 0.65rem;
+  }
+
+  .gamemenu-page .gamemenu-lnurl-actions {
+    display: flex;
+    flex: 1 0 100%;
+    gap: 0.5rem;
+    order: 3;
+  }
+
+  .gamemenu-page .gamemenu-lnurl-action {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.55rem 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: transparent;
+    color: #fff;
+    font: inherit;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
   .gamemenu-page #player1cardinfo,
   .gamemenu-page #player2cardinfo {
     flex: 1 1 auto;
@@ -1409,11 +1442,139 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
     padding: 0 var(--space-3);
   }
 
+  /* Preview locks player 2 to a right-aligned desktop column. On a phone that
+     parks the name on the far edge, away from the code. */
+  .gamemenu-page.gamemenu-preview #player1card,
+  .gamemenu-page.gamemenu-preview #player2card {
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .gamemenu-page.gamemenu-preview #player2card {
+    flex-direction: row;
+  }
+
+  .gamemenu-page.gamemenu-preview #qrcodeContainer2 {
+    order: -1;
+  }
+
+  .gamemenu-page.gamemenu-preview #player1cardinfo,
+  .gamemenu-page.gamemenu-preview #player2cardinfo {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    align-items: flex-start;
+    text-align: left;
+    padding: 0;
+  }
+
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
+  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+    align-self: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    flex-direction: row-reverse;
+  }
+
+  .gamemenu-preview .qrcodeContainer .qrcode {
+    width: min(32vw, 128px);
+    height: min(32vw, 128px);
+    max-width: 128px;
+    max-height: 128px;
+  }
+
   .gamemenu-page #player2cardinfo #player2satsContainer,
   .gamemenu-page #player2cardinfo .condensed,
   .gamemenu-page #player2cardinfo .deposit-message {
     align-self: flex-start;
     justify-content: flex-start;
     text-align: left;
+  }
+
+  /* Nostr is one shared note, not two payment cards. Desktop keeps five columns;
+     on a phone that squeezes relays and the note id to a few characters wide. */
+  .gamemenu-page.is-nostr #bottomInfo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--space-3);
+    row-gap: var(--space-4);
+    align-items: start;
+  }
+
+  .gamemenu-page.is-nostr .nostr-center-card {
+    grid-column: 1 / -1;
+    order: 0;
+    width: 100%;
+  }
+
+  .gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer .qrcode {
+    width: min(42vw, 168px);
+    height: min(42vw, 168px);
+  }
+
+  .gamemenu-page.is-nostr .nostrLine,
+  .gamemenu-page.is-nostr .nostrLine.right {
+    order: 1;
+    flex: none;
+    width: auto;
+    min-width: 0;
+    align-self: start;
+    text-align: left;
+  }
+
+  .gamemenu-page.is-nostr .nostrLine .label {
+    text-align: left;
+  }
+
+  .gamemenu-page.is-nostr .nostr-relay-name,
+  .gamemenu-page.is-nostr .nostr-event-id {
+    letter-spacing: 0.02em;
+    line-height: 1.35;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .gamemenu-page.is-nostr #player1card,
+  .gamemenu-page.is-nostr #player2card {
+    grid-column: 1 / -1;
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .gamemenu-page.is-nostr #player1card {
+    order: 2;
+  }
+
+  .gamemenu-page.is-nostr #player2card {
+    order: 3;
+    flex-direction: row;
+  }
+
+  .gamemenu-page.is-nostr #player2cardinfo #player2satsContainer,
+  .gamemenu-page.is-nostr #player2cardinfo .condensed {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+
+  .gamemenu-page.is-nostr #player1cardinfo,
+  .gamemenu-page.is-nostr #player2cardinfo {
+    background: rgb(0 0 0 / 55%);
+    padding: 0.45rem 0.65rem;
+  }
+
+  .gamemenu-page.is-nostr .playerImg {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0 0.35rem;
+  }
+
+  /* The shared sticky bar sits over the second player while this panel is still
+     on screen. Let the actions follow the zap block instead. */
+  .game-setup-page.gamemenu-page.is-nostr #gameButtons {
+    position: static;
+    background: none;
+    margin-left: 0;
+    margin-right: 0;
   }
 }

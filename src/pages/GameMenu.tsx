@@ -52,6 +52,7 @@ import {
   markSocketDuelSession,
 } from '@/pages/practiceHubModes';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
+import { lightningUriHref } from '@/lib/lightning/lightningUriHref';
 import './gamemenu.css';
 
 /** Valid note1 so the Nostr payment preview can show a note id and nevent. */
@@ -132,6 +133,10 @@ export default function GameMenu({
   const [player1Image, setPlayer1Image] = useState<string>('');
   const [player2Image, setPlayer2Image] = useState<string>('');
   const [leaderboardThreshold, setLeaderboardThreshold] = useState<number>(1);
+  const [copiedLnurlSeat, setCopiedLnurlSeat] = useState<'p1' | 'p2' | null>(
+    null
+  );
+  const copiedLnurlResetRef = useRef<WindowTimeout | null>(null);
 
   const lastKnownP1SatsRef = useRef(0);
   const lastKnownP2SatsRef = useRef(0);
@@ -801,6 +806,17 @@ export default function GameMenu({
   const devCut = Math.floor(totalPrize * DEVELOPER_FEE_RATIO);
   const designCut = Math.floor(totalPrize * DESIGNER_FEE_RATIO);
 
+  const copyLnurl = useCallback((lnurl: string, seat: 'p1' | 'p2') => {
+    void navigator.clipboard.writeText(lnurl).then(() => {
+      if (copiedLnurlResetRef.current) clearTimeout(copiedLnurlResetRef.current);
+      setCopiedLnurlSeat(seat);
+      copiedLnurlResetRef.current = window.setTimeout(() => {
+        setCopiedLnurlSeat(null);
+        copiedLnurlResetRef.current = null;
+      }, 2200);
+    });
+  }, []);
+
   return (
     <>
       <GameSetupLayout
@@ -1083,6 +1099,13 @@ export default function GameMenu({
                   />
                 </a>
               </div>
+              {p1PayLink?.lnurlp ? (
+                <LnurlMobileActions
+                  lnurl={p1PayLink.lnurlp}
+                  copied={copiedLnurlSeat === 'p1'}
+                  onCopy={() => copyLnurl(p1PayLink.lnurlp, 'p1')}
+                />
+              ) : null}
               <div id="player1cardinfo" className="player-card-info">
                 <div
                   id="player1satsContainer"
@@ -1219,6 +1242,13 @@ export default function GameMenu({
                   />
                 </a>
               </div>
+              {p2PayLink?.lnurlp ? (
+                <LnurlMobileActions
+                  lnurl={p2PayLink.lnurlp}
+                  copied={copiedLnurlSeat === 'p2'}
+                  onCopy={() => copyLnurl(p2PayLink.lnurlp, 'p2')}
+                />
+              ) : null}
             </div>
             {preview ? (
               <>
@@ -1243,6 +1273,34 @@ export default function GameMenu({
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </>
+  );
+}
+
+function LnurlMobileActions({
+  lnurl,
+  copied,
+  onCopy,
+}: {
+  lnurl: string;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="gamemenu-lnurl-actions">
+      <a
+        className="gamemenu-lnurl-action"
+        href={lightningUriHref(lnurl)}
+      >
+        Pay with wallet
+      </a>
+      <button
+        type="button"
+        className="gamemenu-lnurl-action"
+        onClick={onCopy}
+      >
+        {copied ? 'Copied' : 'Copy LNURL'}
+      </button>
+    </div>
   );
 }
 
