@@ -926,8 +926,6 @@ export const PracticeChallengesPanel = forwardRef<
 
   useEffect(() => {
     const challengesActive = isActive && !nostrSession.signedIn;
-    const panelJustEntered =
-      challengesActive && !prevChallengesActiveRef.current;
     prevChallengesActiveRef.current = challengesActive;
 
     if (!challengesActive) {
@@ -935,10 +933,15 @@ export const PracticeChallengesPanel = forwardRef<
       return;
     }
 
-    if (panelJustEntered) {
-      challengesRef.current.forEach((_, i) => animateLockedRowBounty(i));
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+    if (reduceMotion) {
+      setLockedBountyDisplays(challengesRef.current.map((c) => c.bounty));
+      return;
     }
 
+    challengesRef.current.forEach((_, i) => animateLockedRowBounty(i));
     return cancelLockedBountyAnimations;
   }, [
     isActive,
