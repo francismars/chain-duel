@@ -299,10 +299,18 @@
     --menu-gap: 0.55rem;
   }
 
+  .index-page #bottomInfo {
+    padding-bottom: 0.15rem;
+  }
+
   .index-page #splits,
   .index-page #version {
-    font-size: 10px;
-    line-height: 1.3;
-    letter-spacing: 0.01rem;
+    font-size: 8px;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  .index-page #splits {
+    margin-top: 0;
   }
 }
