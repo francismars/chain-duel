@@ -15,6 +15,7 @@ import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import { useClientTelemetry } from './hooks/useClientTelemetry';
 import { useKeyboardLayoutAutodetect } from './hooks/useKeyboardLayoutAutodetect';
 import Index from './pages/Index';
+import { FeatureUnavailableFallback } from './pages/FeatureUnavailableFallback';
 import { LegacyPracticeRedirect } from './pages/LegacyPracticeRedirect';
 import './styles/index.css';
 
@@ -193,6 +194,15 @@ function AppRoutes() {
           </>
         ) : null}
         <Route path="/network/*" element={<LegacyNetworkRedirect />} />
+        <Route
+          path="*"
+          element={
+            <FeatureUnavailableFallback
+              title="Page not found"
+              subtitle="That address does not exist."
+            />
+          }
+        />
       </Route>
     </Routes>
   );
