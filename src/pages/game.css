@@ -1232,10 +1232,10 @@
 }
 
 #sponsorshipGame .sponsored-img {
-  height: clamp(12px, 3.2vw, 58px);
   width: auto;
+  height: auto;
+  max-height: clamp(12px, 3.2vw, 58px);
   max-width: none;
-  object-fit: contain;
   margin-top: -0.3vw;
   margin-bottom: -0.3vw;
 }

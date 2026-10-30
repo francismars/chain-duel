@@ -239,7 +239,7 @@
 }
 
 .ffa-hud-sponsor #sponsorshipGame .sponsored-img {
-  height: clamp(10px, 1.6vw, 36px);
+  max-height: clamp(10px, 1.6vw, 36px);
   margin-top: 0;
   margin-bottom: 0;
 }

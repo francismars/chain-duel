@@ -239,8 +239,9 @@ body:has(.match-end-layer) header#brand {
 }
 
 .match-end-card #sponsorship-match-end .sponsored-img {
-  height: clamp(28px, 3.5vw, 56px);
-  max-height: none;
+  width: auto;
+  height: auto;
+  max-height: clamp(28px, 3.5vw, 56px);
   max-width: 24vw;
   margin-bottom: 0;
 }

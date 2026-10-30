@@ -3,10 +3,10 @@ body {
 }
 
 #postGame #sponsorship-postgame .sponsored-img {
-  height: 3.5vw;
-  max-height: none;
-  max-width: 24vw;
   width: auto;
+  height: auto;
+  max-height: 3.5vw;
+  max-width: 24vw;
 }
 
 html.tv-safe-inset header#brand:has(+ #postGame) {

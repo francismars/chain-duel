@@ -15,10 +15,10 @@
 
 .sponsored-img {
   display: block;
-  margin: 0 auto;
+  margin: 0 auto 1vw;
   max-width: 16vw;
   max-height: clamp(12px, 2vw, 36px);
   width: auto;
   height: auto;
-  margin-bottom: 1vw;
+  object-fit: contain;
 }

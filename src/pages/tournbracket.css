@@ -171,10 +171,10 @@
   margin-right: auto;
   margin-top: 0;
   margin-bottom: 0;
-  height: 2.25vw;
-  max-width: none;
-  max-height: none;
   width: auto;
+  height: auto;
+  max-width: none;
+  max-height: 2.25vw;
 }
 
 .tournbracket-page .bracketPayment .bracketPaymentInner {
@@ -714,7 +714,7 @@
   }
 
   .tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-img {
-    height: 1.5rem;
+    max-height: 1.5rem;
   }
 
   .tournbracket-page .bracketPayment .bracketPaymentInner {
