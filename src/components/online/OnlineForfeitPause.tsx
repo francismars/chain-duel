@@ -1,12 +1,13 @@
 import {
   forfeitPauseCopy,
+  idleSeatBadges,
   type ForfeitViewer,
 } from '@/lib/online/forfeitPause';
 import type { OnlineForfeitPause as OnlineForfeitPauseState } from '@/types/socket';
 
 const HIDDEN_PHASES = new Set(['postgame', 'finished', 'cancelled']);
 
-/** Board overlay for a server-paused match. The clock is whatever just arrived. */
+/** Pause plate when the server paused the match. Idle is a side badge. */
 export function OnlineForfeitPause({
   forfeit,
   phase,
@@ -20,13 +21,37 @@ export function OnlineForfeitPause({
   p1Name: string;
   p2Name: string;
 }) {
-  if (!forfeit?.paused || (phase != null && HIDDEN_PHASES.has(phase))) {
+  if (!forfeit || (phase != null && HIDDEN_PHASES.has(phase))) {
     return null;
   }
-  const copy = forfeitPauseCopy({ forfeit, viewer, p1Name, p2Name });
-  if (!copy) {
+  const badges = idleSeatBadges({ forfeit, viewer, p1Name, p2Name });
+  const copy = forfeit.paused
+    ? forfeitPauseCopy({ forfeit, viewer, p1Name, p2Name })
+    : null;
+  if (!copy && badges.length === 0) {
     return null;
   }
+  return (
+    <>
+      {badges.map((badge) => (
+        <p
+          key={badge.seat}
+          className={`online-idle-badge online-idle-badge--${badge.seat}`}
+          role="status"
+        >
+          {badge.label}
+        </p>
+      ))}
+      {copy ? <ForfeitPausePlate copy={copy} /> : null}
+    </>
+  );
+}
+
+function ForfeitPausePlate({
+  copy,
+}: {
+  copy: NonNullable<ReturnType<typeof forfeitPauseCopy>>;
+}) {
   const split = copy.lines.length > 1;
   return (
     <div

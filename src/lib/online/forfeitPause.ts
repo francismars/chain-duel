@@ -143,7 +143,43 @@ function seatPauseLine(args: {
   };
 }
 
-/** Copy for the pause overlay. The clock is the time; the lines do not repeat it. */
+export type IdleSeatBadge = {
+  seat: AwaySeat;
+  label: string;
+};
+
+/** Idle seats while the board is still running. No badge when the match is paused. */
+export function idleSeatBadges(args: {
+  forfeit: OnlineForfeitPause;
+  viewer: ForfeitViewer;
+  p1Name: string;
+  p2Name: string;
+}): IdleSeatBadge[] {
+  if (args.forfeit.paused) {
+    return [];
+  }
+  const badges: IdleSeatBadge[] = [];
+  const seats: AwaySeat[] = ['p1', 'p2'];
+  for (const seat of seats) {
+    const reason =
+      seat === 'p1' ? args.forfeit.p1Reason : args.forfeit.p2Reason;
+    const remainingMs = finiteMs(
+      seat === 'p1' ? args.forfeit.p1RemainingMs : args.forfeit.p2RemainingMs
+    );
+    if (reason !== 'idle' || remainingMs == null) {
+      continue;
+    }
+    const name = seat === 'p1' ? args.p1Name : args.p2Name;
+    const who = args.viewer === seat ? 'You' : name;
+    badges.push({
+      seat,
+      label: `${who} idle · ${formatForfeitRemaining(remainingMs)}`,
+    });
+  }
+  return badges;
+}
+
+/** Copy for the pause overlay. Only when the server has paused the match. */
 export function forfeitPauseCopy(args: {
   forfeit: OnlineForfeitPause;
   viewer: ForfeitViewer;
@@ -181,7 +217,7 @@ export function forfeitPauseCopy(args: {
       tone: 'both',
       lines: [
         {
-          kicker: idle ? "Neither player is moving." : 'Both disconnected',
+          kicker: idle ? 'Neither player is moving.' : 'Both disconnected',
           timeLabel: formatForfeitRemaining(Math.min(p1, p2)),
           message: 'Ends when the first clock hits zero.',
           tone: 'both',
@@ -263,18 +299,32 @@ export function resultsAwayLine(args: {
   return you ? 'You are away.' : `${name} is away.`;
 }
 
-/** Prize deadline. Shown whenever claim is present. */
+/**
+ * Prize deadline. Countdown wording only while the server time is decreasing.
+ * A held remainingMs is a static deadline. Omitted claim hides the line.
+ */
 export function resultsClaimLine(args: {
   claim?: OnlinePrizeClaim | null;
   viewerIsWinner: boolean;
   winnerName: string;
   hasLnAddress: boolean;
+  ticking: boolean;
 }): string | null {
   const ms = finiteMs(args.claim?.remainingMs);
   if (ms == null) {
     return null;
   }
   const time = formatForfeitRemaining(ms);
+  if (!args.ticking) {
+    if (args.hasLnAddress) {
+      return args.viewerIsWinner
+        ? `Pays to your Lightning address if you don't withdraw. Deadline ${time}.`
+        : `Pays to ${args.winnerName}'s Lightning address. Deadline ${time}.`;
+    }
+    return args.viewerIsWinner
+      ? `Withdraw or the house keeps the sats. Deadline ${time}.`
+      : `Unclaimed prize deadline ${time}.`;
+  }
   if (args.hasLnAddress) {
     return args.viewerIsWinner
       ? `Pays to your Lightning address in ${time} if you don't withdraw.`

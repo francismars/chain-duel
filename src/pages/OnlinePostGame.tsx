@@ -240,13 +240,28 @@ export default function OnlinePostGame({
           p2Name: info.p2Name,
         })
       : null;
-  const claimLine =
+  const claimValue =
     info?.phase === 'postgame' && !donLocked
+      ? (claimFromRoom ?? info.claim ?? null)
+      : null;
+  const claimMs = claimValue?.remainingMs;
+  const prevClaimMsRef = useRef<number | null>(null);
+  const claimTicking =
+    typeof claimMs === 'number' &&
+    prevClaimMsRef.current != null &&
+    claimMs < prevClaimMsRef.current;
+  useEffect(() => {
+    prevClaimMsRef.current =
+      typeof claimMs === 'number' && Number.isFinite(claimMs) ? claimMs : null;
+  }, [claimMs]);
+  const claimLine =
+    info && claimValue
       ? resultsClaimLine({
-          claim: claimFromRoom ?? info.claim,
+          claim: claimValue,
           viewerIsWinner: isWinner,
           winnerName: info.winnerName,
           hasLnAddress: Boolean(info.winnerLnAddress),
+          ticking: claimTicking,
         })
       : null;
 
