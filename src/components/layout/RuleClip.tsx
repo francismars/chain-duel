@@ -484,8 +484,8 @@ export function RuleClip({ id }: { id: RuleClipId }) {
   return (
     <div className="rule-clip-frame" aria-hidden>
       <div className="rule-clip__bar">
-        <span style={{ width: `${bar.p1}%` }} />
-        <span style={{ width: `${bar.p2}%` }} />
+        <span style={{ flexGrow: bar.p1 }} />
+        <span style={{ flexGrow: bar.p2 }} />
       </div>
       <div className={blockFlash ? 'rule-clip rule-clip--flash' : 'rule-clip'}>
         <div className="rule-clip__stage" ref={hostRef} />
