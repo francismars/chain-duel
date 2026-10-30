@@ -35,7 +35,7 @@ function readCopy(
   state: GameState,
   continueLabel: string | null | undefined
 ): EndCopy {
-  let freeGame = false;
+  let freeGame: boolean;
   let cfg: Record<string, unknown> = {};
   try {
     const raw = sessionStorage.getItem('gameConfig');

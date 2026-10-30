@@ -770,7 +770,7 @@ function buildTournamentProgression<T>(
   for (let i = 0; i < winners.length; i += 1) {
     if (i + 1 >= numberOfPlayers) break;
     const winnerRole = winners[i];
-    let winnerValue = fallback;
+    let winnerValue: T;
     if (i < round1Games) {
       winnerValue =
         winnerRole === 'Player 1'

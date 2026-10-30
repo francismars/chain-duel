@@ -58,7 +58,7 @@ function normalizeMediaUrl(url: string | null | undefined): string | null {
 }
 
 function parseKind0Event(ev: NostrRawEvent): Kind0Profile {
-  let meta: Record<string, unknown> = {};
+  let meta: Record<string, unknown>;
   try {
     meta = JSON.parse(ev.content || '{}') as Record<string, unknown>;
   } catch {
