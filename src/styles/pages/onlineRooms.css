@@ -582,14 +582,18 @@
   flex-shrink: 0;
 }
 
-/* Room list ENTER — auto width with side padding (not full 28vw menu width) */
-.online-room-actions .online-rooms-btn-pop-wrap {
-  width: auto;
+/* Live row CTAs share Create Room's footprint so labels don't change the box. */
+.online-room-actions {
+  width: var(--online-rooms-btn-width);
+}
+
+.online-room-actions .online-rooms-btn-pop-wrap,
+.online-room-actions .button.online-action {
+  width: 100%;
 }
 
 .online-room-actions .button.online-action,
 .online-history-action-col .online-postgame-round-replay-btn.button {
-  width: auto;
   min-width: 0;
   animation: none !important;
 }
@@ -1041,6 +1045,7 @@
 }
 
 .online-history-action-col .online-postgame-round-replay-btn.button {
+  width: auto;
   white-space: nowrap;
   margin: 0;
 }
@@ -1487,8 +1492,20 @@
     overflow: visible;
   }
 
+  .online-room-card:not(.online-room-card--history) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .online-room-card .button {
     flex-shrink: 0;
+  }
+
+  .online-room-actions,
+  .online-create-btn-wrap,
+  .online-room-actions .button.online-action,
+  .online-create-btn-wrap .online-create-btn {
+    width: 100%;
   }
 
   .online-action-card-body {
