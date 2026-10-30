@@ -2270,6 +2270,13 @@
     padding-top: 0;
   }
 
+  .practice-challenges-panel.solo-challenges-panel
+    .sc-row--selected
+    .sc-row__bounty,
+  .practice-hub-page--challenges .sc-row--selected .sc-row__bounty {
+    padding-right: 4.25rem;
+  }
+
   .practice-challenges-panel.solo-challenges-panel .sc-row__sats-line,
   .practice-challenges-panel.solo-challenges-panel
     .sc-row__bounty--locked
@@ -2283,6 +2290,93 @@
   .practice-challenges-panel.solo-challenges-panel .sc-row__unit,
   .practice-hub-page--challenges .sc-row__unit {
     text-align: right;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__name,
+  .practice-hub-page--challenges .sc-row__name,
+  .practice-challenges-panel.solo-challenges-panel
+    .sc-row__title-text
+    .sc-row__name,
+  .practice-hub-page--challenges .sc-row__title-text .sc-row__name {
+    font-size: 1.2rem;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__icon,
+  .solo-challenges-panel .sc-row__icon,
+  .practice-hub-page--challenges .sc-row__icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__title-icon,
+  .solo-challenges-panel .sc-row__title-icon,
+  .practice-hub-page--challenges .sc-row__title-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .practice-hub-page--challenges
+    .sc-row[data-rank]
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .solo-challenges-panel .sc-row__bounty--locked .sc-row__sats {
+    font-size: 1.85rem;
+  }
+
+  .practice-hub-page--challenges .sc-row__bounty--locked .sc-row__lock,
+  .solo-challenges-panel .sc-row__bounty--locked .sc-row__lock {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Phones have no hover. Resting cards use the brighter hover colors,
+   and the selected card keeps the claim badge without a pointer. */
+@media (hover: none) {
+  .practice-hub-page--challenges .sc-row[data-rank] .sc-row__name-line {
+    color: rgba(var(--sc-accent-strong), 0.88);
+  }
+
+  .practice-hub-page--challenges .sc-row[data-rank='1'] .sc-row__icon,
+  .practice-hub-page--challenges .sc-row[data-rank='2'] .sc-row__icon,
+  .practice-hub-page--challenges .sc-row[data-rank='3'] .sc-row__icon {
+    color: rgba(var(--sc-accent-strong), 0.92);
+  }
+
+  .practice-hub-page--challenges .sc-row[data-rank='4'] .sc-row__icon,
+  .practice-hub-page--challenges .sc-row[data-rank='5'] .sc-row__icon,
+  .practice-hub-page--challenges .sc-row[data-rank='6'] .sc-row__icon {
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  .practice-hub-page--challenges
+    .sc-row[data-rank='1']
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .practice-hub-page--challenges
+    .sc-row[data-rank='2']
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .practice-hub-page--challenges
+    .sc-row[data-rank='3']
+    .sc-row__bounty--locked
+    .sc-row__sats {
+    color: rgba(var(--sc-accent-strong), 0.9);
+  }
+
+  .practice-hub-page--challenges
+    .sc-row[data-rank='4']
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .practice-hub-page--challenges
+    .sc-row[data-rank='5']
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .practice-hub-page--challenges
+    .sc-row[data-rank='6']
+    .sc-row__bounty--locked
+    .sc-row__sats {
+    color: rgba(255, 255, 255, 0.9);
   }
 }
 
