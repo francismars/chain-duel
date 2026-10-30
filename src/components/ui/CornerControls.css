@@ -156,7 +156,7 @@
    edge on release, and opens its panel toward the middle of the screen. */
 
 .corner-controls--touch {
-  --fab-size: 48px;
+  --fab-size: 36px;
   --fab-ease: cubic-bezier(0.22, 1, 0.36, 1);
   top: 0;
   left: 0;
@@ -273,7 +273,7 @@
   gap: 2px;
   min-width: 13rem;
   padding: 6px;
-  border-radius: 14px;
+  border-radius: 0;
   border: 1px solid rgb(255 255 255 / 14%);
   background: rgb(14 14 14 / 72%);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
@@ -329,7 +329,7 @@
   justify-content: flex-start;
   gap: 12px;
   border: 0;
-  border-radius: 9px;
+  border-radius: 0;
   background: transparent;
   color: rgb(255 255 255 / 85%);
   opacity: 0;
@@ -401,7 +401,7 @@
 }
 
 .corner-controls--touch .corner-controls__panel .corner-btn--nostr-signed-in {
-  border-radius: 9px;
+  border-radius: 0;
   overflow: visible;
 }
 

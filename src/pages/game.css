@@ -2122,6 +2122,7 @@
   .flex.players {
     margin-top: 0.35rem;
     margin-bottom: 0.25rem;
+    flex-wrap: wrap;
   }
 
   .flex.points {
@@ -2129,6 +2130,11 @@
     margin-bottom: 0.9rem;
     padding-top: 0;
     padding-bottom: 0.3vw;
+  }
+
+  #sponsorshipGame .sponsored-img,
+  .ffa-hud-sponsor #sponsorshipGame .sponsored-img {
+    max-height: 1.5rem;
   }
 
   .playerSquare {
@@ -2143,7 +2149,23 @@
   }
 
   #gameInfo {
-    font-size: clamp(0.55rem, 2.05vmin, 0.85rem);
+    order: -1;
+    flex: 1 0 100%;
+    width: 100%;
+    overflow: visible;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    text-align: center;
+    -webkit-text-stroke-width: 0;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.72);
+    color: rgba(255, 255, 255, 0.72);
+    margin-bottom: 0.2rem;
+  }
+
+  #sponsorshipGame .sponsored-img,
+  .ffa-hud-sponsor #sponsorshipGame .sponsored-img {
+    max-height: 1.5rem;
   }
 
   .player-sats span {
@@ -2152,6 +2174,14 @@
 
   .player-sats span.grey {
     opacity: 0.88;
+  }
+
+  .match-start__objectives {
+    width: min(100%, 17rem);
+  }
+
+  .match-start__body {
+    max-width: 16rem;
   }
 
   #p1Points,
