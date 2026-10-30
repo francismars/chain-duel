@@ -4,8 +4,8 @@ import {
   touchControlSlotForState,
   writeSlotBinding,
 } from '@/lib/controls/playerControls';
-import { keyForCode, syntheticKeySource } from '@/lib/controls/syntheticKeys';
-import { sendConfirm, sendDirection, swipeDirection } from './touchInput';
+import { keyForCode } from '@/lib/controls/syntheticKeys';
+import { sendDirection } from './touchInput';
 
 class FakeKeyboardEvent {
   type: string;
@@ -41,19 +41,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('swipeDirection', () => {
-  it('ignores small movements', () => {
-    expect(swipeDirection(10, -12)).toBeNull();
-  });
-
-  it('picks the dominant axis', () => {
-    expect(swipeDirection(40, 10)).toBe('right');
-    expect(swipeDirection(-40, 30)).toBe('left');
-    expect(swipeDirection(5, 30)).toBe('down');
-    expect(swipeDirection(-20, -30)).toBe('up');
-  });
-});
-
 describe('keyForCode', () => {
   it('maps codes to the key a physical press reports', () => {
     expect(keyForCode('Space')).toBe(' ');
@@ -64,28 +51,19 @@ describe('keyForCode', () => {
 });
 
 describe('touch key dispatch', () => {
-  it('sends the slot’s bound key, tagged as touch', () => {
+  it('sends the slot’s bound key the way the stick does', () => {
     sendDirection('p1', 'up', 'keydown');
     sendDirection('p1', 'up', 'keyup');
     expect(dispatched.map((e) => [e.type, e.code, e.key])).toEqual([
       ['keydown', 'KeyW', 'w'],
       ['keyup', 'KeyW', 'w'],
     ]);
-    expect(syntheticKeySource(dispatched[0] as unknown as Event)).toBe('touch');
   });
 
   it('follows custom bindings', () => {
     writeSlotBinding('p1', 'left', 'KeyJ');
     sendDirection('p1', 'left', 'keydown');
     expect(dispatched[0].code).toBe('KeyJ');
-  });
-
-  it('tap sends a full confirm press', () => {
-    sendConfirm('p1');
-    expect(dispatched.map((e) => [e.type, e.code, e.key])).toEqual([
-      ['keydown', 'Space', ' '],
-      ['keyup', 'Space', ' '],
-    ]);
   });
 });
 

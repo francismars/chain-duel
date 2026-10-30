@@ -1141,10 +1141,6 @@ export default function OnlineGame({
           // Online accepts P1 bindings for either seat.
           return role.isP1 || role.isP2 ? 'p1' : null;
         }}
-        canTapConfirm={() => {
-          const state = snapshotRef.current?.state as GameState | undefined;
-          return !!state && (!state.gameStarted || state.gameEnded);
-        }}
       />
 
       <div id="gameContainer" className="flex full game">

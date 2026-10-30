@@ -38,7 +38,7 @@ function readCopy(opts: CanvasObjectivesOpts | undefined): PromptCopy {
     isKeyboardStartLine(opts?.startPromptWords) &&
     isKeyboardStartLine(opts?.startPromptAltWords);
   if (seated && localLine && isCoarsePointer()) {
-    // Phones / tablets start with a tap (TouchControls sends the confirm key).
+    // Phones / tablets start with a tap (the landscape stick sends the confirm key).
     return {
       words: TAP_TO_START,
       altWords: null,

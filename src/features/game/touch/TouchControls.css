@@ -1,38 +1,3 @@
-/* While a touch match is mounted, the page must not scroll, zoom or select. */
-html.touch-play,
-html.touch-play body {
-  touch-action: none;
-  overscroll-behavior: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-.touch-hint {
-  position: fixed;
-  left: 50%;
-  bottom: calc(var(--safe-bottom) + var(--space-3));
-  transform: translateX(-50%);
-  z-index: 9000;
-  margin: 0;
-  padding: var(--space-1) var(--space-3);
-  background: rgb(0 0 0 / 70%);
-  border: 1px solid var(--line);
-  color: rgb(255 255 255 / 85%);
-  font-size: var(--fs-sm);
-  letter-spacing: var(--btn-letter-spacing);
-  text-transform: uppercase;
-  white-space: nowrap;
-  pointer-events: none;
-  animation: touch-hint-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes touch-hint-pulse {
-  50% {
-    opacity: 0.55;
-  }
-}
-
 /* ── D-pad: bottom-right, inside the safe area, thumb-sized pads ── */
 .touch-dpad {
   position: fixed;
@@ -80,56 +45,9 @@ html.touch-play body {
   grid-area: right;
 }
 
-/* ── The 51×25 board needs landscape: ask phones held upright to rotate ── */
-.touch-rotate {
-  display: none;
-}
-
+/* The portrait gate in TouchMatchFrame already covers the board. */
 @media (orientation: portrait) and (max-width: 640px) {
-  .touch-rotate {
-    position: fixed;
-    inset: 0;
-    z-index: 10500;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-3);
-    padding: var(--space-5);
-    background: rgb(0 0 0 / 92%);
-    text-align: center;
-    color: #fff;
-    font-size: var(--fs-md);
-    letter-spacing: var(--btn-letter-spacing);
-    text-transform: uppercase;
-  }
-
-  .touch-rotate svg {
-    width: 72px;
-    height: 72px;
-    animation: touch-rotate-hint 2.2s ease-in-out infinite;
-  }
-
-  .touch-hint,
   .touch-dpad {
     display: none;
-  }
-}
-
-@keyframes touch-rotate-hint {
-  0%,
-  30% {
-    transform: rotate(0deg);
-  }
-  60%,
-  100% {
-    transform: rotate(-90deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .touch-hint,
-  .touch-rotate svg {
-    animation: none;
   }
 }

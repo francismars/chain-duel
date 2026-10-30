@@ -1790,10 +1790,6 @@ export default function Game() {
         getSlot={() =>
           stateRef.current ? touchControlSlotForState(stateRef.current) : null
         }
-        canTapConfirm={() => {
-          const state = stateRef.current;
-          return !!state && (!state.gameStarted || state.gameEnded);
-        }}
       />
 
       <h1 id="tournament-name" className="hero-outline in-game hide">
