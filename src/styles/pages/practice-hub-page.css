@@ -2552,25 +2552,63 @@
   }
 }
 
-/* ── Phones: one column, page scrolls, sticky footer with primary on top ── */
+/* ── Phones: header and footer stay put; only the setup column scrolls ── */
 @media (max-width: 640px) {
+  html:has(.practice-hub-page),
+  body:has(.practice-hub-page) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .page-reveal-scope:has(.practice-hub-page) {
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
   .practice-hub-page.practice-hub,
   .practice-hub-page.practice-hub--practice,
   .practice-hub-page.practice-hub--setup-pick {
     max-width: 100%;
-    max-height: none;
-    overflow: visible;
-    grid-template-rows: auto auto auto auto;
-    align-content: start;
-    gap: var(--space-3);
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+    gap: var(--space-2);
     padding: calc(var(--safe-top) + 3.25rem)
       calc(var(--safe-right) + var(--space-3)) 0
       calc(var(--safe-left) + var(--space-3));
   }
 
-  .practice-hub-page {
+  .practice-hub-page .practice-hub-header {
+    grid-row: 1;
+  }
+
+  .practice-hub-page.practice-hub--practice {
     --ph-play-area-max-height: none;
     --ph-panel-max-height: none;
+    --ph-compact-icon: 18px;
+    --ph-content-inset: 0;
+  }
+
+  /* Glow gutters were pulling card edges in from the footer buttons. */
+  .practice-hub-page .ph-picker-block .p2p-picker-row,
+  .practice-hub-page .ph-picker-block .practice-four-slot,
+  .practice-hub-page .ph-picker-block .local-tier-grid,
+  .practice-hub-page .ph-picker-block .p2p-duel-format,
+  .practice-hub-page .p2p-modifiers-section .ph-picker-block .p2p-duel-format {
+    padding-inline: 0;
+    margin-inline: 0;
+  }
+
+  .practice-hub-page .p2p-duel-format__icon,
+  .practice-hub-page .p2p-modifiers-section .p2p-duel-format__icon {
+    width: 18px;
+    height: 18px;
   }
 
   .practice-free-play-panel__body .local-setup-top-row {
@@ -2582,12 +2620,31 @@
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
+  .practice-hub-page .practice-panel {
+    grid-row: 2;
+    align-self: stretch;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    overflow: hidden;
+  }
+
+  .practice-hub-page .practice-play-style-area {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .practice-hub-page .practice-hub-panel-footer {
-    position: sticky;
-    bottom: 0;
+    position: static;
+    flex-shrink: 0;
     flex-direction: column-reverse;
     gap: var(--space-2);
-    padding: var(--space-3) 0 calc(var(--safe-bottom) + var(--space-3));
+    padding: var(--space-3) 0 calc(var(--safe-bottom) + var(--space-4));
     background: linear-gradient(to top, #000 70%, rgb(0 0 0 / 0));
   }
 
