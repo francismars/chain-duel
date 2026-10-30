@@ -18,6 +18,12 @@ import {
   isOnlineVictoryWinner,
 } from '@/lib/online/isOnlineVictoryWinner';
 import {
+  resultsAwayLine,
+  resultsClaimLine,
+  type ForfeitViewer,
+} from '@/lib/online/forfeitPause';
+import type { OnlinePrizeClaim } from '@/types/socket';
+import {
   DEBUG_P1_SESSION,
   DEBUG_P2_SESSION,
   parseOnlinePreviewSide,
@@ -61,6 +67,7 @@ interface OnlinePostGameInfo {
   rematchNote1?: string;
   rematchWaitingForSessionID?: string;
   doubleOrNothingVotes: number;
+  claim?: OnlinePrizeClaim;
   matchRounds?: Array<{
     matchRound: number;
     finishedAt: number;
@@ -115,13 +122,41 @@ export type OnlinePostGameProps = {
   roomId?: string;
   roomCode?: string;
   onReadyChange?: (ready: boolean) => void;
+  p1Away?: boolean;
+  p2Away?: boolean;
+  claim?: OnlinePrizeClaim | null;
 };
+
+function resultsViewer(
+  info: OnlinePostGameInfo | null,
+  sessionID: string,
+  socketID: string
+): ForfeitViewer {
+  if (!info) {
+    return 'spectator';
+  }
+  const p1 = Boolean(
+    (info.p1SessionID && sessionID && info.p1SessionID === sessionID) ||
+    (info.p1SocketID && socketID && info.p1SocketID === socketID)
+  );
+  if (p1) {
+    return 'p1';
+  }
+  const p2 = Boolean(
+    (info.p2SessionID && sessionID && info.p2SessionID === sessionID) ||
+    (info.p2SocketID && socketID && info.p2SocketID === socketID)
+  );
+  return p2 ? 'p2' : 'spectator';
+}
 
 export default function OnlinePostGame({
   embedded = false,
   roomId: roomIdProp,
   roomCode,
   onReadyChange,
+  p1Away = false,
+  p2Away = false,
+  claim: claimFromRoom,
 }: OnlinePostGameProps = {}) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -194,6 +229,26 @@ export default function OnlinePostGame({
   const showPayoutUi = Boolean(info && !sessionFinished);
   /** Withdraw / LN payout controls and QR are winner-only. */
   const showWinnerPayout = showPayoutUi && isWinner;
+  const awayViewer = resultsViewer(info, effectiveSessionID, currentSocketID);
+  const awayLine =
+    info?.phase === 'postgame'
+      ? resultsAwayLine({
+          p1Away,
+          p2Away,
+          viewer: awayViewer,
+          p1Name: info.p1Name,
+          p2Name: info.p2Name,
+        })
+      : null;
+  const claimLine =
+    info?.phase === 'postgame' && !donLocked
+      ? resultsClaimLine({
+          claim: claimFromRoom ?? info.claim,
+          viewerIsWinner: isWinner,
+          winnerName: info.winnerName,
+          hasLnAddress: Boolean(info.winnerLnAddress),
+        })
+      : null;
 
   useEffect(() => {
     mountedAtRef.current = Date.now();
@@ -630,9 +685,12 @@ export default function OnlinePostGame({
                 rematchRequiredAmount: pg.rematchRequiredAmount,
                 rematchNote1: pg.rematchNote1,
                 rematchWaitingForSessionID: pg.rematchWaitingForSessionID,
+                claim: parsed.claim,
               }
             : prev
         );
+      } else {
+        setInfo((prev) => (prev ? { ...prev, claim: parsed.claim } : prev));
       }
       if (parsed.phase === 'lobby' && roomCode) {
         navigate(onlineRoomUrl(roomCode));
@@ -1000,6 +1058,12 @@ export default function OnlinePostGame({
                     ? 'Only the two seated players can vote on a rematch.'
                     : 'Both players must agree to double the stakes and play another round.'}
               </p>
+              {awayLine ? (
+                <p className="online-postgame-away">{awayLine}</p>
+              ) : null}
+              {claimLine ? (
+                <p className="online-postgame-claim">{claimLine}</p>
+              ) : null}
             </div>
 
             <div className="online-postgame-don-controls">

@@ -492,6 +492,15 @@ export default function OnlineRoom() {
               roomCode={roomCode}
               roomId={roomId}
               onReadyChange={setPostGameReady}
+              p1Away={
+                room?.seats['Player 1']?.status === 'paid' &&
+                room.seats['Player 1']?.disconnectedAt != null
+              }
+              p2Away={
+                room?.seats['Player 2']?.status === 'paid' &&
+                room.seats['Player 2']?.disconnectedAt != null
+              }
+              claim={room?.claim ?? null}
             />
           </div>
         ) : null}
