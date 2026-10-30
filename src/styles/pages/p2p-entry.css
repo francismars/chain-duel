@@ -1534,14 +1534,42 @@
 /* ── Phones: same pattern as Free play — page scrolls, sticky stacked footer ── */
 @media (max-width: 640px) {
   .p2p-entry-page.practice-hub--practice {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: 100%;
     max-width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow: hidden;
     padding: calc(var(--safe-top) + 3.25rem)
       calc(var(--safe-right) + var(--space-3)) 0
       calc(var(--safe-left) + var(--space-3));
   }
 
+  .p2p-entry-page .practice-hub-header {
+    flex-shrink: 0;
+  }
+
   .p2p-entry-page .practice-panel {
-    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0;
+  }
+
+  .p2p-entry-page .ph-picker-block .p2p-picker-row,
+  .p2p-entry-page .ph-picker-block .p2p-duel-format,
+  .p2p-entry-page .p2p-modifiers-section .ph-picker-block .p2p-duel-format,
+  .p2p-entry-page .p2p-modifiers-section .p2p-duel-format {
+    padding-inline: 0;
+    margin-inline: 0;
   }
 
   .p2p-entry-page .practice-actions,
@@ -1549,9 +1577,13 @@
     position: sticky;
     bottom: 0;
     z-index: 2;
+    flex-shrink: 0;
+    margin-top: auto;
     flex-direction: column-reverse;
     gap: var(--space-2);
-    padding: var(--space-3) 0 calc(var(--safe-bottom) + var(--space-3));
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--space-3) 0 calc(var(--safe-bottom) + var(--space-4));
     background: linear-gradient(to top, #000 70%, rgb(0 0 0 / 0));
   }
 
