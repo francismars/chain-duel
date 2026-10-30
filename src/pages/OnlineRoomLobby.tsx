@@ -53,8 +53,17 @@ import {
 } from '@/lib/online/buildOnlineRoomInvite';
 import { publishSignedNostrEvent } from '@/lib/nostr/publishSignedNostrEvent';
 import { verifyNip05 } from '@/lib/nostr/fetchKind0Profile';
-import { decodeBolt11ExpiresAt } from '@/lib/lightning/decodeBolt11ExpiresAt';
 import { lightningUriHref } from '@/lib/lightning/lightningUriHref';
+import {
+  formatZapPayError,
+  nextNostrLinkAutoStart,
+  nextZapAutoPrepare,
+  parseStoredNostrLink,
+  prepareZapOnLinkConfirmed,
+  resolveSeatZapExpiresAt,
+  routeLobbyPayFailure,
+  sessionReplacesNostrLink,
+} from '@/lib/online/lobbySeatPay';
 import '@/styles/pages/onlineRoomLobby.css';
 import './game.css';
 import { BrandHeader } from '@/components/layout/BrandHeader';
@@ -146,7 +155,6 @@ function midTruncate(s: string, head = 16, tail = 8): string {
 
 const LIGHTNING_EXPIRY_TEN_MIN_MS = 10 * 60 * 1000;
 const LIGHTNING_EXPIRY_THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-const DEFAULT_BOLT11_EXPIRY_MS = 60 * 60 * 1000;
 
 function formatLightningExpiresIn(expiresAt: number, now: number): string {
   const msLeft = Math.max(0, expiresAt - now);
@@ -191,43 +199,6 @@ function formatKind1PostTimestamp(unixSeconds: number): string {
   const hours = String(d.getHours()).padStart(2, '0');
   const minutes = String(d.getMinutes()).padStart(2, '0');
   return `${weekday} ${day} ${month} ${hours}:${minutes}`;
-}
-
-function formatZapPayError(reason: string): string {
-  switch (reason) {
-    case 'pubkey_mismatch':
-      return 'Zap signature pubkey does not match your linked identity. Sign out in Settings, sign in again with Nostr Connect, then retry.';
-    case 'nostr_not_linked':
-      return 'Nostr room link expired or missing. Tap Link & pay again.';
-    case 'host_ln_unknown':
-      return 'Could not resolve the host Lightning address from the room note.';
-    case 'recipient_lnurl_no_zap':
-      return 'Host Lightning address does not accept Nostr zaps.';
-    case 'kind1_not_ready':
-      return 'Room note is not ready yet. Wait a moment and try again.';
-    case 'no_nostr_signer':
-      return 'No Nostr signer available. Reconnect Nostr Connect in Settings.';
-    case 'already_seated':
-      return 'You already have a paid seat in this room.';
-    case 'seats_full':
-      return 'Both seats are already taken.';
-    case 'not_loser':
-      return 'That zap did not come from the losing player. Use the same identity or payment method as your buy-in.';
-    case 'amount_too_low':
-      return 'Zap amount is too low for double or nothing. Pay the exact rematch amount on the rematch note.';
-    case 'rematch_use_rematch_note':
-      return 'Zap the rematch note (published after both players agreed), not the original room note.';
-    case 'rematch_not_requested':
-      return 'Double or nothing is no longer waiting for payment.';
-    case 'rematch_not_ready':
-      return 'Rematch note is still publishing. Wait a moment — payment will open automatically.';
-    case 'room_not_finished':
-      return 'The room is not in postgame — rematch payment cannot be applied.';
-    case 'no_session':
-      return 'Lost connection to game server. Refresh the page and try again.';
-    default:
-      return reason.replace(/_/g, ' ');
-  }
 }
 
 /**
@@ -436,39 +407,24 @@ export default function OnlineRoomLobby({
       return;
     }
     try {
-      const raw = sessionStorage.getItem(nostrLinkStorageKey);
-      if (!raw) {
+      const stored = parseStoredNostrLink(
+        sessionStorage.getItem(nostrLinkStorageKey),
+        Date.now(),
+        sessionStorage.getItem('sessionID') ?? ''
+      );
+      if (stored.action === 'absent') {
         return;
       }
-      const parsed = JSON.parse(raw) as {
-        expiresAt: number;
-        pubkey: string;
-        name: string;
-        picture: string | null;
-        sessionID?: string;
-      };
-      const currentSid = sessionStorage.getItem('sessionID') ?? '';
-      if (parsed.sessionID && currentSid && parsed.sessionID !== currentSid) {
+      if (stored.action === 'drop') {
         sessionStorage.removeItem(nostrLinkStorageKey);
         return;
       }
-      if (
-        typeof parsed.expiresAt === 'number' &&
-        parsed.expiresAt > Date.now() &&
-        typeof parsed.pubkey === 'string'
-      ) {
-        setNostrLinkExpiresAt(parsed.expiresAt);
-        setNostrLinkedProfile({
-          pubkey: parsed.pubkey,
-          name:
-            typeof parsed.name === 'string'
-              ? parsed.name
-              : `${parsed.pubkey.slice(0, 12)}…`,
-          picture: typeof parsed.picture === 'string' ? parsed.picture : null,
-        });
-      } else {
-        sessionStorage.removeItem(nostrLinkStorageKey);
-      }
+      setNostrLinkExpiresAt(stored.link.expiresAt);
+      setNostrLinkedProfile({
+        pubkey: stored.link.pubkey,
+        name: stored.link.name,
+        picture: stored.link.picture,
+      });
     } catch {
       sessionStorage.removeItem(nostrLinkStorageKey);
     }
@@ -556,11 +512,18 @@ export default function OnlineRoomLobby({
         pendingNostrLinkPubkeyRef.current = null;
         setNostrLinkBusy(false);
         setLightningBusy(false);
-        const msg = formatZapPayError(parsed.reason);
-        if (paymentModeRef.current === 'nostr' || rematchPendingRef.current) {
-          setNostrPayError(msg);
-        } else {
-          setError(msg);
+        const route = routeLobbyPayFailure({
+          source: 'pin',
+          reason: parsed.reason,
+          paymentMode: paymentModeRef.current,
+          rematchPending: rematchPendingRef.current,
+        });
+        if (route.action === 'show') {
+          if (route.slot === 'nostr') {
+            setNostrPayError(route.message);
+          } else {
+            setError(route.message);
+          }
         }
       }
     };
@@ -589,10 +552,20 @@ export default function OnlineRoomLobby({
       const parsed = SocketBoundaryParsers.resOnlineSeatLightningError(payload);
       if (parsed) {
         setLightningBusy(false);
-        if (parsed.reason === 'rematch_not_ready') {
+        const route = routeLobbyPayFailure({
+          source: 'lightning',
+          reason: parsed.reason,
+          paymentMode: paymentModeRef.current,
+          rematchPending: rematchPendingRef.current,
+        });
+        if (route.action === 'ignore') {
           return;
         }
-        setError(formatZapPayError(parsed.reason));
+        if (route.slot === 'nostr') {
+          setNostrPayError(route.message);
+        } else {
+          setError(route.message);
+        }
       }
     };
     const onLightningCancelled = () => {
@@ -635,9 +608,9 @@ export default function OnlineRoomLobby({
           /* ignore quota */
         }
       }
-      // Auto-start zap invoice immediately after signing — skip the PAY button click
-      const mode = paymentModeRef.current;
-      if (mode === 'nostr') {
+      // Auto-start zap invoice immediately after signing — skip the PAY button click.
+      // This path does not use the rematch gate on the auto-prepare effect.
+      if (prepareZapOnLinkConfirmed(paymentModeRef.current)) {
         requestSeatZapPrepareRef.current();
       }
     };
@@ -674,7 +647,7 @@ export default function OnlineRoomLobby({
         return;
       }
       const prev = sessionStorage.getItem('sessionID');
-      const sessionChanged = Boolean(prev && prev !== payload.sessionID);
+      const sessionChanged = sessionReplacesNostrLink(prev, payload.sessionID);
       if (sessionChanged) {
         setNostrLinkExpiresAt(null);
         setNostrLinkedProfile(null);
@@ -829,10 +802,18 @@ export default function OnlineRoomLobby({
         setZapPayBusy(false);
         setPendingNostrAuthUrl(null);
         const msg = e instanceof Error ? e.message : 'sign_failed';
-        if (paymentModeRef.current === 'nostr') {
-          setNostrPayError(formatZapPayError(msg));
-        } else {
-          setError(msg);
+        const route = routeLobbyPayFailure({
+          source: 'sign',
+          reason: msg,
+          paymentMode: paymentModeRef.current,
+          rematchPending: rematchPendingRef.current,
+        });
+        if (route.action === 'show') {
+          if (route.slot === 'nostr') {
+            setNostrPayError(route.message);
+          } else {
+            setError(route.message);
+          }
         }
       }
     };
@@ -845,10 +826,11 @@ export default function OnlineRoomLobby({
       clearZapTimeout();
       setZapPayBusy(false);
       setPendingNostrAuthUrl(null);
-      const expiresAt =
-        decodeBolt11ExpiresAt(parsed.pr) ??
-        decodeBolt11ExpiresAt(parsed.lightningUri) ??
-        Date.now() + DEFAULT_BOLT11_EXPIRY_MS;
+      const expiresAt = resolveSeatZapExpiresAt(
+        parsed.pr,
+        parsed.lightningUri,
+        Date.now()
+      );
       setSeatZapInvoice({
         pr: parsed.pr,
         lightningUri: parsed.lightningUri,
@@ -865,24 +847,26 @@ export default function OnlineRoomLobby({
       clearZapTimeout();
       setZapPayBusy(false);
       setPendingNostrAuthUrl(null);
-      if (parsed.reason === 'rematch_not_ready') {
+      const route = routeLobbyPayFailure({
+        source: 'zap',
+        reason: parsed.reason,
+        paymentMode: paymentModeRef.current,
+        rematchPending: rematchPendingRef.current,
+      });
+      if (route.action === 'ignore') {
         return;
       }
-      const msg = formatZapPayError(parsed.reason);
-      if (
-        parsed.reason === 'nostr_not_linked' ||
-        parsed.reason === 'no_session'
-      ) {
+      if (route.clearStoredNostrLink) {
         setNostrLinkExpiresAt(null);
         setNostrLinkedProfile(null);
         if (nostrLinkStorageKey) {
           sessionStorage.removeItem(nostrLinkStorageKey);
         }
       }
-      if (paymentModeRef.current === 'nostr') {
-        setNostrPayError(msg);
+      if (route.slot === 'nostr') {
+        setNostrPayError(route.message);
       } else {
-        setError(msg);
+        setError(route.message);
       }
     };
 
@@ -928,26 +912,26 @@ export default function OnlineRoomLobby({
 
   const zapAutoPreparedRef = useRef(false);
   useEffect(() => {
-    if (
-      paymentMode !== 'nostr' ||
-      !nostrLinkActive ||
-      seatZapInvoice ||
-      zapPayBusy ||
-      !nostrSession.signedIn
-    ) {
-      if (paymentMode !== 'nostr' || !nostrLinkActive) {
-        zapAutoPreparedRef.current = false;
-      }
-      return;
-    }
     const rematchLoserPay =
       Boolean(room?.postGame?.rematchRequested) &&
       room?.postGame?.rematchWaitingForSessionID === currentSessionID;
     const rematchReady =
       (room?.postGame?.rematchRequiredAmount ?? 0) > 0 &&
       Boolean(room?.postGame?.rematchEventId);
-    if (rematchLoserPay && !rematchReady) {
+    const next = nextZapAutoPrepare({
+      paymentMode,
+      nostrLinkActive,
+      hasSeatZapInvoice: Boolean(seatZapInvoice),
+      zapPayBusy,
+      signedIn: nostrSession.signedIn,
+      rematchLoserPay,
+      rematchReady,
+    });
+    if (next === 'reset') {
       zapAutoPreparedRef.current = false;
+      return;
+    }
+    if (next === 'hold') {
       return;
     }
     if (zapAutoPreparedRef.current) {
@@ -1004,20 +988,21 @@ export default function OnlineRoomLobby({
 
   const nostrLinkAutoStartedRef = useRef(false);
   useEffect(() => {
-    if (
-      paymentMode !== 'nostr' ||
-      !nostrSession.signedIn ||
-      nostrLinkActive ||
-      seatZapInvoice ||
-      nostrLinkBusy ||
-      !socket ||
-      !roomId ||
-      nostrPayError ||
-      !nostrSignerAvailable
-    ) {
-      if (paymentMode !== 'nostr' || !nostrSession.signedIn) {
-        nostrLinkAutoStartedRef.current = false;
-      }
+    const next = nextNostrLinkAutoStart({
+      paymentMode,
+      signedIn: nostrSession.signedIn,
+      nostrLinkActive,
+      hasSeatZapInvoice: Boolean(seatZapInvoice),
+      linkBusy: nostrLinkBusy,
+      canEmit: Boolean(socket && roomId),
+      payError: Boolean(nostrPayError),
+      signerAvailable: nostrSignerAvailable,
+    });
+    if (next === 'reset') {
+      nostrLinkAutoStartedRef.current = false;
+      return;
+    }
+    if (next === 'hold') {
       return;
     }
     if (nostrLinkAutoStartedRef.current) {
