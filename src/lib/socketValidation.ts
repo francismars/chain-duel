@@ -51,7 +51,7 @@ import {
  * Returns validated data or null if validation fails
  */
 export function validateSocketEvent<T>(
-  schema: z.ZodSchema<T>,
+  schema: z.ZodType<T>,
   data: unknown,
   eventName: string
 ): { success: true; data: T } | { success: false; error: string } {
