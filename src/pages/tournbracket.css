@@ -9,35 +9,6 @@
 }
 
 /* Top: header brand */
-.tournbracket-page .tournbracket-header {
-  flex-shrink: 0;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  margin-top: 1rem;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 1;
-}
-
-.tournbracket-page #chain {
-  color: white;
-  margin: 0;
-  margin-left: 1%;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-.tournbracket-page #duel {
-  color: white;
-  margin: 0;
-  text-align: right;
-  font-size: 2.5cqw;
-  margin-right: 1%;
-}
 
 /* Middle: bracket content (visible overflow so Nostr avatars can extend past SVG slot) */
 .tournbracket-page .tournbracket-middle {
@@ -83,7 +54,7 @@
 }
 
 .tournbracket-page #tournament-name.hero-outline {
-  font-size: 5cqw;
+  font-size: max(22px, 5cqw);
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: white;
@@ -188,7 +159,7 @@
 
 .tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-by-label {
   margin-bottom: 0.35vw;
-  font-size: 0.72cqw;
+  font-size: max(11px, 0.72cqw);
   letter-spacing: 0.14em;
   color: rgba(255, 255, 255, 0.48);
   text-transform: uppercase;
@@ -200,10 +171,10 @@
   margin-right: auto;
   margin-top: 0;
   margin-bottom: 0;
-  height: 2.25vw;
-  max-width: none;
-  max-height: none;
   width: auto;
+  height: auto;
+  max-width: none;
+  max-height: 2.25vw;
 }
 
 .tournbracket-page .bracketPayment .bracketPaymentInner {
@@ -216,13 +187,13 @@
 }
 
 .tournbracket-page .bracketPayment .buyintext .label {
-  font-size: 0.8vw;
+  font-size: max(12px, 0.8vw);
   text-transform: uppercase;
   opacity: 0.7;
 }
 
 .tournbracket-page .bracketPayment .buyintext #satsLabel.sats-label-inline {
-  font-size: 0.8vw;
+  font-size: max(12px, 0.8vw);
   letter-spacing: 0.03rem;
   opacity: 0.7;
   text-transform: lowercase;
@@ -371,7 +342,7 @@
 }
 
 .tournbracket-page .bracketPayment #buyinvalue {
-  font-size: 3vw;
+  font-size: max(18px, 3vw);
   display: inline;
   padding-left: 1vw;
   margin: 0;
@@ -422,7 +393,7 @@
 }
 
 .tournbracket-page .bracketPayment .deposited {
-  font-size: 0.8vw;
+  font-size: max(12px, 0.8vw);
 }
 
 .tournbracket-page .bracketPayment .deposited .label {
@@ -430,7 +401,7 @@
 }
 
 .tournbracket-page .bracketPayment .deposited .depositedvalue {
-  font-size: 0.8vw;
+  font-size: max(12px, 0.8vw);
 }
 
 .tournbracket-page .bracketPayment .buttonsDiv {
@@ -444,7 +415,6 @@
   width: 100%;
   height: 100%;
   margin: 0;
-  padding: 3%;
 }
 
 .tournbracket-page .bracketPayment #backButton {
@@ -484,7 +454,7 @@
 }
 
 .tournbracket-page .bracketDetail .label {
-  font-size: 1vw;
+  font-size: max(13px, 1vw);
   text-transform: uppercase;
   opacity: 0.7;
   margin-bottom: 0.25rem;
@@ -504,12 +474,12 @@
 }
 
 .tournbracket-page .bracketDetail .value h3 {
-  font-size: 3vw;
+  font-size: max(18px, 3vw);
   margin: 0;
 }
 
 .tournbracket-page .bracketDetail .value .sats-bottom {
-  font-size: 1vw;
+  font-size: max(13px, 1vw);
   opacity: 0.72;
   letter-spacing: 0.02rem;
   text-transform: lowercase;
@@ -527,7 +497,7 @@
 }
 
 .tournbracket-page .nextGameDiv p.label {
-  font-size: 1vw;
+  font-size: max(13px, 1vw);
   text-transform: uppercase;
   opacity: 0.7;
   margin: 0 0 0.5vw;
@@ -537,7 +507,7 @@
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: white;
-  font-size: 2.5vw;
+  font-size: max(18px, 2.5vw);
   margin: 0;
 }
 
@@ -550,7 +520,7 @@
   align-items: center;
   gap: 0.75vw 1.25vw;
   flex-wrap: wrap;
-  font-size: 1.5vw;
+  font-size: max(15px, 1.5vw);
   box-sizing: border-box;
 }
 
@@ -603,7 +573,7 @@
 }
 
 .tournbracket-page .playerName {
-  font-size: 4vw;
+  font-size: max(22px, 4vw);
 }
 
 .tournbracket-page .playerSquare {
@@ -622,13 +592,10 @@
 
 .tournbracket-page .nextGameButton {
   animation: glowing 2000ms infinite;
-  height: 3vw;
-  width: 25%;
+  width: var(--btn-w);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 1%;
-  line-height: 1;
 }
 
 /* ── Tournament finished panel ── */
@@ -712,17 +679,63 @@
 
 .tournbracket-page #winnerName {
   display: block;
-  font-size: 7vw;
+  font-size: max(22px, 7vw);
   line-height: 0.9;
 }
 
 .tournbracket-page .claimSatsButton {
   animation: glowing 2000ms infinite;
-  width: 26%;
+  width: var(--btn-w);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   box-sizing: border-box;
-  line-height: 1;
+}
+
+/* Phones: payment panel becomes a full-screen sheet with stacked actions. */
+@media (max-width: 640px) {
+  .tournbracket-page .bracketPayment {
+    inset: 0;
+    transform: none;
+    width: 100%;
+    height: 100dvh;
+    padding: calc(var(--safe-top) + 3.25rem)
+      calc(var(--safe-right) + var(--space-3))
+      calc(var(--safe-bottom) + var(--space-3))
+      calc(var(--safe-left) + var(--space-3));
+    box-shadow: none;
+    overflow-y: auto;
+    z-index: 20;
+  }
+
+  .tournbracket-page .bracketPayment .bracketPayment-sponsor {
+    margin-bottom: var(--space-2);
+    padding-top: 0;
+  }
+
+  .tournbracket-page .bracketPayment .bracketPayment-sponsor .sponsored-img {
+    max-height: 1.5rem;
+  }
+
+  .tournbracket-page .bracketPayment .bracketPaymentInner {
+    height: auto;
+    gap: var(--space-2);
+  }
+
+  .tournbracket-page .bracketPayment .buttonsDiv {
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    margin-top: auto;
+  }
+
+  .tournbracket-page .bracketPayment .buttonsDiv .button {
+    height: auto;
+  }
+
+  /* Phones are usually scanning with another device: give the QR room. */
+  .tournbracket-page .bracketPayment .qrCodeDiv canvas.qrcode,
+  .tournbracket-page .bracketPayment .qrCodeDiv svg.qrcode {
+    width: min(64vw, 240px) !important;
+    height: min(64vw, 240px) !important;
+  }
 }

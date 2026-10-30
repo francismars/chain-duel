@@ -1,0 +1,53 @@
+/* ── D-pad: bottom-right, inside the safe area, thumb-sized pads ── */
+.touch-dpad {
+  position: fixed;
+  right: calc(var(--safe-right) + var(--space-3));
+  bottom: calc(var(--safe-bottom) + var(--space-3));
+  z-index: 9001;
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  grid-template-areas:
+    '. up .'
+    'left . right'
+    '. down .';
+  gap: 4px;
+}
+
+.touch-dpad__pad {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 18px;
+  color: rgb(255 255 255 / 80%);
+  background: rgb(0 0 0 / 45%);
+  border: 1px solid rgb(255 255 255 / 30%);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-dpad__pad:active {
+  background: var(--button-glow-bg-low);
+  border-color: #fff;
+}
+
+.touch-dpad__pad--up {
+  grid-area: up;
+}
+.touch-dpad__pad--down {
+  grid-area: down;
+}
+.touch-dpad__pad--left {
+  grid-area: left;
+}
+.touch-dpad__pad--right {
+  grid-area: right;
+}
+
+/* The portrait gate in TouchMatchFrame already covers the board. */
+@media (orientation: portrait) and (max-width: 640px) {
+  .touch-dpad {
+    display: none;
+  }
+}

@@ -1,4 +1,6 @@
 @import url('/fonts/Inter/inter.css');
+@import './variables.css';
+@import './components/dialog.css';
 
 @font-face {
   font-family: 'BureauGrotesque';
@@ -35,8 +37,30 @@ body {
     url('/images/chainduel_bg.jpg');
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Phone pages scroll. Keep the scene and fade locked to the viewport. */
+@media (max-width: 640px) {
+  body:not(.game-page) {
+    background: transparent;
+  }
+
+  body:not(.game-page)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: #000;
+    background-image:
+      linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.5)),
+      url('/images/chainduel_bg.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+  }
 }
 
 audio {
@@ -98,7 +122,7 @@ h3 {
   color: white;
   text-align: center;
   margin-bottom: 0px;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   text-transform: uppercase;
   letter-spacing: 0.03rem;
 }
@@ -115,7 +139,7 @@ h3 {
 
 .full {
   width: 100vw;
-  min-height: calc(100vh - 2vw);
+  min-height: calc(100dvh - 2vw);
 }
 
 .flex.inline {
@@ -127,9 +151,9 @@ h3 {
 .double-button {
   display: flex;
   margin: auto;
-  width: 25%;
+  width: var(--btn-w);
   justify-content: space-between;
-  height: 3vw;
+  min-height: var(--btn-h-md);
   gap: 2%;
 }
 
@@ -137,7 +161,6 @@ h3 {
   margin: 0;
   width: 49%;
   height: 100%;
-  padding: 3.5%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -150,6 +173,7 @@ h3 {
   --button-glow-bg-peak: rgb(255 255 255 / 30%);
   --button-glow-shadow-peak: 0 0 35px rgb(255 255 255);
   --button-glow-border: #fff;
+  --button-glow-fg: inherit;
 }
 
 @keyframes glowing {
@@ -158,17 +182,51 @@ h3 {
     background-color: var(--button-glow-bg-low);
     box-shadow: var(--button-glow-shadow-low);
     border-color: var(--button-glow-border);
+    color: var(--button-glow-fg);
   }
   50% {
     background-color: var(--button-glow-bg-peak);
     box-shadow: var(--button-glow-shadow-peak);
     border-color: var(--button-glow-border);
+    color: var(--button-glow-fg);
   }
+}
+
+/* Shadows & transparency off: keep keyboard/hover selection as a solid invert,
+   not a see-through glow (which disappears when opacity is flattened). */
+html.graphics-flat {
+  --button-glow-bg-low: #fff;
+  --button-glow-bg-peak: #fff;
+  --button-glow-shadow-low: none;
+  --button-glow-shadow-peak: none;
+  --button-glow-border: #fff;
+  --button-glow-fg: #000;
+}
+
+html.graphics-flat .button {
+  --button-glow-bg-low: #fff;
+  --button-glow-bg-peak: #fff;
+  --button-glow-shadow-low: none;
+  --button-glow-shadow-peak: none;
+  --button-glow-border: #fff;
+  --button-glow-fg: #000;
+}
+
+html.graphics-flat .config-section-tab.config-kbd-focus,
+html.graphics-flat .config-login-tab.config-kbd-focus,
+html.graphics-flat .config-section-tab--active.config-kbd-focus,
+html.graphics-flat .rules-modal__actions .rules-slider__arrow--selected,
+html.graphics-flat .practice-start--focused {
+  animation: none !important;
+  background-color: #fff;
+  color: #000;
+  box-shadow: none;
+  border-color: #fff;
 }
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Overscan / fullscreen TV crop: optional inset from corner controls */

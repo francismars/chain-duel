@@ -9,16 +9,16 @@
   text-align: center;
   color: rgba(255, 255, 255, 0.48);
   letter-spacing: 0.14em;
-  font-size: 0.72cqw;
+  font-size: max(11px, 0.72cqw);
   text-transform: uppercase;
 }
 
 .sponsored-img {
   display: block;
-  margin: 0 auto;
+  margin: 0 auto 1vw;
   max-width: 16vw;
   max-height: clamp(12px, 2vw, 36px);
   width: auto;
   height: auto;
-  margin-bottom: 1vw;
+  object-fit: contain;
 }

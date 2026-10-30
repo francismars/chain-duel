@@ -6,5 +6,6 @@ export function setButtonGlow(
   active: boolean
 ): void {
   if (!element) return;
+  element.classList.toggle('button--glow-active', active);
   element.style.animation = active ? BUTTON_GLOW_ACTIVE_ANIMATION : 'none';
 }

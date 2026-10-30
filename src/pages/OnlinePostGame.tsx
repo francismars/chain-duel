@@ -32,12 +32,13 @@ import {
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import '@/styles/pages/onlinePostGame.css';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 type PostGameNav =
   | { type: 'replay'; index: number } // round replay buttons
   | { type: 'don' } // double-or-nothing vote
   | { type: 'payout'; slot: 'withdraw' | 'nostr' } // payout row
-  | { type: 'exit' }; // EXIT ROOM
+  | { type: 'exit' }; // LEAVE ROOM
 
 interface OnlinePostGameInfo {
   roomId: string;
@@ -764,10 +765,7 @@ export default function OnlinePostGame({
       return (
         <div className="online-postgame-page">
           <Sponsorship id="sponsorship-online-postgame" />
-          <header id="brand">
-            <h2 id="chain">CHAIN</h2>
-            <h2 id="duel">DUEL</h2>
-          </header>
+          <BrandHeader />
           <div className="online-postgame-card">
             <p className="online-postgame-error">
               {error || 'Could not load victory screen.'}
@@ -786,10 +784,7 @@ export default function OnlinePostGame({
       )}
       <div className="postgame-scrim" aria-hidden="true" />
       <Sponsorship id="sponsorship-online-postgame" />
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <div className="online-postgame-card">
         <div className="online-postgame-headline">
@@ -1113,6 +1108,7 @@ export default function OnlinePostGame({
               </div>
 
               <Button
+                variant="custom"
                 type="button"
                 className={[
                   'online-postgame-btn',
@@ -1167,6 +1163,7 @@ export default function OnlinePostGame({
                 </div>
                 <div className="online-postgame-payout-row">
                   <Button
+                    variant="custom"
                     type="button"
                     className={[
                       'online-postgame-btn online-postgame-btn-withdraw',
@@ -1194,6 +1191,7 @@ export default function OnlinePostGame({
                         : 'Withdraw via QR'}
                   </Button>
                   <Button
+                    variant="custom"
                     type="button"
                     className={[
                       winnerHasNostrLn && !donLocked ? '' : 'disabled',
@@ -1230,12 +1228,13 @@ export default function OnlinePostGame({
               </>
             ) : null}
             <Button
+              variant="custom"
               ref={exitBtnRef}
               type="button"
               className={`online-postgame-btn online-postgame-btn-back${navFocus.type === 'exit' ? ' online-selected' : ''}`}
               onClick={exitRoom}
             >
-              EXIT ROOM
+              LEAVE ROOM
             </Button>
           </div>
 

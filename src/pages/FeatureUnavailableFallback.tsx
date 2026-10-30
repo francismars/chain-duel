@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router';
 import { Button } from '@/components/ui/Button';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 interface FeatureUnavailableFallbackProps {
   title: string;
@@ -16,10 +17,7 @@ export function FeatureUnavailableFallback({
 
   return (
     <div className="flex full flex-center">
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
       <h1 className="outline">{title}</h1>
       <p className="center grey mb-30">{subtitle}</p>
       <Button id="mainmenubutton" onClick={() => navigateToMainMenu(navigate)}>

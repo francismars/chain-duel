@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useAudio, SFX } from '@/contexts/AudioContext';
 import {
@@ -63,6 +63,7 @@ import {
   tabFromSectionIndex,
 } from './configNav';
 import './config.css';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 function signerModeLabel(mode: StoredSignerMode | null): string {
   if (mode === 'nip46') return 'Nostr Connect';
@@ -914,10 +915,7 @@ export default function Config() {
 
   return (
     <>
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <div className="flex full flex-center config-page">
         <div className="config-shell">
@@ -1795,57 +1793,53 @@ export default function Config() {
           </div>
         </div>
 
-        {ncQrModalOpen && nostrConnectUri && typeof document !== 'undefined'
-          ? createPortal(
-              <div
-                className="config-nc-qr-modal"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Nostr Connect QR code"
+        {ncQrModalOpen && nostrConnectUri ? (
+          <Modal
+            onClose={() => setNcQrModalOpen(false)}
+            label="Nostr Connect QR code"
+            className="config-nc-qr-modal"
+          >
+            <div className="config-nc-qr-modal__body">
+              <div className="config-nc-qr-modal__qr-wrap">
+                <QRCodeSVG
+                  value={nostrConnectUri}
+                  size={ncQrModalSize}
+                  includeMargin
+                  className="config-nc-qr-modal__qr"
+                  aria-label="Nostr Connect URI QR code"
+                />
+              </div>
+              <p className="config-nc-qr-modal__hint" role="status">
+                {nip46Waiting ? (
+                  <>
+                    <svg
+                      className="config-nc-spinner"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      aria-hidden
+                    >
+                      <path d="M12 3a9 9 0 1 1-6.36 2.64" />
+                    </svg>
+                    Waiting for connection…
+                  </>
+                ) : (
+                  'Scan with your signer app, then approve the connection.'
+                )}
+              </p>
+              <Button
+                variant="secondary"
+                className="config-nc-qr-modal__back"
+                glowing
+                onClick={() => setNcQrModalOpen(false)}
               >
-                <div className="config-nc-qr-modal__body">
-                  <div className="config-nc-qr-modal__qr-wrap">
-                    <QRCodeSVG
-                      value={nostrConnectUri}
-                      size={ncQrModalSize}
-                      includeMargin
-                      className="config-nc-qr-modal__qr"
-                      aria-label="Nostr Connect URI QR code"
-                    />
-                  </div>
-                  <p className="config-nc-qr-modal__hint" role="status">
-                    {nip46Waiting ? (
-                      <>
-                        <svg
-                          className="config-nc-spinner"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.4"
-                          strokeLinecap="round"
-                          aria-hidden
-                        >
-                          <path d="M12 3a9 9 0 1 1-6.36 2.64" />
-                        </svg>
-                        Waiting for connection…
-                      </>
-                    ) : (
-                      'Scan with your signer app, then approve the connection.'
-                    )}
-                  </p>
-                  <Button
-                    type="button"
-                    className="config-nc-qr-modal__back"
-                    glowing
-                    onClick={() => setNcQrModalOpen(false)}
-                  >
-                    Back
-                  </Button>
-                </div>
-              </div>,
-              document.body
-            )
-          : null}
+                Close
+              </Button>
+            </div>
+          </Modal>
+        ) : null}
 
         <BackgroundAudio
           src="/sound/chain_duel_produced_menu.m4a"

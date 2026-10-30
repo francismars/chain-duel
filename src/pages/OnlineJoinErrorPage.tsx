@@ -3,6 +3,7 @@ import { Sponsorship } from '@/components/ui/Sponsorship';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import '@/components/ui/Button.css';
 import '@/styles/pages/onlineRoomLobby.css';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 type OnlineJoinErrorPageProps = {
   title: string;
@@ -21,10 +22,7 @@ export function OnlineJoinErrorPage({
 }: OnlineJoinErrorPageProps) {
   return (
     <div className="online-lobby-page online-lobby-page--join-error">
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <div className="online-lobby-main online-lobby-main--join-error">
         <Sponsorship id="sponsorship-online-join-error" />

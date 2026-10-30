@@ -6,6 +6,7 @@ import {
   createContext,
   RefObject,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -14,12 +15,14 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { setButtonGlow } from '@/shared/utils/buttonGlow';
 import { Sponsorship } from '@/components/ui/Sponsorship';
 import { RulesSection } from './RulesSection';
 import '@/components/ui/Button.css';
 import '@/components/ui/Sponsorship.css';
 import './game-setup.css';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 export interface GameSetupLayoutProps {
   /** Page title, e.g. "PRACTICE" or "P2P" */
@@ -141,14 +144,7 @@ export function GameSetupLayout({
     }
   }, [refs, selectedButton]);
 
-  useEffect(() => {
-    if (!rulesOpen) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setRulesOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [rulesOpen]);
+  const closeRules = useCallback(() => setRulesOpen(false), []);
 
   const overlays =
     typeof document !== 'undefined'
@@ -223,10 +219,7 @@ export function GameSetupLayout({
     <>
       <div className={`game-setup-page ${pageClass}`}>
         {/* Top: header brand */}
-        <header id="brand" className="game-setup-header">
-          <h2 id="chain">CHAIN</h2>
-          <h2 id="duel">DUEL</h2>
-        </header>
+        <BrandHeader className="game-setup-header" />
 
         {/* Middle: game setup (rules, buttons) */}
         <div className="game-setup-middle">
@@ -307,47 +300,34 @@ export function GameSetupLayout({
           </div>
         )}
       </div>
-      {rulesOpen
-        ? createPortal(
-            <div
-              className="rules-modal-backdrop"
-              onClick={() => setRulesOpen(false)}
+      {rulesOpen ? (
+        <Modal
+          onClose={closeRules}
+          labelledBy="rules-modal-title"
+          className="rules-modal"
+          backdropClassName="rules-modal-backdrop"
+        >
+          <div className="rules-modal__bar">
+            <p
+              id="rules-modal-title"
+              key={`${rulesTitle.kicker}-${rulesTitle.phase}`}
+              className={
+                rulesTitle.phase === 'idle'
+                  ? 'rules-modal__title'
+                  : `rules-modal__title rules-modal__title--${rulesTitle.phase} rules-modal__title--${rulesTitle.dir}`
+              }
             >
-              <div
-                className="rules-modal"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="rules-modal-title"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <div className="rules-modal__bar">
-                  <p
-                    id="rules-modal-title"
-                    key={`${rulesTitle.kicker}-${rulesTitle.phase}`}
-                    className={
-                      rulesTitle.phase === 'idle'
-                        ? 'rules-modal__title'
-                        : `rules-modal__title rules-modal__title--${rulesTitle.phase} rules-modal__title--${rulesTitle.dir}`
-                    }
-                  >
-                    <span className="rules-modal__kicker">
-                      {rulesTitle.kicker}
-                    </span>
-                    <span className="rules-modal__heading">
-                      {rulesTitle.title}
-                    </span>
-                  </p>
-                </div>
-                <RulesSection
-                  variant="clips"
-                  onTitleChange={setRulesTitle}
-                  onClose={() => setRulesOpen(false)}
-                />
-              </div>
-            </div>,
-            document.body
-          )
-        : null}
+              <span className="rules-modal__kicker">{rulesTitle.kicker}</span>
+              <span className="rules-modal__heading">{rulesTitle.title}</span>
+            </p>
+          </div>
+          <RulesSection
+            variant="clips"
+            onTitleChange={setRulesTitle}
+            onClose={closeRules}
+          />
+        </Modal>
+      ) : null}
       {overlays}
     </>
   );

@@ -239,8 +239,9 @@ body:has(.match-end-layer) header#brand {
 }
 
 .match-end-card #sponsorship-match-end .sponsored-img {
-  height: clamp(28px, 3.5vw, 56px);
-  max-height: none;
+  width: auto;
+  height: auto;
+  max-height: clamp(28px, 3.5vw, 56px);
   max-width: 24vw;
   margin-bottom: 0;
 }
@@ -304,7 +305,7 @@ body:has(.match-end-layer) header#brand {
   gap: 2%;
   width: min(52vw, 720px);
   min-width: min(22rem, 92vw);
-  height: 3vw;
+  min-height: var(--btn-h-md);
   transform: translateX(-50%);
   pointer-events: none;
   animation: match-end-fade 0.5s ease 2.85s both;
@@ -314,13 +315,7 @@ body:has(.match-end-layer) header#brand {
   pointer-events: auto;
   flex: 1;
   width: auto;
-  height: 3vw;
-  min-height: 0;
   margin: 0;
-  padding: 0;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
-  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;

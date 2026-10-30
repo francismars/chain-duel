@@ -38,6 +38,7 @@ import {
 import { hasChallengeMenuFocus } from '@/lib/challengeMenuFocus';
 import { useSocket } from '@/hooks/useSocket';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 function readInitialHubFocus(stepped: boolean): PracticeHubFocus {
   if (hasChallengeMenuFocus()) {
@@ -462,10 +463,7 @@ export default function PracticeHub({
         .filter(Boolean)
         .join(' ')}
     >
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <header className="practice-hub-header">
         <h2 className="practice-hub-title">

@@ -30,10 +30,6 @@
   margin-top: 0.8vw;
 }
 
-.online-match-actions .button {
-  min-width: 240px;
-}
-
 .online-game-you-tag {
   display: inline-flex;
   align-items: center;
@@ -41,7 +37,7 @@
   border-radius: 0;
   border: 1px solid rgb(255 255 255 / 0.84);
   color: #fff;
-  font-size: 0.58cqw;
+  font-size: max(11px, 0.58cqw);
   letter-spacing: 0.03rem;
   vertical-align: middle;
 }
@@ -64,7 +60,7 @@
   border-radius: 0;
   border: 1px solid rgb(255 255 255 / 0.35);
   font-variant-numeric: tabular-nums;
-  font-size: 0.58cqw;
+  font-size: max(11px, 0.58cqw);
   letter-spacing: 0.02em;
   line-height: 1.1;
   vertical-align: middle;
@@ -79,7 +75,7 @@
 
 .online-game-ping {
   font-variant-numeric: tabular-nums;
-  font-size: 0.62cqw;
+  font-size: var(--fs-xs);
   letter-spacing: 0.02em;
   opacity: 0.92;
 }
@@ -130,7 +126,7 @@
   padding: 0.38vw 0.9vw;
   min-height: 2.2vw;
   font-family: 'Inter', sans-serif;
-  font-size: 0.62cqw;
+  font-size: var(--fs-xs);
   font-weight: 500;
   letter-spacing: 0.08rem;
   text-transform: uppercase;
@@ -231,7 +227,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4vw;
-  font-size: 0.62cqw;
+  font-size: var(--fs-xs);
   letter-spacing: 0.06rem;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.78);
@@ -254,7 +250,7 @@
   background: transparent;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
-  font-size: 0.62cqw;
+  font-size: var(--fs-xs);
   font-weight: 500;
   letter-spacing: 0.05rem;
   user-select: none;
@@ -331,7 +327,7 @@
   padding: 0.28vw 0.55vw;
   text-align: left;
   font-family: 'Inter', sans-serif;
-  font-size: 0.6cqw;
+  font-size: max(11px, 0.6cqw);
   font-weight: 500;
   letter-spacing: 0.04rem;
   color: rgb(255 255 255 / 0.52);
@@ -464,7 +460,7 @@
   margin: 0;
   padding-left: 0.15vw;
   font-family: 'Inter', sans-serif;
-  font-size: 0.62cqw;
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   color: rgb(255 255 255 / 0.72);
@@ -585,6 +581,6 @@
 .online-replay-error {
   margin-top: 0.35vw;
   color: #ff9b9b;
-  font-size: 0.65cqw;
+  font-size: max(11px, 0.65cqw);
   letter-spacing: 0.02em;
 }

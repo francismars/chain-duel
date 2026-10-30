@@ -33,6 +33,7 @@ import '@/components/ui/Button.css';
 import './postgame.css';
 
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 type MenuState = 1 | 2 | 3;
 type ActiveButtonMenu1 = 0 | 1;
@@ -513,10 +514,7 @@ export default function PostGame() {
 
   return (
     <>
-      <header id="brand">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader />
 
       <div
         id="postGame"
@@ -662,7 +660,7 @@ export default function PostGame() {
                 }}
                 onClick={onMainMenu}
               >
-                RETURN TO MAIN MENU
+                MAIN MENU
               </Button>
             ) : (
               <Button
@@ -670,7 +668,7 @@ export default function PostGame() {
                 style={{ display: 'none' }}
                 onClick={onMainMenu}
               >
-                RETURN TO MAIN MENU
+                MAIN MENU
               </Button>
             )}
           </div>

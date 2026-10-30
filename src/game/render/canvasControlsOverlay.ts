@@ -34,6 +34,7 @@ import {
   preMatchKeyCapScale,
   type PreMatchKeyDir,
 } from '@/game/render/preMatchKeyHighlight';
+import { isGraphicsFlat } from '@/lib/graphicsSettings';
 
 const FADE_DELAY_MS = 1000;
 const FADE_DURATION_MS = 420;
@@ -480,9 +481,14 @@ export class CanvasControlsOverlay {
     const capW = confirmKeyCapWidth(keyPx, this.keyGap, wide);
     const capH = keyPx;
     const active = isPreMatchKeyHeld(slot, cap.dir);
-    const borderAlpha = active ? 0.48 : 0.42;
-    const borderWidth = active ? 1.2 : 1;
-    const labelColor = active ? 'rgba(255,255,255,0.55)' : '#e8e8e8';
+    const flat = isGraphicsFlat();
+    const borderAlpha = active ? (flat ? 1 : 0.48) : 0.42;
+    const borderWidth = active ? (flat ? 2 : 1.2) : 1;
+    const labelColor = active
+      ? flat
+        ? '#111111'
+        : 'rgba(255,255,255,0.55)'
+      : '#e8e8e8';
 
     const cornerR = keyCapCornerRadius(keyPx);
 
@@ -490,7 +496,7 @@ export class CanvasControlsOverlay {
     if (active) {
       cap.border
         .roundRect(-capW / 2, -capH / 2, capW, capH, cornerR)
-        .fill({ color: 0xffffff, alpha: 0.05 });
+        .fill({ color: 0xffffff, alpha: flat ? 1 : 0.05 });
     }
     cap.border
       .roundRect(-capW / 2, -capH / 2, capW, capH, cornerR)
@@ -567,12 +573,15 @@ export function drawCanvasControlsFallback(
       const x = anchorX + spec.x;
       const y = anchorY + spec.y;
       const active = isPreMatchKeyHeld(slot, spec.dir);
+      const flat = isGraphicsFlat();
       ctx.strokeStyle = active
-        ? 'rgba(255,255,255,0.48)'
+        ? flat
+          ? '#ffffff'
+          : 'rgba(255,255,255,0.48)'
         : 'rgba(255,255,255,0.42)';
-      ctx.lineWidth = active ? 1.2 : 1;
+      ctx.lineWidth = active ? (flat ? 2 : 1.2) : 1;
       if (active) {
-        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        ctx.fillStyle = flat ? '#ffffff' : 'rgba(255,255,255,0.05)';
         fillRoundedRect(
           ctx,
           x - capW / 2,
@@ -592,7 +601,11 @@ export function drawCanvasControlsFallback(
         cornerR * scale
       );
       ctx.stroke();
-      ctx.fillStyle = active ? 'rgba(255,255,255,0.55)' : '#e8e8e8';
+      ctx.fillStyle = active
+        ? flat
+          ? '#111111'
+          : 'rgba(255,255,255,0.55)'
+        : '#e8e8e8';
       ctx.fillText(formatKeyCapLabel(spec.label, spec.dir), x, y);
     }
   }

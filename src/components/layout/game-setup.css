@@ -16,13 +16,11 @@
   flex-shrink: 0;
   position: absolute;
   z-index: 2;
-  top: 1rem;
+  top: 0;
   left: 0;
   right: 0;
   width: 100%;
   box-sizing: border-box;
-  padding-left: 1%;
-  padding-right: 1%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -49,28 +47,12 @@
   flex-shrink: 0;
 }
 
-.game-setup-page #chain {
-  color: white;
-  margin-top: 0;
-  margin-left: 0;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-.game-setup-page #duel {
-  color: white;
-  margin-top: 0;
-  text-align: right;
-  font-size: 2.5cqw;
-  margin-right: 0;
-}
-
 #titleslogan {
   color: white;
   text-align: center;
   margin-bottom: 1%;
   margin-top: 1%;
-  font-size: 1.5cqw;
+  font-size: max(15px, 1.5cqw);
   font-weight: 300;
 }
 
@@ -90,14 +72,14 @@
   color: white;
   text-align: center;
   margin-bottom: 0;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   text-transform: uppercase;
   letter-spacing: 0.03rem;
 }
 
 .gameDescription {
   text-align: center;
-  font-size: 0.9cqw;
+  font-size: max(12px, 0.9cqw);
 }
 
 .rewards {
@@ -121,22 +103,18 @@
 
 #gameButtons .button {
   margin: 0;
-  width: 25vw;
-  height: 3vw;
-  font-size: 0.8cqw;
+  width: var(--btn-w);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   box-sizing: border-box;
-  line-height: 1;
 }
 
 .game-setup-status {
   text-align: center;
   margin-top: 1rem;
   min-height: 1.5rem;
-  font-size: 0.9cqw;
+  font-size: max(12px, 0.9cqw);
 }
 
 #mainmenubutton,
@@ -210,7 +188,7 @@
   width: max-content;
   max-width: 28vw;
   text-align: center;
-  font-size: 0.75cqw;
+  font-size: max(12px, 0.75cqw);
   line-height: 1.35;
   color: rgba(255, 255, 255, 0.92);
   background: rgba(0, 0, 0, 0.88);
@@ -249,73 +227,93 @@
   position: static;
   margin-bottom: 1%;
   text-align: center;
-  font-size: 6cqw;
+  font-size: max(22px, 6cqw);
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: white;
 }
 
-/* Overlay and warning */
-.overlay {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  background: rgba(0, 0, 0, 0.8);
-  position: fixed;
-  top: 0;
-  left: 0;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.35s ease-in-out;
-  opacity: 1;
-  z-index: 10000;
-}
+/* ── Phones: one scrolling column in the order a player needs it —
+   title, prize, deposit QR codes, actions (sticky), then the rules. ── */
+@media (max-width: 640px) {
+  .game-setup-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    gap: var(--space-4);
+    padding: calc(var(--safe-top) + 3.5rem)
+      calc(var(--safe-right) + var(--space-3)) 0
+      calc(var(--safe-left) + var(--space-3));
+    box-sizing: border-box;
+  }
 
-#loading.overlay img {
-  display: block;
-  width: 7vw;
-  height: 7vw;
-}
+  /* Flatten the desktop wrappers so their children can be re-ordered. */
+  .game-setup-page .game-setup-middle,
+  .game-setup-page .game-setup-main {
+    display: contents;
+  }
 
-#loading.overlay.hide {
-  opacity: 0;
-  pointer-events: none;
-}
+  .game-setup-page .game-setup-main > div:first-child {
+    order: 0;
+  }
 
-.overlay.hide {
-  opacity: 0;
-  pointer-events: none;
-}
+  /* index.css pins #bottomInfo to the viewport bottom; here it follows the content. */
+  .game-setup-page #bottomInfo.game-setup-bottom {
+    order: 1;
+    position: static;
+    margin: 0;
+    padding: 0;
+  }
 
-.warning {
-  width: 30%;
-  background: #000;
-  text-align: center;
-  box-shadow: 0 0 5vw rgba(255, 255, 255, 0.42);
-}
+  .game-setup-page .game-setup-status {
+    order: 2;
+    margin: 0;
+  }
 
-.warning-inner {
-  padding: 8vw 6vw 6vw 6vw;
-}
+  #gameButtons {
+    order: 3;
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    width: auto;
+    margin: 0 calc(-1 * var(--space-3));
+    padding: var(--space-4) var(--space-3)
+      calc(var(--safe-bottom) + var(--space-3));
+    background: linear-gradient(to top, #000 72%, rgb(0 0 0 / 0));
+  }
 
-.warning-title {
-  font-size: 3vw;
-}
+  #gameButtons .button,
+  #gameButtons .game-setup-start-wrap {
+    width: 100%;
+  }
 
-.warning-text {
-  font-size: 1.2vw;
-}
+  /* Rules move below the actions with their own heading. */
+  #titleslogan {
+    display: none;
+  }
 
-.warning-actions {
-  display: flex;
-}
+  .game-setup-page #centerSection {
+    order: 4;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-bottom: calc(var(--safe-bottom) + var(--space-5));
+  }
 
-.warning .button {
-  width: 100%;
-  margin-top: 0;
-  margin-bottom: 0;
-}
+  .game-setup-page #centerSection::before {
+    content: 'Rules';
+    text-align: center;
+    font-size: var(--fs-lg);
+    font-weight: 300;
+  }
 
-.warning .button.half {
-  width: 50%;
+  #gameCard {
+    width: 100%;
+    margin: 0;
+  }
+
+  .rewards {
+    width: min(100%, 16rem);
+  }
 }

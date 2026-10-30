@@ -5,7 +5,11 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { confirmKeyCode, slotBindings } from '@/lib/controls/playerControls';
+import {
+  confirmKeyCode,
+  slotBindings,
+  type PlayerControlSlot,
+} from '@/lib/controls/playerControls';
 import {
   StickSession,
   TOUCH_GESTURE_EVENT,
@@ -13,6 +17,10 @@ import {
   isStickBlockedTarget,
   type StickVisual,
 } from '@/features/game/touchStick';
+import {
+  readTouchPlaySlot,
+  TOUCH_PLAY_TARGET_EVENT,
+} from '@/features/game/touch/touchPlayTarget';
 import './touchMatchFrame.css';
 
 type TouchMatchMode = 'off' | 'landscape' | 'portrait';
@@ -84,6 +92,7 @@ function useStickPointer(
     if (mode !== 'landscape') return;
 
     let session: StickSession | null = null;
+    let sessionSlot: PlayerControlSlot | null = null;
     let touchId: number | null = null;
     let pointerId: number | null = null;
 
@@ -95,13 +104,17 @@ function useStickPointer(
     };
 
     const begin = (x: number, y: number) => {
+      const slot = readTouchPlaySlot();
+      if (!slot) return false;
+      sessionSlot = slot;
       session = new StickSession(
-        slotBindings('p1'),
-        confirmKeyCode('p1'),
+        slotBindings(slot),
+        confirmKeyCode(slot),
         dispatchStickKey,
         onVisual
       );
       session.begin(x, y);
+      return true;
     };
 
     const endTouch = (tap: boolean) => {
@@ -109,8 +122,14 @@ function useStickPointer(
       if (tap) session.end();
       else session.cancel();
       session = null;
+      sessionSlot = null;
       touchId = null;
       pointerId = null;
+    };
+
+    const onTargetChange = () => {
+      if (!session) return;
+      if (readTouchPlaySlot() !== sessionSlot) endTouch(false);
     };
 
     // Fingers use touch events. Phones often pointercancel the gesture as soon
@@ -119,9 +138,8 @@ function useStickPointer(
       window.dispatchEvent(new Event(TOUCH_GESTURE_EVENT));
       if (isStickBlockedTarget(event.target) || session) return;
       const touch = event.changedTouches.item(0);
-      if (!touch) return;
+      if (!touch || !begin(touch.clientX, touch.clientY)) return;
       touchId = touch.identifier;
-      begin(touch.clientX, touch.clientY);
     };
 
     const onTouchMove = (event: TouchEvent) => {
@@ -153,8 +171,8 @@ function useStickPointer(
       if (event.button !== 0 || session) return;
       window.dispatchEvent(new Event(TOUCH_GESTURE_EVENT));
       if (isStickBlockedTarget(event.target)) return;
+      if (!begin(event.clientX, event.clientY)) return;
       pointerId = event.pointerId;
-      begin(event.clientX, event.clientY);
       const target = event.target;
       if (target instanceof Element) {
         try {
@@ -189,8 +207,10 @@ function useStickPointer(
     window.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove, { passive: false });
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener(TOUCH_PLAY_TARGET_EVENT, onTargetChange);
     return () => {
       session?.cancel();
+      window.removeEventListener(TOUCH_PLAY_TARGET_EVENT, onTargetChange);
       document.removeEventListener('touchstart', onTouchStart, true);
       document.removeEventListener('touchmove', onTouchMove, true);
       document.removeEventListener('touchend', onTouchEnd, true);

@@ -454,7 +454,7 @@
 
 .p2p-modifiers-section .p2p-duel-format__label {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   letter-spacing: 0.1rem;
   text-transform: uppercase;
@@ -735,15 +735,10 @@
 .p2p-entry-page .practice-back.button {
   flex: 1 1 0; /* equal share of the row */
   width: auto;
-  height: 3vw; /* same as base .button */
-  min-height: 30px; /* floor for very small viewports */
   margin: 0;
-  padding: 1%; /* same as base .button (% = relative to parent width) */
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw; /* same as base .button — explicit to override practiceHub */
   font-weight: 400;
-  letter-spacing: 0.1rem; /* same as base .button */
   color: #fff;
   border-color: rgba(255, 255, 255, 0.34);
   box-shadow: none;
@@ -798,7 +793,7 @@
 .p2p-entry-page .p2p-picker-card--nostr .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--duel .p2p-picker-sub,
 .p2p-entry-page .p2p-picker-card--tournament .p2p-picker-sub {
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   letter-spacing: 0.1rem;
 }
@@ -1278,7 +1273,7 @@
 
 .bracket-sizing-hub__player-num {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   letter-spacing: 0.1rem;
   text-transform: uppercase;
@@ -1335,7 +1330,7 @@
   cursor: pointer;
   color: rgba(255, 255, 255, 0.88);
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   letter-spacing: 0.1rem;
   text-transform: uppercase;
@@ -1533,5 +1528,67 @@
   /* Page title */
   .p2p-entry-page .practice-hub-title {
     font-size: clamp(32px, 4vw, 68px);
+  }
+}
+
+/* ── Phones: same pattern as Free play — page scrolls, sticky stacked footer ── */
+@media (max-width: 640px) {
+  .p2p-entry-page.practice-hub--practice {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding: calc(var(--safe-top) + 3.25rem)
+      calc(var(--safe-right) + var(--space-3)) 0
+      calc(var(--safe-left) + var(--space-3));
+  }
+
+  .p2p-entry-page .practice-hub-header {
+    flex-shrink: 0;
+  }
+
+  .p2p-entry-page .practice-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0;
+  }
+
+  .p2p-entry-page .ph-picker-block .p2p-picker-row,
+  .p2p-entry-page .ph-picker-block .p2p-duel-format,
+  .p2p-entry-page .p2p-modifiers-section .ph-picker-block .p2p-duel-format,
+  .p2p-entry-page .p2p-modifiers-section .p2p-duel-format {
+    padding-inline: 0;
+    margin-inline: 0;
+  }
+
+  .p2p-entry-page .practice-actions,
+  .p2p-entry-page--stepped .practice-panel > .practice-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    flex-shrink: 0;
+    margin-top: auto;
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--space-3) 0 calc(var(--safe-bottom) + var(--space-4));
+    background: linear-gradient(to top, #000 70%, rgb(0 0 0 / 0));
+  }
+
+  .p2p-entry-page .practice-actions .button {
+    width: 100%;
+    flex: 0 0 auto;
   }
 }

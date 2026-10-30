@@ -21,19 +21,19 @@
 
 /* ── Fluid typography — scales proportionally with viewport width ── */
 .practice-hub-page.practice-hub--practice {
-  --ph-fs-soon: calc(0.2rem + 0.58vw);
-  --ph-fs-gate-check: calc(0.18rem + 0.52vw);
-  --ph-fs-gate-meta: calc(0.16rem + 0.48vw);
-  --ph-fs-play-style-sub: calc(0.2rem + 0.65vw);
-  --ph-fs-caption: calc(0.24rem + 0.78vw);
-  --ph-fs-body-sm: calc(0.28rem + 0.86vw);
-  --ph-fs-tier: calc(0.3rem + 0.82vw);
-  --ph-fs-body: calc(0.36rem + 0.98vw);
-  --ph-fs-ui: calc(0.4rem + 1.08vw);
-  --ph-fs-heading-sm: calc(0.46rem + 1.2vw);
-  --ph-fs-heading: calc(0.5rem + 1.38vw);
-  --ph-fs-display-sm: calc(0.58rem + 1.9vw);
-  --ph-fs-display: calc(0.72rem + 2.85vw);
+  --ph-fs-soon: max(10px, calc(0.2rem + 0.58vw));
+  --ph-fs-gate-check: max(10px, calc(0.18rem + 0.52vw));
+  --ph-fs-gate-meta: max(10px, calc(0.16rem + 0.48vw));
+  --ph-fs-play-style-sub: max(11px, calc(0.2rem + 0.65vw));
+  --ph-fs-caption: max(11px, calc(0.24rem + 0.78vw));
+  --ph-fs-body-sm: max(12px, calc(0.28rem + 0.86vw));
+  --ph-fs-tier: max(12px, calc(0.3rem + 0.82vw));
+  --ph-fs-body: max(13px, calc(0.36rem + 0.98vw));
+  --ph-fs-ui: max(14px, calc(0.4rem + 1.08vw));
+  --ph-fs-heading-sm: max(15px, calc(0.46rem + 1.2vw));
+  --ph-fs-heading: max(16px, calc(0.5rem + 1.38vw));
+  --ph-fs-display-sm: max(20px, calc(0.58rem + 1.9vw));
+  --ph-fs-display: max(24px, calc(0.72rem + 2.85vw));
   /* Panel caps — chrome reserve scales with viewport width */
   --ph-page-max-width: 88vw;
   --ph-chrome-vw: 22vw;
@@ -44,8 +44,8 @@
   --ph-glow-gutter: max(1.5rem, 2.5vw, calc(var(--ph-card-glow-blur) * 0.85));
   --ph-content-inset: max(0.45rem, calc(var(--ph-glow-gutter) * 0.35));
   --ph-section-gap: 1.1vw;
-  --ph-compact-card-min: calc(4.6vw);
-  --ph-compact-card-pad-y: 0.65vw;
+  --ph-compact-card-min: max(3.15rem, 4.6vw);
+  --ph-compact-card-pad-y: max(0.7rem, 0.65vw);
   --ph-compact-card-pad-x: calc(0.85vw + var(--ph-glow-gutter) * 0.12);
   --ph-compact-icon: 2.4vw;
 }
@@ -573,15 +573,10 @@
 .practice-hub-page .practice-hub-panel-footer .practice-back.button {
   flex: 1 1 0;
   width: auto;
-  height: 3vw;
-  min-height: 30px;
   margin: 0;
-  padding: 1%;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
   font-weight: 400;
-  letter-spacing: 0.1rem;
   text-transform: uppercase;
   color: #fff;
   background-color: transparent;
@@ -951,7 +946,7 @@
   .local-setup-top-row
   .practice-slot-role {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.1rem;
@@ -1158,20 +1153,14 @@
 .practice-hub-page .local-human-p2p-link.button {
   box-sizing: border-box;
   width: 100%;
-  height: auto;
-  min-height: unset;
   margin: 0;
-  padding: max(0.4rem, 0.55vw) var(--ph-content-inset);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
   font-weight: 400;
-  letter-spacing: 0.1rem;
   text-transform: uppercase;
-  line-height: 1;
   color: rgba(255, 255, 255, 0.62);
   background-color: transparent;
   border-color: rgba(255, 255, 255, 0.24);
@@ -1438,7 +1427,7 @@
   .p2p-picker-card--compact-inline
   .p2p-picker-sub {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.1rem;
@@ -1447,7 +1436,7 @@
 
 .practice-hub-page .local-tier-card .p2p-duel-format__label {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.1rem;
@@ -1456,7 +1445,7 @@
 
 .practice-hub-page .p2p-modifiers-section .p2p-duel-format__label {
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.1rem;
@@ -2560,5 +2549,127 @@
     display: grid;
     min-height: var(--ph-compact-card-min);
     height: auto;
+  }
+}
+
+/* ── Phones: header and footer stay put; only the setup column scrolls ── */
+@media (max-width: 640px) {
+  html:has(.practice-hub-page),
+  body:has(.practice-hub-page) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .page-reveal-scope:has(.practice-hub-page) {
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .practice-hub-page.practice-hub,
+  .practice-hub-page.practice-hub--practice,
+  .practice-hub-page.practice-hub--setup-pick {
+    max-width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+    gap: var(--space-2);
+    padding: calc(var(--safe-top) + 3.25rem)
+      calc(var(--safe-right) + var(--space-3)) 0
+      calc(var(--safe-left) + var(--space-3));
+  }
+
+  .practice-hub-page .practice-hub-header {
+    grid-row: 1;
+  }
+
+  .practice-hub-page.practice-hub--practice {
+    --ph-play-area-max-height: none;
+    --ph-panel-max-height: none;
+    --ph-compact-icon: 18px;
+    --ph-content-inset: 0;
+  }
+
+  /* Glow gutters were pulling card edges in from the footer buttons. */
+  .practice-hub-page .ph-picker-block .p2p-picker-row,
+  .practice-hub-page .ph-picker-block .practice-four-slot,
+  .practice-hub-page .ph-picker-block .local-tier-grid,
+  .practice-hub-page .ph-picker-block .p2p-duel-format,
+  .practice-hub-page .p2p-modifiers-section .ph-picker-block .p2p-duel-format {
+    padding-inline: 0;
+    margin-inline: 0;
+  }
+
+  .practice-hub-page .p2p-duel-format__icon,
+  .practice-hub-page .p2p-modifiers-section .p2p-duel-format__icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .practice-free-play-panel__body .local-setup-top-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .practice-hub-page .local-tier-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .practice-hub-page .practice-panel {
+    grid-row: 2;
+    align-self: stretch;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    overflow: hidden;
+  }
+
+  .practice-hub-page .practice-play-style-area {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .practice-hub-page .practice-hub-panel-footer {
+    position: static;
+    flex-shrink: 0;
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    padding: var(--space-3) 0 calc(var(--safe-bottom) + var(--space-4));
+    background: linear-gradient(to top, #000 70%, rgb(0 0 0 / 0));
+  }
+
+  .practice-hub-page .practice-hub-panel-footer .button {
+    width: 100%;
+  }
+
+  .p2p-modifiers-section .p2p-duel-format,
+  .practice-hub-page .p2p-modifiers-section .ph-picker-block .p2p-duel-format {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .practice-hub-page--challenges .sc-list,
+  .solo-challenges-panel .sc-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-card--lightning
+    .p2p-picker-sub,
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-card--nostr
+    .p2p-picker-sub {
+    display: none;
   }
 }

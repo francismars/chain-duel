@@ -1,29 +1,3 @@
-/* About page styles - matching legacy exactly */
-
-#brand {
-  position: fixed;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#chain {
-  color: white;
-  margin-top: 0%;
-  margin-left: 1%;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-#duel {
-  color: white;
-  margin-top: 0%;
-  text-align: right;
-  font-size: 2.5cqw;
-  margin-right: 1%;
-}
-
 #about {
   margin: 0 29vw;
 }
@@ -39,7 +13,7 @@
 
 .page {
   position: absolute;
-  font-size: 1.3vw;
+  font-size: max(13px, 1.3vw);
   height: 100%;
   width: 100%;
 }
@@ -64,13 +38,13 @@
   text-align: center;
   letter-spacing: 0.5rem;
   width: 100%;
-  font-size: 1vw;
+  font-size: max(13px, 1vw);
 }
 
 .page p {
   margin-top: 0;
-  margin-bottom: 2vw;
-  line-height: 1.8vw;
+  margin-bottom: max(12px, 2vw);
+  line-height: 1.6;
 }
 
 .page p:last-child {
@@ -95,7 +69,7 @@ p.text-upscale {
 }
 
 h2.label {
-  font-size: 1.5vw;
+  font-size: max(15px, 1.5vw);
   letter-spacing: 0.01rem;
   margin-bottom: 3%;
 }
@@ -114,7 +88,7 @@ img.inline-logo {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: min(100%, 25vw);
+  width: var(--btn-w);
   margin-left: auto;
   margin-right: auto;
   gap: 0.4vw;
@@ -131,9 +105,7 @@ img.inline-logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   box-sizing: border-box;
-  line-height: 1;
 }
 
 #prevButton {
@@ -152,12 +124,12 @@ img.inline-logo {
 
 .credit .label {
   margin-bottom: 1%;
-  font-size: 1cqw;
+  font-size: max(13px, 1cqw);
 }
 
 .credit .credit-name {
   margin-bottom: 6%;
-  font-size: 3vw;
+  font-size: max(18px, 3vw);
   letter-spacing: 0.005rem;
 }
 
@@ -167,7 +139,7 @@ img.inline-logo {
 }
 
 .credits .liquidity .credit-name {
-  font-size: 2vw;
+  font-size: max(15px, 2vw);
   letter-spacing: 0.01rem;
 }
 
@@ -185,4 +157,31 @@ img.inline-logo {
 
 .qr {
   width: 100%;
+}
+
+@media (max-width: 1024px) {
+  #about {
+    margin: 0 max(var(--space-4), 8vw);
+  }
+}
+
+@media (max-width: 640px) {
+  #about {
+    margin: 0 calc(var(--space-4) + var(--safe-left)) 0
+      calc(var(--space-4) + var(--safe-right));
+    padding-top: calc(var(--safe-top) + 3.5rem);
+  }
+
+  .pages {
+    height: min(68dvh, 34rem);
+    margin-bottom: 2.5rem;
+  }
+
+  .page-inner {
+    height: 100%;
+  }
+
+  .credit .credit-name {
+    font-size: max(16px, 3vw);
+  }
 }

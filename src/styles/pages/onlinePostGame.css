@@ -1,43 +1,12 @@
-/* —— Brand header —— */
-#brand {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  pointer-events: none;
-  z-index: 10;
-}
-
-#chain {
-  color: white;
-  margin-top: 0;
-  margin-left: 1%;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-#duel {
-  color: white;
-  margin-top: 0;
-  margin-right: 1%;
-  text-align: right;
-  font-size: 2.5cqw;
-}
-
 .online-postgame-page #sponsorship-online-postgame .sponsored-img {
-  height: 3.5vw;
-  max-height: none;
-  max-width: 24vw;
   width: auto;
+  height: auto;
+  max-height: 3.5vw;
+  max-width: 24vw;
 }
 
 /* —— Page —— */
 .online-postgame-page {
-  --online-rooms-btn-width: 28vw;
-  --online-rooms-btn-height: 3vw;
-  --online-rooms-btn-font: 0.8vw;
-
   min-height: 100vh;
   padding: 3.4rem 1.25rem 2rem;
   display: flex;
@@ -402,17 +371,12 @@
 .online-postgame-round-replay-btn.button {
   width: auto;
   min-width: unset;
-  height: var(--online-rooms-btn-height);
-  min-height: unset;
-  padding: 1% 1.4vw;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.48rem;
   font-family: Inter, sans-serif;
-  font-size: var(--online-rooms-btn-font);
   font-weight: 400;
-  letter-spacing: 0.1rem;
   text-transform: uppercase;
   border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.34);
@@ -660,20 +624,14 @@
 }
 
 .online-postgame-btn-back {
-  width: min(100%, var(--online-rooms-btn-width));
-  min-width: min(100%, var(--online-rooms-btn-width));
-  height: var(--online-rooms-btn-height);
-  min-height: unset;
-  padding: 1%;
+  width: var(--btn-w);
   margin: 0;
   border: 1px solid rgba(255, 255, 255, 0.34);
   color: #fff;
   background: transparent;
   box-shadow: none;
   font-family: Inter, sans-serif;
-  font-size: var(--online-rooms-btn-font);
   font-weight: 400;
-  letter-spacing: 0.1rem;
   text-transform: uppercase;
   animation: none;
   box-sizing: border-box;
@@ -902,16 +860,10 @@
 .online-postgame-page
   .online-postgame-don-panel
   .button.online-postgame-btn-don {
-  height: 42px;
-  min-width: 13rem;
-  padding: 0 1rem;
   border-radius: 0;
   border-width: 1px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.72rem;
   font-weight: 500;
-  letter-spacing: 0.1rem;
-  line-height: 1;
   text-transform: uppercase;
   transition: all 120ms ease-in-out;
   box-shadow: none;
@@ -970,7 +922,6 @@
     .button.online-postgame-btn-don {
     width: 100%;
     min-width: 0;
-    height: 44px;
   }
 }
 
@@ -1030,11 +981,6 @@
 
   .online-postgame-grid {
     grid-template-columns: 1fr;
-  }
-
-  .online-postgame-actions .button {
-    height: 44px;
-    font-size: 0.88rem;
   }
 
   .online-postgame-payout-row {

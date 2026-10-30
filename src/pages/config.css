@@ -1,31 +1,3 @@
-/* Config page styles - matching legacy exactly */
-
-header#brand:has(+ .config-page) {
-  position: fixed;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 2;
-  pointer-events: none;
-}
-
-header#brand:has(+ .config-page) #chain {
-  color: white;
-  margin-top: 0%;
-  margin-left: 1%;
-  text-align: left;
-  font-size: 2.5cqw;
-}
-
-header#brand:has(+ .config-page) #duel {
-  color: white;
-  margin-top: 0%;
-  text-align: right;
-  font-size: 2.5cqw;
-  margin-right: 1%;
-}
-
 .config-row {
   display: flex;
   width: min(90vw, 44rem);
@@ -96,12 +68,11 @@ header#brand:has(+ .config-page) #duel {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
+  min-height: var(--btn-h-md);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-sm);
   text-transform: uppercase;
-  letter-spacing: 0.1rem;
+  letter-spacing: var(--btn-letter-spacing);
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
@@ -207,35 +178,19 @@ header#brand:has(+ .config-page) #duel {
 
 .config-shell__footer .button {
   margin: 0 auto;
-  width: 28vw;
+  width: var(--btn-w);
   max-width: 100%;
   min-width: 0;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
 }
 
 /* Same box as the home menu .button (28vw × 3vw, 0.8cqw). */
 .config-shell__footer #backButton.button,
 .config-page #nostrSignOut.button {
   margin: 0 auto;
-  width: 28vw;
+  width: var(--btn-w);
   max-width: 100%;
   min-width: 0;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
   white-space: nowrap;
-}
-
-/* Sign out lives inside the profile panel container, so cqw shrinks the
-   label. Match Main Menu, whose 0.8cqw resolves against the viewport. */
-.config-page #nostrSignOut.button {
-  font-size: 0.8svw;
 }
 
 .config-page #nostrSignInNsec.button {
@@ -243,11 +198,6 @@ header#brand:has(+ .config-page) #duel {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
   white-space: nowrap;
 }
 
@@ -322,11 +272,6 @@ header#brand:has(+ .config-page) #duel {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
 }
 
 .config-kbd-focus {
@@ -384,12 +329,11 @@ header#brand:has(+ .config-page) #duel {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
+  min-height: var(--btn-h-md);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-sm);
   text-transform: uppercase;
-  letter-spacing: 0.1rem;
+  letter-spacing: var(--btn-letter-spacing);
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
@@ -438,6 +382,7 @@ header#brand:has(+ .config-page) #duel {
 
 .config-login-panel {
   display: grid;
+  position: relative;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -455,6 +400,7 @@ header#brand:has(+ .config-page) #duel {
 }
 
 .config-login-panel__block--inactive {
+  position: absolute;
   visibility: hidden;
   pointer-events: none;
   z-index: 0;
@@ -515,11 +461,6 @@ header#brand:has(+ .config-page) #duel {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
   box-sizing: border-box;
 }
 
@@ -607,10 +548,9 @@ header#brand:has(+ .config-page) #duel {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  height: 3vw;
-  min-height: 0;
+  min-height: var(--btn-h-md);
   padding: 1%;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 500;
   letter-spacing: 0.1rem;
   text-transform: uppercase;
@@ -659,10 +599,9 @@ a.config-nc-signer-btn:not([href]) {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 3vw;
-  min-height: 0;
+  min-height: var(--btn-h-md);
   padding: 1%;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   letter-spacing: 0.1rem;
 }
 
@@ -690,16 +629,10 @@ a.config-nc-signer-btn.config-kbd-focus {
   box-shadow: 0 0 16px rgb(255 255 255 / 0.22);
 }
 
-.config-nc-qr-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
+.modal.config-nc-qr-modal {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: min(4vw, 24px);
-  background: rgb(0 0 0 / 0.88);
-  backdrop-filter: blur(6px);
 }
 
 .config-nc-qr-modal__body {
@@ -842,12 +775,11 @@ a.config-nc-signer-btn.config-kbd-focus {
 .config-nc-copy-btn {
   flex: 0 0 auto;
   width: auto;
-  height: 3vw;
-  min-height: 0;
+  min-height: var(--btn-h-md);
   padding: 0 0.75rem;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   text-transform: uppercase;
-  letter-spacing: 0.1rem;
+  letter-spacing: var(--btn-letter-spacing);
   font-family: inherit;
   color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.08);
@@ -906,11 +838,6 @@ a.config-nc-signer-btn.config-kbd-focus {
   width: auto;
   max-width: 100%;
   min-width: 0;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -975,13 +902,7 @@ a.config-nc-signer-btn.config-kbd-focus {
   width: auto;
   min-width: 0;
   max-width: 100%;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
   white-space: nowrap;
-  line-height: 1.2;
 }
 
 .config-nip46-auth-banner__btn--secondary {
@@ -1005,16 +926,10 @@ a.config-nc-signer-btn.config-kbd-focus {
   text-align: left;
 }
 
-.config-row button,
 .config-row .button {
   margin-right: 0;
-  width: 28vw;
+  width: var(--btn-w);
   max-width: 100%;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
 }
 
 .config-page__actions {
@@ -1032,19 +947,14 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-page__actions .button {
   margin: 0;
-  width: 28vw;
+  width: var(--btn-w);
   max-width: 100%;
   min-width: 0;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
   white-space: nowrap;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
 }
 
 .value {
-  font-size: 1.5vw;
+  font-size: max(15px, 1.5vw);
 }
 
 .config-overlay {
@@ -1420,13 +1330,8 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-profile-card__actions .button {
   margin: 0;
-  width: 28vw;
+  width: var(--btn-w);
   max-width: 100%;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
   color: #ff5a5a;
   border-color: rgb(255 90 90 / 55%);
   --button-glow-bg-peak: rgb(255 90 90 / 30%);
@@ -1853,13 +1758,8 @@ a.config-nc-signer-btn.config-kbd-focus {
 
 .config-nwc-block__input-row .button {
   margin: 0 auto;
-  width: 28vw;
+  width: var(--btn-w);
   max-width: 100%;
-  height: 3vw;
-  min-height: 0;
-  padding: 1%;
-  font-size: 0.8cqw;
-  letter-spacing: 0.1rem;
 }
 
 .config-nwc-block__input {
@@ -2311,5 +2211,46 @@ a.config-nc-signer-btn.config-kbd-focus {
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;
+  }
+}
+
+/* Phones: section + login tabs become a swipeable strip instead of squeezing. */
+@media (max-width: 640px) {
+  .config-section-tabs,
+  .config-login-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .config-section-tabs::-webkit-scrollbar,
+  .config-login-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .config-section-tab,
+  .config-login-tab {
+    flex: 0 0 auto;
+    padding-inline: var(--space-3);
+    scroll-snap-align: start;
+  }
+
+  /* Fit the panel to the screen so MAIN MENU stays visible; the tab scrolls. */
+  .config-panel {
+    height: calc(100dvh - 11rem - var(--safe-top) - var(--safe-bottom));
+    min-height: 20rem;
+    padding: var(--space-2);
+  }
+
+  .config-panel > .config-tab-panel {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .config-page {
+    padding-top: calc(var(--safe-top) + 2.75rem);
+    padding-bottom: calc(var(--safe-bottom) + var(--space-2));
   }
 }

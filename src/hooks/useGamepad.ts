@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { CHAIN_DUEL_LNURL_COMPAT_QR_EVENT } from '@/shared/constants/events';
+import {
+  dispatchSyntheticKey,
+  syntheticKeySource,
+} from '@/lib/controls/syntheticKeys';
 
 export type GamepadInputMode = 'menu' | 'game';
 
@@ -38,11 +42,9 @@ const KEY_TO_CODE: Record<string, string> = {
   Enter: 'Enter',
 };
 
-const gamepadSyntheticKeys = new WeakSet<Event>();
-
 /** True for keyboard events synthesized from a controller, not a physical key. */
 export function isGamepadSyntheticKey(event: Event): boolean {
-  return gamepadSyntheticKeys.has(event);
+  return syntheticKeySource(event) === 'gamepad';
 }
 
 function dispatchKey(
@@ -50,13 +52,7 @@ function dispatchKey(
   init: { key?: string; code?: string }
 ) {
   const code = init.code ?? (init.key ? KEY_TO_CODE[init.key] : undefined);
-  const event = new KeyboardEvent(type, {
-    ...init,
-    ...(code ? { code } : {}),
-    bubbles: true,
-  });
-  gamepadSyntheticKeys.add(event);
-  window.dispatchEvent(event);
+  dispatchSyntheticKey(type, { ...init, ...(code ? { code } : {}) }, 'gamepad');
 }
 
 /**

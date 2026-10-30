@@ -31,6 +31,7 @@ import '@/components/ui/Sponsorship.css';
 import './tournbracket.css';
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
 import { useLnurlQrCompatiblePulse } from '@/features/setup-menu/hooks/useLnurlQrCompatiblePulse';
+import { BrandHeader } from '@/components/layout/BrandHeader';
 
 /** Strip external styles from SVG so page font CSS applies to inlined SVG. */
 function stripSvgStyle(svgText: string): string {
@@ -733,10 +734,7 @@ export default function TournamentBracket() {
 
   return (
     <div className="tournbracket-page">
-      <header id="brand" className="tournbracket-header">
-        <h2 id="chain">CHAIN</h2>
-        <h2 id="duel">DUEL</h2>
-      </header>
+      <BrandHeader className="tournbracket-header" />
 
       <div className="tournbracket-middle">
         <div id="bracket">

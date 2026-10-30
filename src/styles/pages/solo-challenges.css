@@ -1163,7 +1163,7 @@
   color: #fff;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   .practice-hub-page--challenges .sc-gate__split {
     grid-template-columns: 1fr;
     align-items: start;
@@ -2157,15 +2157,10 @@
 
 .solo-challenges-page .practice-back.button {
   flex: 0 1 100%;
-  height: 3vw;
-  min-height: 30px;
   margin: 0;
-  padding: 1%;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8cqw;
   font-weight: 400;
-  letter-spacing: 0.1rem;
   color: #fff;
   border-color: rgba(255, 255, 255, 0.34);
   box-shadow: none;
@@ -2207,6 +2202,181 @@
   .solo-challenges-layout {
     grid-template-columns: 1fr;
     gap: clamp(10px, 1.5vh, 16px);
+  }
+}
+
+@media (max-width: 640px) {
+  .sc-list,
+  .practice-hub-page--challenges .sc-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__inner,
+  .practice-hub-page--challenges .sc-row__inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__info,
+  .practice-hub-page--challenges .sc-row__info {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__title,
+  .practice-hub-page--challenges .sc-row__title {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.55rem;
+    width: auto;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__name,
+  .practice-hub-page--challenges .sc-row__name,
+  .practice-challenges-panel.solo-challenges-panel
+    .sc-row__title-text
+    .sc-row__name,
+  .practice-hub-page--challenges .sc-row__title-text .sc-row__name {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.28em;
+    min-height: 0;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__name-line,
+  .practice-hub-page--challenges .sc-row__name-line {
+    width: auto;
+    min-height: 0;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__tags,
+  .practice-hub-page--challenges .sc-row__tags {
+    justify-content: flex-start;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__bounty,
+  .practice-hub-page--challenges .sc-row__bounty,
+  .practice-challenges-panel.solo-challenges-panel .sc-row__bounty--locked,
+  .practice-challenges-panel.solo-challenges-panel .sc-row__bounty--violator,
+  .practice-hub-page--challenges .sc-row__bounty--locked,
+  .practice-hub-page--challenges .sc-row__bounty--violator {
+    width: auto;
+    margin-top: 0;
+    margin-left: auto;
+    align-items: flex-end;
+    padding-top: 0;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel
+    .sc-row--selected
+    .sc-row__bounty,
+  .practice-hub-page--challenges .sc-row--selected .sc-row__bounty {
+    padding-right: 4.25rem;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__sats-line,
+  .practice-challenges-panel.solo-challenges-panel
+    .sc-row__bounty--locked
+    .sc-row__sats-line,
+  .practice-hub-page--challenges .sc-row__sats-line,
+  .practice-hub-page--challenges .sc-row__bounty--locked .sc-row__sats-line {
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__unit,
+  .practice-hub-page--challenges .sc-row__unit {
+    text-align: right;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__name,
+  .practice-hub-page--challenges .sc-row__name,
+  .practice-challenges-panel.solo-challenges-panel
+    .sc-row__title-text
+    .sc-row__name,
+  .practice-hub-page--challenges .sc-row__title-text .sc-row__name {
+    font-size: 1.2rem;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__icon,
+  .solo-challenges-panel .sc-row__icon,
+  .practice-hub-page--challenges .sc-row__icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .practice-challenges-panel.solo-challenges-panel .sc-row__title-icon,
+  .solo-challenges-panel .sc-row__title-icon,
+  .practice-hub-page--challenges .sc-row__title-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .practice-hub-page--challenges
+    .sc-row[data-rank]
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .solo-challenges-panel .sc-row__bounty--locked .sc-row__sats {
+    font-size: 1.85rem;
+  }
+
+  .practice-hub-page--challenges .sc-row__bounty--locked .sc-row__lock,
+  .solo-challenges-panel .sc-row__bounty--locked .sc-row__lock {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Phones have no hover. Resting cards use the brighter hover colors,
+   and the selected card keeps the claim badge without a pointer. */
+@media (hover: none) {
+  .practice-hub-page--challenges .sc-row[data-rank] .sc-row__name-line {
+    color: rgba(var(--sc-accent-strong), 0.88);
+  }
+
+  .practice-hub-page--challenges .sc-row[data-rank='1'] .sc-row__icon,
+  .practice-hub-page--challenges .sc-row[data-rank='2'] .sc-row__icon,
+  .practice-hub-page--challenges .sc-row[data-rank='3'] .sc-row__icon {
+    color: rgba(var(--sc-accent-strong), 0.92);
+  }
+
+  .practice-hub-page--challenges .sc-row[data-rank='4'] .sc-row__icon,
+  .practice-hub-page--challenges .sc-row[data-rank='5'] .sc-row__icon,
+  .practice-hub-page--challenges .sc-row[data-rank='6'] .sc-row__icon {
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  .practice-hub-page--challenges
+    .sc-row[data-rank='1']
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .practice-hub-page--challenges
+    .sc-row[data-rank='2']
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .practice-hub-page--challenges
+    .sc-row[data-rank='3']
+    .sc-row__bounty--locked
+    .sc-row__sats {
+    color: rgba(var(--sc-accent-strong), 0.9);
+  }
+
+  .practice-hub-page--challenges
+    .sc-row[data-rank='4']
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .practice-hub-page--challenges
+    .sc-row[data-rank='5']
+    .sc-row__bounty--locked
+    .sc-row__sats,
+  .practice-hub-page--challenges
+    .sc-row[data-rank='6']
+    .sc-row__bounty--locked
+    .sc-row__sats {
+    color: rgba(255, 255, 255, 0.9);
   }
 }
 

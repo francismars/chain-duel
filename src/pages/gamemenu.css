@@ -1,10 +1,10 @@
 /* P2P game menu – LNURL panel (layout shared in game-setup.css) */
 
 .gamemenu-page #sponsorshipGameMenu .sponsored-img {
-  height: 3.5vw;
-  max-height: none;
-  max-width: 24vw;
   width: auto;
+  height: auto;
+  max-height: 3.5vw;
+  max-width: 24vw;
 }
 
 .qr-expand-backdrop {
@@ -58,6 +58,10 @@
   flex-shrink: 0;
 }
 
+.gamemenu-page .gamemenu-lnurl-actions {
+  display: none;
+}
+
 .gamemenu-page .prizeinfocard {
   display: flex;
   width: 33%;
@@ -73,13 +77,13 @@
   margin-top: 0;
   color: grey;
   text-align: center;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
 }
 
 #prizevaluesats {
   margin-top: 0;
   color: white;
-  font-size: 3cqw;
+  font-size: max(18px, 3cqw);
   text-align: center;
   margin-bottom: 0;
   display: inline-flex;
@@ -103,7 +107,7 @@
 #prizeinfosats {
   margin-top: 0;
   color: white;
-  font-size: 1.5cqw;
+  font-size: max(15px, 1.5cqw);
   text-align: center;
   margin-bottom: 0;
 }
@@ -211,14 +215,14 @@
 #player2sats,
 #player1sats {
   color: white;
-  font-size: 2cqw;
+  font-size: max(15px, 2cqw);
   padding-bottom: 0;
 }
 
 .player1info,
 .player2info {
   color: white;
-  font-size: 2.5cqw;
+  font-size: max(18px, 2.5cqw);
   padding-top: 0;
   margin-top: 0.2cqw;
   white-space: nowrap;
@@ -236,7 +240,7 @@
 }
 
 .sats-label {
-  font-size: 1.3cqw;
+  font-size: max(13px, 1.3cqw);
 }
 
 .gamemenu-page .qrcodeContainer {
@@ -393,7 +397,7 @@
 }
 
 .deposit-message {
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   opacity: 0.5;
   margin-top: 0.7cqw;
 }
@@ -423,7 +427,7 @@
   margin: auto;
   background: #fff;
   border-radius: 100px;
-  font-size: 0.7vw;
+  font-size: max(11px, 0.7vw);
   padding: 0.3vw 0.8vw;
   box-shadow: 0 0 10px #fff;
 }
@@ -515,14 +519,14 @@
 }
 
 .gamemenu-page.is-nostr .nostr-relay-name {
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   letter-spacing: 0.06em;
   line-height: 1.3;
   word-break: break-all;
 }
 
 .gamemenu-page.is-nostr .nostr-event-id {
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   letter-spacing: 0.06em;
   line-height: 1.3;
   word-break: break-all;
@@ -543,7 +547,7 @@
   margin: 0;
   width: 100%;
   text-align: center;
-  font-size: 3.5cqw;
+  font-size: max(22px, 3.5cqw);
 }
 
 .gamemenu-page.is-nostr .nostr-zap-title-char {
@@ -584,7 +588,7 @@
 }
 
 .gamemenu-page.is-nostr #gameCodeNostr {
-  font-size: 2.1cqw;
+  font-size: max(15px, 2.1cqw);
   line-height: 1;
   text-align: center;
   width: 100%;
@@ -648,15 +652,15 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   display: block;
   width: fit-content;
   margin: 0.7rem auto 0;
-  height: 3vw;
+  min-height: var(--btn-h-md);
   padding: 0 1.05rem;
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   font-weight: 400;
-  letter-spacing: 0.1rem;
+  letter-spacing: var(--btn-letter-spacing);
   line-height: 1;
   text-transform: uppercase;
   cursor: pointer;
@@ -678,15 +682,13 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   background: rgba(255, 255, 255, 0.28);
 }
 
-.rules-modal-backdrop {
-  position: fixed;
-  inset: 0;
+.modal-backdrop.rules-modal-backdrop {
   z-index: 40;
-  display: flex;
+  padding: 0;
   background: transparent;
 }
 
-.rules-modal {
+.modal.rules-modal {
   width: 100%;
   height: 100%;
   max-height: none;
@@ -739,26 +741,10 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 }
 
 .rules-modal__close {
-  width: min(25vw, 16rem);
-  min-width: 12rem;
-  height: 3vw;
-  padding: 0;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background: transparent;
-  color: white;
-  font-size: 0.8cqw;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  line-height: 1;
-  cursor: pointer;
+  margin: 0;
 }
 
-.rules-modal__actions .rules-slider__arrow--selected,
-.rules-modal__close--selected {
+.rules-modal__actions .rules-slider__arrow--selected {
   color: white;
   outline: none;
   animation: glowing 1.4s ease-in-out infinite;
@@ -1042,7 +1028,7 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 }
 
 .rules-modal__actions .rules-slider__nav {
-  width: min(25vw, 16rem);
+  width: var(--btn-w);
   min-width: 12rem;
   margin-top: 0;
   gap: 0.15rem;
@@ -1051,7 +1037,7 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 .rules-modal__actions .rules-slider__arrow {
   flex: 1;
   min-width: 0;
-  height: 3vw;
+  min-height: var(--btn-h-md);
   padding: 0;
   box-sizing: border-box;
   display: inline-flex;
@@ -1059,7 +1045,7 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.4);
   color: white;
-  font-size: 0.8cqw;
+  font-size: var(--fs-sm);
   letter-spacing: 0.08em;
 }
 
@@ -1294,17 +1280,17 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
 .gamemenu-page.gamemenu-preview.is-nostr
   #player2satsContainer
   span:not(.sats-label) {
-  font-size: 2cqw;
+  font-size: max(15px, 2cqw);
 }
 
 .gamemenu-page.gamemenu-preview.is-nostr #player1satsContainer .sats-label,
 .gamemenu-page.gamemenu-preview.is-nostr #player2satsContainer .sats-label {
-  font-size: 1.15cqw;
+  font-size: max(13px, 1.15cqw);
 }
 
 .gamemenu-page.gamemenu-preview.is-nostr .player1info,
 .gamemenu-page.gamemenu-preview.is-nostr .player2info {
-  font-size: 4cqw;
+  font-size: max(22px, 4cqw);
 }
 
 .gamemenu-page.gamemenu-preview.is-nostr .playerSquare,
@@ -1371,19 +1357,116 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
 }
 
 @media (max-width: 640px) {
-  .gamemenu-preview #player1card,
-  .gamemenu-preview #player2card,
-  .gamemenu-preview .prizeinfocard {
+  /* Prize on top, then each player's QR + info as a full-width row. */
+  .gamemenu-page #bottomInfo {
+    flex-wrap: wrap;
+    row-gap: var(--space-4);
+  }
+
+  .gamemenu-page #player1card,
+  .gamemenu-page #player2card,
+  .gamemenu-page .prizeinfocard {
     flex: 1 0 100%;
     width: 100%;
     justify-content: center;
   }
 
+  .gamemenu-page .prizeinfocard {
+    order: -1;
+  }
+
+  .gamemenu-page #player2card {
+    flex-direction: row-reverse;
+  }
+
+  .gamemenu-page .player-card-info {
+    height: auto;
+  }
+
+  /* Desktop mirrors player 2 ("sats 0", name before square); on phones both
+     cards read left-to-right the same way. */
+  .gamemenu-page #player2satsContainer,
+  .gamemenu-page #player2cardinfo .condensed {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.35em;
+  }
+
+  /* QR has to be scannable from another phone. */
+  .gamemenu-page .qrcodeContainer {
+    align-self: center;
+  }
+
+  .gamemenu-page .qrcodeContainer .qrcode {
+    width: min(32vw, 128px);
+    height: min(32vw, 128px);
+  }
+
+  .gamemenu-page:not(.is-nostr) #player1card,
+  .gamemenu-page:not(.is-nostr) #player2card {
+    flex-wrap: wrap;
+    row-gap: 0.65rem;
+  }
+
+  .gamemenu-page .gamemenu-lnurl-actions {
+    display: flex;
+    flex: 1 0 100%;
+    gap: 0.5rem;
+    order: 3;
+  }
+
+  .gamemenu-page .gamemenu-lnurl-action {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.55rem 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: transparent;
+    color: #fff;
+    font: inherit;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .gamemenu-page #player1cardinfo,
+  .gamemenu-page #player2cardinfo {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: flex-start;
+    text-align: left;
+    padding: 0 var(--space-3);
+  }
+
+  /* Preview locks player 2 to a right-aligned desktop column. On a phone that
+     parks the name on the far edge, away from the code. */
+  .gamemenu-page.gamemenu-preview #player1card,
+  .gamemenu-page.gamemenu-preview #player2card {
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .gamemenu-page.gamemenu-preview #player2card {
+    flex-direction: row;
+  }
+
+  .gamemenu-page.gamemenu-preview #qrcodeContainer2 {
+    order: -1;
+  }
+
   .gamemenu-page.gamemenu-preview #player1cardinfo,
   .gamemenu-page.gamemenu-preview #player2cardinfo {
     flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: none;
     align-items: flex-start;
     text-align: left;
+    padding: 0;
   }
 
   .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
@@ -1391,14 +1474,107 @@ html.tv-safe-inset .gamemenu-preview #bottomInfo,
     align-self: flex-start;
     justify-content: flex-start;
     text-align: left;
+    flex-direction: row-reverse;
   }
 
-  .gamemenu-preview #gameButtons {
-    flex-wrap: wrap;
+  .gamemenu-preview .qrcodeContainer .qrcode {
+    width: min(32vw, 128px);
+    height: min(32vw, 128px);
+    max-width: 128px;
+    max-height: 128px;
   }
 
-  .gamemenu-preview #gameButtons .button {
-    width: min(25vw, 100%);
-    min-width: 12rem;
+  .gamemenu-page #player2cardinfo #player2satsContainer,
+  .gamemenu-page #player2cardinfo .condensed,
+  .gamemenu-page #player2cardinfo .deposit-message {
+    align-self: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  /* Nostr is one shared note, not two payment cards. Desktop keeps five columns;
+     on a phone that squeezes relays and the note id to a few characters wide. */
+  .gamemenu-page.is-nostr #bottomInfo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--space-3);
+    row-gap: var(--space-4);
+    align-items: start;
+  }
+
+  .gamemenu-page.is-nostr .nostr-center-card {
+    grid-column: 1 / -1;
+    order: 0;
+    width: 100%;
+  }
+
+  .gamemenu-page.is-nostr #qrcodeContainerNostr.qrcodeContainer .qrcode {
+    width: min(42vw, 168px);
+    height: min(42vw, 168px);
+  }
+
+  .gamemenu-page.is-nostr .nostrLine,
+  .gamemenu-page.is-nostr .nostrLine.right {
+    order: 1;
+    flex: none;
+    width: auto;
+    min-width: 0;
+    align-self: start;
+    text-align: left;
+  }
+
+  .gamemenu-page.is-nostr .nostrLine .label {
+    text-align: left;
+  }
+
+  .gamemenu-page.is-nostr .nostr-relay-name,
+  .gamemenu-page.is-nostr .nostr-event-id {
+    letter-spacing: 0.02em;
+    line-height: 1.35;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .gamemenu-page.is-nostr #player1card,
+  .gamemenu-page.is-nostr #player2card {
+    grid-column: 1 / -1;
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .gamemenu-page.is-nostr #player1card {
+    order: 2;
+  }
+
+  .gamemenu-page.is-nostr #player2card {
+    order: 3;
+    flex-direction: row;
+  }
+
+  .gamemenu-page.is-nostr #player2cardinfo #player2satsContainer,
+  .gamemenu-page.is-nostr #player2cardinfo .condensed {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+
+  .gamemenu-page.is-nostr #player1cardinfo,
+  .gamemenu-page.is-nostr #player2cardinfo {
+    background: rgb(0 0 0 / 55%);
+    padding: 0.45rem 0.65rem;
+  }
+
+  .gamemenu-page.is-nostr .playerImg {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0 0.35rem;
+  }
+
+  /* The shared sticky bar sits over the second player while this panel is still
+     on screen. Let the actions follow the zap block instead. */
+  .game-setup-page.gamemenu-page.is-nostr #gameButtons {
+    position: static;
+    background: none;
+    margin-left: 0;
+    margin-right: 0;
   }
 }
