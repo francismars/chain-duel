@@ -37,8 +37,30 @@ body {
     url('/images/chainduel_bg.jpg');
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Phone pages scroll. Keep the scene and fade locked to the viewport. */
+@media (max-width: 640px) {
+  body:not(.game-page) {
+    background: transparent;
+  }
+
+  body:not(.game-page)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: #000;
+    background-image:
+      linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.5)),
+      url('/images/chainduel_bg.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+  }
 }
 
 audio {
