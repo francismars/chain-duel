@@ -156,7 +156,7 @@
    edge on release, and opens its panel toward the middle of the screen. */
 
 .corner-controls--touch {
-  --fab-size: 36px;
+  --fab-size: 44px;
   --fab-ease: cubic-bezier(0.22, 1, 0.36, 1);
   top: 0;
   left: 0;

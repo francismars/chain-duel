@@ -27,7 +27,7 @@ function getStoredTvSafeInset(): boolean {
 }
 
 /** Diameter of the floating quick-settings button (px). */
-const FAB_SIZE = 48;
+const FAB_SIZE = 44;
 
 export function CornerControls() {
   const navigate = useNavigate();

@@ -18,7 +18,11 @@ interface Dock {
 /** Finger travel before a press becomes a drag. */
 const DRAG_THRESHOLD_PX = 6;
 const EDGE_GAP_PX = 10;
-const DEFAULT_DOCK: Dock = { side: 'left', y: 0.62 };
+/**
+ * Top of the left edge, in the wordmark row. Mid-screen covered LEDGER,
+ * room rows, and the nsec field; lower spots land on the menu footers.
+ */
+const DEFAULT_DOCK: Dock = { side: 'left', y: 0 };
 
 function readDock(): Dock {
   try {
