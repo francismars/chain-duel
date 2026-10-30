@@ -17,6 +17,7 @@ import { SocketBoundaryParsers } from '@/shared/socket/socketBoundary';
 import { ONLINE_HOME } from '@/shared/constants/onlineRoutes';
 import { isOnlineSeatStartReady } from '@/lib/online/isOnlineSeatStartReady';
 import type {
+  OnlineForfeitPause as OnlineForfeitPauseState,
   OnlineReplayBlockEvent,
   OnlineRoomSnapshot,
 } from '@/types/socket';
@@ -35,8 +36,10 @@ import { expandOnlineReplayWire } from '@/replay/expandOnlineReplayWire';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { normalizeOnlineRoomSnapshot } from '@/game/online/normalizeOnlineSnapshot';
 import { onlinePingAccent } from '@/game/online/onlinePingAccent';
+import { OnlineForfeitPause } from '@/components/online/OnlineForfeitPause';
 import { MatchEndCard } from '@/features/game/MatchEndCard';
 import { MatchStartPrompt } from '@/features/game/MatchStartPrompt';
+import { coerceOnlineForfeitPause } from '@/lib/online/forfeitPause';
 import { useHudCaptureFeedback } from '@/features/game/hooks/useHudCaptureFeedback';
 import {
   captureFeedbackStyleFromCtx,
@@ -143,6 +146,8 @@ export default function OnlineGame({
     p2StartConfirmed?: boolean;
   } | null>(null);
   const [localStartConfirmed, setLocalStartConfirmed] = useState(false);
+  const [forfeitPause, setForfeitPause] =
+    useState<OnlineForfeitPauseState | null>(null);
   const [currentSessionID, setCurrentSessionID] = useState(
     () => sessionStorage.getItem('sessionID') ?? ''
   );
@@ -385,6 +390,7 @@ export default function OnlineGame({
     }
     replayLoadedRef.current = false;
     replayFetchInFlightRef.current = false;
+    setForfeitPause(null);
     setReplayLoaded(false);
     setReplayFrames([]);
     setReplayError('');
@@ -448,6 +454,7 @@ export default function OnlineGame({
           setDisplayHud,
           setSnapshot,
         });
+        setForfeitPause(parsed.forfeit ?? null);
       }
     };
     const onUpdated = (payload: unknown) => {
@@ -470,6 +477,7 @@ export default function OnlineGame({
             setDisplayHud,
             setSnapshot,
           });
+          setForfeitPause(parsed.forfeit ?? null);
         }
         const p1 = parsed.seats['Player 1'];
         const p2 = parsed.seats['Player 2'];
@@ -1317,6 +1325,15 @@ export default function OnlineGame({
               }
               suppressedRef={victoryHandoffRef}
             />
+            {replayMode ? null : (
+              <OnlineForfeitPause
+                forfeit={forfeitPause}
+                phase={snapshot?.phase ?? roomInfo?.phase}
+                viewer={isP1 ? 'p1' : isP2 ? 'p2' : 'spectator'}
+                p1Name={roomInfo?.p1Name || 'Player 1'}
+                p2Name={roomInfo?.p2Name || 'Player 2'}
+              />
+            )}
           </div>
           {replayMode ? (
             <div className="online-replay-controls">
@@ -1448,9 +1465,11 @@ export default function OnlineGame({
   );
 }
 
-function coerceOnlineRoomSnapshotEvent(
-  payload: unknown
-): { roomId: string; snapshot: OnlineRoomSnapshot } | null {
+function coerceOnlineRoomSnapshotEvent(payload: unknown): {
+  roomId: string;
+  snapshot: OnlineRoomSnapshot;
+  forfeit?: OnlineForfeitPauseState;
+} | null {
   if (!payload || typeof payload !== 'object') {
     return null;
   }
@@ -1461,9 +1480,13 @@ function coerceOnlineRoomSnapshotEvent(
   if (!candidate.snapshot || typeof candidate.snapshot !== 'object') {
     return null;
   }
+  const forfeit = coerceOnlineForfeitPause(
+    (payload as { forfeit?: unknown }).forfeit
+  );
   return {
     roomId: candidate.roomId,
     snapshot: candidate.snapshot as OnlineRoomSnapshot,
+    ...(forfeit ? { forfeit } : {}),
   };
 }
 
@@ -1474,6 +1497,7 @@ function coerceOnlineRoomUpdated(payload: unknown): {
   phase?: string;
   buyin?: number;
   snapshot: OnlineRoomSnapshot;
+  forfeit?: OnlineForfeitPauseState;
   seats: Record<
     string,
     {
@@ -1524,6 +1548,9 @@ function coerceOnlineRoomUpdated(payload: unknown): {
           }
         >)
       : {};
+  const forfeit = coerceOnlineForfeitPause(
+    (payload as { forfeit?: unknown }).forfeit
+  );
   return {
     roomId: candidate.roomId,
     roomCode:
@@ -1535,6 +1562,7 @@ function coerceOnlineRoomUpdated(payload: unknown): {
     phase: typeof candidate.phase === 'string' ? candidate.phase : undefined,
     buyin: typeof candidate.buyin === 'number' ? candidate.buyin : undefined,
     snapshot: candidate.snapshot as OnlineRoomSnapshot,
+    ...(forfeit ? { forfeit } : {}),
     seats,
   };
 }
