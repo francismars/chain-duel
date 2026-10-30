@@ -382,6 +382,7 @@
 
 .config-login-panel {
   display: grid;
+  position: relative;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -399,6 +400,7 @@
 }
 
 .config-login-panel__block--inactive {
+  position: absolute;
   visibility: hidden;
   pointer-events: none;
   z-index: 0;
