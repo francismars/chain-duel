@@ -11,10 +11,11 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "sim:baseline": "tsx scripts/challengeBaseline.ts",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"e2e/**/*.ts\" playwright.config.ts",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"e2e/**/*.ts\" playwright.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@typescript-eslint/eslint-plugin": "^8.72.1",
