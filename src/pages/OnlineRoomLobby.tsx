@@ -27,6 +27,7 @@ import {
   isOnlineSeatStartReady,
   onlineSeatStartMeta,
 } from '@/lib/online/isOnlineSeatStartReady';
+import { seatAwayLine, seatDisconnectLabel } from '@/lib/online/forfeitPause';
 import {
   signNostrEvent,
   signOnlineSeatLinkChallenge,
@@ -1229,12 +1230,52 @@ export default function OnlineRoomLobby({
           : 'Head to the victory screen to claim your prize, vote for double or nothing, or watch the replay.',
       };
     }
+    const p1Seat = room?.seats['Player 1'];
+    const p2Seat = room?.seats['Player 2'];
+    const p1Away = Boolean(
+      p1Seat?.status === 'paid' && p1Seat.disconnectedAt != null
+    );
+    const p2Away = Boolean(
+      p2Seat?.status === 'paid' && p2Seat.disconnectedAt != null
+    );
+    const viewer = isMyP1Seat ? 'p1' : 'p2';
     if (paidSeats < 2) {
+      if (mySeat.disconnectedAt != null) {
+        return {
+          cardMod: '',
+          label: 'SEAT PAID',
+          pin: 'ROOM CLOSES',
+          copy: 'Rejoin before the clock on your seat hits zero or this room closes.',
+        };
+      }
       return {
         cardMod: 'online-lobby-pin-card--ready',
         label: 'SEAT PAID',
         pin: 'WAITING',
         copy: 'Waiting for the second player to pay. The arena opens when both seats are filled.',
+      };
+    }
+    if (p1Away || p2Away) {
+      const away = seatAwayLine({
+        p1Away,
+        p2Away,
+        viewer,
+        p1Name: p1Seat?.name?.trim() || 'Player 1',
+        p2Name: p2Seat?.name?.trim() || 'Player 2',
+        forfeit: room?.forfeit,
+      });
+      const pin =
+        p1Away && p2Away
+          ? 'BOTH AWAY'
+          : mySeat.disconnectedAt != null
+            ? 'YOU ARE AWAY'
+            : 'WAITING';
+      return {
+        cardMod: '',
+        label: 'SEAT AWAY',
+        pin,
+        copy:
+          away ?? 'A player is away. The room closes if their clock hits zero.',
       };
     }
     return {
@@ -1374,6 +1415,21 @@ export default function OnlineRoomLobby({
     : rematchPending
       ? 'Locked for rematch'
       : onlineSeatStartMeta(p2, room?.phase);
+  const seatDisconnectVisible = !isMatchEnded || rematchPending;
+  const p1Disconnected = Boolean(
+    seatDisconnectVisible && p1?.status === 'paid' && p1.disconnectedAt != null
+  );
+  const p2Disconnected = Boolean(
+    seatDisconnectVisible && p2?.status === 'paid' && p2.disconnectedAt != null
+  );
+  const spectatorAwayLine = seatAwayLine({
+    p1Away: p1Disconnected,
+    p2Away: p2Disconnected,
+    viewer: 'spectator',
+    p1Name: p1NameDisplay,
+    p2Name: p2NameDisplay,
+    forfeit: room?.forfeit,
+  });
 
   const hasPaidMySeat = Boolean(mySeat);
   const isRematchLoserPay = rematchPending && amILoserToPay;
@@ -2538,7 +2594,11 @@ export default function OnlineRoomLobby({
               <p className="online-lobby-arena-seat-name">{p1NameDisplay}</p>
             </div>
             <p className="online-lobby-arena-seat-meta">
-              {p1IsReady ? (
+              {p1Disconnected ? (
+                <span className="online-lobby-arena-seat-meta--disconnected">
+                  {seatDisconnectLabel(room?.forfeit?.p1RemainingMs)}
+                </span>
+              ) : p1IsReady ? (
                 <>
                   Paid ·{' '}
                   <span className="online-lobby-arena-seat-meta--ready">
@@ -2612,7 +2672,11 @@ export default function OnlineRoomLobby({
               <p className="online-lobby-arena-seat-name">{p2NameDisplay}</p>
             </div>
             <p className="online-lobby-arena-seat-meta">
-              {p2IsReady ? (
+              {p2Disconnected ? (
+                <span className="online-lobby-arena-seat-meta--disconnected">
+                  {seatDisconnectLabel(room?.forfeit?.p2RemainingMs)}
+                </span>
+              ) : p2IsReady ? (
                 <>
                   Paid ·{' '}
                   <span className="online-lobby-arena-seat-meta--ready">
@@ -2683,6 +2747,11 @@ export default function OnlineRoomLobby({
                       sats
                     </span>
                   </p>
+                  {spectatorAwayLine ? (
+                    <p className="online-lobby-full-room-away">
+                      {spectatorAwayLine}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import type { GameState } from '@/game/engine/types';
+import { seatAwayLine } from '@/lib/online/forfeitPause';
 import type { OnlineRoomState } from '@/types/socket';
 import { PlayerRole } from '@/types/socket';
 
@@ -24,6 +25,7 @@ export type MatchIntroData = {
   viewerRole: MatchIntroViewerRole;
   viewerSide: MatchIntroViewerSide | null;
   roomCode: string;
+  awayLine: string | null;
 };
 
 function seatName(
@@ -115,5 +117,13 @@ export function buildMatchIntroData(
     viewerRole: viewerSide ? 'duelist' : 'spectator',
     viewerSide,
     roomCode: room.roomCode,
+    awayLine: seatAwayLine({
+      p1Away: p1Seat.disconnectedAt != null,
+      p2Away: p2Seat.disconnectedAt != null,
+      viewer: viewerSide ?? 'spectator',
+      p1Name,
+      p2Name,
+      forfeit: room.forfeit,
+    }),
   };
 }

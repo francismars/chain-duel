@@ -528,6 +528,11 @@
   color: #8a1010;
 }
 
+.online-lobby-arena-seat--ready .online-lobby-arena-seat-meta--disconnected {
+  color: #8a1010;
+  text-shadow: none;
+}
+
 @keyframes arena-seat-swipe-in-left {
   0% {
     opacity: 0;
@@ -716,6 +721,13 @@
   letter-spacing: 0.06em;
   color: #fff;
   text-shadow: 0 0 10px rgb(255 255 255 / 55%);
+}
+
+.online-lobby-arena-seat-meta--disconnected {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ff9b9b;
 }
 
 /* Arena center pillar */
@@ -951,6 +963,16 @@
   font-size: clamp(1.15rem, 2.2vw, 1.7rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.online-lobby-full-room-away {
+  margin: 0.55rem 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ff9b9b;
 }
 
 .online-lobby-full-room-prize-unit {
