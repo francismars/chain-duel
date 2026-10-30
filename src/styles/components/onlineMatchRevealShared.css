@@ -43,23 +43,20 @@ body:has(.online-reveal) {
   z-index: 2;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  padding: calc(var(--safe-top) + 0.5rem) max(var(--safe-right), var(--space-3))
+    0 max(var(--safe-left), var(--space-3));
   pointer-events: none;
 }
 
 .online-reveal__brand h2 {
   margin: 0;
   color: white;
-  font-size: max(18px, 2.5cqw);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.online-reveal__brand h2:first-child {
-  margin-left: 1%;
-}
-
-.online-reveal__brand h2:last-child {
-  margin-right: 1%;
+  font-family: var(--font-chainduel);
+  font-size: clamp(1.1rem, 2.5vw, 4rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.05vw;
 }
 
 .online-reveal__vignette {
