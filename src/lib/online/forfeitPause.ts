@@ -300,8 +300,9 @@ export function resultsAwayLine(args: {
 }
 
 /**
- * Prize deadline. Countdown wording only while the server time is decreasing.
- * A held remainingMs is a static deadline. Omitted claim hides the line.
+ * Prize deadline from the last claim the server sent. Countdown wording only
+ * while remainingMs is decreasing. A held or higher value is a static deadline.
+ * Omitted claim hides the line. limitMs is not used for the sentence.
  */
 export function resultsClaimLine(args: {
   claim?: OnlinePrizeClaim | null;
@@ -322,8 +323,8 @@ export function resultsClaimLine(args: {
         : `Pays to ${args.winnerName}'s Lightning address. Deadline ${time}.`;
     }
     return args.viewerIsWinner
-      ? `Withdraw or the house keeps the sats. Deadline ${time}.`
-      : `Unclaimed prize deadline ${time}.`;
+      ? `Withdraw or start double-or-nothing. Deadline ${time}. After that the prize is held for a manual payout.`
+      : `Prize deadline ${time}. It is held for a manual payout.`;
   }
   if (args.hasLnAddress) {
     return args.viewerIsWinner
@@ -331,8 +332,8 @@ export function resultsClaimLine(args: {
       : `Pays to ${args.winnerName}'s Lightning address in ${time}.`;
   }
   return args.viewerIsWinner
-    ? `Withdraw before ${time} or the house keeps the sats.`
-    : `Unclaimed prize closes in ${time}.`;
+    ? `Withdraw or start double-or-nothing before ${time}. After that the prize is held for a manual payout.`
+    : `Prize is held for a manual payout in ${time}.`;
 }
 
 export function coerceOnlinePrizeClaim(

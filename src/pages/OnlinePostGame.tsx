@@ -246,6 +246,7 @@ export default function OnlinePostGame({
       : null;
   const claimMs = claimValue?.remainingMs;
   const prevClaimMsRef = useRef<number | null>(null);
+  // A jump up is a new server value (the 5 minute bank paused). It is not a local timer.
   const claimTicking =
     typeof claimMs === 'number' &&
     prevClaimMsRef.current != null &&

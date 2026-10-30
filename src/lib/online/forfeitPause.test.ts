@@ -388,7 +388,20 @@ describe('seat and results disconnect copy', () => {
         hasLnAddress: false,
         ticking: true,
       })
-    ).toBe('Withdraw before 2:05 or the house keeps the sats.');
+    ).toBe(
+      'Withdraw or start double-or-nothing before 2:05. After that the prize is held for a manual payout.'
+    );
+    expect(
+      resultsClaimLine({
+        claim: { remainingMs: 900000, limitMs: 900000 },
+        viewerIsWinner: true,
+        winnerName: 'Satoshi',
+        hasLnAddress: false,
+        ticking: true,
+      })
+    ).toBe(
+      'Withdraw or start double-or-nothing before 15:00. After that the prize is held for a manual payout.'
+    );
     expect(
       resultsClaimLine({
         claim,
@@ -397,7 +410,7 @@ describe('seat and results disconnect copy', () => {
         hasLnAddress: false,
         ticking: true,
       })
-    ).toBe('Unclaimed prize closes in 2:05.');
+    ).toBe('Prize is held for a manual payout in 2:05.');
     expect(
       resultsClaimLine({
         claim,
@@ -417,7 +430,18 @@ describe('seat and results disconnect copy', () => {
         hasLnAddress: false,
         ticking: false,
       })
-    ).toBe('Unclaimed prize deadline 2:05.');
+    ).toBe('Prize deadline 2:05. It is held for a manual payout.');
+    expect(
+      resultsClaimLine({
+        claim,
+        viewerIsWinner: true,
+        winnerName: 'Satoshi',
+        hasLnAddress: false,
+        ticking: false,
+      })
+    ).toBe(
+      'Withdraw or start double-or-nothing. Deadline 2:05. After that the prize is held for a manual payout.'
+    );
     expect(
       resultsClaimLine({
         claim: null,
