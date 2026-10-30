@@ -54,6 +54,25 @@
   grid-row: 2;
   align-self: center;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-width: 0;
+}
+
+.practice-hub-page .practice-hub-rules.button {
+  flex: 0 0 auto;
+  width: fit-content;
+  min-width: 8.5rem;
+  margin: 0;
+  padding-inline: 1.6rem;
+  white-space: nowrap;
+}
+
+.practice-hub-page .practice-hub-rules--scroll {
+  display: none;
 }
 
 .practice-hub-page #brand {
@@ -2566,6 +2585,8 @@
     min-height: 0;
     max-height: 100dvh;
     overflow: hidden;
+    animation: none;
+    transform: none;
   }
 
   .practice-hub-page.practice-hub,
@@ -2579,13 +2600,29 @@
     grid-template-rows: auto minmax(0, 1fr);
     align-content: stretch;
     gap: var(--space-2);
-    padding: calc(var(--safe-top) + 3.25rem)
-      calc(var(--safe-right) + var(--space-3)) 0
+    padding: 0 calc(var(--safe-right) + var(--space-3)) 0
       calc(var(--safe-left) + var(--space-3));
   }
 
   .practice-hub-page .practice-hub-header {
-    grid-row: 1;
+    display: none;
+  }
+
+  .practice-hub-page .practice-hub-title {
+    display: none;
+  }
+
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-card--lightning
+    .p2p-picker-label,
+  .practice-hub-page
+    .practice-play-style-section
+    .p2p-picker-card--nostr
+    .p2p-picker-label {
+    font-size: var(--ph-fs-display-sm);
+    letter-spacing: 0;
+    line-height: 1.1;
   }
 
   .practice-hub-page.practice-hub--practice {
@@ -2616,8 +2653,39 @@
     gap: var(--space-3);
   }
 
+  .practice-hub-page
+    .practice-free-play-panel__body
+    .p2p-picker-card--compact-inline {
+    padding-left: 1rem;
+    column-gap: 0.75rem;
+  }
+
+  .practice-hub-page
+    .practice-free-play-panel__body
+    .p2p-picker-card--compact-inline
+    .p2p-picker-icon {
+    width: 28px;
+    height: 28px;
+  }
+
   .practice-hub-page .local-tier-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .practice-hub-page.p2p-entry-page.practice-hub--practice {
+    padding-top: 0;
+  }
+
+  /* Stepped settings: format stacks like /practice, and the first label clears the menu button. */
+  .practice-hub-page.practice-hub--setup-pick .practice-panel {
+    padding-top: calc(var(--safe-top) + 5.25rem);
+  }
+
+  .practice-hub-page.practice-hub--setup-pick
+    .local-format-section
+    .ph-picker-block
+    .p2p-picker-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .practice-hub-page .practice-panel {
@@ -2626,30 +2694,57 @@
     min-height: 0;
     height: auto;
     max-height: none;
-    overflow: hidden;
-  }
-
-  .practice-hub-page .practice-play-style-area {
-    flex: 1 1 auto;
-    min-height: 0 !important;
-    max-height: none;
+    /* Top inset lives inside the scroller so cards can move under the wordmark
+       instead of being sliced at the panel edge. */
+    padding-top: calc(var(--safe-top) + 3.25rem);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+    animation: none;
+    transform: none;
+  }
+
+  .practice-hub-page .practice-play-style-area {
+    flex: 0 0 auto;
+    min-height: 0 !important;
+    max-height: none;
+    overflow: visible;
   }
 
   .practice-hub-page .practice-hub-panel-footer {
     position: static;
     flex-shrink: 0;
-    flex-direction: column-reverse;
+    flex-direction: column;
+    height: auto;
     gap: var(--space-2);
-    padding: var(--space-3) 0 calc(var(--safe-bottom) + var(--space-4));
-    background: linear-gradient(to top, #000 70%, rgb(0 0 0 / 0));
+    margin-top: var(--space-4);
+    padding: var(--space-2) 0 calc(var(--safe-bottom) + 4.75rem);
+    background: none;
+  }
+
+  .practice-hub-page .practice-hub-rules--scroll {
+    display: block;
+    width: 100%;
+    min-width: 0;
   }
 
   .practice-hub-page .practice-hub-panel-footer .button {
+    position: static;
     width: 100%;
+    left: auto;
+    right: auto;
+    bottom: auto;
+  }
+
+  .practice-hub-page .practice-hub-panel-footer .practice-start.button {
+    position: fixed;
+    left: calc(var(--safe-left) + var(--space-3));
+    right: calc(var(--safe-right) + var(--space-3));
+    bottom: calc(var(--safe-bottom) + var(--space-3));
+    width: auto;
+    z-index: 12;
+    background: #000;
   }
 
   .p2p-modifiers-section .p2p-duel-format,

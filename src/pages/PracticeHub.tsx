@@ -8,6 +8,9 @@ import {
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Sponsorship } from '@/components/ui/Sponsorship';
+import { RulesSection } from '@/components/layout/RulesSection';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
 import { useAudio, SFX } from '@/contexts/AudioContext';
 import { useGamepad } from '@/hooks/useGamepad';
@@ -21,6 +24,7 @@ import type {
 import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
 import '@/components/ui/Button.css';
 import './practiceHub.css';
+import './gamemenu.css';
 import '@/styles/pages/p2p-entry.css';
 import '@/styles/pages/practice-hub-page.css';
 import '@/styles/pages/solo-challenges.css';
@@ -98,6 +102,14 @@ export default function PracticeHub({
   const [challengeLaunchPhase, setChallengeLaunchPhase] =
     useState<ChallengeLaunchPhase>('server');
   const [challengeLaunchSlowHint, setChallengeLaunchSlowHint] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [rulesTitle, setRulesTitle] = useState({
+    kicker: 'Rule 1',
+    title: 'Stake your sats',
+    phase: 'idle' as 'idle' | 'hide' | 'show',
+    dir: 'next' as 'next' | 'prev',
+  });
+  const closeRules = useCallback(() => setRulesOpen(false), []);
 
   const playStyleRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const footerBackRef = useRef<HTMLButtonElement | null>(null);
@@ -473,6 +485,13 @@ export default function PracticeHub({
               ? 'CHALLENGES'
               : 'QUICK MATCH'}
         </h2>
+        <Button
+          type="button"
+          className="practice-hub-rules"
+          onClick={() => setRulesOpen(true)}
+        >
+          Rules
+        </Button>
       </header>
 
       <div className="practice-panel" role="main" aria-label="Practice play">
@@ -678,6 +697,13 @@ export default function PracticeHub({
 
         <div className="practice-actions practice-hub-panel-footer">
           <Button
+            type="button"
+            className="practice-hub-rules practice-hub-rules--scroll"
+            onClick={() => setRulesOpen(true)}
+          >
+            Rules
+          </Button>
+          <Button
             ref={footerBackRef}
             tabIndex={footerBackFocused ? 0 : -1}
             className={[
@@ -752,6 +778,40 @@ export default function PracticeHub({
             document.body
           )
         : null}
+
+      {rulesOpen ? (
+        <Modal
+          onClose={closeRules}
+          labelledBy="rules-modal-title"
+          className="rules-modal"
+          backdropClassName="rules-modal-backdrop"
+          showClose={false}
+        >
+          <div className="rules-modal__mast">
+            <BrandHeader embedded className="rules-modal__brand" />
+            <Sponsorship id="sponsorshipRules" />
+          </div>
+          <div className="rules-modal__bar">
+            <p
+              id="rules-modal-title"
+              key={`${rulesTitle.kicker}-${rulesTitle.phase}`}
+              className={
+                rulesTitle.phase === 'idle'
+                  ? 'rules-modal__title'
+                  : `rules-modal__title rules-modal__title--${rulesTitle.phase} rules-modal__title--${rulesTitle.dir}`
+              }
+            >
+              <span className="rules-modal__kicker">{rulesTitle.kicker}</span>
+              <span className="rules-modal__heading">{rulesTitle.title}</span>
+            </p>
+          </div>
+          <RulesSection
+            variant="clips"
+            onTitleChange={setRulesTitle}
+            onClose={closeRules}
+          />
+        </Modal>
+      ) : null}
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </div>
