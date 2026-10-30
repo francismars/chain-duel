@@ -60,6 +60,10 @@ export const GAMEPAD_MIRROR = 'translate(440 0) scale(-1 1)';
 export const GAMEPAD_L_STICK = { cx: 176, cy: 158 };
 export const GAMEPAD_R_STICK = { cx: 264, cy: 158 };
 
+/**
+ * Face labels match the controller: X top, Y left, A right, B bottom.
+ * Button 3 is the top face — keyboard X, the solo seat switch.
+ */
 export const GAMEPAD_FACE: Record<
   'x' | 'y' | 'a' | 'b',
   { cx: number; cy: number; index: number }

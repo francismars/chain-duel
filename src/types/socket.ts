@@ -186,6 +186,8 @@ export interface OnlineSeatState {
   ready?: boolean;
   startConfirmed?: boolean;
   disconnectedAt?: number;
+  /** Time already banked. Do not drive the pause clock from this. */
+  disconnectMs?: number;
   name?: string;
   picture?: string;
   pubkey?: string;
@@ -193,6 +195,28 @@ export interface OnlineSeatState {
   payMethod?: 'lightning' | 'nostr_web' | 'nostr_app';
   /** Reported RTT (ms) for this seat; set by server from `reportOnlineRoomPing`. */
   pingMs?: number;
+}
+
+/** Unclaimed prize deadline for the whole of postgame, until a payout or rematch. */
+export interface OnlinePrizeClaim {
+  remainingMs: number;
+  limitMs: number;
+}
+
+export type OnlineForfeitReason = 'disconnect' | 'idle';
+
+/** Server pause while a paid seat is away. Absent means the match is running. */
+export interface OnlineForfeitPause {
+  paused: boolean;
+  limitMs: number;
+  /** Set only while Player 1 is currently away. */
+  p1RemainingMs?: number;
+  /** Set only while Player 2 is currently away. */
+  p2RemainingMs?: number;
+  /** Why Player 1's clock is running. Absent means disconnect. */
+  p1Reason?: OnlineForfeitReason;
+  /** Why Player 2's clock is running. Absent means disconnect. */
+  p2Reason?: OnlineForfeitReason;
 }
 
 export interface OnlineRoomState {
@@ -210,6 +234,9 @@ export interface OnlineRoomState {
   seats: Record<string, OnlineSeatState>;
   spectators: string[];
   snapshot: OnlineRoomSnapshot;
+  forfeit?: OnlineForfeitPause;
+  /** Set through postgame until a payout is chosen or a rematch locks. */
+  claim?: OnlinePrizeClaim;
   result?: {
     winnerName: string;
     p1Name: string;
@@ -545,6 +572,7 @@ export interface ServerToClientEvents {
   onlineRoomSnapshot: (data: {
     roomId: string;
     snapshot: OnlineRoomSnapshot;
+    forfeit?: OnlineForfeitPause;
   }) => void;
   /** New mempool tip block: server already spawned food; use for SFX / UI flash only. */
   onlineBitcoinBlock: (data: {
@@ -662,6 +690,7 @@ export interface ServerToClientEvents {
     rematchNote1?: string;
     rematchWaitingForSessionID?: string;
     doubleOrNothingVotes: number;
+    claim?: OnlinePrizeClaim;
     matchRounds?: Array<{
       matchRound: number;
       finishedAt: number;

@@ -265,6 +265,48 @@ export function checkPowerUpPickup(state: GameState): void {
   }
 }
 
+/**
+ * Body length once this eat's new block is on the chain.
+ * The capture-rate label uses this. The sats use the length before the block is added.
+ */
+function lengthAfterEat(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex
+): number {
+  if (is2v1Mode(state) && (playerIndex === 1 || playerIndex === 2)) {
+    const lengths: number[] = [];
+    if (isFfaPlayerAlive(state, 1)) lengths.push(state.p2.body.length);
+    if (isFfaPlayerAlive(state, 2)) {
+      lengths.push(state.extraSnakes[0]?.snake.body.length ?? 0);
+    }
+    const longest = lengths.length === 0 ? 0 : Math.max(...lengths);
+    return longest + 1;
+  }
+  return getSnakeByIndex(state, playerIndex).body.length + 1;
+}
+
+function withAmplifier(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex,
+  percent: number
+): number {
+  return getSnakeEffects(state, playerIndex).amped
+    ? Math.min(32, percent * 2)
+    : percent;
+}
+
+/** Capture tier the chain is on after this eat. A block's fixed sats do not change it. */
+export function captureRatePercentForEat(
+  state: GameState,
+  playerIndex: PowerUpPlayerIndex
+): number {
+  return withAmplifier(
+    state,
+    playerIndex,
+    capturePercentByLength(lengthAfterEat(state, playerIndex))
+  );
+}
+
 export function capturePercentForCoinbase(
   state: GameState,
   playerIndex: PowerUpPlayerIndex,
@@ -276,8 +318,7 @@ export function capturePercentForCoinbase(
     (is2v1Mode(state) && (playerIndex === 1 || playerIndex === 2)
       ? get2v1TeamCapturePercent(state)
       : capturePercentByLength(snake.body.length));
-  const effects = getSnakeEffects(state, playerIndex);
-  return effects.amped ? Math.min(32, basePercent * 2) : basePercent;
+  return withAmplifier(state, playerIndex, basePercent);
 }
 
 export function computeCaptureChangeForIndex(

@@ -6,14 +6,19 @@ const BLACK = 0x111111;
 
 type RingSpec = { life: number; from: number; to: number; peak: number };
 
-/** WALL and CLASH: quiet ack — small, short, little expand. Starts half opaque. */
-const HIT_RING: RingSpec = { life: 1, from: 0.72, to: 0.98, peak: 0.5 };
-/** REORG: story beat — clearly bigger, still brief. Same half-opaque start. */
-const REORG_RING: RingSpec = { life: 1, from: 0.58, to: 1.02, peak: 0.5 };
-/** Soft home flash after a reset. */
-const SPAWN_RING: RingSpec = { life: 1, from: 0.85, to: 1.05, peak: 0.45 };
+/** WALL and CLASH: quiet ack — short, little expand. White ink peaks here. */
+const HIT_RING: RingSpec = { life: 1, from: 0.72, to: 0.98, peak: 0.35 };
+/** REORG: story beat — about a cell and a half, still brief. */
+const REORG_RING: RingSpec = { life: 1, from: 0.58, to: 1.02, peak: 0.35 };
+/** Soft home flash after a reset. A little under one cell. */
+const SPAWN_RING: RingSpec = { life: 1, from: 0.85, to: 1.05, peak: 0.32 };
 /** Wipe line, as a fraction of the death square's opacity. */
-const WIPE_ALPHA = 0.45;
+const WIPE_ALPHA = 0.3;
+/**
+ * Near-black ink at the white peak disappears into the light grid.
+ * Dark strokes use this peak instead, including their wipe.
+ */
+const DARK_PEAK = 0.55;
 
 function ringColor(pop: StreakPop): { fill: number; css: string } {
   const tone =
@@ -34,14 +39,40 @@ function ringColor(pop: StreakPop): { fill: number; css: string } {
   return { fill: BLACK, css: '#111111' };
 }
 
-/** Each nested square, as a fraction of the one outside it. Head-to-head and reorg share this gap. */
-const CLASH_INNER = 0.74;
+/** Head-to-head inner square, as a fraction of the outer one. Wide enough that both colors read. */
+const CLASH_INNER = 0.62;
+/** Reorg nested squares, as a fraction of the one outside. */
+const REORG_INNER = 0.74;
 
-/** Half-side in cells. Wall and clash match. Reorg is a bit larger, double-ring. */
+/**
+ * Half-side in cells, before the small expand.
+ * A wall ends near one cell across. A head-to-head ends near a cell and a quarter.
+ * Reorg ends near a cell and a half. Spawn ends a little under one cell.
+ */
+const HIT_RADIUS = 0.51;
+const CLASH_RADIUS = 0.64;
+const REORG_RADIUS = 0.74;
+const SPAWN_RADIUS = 0.4;
+
 function baseRadiusCells(pop: StreakPop): number {
-  if (pop.text === 'REORG') return 1.85;
-  if (pop.text === 'SPAWN') return 0.9;
-  return 1.25;
+  if (pop.text === 'REORG') return REORG_RADIUS;
+  if (pop.text === 'CLASH') return CLASH_RADIUS;
+  if (pop.text === 'SPAWN') return SPAWN_RADIUS;
+  return HIT_RADIUS;
+}
+
+/** #111111 and anything darker. Mid grays stay on the shared peak. */
+function isDarkInk(color: number): boolean {
+  const r = (color >> 16) & 255;
+  const g = (color >> 8) & 255;
+  const b = color & 255;
+  return r <= 0x22 && g <= 0x22 && b <= 0x22;
+}
+
+/** Lifts a dark stroke so its peak is DARK_PEAK. White ink is unchanged. */
+function inkAlpha(color: number, alpha: number, peak: number): number {
+  if (peak <= 0 || !isDarkInk(color)) return alpha;
+  return alpha * (DARK_PEAK / peak);
 }
 
 function ringAlpha(
@@ -167,7 +198,7 @@ function wipeSegment(
   const inset = squareEdge(
     dx,
     dy,
-    spawn ? outerHalfPx(spawn, cell) : 0.9 * cell * SPAWN_RING.to
+    spawn ? outerHalfPx(spawn, cell) : SPAWN_RADIUS * cell * SPAWN_RING.to
   );
   const end = { x: dx - inset.x, y: dy - inset.y };
   if ((end.x - start.x) * dx + (end.y - start.y) * dy <= 0) return null;
@@ -183,8 +214,9 @@ function paintMark(
 ): void {
   const life = 1 - pop.alpha;
   const color = ringColor(pop).fill;
+  const spec = specFor(pop.text);
   const base = baseRadiusCells(pop) * cell;
-  const drawn = ringAlpha(life, specFor(pop.text));
+  const drawn = ringAlpha(life, spec);
   mark.root.position.set(
     pop.col * colSize + colSize / 2,
     pop.row * rowSize + rowSize / 2
@@ -207,7 +239,7 @@ function paintMark(
       .stroke({
         width: Math.max(1, cell * 0.04),
         color,
-        alpha: drawn.alpha * WIPE_ALPHA,
+        alpha: inkAlpha(color, drawn.alpha, spec.peak) * WIPE_ALPHA,
       });
   }
   if (pop.text === 'WIPE') return;
@@ -215,21 +247,46 @@ function paintMark(
   // Head-to-head: one square, both chain colors, on the cell where they meet.
   if (pop.text === 'CLASH' && pop.fillInner != null) {
     const innerHalf = half * CLASH_INNER;
-    strokeSquare(mark.ring, half, width, color, drawn.alpha);
-    strokeSquare(mark.ring, innerHalf, width, pop.fillInner, drawn.alpha);
+    strokeSquare(
+      mark.ring,
+      half,
+      width,
+      color,
+      inkAlpha(color, drawn.alpha, spec.peak)
+    );
+    strokeSquare(
+      mark.ring,
+      innerHalf,
+      width,
+      pop.fillInner,
+      inkAlpha(pop.fillInner, drawn.alpha, spec.peak)
+    );
     return;
   }
   // REORG: three squares. Solo is one color. Head-on puts the shorter chain in the middle.
   if (pop.text === 'REORG') {
-    const midHalf = half * CLASH_INNER;
-    const innerHalf = midHalf * CLASH_INNER;
+    const midHalf = half * REORG_INNER;
+    const innerHalf = midHalf * REORG_INNER;
     const mid = pop.fillInner ?? color;
-    strokeSquare(mark.ring, half, width, color, drawn.alpha);
-    strokeSquare(mark.ring, midHalf, width, mid, drawn.alpha);
-    strokeSquare(mark.ring, innerHalf, width, color, drawn.alpha);
+    const outerAlpha = inkAlpha(color, drawn.alpha, spec.peak);
+    strokeSquare(mark.ring, half, width, color, outerAlpha);
+    strokeSquare(
+      mark.ring,
+      midHalf,
+      width,
+      mid,
+      inkAlpha(mid, drawn.alpha, spec.peak)
+    );
+    strokeSquare(mark.ring, innerHalf, width, color, outerAlpha);
     return;
   }
-  strokeSquare(mark.ring, half, width, color, drawn.alpha);
+  strokeSquare(
+    mark.ring,
+    half,
+    width,
+    color,
+    inkAlpha(color, drawn.alpha, spec.peak)
+  );
 }
 
 export function drawStreakPopsCanvas(
@@ -243,21 +300,24 @@ export function drawStreakPopsCanvas(
   ctx.save();
   for (const pop of pops) {
     const life = 1 - pop.alpha;
-    const css = ringColor(pop).css;
+    const paint = ringColor(pop);
+    const css = paint.css;
+    const spec = specFor(pop.text);
     const base = baseRadiusCells(pop) * cell;
-    const drawn = ringAlpha(life, specFor(pop.text));
+    const drawn = ringAlpha(life, spec);
     if (!drawn) continue;
     const half = base * drawn.scale;
     const x = pop.col * colSize + colSize / 2;
     const y = pop.row * rowSize + rowSize / 2;
     const width = Math.max(1, cell * 0.06);
+    const alphaFor = (color: number) => inkAlpha(color, drawn.alpha, spec.peak);
     ctx.strokeStyle = css;
     ctx.lineWidth = width;
     const wipe = wipeSegment(pop, colSize, rowSize, cell);
     if (pop.text !== 'SPAWN' && wipe) {
       const travel = Math.min(1, life * 1.35);
       ctx.strokeStyle = css;
-      ctx.globalAlpha = drawn.alpha * WIPE_ALPHA;
+      ctx.globalAlpha = alphaFor(paint.fill) * WIPE_ALPHA;
       ctx.lineWidth = Math.max(1, cell * 0.04);
       ctx.beginPath();
       ctx.moveTo(x + wipe.from.x, y + wipe.from.y);
@@ -272,9 +332,10 @@ export function drawStreakPopsCanvas(
     if (pop.text === 'CLASH' && pop.fillInner != null) {
       const innerHalf = half * CLASH_INNER;
       const inner = `#${pop.fillInner.toString(16).padStart(6, '0')}`;
-      ctx.globalAlpha = drawn.alpha;
+      ctx.globalAlpha = alphaFor(paint.fill);
       ctx.strokeStyle = css;
       ctx.strokeRect(x - half, y - half, half * 2, half * 2);
+      ctx.globalAlpha = alphaFor(pop.fillInner);
       ctx.strokeStyle = inner;
       ctx.strokeRect(
         x - innerHalf,
@@ -285,17 +346,20 @@ export function drawStreakPopsCanvas(
       continue;
     }
     if (pop.text === 'REORG') {
-      const midHalf = half * CLASH_INNER;
-      const innerHalf = midHalf * CLASH_INNER;
+      const midHalf = half * REORG_INNER;
+      const innerHalf = midHalf * REORG_INNER;
+      const midColor = pop.fillInner ?? paint.fill;
       const mid =
         pop.fillInner == null
           ? css
           : `#${pop.fillInner.toString(16).padStart(6, '0')}`;
-      ctx.globalAlpha = drawn.alpha;
+      ctx.globalAlpha = alphaFor(paint.fill);
       ctx.strokeStyle = css;
       ctx.strokeRect(x - half, y - half, half * 2, half * 2);
+      ctx.globalAlpha = alphaFor(midColor);
       ctx.strokeStyle = mid;
       ctx.strokeRect(x - midHalf, y - midHalf, midHalf * 2, midHalf * 2);
+      ctx.globalAlpha = alphaFor(paint.fill);
       ctx.strokeStyle = css;
       ctx.strokeRect(
         x - innerHalf,
@@ -305,7 +369,7 @@ export function drawStreakPopsCanvas(
       );
       continue;
     }
-    ctx.globalAlpha = drawn.alpha;
+    ctx.globalAlpha = alphaFor(paint.fill);
     ctx.strokeRect(x - half, y - half, half * 2, half * 2);
   }
   ctx.restore();

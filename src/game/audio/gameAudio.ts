@@ -201,6 +201,8 @@ export class GameAudioSystem {
   private mixTimer: ReturnType<typeof setInterval> | null = null;
   private endingPlayed = false;
   private previousBorder: GameState['shrinkBorder'] = null;
+  /** The lit-edge warning is already sounding, so a later frame does not restart it. */
+  private wallWarning = false;
   /**
    * Config → Graphics → Sound effects & tension. Off skips every effect sound
    * plus the tension / streak / shrink tracking; music and the end jingle stay.
@@ -225,7 +227,8 @@ export class GameAudioSystem {
   private capture32 = createAudio('/sound/P-FC_32.aac');
   private blockFound = createAudio('/sound/MAINNET_BLOCK.aac');
   private powerUp = createAudio('/sound/powerup.mp3');
-  private shrink = createAudio('/sound/chain_duel_shrink.m4a');
+  private wallWarn = createAudio('/sound/chain_duel_warn.wav');
+  private shrink = createAudio('/sound/chain_duel_shrink.wav');
 
   /** Set by startMusic(); gates resume after unmute and avoids BGM before match load. */
   private musicShouldPlay = false;
@@ -250,6 +253,7 @@ export class GameAudioSystem {
     this.blockFound,
     this.powerUp,
     this.ending,
+    this.wallWarn,
     this.shrink,
   ];
 
@@ -295,6 +299,12 @@ export class GameAudioSystem {
     this.playMusicLayers();
   }
 
+  /** Call from a touch. A play() that ran before the gesture stays blocked on iOS. */
+  resumeFromGesture(): void {
+    if (!this.musicShouldPlay || this.appMusicMuted) return;
+    this.playMusicLayers();
+  }
+
   stopAll(): void {
     if (this.endingPlayed) saveMenuMusicPosition(this.menuMusic.currentTime);
     this.musicShouldPlay = false;
@@ -309,6 +319,7 @@ export class GameAudioSystem {
     this.streakCount = 0;
     this.previousPlayers = null;
     this.previousBorder = null;
+    this.wallWarning = false;
     resetTensionDebug();
     if (this.mixTimer !== null) clearInterval(this.mixTimer);
     this.mixTimer = null;
@@ -341,7 +352,7 @@ export class GameAudioSystem {
     }
     const border = state.gameStarted ? state.shrinkBorder : null;
     const previous = this.previousBorder;
-    if (
+    const stepped = Boolean(
       border &&
       previous &&
       border.left >= previous.left &&
@@ -352,8 +363,21 @@ export class GameAudioSystem {
         border.right < previous.right ||
         border.top > previous.top ||
         border.bottom < previous.bottom)
-    ) {
+    );
+    if (stepped) {
+      this.wallWarn.pause();
+      this.wallWarn.currentTime = 0;
       this.play(this.shrink);
+      this.wallWarning = Boolean(border?.warningActive);
+    } else if (border?.warningActive && !this.wallWarning) {
+      this.play(this.wallWarn);
+      this.wallWarning = true;
+    } else if (!border?.warningActive) {
+      if (this.wallWarning) {
+        this.wallWarn.pause();
+        this.wallWarn.currentTime = 0;
+      }
+      this.wallWarning = false;
     }
     // Local simulation mutates the same border object; retain a value snapshot.
     this.previousBorder = border ? { ...border } : null;
@@ -413,7 +437,7 @@ export class GameAudioSystem {
       (deathAt?.[reorged.index] ??
         (reorgPartner ? deathAt?.[reorgPartner.before.index] : undefined))
     );
-    const reorgCell = !reorged
+    const reorgCell: GridPos | null = !reorged
       ? null
       : reorgFromImpact
         ? reorgPartner

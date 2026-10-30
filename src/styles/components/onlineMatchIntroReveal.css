@@ -4,6 +4,19 @@
   pointer-events: auto;
 }
 
+.online-reveal__away {
+  position: relative;
+  z-index: 1;
+  margin: 0.85rem 0 0;
+  font-family: Inter, sans-serif;
+  font-size: clamp(0.68rem, 1.4vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #ff9b9b;
+}
+
 .online-reveal--intro .online-reveal__pulse {
   position: absolute;
   top: 42%;

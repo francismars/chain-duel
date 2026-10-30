@@ -77,6 +77,49 @@ describe('game engine parity behavior', () => {
     expect(state.score[1]).toBeLessThan(before[1]);
   });
 
+  it('announces the capture tier of the chain after the new block', () => {
+    const state = createGameState({
+      p1Name: 'P1',
+      p2Name: 'P2',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'P2P',
+      practiceMode: false,
+      isTournament: false,
+    });
+    state.gameStarted = true;
+    state.p1.head = [25, 12];
+    state.p1.body = [[24, 12]];
+    state.p1.dirWanted = 'Right';
+    state.coinbases = [{ pos: [26, 12] }];
+    stepGame(state);
+    expect(state.p1.body).toHaveLength(2);
+    expect(getHudState(state).captureP1).toBe('4%');
+    expect(state.pointChanges[0]?.captureRateLabel).toBe('4%');
+    expect(state.pointChanges[0]?.value).toBe(
+      Math.floor((state.totalPoints * 2) / 100)
+    );
+  });
+
+  it('keeps a block reward from replacing the chain capture tier', () => {
+    const state = createGameState({
+      p1Name: 'P1',
+      p2Name: 'P2',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'P2P',
+      practiceMode: false,
+      isTournament: false,
+    });
+    state.gameStarted = true;
+    state.p1.head = [25, 12];
+    state.p1.body = [[24, 12]];
+    state.p1.dirWanted = 'Right';
+    state.coinbases = [{ pos: [26, 12], reward: 16 }];
+    stepGame(state);
+    expect(state.pointChanges[0]?.captureRateLabel).toBe('4%');
+  });
+
   it('marks winner when one side reaches zero', () => {
     const state = createGameState({
       p1Name: 'A',

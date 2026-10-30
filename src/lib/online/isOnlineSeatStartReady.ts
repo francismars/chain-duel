@@ -26,11 +26,11 @@ export function onlineSeatStartMeta(
   if (!seat || seat.status === 'open') {
     return 'Waiting payment';
   }
+  if (seat.disconnectedAt != null) {
+    return 'Disconnected';
+  }
   if (isOnlineSeatStartReady(seat, phase)) {
     return phase === 'playing' ? 'Paid · Ready to start' : 'Paid · Ready';
-  }
-  if (seat.disconnectedAt) {
-    return 'Paid · Offline';
   }
   return phase === 'playing'
     ? 'Paid · Press Space or Enter'

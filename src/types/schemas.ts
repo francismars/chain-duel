@@ -128,12 +128,29 @@ export const OnlineSeatStateSchema = z.object({
   ready: z.boolean().optional(),
   startConfirmed: z.boolean().optional(),
   disconnectedAt: z.number().optional(),
+  /** Time already banked on this seat. The pause clock uses `forfeit.*RemainingMs`. */
+  disconnectMs: z.number().optional(),
   name: z.string().optional(),
   picture: z.string().optional(),
   pubkey: z.string().optional(),
   lnAddress: z.string().optional(),
   payMethod: z.enum(['lightning', 'nostr_web', 'nostr_app']).optional(),
   pingMs: z.number().optional(),
+});
+
+export const OnlineForfeitPauseSchema = z.object({
+  paused: z.boolean(),
+  limitMs: z.number(),
+  p1RemainingMs: z.number().optional(),
+  p2RemainingMs: z.number().optional(),
+  p1Reason: z.enum(['disconnect', 'idle']).optional(),
+  p2Reason: z.enum(['disconnect', 'idle']).optional(),
+});
+
+/** Prize deadline for postgame. Not the match forfeit clock. */
+export const OnlinePrizeClaimSchema = z.object({
+  remainingMs: z.number(),
+  limitMs: z.number(),
 });
 
 export const OnlineRoomStateSchema = z.object({
@@ -150,6 +167,8 @@ export const OnlineRoomStateSchema = z.object({
   seats: z.record(z.string(), OnlineSeatStateSchema),
   spectators: z.array(z.string()),
   snapshot: OnlineRoomSnapshotSchema,
+  forfeit: OnlineForfeitPauseSchema.optional(),
+  claim: OnlinePrizeClaimSchema.optional(),
   result: z
     .object({
       winnerName: z.string(),
@@ -267,6 +286,7 @@ export const ResJoinOnlineRoomSchema = ResCreateOnlineRoomSchema;
 export const OnlineRoomSnapshotEventSchema = z.object({
   roomId: z.string(),
   snapshot: OnlineRoomSnapshotSchema,
+  forfeit: OnlineForfeitPauseSchema.optional(),
 });
 
 export const OnlineSeatAssignedSchema = z.object({
@@ -470,6 +490,7 @@ export const ResOnlinePostGameInfoSchema = z.object({
   rematchNote1: z.string().optional(),
   rematchWaitingForSessionID: z.string().optional(),
   doubleOrNothingVotes: z.number(),
+  claim: OnlinePrizeClaimSchema.optional(),
   matchRounds: z.array(OnlineMatchRoundSummarySchema).optional(),
 });
 

@@ -68,7 +68,8 @@ export const SOUND_FILES = [
   'chain_duel_pressure.m4a',
   'chain_duel_produced_game.m4a',
   'chain_duel_produced_menu.m4a',
-  'chain_duel_shrink.m4a',
+  'chain_duel_shrink.wav',
+  'chain_duel_warn.wav',
   'chain_duel_tension.m4a',
   'powerup.mp3',
 ] as const;

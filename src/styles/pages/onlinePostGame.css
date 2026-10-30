@@ -787,6 +787,18 @@
   color: rgb(255 255 255 / 0.5);
 }
 
+.online-postgame-away,
+.online-postgame-claim {
+  margin: 0.45rem 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.45;
+  text-transform: uppercase;
+  color: #ff9b9b;
+}
+
 .online-postgame-don-controls {
   flex-shrink: 0;
   display: flex;

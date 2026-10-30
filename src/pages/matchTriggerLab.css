@@ -360,7 +360,7 @@
 }
 
 .match-lab__moments--reorg {
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
 }
 
 .match-lab__moments--reorg button {

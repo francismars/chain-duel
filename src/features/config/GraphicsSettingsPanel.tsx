@@ -63,11 +63,6 @@ const TOGGLES: ToggleSpec[] = [
     title: 'Shadows & transparency',
     copy: 'Blurred shadows on the countdown and hints, the coin halo, and the see-through board. Off draws a solid board with flat text.',
   },
-  {
-    key: 'measureEveryFrame',
-    title: 'Measure board every frame',
-    copy: 'Reads the board size from the page each frame. Off uses the last resize, which avoids a layout pass.',
-  },
 ];
 
 const SOUND_TOGGLE: ToggleSpec = {

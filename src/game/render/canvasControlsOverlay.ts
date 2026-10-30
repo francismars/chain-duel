@@ -265,7 +265,7 @@ export class CanvasControlsOverlay {
       gamepad.visible = false;
       root.addChild(gamepad);
       const gamepadLabels: Text[] = [];
-      for (const letter of ['B', 'A', 'X']) {
+      for (const letter of ['B', 'A', 'X', 'Y']) {
         const face = new Text({
           text: letter,
           style: new TextStyle({

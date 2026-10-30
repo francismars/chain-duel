@@ -202,6 +202,10 @@ export function OnlineMatchIntroReveal({
         </article>
       </div>
 
+      {data.awayLine ? (
+        <p className="online-reveal__away">{data.awayLine}</p>
+      ) : null}
+
       <p className="online-reveal__stakes">
         {data.buyinEach.toLocaleString()}
         <span className="online-reveal__stakes-denom"> sats each</span>

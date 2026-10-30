@@ -6,6 +6,7 @@ import { ONLINE_HOME } from '@/shared/constants/onlineRoutes';
 import type { OnlineRoomState } from '@/types/socket';
 import OnlineRoomLobby from '@/pages/OnlineRoomLobby';
 import OnlineGame from '@/pages/OnlineGame';
+import { TouchMatchFrame } from '@/features/game/TouchMatchFrame';
 import OnlinePostGame from '@/pages/OnlinePostGame';
 import { OnlineJoinErrorPage } from '@/pages/OnlineJoinErrorPage';
 import { OnlineVictoryReveal } from '@/components/online/OnlineVictoryReveal';
@@ -458,12 +459,14 @@ export default function OnlineRoom() {
           />
         ) : null}
         {showArena ? (
-          <OnlineGame
-            embedded
-            roomCode={roomCode}
-            roomId={roomId}
-            victoryHandoff={victoryHandoff}
-          />
+          <TouchMatchFrame>
+            <OnlineGame
+              embedded
+              roomCode={roomCode}
+              roomId={roomId}
+              victoryHandoff={victoryHandoff}
+            />
+          </TouchMatchFrame>
         ) : null}
         {matchIntroActive && room ? (
           <OnlineMatchIntroReveal
@@ -489,6 +492,15 @@ export default function OnlineRoom() {
               roomCode={roomCode}
               roomId={roomId}
               onReadyChange={setPostGameReady}
+              p1Away={
+                room?.seats['Player 1']?.status === 'paid' &&
+                room.seats['Player 1']?.disconnectedAt != null
+              }
+              p2Away={
+                room?.seats['Player 2']?.status === 'paid' &&
+                room.seats['Player 2']?.disconnectedAt != null
+              }
+              claim={room?.claim ?? null}
             />
           </div>
         ) : null}

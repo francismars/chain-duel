@@ -469,6 +469,86 @@
   line-height: 1.2;
 }
 
+/* Server pause. Sharp plate on the board: pink status, grotesque clock, one line. */
+.online-forfeit {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6%;
+  pointer-events: none;
+  background: rgb(0 0 0 / 28%);
+}
+
+.online-forfeit__plate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  width: min(100%, 22rem);
+  padding: 0.9rem 1.15rem 0.85rem;
+  text-align: center;
+  background: rgb(8 8 8 / 88%);
+  border: 1px solid rgb(255 255 255 / 34%);
+}
+
+.online-forfeit__line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  width: 100%;
+}
+
+.online-forfeit--split .online-forfeit__line + .online-forfeit__line {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgb(255 255 255 / 22%);
+}
+
+.online-forfeit__kicker {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: clamp(0.62rem, 1.7cqi, 0.78rem);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ff9b9b;
+}
+
+.online-forfeit__line--opponent .online-forfeit__kicker {
+  color: #fff;
+}
+
+.online-forfeit--split .online-forfeit__time {
+  font-size: clamp(1.8rem, 8cqi, 2.6rem);
+}
+
+.online-forfeit__time {
+  margin: 0;
+  font-family: BureauGrotesque, sans-serif;
+  font-size: clamp(2.8rem, 14cqi, 4.6rem);
+  font-weight: 500;
+  line-height: 0.86;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+.online-forfeit__body {
+  margin: 0.2rem 0 0;
+  max-width: 22em;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: clamp(0.62rem, 1.7cqi, 0.78rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: rgb(255 255 255 / 72%);
+}
+
 .online-replay-error {
   margin-top: 0.35vw;
   color: #ff9b9b;
