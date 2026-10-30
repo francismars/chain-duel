@@ -808,7 +808,8 @@ export default function GameMenu({
 
   const copyLnurl = useCallback((lnurl: string, seat: 'p1' | 'p2') => {
     void navigator.clipboard.writeText(lnurl).then(() => {
-      if (copiedLnurlResetRef.current) clearTimeout(copiedLnurlResetRef.current);
+      if (copiedLnurlResetRef.current)
+        clearTimeout(copiedLnurlResetRef.current);
       setCopiedLnurlSeat(seat);
       copiedLnurlResetRef.current = window.setTimeout(() => {
         setCopiedLnurlSeat(null);
@@ -1287,17 +1288,10 @@ function LnurlMobileActions({
 }) {
   return (
     <div className="gamemenu-lnurl-actions">
-      <a
-        className="gamemenu-lnurl-action"
-        href={lightningUriHref(lnurl)}
-      >
+      <a className="gamemenu-lnurl-action" href={lightningUriHref(lnurl)}>
         Pay with wallet
       </a>
-      <button
-        type="button"
-        className="gamemenu-lnurl-action"
-        onClick={onCopy}
-      >
+      <button type="button" className="gamemenu-lnurl-action" onClick={onCopy}>
         {copied ? 'Copied' : 'Copy LNURL'}
       </button>
     </div>
