@@ -18,7 +18,7 @@ Production: game at [game.chainduel.net](https://game.chainduel.net/), backend a
 
 ```
 ┌─────────────────────────┐
-│  React client           │  React 18, TypeScript, PixiJS 8, Vite
+│  React client           │  React 19, TypeScript, PixiJS 8, Vite
 │  (Vite dev :5173)       │  Socket.IO client, nostr-tools
 └───────────┬─────────────┘
             │  Socket.IO (VITE_SOCKET_URL)

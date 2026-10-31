@@ -90,7 +90,7 @@ export function computeBracketState(
   for (let i = 0; i < winnersList.length; i++) {
     if (i + 1 >= numberOfPlayers) break;
     const w = winnersList[i];
-    let name = '';
+    let name: string;
     if (i < round1) {
       name =
         w === 'Player 1'
@@ -121,8 +121,8 @@ export function computeBracketState(
     };
   }
 
-  let nextP1 = '';
-  let nextP2 = '';
+  let nextP1: string;
+  let nextP2: string;
   if (nextIdx < round1) {
     nextP1 = playersList[nextIdx * 2] ?? '';
     nextP2 = playersList[nextIdx * 2 + 1] ?? '';

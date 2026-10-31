@@ -504,7 +504,7 @@ export default function TournamentBracket() {
     for (let i = 0; i < winnersList.length; i++) {
       if (i + 1 >= numberOfPlayers) break;
       const w = winnersList[i];
-      let winnerName = '';
+      let winnerName: string;
 
       if (i < round1) {
         if (w === 'Player 1') {

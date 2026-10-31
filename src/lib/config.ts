@@ -49,6 +49,6 @@ export async function loadConfig(): Promise<Config> {
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error('Unknown error loading config');
+    throw new Error('Unknown error loading config', { cause: error });
   }
 }

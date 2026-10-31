@@ -28,9 +28,9 @@ export const PlayerInfoSchema = z.object({
 });
 
 export const SerializedGameInfoSchema = z.object({
-  mode: z.nativeEnum(GameMode),
+  mode: z.enum(GameMode),
   players: z.record(z.string(), PlayerInfoSchema),
-  winners: z.array(z.nativeEnum(PlayerRole)).optional(),
+  winners: z.array(z.enum(PlayerRole)).optional(),
   numberOfPlayers: z.number().optional(),
   champion: z.string().optional(),
 });
@@ -44,7 +44,7 @@ export const LNURLPSchema = z.object({
   lnurlp: z.string(),
   description: z.string(),
   min: z.number(),
-  mode: z.nativeEnum(GameMode).optional(),
+  mode: z.enum(GameMode).optional(),
   hostLNAddress: z.string().optional(),
 });
 
@@ -105,7 +105,7 @@ export const OnlineNostrMetaSchema = z.object({
 export const OnlineRoomSnapshotSchema = z.object({
   tick: z.number(),
   phase: z.enum(['lobby', 'playing', 'postgame', 'finished', 'cancelled']),
-  state: z.object({}).passthrough(),
+  state: z.looseObject({}),
   hud: z.object({
     p1Points: z.number(),
     p2Points: z.number(),

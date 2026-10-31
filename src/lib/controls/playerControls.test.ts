@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createGameState } from '@/game/engine';
 import {
   confirmKeyCode,
   DEFAULT_CONFIRM_BINDINGS,
@@ -10,6 +11,7 @@ import {
   resolveDirectionFromKeyboardEvent,
   slotBindingLabels,
   slotBindings,
+  touchControlSlotForState,
   writeConfirmBinding,
   writeSlotBinding,
 } from '@/lib/controls/playerControls';
@@ -71,5 +73,35 @@ describe('playerControls', () => {
 
   it('infers AZERTY from KeyW producing z', () => {
     expect(inferLayoutFromKeyEvent({ code: 'KeyW', key: 'z' })).toBe('azerty');
+  });
+
+  it('drives the solo human’s input slot from touch', () => {
+    const state = createGameState({
+      p1Name: 'A',
+      p2Name: 'B',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'PRACTICE',
+      practiceMode: true,
+      teamMode: 'solo',
+      p1Human: true,
+      p2Human: false,
+    });
+    expect(touchControlSlotForState(state)).toBe('p1');
+  });
+
+  it('turns touch input off when two local humans share the screen', () => {
+    const state = createGameState({
+      p1Name: 'A',
+      p2Name: 'B',
+      p1Points: 1000,
+      p2Points: 1000,
+      modeLabel: 'PRACTICE',
+      practiceMode: false,
+      teamMode: 'solo',
+      p1Human: true,
+      p2Human: true,
+    });
+    expect(touchControlSlotForState(state)).toBeNull();
   });
 });

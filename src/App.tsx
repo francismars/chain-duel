@@ -1,3 +1,4 @@
+import { useEffect, type ComponentType } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -14,31 +15,75 @@ import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import { useClientTelemetry } from './hooks/useClientTelemetry';
 import { useKeyboardLayoutAutodetect } from './hooks/useKeyboardLayoutAutodetect';
 import Index from './pages/Index';
-import GameMenu from './pages/GameMenu';
-import PracticeHub from './pages/PracticeHub';
+import { FeatureUnavailableFallback } from './pages/FeatureUnavailableFallback';
 import { LegacyPracticeRedirect } from './pages/LegacyPracticeRedirect';
-import P2pEntry from './pages/P2pEntry';
-import TournamentLobby from './pages/TournamentLobby';
-import TournamentBracket from './pages/TournamentBracket';
-import Game from './pages/Game';
-import PostGame from './pages/PostGame';
-import Highscores from './pages/Highscores';
-import About from './pages/About';
-import Config from './pages/Config';
-import OnlineRoom from './pages/OnlineRoom';
-import OnlineRooms from './pages/OnlineRooms';
-import OnlinePostGame from './pages/OnlinePostGame';
-import OnlineFinishPreview from './pages/OnlineFinishPreview';
-import OnlineSeatPreview from './pages/OnlineSeatPreview';
-import UiDebugIndex from './pages/UiDebugIndex';
-import DebugPlayLaunch from './pages/DebugPlayLaunch';
-import MatchTriggerLab from './pages/MatchTriggerLab';
-import {
-  FreePlaySettingsPreviewB,
-  P2pPaymentPreviewB,
-  P2pSettingsPreviewB,
-} from './pages/uiDebugLayouts';
+import { lazyWithReload } from './lib/lazyWithReload';
 import './styles/index.css';
+
+const loadPracticeHub = () => import('./pages/PracticeHub');
+const loadP2pEntry = () => import('./pages/P2pEntry');
+const loadOnlineRooms = () => import('./pages/OnlineRooms');
+
+const GameMenu = lazyWithReload(() => import('./pages/GameMenu'));
+const PracticeHub = lazyWithReload(loadPracticeHub);
+const P2pEntry = lazyWithReload(loadP2pEntry);
+const TournamentLobby = lazyWithReload(() => import('./pages/TournamentLobby'));
+const TournamentBracket = lazyWithReload(
+  () => import('./pages/TournamentBracket')
+);
+const Game = lazyWithReload(() => import('./pages/Game'));
+const PostGame = lazyWithReload(() => import('./pages/PostGame'));
+const Highscores = lazyWithReload(() => import('./pages/Highscores'));
+const About = lazyWithReload(() => import('./pages/About'));
+const Config = lazyWithReload(() => import('./pages/Config'));
+const OnlineRoom = lazyWithReload(() => import('./pages/OnlineRoom'));
+const OnlineRooms = lazyWithReload(loadOnlineRooms);
+
+/**
+ * UI labs (`/preview` and the debug menu). On for `npm run dev`.
+ * A production build includes them only when VITE_ENABLE_PREVIEW=true,
+ * so the lab chunks are left out of the deployed bundle otherwise.
+ */
+const previewLabsEnabled =
+  import.meta.env.DEV || import.meta.env.VITE_ENABLE_PREVIEW === 'true';
+
+function lazyNamed<Module extends Record<string, ComponentType>>(
+  load: () => Promise<Module>,
+  name: keyof Module & string
+) {
+  return lazyWithReload(() => load().then((mod) => ({ default: mod[name] })));
+}
+
+const UiDebugIndex = previewLabsEnabled
+  ? lazyWithReload(() => import('./pages/UiDebugIndex'))
+  : null;
+const DebugPlayLaunch = previewLabsEnabled
+  ? lazyWithReload(() => import('./pages/DebugPlayLaunch'))
+  : null;
+const MatchTriggerLab = previewLabsEnabled
+  ? lazyWithReload(() => import('./pages/MatchTriggerLab'))
+  : null;
+const OnlineFinishPreview = previewLabsEnabled
+  ? lazyWithReload(() => import('./pages/OnlineFinishPreview'))
+  : null;
+const OnlineSeatPreview = previewLabsEnabled
+  ? lazyWithReload(() => import('./pages/OnlineSeatPreview'))
+  : null;
+const OnlinePostGame = previewLabsEnabled
+  ? lazyWithReload(() => import('./pages/OnlinePostGame'))
+  : null;
+const P2pSettingsPreviewB = previewLabsEnabled
+  ? lazyNamed(() => import('./pages/uiDebugLayouts'), 'P2pSettingsPreviewB')
+  : null;
+const FreePlaySettingsPreviewB = previewLabsEnabled
+  ? lazyNamed(
+      () => import('./pages/uiDebugLayouts'),
+      'FreePlaySettingsPreviewB'
+    )
+  : null;
+const P2pPaymentPreviewB = previewLabsEnabled
+  ? lazyNamed(() => import('./pages/uiDebugLayouts'), 'P2pPaymentPreviewB')
+  : null;
 
 function LegacyNetworkRedirect() {
   const { pathname, search } = useLocation();
@@ -50,9 +95,29 @@ function LegacyNetworkRedirect() {
   );
 }
 
+/** Home's three primary buttons. Same loaders as the routes, so idle prefetch hits those chunks. */
+function usePrefetchHomeRoutes() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (pathname !== '/') return;
+    const run = () => {
+      void loadPracticeHub();
+      void loadP2pEntry();
+      void loadOnlineRooms();
+    };
+    if (typeof window.requestIdleCallback !== 'function') {
+      const timeoutId = window.setTimeout(run, 1);
+      return () => window.clearTimeout(timeoutId);
+    }
+    const idleId = window.requestIdleCallback(run, { timeout: 2000 });
+    return () => window.cancelIdleCallback(idleId);
+  }, [pathname]);
+}
+
 function AppRoutes() {
   useClientTelemetry();
   useKeyboardLayoutAutodetect();
+  usePrefetchHomeRoutes();
   return (
     <Routes>
       <Route element={<PageRevealOutlet />}>
@@ -93,26 +158,59 @@ function AppRoutes() {
         {/* Online (legacy /network/* redirects preserve query strings) */}
         <Route path="/online" element={<OnlineRooms />} />
         <Route path="/online/r/:roomCode" element={<OnlineRoom />} />
-        <Route path="/preview" element={<UiDebugIndex />} />
-        <Route path="/preview/play/:kind" element={<DebugPlayLaunch />} />
-        <Route path="/preview/match-triggers" element={<MatchTriggerLab />} />
-        <Route
-          path="/preview/p2p-settings-b"
-          element={<P2pSettingsPreviewB />}
-        />
-        <Route
-          path="/preview/freeplay-settings-b"
-          element={<FreePlaySettingsPreviewB />}
-        />
-        <Route path="/preview/p2p-payment-b" element={<P2pPaymentPreviewB />} />
-        <Route
-          path="/preview/online-finish"
-          element={<OnlineFinishPreview />}
-        />
-        <Route path="/preview/online-seat" element={<OnlineSeatPreview />} />
-        <Route path="/preview/online-results" element={<OnlinePostGame />} />
-        <Route path="/preview/online-don" element={<OnlinePostGame />} />
+        {UiDebugIndex &&
+        DebugPlayLaunch &&
+        MatchTriggerLab &&
+        P2pSettingsPreviewB &&
+        FreePlaySettingsPreviewB &&
+        P2pPaymentPreviewB &&
+        OnlineFinishPreview &&
+        OnlineSeatPreview &&
+        OnlinePostGame ? (
+          <>
+            <Route path="/preview" element={<UiDebugIndex />} />
+            <Route path="/preview/play/:kind" element={<DebugPlayLaunch />} />
+            <Route
+              path="/preview/match-triggers"
+              element={<MatchTriggerLab />}
+            />
+            <Route
+              path="/preview/p2p-settings-b"
+              element={<P2pSettingsPreviewB />}
+            />
+            <Route
+              path="/preview/freeplay-settings-b"
+              element={<FreePlaySettingsPreviewB />}
+            />
+            <Route
+              path="/preview/p2p-payment-b"
+              element={<P2pPaymentPreviewB />}
+            />
+            <Route
+              path="/preview/online-finish"
+              element={<OnlineFinishPreview />}
+            />
+            <Route
+              path="/preview/online-seat"
+              element={<OnlineSeatPreview />}
+            />
+            <Route
+              path="/preview/online-results"
+              element={<OnlinePostGame />}
+            />
+            <Route path="/preview/online-don" element={<OnlinePostGame />} />
+          </>
+        ) : null}
         <Route path="/network/*" element={<LegacyNetworkRedirect />} />
+        <Route
+          path="*"
+          element={
+            <FeatureUnavailableFallback
+              title="Page not found"
+              subtitle="That address does not exist."
+            />
+          }
+        />
       </Route>
     </Routes>
   );

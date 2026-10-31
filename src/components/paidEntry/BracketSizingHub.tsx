@@ -7,6 +7,7 @@ const PLAYER_OPTIONS = [
   { n: 16 as const },
 ];
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const BUYIN_STEPS = Array.from(
   { length: 10 },
   (_, i) => (i + 1) * 10000

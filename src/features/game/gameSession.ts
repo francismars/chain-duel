@@ -233,7 +233,7 @@ function buildWinnerProgression<T>(
   for (let i = 0; i < winnersList.length; i += 1) {
     if (i + 1 >= numberOfPlayers) break;
     const winner = winnersList[i];
-    let winnerValue: T = fallback;
+    let winnerValue: T;
     if (i < round1Games) {
       winnerValue =
         winner === 'Player 1'

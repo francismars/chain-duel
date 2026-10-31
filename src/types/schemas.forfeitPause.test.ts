@@ -68,6 +68,22 @@ describe('online forfeit pause wire', () => {
       p2Reason: 'idle',
     });
 
+    const running = OnlineRoomStateSchema.parse({
+      ...room,
+      forfeit: {
+        paused: false,
+        limitMs: 300000,
+        p1RemainingMs: 272000,
+        p1Reason: 'idle',
+      },
+    });
+    expect(running.forfeit).toEqual({
+      paused: false,
+      limitMs: 300000,
+      p1RemainingMs: 272000,
+      p1Reason: 'idle',
+    });
+
     const claimed = OnlineRoomStateSchema.parse({
       ...room,
       phase: 'postgame',

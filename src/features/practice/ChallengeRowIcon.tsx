@@ -1,3 +1,4 @@
+// eslint-disable-next-line react-refresh/only-export-components
 export const CHALLENGE_ICON_IDS = [
   'normie',
   'stacker',

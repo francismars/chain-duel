@@ -799,7 +799,10 @@ export default function OnlineGame({
       if (slot && preState && !preState.gameStarted && !preState.gameEnded) {
         applyPreMatchAxisHeld(slot, keysHeldRef.current);
       }
-      emitHeldInput(axis);
+      // A held key repeats keydown. MarsPay treats every intent as a new steer,
+      // which would keep the idle clock from starting. Repeats still send the
+      // held directions and lastAxis.
+      emitHeldInput(event.repeat ? undefined : axis);
     };
 
     const onKeyUp = (event: KeyboardEvent) => {

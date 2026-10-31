@@ -4,6 +4,7 @@ import {
   coerceOnlinePrizeClaim,
   forfeitPauseCopy,
   formatForfeitRemaining,
+  idleSeatBadges,
   resultsAwayLine,
   resultsClaimLine,
   seatAwayLine,
@@ -177,7 +178,7 @@ describe('forfeitPauseCopy', () => {
       tone: 'both',
       lines: [
         {
-          kicker: "Neither player is moving.",
+          kicker: 'Neither player is moving.',
           timeLabel: '0:20',
           message: 'Ends when the first clock hits zero.',
           tone: 'both',
@@ -230,6 +231,45 @@ describe('forfeitPauseCopy', () => {
         ...names,
       })
     ).toBeNull();
+  });
+
+  it('badges an idle seat without covering a running board', () => {
+    const forfeit = {
+      paused: false,
+      limitMs: 300000,
+      p2RemainingMs: 272000,
+      p2Reason: 'idle' as const,
+    };
+    expect(
+      forfeitPauseCopy({ forfeit, viewer: 'spectator', ...names })
+    ).toBeNull();
+    expect(idleSeatBadges({ forfeit, viewer: 'spectator', ...names })).toEqual([
+      { seat: 'p2', label: 'Hal idle · 4:32' },
+    ]);
+    expect(
+      idleSeatBadges({
+        forfeit: {
+          paused: false,
+          limitMs: 300000,
+          p1RemainingMs: 9000,
+          p1Reason: 'idle',
+        },
+        viewer: 'p1',
+        ...names,
+      })
+    ).toEqual([{ seat: 'p1', label: 'You idle · 0:09' }]);
+    expect(
+      idleSeatBadges({
+        forfeit: {
+          paused: true,
+          limitMs: 300000,
+          p2RemainingMs: 272000,
+          p2Reason: 'idle',
+        },
+        viewer: 'spectator',
+        ...names,
+      })
+    ).toEqual([]);
   });
 });
 
@@ -328,16 +368,16 @@ describe('seat and results disconnect copy', () => {
         viewerIsWinner: true,
         winnerName: 'Satoshi',
         hasLnAddress: true,
+        ticking: true,
       })
-    ).toBe(
-      "Pays to your Lightning address in 2:05 if you don't withdraw."
-    );
+    ).toBe("Pays to your Lightning address in 2:05 if you don't withdraw.");
     expect(
       resultsClaimLine({
         claim,
         viewerIsWinner: false,
         winnerName: 'Satoshi',
         hasLnAddress: true,
+        ticking: true,
       })
     ).toBe("Pays to Satoshi's Lightning address in 2:05.");
     expect(
@@ -346,22 +386,69 @@ describe('seat and results disconnect copy', () => {
         viewerIsWinner: true,
         winnerName: 'Satoshi',
         hasLnAddress: false,
+        ticking: true,
       })
-    ).toBe('Withdraw before 2:05 or the house keeps the sats.');
+    ).toBe(
+      'Withdraw or start double-or-nothing before 2:05. After that the prize is held for a manual payout.'
+    );
+    expect(
+      resultsClaimLine({
+        claim: { remainingMs: 900000, limitMs: 900000 },
+        viewerIsWinner: true,
+        winnerName: 'Satoshi',
+        hasLnAddress: false,
+        ticking: true,
+      })
+    ).toBe(
+      'Withdraw or start double-or-nothing before 15:00. After that the prize is held for a manual payout.'
+    );
     expect(
       resultsClaimLine({
         claim,
         viewerIsWinner: false,
         winnerName: 'Satoshi',
         hasLnAddress: false,
+        ticking: true,
       })
-    ).toBe('Unclaimed prize closes in 2:05.');
+    ).toBe('Prize is held for a manual payout in 2:05.');
+    expect(
+      resultsClaimLine({
+        claim,
+        viewerIsWinner: true,
+        winnerName: 'Satoshi',
+        hasLnAddress: true,
+        ticking: false,
+      })
+    ).toBe(
+      "Pays to your Lightning address if you don't withdraw. Deadline 2:05."
+    );
+    expect(
+      resultsClaimLine({
+        claim,
+        viewerIsWinner: false,
+        winnerName: 'Satoshi',
+        hasLnAddress: false,
+        ticking: false,
+      })
+    ).toBe('Prize deadline 2:05. It is held for a manual payout.');
+    expect(
+      resultsClaimLine({
+        claim,
+        viewerIsWinner: true,
+        winnerName: 'Satoshi',
+        hasLnAddress: false,
+        ticking: false,
+      })
+    ).toBe(
+      'Withdraw or start double-or-nothing. Deadline 2:05. After that the prize is held for a manual payout.'
+    );
     expect(
       resultsClaimLine({
         claim: null,
         viewerIsWinner: false,
         winnerName: 'Satoshi',
         hasLnAddress: true,
+        ticking: true,
       })
     ).toBeNull();
   });

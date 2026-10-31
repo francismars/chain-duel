@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 26
           cache: npm
       - run: npm ci
       - run: npm run format:check
@@ -24,3 +24,37 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  # Sibling checkout so src/game/sim/challengeParity.test.ts resolves ../marspay.
+  # Bump the pin when the client engine changes, to the marspay commit it must match.
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: chain-duel
+      - uses: actions/checkout@v4
+        with:
+          repository: francismars/marspay
+          ref: b8c086dd901ebd0a26d42b5b0fdd3c83fd86b559
+          path: marspay
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: |
+            chain-duel/package-lock.json
+            marspay/package-lock.json
+      - run: npm ci
+        working-directory: marspay
+      # tsc emits dist/game/challengeEngine/replayRunner.js. The admin UI is not part of this check.
+      - run: npx tsc
+        working-directory: marspay
+      - run: npm ci
+        working-directory: chain-duel
+      - run: npx vitest run src/game/sim/challengeParity.test.ts
+        working-directory: chain-duel
+        env:
+          CHALLENGE_PARITY_REQUIRED: '1'

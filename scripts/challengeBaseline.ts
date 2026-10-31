@@ -1,6 +1,6 @@
 /**
  * Headless baseline win-rate report for all 6 challenge presets.
- * Usage: npx tsx scripts/challengeBaseline.ts
+ * Usage: npm run sim:baseline
  */
 import {
   CHALLENGE_SIM_PRESETS,

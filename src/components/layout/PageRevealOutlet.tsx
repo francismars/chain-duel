@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router';
 import '@/styles/page-reveal.css';
 
@@ -22,7 +22,11 @@ export function PageRevealOutlet() {
           : 'page-reveal-scope'
       }
     >
-      <Outlet />
+      <Suspense
+        fallback={<div className="page-reveal-fallback" aria-busy="true" />}
+      >
+        <Outlet />
+      </Suspense>
     </div>
   );
 }
