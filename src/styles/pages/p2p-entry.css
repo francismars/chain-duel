@@ -1556,7 +1556,9 @@
     flex-shrink: 0;
   }
 
-  .p2p-entry-page .practice-section[aria-labelledby='te-session'] .p2p-picker-row {
+  .p2p-entry-page
+    .practice-section[aria-labelledby='te-session']
+    .p2p-picker-row {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -1653,7 +1655,9 @@
     padding-bottom: calc(var(--safe-bottom) + 4.75rem);
   }
 
-  .p2p-entry-page:not(.practice-hub-page) .practice-actions .practice-start.button {
+  .p2p-entry-page:not(.practice-hub-page)
+    .practice-actions
+    .practice-start.button {
     position: fixed;
     left: calc(var(--safe-left) + var(--space-3));
     right: calc(var(--safe-right) + var(--space-3));

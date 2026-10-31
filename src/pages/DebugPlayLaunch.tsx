@@ -1,8 +1,5 @@
 import { Navigate, useParams } from 'react-router';
-import {
-  isDebugPlayKind,
-  saveDebugPlayConfig,
-} from '@/lib/uiDebug/debugPlay';
+import { isDebugPlayKind, saveDebugPlayConfig } from '@/lib/uiDebug/debugPlay';
 
 /** Writes a local match config, then opens the real game. */
 export default function DebugPlayLaunch() {

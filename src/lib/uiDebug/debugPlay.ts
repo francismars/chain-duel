@@ -14,7 +14,9 @@ export const DEBUG_PLAY_KINDS = [
 
 export type DebugPlayKind = (typeof DEBUG_PLAY_KINDS)[number];
 
-export function isDebugPlayKind(value: string | undefined): value is DebugPlayKind {
+export function isDebugPlayKind(
+  value: string | undefined
+): value is DebugPlayKind {
   return (DEBUG_PLAY_KINDS as readonly string[]).includes(value ?? '');
 }
 
