@@ -9,6 +9,7 @@ import {
 import { AudioProvider } from './contexts/AudioContext';
 import { NostrSessionProvider } from './contexts/NostrSessionContext';
 import { SocketProvider } from './contexts/SocketContext';
+import { AppUpdatePrompt } from './components/pwa/AppUpdatePrompt';
 import { CornerControls } from './components/ui/CornerControls';
 import { TouchMatchFrame } from './features/game/TouchMatchFrame';
 import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
@@ -224,6 +225,7 @@ function App() {
         <NostrSessionProvider>
           <BrowserRouter>
             <CornerControls />
+            <AppUpdatePrompt />
             <AppRoutes />
           </BrowserRouter>
         </NostrSessionProvider>

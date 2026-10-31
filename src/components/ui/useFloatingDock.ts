@@ -48,18 +48,48 @@ function writeDock(dock: Dock): void {
   }
 }
 
-function safeInset(name: 'top' | 'bottom' | 'left' | 'right'): number {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(
-    `--safe-${name}`
-  );
-  return parseFloat(value) || 0;
+type SafeInsets = { top: number; right: number; bottom: number; left: number };
+
+/**
+ * `--safe-*` stores `env(safe-area-inset-*)`. getComputedStyle returns that
+ * text, not pixels, so the dock used to ignore the notch. Measure a real
+ * padding instead. One reading per resize — the installed status bar is
+ * included here, and pages do not add a second inset on top of this button.
+ */
+let insetCache: SafeInsets | null = null;
+
+function safeInsets(): SafeInsets {
+  if (insetCache) return insetCache;
+  if (typeof document === 'undefined') {
+    return { top: 0, right: 0, bottom: 0, left: 0 };
+  }
+  const probe = document.createElement('div');
+  probe.setAttribute('aria-hidden', 'true');
+  probe.style.position = 'fixed';
+  probe.style.visibility = 'hidden';
+  probe.style.pointerEvents = 'none';
+  probe.style.paddingTop = 'env(safe-area-inset-top, 0px)';
+  probe.style.paddingRight = 'env(safe-area-inset-right, 0px)';
+  probe.style.paddingBottom = 'env(safe-area-inset-bottom, 0px)';
+  probe.style.paddingLeft = 'env(safe-area-inset-left, 0px)';
+  document.documentElement.appendChild(probe);
+  const style = getComputedStyle(probe);
+  insetCache = {
+    top: parseFloat(style.paddingTop) || 0,
+    right: parseFloat(style.paddingRight) || 0,
+    bottom: parseFloat(style.paddingBottom) || 0,
+    left: parseFloat(style.paddingLeft) || 0,
+  };
+  probe.remove();
+  return insetCache;
 }
 
 function bounds(size: number) {
-  const minX = safeInset('left') + EDGE_GAP_PX;
-  const maxX = window.innerWidth - safeInset('right') - EDGE_GAP_PX - size;
-  const minY = safeInset('top') + EDGE_GAP_PX;
-  const maxY = window.innerHeight - safeInset('bottom') - EDGE_GAP_PX - size;
+  const insets = safeInsets();
+  const minX = insets.left + EDGE_GAP_PX;
+  const maxX = window.innerWidth - insets.right - EDGE_GAP_PX - size;
+  const minY = insets.top + EDGE_GAP_PX;
+  const maxY = window.innerHeight - insets.bottom - EDGE_GAP_PX - size;
   return { minX, maxX, minY, maxY: Math.max(minY, maxY) };
 }
 
@@ -95,7 +125,10 @@ export function useFloatingDock(size: number, enabled: boolean) {
   // Re-place on resize / rotation and whenever the dock changes.
   useEffect(() => {
     if (!enabled) return;
-    const place = () => setPoint(dockToPoint(dock, size));
+    const place = () => {
+      insetCache = null;
+      setPoint(dockToPoint(dock, size));
+    };
     place();
     window.addEventListener('resize', place);
     return () => window.removeEventListener('resize', place);

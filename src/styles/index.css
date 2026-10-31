@@ -27,6 +27,14 @@ button {
   font-family: 'Inter', sans-serif;
 }
 
+/* Installed window: overscroll and the status-bar gap stay black.
+   Insets stay on --safe-*, not on body. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  html {
+    background-color: #000;
+  }
+}
+
 body {
   padding: 0;
   margin: 0;
