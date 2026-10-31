@@ -2624,6 +2624,13 @@
     --ph-content-inset: 0;
   }
 
+  .practice-hub-page
+    .practice-play-style-section
+    .ph-picker-block
+    .p2p-picker-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   /* Glow gutters were pulling card edges in from the footer buttons. */
   .practice-hub-page .ph-picker-block .p2p-picker-row,
   .practice-hub-page .ph-picker-block .practice-four-slot,
