@@ -70,7 +70,7 @@ describe('lazyWithReload', () => {
     expect(settled).toBe(false);
   });
 
-  it('rethrows the next failure in the same tab without reloading again', async () => {
+  it('reloads only once when two loads fail in a row', async () => {
     const pending = start(() => Promise.reject(new Error('missing chunk')));
     await Promise.resolve();
     expect(reload).toHaveBeenCalledOnce();
@@ -79,6 +79,7 @@ describe('lazyWithReload', () => {
     const error = new Error('still missing');
     await expect(start(() => Promise.reject(error))).rejects.toBe(error);
     expect(reload).toHaveBeenCalledOnce();
+    expect(storage.get(STORAGE_KEY_CHUNK_RELOAD)).toBe('1');
   });
 
   it('returns the module when the loader succeeds', async () => {
@@ -86,6 +87,51 @@ describe('lazyWithReload', () => {
     await expect(start(() => Promise.resolve(mod))).resolves.toBe(mod);
     expect(reload).not.toHaveBeenCalled();
     expect(storage.has(STORAGE_KEY_CHUNK_RELOAD)).toBe(false);
+  });
+
+  it('clears the reload flag after a chunk loads successfully', async () => {
+    storage.set(STORAGE_KEY_CHUNK_RELOAD, '1');
+    const mod = { default: Page };
+    await expect(start(() => Promise.resolve(mod))).resolves.toBe(mod);
+    expect(reload).not.toHaveBeenCalled();
+    expect(storage.has(STORAGE_KEY_CHUNK_RELOAD)).toBe(false);
+  });
+
+  it('reloads again after a successful load has cleared the flag', async () => {
+    storage.set(STORAGE_KEY_CHUNK_RELOAD, '1');
+    await start(() => Promise.resolve({ default: Page }));
+    expect(storage.has(STORAGE_KEY_CHUNK_RELOAD)).toBe(false);
+
+    const pending = start(() => Promise.reject(new Error('missing chunk')));
+    await Promise.resolve();
+    expect(reload).toHaveBeenCalledOnce();
+    expect(storage.get(STORAGE_KEY_CHUNK_RELOAD)).toBe('1');
+    void pending;
+  });
+
+  it('keeps the flag when a chunk resolves after a reload was requested', async () => {
+    const pending = start(() => Promise.reject(new Error('missing chunk')));
+    await Promise.resolve();
+    void pending;
+    expect(reload).toHaveBeenCalledOnce();
+
+    await start(() => Promise.resolve({ default: Page }));
+    expect(storage.get(STORAGE_KEY_CHUNK_RELOAD)).toBe('1');
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('returns the module when clearing the flag throws', async () => {
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => '1',
+      setItem: () => {},
+      removeItem: () => {
+        throw new Error('blocked');
+      },
+    });
+
+    const mod = { default: Page };
+    await expect(start(() => Promise.resolve(mod))).resolves.toBe(mod);
+    expect(reload).not.toHaveBeenCalled();
   });
 
   it('rethrows when sessionStorage is blocked so a reload cannot loop', async () => {
