@@ -326,6 +326,15 @@ export class GameAudioSystem {
     for (const audio of this.sfx) audio.pause();
   }
 
+  /**
+   * Record the board without treating the jump as a death.
+   * A rules clip teleports chains between beats; that jump is not a reset.
+   */
+  primeCollisionMarks(state: GameState): void {
+    this.previousPlayers = null;
+    this.trackStreak(state);
+  }
+
   /** Called for local frames and authoritative online/replay snapshots. */
   updateGameState(state: GameState): void {
     if (state.gameEnded) {

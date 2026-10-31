@@ -13,6 +13,11 @@ import {
 import type { GameState, GridPos } from '@/game/engine/types';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
+import { GameAudioSystem } from '@/game/audio/gameAudio';
+import {
+  advanceStreakPops,
+  streakPops,
+} from '@/game/audio/tensionDebug';
 
 export type RuleClipId = 'stake' | 'chain' | 'reset' | 'block';
 
@@ -88,10 +93,6 @@ type ResetPhase = 'wall' | 'straight' | 'reorg' | 'clash' | 'restart';
 
 /** Left, with a one-cell rise and fall so the long chain arrives later. */
 const BLACK_ZIGZAG = ['Left', 'Left', 'Up', 'Left', 'Left', 'Down'] as const;
-
-function jumped(from: GridPos, to: GridPos): boolean {
-  return Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1]) > 1;
-}
 
 /**
  * White is short and aimed at the top wall. Black is already long on the
@@ -175,12 +176,6 @@ export function RuleClip({ id }: { id: RuleClipId }) {
   const [stake, setStake] = useState({ p1: 0, p2: 0 });
   const [bar, setBar] = useState({ p1: 50, p2: 50 });
   const [blockFlash, setBlockFlash] = useState(false);
-  const [impact, setImpact] = useState<{
-    id: number;
-    left: number;
-    top: number;
-    kind: 'wall' | 'clash' | 'reorg';
-  } | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -202,9 +197,9 @@ export function RuleClip({ id }: { id: RuleClipId }) {
     let resetPhase: ResetPhase = 'wall';
     let restartSteps = 0;
     let zigSteps = 0;
-    let impactId = 0;
+    const marks = new GameAudioSystem();
+    marks.applyAppMuteState(true, true);
     setShowQr(id === 'stake');
-    setImpact(null);
     setStake({ p1: 0, p2: 0 });
     setBlockFlash(false);
     const syncBar = () => {
@@ -291,6 +286,7 @@ export function RuleClip({ id }: { id: RuleClipId }) {
           restartSteps += 1;
           if (restartSteps >= 3) {
             placeWallApproach(state);
+            marks.primeCollisionMarks(state);
             resetPhase = 'wall';
             restartSteps = 0;
             zigSteps = 0;
@@ -328,29 +324,16 @@ export function RuleClip({ id }: { id: RuleClipId }) {
         const beforeP1: GridPos = [state.p1.head[0], state.p1.head[1]];
         const beforeP2: GridPos = [state.p2.head[0], state.p2.head[1]];
         stepGame(state);
-        const p1Hit = jumped(beforeP1, state.p1.head);
-        const p2Hit = jumped(beforeP2, state.p2.head);
-        const flash = (
-          kind: 'wall' | 'clash' | 'reorg',
-          col: number,
-          row: number
-        ) => {
-          impactId += 1;
-          setImpact({
-            id: impactId,
-            left: ((col + 0.5) / state.cols) * 100,
-            top: ((row + 0.5) / state.rows) * 100,
-            kind,
-          });
-        };
+        if (!state.gameEnded) marks.updateGameState(state);
+        const moved = (from: GridPos, to: GridPos) =>
+          Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1]) > 1;
+        const p1Hit = moved(beforeP1, state.p1.head);
+        const p2Hit = moved(beforeP2, state.p2.head);
         if (resetPhase === 'wall' && p1Hit && !p2Hit) {
-          flash('wall', beforeP1[0], 0);
           resetPhase = 'straight';
         } else if (resetPhase === 'reorg' && p1Hit && p2Hit) {
-          flash('reorg', (beforeP1[0] + beforeP2[0]) / 2, beforeP1[1]);
           resetPhase = 'clash';
         } else if (resetPhase === 'clash' && p1Hit && p2Hit) {
-          flash('clash', (beforeP1[0] + beforeP2[0]) / 2, beforeP1[1]);
           resetPhase = 'restart';
           restartSteps = 0;
         }
@@ -464,7 +447,13 @@ export function RuleClip({ id }: { id: RuleClipId }) {
           stepped = true;
         }
         advancePointChanges(state, delta);
-        if (stepped || (state.pointChanges?.length ?? 0) > 0 || sizeChanged) {
+        advanceStreakPops();
+        if (
+          stepped ||
+          (state.pointChanges?.length ?? 0) > 0 ||
+          streakPops().length > 0 ||
+          sizeChanged
+        ) {
           sizeChanged = false;
           paint();
         }
@@ -477,6 +466,7 @@ export function RuleClip({ id }: { id: RuleClipId }) {
       stopped = true;
       detachResize?.();
       window.cancelAnimationFrame(frame);
+      marks.stopAll();
       renderer.destroy();
     };
   }, [id]);
@@ -489,14 +479,6 @@ export function RuleClip({ id }: { id: RuleClipId }) {
       </div>
       <div className={blockFlash ? 'rule-clip rule-clip--flash' : 'rule-clip'}>
         <div className="rule-clip__stage" ref={hostRef} />
-        {impact ? (
-          <div
-            key={impact.id}
-            className={`rule-clip__impact rule-clip__impact--${impact.kind}`}
-            style={{ left: `${impact.left}%`, top: `${impact.top}%` }}
-            onAnimationEnd={() => setImpact(null)}
-          />
-        ) : null}
         {id === 'stake' && showQr ? (
           <div className="rule-clip__qr">
             {(
