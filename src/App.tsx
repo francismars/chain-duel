@@ -199,6 +199,7 @@ function AppRoutes() {
               element={<OnlinePostGame />}
             />
             <Route path="/preview/online-don" element={<OnlinePostGame />} />
+            <Route path="/preview/online-away" element={<OnlinePostGame />} />
           </>
         ) : null}
         <Route path="/network/*" element={<LegacyNetworkRedirect />} />

@@ -90,8 +90,8 @@ export function buildOnlineUiDebugRoom(
 ): OnlineRoomState {
   const code = roomCode.trim().toUpperCase() || 'DEBUG';
   const liveMatch = scene === 'loading';
-  const p1Name = liveMatch ? 'Lena Okonkwo' : 'Satoshi';
-  const p2Name = 'Samir Dalal';
+  const p1Name = 'Satoshi';
+  const p2Name = 'Hal';
   const p1 = paidSeat(PlayerRole.Player1, p1Name, DEBUG_P1_SESSION, {
     picture: liveMatch ? PREVIEW_P1_PICTURE : undefined,
     pubkey: liveMatch
