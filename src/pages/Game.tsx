@@ -186,9 +186,35 @@ function soloZapNavDirection(
   return null;
 }
 
+const CHAINDUEL_AVATAR = '/images/favicon_package/apple-touch-icon.png';
+
+function SoloZapAvatar({
+  src,
+  onError,
+}: {
+  src: string | null;
+  onError: () => void;
+}) {
+  const fallback = !src;
+  return (
+    <img
+      className={`solo-zap-profile__avatar${
+        fallback ? ' solo-zap-profile__avatar--mark' : ''
+      }`}
+      src={src ?? CHAINDUEL_AVATAR}
+      alt=""
+      width={56}
+      height={56}
+      onError={fallback ? undefined : onError}
+    />
+  );
+}
+
 export default function Game() {
   const location = useLocation();
   const endPreview = new URLSearchParams(location.search).get('preview');
+  const previewNoAvatar =
+    new URLSearchParams(location.search).get('avatar') === 'none';
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
   const nostrSession = useNostrSession();
@@ -624,11 +650,12 @@ export default function Game() {
       return;
     }
     setSoloZapFocus((current) => {
-      if (current && soloZapFocusOrder.includes(current)) return current;
-      return (
+      const preferred =
         SOLO_ZAP_FOCUS_PRIORITY.find((id) => soloZapFocusOrder.includes(id)) ??
-        soloZapFocusOrder[0]
-      );
+        soloZapFocusOrder[0];
+      if (!current || !soloZapFocusOrder.includes(current)) return preferred;
+      if (current === 'menu' && preferred !== 'menu') return preferred;
+      return current;
     });
   }, [soloEndData, soloZapFocusOrder]);
 
@@ -2219,18 +2246,15 @@ export default function Game() {
                 <>
                   <div className="solo-zap-profile solo-zap-profile--winner">
                     <div className="solo-zap-profile__identity">
-                      <img
-                        className="solo-zap-profile__avatar"
+                      <SoloZapAvatar
                         src={
+                          !previewNoAvatar &&
                           nostrSession.signedIn &&
                           !noteAuthorAvatarBroken &&
                           noteAuthorAvatar
                             ? noteAuthorAvatar
-                            : '/images/social/Nostr.png'
+                            : null
                         }
-                        alt=""
-                        width={56}
-                        height={56}
                         onError={() => setNoteAuthorAvatarBroken(true)}
                       />
                       <h2 className="match-end-card__name">
@@ -2366,54 +2390,74 @@ export default function Game() {
                                 </Button>
                               </>
                             ) : (
-                              <Button
-                                ref={soloZapClaimRef}
-                                data-solo-zap-nav="claim"
-                                type="button"
-                                tabIndex={soloZapFocus === 'claim' ? 0 : -1}
-                                className={soloZapButtonClass(
-                                  'claim',
-                                  'practice-start solo-zap-post-btn'
-                                )}
-                                onFocus={() => setSoloZapFocus('claim')}
-                                disabled={
-                                  noteState === 'posting' ||
-                                  noteState === 'zapping'
-                                }
-                                onClick={() => {
-                                  void postBountyNote();
-                                }}
-                              >
-                                {noteState === 'posting' ||
-                                noteState === 'zapping' ? (
-                                  <>
-                                    <svg
-                                      className="solo-zap-post-spinner"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      aria-hidden
-                                    >
-                                      <circle
-                                        cx="12"
-                                        cy="12"
-                                        r="9"
-                                        strokeOpacity="0.15"
-                                      />
-                                      <path d="M12 3a9 9 0 0 1 9 9" />
-                                    </svg>
-                                    {resolveSignerMode() === 'nip46'
-                                      ? 'WAITING FOR APPROVAL…'
-                                      : noteState === 'zapping'
-                                        ? 'ZAPPING…'
-                                        : 'SIGNING…'}
-                                  </>
-                                ) : (
-                                  'POST ON NOSTR AND CLAIM PRIZE'
-                                )}
-                              </Button>
+                              <div className="solo-zap-note-preview__actions-row">
+                                <Button
+                                  ref={soloZapClaimRef}
+                                  data-solo-zap-nav="claim"
+                                  type="button"
+                                  tabIndex={soloZapFocus === 'claim' ? 0 : -1}
+                                  className={soloZapButtonClass(
+                                    'claim',
+                                    'practice-start solo-zap-post-btn'
+                                  )}
+                                  tooltip="Post on Nostr and claim the prize"
+                                  onFocus={() => setSoloZapFocus('claim')}
+                                  disabled={
+                                    noteState === 'posting' ||
+                                    noteState === 'zapping'
+                                  }
+                                  onClick={() => {
+                                    void postBountyNote();
+                                  }}
+                                >
+                                  {noteState === 'posting' ||
+                                  noteState === 'zapping' ? (
+                                    <>
+                                      <svg
+                                        className="solo-zap-post-spinner"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        aria-hidden
+                                      >
+                                        <circle
+                                          cx="12"
+                                          cy="12"
+                                          r="9"
+                                          strokeOpacity="0.15"
+                                        />
+                                        <path d="M12 3a9 9 0 0 1 9 9" />
+                                      </svg>
+                                      {resolveSignerMode() === 'nip46'
+                                        ? 'WAITING…'
+                                        : noteState === 'zapping'
+                                          ? 'ZAPPING…'
+                                          : 'SIGNING…'}
+                                    </>
+                                  ) : (
+                                    'CLAIM'
+                                  )}
+                                </Button>
+                                <Button
+                                  ref={soloZapMenuRef}
+                                  data-solo-zap-nav="menu"
+                                  type="button"
+                                  tabIndex={soloZapFocus === 'menu' ? 0 : -1}
+                                  className={soloZapButtonClass(
+                                    'menu',
+                                    'solo-zap-footer-btn solo-zap-footer-btn--subtle practice-back'
+                                  )}
+                                  tooltip="Leave without claiming the zap"
+                                  onFocus={() => setSoloZapFocus('menu')}
+                                  onClick={() => {
+                                    forfeitClaimAndExit();
+                                  }}
+                                >
+                                  LEAVE
+                                </Button>
+                              </div>
                             )}
                           </div>
                         ) : null}
@@ -2457,18 +2501,15 @@ export default function Game() {
                 <>
                   <div className="solo-zap-profile solo-zap-profile--winner">
                     <div className="solo-zap-profile__identity">
-                      <img
-                        className="solo-zap-profile__avatar"
+                      <SoloZapAvatar
                         src={
+                          !previewNoAvatar &&
                           nostrSession.signedIn &&
                           !noteAuthorAvatarBroken &&
                           noteAuthorAvatar
                             ? noteAuthorAvatar
-                            : '/images/social/Nostr.png'
+                            : null
                         }
-                        alt=""
-                        width={56}
-                        height={56}
                         onError={() => setNoteAuthorAvatarBroken(true)}
                       />
                       <h2 className="match-end-card__name">
@@ -2500,7 +2541,7 @@ export default function Game() {
                 </>
               )}
 
-              {!soloEndData.validating && (
+              {!soloEndData.validating && !canForfeitUnclaimedPrize && (
                 <div className="solo-zap-footer">
                   <Button
                     ref={soloZapMenuRef}
