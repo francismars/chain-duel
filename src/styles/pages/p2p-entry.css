@@ -766,6 +766,10 @@
   gap: clamp(12px, 1.6vw, 18px);
 }
 
+.p2p-entry-page--stepped .practice-panel {
+  gap: clamp(1.75rem, 3vw, 2.5rem);
+}
+
 .p2p-entry-page .practice-section {
   gap: 0.45em;
 }
@@ -1552,6 +1556,40 @@
     flex-shrink: 0;
   }
 
+  .p2p-entry-page
+    .practice-section[aria-labelledby='te-session']
+    .p2p-picker-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .p2p-entry-page [aria-labelledby='te-duel-format'] .p2p-duel-format {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .p2p-entry-page [aria-labelledby='te-duel-format'] .p2p-duel-format__card {
+    min-height: 4.5rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .p2p-entry-page .p2p-picker-card--duel,
+  .p2p-entry-page .p2p-picker-card--tournament {
+    min-height: 148px;
+    padding: 1.35rem 1rem 1.15rem;
+    gap: 0.45rem;
+  }
+
+  .p2p-entry-page .p2p-picker-card--duel .p2p-picker-icon,
+  .p2p-entry-page .p2p-picker-card--tournament .p2p-picker-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .p2p-entry-page .p2p-picker-card--duel .p2p-picker-label,
+  .p2p-entry-page .p2p-picker-card--tournament .p2p-picker-label {
+    font-size: 1.35rem;
+  }
+
   .p2p-entry-page .practice-panel {
     display: flex;
     flex-direction: column;
@@ -1562,6 +1600,10 @@
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     padding: 0;
+  }
+
+  .p2p-entry-page--stepped .practice-panel {
+    gap: 2rem;
   }
 
   .p2p-entry-page .ph-picker-block .p2p-picker-row,
@@ -1590,5 +1632,38 @@
   .p2p-entry-page .practice-actions .button {
     width: 100%;
     flex: 0 0 auto;
+  }
+
+  .page-reveal-scope:has(.p2p-entry-page:not(.practice-hub-page)) {
+    animation: none;
+    transform: none;
+  }
+
+  .p2p-entry-page:not(.practice-hub-page) .practice-panel {
+    animation: none;
+    transform: none;
+  }
+
+  .p2p-entry-page:not(.practice-hub-page) .practice-actions,
+  .p2p-entry-page--stepped:not(.practice-hub-page)
+    .practice-panel
+    > .practice-actions {
+    position: static;
+    margin-top: var(--space-3);
+    flex-direction: column;
+    background: none;
+    padding-bottom: calc(var(--safe-bottom) + 4.75rem);
+  }
+
+  .p2p-entry-page:not(.practice-hub-page)
+    .practice-actions
+    .practice-start.button {
+    position: fixed;
+    left: calc(var(--safe-left) + var(--space-3));
+    right: calc(var(--safe-right) + var(--space-3));
+    bottom: calc(var(--safe-bottom) + var(--space-3));
+    width: auto;
+    z-index: 12;
+    background: #000;
   }
 }

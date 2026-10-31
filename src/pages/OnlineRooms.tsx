@@ -159,17 +159,11 @@ function HistoryMatchupBlock({
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.25"
-            strokeLinejoin="round"
-            strokeLinecap="round"
+            fill="currentColor"
             className="online-postgame-crown-svg"
           >
-            <path d="M1 15h18V9L15 12L10 2L5 12L1 9Z" />
-            <circle cx="10" cy="2" r="1.1" fill="currentColor" stroke="none" />
-            <circle cx="1" cy="9" r="0.9" fill="currentColor" stroke="none" />
-            <circle cx="19" cy="9" r="0.9" fill="currentColor" stroke="none" />
+            <path d="M1.5 12.6 4.1 6.2 7.4 9.4 10 1.8 12.6 9.4 15.9 6.2 18.5 12.6H1.5Z" />
+            <path d="M1.2 13.2h17.6v1.5H1.2z" />
           </svg>
         </span>
         <span className="online-postgame-round-winner-body">

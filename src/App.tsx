@@ -57,6 +57,9 @@ function lazyNamed<Module extends Record<string, ComponentType>>(
 const UiDebugIndex = previewLabsEnabled
   ? lazyWithReload(() => import('./pages/UiDebugIndex'))
   : null;
+const DebugPlayLaunch = previewLabsEnabled
+  ? lazyWithReload(() => import('./pages/DebugPlayLaunch'))
+  : null;
 const MatchTriggerLab = previewLabsEnabled
   ? lazyWithReload(() => import('./pages/MatchTriggerLab'))
   : null;
@@ -156,6 +159,7 @@ function AppRoutes() {
         <Route path="/online" element={<OnlineRooms />} />
         <Route path="/online/r/:roomCode" element={<OnlineRoom />} />
         {UiDebugIndex &&
+        DebugPlayLaunch &&
         MatchTriggerLab &&
         P2pSettingsPreviewB &&
         FreePlaySettingsPreviewB &&
@@ -165,6 +169,7 @@ function AppRoutes() {
         OnlinePostGame ? (
           <>
             <Route path="/preview" element={<UiDebugIndex />} />
+            <Route path="/preview/play/:kind" element={<DebugPlayLaunch />} />
             <Route
               path="/preview/match-triggers"
               element={<MatchTriggerLab />}
@@ -194,6 +199,7 @@ function AppRoutes() {
               element={<OnlinePostGame />}
             />
             <Route path="/preview/online-don" element={<OnlinePostGame />} />
+            <Route path="/preview/online-away" element={<OnlinePostGame />} />
           </>
         ) : null}
         <Route path="/network/*" element={<LegacyNetworkRedirect />} />

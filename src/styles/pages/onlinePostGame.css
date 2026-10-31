@@ -135,18 +135,17 @@
   letter-spacing: 0.11em;
   text-transform: uppercase;
   padding: 0.32rem 0.55rem;
-  border: 1px solid rgb(255 175 85 / 0.42);
-  color: var(--h-don);
-  background: rgb(255 130 40 / 0.07);
+  border: none;
+  color: #000;
+  background: #d4d4d4;
   max-width: 100%;
   line-height: 1;
   white-space: nowrap;
 }
 
 .online-postgame-round-chip--open {
-  border-color: rgb(130 205 255 / 0.42);
-  color: var(--h-accent);
-  background: rgb(90 170 255 / 0.08);
+  color: #000;
+  background: #8a8a8a;
 }
 
 .online-postgame-round-time {
@@ -316,8 +315,8 @@
 }
 
 .online-postgame-crown-svg {
-  width: 16px;
-  height: 13px;
+  width: 18px;
+  height: 14px;
   display: block;
 }
 
@@ -526,7 +525,8 @@
 .online-postgame-grid {
   margin-top: 0.6rem;
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: 1fr;
+  align-items: start;
   gap: 0.65rem;
 }
 
@@ -544,31 +544,42 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.55rem;
   flex-wrap: wrap;
 }
 
 .online-postgame-payout-choice {
   width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  text-align: left;
   border: 1px solid rgb(255 255 255 / 0.24);
   border-radius: 0;
   background: rgb(255 255 255 / 0.03);
-  padding: 0.5rem 0.6rem;
+  padding: 0;
   margin-bottom: 0.1rem;
+}
+
+.online-postgame-payout-copy {
+  min-width: 0;
+  padding: 0.75rem 1.6rem 0.75rem 0.9rem;
 }
 
 .online-postgame-payout-title {
   margin: 0;
   font-family: BureauGrotesque, sans-serif;
-  letter-spacing: 0.08em;
-  font-size: 0.88rem;
+  letter-spacing: 0;
+  text-align: left;
+  font-size: 1.2rem;
   color: rgb(255 255 255 / 0.96);
   text-transform: uppercase;
 }
 
 .online-postgame-payout-note {
   margin: 0.2rem 0 0;
+  text-align: left;
   font-size: 0.78rem;
   color: rgb(222 222 222 / 0.82);
 }
@@ -576,8 +587,9 @@
 .online-postgame-payout-row {
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 0.55rem;
+  margin-top: 0.65rem;
 }
 
 .online-postgame-payout-row .button {
@@ -683,10 +695,32 @@
 }
 
 .online-postgame-qr-wrap {
-  border: 1px solid rgb(255 255 255 / 0.2);
+  position: relative;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: none;
   border-radius: 0;
-  background: rgb(0 0 0 / 28%);
-  padding: 0.75rem;
+  background: none;
+  padding: 0.75rem 0.9rem;
+}
+
+.online-postgame-qr-wrap::before {
+  content: '';
+  position: absolute;
+  top: 1.15rem;
+  bottom: 1.15rem;
+  left: 0;
+  width: 1px;
+  background: rgb(255 255 255 / 0.24);
+}
+
+.online-postgame-qr-title,
+.online-postgame-qr-note,
+.online-postgame-qr-lnurl-link {
+  align-self: stretch;
+  text-align: center;
 }
 
 .online-postgame-qr-title {
@@ -725,8 +759,8 @@
 
 .online-postgame-qr-note {
   margin: 0.45rem 0 0;
-  color: rgb(255 255 255 / 0.74);
-  font-size: 0.82rem;
+  color: rgb(255 255 255 / 0.38);
+  font-size: 0.78rem;
 }
 
 .online-postgame-qr-blur {
@@ -743,11 +777,10 @@
 .online-postgame-don-panel {
   margin-top: 0.55rem;
   border: 1px solid rgb(255 255 255 / 0.18);
-  border-left: 3px solid rgb(255 175 85 / 0.45);
   background: rgb(0 0 0 / 28%);
   padding: 0.75rem 0.9rem 0.8rem 0.85rem;
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.15fr) minmax(0, 1.1fr);
   align-items: center;
   gap: 1rem;
   transition:
@@ -755,27 +788,26 @@
     opacity 0.22s ease;
 }
 
-.online-postgame-don-panel--active {
-  border-left-color: rgb(255 175 85 / 0.75);
-}
-
 .online-postgame-don-panel--locked {
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-left: 3px solid rgb(255 255 255 / 0.14);
+  border-color: rgb(255 255 255 / 0.1);
   opacity: 0.42;
 }
 
-.online-postgame-don-info {
-  flex: 1;
+.online-postgame-don-info,
+.online-postgame-don-messages {
   min-width: 0;
   text-align: left;
+}
+
+.online-postgame-don-messages {
+  align-self: start;
 }
 
 .online-postgame-don-title {
   margin: 0;
   font-family: BureauGrotesque, sans-serif;
-  font-size: 0.88rem;
-  letter-spacing: 0.12em;
+  font-size: 1.2rem;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.88);
 }
@@ -787,32 +819,124 @@
   color: rgb(255 255 255 / 0.5);
 }
 
+.online-postgame-don-messages .online-postgame-away,
+.online-postgame-don-messages .online-postgame-claim {
+  margin: 0;
+}
+
+.online-postgame-don-messages .online-postgame-claim {
+  margin-top: 0.45rem;
+}
+
 .online-postgame-away,
 .online-postgame-claim {
   margin: 0.45rem 0 0;
   font-family: Inter, sans-serif;
   font-size: 0.72rem;
-  font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1.45;
   text-transform: uppercase;
   color: #ff9b9b;
 }
 
+.online-postgame-away {
+  font-weight: 700;
+}
+
+.online-postgame-claim {
+  font-weight: 400;
+}
+
+.online-postgame-claim-time {
+  font-weight: 700;
+}
+
 .online-postgame-don-controls {
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: stretch;
+  justify-self: end;
   gap: 0.5rem;
 }
 
 .online-postgame-don-vote-row {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 0.48rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.35rem;
+}
+
+.online-postgame-don-player {
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  gap: 0.4rem;
+  min-width: 0;
+  max-width: 50%;
+}
+
+.online-postgame-don-player--right {
+  flex-direction: row-reverse;
+}
+
+.online-postgame-don-vote-cycle {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.online-postgame-don-vote-cycle > span {
+  grid-area: 1 / 1;
+  justify-self: stretch;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  animation: don-vote-swap 4s ease-in-out infinite;
+}
+
+.online-postgame-don-vote-cycle > span:last-child {
+  animation-delay: -2s;
+}
+
+@keyframes don-vote-swap {
+  0%,
+  38% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0;
+    transform: translateY(-0.45em);
+  }
+  88% {
+    opacity: 0;
+    transform: translateY(0.45em);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-postgame-don-vote-cycle > span {
+    animation: none;
+  }
+
+  .online-postgame-don-vote-cycle > span:last-child {
+    display: none;
+  }
+
+  .online-postgame-page
+    .online-postgame-don-panel
+    .button.online-postgame-btn-don::after {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 .online-postgame-don-pips {
@@ -821,8 +945,12 @@
 }
 
 .online-postgame-don-pip {
-  width: 0.72rem;
-  height: 0.72rem;
+  display: block;
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  aspect-ratio: 1;
+  box-sizing: border-box;
   border: 1px solid rgb(255 255 255 / 0.25);
   background: transparent;
   transition:
@@ -832,27 +960,21 @@
 }
 
 .online-postgame-don-pip--active {
-  background: rgb(255 175 85 / 0.78);
-  border-color: rgb(255 175 85 / 0.85);
-  box-shadow: 0 0 6px rgb(255 175 85 / 0.3);
+  background: rgb(255 255 255 / 0.92);
+  border-color: rgb(255 255 255 / 0.92);
+  box-shadow: none;
 }
 
 .online-postgame-don-vote-label {
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.72rem;
   color: rgb(255 255 255 / 0.45);
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
-}
-
-.online-postgame-don-my-vote-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.1rem 0.4rem;
-  border: 1px solid rgb(255 175 85 / 0.45);
-  color: rgb(255 200 110 / 0.85);
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
 /* DoN button inherits .online-postgame-btn base sizing from actions context;
@@ -895,21 +1017,88 @@
 
 .online-postgame-page
   .online-postgame-don-panel
-  .button.online-postgame-btn-don:focus-visible {
-  outline: 2px solid rgb(255 175 85 / 0.7);
-  outline-offset: 2px;
+  .button.online-postgame-btn-don:not(:disabled):not(.disabled) {
+  position: relative;
+  overflow: hidden;
+}
+
+.online-postgame-page
+  .online-postgame-don-panel
+  .button.online-postgame-btn-don:not(:disabled):not(.disabled)::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: 0;
+  width: 28%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgb(255 255 255 / 0) 18%,
+    rgb(255 255 255 / 0.45) 40%,
+    #fff 50%,
+    rgb(255 255 255 / 0.45) 60%,
+    transparent 82%
+  );
+  mix-blend-mode: screen;
+  transform: translateX(-220%) skewX(-16deg);
+  animation: don-btn-shine 3.2s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+.online-postgame-page
+  .online-postgame-don-panel
+  .button.online-postgame-btn-don.online-selected:not(:disabled):not(
+    .disabled
+  )::after {
+  mix-blend-mode: multiply;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgb(0 0 0 / 0) 18%,
+    rgb(0 0 0 / 0.12) 40%,
+    rgb(0 0 0 / 0.28) 50%,
+    rgb(0 0 0 / 0.12) 60%,
+    transparent 82%
+  );
+}
+
+@keyframes don-btn-shine {
+  0%,
+  58% {
+    transform: translateX(-220%) skewX(-16deg);
+  }
+  82%,
+  100% {
+    transform: translateX(460%) skewX(-16deg);
+  }
 }
 
 @media (max-width: 720px) {
+  .online-postgame-payout-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .online-postgame-qr-wrap::before {
+    top: 0;
+    bottom: auto;
+    left: 1.15rem;
+    right: 1.15rem;
+    width: auto;
+    height: 1px;
+  }
+
   .online-postgame-don-panel {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
+    align-items: start;
+    justify-items: stretch;
     gap: 0.65rem;
     padding: 0.7rem 0.75rem 0.75rem 0.7rem;
   }
 
   .online-postgame-don-controls {
     align-items: stretch;
+    justify-self: stretch;
     width: 100%;
   }
 

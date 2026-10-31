@@ -3,11 +3,9 @@
  * Template: top = header brand, middle = game setup (rules + buttons), bottom = bottom info (player/prize).
  */
 import {
-  createContext,
   RefObject,
   ReactNode,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -35,6 +33,11 @@ export interface GameSetupLayoutProps {
   mainMenuLabel?: string;
   /** Enable READY TO START */
   canStart: boolean;
+  /**
+   * Phone flow: the fixed bar asks for this seat until both are funded,
+   * then it becomes READY TO START. Null keeps the two-button bar.
+   */
+  paySeat?: 'p1' | 'p2' | null;
   onMainMenu: () => void;
   onStart: () => void;
   loading: boolean;
@@ -66,19 +69,13 @@ export interface GameSetupLayoutProps {
   children: ReactNode;
 }
 
-const PreviewRulesButtonContext = createContext<ReactNode>(null);
-
-/** Preview menu places the Rules control under the ledger line. */
-export function PreviewRulesButtonSlot() {
-  return useContext(PreviewRulesButtonContext);
-}
-
 export function GameSetupLayout({
   title,
   pageClass,
   mainMenuDisabled,
   mainMenuLabel = 'MAIN MENU',
   canStart,
+  paySeat = null,
   onMainMenu,
   onStart,
   loading,
@@ -144,7 +141,95 @@ export function GameSetupLayout({
     }
   }, [refs, selectedButton]);
 
+  const [payOffer, setPayOffer] = useState<'p1' | 'p2'>('p2');
+  const [phonePay, setPhonePay] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 640px)').matches
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    const sync = () => setPhonePay(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
   const closeRules = useCallback(() => setRulesOpen(false), []);
+
+  useEffect(() => {
+    if (!paySeat || canStart || !phonePay) return;
+    const slider = document.querySelector('.player-cards-slider');
+    if (!(slider instanceof HTMLElement)) return;
+    let timer = 0;
+    const onScroll = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        const cards = [...slider.children].filter(
+          (el): el is HTMLElement => el instanceof HTMLElement
+        );
+        const sliderMid =
+          slider.getBoundingClientRect().left + slider.clientWidth / 2;
+        const shown = cards.reduce<{ el: HTMLElement | null; dist: number }>(
+          (best, el) => {
+            const box = el.getBoundingClientRect();
+            const dist = Math.abs(box.left + box.width / 2 - sliderMid);
+            return dist < best.dist ? { el, dist } : best;
+          },
+          { el: null, dist: Infinity }
+        );
+        setPayOffer(shown.el?.id === 'player2card' ? 'p1' : 'p2');
+      }, 140);
+    };
+    slider.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      slider.removeEventListener('scroll', onScroll);
+      window.clearTimeout(timer);
+    };
+  }, [paySeat, canStart, phonePay]);
+
+  const scrollToPaySeat = useCallback(() => {
+    const seat = payOffer;
+    const slider = document.querySelector('.player-cards-slider');
+    const card = document.getElementById(
+      seat === 'p2' ? 'player2card' : 'player1card'
+    );
+    if (!(slider instanceof HTMLElement) || !(card instanceof HTMLElement)) {
+      return;
+    }
+    const slide = () => {
+      const left =
+        card.getBoundingClientRect().left -
+        slider.getBoundingClientRect().left +
+        slider.scrollLeft;
+      slider.scrollTo({ left, behavior: 'smooth' });
+    };
+    const anchor = document.getElementById('player1card') ?? slider;
+    const targetTop = Math.max(
+      0,
+      anchor.getBoundingClientRect().top + window.scrollY - 96
+    );
+    const needsPageScroll =
+      seat === 'p2' && Math.abs(window.scrollY - targetTop) > 24;
+    if (!needsPageScroll) {
+      slide();
+      return;
+    }
+    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      window.removeEventListener('scroll', onWinScroll);
+      slide();
+    };
+    const onWinScroll = () => {
+      if (Math.abs(window.scrollY - targetTop) < 12) finish();
+    };
+    window.addEventListener('scroll', onWinScroll, { passive: true });
+    window.setTimeout(finish, 650);
+  }, [payOffer]);
 
   const overlays =
     typeof document !== 'undefined'
@@ -234,47 +319,59 @@ export function GameSetupLayout({
 
             {previewSwap ? (
               <div id="bottomInfo" className="game-setup-bottom">
-                <PreviewRulesButtonContext.Provider
-                  value={
-                    <button
-                      ref={rulesButtonRef}
-                      id="gamemenu-rules"
-                      type="button"
-                      className="gamemenu-preview-rules-btn"
-                      onClick={() => setRulesOpen(true)}
-                    >
-                      Rules
-                    </button>
-                  }
-                >
-                  {children}
-                </PreviewRulesButtonContext.Provider>
+                {children}
               </div>
             ) : (
-              <RulesSection />
+              <div id="bottomInfo" className="game-setup-bottom">
+                {children}
+              </div>
             )}
+            {previewSwap ? null : <RulesSection />}
             {statusMessage ? (
               <p className="game-setup-status grey">{statusMessage}</p>
             ) : null}
-
-            <div id="gameButtons">
+            {previewSwap ? (
               <Button
-                ref={refs.mainMenuButton}
-                id="mainmenubutton"
+                ref={rulesButtonRef}
+                id="gamemenu-rules"
                 type="button"
-                className={mainMenuDisabled ? 'disabled' : ''}
-                onClick={onMainMenu}
+                onClick={() => setRulesOpen(true)}
               >
-                {mainMenuLabel}
+                Rules
               </Button>
-              <div
-                className={[
-                  'game-setup-start-wrap',
-                  startShaking ? 'game-setup-start-wrap--shake' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
+            ) : null}
+            <Button
+              type="button"
+              className={`game-setup-scroll-exit${mainMenuDisabled ? ' disabled' : ''}`}
+              onClick={onMainMenu}
+            >
+              {mainMenuLabel}
+            </Button>
+          </div>
+
+          <div id="gameButtons">
+            <Button
+              ref={refs.mainMenuButton}
+              id="mainmenubutton"
+              type="button"
+              className={mainMenuDisabled ? 'disabled' : ''}
+              onClick={onMainMenu}
+            >
+              {mainMenuLabel}
+            </Button>
+            <div
+              className={[
+                'game-setup-start-wrap',
+                startShaking ? 'game-setup-start-wrap--shake' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {paySeat && !canStart && phonePay ? (
+                <Button type="button" onClick={scrollToPaySeat}>
+                  {payOffer === 'p2' ? 'PAY PLAYER 2' : 'PAY PLAYER 1'}
+                </Button>
+              ) : (
                 <Button
                   ref={refs.startgame}
                   id="startgame"
@@ -284,21 +381,15 @@ export function GameSetupLayout({
                 >
                   READY TO START
                 </Button>
-                {startBlockedHint ? (
-                  <p className="game-setup-start-hint" role="status">
-                    {startBlockedHint}
-                  </p>
-                ) : null}
-              </div>
+              )}
+              {startBlockedHint ? (
+                <p className="game-setup-start-hint" role="status">
+                  {startBlockedHint}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
-
-        {previewSwap ? null : (
-          <div id="bottomInfo" className="game-setup-bottom">
-            {children}
-          </div>
-        )}
       </div>
       {rulesOpen ? (
         <Modal
@@ -306,7 +397,12 @@ export function GameSetupLayout({
           labelledBy="rules-modal-title"
           className="rules-modal"
           backdropClassName="rules-modal-backdrop"
+          showClose={false}
         >
+          <div className="rules-modal__mast">
+            <BrandHeader embedded className="rules-modal__brand" />
+            <Sponsorship id="sponsorshipRules" />
+          </div>
           <div className="rules-modal__bar">
             <p
               id="rules-modal-title"

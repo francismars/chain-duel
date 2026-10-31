@@ -21,7 +21,14 @@ describe('postGameWinnerAllowsKey', () => {
     expect(
       postGameWinnerAllowsKey('Player 1', 'ArrowDown', {
         practiceMode: false,
-        menu: 2,
+        menu: 1,
+      })
+    ).toBe(true);
+    expect(
+      postGameWinnerAllowsKey('Player 1', 'ArrowDown', {
+        practiceMode: false,
+        menu: 1,
+        synthetic: 'gamepad',
       })
     ).toBe(false);
   });

@@ -3,10 +3,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import { BackgroundAudio } from '@/components/audio/BackgroundAudio';
-import {
-  GameSetupLayout,
-  PreviewRulesButtonSlot,
-} from '@/components/layout/GameSetupLayout';
+import { GameSetupLayout } from '@/components/layout/GameSetupLayout';
 import { useSocket } from '@/hooks/useSocket';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useAudio, SFX } from '@/contexts/AudioContext';
@@ -827,6 +824,15 @@ export default function GameMenu({
         }`}
         mainMenuDisabled={false}
         canStart={canStart}
+        paySeat={
+          isNostrMode
+            ? null
+            : player1Sats === 0
+              ? 'p1'
+              : player2Sats === 0
+                ? 'p2'
+                : null
+        }
         mainMenuLabel={
           prevWinner ? 'CLAIM PRIZE INSTEAD' : 'BACK TO P2P SETTINGS'
         }
@@ -1044,99 +1050,6 @@ export default function GameMenu({
           </>
         ) : (
           <>
-            <div
-              id="player1card"
-              className={[
-                player1CardExpanded ? 'expanded' : '',
-                player1QrRaised ? 'qr-raised' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <div
-                id="qrcodeContainer1"
-                className={[
-                  'qrcodeContainer',
-                  lnurlCompatP1 ? 'qrcodeContainer--compatible' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                <a
-                  id="qrcode1Link"
-                  href={
-                    p1PayLink?.lnurlp
-                      ? `lightning:${p1PayLink.lnurlp}`
-                      : undefined
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {p1PayLink?.lnurlp ? (
-                    <QRCodeSVG
-                      id="qrcode1"
-                      className={`qrcode ${lnurlCompatP1 ? 'qrcode--compatible' : ''}`}
-                      value={p1PayLink.lnurlp}
-                      size={QR_CODE_CARD_SIZE}
-                      level={compatibleP1 ? 'H' : 'M'}
-                      includeMargin={compatibleP1}
-                    />
-                  ) : (
-                    <QRCodeSVG
-                      id="qrcode1"
-                      className="qrcode"
-                      value={DECOY_LNURL_QR_VALUE}
-                      size={QR_CODE_CARD_SIZE}
-                      level="M"
-                      includeMargin={false}
-                      aria-hidden
-                    />
-                  )}
-                  <img
-                    id="qrcode1Decoration"
-                    className={`qrcodeDecoration ${showsPayPop(highlightP1) ? '' : 'hide'}`}
-                    src="/images/qr_lightning.gif"
-                    alt=""
-                  />
-                </a>
-              </div>
-              {p1PayLink?.lnurlp ? (
-                <LnurlMobileActions
-                  lnurl={p1PayLink.lnurlp}
-                  copied={copiedLnurlSeat === 'p1'}
-                  onCopy={() => copyLnurl(p1PayLink.lnurlp, 'p1')}
-                />
-              ) : null}
-              <div id="player1cardinfo" className="player-card-info">
-                <div
-                  id="player1satsContainer"
-                  className={`player-sats ${showsPayPop(highlightP1) ? 'highlight' : ''}`}
-                >
-                  <span id="player1sats">{fmt(player1Sats)}</span>{' '}
-                  <span className="grey sats-label">sats</span>
-                </div>
-                <div className="condensed">
-                  <div className="inline playerSquare white" />
-                  <div
-                    id="player1info"
-                    className={`player1info inline ${showsNamePop(highlightP1) ? 'highlight' : ''}`}
-                  >
-                    {p1Name}
-                  </div>
-                </div>
-                <div className="deposit-message">
-                  Deposit between <b>{fmt(minP1)}</b> and{' '}
-                  <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
-                  <br />
-                  Set player name on the payment note
-                  <br />
-                  LNURL compatible wallet required
-                  <br />
-                  Allows for multiple deposits
-                </div>
-              </div>
-            </div>
-
             <div className="prizeinfocard">
               <div id="prizevaluesats" className="condensed">
                 <span id="prizevaluesatsAmount">{fmt(totalPrize)}</span>{' '}
@@ -1156,100 +1069,193 @@ export default function GameMenu({
                   sats qualifies for the ledger
                 </p>
               </div>
-              {preview ? <PreviewRulesButtonSlot /> : null}
             </div>
-
-            <div
-              id="player2card"
-              className={[
-                player2CardExpanded ? 'expanded' : '',
-                player2QrRaised ? 'qr-raised' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <div id="player2cardinfo" className="player-card-info">
-                <div
-                  id="player2satsContainer"
-                  className={`player-sats ${showsPayPop(highlightP2) ? 'highlight' : ''}`}
-                >
-                  <span className="grey sats-label">sats</span>
-                  <span id="player2sats">{fmt(player2Sats)}</span>
-                </div>
-                <div className="condensed">
-                  <div
-                    id="player2info"
-                    className={`player2info inline ${showsNamePop(highlightP2) ? 'highlight' : ''}`}
-                  >
-                    {p2Name}
-                  </div>
-                  <div className="inline playerSquare black" />
-                </div>
-                <div className="deposit-message">
-                  Deposit between <b>{fmt(minP2)}</b> and{' '}
-                  <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
-                  <br />
-                  Set player name on the payment note
-                  <br />
-                  LNURL compatible wallet required
-                  <br />
-                  Allows for multiple deposits
-                </div>
-              </div>
+            <div className="player-cards-slider">
               <div
-                id="qrcodeContainer2"
+                id="player1card"
                 className={[
-                  'qrcodeContainer',
-                  lnurlCompatP2 ? 'qrcodeContainer--compatible' : '',
+                  player1CardExpanded ? 'expanded' : '',
+                  player1QrRaised ? 'qr-raised' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
               >
-                <a
-                  id="qrcode2Link"
-                  href={
-                    p2PayLink?.lnurlp
-                      ? `lightning:${p2PayLink.lnurlp}`
-                      : undefined
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <div
+                  id="qrcodeContainer1"
+                  className={[
+                    'qrcodeContainer',
+                    lnurlCompatP1 ? 'qrcodeContainer--compatible' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                 >
-                  {p2PayLink?.lnurlp ? (
-                    <QRCodeSVG
-                      id="qrcode2"
-                      className={`qrcode ${lnurlCompatP2 ? 'qrcode--compatible' : ''}`}
-                      value={p2PayLink.lnurlp}
-                      size={180}
-                      level={compatibleP2 ? 'H' : 'M'}
-                      includeMargin={compatibleP2}
+                  <a
+                    id="qrcode1Link"
+                    href={
+                      p1PayLink?.lnurlp
+                        ? `lightning:${p1PayLink.lnurlp}`
+                        : undefined
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {p1PayLink?.lnurlp ? (
+                      <QRCodeSVG
+                        id="qrcode1"
+                        className={`qrcode ${lnurlCompatP1 ? 'qrcode--compatible' : ''}`}
+                        value={p1PayLink.lnurlp}
+                        size={QR_CODE_CARD_SIZE}
+                        level={compatibleP1 ? 'H' : 'M'}
+                        includeMargin={compatibleP1}
+                      />
+                    ) : (
+                      <QRCodeSVG
+                        id="qrcode1"
+                        className="qrcode"
+                        value={DECOY_LNURL_QR_VALUE}
+                        size={QR_CODE_CARD_SIZE}
+                        level="M"
+                        includeMargin={false}
+                        aria-hidden
+                      />
+                    )}
+                    <img
+                      id="qrcode1Decoration"
+                      className={`qrcodeDecoration ${showsPayPop(highlightP1) ? '' : 'hide'}`}
+                      src="/images/qr_lightning.gif"
+                      alt=""
                     />
-                  ) : (
-                    <QRCodeSVG
-                      id="qrcode2"
-                      className="qrcode"
-                      value={DECOY_LNURL_QR_VALUE}
-                      size={180}
-                      level="M"
-                      includeMargin={false}
-                      aria-hidden
-                    />
-                  )}
-                  <img
-                    id="qrcode2Decoration"
-                    className={`qrcodeDecoration ${showsPayPop(highlightP2) ? '' : 'hide'}`}
-                    src="/images/qr_lightning.gif"
-                    alt=""
+                  </a>
+                </div>
+                {p1PayLink?.lnurlp ? (
+                  <LnurlMobileActions
+                    lnurl={p1PayLink.lnurlp}
+                    copied={copiedLnurlSeat === 'p1'}
+                    onCopy={() => copyLnurl(p1PayLink.lnurlp, 'p1')}
                   />
-                </a>
+                ) : null}
+                <div id="player1cardinfo" className="player-card-info">
+                  <div
+                    id="player1satsContainer"
+                    className={`player-sats ${showsPayPop(highlightP1) ? 'highlight' : ''}`}
+                  >
+                    <span id="player1sats">{fmt(player1Sats)}</span>{' '}
+                    <span className="grey sats-label">sats</span>
+                  </div>
+                  <div className="condensed">
+                    <div className="inline playerSquare white" />
+                    <div
+                      id="player1info"
+                      className={`player1info inline ${showsNamePop(highlightP1) ? 'highlight' : ''}`}
+                    >
+                      {p1Name}
+                    </div>
+                  </div>
+                  <div className="deposit-message">
+                    Deposit between <b>{fmt(minP1)}</b> and{' '}
+                    <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
+                    <br />
+                    Set player name on the payment note
+                    <br />
+                    LNURL compatible wallet required
+                    <br />
+                    Allows for multiple deposits
+                  </div>
+                </div>
               </div>
-              {p2PayLink?.lnurlp ? (
-                <LnurlMobileActions
-                  lnurl={p2PayLink.lnurlp}
-                  copied={copiedLnurlSeat === 'p2'}
-                  onCopy={() => copyLnurl(p2PayLink.lnurlp, 'p2')}
-                />
-              ) : null}
+
+              <div
+                id="player2card"
+                className={[
+                  player2CardExpanded ? 'expanded' : '',
+                  player2QrRaised ? 'qr-raised' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <div id="player2cardinfo" className="player-card-info">
+                  <div
+                    id="player2satsContainer"
+                    className={`player-sats ${showsPayPop(highlightP2) ? 'highlight' : ''}`}
+                  >
+                    <span className="grey sats-label">sats</span>
+                    <span id="player2sats">{fmt(player2Sats)}</span>
+                  </div>
+                  <div className="condensed">
+                    <div
+                      id="player2info"
+                      className={`player2info inline ${showsNamePop(highlightP2) ? 'highlight' : ''}`}
+                    >
+                      {p2Name}
+                    </div>
+                    <div className="inline playerSquare black" />
+                  </div>
+                  <div className="deposit-message">
+                    Deposit between <b>{fmt(minP2)}</b> and{' '}
+                    <b>{fmt(SATS_DISPLAY_MAX)}</b> sats
+                    <br />
+                    Set player name on the payment note
+                    <br />
+                    LNURL compatible wallet required
+                    <br />
+                    Allows for multiple deposits
+                  </div>
+                </div>
+                <div
+                  id="qrcodeContainer2"
+                  className={[
+                    'qrcodeContainer',
+                    lnurlCompatP2 ? 'qrcodeContainer--compatible' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  <a
+                    id="qrcode2Link"
+                    href={
+                      p2PayLink?.lnurlp
+                        ? `lightning:${p2PayLink.lnurlp}`
+                        : undefined
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {p2PayLink?.lnurlp ? (
+                      <QRCodeSVG
+                        id="qrcode2"
+                        className={`qrcode ${lnurlCompatP2 ? 'qrcode--compatible' : ''}`}
+                        value={p2PayLink.lnurlp}
+                        size={180}
+                        level={compatibleP2 ? 'H' : 'M'}
+                        includeMargin={compatibleP2}
+                      />
+                    ) : (
+                      <QRCodeSVG
+                        id="qrcode2"
+                        className="qrcode"
+                        value={DECOY_LNURL_QR_VALUE}
+                        size={180}
+                        level="M"
+                        includeMargin={false}
+                        aria-hidden
+                      />
+                    )}
+                    <img
+                      id="qrcode2Decoration"
+                      className={`qrcodeDecoration ${showsPayPop(highlightP2) ? '' : 'hide'}`}
+                      src="/images/qr_lightning.gif"
+                      alt=""
+                    />
+                  </a>
+                </div>
+                {p2PayLink?.lnurlp ? (
+                  <LnurlMobileActions
+                    lnurl={p2PayLink.lnurlp}
+                    copied={copiedLnurlSeat === 'p2'}
+                    onCopy={() => copyLnurl(p2PayLink.lnurlp, 'p2')}
+                  />
+                ) : null}
+              </div>
             </div>
             {preview ? (
               <>

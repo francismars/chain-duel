@@ -11,6 +11,15 @@ export type UiDebugGroup = {
 
 export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
   {
+    title: 'Play the game',
+    links: [
+      { label: 'Normal P2P', href: '/preview/play/p2p' },
+      { label: 'Nostr P2P', href: '/preview/play/p2p-nostr' },
+      { label: 'Tournament', href: '/preview/play/tournament' },
+      { label: 'Challenge', href: '/preview/play/challenge' },
+    ],
+  },
+  {
     title: 'In-game triggers',
     links: [
       { label: 'Sounds, chains, walls, pops', href: '/preview/match-triggers' },
@@ -109,6 +118,30 @@ export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
       { label: 'Double or nothing history', href: '/preview/online-don' },
       { label: 'DoN, winner', href: '/preview/online-don?side=winner' },
       { label: 'DoN, loser', href: '/preview/online-don?side=loser' },
+      {
+        label: 'DoN, you agreed',
+        href: '/preview/online-results?side=winner&votes=1&voted=1',
+      },
+      {
+        label: 'DoN, opponent agreed',
+        href: '/preview/online-results?side=winner&votes=1',
+      },
+      {
+        label: 'DoN, both agreed',
+        href: '/preview/online-results?side=winner&votes=2&voted=1',
+      },
+      {
+        label: 'Away and countdown',
+        href: '/preview/online-away',
+      },
+      {
+        label: 'Away and countdown, winner',
+        href: '/preview/online-away?side=winner',
+      },
+      {
+        label: 'Away and countdown, loser',
+        href: '/preview/online-away?side=loser',
+      },
     ],
   },
   {
@@ -128,6 +161,10 @@ export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
     links: [
       { label: 'Win', href: '/game?preview=solo' },
       { label: 'Loss', href: '/game?preview=solo&side=loser' },
+      {
+        label: 'Loss, no portrait',
+        href: '/game?preview=solo&side=loser&avatar=none',
+      },
     ],
   },
   {
@@ -137,6 +174,10 @@ export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
       { label: 'Claim, QR blurred', href: '/postgame?preview=claim&qr=0' },
       { label: 'Claim, already claimed', href: '/postgame?preview=claim' },
       { label: 'Bracket finished', href: '/tournbracket?preview=finished' },
+      {
+        label: 'Bracket finished, Nostr portraits',
+        href: '/tournbracket?mode=tournamentnostr&preview=nostr',
+      },
     ],
   },
 ];

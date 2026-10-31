@@ -388,9 +388,7 @@ describe('seat and results disconnect copy', () => {
         hasLnAddress: false,
         ticking: true,
       })
-    ).toBe(
-      'Withdraw or start double-or-nothing before 2:05. After that the prize is held for a manual payout.'
-    );
+    ).toBe('Withdraw or double before 2:05. Then the prize is held.');
     expect(
       resultsClaimLine({
         claim: { remainingMs: 900000, limitMs: 900000 },
@@ -399,9 +397,7 @@ describe('seat and results disconnect copy', () => {
         hasLnAddress: false,
         ticking: true,
       })
-    ).toBe(
-      'Withdraw or start double-or-nothing before 15:00. After that the prize is held for a manual payout.'
-    );
+    ).toBe('Withdraw or double before 15:00. Then the prize is held.');
     expect(
       resultsClaimLine({
         claim,
@@ -439,9 +435,7 @@ describe('seat and results disconnect copy', () => {
         hasLnAddress: false,
         ticking: false,
       })
-    ).toBe(
-      'Withdraw or start double-or-nothing. Deadline 2:05. After that the prize is held for a manual payout.'
-    );
+    ).toBe('Withdraw or double by 2:05. Then the prize is held.');
     expect(
       resultsClaimLine({
         claim: null,

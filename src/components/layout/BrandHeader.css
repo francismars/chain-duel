@@ -13,7 +13,8 @@
 }
 
 .brand-header #chain,
-.brand-header #duel {
+.brand-header #duel,
+.brand-header h2 {
   margin: 0;
   color: white;
   font-size: clamp(1.1rem, 2.5vw, 4rem);

@@ -130,6 +130,22 @@ export function OnlineMatchIntroReveal({
       aria-live="polite"
       aria-label={ariaLabel}
     >
+      <svg
+        className="online-reveal__filters"
+        aria-hidden="true"
+        width="0"
+        height="0"
+      >
+        <filter id="online-reveal-cartoon" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="saturate" values="3.2" />
+          <feComponentTransfer>
+            <feFuncR type="discrete" tableValues="0 0.35 0.7 1" />
+            <feFuncG type="discrete" tableValues="0 0.35 0.7 1" />
+            <feFuncB type="discrete" tableValues="0 0.35 0.7 1" />
+          </feComponentTransfer>
+          <feColorMatrix type="saturate" values="1.6" />
+        </filter>
+      </svg>
       <div className="online-reveal__scrim" aria-hidden="true" />
       <div className="online-reveal__vignette" aria-hidden="true" />
       <header className="online-reveal__brand">
@@ -207,11 +223,14 @@ export function OnlineMatchIntroReveal({
       ) : null}
 
       <p className="online-reveal__stakes">
-        {data.buyinEach.toLocaleString()}
-        <span className="online-reveal__stakes-denom"> sats each</span>
-        {' · '}
-        {data.netPrize.toLocaleString()}
-        <span className="online-reveal__stakes-denom"> sats to winner</span>
+        <span className="online-reveal__stakes-line">
+          {data.buyinEach.toLocaleString()}
+          <span className="online-reveal__stakes-denom"> sats each</span>
+        </span>
+        <span className="online-reveal__stakes-line">
+          {data.netPrize.toLocaleString()}
+          <span className="online-reveal__stakes-denom"> sats to winner</span>
+        </span>
       </p>
 
       {watching && data.viewerRole === 'duelist' ? (

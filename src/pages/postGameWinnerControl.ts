@@ -1,3 +1,5 @@
+import type { SyntheticKeySource } from '@/lib/controls/syntheticKeys';
+
 export type PostGameWinner = 'Player 1' | 'Player 2';
 export type PostGameMenu = 1 | 2 | 3;
 
@@ -5,15 +7,24 @@ export type PostGameMenu = 1 | 2 | 3;
  * Legacy cabinet lock (`public/javascripts/postGame.js`):
  * Pad 1 = Space / WASD, Pad 2 = Enter / arrows.
  * Only the winner's pad may claim, reveal/blur the QR, or confirm double-or-nothing.
- * Practice unlocks both pads. Ledger (menu 3) unlocks both. Left/right were never gated.
+ * Practice unlocks both pads. Ledger (menu 3) unlocks both.
+ * A real keyboard's arrow keys also move the winner's buttons. Gamepad arrows stay
+ * on pad 2 so the loser cannot drive the menu.
  */
 export function postGameWinnerAllowsKey(
   winner: PostGameWinner,
   key: string,
-  opts: { practiceMode: boolean; menu: PostGameMenu }
+  opts: {
+    practiceMode: boolean;
+    menu: PostGameMenu;
+    synthetic?: SyntheticKeySource | null;
+  }
 ): boolean {
   if (opts.menu === 3 || opts.practiceMode) return true;
   if (isHorizontalMenuKey(key)) return true;
+  if (!opts.synthetic && (key === 'ArrowUp' || key === 'ArrowDown')) {
+    return true;
+  }
   if (winner === 'Player 1') return isPlayer1ControlKey(key);
   return isPlayer2ControlKey(key);
 }
