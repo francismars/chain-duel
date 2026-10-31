@@ -8,6 +8,9 @@ import path from 'path';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
+/** Set in `configResolved` so `vite build --outDir` still finds index.html. */
+let buildOutDir = path.join(rootDir, 'dist');
+
 /** nginx allows 20 r/s with a burst of 40. The install precache must stay under that. */
 const PRECACHE_FILE_CAP = 15;
 
@@ -29,10 +32,7 @@ function shellPrecacheUrls(html: string): Set<string> {
 type PrecacheEntry = { url: string; revision: string | null; size: number };
 
 function shellPrecacheManifest(entries: PrecacheEntry[]) {
-  const html = fs.readFileSync(
-    path.join(rootDir, 'dist', 'index.html'),
-    'utf8'
-  );
+  const html = fs.readFileSync(path.join(buildOutDir, 'index.html'), 'utf8');
   const keep = shellPrecacheUrls(html);
   const manifest = entries.filter((entry) => keep.has(entry.url));
   const missing = [...keep].filter(
@@ -81,11 +81,66 @@ function pwaKillSwitch(disabled: boolean): Plugin {
       order: 'post',
       handler() {
         if (!disabled) return;
-        fs.writeFileSync(path.join(rootDir, 'dist', 'sw.js'), KILL_SWITCH_SW);
+        fs.writeFileSync(path.join(buildOutDir, 'sw.js'), KILL_SWITCH_SW);
       },
     },
   };
 }
+
+function rememberBuildOutDir(): Plugin {
+  return {
+    name: 'remember-build-out-dir',
+    configResolved(config) {
+      buildOutDir = path.resolve(config.root, config.build.outDir);
+    },
+  };
+}
+
+/**
+ * A missing hashed file must not be stored. `serve -s` answers 200
+ * text/html for it, and CacheFirst would keep that body under the script URL.
+ * These objects are copied into the generated worker, so they cannot close
+ * over this file.
+ */
+const assetCachePlugin = {
+  cacheWillUpdate: async ({
+    request,
+    response,
+  }: {
+    request: { url: string };
+    response: {
+      status: number;
+      headers: { get(name: string): string | null };
+    } | null;
+  }) => {
+    if (!response || response.status !== 200) return null;
+    const type = (response.headers.get('content-type') || '').toLowerCase();
+    const pathname = new URL(request.url).pathname;
+    if (pathname.endsWith('.js')) {
+      return type.includes('javascript') ? response : null;
+    }
+    if (pathname.endsWith('.css')) {
+      return type.includes('text/css') ? response : null;
+    }
+    return null;
+  },
+};
+
+const staticCachePlugin = {
+  cacheWillUpdate: async ({
+    response,
+  }: {
+    response: {
+      status: number;
+      headers: { get(name: string): string | null };
+    } | null;
+  }) => {
+    if (!response || response.status !== 200) return null;
+    const type = (response.headers.get('content-type') || '').toLowerCase();
+    if (type.includes('text/html')) return null;
+    return response;
+  },
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -95,6 +150,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
+      rememberBuildOutDir(),
       react(),
       VitePWA({
         // Registration lives in AppUpdatePrompt so it waits until after first paint.
@@ -128,14 +184,12 @@ export default defineConfig(({ mode }) => {
                 /\.(?:js|css)$/.test(url.pathname),
               handler: 'CacheFirst',
               options: {
-                cacheName: 'chain-duel-assets',
+                cacheName: 'chain-duel-assets-v2',
                 expiration: {
                   maxEntries: 150,
                   maxAgeSeconds: 60 * 60 * 24 * 30,
                 },
-                cacheableResponse: {
-                  statuses: [200],
-                },
+                plugins: [assetCachePlugin],
               },
             },
             {
@@ -147,11 +201,12 @@ export default defineConfig(({ mode }) => {
                 ),
               handler: 'StaleWhileRevalidate',
               options: {
-                cacheName: 'chain-duel-static',
+                cacheName: 'chain-duel-static-v2',
                 expiration: {
                   maxEntries: 80,
                   maxAgeSeconds: 60 * 60 * 24 * 30,
                 },
+                plugins: [staticCachePlugin],
               },
             },
           ],

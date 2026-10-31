@@ -7,14 +7,16 @@ import './AppUpdatePrompt.css';
 const PWA_KILL_ATTEMPTED = 'chainduel_pwaKill';
 
 /**
- * After the load event. requestIdleCallback when the browser has one,
- * otherwise a 5s timeout. Never during first paint.
+ * After the load event. requestIdleCallback, or a 5s timeout when the
+ * browser has none. The idle callback itself also times out at 5s so a
+ * busy page still registers. Never during first paint.
  */
 function afterLoadIdle(run: () => void): () => void {
   let cancelIdle: (() => void) | undefined;
   const startIdle = () => {
     if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(() => run());
+      // A busy menu may never go idle. Register by 5s after load anyway.
+      const id = window.requestIdleCallback(() => run(), { timeout: 5000 });
       cancelIdle = () => window.cancelIdleCallback(id);
       return;
     }

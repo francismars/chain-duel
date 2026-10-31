@@ -79,6 +79,8 @@ src/
 
 React 19, TypeScript, Vite 8, PixiJS 8, React Router 8, socket.io-client, nostr-tools, Zod 4, Vitest 5.
 
+Production runs `serve dist` (not `serve -s`). Vite copies `public/serve.json` into the build, and that file is what `serve` reads: app routes fall back to `index.html`, while a missing file under `assets/`, `sound/`, `images/`, `fonts/`, or `files/` is a real 404. The `-s` flag is being removed from the pm2 config on the server.
+
 Pressure-music knobs are `SHIPPED_RECIPE` in `src/game/effects/matchRecipe.ts`. Rebuild cues with `python3 scripts/audio/create-game-cues.py` and `python3 scripts/audio/create-shrink-cue.py`.
 
 ## Documentation
