@@ -818,7 +818,9 @@ export default function Game() {
   }, []);
 
   const ignoreSocketSessionUpdates = useMemo(
-    () => sessionUsesPracticeHubConfig() || isDebugPlayConfig(readSessionGameConfig()),
+    () =>
+      sessionUsesPracticeHubConfig() ||
+      isDebugPlayConfig(readSessionGameConfig()),
     []
   );
 
@@ -1018,7 +1020,8 @@ export default function Game() {
         p2Human,
         p3Human,
         p4Human,
-        isTournament: debugPlay && debugMode.toUpperCase().startsWith('TOURNAMENT'),
+        isTournament:
+          debugPlay && debugMode.toUpperCase().startsWith('TOURNAMENT'),
         aiTier,
         ffaAiTier: gameConfig.ffaAiTier
           ? normalizeAiTier(gameConfig.ffaAiTier as string)
@@ -1270,7 +1273,10 @@ export default function Game() {
 
   useEffect(() => {
     const gameConfig = readSessionGameConfig();
-    if (isExplicitPracticeSession(gameConfig) || isDebugPlayConfig(gameConfig)) {
+    if (
+      isExplicitPracticeSession(gameConfig) ||
+      isDebugPlayConfig(gameConfig)
+    ) {
       bootstrapLocalGame();
       return;
     }
@@ -2392,6 +2398,23 @@ export default function Game() {
                             ) : (
                               <div className="solo-zap-note-preview__actions-row">
                                 <Button
+                                  ref={soloZapMenuRef}
+                                  data-solo-zap-nav="menu"
+                                  type="button"
+                                  tabIndex={soloZapFocus === 'menu' ? 0 : -1}
+                                  className={soloZapButtonClass(
+                                    'menu',
+                                    'solo-zap-footer-btn solo-zap-footer-btn--subtle practice-back'
+                                  )}
+                                  tooltip="Leave without claiming the zap"
+                                  onFocus={() => setSoloZapFocus('menu')}
+                                  onClick={() => {
+                                    forfeitClaimAndExit();
+                                  }}
+                                >
+                                  LEAVE
+                                </Button>
+                                <Button
                                   ref={soloZapClaimRef}
                                   data-solo-zap-nav="claim"
                                   type="button"
@@ -2439,23 +2462,6 @@ export default function Game() {
                                   ) : (
                                     'CLAIM'
                                   )}
-                                </Button>
-                                <Button
-                                  ref={soloZapMenuRef}
-                                  data-solo-zap-nav="menu"
-                                  type="button"
-                                  tabIndex={soloZapFocus === 'menu' ? 0 : -1}
-                                  className={soloZapButtonClass(
-                                    'menu',
-                                    'solo-zap-footer-btn solo-zap-footer-btn--subtle practice-back'
-                                  )}
-                                  tooltip="Leave without claiming the zap"
-                                  onFocus={() => setSoloZapFocus('menu')}
-                                  onClick={() => {
-                                    forfeitClaimAndExit();
-                                  }}
-                                >
-                                  LEAVE
                                 </Button>
                               </div>
                             )}

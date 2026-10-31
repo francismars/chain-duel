@@ -258,8 +258,7 @@
     overflow: visible;
     gap: var(--space-4);
     padding: calc(var(--safe-top) + 2.15rem)
-      calc(var(--safe-right) + var(--space-3))
-      calc(var(--safe-bottom) + 6.5rem)
+      calc(var(--safe-right) + var(--space-3)) calc(var(--safe-bottom) + 6.5rem)
       calc(var(--safe-left) + var(--space-3));
     box-sizing: border-box;
   }

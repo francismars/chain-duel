@@ -350,44 +350,44 @@ export function GameSetupLayout({
           </div>
 
           <div id="gameButtons">
-              <Button
-                ref={refs.mainMenuButton}
-                id="mainmenubutton"
-                type="button"
-                className={mainMenuDisabled ? 'disabled' : ''}
-                onClick={onMainMenu}
-              >
-                {mainMenuLabel}
-              </Button>
-              <div
-                className={[
-                  'game-setup-start-wrap',
-                  startShaking ? 'game-setup-start-wrap--shake' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                {paySeat && !canStart && phonePay ? (
-                  <Button type="button" onClick={scrollToPaySeat}>
-                    {payOffer === 'p2' ? 'PAY PLAYER 2' : 'PAY PLAYER 1'}
-                  </Button>
-                ) : (
-                  <Button
-                    ref={refs.startgame}
-                    id="startgame"
-                    type="button"
-                    className={canStart ? '' : 'not-ready'}
-                    onClick={onStart}
-                  >
-                    READY TO START
-                  </Button>
-                )}
-                {startBlockedHint ? (
-                  <p className="game-setup-start-hint" role="status">
-                    {startBlockedHint}
-                  </p>
-                ) : null}
-              </div>
+            <Button
+              ref={refs.mainMenuButton}
+              id="mainmenubutton"
+              type="button"
+              className={mainMenuDisabled ? 'disabled' : ''}
+              onClick={onMainMenu}
+            >
+              {mainMenuLabel}
+            </Button>
+            <div
+              className={[
+                'game-setup-start-wrap',
+                startShaking ? 'game-setup-start-wrap--shake' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {paySeat && !canStart && phonePay ? (
+                <Button type="button" onClick={scrollToPaySeat}>
+                  {payOffer === 'p2' ? 'PAY PLAYER 2' : 'PAY PLAYER 1'}
+                </Button>
+              ) : (
+                <Button
+                  ref={refs.startgame}
+                  id="startgame"
+                  type="button"
+                  className={canStart ? '' : 'not-ready'}
+                  onClick={onStart}
+                >
+                  READY TO START
+                </Button>
+              )}
+              {startBlockedHint ? (
+                <p className="game-setup-start-hint" role="status">
+                  {startBlockedHint}
+                </p>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

@@ -14,10 +14,7 @@ import type { GameState, GridPos } from '@/game/engine/types';
 import { PixiGameRenderer } from '@/game/render/pixiRenderer';
 import { STEP_SPEED_MS } from '@/game/engine/constants';
 import { GameAudioSystem } from '@/game/audio/gameAudio';
-import {
-  advanceStreakPops,
-  streakPops,
-} from '@/game/audio/tensionDebug';
+import { advanceStreakPops, streakPops } from '@/game/audio/tensionDebug';
 
 export type RuleClipId = 'stake' | 'chain' | 'reset' | 'block';
 
