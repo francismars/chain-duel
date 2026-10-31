@@ -323,7 +323,7 @@ export function resultsClaimLine(args: {
         : `Pays to ${args.winnerName}'s Lightning address. Deadline ${time}.`;
     }
     return args.viewerIsWinner
-      ? `Withdraw or start double-or-nothing. Deadline ${time}. After that the prize is held for a manual payout.`
+      ? `Withdraw or double by ${time}. Then the prize is held.`
       : `Prize deadline ${time}. It is held for a manual payout.`;
   }
   if (args.hasLnAddress) {
@@ -332,7 +332,7 @@ export function resultsClaimLine(args: {
       : `Pays to ${args.winnerName}'s Lightning address in ${time}.`;
   }
   return args.viewerIsWinner
-    ? `Withdraw or start double-or-nothing before ${time}. After that the prize is held for a manual payout.`
+    ? `Withdraw or double before ${time}. Then the prize is held.`
     : `Prize is held for a manual payout in ${time}.`;
 }
 
