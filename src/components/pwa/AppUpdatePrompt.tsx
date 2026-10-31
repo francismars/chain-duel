@@ -1,12 +1,41 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { isLiveMatchPath } from '@/lib/pwa/isLiveMatchPath';
 import './AppUpdatePrompt.css';
+
+/** One kill-switch attempt per tab, so the unregistering worker cannot reload forever. */
+const PWA_KILL_ATTEMPTED = 'chainduel_pwaKill';
+
+/**
+ * After the load event. requestIdleCallback when the browser has one,
+ * otherwise a 5s timeout. Never during first paint.
+ */
+function afterLoadIdle(run: () => void): () => void {
+  let cancelIdle: (() => void) | undefined;
+  const startIdle = () => {
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(() => run());
+      cancelIdle = () => window.cancelIdleCallback(id);
+      return;
+    }
+    const id = window.setTimeout(run, 5000);
+    cancelIdle = () => window.clearTimeout(id);
+  };
+  if (document.readyState === 'complete') {
+    startIdle();
+  } else {
+    window.addEventListener('load', startIdle, { once: true });
+  }
+  return () => {
+    window.removeEventListener('load', startIdle);
+    cancelIdle?.();
+  };
+}
 
 /**
  * A waiting service worker reloads the page once it takes control.
  * During a match that reload is postponed until the player leaves.
+ * Registration waits until the first visit has finished loading.
  */
 export function AppUpdatePrompt() {
   const { pathname } = useLocation();
@@ -14,26 +43,51 @@ export function AppUpdatePrompt() {
   const registrationRef = useRef<ServiceWorkerRegistration | undefined>(
     undefined
   );
+  const updateServiceWorkerRef = useRef<
+    (reloadPage?: boolean) => Promise<void>
+  >(async () => {});
   const liveMatchRef = useRef(false);
   const reloadWhenSafeRef = useRef(false);
+  const [needRefresh, setNeedRefresh] = useState(false);
   liveMatchRef.current = isLiveMatchPath(pathname);
   const inMatch = liveMatchRef.current;
 
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onNeedReload() {
-      if (liveMatchRef.current) {
-        reloadWhenSafeRef.current = true;
-        return;
-      }
-      window.location.reload();
-    },
-    onRegisteredSW(_url, registration) {
-      registrationRef.current = registration;
-    },
-  });
+  useEffect(() => {
+    let cancelled = false;
+    const cancelSchedule = afterLoadIdle(() => {
+      void (async () => {
+        if (cancelled || !('serviceWorker' in navigator)) return;
+        if (import.meta.env.VITE_PWA_DISABLED === 'true') {
+          if (sessionStorage.getItem(PWA_KILL_ATTEMPTED) === '1') return;
+          const existing = await navigator.serviceWorker.getRegistration();
+          if (cancelled || !existing) return;
+          sessionStorage.setItem(PWA_KILL_ATTEMPTED, '1');
+        }
+        const { registerSW } = await import('virtual:pwa-register');
+        if (cancelled) return;
+        updateServiceWorkerRef.current = registerSW({
+          immediate: true,
+          onNeedRefresh() {
+            setNeedRefresh(true);
+          },
+          onNeedReload() {
+            if (liveMatchRef.current) {
+              reloadWhenSafeRef.current = true;
+              return;
+            }
+            window.location.reload();
+          },
+          onRegisteredSW(_url, registration) {
+            registrationRef.current = registration;
+          },
+        });
+      })();
+    });
+    return () => {
+      cancelled = true;
+      cancelSchedule();
+    };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -80,7 +134,7 @@ export function AppUpdatePrompt() {
           type="button"
           className="app-update__button"
           onClick={() => {
-            void updateServiceWorker(true);
+            void updateServiceWorkerRef.current(true);
           }}
         >
           Reload
