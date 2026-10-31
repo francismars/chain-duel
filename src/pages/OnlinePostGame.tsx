@@ -18,6 +18,7 @@ import {
   isOnlineVictoryWinner,
 } from '@/lib/online/isOnlineVictoryWinner';
 import {
+  formatForfeitRemaining,
   resultsAwayLine,
   resultsClaimLine,
   type ForfeitViewer,
@@ -150,6 +151,20 @@ function resultsViewer(
   return p2 ? 'p2' : 'spectator';
 }
 
+function ClaimCopy({ text, time }: { text: string; time: string }) {
+  const at = time ? text.indexOf(time) : -1;
+  if (at < 0) {
+    return text;
+  }
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="online-postgame-claim-time">{time}</span>
+      {text.slice(at + time.length)}
+    </>
+  );
+}
+
 export default function OnlinePostGame({
   embedded = false,
   roomId: roomIdProp,
@@ -164,10 +179,12 @@ export default function OnlinePostGame({
   const navigate = useNavigate();
   const { socket } = useSocket({ autoConnect: true });
   const isDonHistory = location.pathname === '/preview/online-don';
+  const isAwayPreview = location.pathname === '/preview/online-away';
   const isPreview =
     searchParams.get('preview') === 'results' ||
     location.pathname === '/preview/online-results' ||
-    isDonHistory;
+    isDonHistory ||
+    isAwayPreview;
   const roomId = isPreview
     ? 'preview'
     : (roomIdProp ?? searchParams.get('roomId') ?? '');
@@ -186,6 +203,7 @@ export default function OnlinePostGame({
   const [lnurlw, setLnurlw] = useState('');
   const [myVoted, setMyVoted] = useState(false);
   const [navFocus, setNavFocus] = useState<PostGameNav>({ type: 'don' });
+  const [previewClaimMs, setPreviewClaimMs] = useState(4 * 60 * 1000 + 12_000);
   const keyRepeatRef = useRef<Record<string, number>>({});
   const mountedAtRef = useRef(Date.now());
   const exitConfirmPendingRef = useRef(false);
@@ -231,20 +249,23 @@ export default function OnlinePostGame({
   /** Withdraw / LN payout controls and QR are winner-only. */
   const showWinnerPayout = showPayoutUi && isWinner;
   const awayViewer = resultsViewer(info, effectiveSessionID, currentSocketID);
+  const effectiveP2Away = isAwayPreview || p2Away;
   const awayLine =
     info?.phase === 'postgame'
       ? resultsAwayLine({
           p1Away,
-          p2Away,
+          p2Away: effectiveP2Away,
           viewer: awayViewer,
           p1Name: info.p1Name,
           p2Name: info.p2Name,
         })
       : null;
   const claimValue =
-    info?.phase === 'postgame' && !donLocked
-      ? (claimFromRoom ?? info.claim ?? null)
-      : null;
+    isAwayPreview && info?.phase === 'postgame' && !donLocked
+      ? { remainingMs: previewClaimMs, limitMs: 5 * 60 * 1000 }
+      : info?.phase === 'postgame' && !donLocked
+        ? (claimFromRoom ?? info.claim ?? null)
+        : null;
   const claimMs = claimValue?.remainingMs;
   const prevClaimMsRef = useRef<number | null>(null);
   // A jump up is a new server value (the 5 minute bank paused). It is not a local timer.
@@ -282,7 +303,7 @@ export default function OnlinePostGame({
     setLnurlw('');
     setLoading(true);
     setError('');
-    setMyVoted(false);
+    setMyVoted(sessionStorage.getItem(`don-voted:${roomId}`) === '1');
     setCreatingWithdrawal(false);
     setCreatingNostrPayout(false);
   }, [onReadyChange, roomId]);
@@ -445,6 +466,9 @@ export default function OnlinePostGame({
           playConfirm();
           setError('');
           setMyVoted(true);
+          if (roomId !== 'preview') {
+            sessionStorage.setItem(`don-voted:${roomId}`, '1');
+          }
           socket.emit('onlineDoubleOrNothing', { roomId });
           return;
         }
@@ -572,7 +596,7 @@ export default function OnlinePostGame({
     setInfo({
       roomId: 'preview',
       phase: 'postgame',
-      p1Name: 'Satoshi',
+      p1Name: 'Satoshi Nakamoto',
       p2Name: 'Hal',
       p1SessionID: side ? DEBUG_P1_SESSION : undefined,
       p2SessionID: side ? DEBUG_P2_SESSION : undefined,
@@ -580,7 +604,7 @@ export default function OnlinePostGame({
       p2Points: isDonHistory ? 22000 : 18000,
       winnerRole: 'Player 1',
       winnerSessionID: side ? DEBUG_P1_SESSION : undefined,
-      winnerName: 'Satoshi',
+      winnerName: 'Satoshi Nakamoto',
       winnerPoints: isDonHistory ? 80000 : 42000,
       totalPrize: isDonHistory ? 80000 : 60000,
       doubleOrNothingVotes: 0,
@@ -601,7 +625,20 @@ export default function OnlinePostGame({
             },
           ],
     });
+    const rawVotes = Number(searchParams.get('votes'));
+    setVotes(
+      Number.isFinite(rawVotes) ? Math.max(0, Math.min(2, rawVotes)) : 0
+    );
+    setMyVoted(searchParams.get('voted') === '1');
   }, [isDonHistory, isPreview, searchParams]);
+
+  useEffect(() => {
+    if (!isAwayPreview) return;
+    const id = window.setInterval(() => {
+      setPreviewClaimMs((ms) => Math.max(0, ms - 1000));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [isAwayPreview]);
 
   useEffect(() => {
     if (isPreview || !socket || !roomId) {
@@ -958,37 +995,11 @@ export default function OnlinePostGame({
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               viewBox="0 0 20 16"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.25"
-                              strokeLinejoin="round"
-                              strokeLinecap="round"
+                              fill="currentColor"
                               className="online-postgame-crown-svg"
                             >
-                              {/* crown body — closed silhouette */}
-                              <path d="M1 15h18V9L15 12L10 2L5 12L1 9Z" />
-                              {/* orbs at each peak tip */}
-                              <circle
-                                cx="10"
-                                cy="2"
-                                r="1.1"
-                                fill="currentColor"
-                                stroke="none"
-                              />
-                              <circle
-                                cx="1"
-                                cy="9"
-                                r="0.9"
-                                fill="currentColor"
-                                stroke="none"
-                              />
-                              <circle
-                                cx="19"
-                                cy="9"
-                                r="0.9"
-                                fill="currentColor"
-                                stroke="none"
-                              />
+                              <path d="M1.5 12.6 4.1 6.2 7.4 9.4 10 1.8 12.6 9.4 15.9 6.2 18.5 12.6H1.5Z" />
+                              <path d="M1.2 13.2h17.6v1.5H1.2z" />
                             </svg>
                           </span>
                           <span className="online-postgame-round-winner-body">
@@ -1069,11 +1080,22 @@ export default function OnlinePostGame({
                     ? 'Only the two seated players can vote on a rematch.'
                     : 'Both players must agree to double the stakes and play another round.'}
               </p>
+            </div>
+            <div className="online-postgame-don-messages">
               {awayLine ? (
                 <p className="online-postgame-away">{awayLine}</p>
               ) : null}
               {claimLine ? (
-                <p className="online-postgame-claim">{claimLine}</p>
+                <p className="online-postgame-claim">
+                  <ClaimCopy
+                    text={claimLine}
+                    time={
+                      typeof claimMs === 'number'
+                        ? formatForfeitRemaining(claimMs)
+                        : ''
+                    }
+                  />
+                </p>
               ) : null}
             </div>
 
@@ -1082,29 +1104,42 @@ export default function OnlinePostGame({
                 className="online-postgame-don-vote-row"
                 aria-label={`${effectiveVotes} of ${requiredVotes} players agreed`}
               >
-                <div className="online-postgame-don-pips">
-                  {Array.from({ length: requiredVotes }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={[
-                        'online-postgame-don-pip',
-                        i < effectiveVotes
-                          ? 'online-postgame-don-pip--active'
-                          : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    />
-                  ))}
-                </div>
-                <span className="online-postgame-don-vote-label">
-                  {effectiveVotes}/{requiredVotes} agreed
-                </span>
-                {myVoted && !donLocked ? (
-                  <span className="online-postgame-don-my-vote-tag">
-                    Your vote cast
-                  </span>
-                ) : null}
+                {[info?.p1Name ?? 'Player 1', info?.p2Name ?? 'Player 2'].map(
+                  (name, i) => {
+                    const agreed = i < effectiveVotes;
+                    return (
+                      <span
+                        key={name}
+                        className={[
+                          'online-postgame-don-player',
+                          i === 1 ? 'online-postgame-don-player--right' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        aria-label={agreed ? `${name} agreed` : name}
+                      >
+                        <span
+                          className={[
+                            'online-postgame-don-pip',
+                            agreed ? 'online-postgame-don-pip--active' : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                        />
+                        <span className="online-postgame-don-vote-label">
+                          {agreed ? (
+                            <span className="online-postgame-don-vote-cycle">
+                              <span>{name}</span>
+                              <span>agreed</span>
+                            </span>
+                          ) : (
+                            name
+                          )}
+                        </span>
+                      </span>
+                    );
+                  }
+                )}
               </div>
 
               <Button
@@ -1126,6 +1161,9 @@ export default function OnlinePostGame({
                   playConfirm();
                   setError('');
                   setMyVoted(true);
+                  if (roomId && roomId !== 'preview') {
+                    sessionStorage.setItem(`don-voted:${roomId}`, '1');
+                  }
                   socket.emit('onlineDoubleOrNothing', { roomId });
                 }}
               >
@@ -1134,7 +1172,7 @@ export default function OnlinePostGame({
                   : !isMatchPlayer
                     ? 'PLAYERS ONLY'
                     : myVoted
-                      ? `VOTED — WAITING (${effectiveVotes}/${requiredVotes})`
+                      ? 'AGREED'
                       : 'DOUBLE OR NOTHING'}
               </Button>
             </div>
@@ -1153,6 +1191,7 @@ export default function OnlinePostGame({
             {showWinnerPayout ? (
               <>
                 <div className="online-postgame-payout-choice">
+                  <div className="online-postgame-payout-copy">
                   <p className="online-postgame-payout-title">
                     Choose payout method
                   </p>
@@ -1160,8 +1199,7 @@ export default function OnlinePostGame({
                     Pick one. Once selected, the other method and Double or
                     Nothing are locked.
                   </p>
-                </div>
-                <div className="online-postgame-payout-row">
+                  <div className="online-postgame-payout-row">
                   <Button
                     variant="custom"
                     type="button"
@@ -1224,6 +1262,52 @@ export default function OnlinePostGame({
                       ? 'Sending to LN address...'
                       : 'Pay to LN address'}
                   </Button>
+                  </div>
+                  </div>
+                  <div className="online-postgame-qr-wrap">
+                    <p className="online-postgame-qr-title">WITHDRAWAL QR</p>
+                    {withdrawalValue ? (
+                      lnurlw ? (
+                        <a
+                          className="online-postgame-qr-lnurl-anchor"
+                          href={`lightning:${lnurlw.replace(/^lightning:/i, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Open withdrawal LNURL in a Lightning wallet"
+                        >
+                          <QRCodeSVG
+                            value={withdrawalValue}
+                            size={220}
+                            includeMargin
+                          />
+                        </a>
+                      ) : (
+                        <QRCodeSVG
+                          value={withdrawalValue}
+                          size={220}
+                          includeMargin
+                          className="online-postgame-qr-blur"
+                        />
+                      )
+                    ) : (
+                      <img src="/images/loading.gif" alt="Creating withdrawal" />
+                    )}
+                    {lnurlw ? (
+                      <a
+                        className="online-postgame-qr-lnurl-link"
+                        href={`lightning:${lnurlw.replace(/^lightning:/i, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open LNURL in wallet
+                      </a>
+                    ) : null}
+                    <p className="online-postgame-qr-note">
+                      {lnurlw
+                        ? 'Scan with a compatible wallet, or use the link above.'
+                        : 'Choose Withdraw via QR to reveal it.'}
+                    </p>
+                  </div>
                 </div>
               </>
             ) : null}
@@ -1237,53 +1321,6 @@ export default function OnlinePostGame({
               LEAVE ROOM
             </Button>
           </div>
-
-          {showWinnerPayout ? (
-            <div className="online-postgame-qr-wrap">
-              <p className="online-postgame-qr-title">WITHDRAWAL QR</p>
-              {withdrawalValue ? (
-                lnurlw ? (
-                  <a
-                    className="online-postgame-qr-lnurl-anchor"
-                    href={`lightning:${lnurlw.replace(/^lightning:/i, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Open withdrawal LNURL in a Lightning wallet"
-                  >
-                    <QRCodeSVG
-                      value={withdrawalValue}
-                      size={220}
-                      includeMargin
-                    />
-                  </a>
-                ) : (
-                  <QRCodeSVG
-                    value={withdrawalValue}
-                    size={220}
-                    includeMargin
-                    className="online-postgame-qr-blur"
-                  />
-                )
-              ) : (
-                <img src="/images/loading.gif" alt="Creating withdrawal" />
-              )}
-              {lnurlw ? (
-                <a
-                  className="online-postgame-qr-lnurl-link"
-                  href={`lightning:${lnurlw.replace(/^lightning:/i, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Open LNURL in wallet
-                </a>
-              ) : null}
-              <p className="online-postgame-qr-note">
-                {lnurlw
-                  ? 'Scan with a compatible wallet, or use the link above.'
-                  : 'Winner can reveal QR by creating withdrawal.'}
-              </p>
-            </div>
-          ) : null}
         </div>
 
         {showWinnerPayout && payoutChosen ? (
