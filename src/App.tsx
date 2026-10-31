@@ -1,4 +1,4 @@
-import { lazy, useEffect, type ComponentType } from 'react';
+import { useEffect, type ComponentType } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -17,24 +17,27 @@ import { useKeyboardLayoutAutodetect } from './hooks/useKeyboardLayoutAutodetect
 import Index from './pages/Index';
 import { FeatureUnavailableFallback } from './pages/FeatureUnavailableFallback';
 import { LegacyPracticeRedirect } from './pages/LegacyPracticeRedirect';
+import { lazyWithReload } from './lib/lazyWithReload';
 import './styles/index.css';
 
 const loadPracticeHub = () => import('./pages/PracticeHub');
 const loadP2pEntry = () => import('./pages/P2pEntry');
 const loadOnlineRooms = () => import('./pages/OnlineRooms');
 
-const GameMenu = lazy(() => import('./pages/GameMenu'));
-const PracticeHub = lazy(loadPracticeHub);
-const P2pEntry = lazy(loadP2pEntry);
-const TournamentLobby = lazy(() => import('./pages/TournamentLobby'));
-const TournamentBracket = lazy(() => import('./pages/TournamentBracket'));
-const Game = lazy(() => import('./pages/Game'));
-const PostGame = lazy(() => import('./pages/PostGame'));
-const Highscores = lazy(() => import('./pages/Highscores'));
-const About = lazy(() => import('./pages/About'));
-const Config = lazy(() => import('./pages/Config'));
-const OnlineRoom = lazy(() => import('./pages/OnlineRoom'));
-const OnlineRooms = lazy(loadOnlineRooms);
+const GameMenu = lazyWithReload(() => import('./pages/GameMenu'));
+const PracticeHub = lazyWithReload(loadPracticeHub);
+const P2pEntry = lazyWithReload(loadP2pEntry);
+const TournamentLobby = lazyWithReload(() => import('./pages/TournamentLobby'));
+const TournamentBracket = lazyWithReload(
+  () => import('./pages/TournamentBracket')
+);
+const Game = lazyWithReload(() => import('./pages/Game'));
+const PostGame = lazyWithReload(() => import('./pages/PostGame'));
+const Highscores = lazyWithReload(() => import('./pages/Highscores'));
+const About = lazyWithReload(() => import('./pages/About'));
+const Config = lazyWithReload(() => import('./pages/Config'));
+const OnlineRoom = lazyWithReload(() => import('./pages/OnlineRoom'));
+const OnlineRooms = lazyWithReload(loadOnlineRooms);
 
 /**
  * UI labs (`/preview` and the debug menu). On for `npm run dev`.
@@ -48,23 +51,23 @@ function lazyNamed<Module extends Record<string, ComponentType>>(
   load: () => Promise<Module>,
   name: keyof Module & string
 ) {
-  return lazy(() => load().then((mod) => ({ default: mod[name] })));
+  return lazyWithReload(() => load().then((mod) => ({ default: mod[name] })));
 }
 
 const UiDebugIndex = previewLabsEnabled
-  ? lazy(() => import('./pages/UiDebugIndex'))
+  ? lazyWithReload(() => import('./pages/UiDebugIndex'))
   : null;
 const MatchTriggerLab = previewLabsEnabled
-  ? lazy(() => import('./pages/MatchTriggerLab'))
+  ? lazyWithReload(() => import('./pages/MatchTriggerLab'))
   : null;
 const OnlineFinishPreview = previewLabsEnabled
-  ? lazy(() => import('./pages/OnlineFinishPreview'))
+  ? lazyWithReload(() => import('./pages/OnlineFinishPreview'))
   : null;
 const OnlineSeatPreview = previewLabsEnabled
-  ? lazy(() => import('./pages/OnlineSeatPreview'))
+  ? lazyWithReload(() => import('./pages/OnlineSeatPreview'))
   : null;
 const OnlinePostGame = previewLabsEnabled
-  ? lazy(() => import('./pages/OnlinePostGame'))
+  ? lazyWithReload(() => import('./pages/OnlinePostGame'))
   : null;
 const P2pSettingsPreviewB = previewLabsEnabled
   ? lazyNamed(() => import('./pages/uiDebugLayouts'), 'P2pSettingsPreviewB')

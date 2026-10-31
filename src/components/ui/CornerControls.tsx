@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
@@ -9,6 +9,7 @@ import {
   useCoarsePointer,
   useMediaQuery,
 } from '@/shared/utils/inputMode';
+import { lazyWithReload } from '@/lib/lazyWithReload';
 import './CornerControls.css';
 
 function getStoredTvSafeInset(): boolean {
@@ -28,7 +29,7 @@ const previewLabsEnabled =
   import.meta.env.DEV || import.meta.env.VITE_ENABLE_PREVIEW === 'true';
 
 const UiDebugMenu = previewLabsEnabled
-  ? lazy(() =>
+  ? lazyWithReload(() =>
       import('@/components/ui/UiDebugMenu').then((mod) => ({
         default: mod.UiDebugMenu,
       }))
