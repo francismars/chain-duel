@@ -95,19 +95,30 @@
 
 #gameButtons {
   padding-top: 3cqw;
-  display: flex;
-  margin: auto;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 auto;
   justify-content: center;
   gap: 21px;
+  width: max-content;
+  max-width: 100%;
+  align-self: center;
+}
+
+#gameButtons .button,
+#gameButtons .game-setup-start-wrap {
+  width: 100%;
+  min-width: 0;
 }
 
 #gameButtons .button {
   margin: 0;
-  width: var(--btn-w);
+  min-width: 15rem;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .game-setup-scroll-exit {
@@ -377,7 +388,9 @@
     right: 0;
     bottom: 0;
     z-index: 6;
+    display: flex;
     flex-direction: column-reverse;
+    grid-template-columns: none;
     gap: var(--space-2);
     width: auto;
     margin: 0;
@@ -389,6 +402,10 @@
   #gameButtons .button,
   #gameButtons .game-setup-start-wrap {
     width: 100%;
+  }
+
+  #gameButtons .button {
+    white-space: normal;
   }
 
   /* One fixed action. Leave sits at the end of the page. */
