@@ -438,7 +438,7 @@
   display: flex;
   justify-content: center;
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.21);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-sizing: border-box;
 }
 
@@ -446,7 +446,7 @@
   width: 25%;
   padding: 1vw;
   box-sizing: border-box;
-  border-right: 1px solid rgba(255, 255, 255, 0.21);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .tournbracket-page .bracketDetail:last-child {
@@ -641,45 +641,12 @@
   font-weight: 500;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  background: linear-gradient(
-    95deg,
-    #737373 0%,
-    #fde047 28%,
-    #fffbeb 42%,
-    #facc15 55%,
-    #fef9c3 72%,
-    #fde047 88%,
-    #a3a3a3 100%
-  );
-  background-size: 260% 100%;
-  background-position: 0% 50%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.38));
-  animation: tournFinishedGradientShift 3.5s linear infinite;
-}
-
-@keyframes tournFinishedGradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  100% {
-    background-position: 100% 50%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tournbracket-page .tourn-finished-title {
-    animation: none;
-    background-position: 40% 50%;
-  }
+  color: #fff;
 }
 
 .tournbracket-page #winnerName {
   display: block;
-  font-size: max(22px, 7vw);
+  font-size: max(22px, 5.4vw);
   line-height: 0.9;
 }
 

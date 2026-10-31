@@ -130,10 +130,10 @@ export default function TournamentBracket() {
     timesWithdrawnRef.current = 0;
     if (isFinishedPreview) {
       setPlayersPaid({
-        'Player 1': { name: 'Ada' },
-        'Player 2': { name: 'Bea' },
-        'Player 3': { name: 'Cal' },
-        'Player 4': { name: 'Dee' },
+        'Player 1': { name: 'Ada ⚡' },
+        'Player 2': { name: 'Beatrice' },
+        'Player 3': { name: 'Satoshi Nakamoto the First' },
+        'Player 4': { name: '🔥' },
       });
       setWinnersList(['Player 1', 'Player 1', 'Player 1']);
       setLoading(false);
@@ -488,6 +488,24 @@ export default function TournamentBracket() {
       if (r) r.style.opacity = '0.7';
     };
 
+    // A player who won, then lost later, keeps a solid white slot and connector.
+    // Fade that white so only the path still in the tournament stays bright.
+    const muteEliminated = (id: string) => {
+      const n = svgEl.querySelector<SVGElement>(`#${id}_name`);
+      const r = svgEl.querySelector<SVGElement>(`#${id}_rect`);
+      const p = svgEl.querySelector<SVGElement>(`#${id}_path`);
+      if (n) {
+        n.style.fill = '#fff';
+        n.style.webkitTextFillColor = '#fff';
+        n.style.opacity = '0.45';
+      }
+      if (r) {
+        r.style.fill = 'rgba(255, 255, 255, 0.22)';
+        r.style.opacity = '1';
+      }
+      if (p) p.style.opacity = '0.28';
+    };
+
     const setAdvancingName = (posId: string, name: string) => {
       const el =
         posId === 'Winner'
@@ -500,36 +518,36 @@ export default function TournamentBracket() {
 
     const round1 = Math.max(1, Math.floor(numberOfPlayers / 2));
     const WN: string[] = [];
+    const winnerSlots: string[] = [];
 
     for (let i = 0; i < winnersList.length; i++) {
       if (i + 1 >= numberOfPlayers) break;
       const w = winnersList[i];
       let winnerName: string;
+      const winnerSlot =
+        w === 'Player 1'
+          ? INITIAL_POSITIONS[i * 2]
+          : INITIAL_POSITIONS[i * 2 + 1];
+      const loserSlot =
+        w === 'Player 1'
+          ? INITIAL_POSITIONS[i * 2 + 1]
+          : INITIAL_POSITIONS[i * 2];
 
       if (i < round1) {
-        if (w === 'Player 1') {
-          highLight(INITIAL_POSITIONS[i * 2]);
-          dimLoser(INITIAL_POSITIONS[i * 2 + 1]);
-          winnerName = playersList[i * 2] ?? '';
-        } else {
-          highLight(INITIAL_POSITIONS[i * 2 + 1]);
-          dimLoser(INITIAL_POSITIONS[i * 2]);
-          winnerName = playersList[i * 2 + 1] ?? '';
-        }
+        winnerName =
+          w === 'Player 1'
+            ? (playersList[i * 2] ?? '')
+            : (playersList[i * 2 + 1] ?? '');
       } else {
         const p1i = (i - round1) * 2;
-        if (w === 'Player 1') {
-          highLight(INITIAL_POSITIONS[i * 2]);
-          dimLoser(INITIAL_POSITIONS[i * 2 + 1]);
-          winnerName = WN[p1i] ?? '';
-        } else {
-          highLight(INITIAL_POSITIONS[i * 2 + 1]);
-          dimLoser(INITIAL_POSITIONS[i * 2]);
-          winnerName = WN[p1i + 1] ?? '';
-        }
+        winnerName = w === 'Player 1' ? (WN[p1i] ?? '') : (WN[p1i + 1] ?? '');
       }
 
+      if (winnerSlot) highLight(winnerSlot);
+      if (loserSlot) dimLoser(loserSlot);
+
       WN.push(winnerName);
+      winnerSlots.push(winnerSlot ?? '');
 
       // An empty pass (roster not ready yet) must not wipe a name already shown.
       if (!winnerName.trim()) continue;
@@ -549,6 +567,29 @@ export default function TournamentBracket() {
         const domPos = INITIAL_POSITIONS[numberOfPlayers + i];
         if (domPos) setAdvancingName(domPos, winnerName);
       }
+    }
+
+    const matchPlayers = (match: number): [string, string] => {
+      if (match < round1) {
+        return [playersList[match * 2] ?? '', playersList[match * 2 + 1] ?? ''];
+      }
+      const p1i = (match - round1) * 2;
+      return [WN[p1i] ?? '', WN[p1i + 1] ?? ''];
+    };
+
+    for (let i = 0; i < winnerSlots.length; i++) {
+      const name = WN[i];
+      const slot = winnerSlots[i];
+      if (!name || !slot) continue;
+      let eliminated = false;
+      for (let j = i + 1; j < WN.length; j++) {
+        const [p1, p2] = matchPlayers(j);
+        if ((p1 === name || p2 === name) && WN[j] !== name) {
+          eliminated = true;
+          break;
+        }
+      }
+      if (eliminated) muteEliminated(slot);
     }
 
     // Highlight the slots and game-number label for the NEXT game to be played
