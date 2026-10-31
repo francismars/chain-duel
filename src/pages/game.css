@@ -1602,6 +1602,11 @@
   box-shadow: 0 0 22px rgba(255, 255, 255, 0.08);
 }
 
+.solo-zap-profile__avatar--mark {
+  object-fit: cover;
+  background: #111;
+}
+
 .solo-zap-card[data-rank] .solo-zap-profile__avatar {
   border-color: rgba(var(--solo-accent-strong), 0.5);
   box-shadow: 0 0 28px rgba(var(--solo-accent), 0.3);
@@ -1957,6 +1962,18 @@
   margin-top: clamp(10px, 1vw, 14px);
   padding-top: clamp(10px, 1vw, 14px);
   border-top: none;
+}
+
+.solo-zap-note-preview__actions-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.solo-zap-note-preview__actions-row > .button,
+.solo-zap-note-preview__actions-row > .button-tip {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .solo-zap-note-preview__actions .solo-zap-post-btn {

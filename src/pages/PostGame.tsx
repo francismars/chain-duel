@@ -29,7 +29,9 @@ import {
   postGameConfirmGate,
   postGameWinnerAllowsKey,
 } from '@/pages/postGameWinnerControl';
+import { syntheticKeySource } from '@/lib/controls/syntheticKeys';
 import '@/components/ui/Button.css';
+import '@/styles/components/matchResults.css';
 import './postgame.css';
 
 import { SoloZapRadiatingLines } from '@/features/game/SoloZapRadiatingLines';
@@ -430,6 +432,7 @@ export default function PostGame() {
       const winnerAllows = postGameWinnerAllowsKey(winnerPlayer, event.key, {
         practiceMode,
         menu,
+        synthetic: syntheticKeySource(event),
       });
 
       if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
@@ -525,7 +528,6 @@ export default function PostGame() {
         {practiceMode ? null : <Sponsorship id="sponsorship-postgame" />}
         <div className="postgame-stage">
           <div className="flex match-result-heading">
-            <h2 id="gameOver">MATCH COMPLETE</h2>
             <div className="playerInfoGroup">
               <img
                 className={`playerImg ${winnerPicture ? '' : 'hide'}`}
@@ -549,39 +551,88 @@ export default function PostGame() {
         <div
           className={`postgame-claim-row${menu === 3 ? ' postgame-claim-row--menu3' : ''}`}
         >
-          <div className="postgame-claim-copy">
-            <p
-              id="claimText"
+          <div className="postgame-claim-side">
+            <div
+              id="buttonsDiv"
               style={{
-                display: menu === 3 || practiceMode ? 'none' : undefined,
+                flexDirection: menu === 3 ? 'row' : 'column',
+                justifyContent: menu === 3 ? 'center' : undefined,
               }}
             >
-              CLAIM YOUR WINNINGS
-            </p>
-            {practiceMode ? null : (
-              <div id="fees">
-                <span id="split1">
-                  2% <span id="hostFee">({hostFee.toLocaleString()} sats)</span>{' '}
-                  to the Sponsor (@piratehash)
-                </span>{' '}
-                ·{' '}
-                <span id="split2">
-                  2%{' '}
-                  <span id="developerFee">
-                    ({developerFee.toLocaleString()} sats)
-                  </span>{' '}
-                  to the developer (@francismars)
-                </span>{' '}
-                ·{' '}
-                <span id="split3">
-                  1%{' '}
-                  <span id="designerFee">
-                    ({designerFee.toLocaleString()} sats)
-                  </span>{' '}
-                  to the designer (@bitcoinanatomy)
-                </span>
-              </div>
-            )}
+              <Button
+                ref={claimButtonRef}
+                id="claimbutton"
+                style={{
+                  marginLeft: menu === 3 ? '0px' : undefined,
+                  marginRight: menu === 3 ? '0px' : undefined,
+                }}
+                onClick={onClaim}
+              >
+                {claimButtonText}
+              </Button>
+              {menu === 3 || tournamentMode ? null : (
+                <div className="don-section">
+                  <Button
+                    ref={doubleOrNothingRef}
+                    id="doubleornotthingbutton"
+                    className={canDoubleOrNothing ? '' : 'disabled'}
+                    disabled={!canDoubleOrNothing}
+                    onClick={onDoubleOrNothing}
+                  >
+                    {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
+                  </Button>
+                </div>
+              )}
+              {menu === 3 ? (
+                <Button
+                  ref={mainMenuButtonRef}
+                  id="startnewbutton"
+                  style={{
+                    display: 'block',
+                    marginLeft: '0px',
+                    marginRight: '0px',
+                  }}
+                  onClick={onMainMenu}
+                >
+                  MAIN MENU
+                </Button>
+              ) : (
+                <Button
+                  id="startnewbutton"
+                  style={{ display: 'none' }}
+                  onClick={onMainMenu}
+                >
+                  MAIN MENU
+                </Button>
+              )}
+            </div>
+            <div className="postgame-claim-copy">
+              {practiceMode ? null : (
+                <div id="fees">
+                  <span id="split1">
+                    2% <span id="hostFee">{hostFee.toLocaleString()} sats</span>{' '}
+                    to the Sponsor{' '}
+                    <span className="fee-handle">@piratehash</span>
+                  </span>
+                  <span id="split2">
+                    2%{' '}
+                    <span id="developerFee">
+                      {developerFee.toLocaleString()} sats
+                    </span>{' '}
+                    to the developer{' '}
+                    <span className="fee-handle">@francismars</span>
+                  </span>
+                  <span id="split3">
+                    1%{' '}
+                    <span id="designerFee">
+                      {designerFee.toLocaleString()} sats
+                    </span>{' '}
+                    to the designer{' '}
+                    <span className="fee-handle">@bitcoinanatomy</span>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
           <div className="postgame-claim-qr">
             <a
@@ -611,66 +662,6 @@ export default function PostGame() {
             >
               Requires compatible wallet.
             </p>
-          </div>
-          <div
-            id="buttonsDiv"
-            style={{
-              flexDirection: menu === 3 ? 'row' : 'column',
-              justifyContent: menu === 3 ? 'center' : undefined,
-              marginTop: menu === 3 ? '16cqw' : undefined,
-            }}
-          >
-            <Button
-              ref={claimButtonRef}
-              id="claimbutton"
-              style={{
-                marginLeft: menu === 3 ? '0px' : undefined,
-                marginRight: menu === 3 ? '0px' : undefined,
-              }}
-              onClick={onClaim}
-            >
-              {claimButtonText}
-            </Button>
-            {menu === 3 || tournamentMode ? null : (
-              <div className="don-section">
-                <Button
-                  ref={doubleOrNothingRef}
-                  id="doubleornotthingbutton"
-                  className={canDoubleOrNothing ? '' : 'disabled'}
-                  disabled={!canDoubleOrNothing}
-                  onClick={onDoubleOrNothing}
-                >
-                  {practiceMode ? 'PRACTICE AGAIN' : 'DOUBLE OR NOTHING'}
-                </Button>
-                {!practiceMode ? (
-                  <p className="don-subtitle">
-                    Play again for double the prize
-                  </p>
-                ) : null}
-              </div>
-            )}
-            {menu === 3 ? (
-              <Button
-                ref={mainMenuButtonRef}
-                id="startnewbutton"
-                style={{
-                  display: 'block',
-                  marginLeft: '0px',
-                  marginRight: '0px',
-                }}
-                onClick={onMainMenu}
-              >
-                MAIN MENU
-              </Button>
-            ) : (
-              <Button
-                id="startnewbutton"
-                style={{ display: 'none' }}
-                onClick={onMainMenu}
-              >
-                MAIN MENU
-              </Button>
-            )}
           </div>
         </div>
         <div id="socialFollow">

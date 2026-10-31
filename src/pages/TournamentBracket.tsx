@@ -55,6 +55,8 @@ export default function TournamentBracket() {
   const [params] = useSearchParams();
   const isNostrTournament = params.get('mode') === 'tournamentnostr';
   const isFinishedPreview = params.get('preview') === 'finished';
+  const isNostrPreview = params.get('preview') === 'nostr';
+  const isBracketPreview = isFinishedPreview || isNostrPreview;
   const { socket } = useSocket();
 
   useGamepad(true);
@@ -128,13 +130,34 @@ export default function TournamentBracket() {
     setNostrNote1('');
     setNostrCode('');
     timesWithdrawnRef.current = 0;
-    if (isFinishedPreview) {
-      setPlayersPaid({
-        'Player 1': { name: 'Ada' },
-        'Player 2': { name: 'Bea' },
-        'Player 3': { name: 'Cal' },
-        'Player 4': { name: 'Dee' },
-      });
+    if (isBracketPreview) {
+      setPlayersPaid(
+        isNostrPreview
+          ? {
+              'Player 1': {
+                name: 'Ada ⚡',
+                picture: '/images/preview/player-lena.jpg',
+              },
+              'Player 2': {
+                name: 'Kenji',
+                picture: '/images/preview/player-samir.jpg',
+              },
+              'Player 3': {
+                name: 'Satoshi Nakamoto the First',
+                picture: '/images/preview/player-nova.jpg',
+              },
+              'Player 4': {
+                name: '🔥',
+                picture: '/images/preview/player-kai.jpg',
+              },
+            }
+          : {
+              'Player 1': { name: 'Ada ⚡' },
+              'Player 2': { name: 'Kenji' },
+              'Player 3': { name: 'Satoshi Nakamoto the First' },
+              'Player 4': { name: '🔥' },
+            }
+      );
       setWinnersList(['Player 1', 'Player 1', 'Player 1']);
       setLoading(false);
       setShowPaymentPanel(false);
@@ -143,7 +166,8 @@ export default function TournamentBracket() {
     urlDeposit,
     numberOfPlayersFromUrl,
     isNostrTournament,
-    isFinishedPreview,
+    isBracketPreview,
+    isNostrPreview,
   ]);
 
   // Displayed buy-in follows URL by default, then backend min when provided.
@@ -199,11 +223,15 @@ export default function TournamentBracket() {
     return {
       p1Src: p1 ?? (isNostrTournament ? nostrFallback : null),
       p2Src: p2 ?? (isNostrTournament ? nostrFallback : null),
+      championSrc:
+        pictureForDisplayName(bracketState.champion) ??
+        (isNostrTournament ? nostrFallback : null),
     };
   }, [
     playersPaid,
     bracketState.nextP1,
     bracketState.nextP2,
+    bracketState.champion,
     isNostrTournament,
   ]);
 
@@ -239,7 +267,7 @@ export default function TournamentBracket() {
         min: number;
       };
     }) => {
-      if (isFinishedPreview) return;
+      if (isBracketPreview) return;
       if (d.gameInfo?.numberOfPlayers)
         setNumberOfPlayers(d.gameInfo.numberOfPlayers);
       const incomingMin =
@@ -253,7 +281,7 @@ export default function TournamentBracket() {
       }
       if (d.lnurlp) setPayLink(d.lnurlp);
       if (
-        !isFinishedPreview &&
+        !isBracketPreview &&
         d.gameInfo?.players &&
         Object.keys(d.gameInfo.players).length > 0
       ) {
@@ -265,7 +293,7 @@ export default function TournamentBracket() {
       }
 
       if (
-        !isFinishedPreview &&
+        !isBracketPreview &&
         d.gameInfo?.winners &&
         d.gameInfo.winners.length > 0
       ) {
@@ -294,17 +322,17 @@ export default function TournamentBracket() {
         }
       }
     },
-    [navigate, isFinishedPreview]
+    [navigate, isBracketPreview]
   );
 
   const handleTournamentPayments = useCallback(
     (players: Record<string, TournamentPlayerIdentity>) => {
-      if (isFinishedPreview || Object.keys(players).length === 0) return;
+      if (isBracketPreview || Object.keys(players).length === 0) return;
       setPlayersPaid(players);
       setHighlightDeposit(true);
       setTimeout(() => setHighlightDeposit(false), 1200);
     },
-    [isFinishedPreview]
+    [isBracketPreview]
   );
 
   const handleTournamentCancel = useCallback(
@@ -377,85 +405,12 @@ export default function TournamentBracket() {
         nameEl.style.opacity = '1';
       }
       if (isNostrTournament && nameEl) {
-        const textNode = nameEl as unknown as SVGGraphicsElement | null;
-        if (!textNode) continue;
-        const originalTransform = nameEl.getAttribute(
-          'data-original-transform'
-        );
-        if (!originalTransform) {
-          const currentTransform = nameEl.getAttribute('transform') ?? '';
-          nameEl.setAttribute('data-original-transform', currentTransform);
-        } else {
-          nameEl.setAttribute('transform', originalTransform);
-        }
-        const { size: avatarSize, refBBox } = getBracketAvatarLayout(nameEl);
-        const gap = 10;
-        const avatarLeftExtra = 5;
-        const avatarLeftNudge = 4;
-        const nameLift = 2;
-        const shift = (avatarSize + gap + avatarLeftExtra) / 2;
-
-        const transformAttr = nameEl.getAttribute('transform') ?? '';
-        const match = transformAttr.match(
-          /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
-        );
-        if (!match) continue;
-        const tx = Number.parseFloat(match[1]) + shift;
-        const ty = Number.parseFloat(match[2]) - nameLift;
-        nameEl.removeAttribute('dominant-baseline');
-        nameEl.setAttribute('transform', `translate(${tx} ${ty})`);
-
-        const alignedBBox = textNode.getBBox();
         const picture = paid[key]?.picture;
         const imageHref =
           picture && picture.trim() !== ''
             ? picture
             : '/images/social/Nostr.png';
-        const wrap = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'g'
-        );
-        wrap.setAttribute('class', 'bracket-avatar-wrap');
-        const ix =
-          tx +
-          alignedBBox.x -
-          avatarSize -
-          gap -
-          avatarLeftExtra -
-          avatarLeftNudge;
-        const iy = ty + refBBox.y + (refBBox.height - avatarSize) / 2;
-        const avatar = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'image'
-        );
-        avatar.setAttribute('data-avatar', 'true');
-        avatar.setAttribute('x', `${ix}`);
-        avatar.setAttribute('y', `${iy}`);
-        avatar.setAttribute('width', `${avatarSize}`);
-        avatar.setAttribute('height', `${avatarSize}`);
-        avatar.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-        avatar.setAttributeNS(
-          'http://www.w3.org/1999/xlink',
-          'href',
-          imageHref
-        );
-        avatar.setAttribute('href', imageHref);
-        /* Same ring as HUD .playerImg: 1px rgba(255,255,255,0.28) — vector stroke survives clip-path on <image> */
-        const ring = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'circle'
-        );
-        ring.setAttribute('cx', `${ix + avatarSize / 2}`);
-        ring.setAttribute('cy', `${iy + avatarSize / 2}`);
-        ring.setAttribute('r', `${avatarSize / 2 - 0.5}`);
-        ring.setAttribute('fill', 'none');
-        ring.setAttribute('stroke', 'rgba(255, 255, 255, 0.28)');
-        ring.setAttribute('stroke-width', '1');
-        ring.setAttribute('pointer-events', 'none');
-        ring.setAttribute('data-avatar-ring', 'true');
-        wrap.appendChild(avatar);
-        wrap.appendChild(ring);
-        nameEl.parentNode?.appendChild(wrap);
+        attachBracketAvatar(nameEl, imageHref);
       }
     }
   }, [playersPaid, svgMarkup, isNostrTournament]);
@@ -488,48 +443,88 @@ export default function TournamentBracket() {
       if (r) r.style.opacity = '0.7';
     };
 
+    // Same solid winner treatment, in grey, once that player is eliminated.
+    const muteEliminated = (id: string) => {
+      const n = svgEl.querySelector<SVGElement>(`#${id}_name`);
+      const r = svgEl.querySelector<SVGElement>(`#${id}_rect`);
+      const p = svgEl.querySelector<SVGElement>(`#${id}_path`);
+      if (n) {
+        n.style.fill = 'black';
+        n.style.webkitTextFillColor = 'black';
+        n.style.opacity = '1';
+      }
+      if (r) {
+        r.style.fill = '#8a8a8a';
+        r.style.stroke = '#8a8a8a';
+        r.style.opacity = '1';
+      }
+      if (p) {
+        p.style.opacity = '1';
+        p.style.stroke = '#8a8a8a';
+        p.style.strokeWidth = '5';
+      }
+    };
+
     const setAdvancingName = (posId: string, name: string) => {
       const el =
         posId === 'Winner'
           ? svgEl.querySelector<SVGElement>('#Winner_name')
           : svgEl.querySelector<SVGElement>(`#${posId}_name`);
       if (!el) return;
-      applyBracketNameText(el, name, false);
+      applyBracketNameText(el, name, isNostrTournament);
       el.style.opacity = '1';
+      if (!isNostrTournament) return;
+      const picture = pictureForName(name);
+      attachBracketAvatar(
+        el,
+        picture && picture.trim() !== '' ? picture : '/images/social/Nostr.png'
+      );
+    };
+
+    const pictureForName = (displayName: string): string | undefined => {
+      const t = displayName.trim().toLocaleUpperCase('en-US');
+      for (const [key, v] of Object.entries(playersPaid)) {
+        if (
+          resolveIdentityLabel(v, key).trim().toLocaleUpperCase('en-US') === t
+        ) {
+          return v.picture;
+        }
+      }
+      return undefined;
     };
 
     const round1 = Math.max(1, Math.floor(numberOfPlayers / 2));
     const WN: string[] = [];
+    const winnerSlots: string[] = [];
 
     for (let i = 0; i < winnersList.length; i++) {
       if (i + 1 >= numberOfPlayers) break;
       const w = winnersList[i];
       let winnerName: string;
+      const winnerSlot =
+        w === 'Player 1'
+          ? INITIAL_POSITIONS[i * 2]
+          : INITIAL_POSITIONS[i * 2 + 1];
+      const loserSlot =
+        w === 'Player 1'
+          ? INITIAL_POSITIONS[i * 2 + 1]
+          : INITIAL_POSITIONS[i * 2];
 
       if (i < round1) {
-        if (w === 'Player 1') {
-          highLight(INITIAL_POSITIONS[i * 2]);
-          dimLoser(INITIAL_POSITIONS[i * 2 + 1]);
-          winnerName = playersList[i * 2] ?? '';
-        } else {
-          highLight(INITIAL_POSITIONS[i * 2 + 1]);
-          dimLoser(INITIAL_POSITIONS[i * 2]);
-          winnerName = playersList[i * 2 + 1] ?? '';
-        }
+        winnerName =
+          w === 'Player 1'
+            ? (playersList[i * 2] ?? '')
+            : (playersList[i * 2 + 1] ?? '');
       } else {
         const p1i = (i - round1) * 2;
-        if (w === 'Player 1') {
-          highLight(INITIAL_POSITIONS[i * 2]);
-          dimLoser(INITIAL_POSITIONS[i * 2 + 1]);
-          winnerName = WN[p1i] ?? '';
-        } else {
-          highLight(INITIAL_POSITIONS[i * 2 + 1]);
-          dimLoser(INITIAL_POSITIONS[i * 2]);
-          winnerName = WN[p1i + 1] ?? '';
-        }
+        winnerName = w === 'Player 1' ? (WN[p1i] ?? '') : (WN[p1i + 1] ?? '');
       }
 
+      if (winnerSlot) highLight(winnerSlot);
+      if (loserSlot) dimLoser(loserSlot);
+
       WN.push(winnerName);
+      winnerSlots.push(winnerSlot ?? '');
 
       // An empty pass (roster not ready yet) must not wipe a name already shown.
       if (!winnerName.trim()) continue;
@@ -551,6 +546,29 @@ export default function TournamentBracket() {
       }
     }
 
+    const matchPlayers = (match: number): [string, string] => {
+      if (match < round1) {
+        return [playersList[match * 2] ?? '', playersList[match * 2 + 1] ?? ''];
+      }
+      const p1i = (match - round1) * 2;
+      return [WN[p1i] ?? '', WN[p1i + 1] ?? ''];
+    };
+
+    for (let i = 0; i < winnerSlots.length; i++) {
+      const name = WN[i];
+      const slot = winnerSlots[i];
+      if (!name || !slot) continue;
+      let eliminated = false;
+      for (let j = i + 1; j < WN.length; j++) {
+        const [p1, p2] = matchPlayers(j);
+        if ((p1 === name || p2 === name) && WN[j] !== name) {
+          eliminated = true;
+          break;
+        }
+      }
+      if (eliminated) muteEliminated(slot);
+    }
+
     // Highlight the slots and game-number label for the NEXT game to be played
     const nextIdx = winnersList.length;
     if (nextIdx < numberOfPlayers - 1) {
@@ -570,7 +588,15 @@ export default function TournamentBracket() {
         gEl.style.fontWeight = '900';
       }
     }
-  }, [winnersList, svgMarkup, numberOfPlayers, playersList, preStartReady]);
+  }, [
+    winnersList,
+    svgMarkup,
+    numberOfPlayers,
+    playersList,
+    playersPaid,
+    isNostrTournament,
+    preStartReady,
+  ]);
 
   useTournamentSocketEvents({
     socket,
@@ -1060,6 +1086,13 @@ export default function TournamentBracket() {
             <span className="tourn-finished-title">Champion</span>
           </h2>
           <h1>
+            {nextGameAvatars.championSrc ? (
+              <img
+                className="tourn-champion-avatar"
+                src={nextGameAvatars.championSrc}
+                alt=""
+              />
+            ) : null}
             <span id="winnerName">{bracketState.champion}</span>
           </h1>
           <Button
@@ -1171,23 +1204,25 @@ function resolveIdentityLabel(
   return fallbackRole;
 }
 
-/** Horizontal space from the name anchor to the slot rect edge (SVG user units). */
-function getBracketSlotMaxTextWidth(nameEl: SVGElement): number {
+/** Slot rect edges in the same coordinates as the name's translate x. */
+function getBracketSlotEdges(nameEl: SVGElement): {
+  left: number;
+  right: number;
+} {
   const posId = nameEl.id.replace(/_name$/, '');
   const slotGroup = nameEl.parentElement;
-  if (!slotGroup) return 95;
-
   const rectG =
-    slotGroup.querySelector(`#${posId}_rect`) ??
-    slotGroup.querySelector('[id$="_rect"]');
+    slotGroup?.querySelector(`#${posId}_rect`) ??
+    slotGroup?.querySelector('[id$="_rect"]');
   const rect = rectG?.querySelector('rect');
-  if (!rect) return 95;
+  if (!rect) return { left: 0, right: 120 };
 
   const rectBBox = (rect as SVGGraphicsElement).getBBox();
-  const rectLeft = rectBBox.x;
-  const rectRight = rectBBox.x + rectBBox.width;
-  const padding = 3;
+  const left = translateX(rectG ?? null) + rectBBox.x;
+  return { left, right: left + rectBBox.width };
+}
 
+function bracketNameAnchorX(nameEl: SVGElement): number {
   const transformAttr =
     nameEl.getAttribute('data-original-transform') ??
     nameEl.getAttribute('transform') ??
@@ -1195,14 +1230,13 @@ function getBracketSlotMaxTextWidth(nameEl: SVGElement): number {
   const match = transformAttr.match(
     /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
   );
-  const nameX = match ? Number.parseFloat(match[1]) : 0;
+  return match ? Number.parseFloat(match[1]) : 0;
+}
 
-  if (nameEl.id === 'Winner_name') {
-    const half = Math.min(nameX - rectLeft, rectRight - nameX) - padding;
-    return Math.max(40, half * 2);
-  }
-
-  return Math.max(36, rectRight - nameX - padding);
+function translateX(el: Element | null): number {
+  const transform = el?.getAttribute('transform') ?? '';
+  const match = transform.match(/translate\(\s*([-+]?\d*\.?\d+)/);
+  return match ? Number.parseFloat(match[1]) : 0;
 }
 
 function fitBracketNameText(
@@ -1211,9 +1245,6 @@ function fitBracketNameText(
   reserveRightShift = 0
 ): void {
   const tspan = nameEl.querySelector('tspan');
-  if (tspan) tspan.textContent = name;
-  else nameEl.textContent = name;
-
   const storedBase = nameEl.getAttribute('data-base-font-size');
   const attrBase = nameEl.getAttribute('font-size');
   const baseFontSize = Number.parseFloat(storedBase ?? attrBase ?? '26');
@@ -1221,21 +1252,113 @@ function fitBracketNameText(
     nameEl.setAttribute('data-base-font-size', attrBase);
   }
 
-  const maxWidth = Math.max(
-    28,
-    getBracketSlotMaxTextWidth(nameEl) - reserveRightShift
-  );
-  const textGfx = nameEl as unknown as SVGGraphicsElement;
-  const minFontSize = Math.max(20, Math.round(baseFontSize * 0.82));
-
+  const fittedName = name.toLocaleUpperCase('en-US');
+  const setLabel = (label: string) => {
+    if (tspan) tspan.textContent = label;
+    else nameEl.textContent = label;
+  };
+  setLabel(fittedName);
   nameEl.setAttribute('font-size', `${baseFontSize}`);
-  const textWidth = textGfx.getBBox().width;
 
-  if (textWidth > maxWidth) {
-    const scaled = Math.floor(baseFontSize * (maxWidth / textWidth));
-    const fontSize = Math.max(minFontSize, scaled);
-    nameEl.setAttribute('font-size', `${fontSize}`);
+  const edges = getBracketSlotEdges(nameEl);
+  const textGfx = nameEl as unknown as SVGGraphicsElement;
+  const nameX = bracketNameAnchorX(nameEl) + reserveRightShift;
+  const leftRoom = nameX - edges.left;
+  const rightRoom = edges.right - nameX;
+  const maxWidth = Math.max(48, 2 * Math.min(leftRoom, rightRoom) * 0.84);
+  const fits = () => textGfx.getBBox().width <= maxWidth;
+
+  if (!fits()) {
+    const minFontSize = Math.max(16, Math.round(baseFontSize * 0.7));
+    const width = Math.max(1, textGfx.getBBox().width);
+    const scaled = Math.floor(baseFontSize * (maxWidth / width));
+    nameEl.setAttribute(
+      'font-size',
+      `${Math.max(minFontSize, Math.min(baseFontSize, scaled))}`
+    );
   }
+
+  if (fits() || fittedName.length <= 1) {
+    liftShrunkBracketName(nameEl, baseFontSize);
+    return;
+  }
+
+  let lo = 1;
+  let hi = fittedName.length - 1;
+  let best = '…';
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const candidate = `${fittedName.slice(0, mid).trimEnd()}…`;
+    setLabel(candidate);
+    if (fits()) {
+      best = candidate;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  setLabel(best);
+  liftShrunkBracketName(nameEl, baseFontSize);
+}
+
+/** Baseline-anchored labels sink when the font shrinks. Center them in the slot. */
+function liftShrunkBracketName(nameEl: SVGElement, baseFontSize: number): void {
+  const current = Number.parseFloat(
+    nameEl.getAttribute('font-size') ?? `${baseFontSize}`
+  );
+  const stored =
+    nameEl.getAttribute('data-original-transform') ??
+    nameEl.getAttribute('transform') ??
+    '';
+  if (!nameEl.getAttribute('data-original-transform')) {
+    nameEl.setAttribute('data-original-transform', stored);
+  }
+  const match = stored.match(
+    /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
+  );
+  if (!match) return;
+  const tx = Number.parseFloat(match[1]);
+  let ty = Number.parseFloat(match[2]);
+  if (baseFontSize - current >= 0.5) {
+    const posId = nameEl.id.replace(/_name$/, '');
+    const rectG =
+      nameEl.parentElement?.querySelector(`#${posId}_rect`) ??
+      nameEl.parentElement?.querySelector('[id$="_rect"]');
+    const rect = rectG?.querySelector('rect');
+    if (rect) {
+      nameEl.setAttribute('transform', stored);
+      const box = (nameEl as unknown as SVGGraphicsElement).getBBox();
+      const rectBox = (rect as SVGGraphicsElement).getBBox();
+      const rectShift = translateXY(rectG ?? null);
+      const rectMid = rectShift.y + rectBox.y + rectBox.height / 2;
+      const textMid = ty + box.y + box.height / 2;
+      ty -= textMid - rectMid;
+    }
+  }
+  nameEl.setAttribute('transform', `translate(${tx} ${ty})`);
+}
+
+function bracketSlotRectMidY(nameEl: SVGElement): number | null {
+  const posId = nameEl.id.replace(/_name$/, '');
+  const rectG =
+    nameEl.parentElement?.querySelector(`#${posId}_rect`) ??
+    nameEl.parentElement?.querySelector('[id$="_rect"]');
+  const rect = rectG?.querySelector('rect');
+  if (!rect) return null;
+  const rectBox = (rect as SVGGraphicsElement).getBBox();
+  const rectShift = translateXY(rectG ?? null);
+  return rectShift.y + rectBox.y + rectBox.height / 2;
+}
+
+function translateXY(el: Element | null): { x: number; y: number } {
+  const transform = el?.getAttribute('transform') ?? '';
+  const match = transform.match(
+    /translate\(\s*([-+]?\d*\.?\d+)(?:[\s,]+([-+]?\d*\.?\d+))?\s*\)/
+  );
+  return {
+    x: match ? Number.parseFloat(match[1]) : 0,
+    y: match?.[2] ? Number.parseFloat(match[2]) : 0,
+  };
 }
 
 /** Fixed avatar size from base slot font — independent of shrunk long-name text. */
@@ -1257,6 +1380,79 @@ function getBracketAvatarLayout(nameEl: SVGElement): {
   }
   const size = Math.max(22, Math.round(refBBox.height * 1.55));
   return { size, refBBox };
+}
+
+/** Portrait to the left of a bracket name. Resets the label anchor so it is not shifted twice. */
+function attachBracketAvatar(nameEl: SVGElement, imageHref: string): void {
+  const originalTransform = nameEl.getAttribute('data-original-transform');
+  if (!originalTransform) {
+    nameEl.setAttribute(
+      'data-original-transform',
+      nameEl.getAttribute('transform') ?? ''
+    );
+  } else {
+    nameEl.setAttribute('transform', originalTransform);
+  }
+
+  const { size: avatarSize, refBBox } = getBracketAvatarLayout(nameEl);
+  const gap = 10;
+  const avatarLeftExtra = 5;
+  const avatarLeftNudge = 4;
+  const shift = (avatarSize + gap + avatarLeftExtra) / 2;
+  const transformAttr = nameEl.getAttribute('transform') ?? '';
+  const match = transformAttr.match(
+    /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
+  );
+  if (!match) return;
+  const tx = Number.parseFloat(match[1]) + shift;
+  const fallbackTy = Number.parseFloat(match[2]);
+  const textNode = nameEl as unknown as SVGGraphicsElement;
+  nameEl.setAttribute('transform', `translate(${tx} ${fallbackTy})`);
+  const glyph = textNode.getBBox();
+  const rectMid = bracketSlotRectMidY(nameEl);
+  const ty =
+    rectMid == null ? fallbackTy - 2 : rectMid - (glyph.y + glyph.height / 2);
+  nameEl.removeAttribute('dominant-baseline');
+  nameEl.setAttribute('transform', `translate(${tx} ${ty})`);
+
+  const parent = nameEl.parentNode;
+  parent
+    ?.querySelectorAll('g.bracket-avatar-wrap')
+    .forEach((node) => node.remove());
+
+  const alignedBBox = textNode.getBBox();
+  const wrap = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  wrap.setAttribute('class', 'bracket-avatar-wrap');
+  const ix =
+    tx + alignedBBox.x - avatarSize - gap - avatarLeftExtra - avatarLeftNudge;
+  const iy =
+    rectMid == null
+      ? ty + refBBox.y + (refBBox.height - avatarSize) / 2
+      : rectMid - avatarSize / 2;
+  const avatar = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'image'
+  );
+  avatar.setAttribute('data-avatar', 'true');
+  avatar.setAttribute('x', `${ix}`);
+  avatar.setAttribute('y', `${iy}`);
+  avatar.setAttribute('width', `${avatarSize}`);
+  avatar.setAttribute('height', `${avatarSize}`);
+  avatar.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  avatar.setAttributeNS('http://www.w3.org/1999/xlink', 'href', imageHref);
+  avatar.setAttribute('href', imageHref);
+  const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  ring.setAttribute('cx', `${ix + avatarSize / 2}`);
+  ring.setAttribute('cy', `${iy + avatarSize / 2}`);
+  ring.setAttribute('r', `${avatarSize / 2 - 0.5}`);
+  ring.setAttribute('fill', 'none');
+  ring.setAttribute('stroke', 'rgba(255, 255, 255, 0.28)');
+  ring.setAttribute('stroke-width', '1');
+  ring.setAttribute('pointer-events', 'none');
+  ring.setAttribute('data-avatar-ring', 'true');
+  wrap.appendChild(avatar);
+  wrap.appendChild(ring);
+  parent?.appendChild(wrap);
 }
 
 /** Shrink long names to fit bracket slots; reserve space when a Nostr avatar shifts the label right. */

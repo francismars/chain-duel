@@ -42,7 +42,7 @@ type RulesFocus = 'prev' | 'next' | 'close';
 type SlideDir = 'next' | 'prev';
 type SlidePhase = 'idle' | 'hide' | 'show';
 
-const SLIDE_HIDE_MS = 240;
+const SLIDE_HIDE_MS = 300;
 
 export function RulesSection({
   variant = 'classic',
@@ -71,6 +71,8 @@ export function RulesSection({
 }
 
 const AUTOPLAY_MS = 4800;
+const IDLE_ARM_MS = 50_000;
+const IDLE_STEP_MS = 15_000;
 
 function ClipRules({
   onTitleChange,
@@ -128,6 +130,37 @@ function ClipRules({
     const id = window.setInterval(() => goRef.current(1), AUTOPLAY_MS);
     return () => window.clearInterval(id);
   }, [autoplay]);
+
+  useEffect(() => {
+    if (!onClose) return;
+    let stepId: number | null = null;
+    let armId = 0;
+
+    const startStepping = () => {
+      goRef.current(1);
+      stepId = window.setInterval(() => goRef.current(1), IDLE_STEP_MS);
+    };
+
+    const arm = () => {
+      if (stepId != null) {
+        window.clearInterval(stepId);
+        stepId = null;
+      }
+      window.clearTimeout(armId);
+      armId = window.setTimeout(startStepping, IDLE_ARM_MS);
+    };
+
+    arm();
+    const onActivity = () => arm();
+    window.addEventListener('pointerdown', onActivity);
+    window.addEventListener('keydown', onActivity);
+    return () => {
+      window.clearTimeout(armId);
+      if (stepId != null) window.clearInterval(stepId);
+      window.removeEventListener('pointerdown', onActivity);
+      window.removeEventListener('keydown', onActivity);
+    };
+  }, [onClose]);
 
   useEffect(() => {
     return () => {
