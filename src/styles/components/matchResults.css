@@ -53,12 +53,12 @@
 }
 .solo-zap-overlay[data-rank] .solo-zap-profile--winner {
   flex-direction: row;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   order: 0;
   margin-top: 0;
-  gap: 10px 14px;
+  gap: 0 14px;
 }
 .solo-zap-overlay[data-rank] .solo-zap-profile__identity {
   display: inline-flex;
@@ -68,8 +68,8 @@
 .solo-zap-overlay[data-rank]
   .solo-zap-profile--winner
   .solo-zap-profile__avatar {
-  width: 72px;
-  height: 72px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
 }
 .solo-zap-overlay[data-rank] .solo-zap-profile--winner .match-end-card__name,
@@ -79,6 +79,10 @@
   line-height: 1;
   width: auto;
   white-space: nowrap;
+}
+.solo-zap-overlay[data-rank] .solo-zap-profile--winner .match-end-card__wins {
+  flex-basis: 100%;
+  margin-top: -10px;
 }
 .solo-zap-overlay[data-rank] .match-end-card__wins-word {
   -webkit-text-stroke: 1px #fff;
@@ -95,7 +99,9 @@
   order: 0;
   margin-top: 8px;
 }
-.solo-zap-overlay[data-rank] .solo-zap-note-section,
+.solo-zap-overlay[data-rank] .solo-zap-note-section {
+  width: min(468px, 94vw);
+}
 .solo-zap-overlay[data-rank] .solo-zap-receipt,
 .solo-zap-overlay[data-rank] .solo-zap-footer {
   width: min(420px, 92vw);
@@ -137,20 +143,79 @@
   text-align: center;
   animation: none;
 }
+.solo-zap-overlay[data-rank]
+  .solo-zap-note-preview__actions
+  .solo-zap-note-label {
+  margin: 12px 0 0;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: rgb(255 255 255 / 38%);
+}
+@property --solo-note-border-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 145deg;
+}
+
+@keyframes solo-zap-note-border {
+  to {
+    --solo-note-border-angle: 505deg;
+  }
+}
+
 .solo-zap-overlay[data-rank] .solo-zap-card[data-rank] .solo-zap-note-preview {
-  background: #111;
-  border: 1px solid #3a3a3a;
-  padding: 16px 16px 14px;
+  --solo-note-border-angle: 145deg;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 22px 22px 32px;
   margin: 0;
+  background:
+    linear-gradient(#111, #111) padding-box,
+    linear-gradient(
+        var(--solo-note-border-angle),
+        rgb(255 255 255 / 42%),
+        rgb(255 255 255 / 8%) 42%,
+        rgb(255 255 255 / 22%)
+      )
+      border-box;
+  animation: solo-zap-note-border 10s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .solo-zap-overlay[data-rank]
+    .solo-zap-card[data-rank]
+    .solo-zap-note-preview {
+    animation: none;
+  }
 }
 .solo-zap-overlay[data-rank] .solo-zap-note-text {
   color: #eee;
   font-size: 13px;
   line-height: 1.55;
+  padding-left: 32px;
+}
+.solo-zap-overlay[data-rank] .solo-zap-note-author {
+  gap: 8px;
+  margin-bottom: 2px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.solo-zap-overlay[data-rank] .solo-zap-note-author-avatar {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: none;
+  max-height: none;
+}
+.solo-zap-overlay[data-rank] .solo-zap-note-author-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
 }
 .solo-zap-overlay[data-rank] .solo-zap-note-preview__actions {
   margin-top: 14px;
-  padding-top: 14px;
+  padding-top: 0;
   border-top: none;
 }
 .solo-zap-overlay[data-rank] .solo-zap-card .button.solo-zap-post-btn,

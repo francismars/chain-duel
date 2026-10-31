@@ -339,6 +339,18 @@ export default function Game() {
   const soloZapClaimRef = useRef<HTMLButtonElement>(null);
   const soloZapMenuRef = useRef<HTMLButtonElement>(null);
   const noteContentDisplay = useNoteContentDisplay(soloEndData?.noteContent);
+  const noteCardAvatar =
+    !previewNoAvatar &&
+    nostrSession.signedIn &&
+    !noteAuthorAvatarBroken &&
+    noteAuthorAvatar
+      ? noteAuthorAvatar
+      : null;
+  const noteCardName = nostrSession.signedIn
+    ? noteAuthorName
+    : soloEndData?.challengeId === 'preview'
+      ? 'SATOSHI'
+      : 'YOU';
 
   const postBountyNote = useCallback(async () => {
     if (
@@ -1123,14 +1135,9 @@ export default function Game() {
               claimToken: 'preview',
               noteTags: [],
               noteContent: [
-                'I just beat the NORMIE DUEL challenge on',
-                '@chainduel and got 21 sats ⚡',
+                'I just beat the NORMIE DUEL challenge on @chainduel and got 21 sats ⚡',
                 '',
-                'Can you beat it?',
-                'https://game.chainduel.net/',
-                '',
-                'Sign in with Nostr → pick a challenge → beat the',
-                'bot → collect sats.',
+                'https://game.chainduel.net/practice?play=challenges',
               ].join('\n'),
             }),
       });
@@ -2314,15 +2321,6 @@ export default function Game() {
                     </>
                   ) : (
                     <div className="solo-zap-note-section">
-                      <p
-                        className={`solo-zap-note-label${
-                          canForfeitUnclaimedPrize
-                            ? ' solo-zap-note-label--pulse'
-                            : ''
-                        }`}
-                      >
-                        POST THIS NOTE TO CLAIM YOUR ZAP
-                      </p>
                       {resolveSignerMode() === 'nip46' &&
                       (noteState === 'posting' || noteState === 'zapping') ? (
                         <p className="solo-zap-note-label">
@@ -2354,120 +2352,149 @@ export default function Game() {
                         </Button>
                       ) : null}
                       <div className="solo-zap-note-preview">
+                        <div className="solo-zap-note-author">
+                          <img
+                            className={`solo-zap-note-author-avatar${
+                              noteCardAvatar
+                                ? ''
+                                : ' solo-zap-profile__avatar--mark'
+                            }`}
+                            src={noteCardAvatar ?? CHAINDUEL_AVATAR}
+                            alt=""
+                            width={24}
+                            height={24}
+                            onError={
+                              noteCardAvatar
+                                ? () => setNoteAuthorAvatarBroken(true)
+                                : undefined
+                            }
+                          />
+                          <div className="solo-zap-note-author-meta">
+                            <span className="solo-zap-note-author-name">
+                              {noteCardName}
+                            </span>
+                          </div>
+                        </div>
                         <p className="solo-zap-note-text">
                           {noteContentDisplay}
                         </p>
-                        {soloEndData.claimToken &&
-                        (nostrSession.signedIn ||
-                          soloEndData.challengeId === 'preview') ? (
-                          <div className="solo-zap-note-preview__actions">
-                            {noteState === 'posted' && soloEndData.zapPaid ? (
-                              <p className="solo-zap-note-ok solo-zap-note-ok--in-note">
-                                ✓ Note posted — zap sent ⚡
-                              </p>
-                            ) : noteState === 'posted' ? (
-                              <>
-                                <p className="solo-zap-note-ok solo-zap-note-ok--in-note">
-                                  ✓ Note posted
-                                </p>
-                                <p className="solo-zap-note-err solo-zap-note-err--in-note">
-                                  Zap pending
-                                  {soloEndData.zapReason
-                                    ? `: ${soloEndData.zapReason}`
-                                    : ''}
-                                </p>
-                                <Button
-                                  ref={soloZapRetryRef}
-                                  data-solo-zap-nav="retryZap"
-                                  type="button"
-                                  tabIndex={
-                                    soloZapFocus === 'retryZap' ? 0 : -1
-                                  }
-                                  className={soloZapButtonClass(
-                                    'retryZap',
-                                    'practice-start solo-zap-post-btn'
-                                  )}
-                                  onFocus={() => setSoloZapFocus('retryZap')}
-                                  onClick={() => {
-                                    void retryZap();
-                                  }}
-                                >
-                                  RETRY ZAP
-                                </Button>
-                              </>
-                            ) : (
-                              <div className="solo-zap-note-preview__actions-row">
-                                <Button
-                                  ref={soloZapMenuRef}
-                                  data-solo-zap-nav="menu"
-                                  type="button"
-                                  tabIndex={soloZapFocus === 'menu' ? 0 : -1}
-                                  className={soloZapButtonClass(
-                                    'menu',
-                                    'solo-zap-footer-btn solo-zap-footer-btn--subtle practice-back'
-                                  )}
-                                  tooltip="Leave without claiming the zap"
-                                  onFocus={() => setSoloZapFocus('menu')}
-                                  onClick={() => {
-                                    forfeitClaimAndExit();
-                                  }}
-                                >
-                                  LEAVE
-                                </Button>
-                                <Button
-                                  ref={soloZapClaimRef}
-                                  data-solo-zap-nav="claim"
-                                  type="button"
-                                  tabIndex={soloZapFocus === 'claim' ? 0 : -1}
-                                  className={soloZapButtonClass(
-                                    'claim',
-                                    'practice-start solo-zap-post-btn'
-                                  )}
-                                  tooltip="Post on Nostr and claim the prize"
-                                  onFocus={() => setSoloZapFocus('claim')}
-                                  disabled={
-                                    noteState === 'posting' ||
-                                    noteState === 'zapping'
-                                  }
-                                  onClick={() => {
-                                    void postBountyNote();
-                                  }}
-                                >
-                                  {noteState === 'posting' ||
-                                  noteState === 'zapping' ? (
-                                    <>
-                                      <svg
-                                        className="solo-zap-post-spinner"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        aria-hidden
-                                      >
-                                        <circle
-                                          cx="12"
-                                          cy="12"
-                                          r="9"
-                                          strokeOpacity="0.15"
-                                        />
-                                        <path d="M12 3a9 9 0 0 1 9 9" />
-                                      </svg>
-                                      {resolveSignerMode() === 'nip46'
-                                        ? 'WAITING…'
-                                        : noteState === 'zapping'
-                                          ? 'ZAPPING…'
-                                          : 'SIGNING…'}
-                                    </>
-                                  ) : (
-                                    'CLAIM'
-                                  )}
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        ) : null}
                       </div>
+                      {soloEndData.claimToken &&
+                      (nostrSession.signedIn ||
+                        soloEndData.challengeId === 'preview') ? (
+                        <div className="solo-zap-note-preview__actions">
+                          {noteState === 'posted' && soloEndData.zapPaid ? (
+                            <p className="solo-zap-note-ok solo-zap-note-ok--in-note">
+                              ✓ Note posted — zap sent ⚡
+                            </p>
+                          ) : noteState === 'posted' ? (
+                            <>
+                              <p className="solo-zap-note-ok solo-zap-note-ok--in-note">
+                                ✓ Note posted
+                              </p>
+                              <p className="solo-zap-note-err solo-zap-note-err--in-note">
+                                Zap pending
+                                {soloEndData.zapReason
+                                  ? `: ${soloEndData.zapReason}`
+                                  : ''}
+                              </p>
+                              <Button
+                                ref={soloZapRetryRef}
+                                data-solo-zap-nav="retryZap"
+                                type="button"
+                                tabIndex={soloZapFocus === 'retryZap' ? 0 : -1}
+                                className={soloZapButtonClass(
+                                  'retryZap',
+                                  'practice-start solo-zap-post-btn'
+                                )}
+                                onFocus={() => setSoloZapFocus('retryZap')}
+                                onClick={() => {
+                                  void retryZap();
+                                }}
+                              >
+                                RETRY ZAP
+                              </Button>
+                            </>
+                          ) : (
+                            <div className="solo-zap-note-preview__actions-row">
+                              <Button
+                                ref={soloZapMenuRef}
+                                data-solo-zap-nav="menu"
+                                type="button"
+                                tabIndex={soloZapFocus === 'menu' ? 0 : -1}
+                                className={soloZapButtonClass(
+                                  'menu',
+                                  'solo-zap-footer-btn solo-zap-footer-btn--subtle practice-back'
+                                )}
+                                onFocus={() => setSoloZapFocus('menu')}
+                                onClick={() => {
+                                  forfeitClaimAndExit();
+                                }}
+                              >
+                                LEAVE WITHOUT POST
+                              </Button>
+                              <Button
+                                ref={soloZapClaimRef}
+                                data-solo-zap-nav="claim"
+                                type="button"
+                                tabIndex={soloZapFocus === 'claim' ? 0 : -1}
+                                className={soloZapButtonClass(
+                                  'claim',
+                                  'practice-start solo-zap-post-btn'
+                                )}
+                                onFocus={() => setSoloZapFocus('claim')}
+                                disabled={
+                                  noteState === 'posting' ||
+                                  noteState === 'zapping'
+                                }
+                                onClick={() => {
+                                  void postBountyNote();
+                                }}
+                              >
+                                {noteState === 'posting' ||
+                                noteState === 'zapping' ? (
+                                  <>
+                                    <svg
+                                      className="solo-zap-post-spinner"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      aria-hidden
+                                    >
+                                      <circle
+                                        cx="12"
+                                        cy="12"
+                                        r="9"
+                                        strokeOpacity="0.15"
+                                      />
+                                      <path d="M12 3a9 9 0 0 1 9 9" />
+                                    </svg>
+                                    {resolveSignerMode() === 'nip46'
+                                      ? 'WAITING…'
+                                      : noteState === 'zapping'
+                                        ? 'ZAPPING…'
+                                        : 'SIGNING…'}
+                                  </>
+                                ) : (
+                                  'POST AND CLAIM'
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                          <p
+                            className={`solo-zap-note-label${
+                              canForfeitUnclaimedPrize
+                                ? ' solo-zap-note-label--pulse'
+                                : ''
+                            }`}
+                          >
+                            Post this note on Nostr and the prize sats are sent
+                            to you.
+                          </p>
+                        </div>
+                      ) : null}
 
                       {soloEndData.claimToken &&
                       soloEndData.challengeId !== 'preview' ? (
