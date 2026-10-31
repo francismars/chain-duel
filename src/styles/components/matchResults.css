@@ -260,17 +260,16 @@
   gap: 8px;
 }
 #postGame #sponsorship-postgame {
-  position: absolute;
-  top: max(56px, 8vh);
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   z-index: 2;
+  margin-top: -20px;
+  margin-bottom: 28px;
 }
 #postGame .postgame-stage {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: clamp(10px, 1.6vh, 18px);
   width: min(100%, 980px);
   text-align: center;
 }
@@ -278,14 +277,6 @@
   align-items: center;
   gap: 4px;
   max-width: 100%;
-}
-#postGame #gameOver {
-  font:
-    500 11px/1.4 Inter,
-    sans-serif;
-  letter-spacing: 0.15em;
-  -webkit-text-stroke: 0;
-  -webkit-text-fill-color: #aaa;
 }
 #postGame #winner {
   font-size: clamp(26px, 4.2vw, 60px);
@@ -296,18 +287,20 @@
   width: 100%;
   font-size: clamp(40px, 6.4vw, 84px);
   line-height: 0.9;
-  margin: 0;
+  margin: -8px 0 0;
   text-align: center;
   text-shadow: none;
 }
 #postGame .postgame-claim-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: start;
   align-self: center;
-  gap: 28px;
+  gap: 36px;
   width: min(100%, 980px);
   margin-inline: auto;
+  margin-top: clamp(16px, 2.4vh, 32px);
 }
 #postGame .postgame-claim-row--menu3 {
   display: flex;
@@ -319,7 +312,7 @@
   width: 100%;
   min-height: var(--btn-h-md);
   gap: 2%;
-  margin-top: 0 !important;
+  margin-top: clamp(28px, 5vh, 64px) !important;
 }
 #postGame .postgame-claim-row--menu3 #buttonsDiv .button {
   flex: 1;
@@ -332,8 +325,17 @@
 #postGame .postgame-claim-row--menu3 .postgame-claim-qr {
   display: none;
 }
+#postGame .postgame-claim-side {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  width: min(100%, 280px);
+}
+#postGame .postgame-claim-row--menu3 .postgame-claim-side {
+  width: 100%;
+}
 #postGame .postgame-claim-copy {
-  justify-self: end;
   max-width: 280px;
   text-align: left;
 }
@@ -341,8 +343,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: 0;
+  margin-bottom: 16px;
 }
 #postGame #fees {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   max-width: 100%;
   margin: 6px 0 0;
   text-align: left;
@@ -351,11 +358,8 @@
   font-size: 11px;
   line-height: 1.35;
 }
-#postGame #claimText {
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  margin: 0;
-  text-align: left;
+#postGame #fees .fee-handle {
+  color: rgb(255 255 255 / 0.32);
 }
 #postGame #claimReq1 {
   font-size: 11px;
@@ -367,9 +371,27 @@
   margin-bottom: 0;
 }
 #postGame #buttonsDiv {
-  justify-self: start;
   width: min(100%, 280px);
   align-items: stretch;
+}
+#postGame #socialFollow {
+  position: absolute;
+  bottom: max(28px, 4.5vh);
+  left: 0;
+  right: 0;
+  margin-top: 0;
+  color: rgb(255 255 255 / 0.38);
+  font-size: max(11px, 1.05cqw);
+}
+#postGame #socialFollow .social-follow-link {
+  color: inherit;
+}
+#postGame #socialFollow img.social-icon {
+  filter: grayscale(1) brightness(2.2);
+  opacity: 0.55;
+}
+#postGame #socialFollow .social-icon-x {
+  opacity: 0.55;
 }
 
 /* Square and portrait: the three-column claim row clips both edges. */
@@ -406,8 +428,7 @@
     text-align: center;
   }
 
-  #postGame #fees,
-  #postGame #claimText {
+  #postGame #fees {
     text-align: center;
   }
 
@@ -418,8 +439,8 @@
 
   #postGame #qrCode1,
   #postGame #qrcodeLink canvas#qrCode1 {
-    width: clamp(132px, 26vmin, 188px) !important;
-    height: clamp(132px, 26vmin, 188px) !important;
+    width: clamp(107px, 21.12vmin, 153px) !important;
+    height: clamp(107px, 21.12vmin, 153px) !important;
     max-width: none;
     max-height: none;
   }
@@ -435,8 +456,8 @@
   }
 
   #postGame #socialFollow {
-    margin-top: 18px;
-    font-size: 13px;
+    bottom: 22px;
+    font-size: 12px;
   }
 
   #postGame #socialFollow .social-icon {
@@ -451,20 +472,6 @@
 }
 #postGame #buttonsDiv .button {
   width: 100%;
-  border-radius: 0;
-  background: transparent;
-  color: white;
-  box-shadow: none;
-  animation: none;
-}
-#postGame
-  #buttonsDiv
-  .button:not(:disabled):not(.disabled):is(:hover, :focus-visible) {
-  background: white;
-  color: black;
-  outline: 2px solid white;
-  outline-offset: 3px;
-  box-shadow: none;
 }
 
 .online-postgame-page .online-postgame-card {
