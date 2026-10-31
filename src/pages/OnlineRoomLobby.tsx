@@ -64,6 +64,7 @@ import {
   routeLobbyPayFailure,
   sessionReplacesNostrLink,
 } from '@/lib/online/lobbySeatPay';
+import { rematchLobbyView } from '@/lib/online/rematchLobby';
 import '@/styles/pages/onlineRoomLobby.css';
 import './game.css';
 import { BrandHeader } from '@/components/layout/BrandHeader';
@@ -375,15 +376,17 @@ export default function OnlineRoomLobby({
     };
   }, [clearZapPayTimeout]);
 
-  const kind1 = useMemo(() => {
-    const rematchPending = Boolean(room?.postGame?.rematchRequested);
-    const rematchNote = room?.postGame?.rematchNote1 ?? '';
-    return rematchPending ? rematchNote : (room?.nostrMeta?.note1 ?? '');
-  }, [
-    room?.postGame?.rematchRequested,
-    room?.postGame?.rematchNote1,
-    room?.nostrMeta?.note1,
-  ]);
+  const rematch = useMemo(
+    () =>
+      rematchLobbyView({
+        postGame: room?.postGame,
+        roomNote1: room?.nostrMeta?.note1 ?? '',
+        sessionId: currentSessionID,
+      }),
+    [room?.postGame, room?.nostrMeta?.note1, currentSessionID]
+  );
+  const kind1 = rematch.noteToPoll;
+  rematchPendingRef.current = rematch.pending;
 
   const nostrLinkStorageKey = useMemo(
     () => (roomId ? `onlineLobbyNostrLink_${roomId}` : ''),
@@ -912,20 +915,14 @@ export default function OnlineRoomLobby({
 
   const zapAutoPreparedRef = useRef(false);
   useEffect(() => {
-    const rematchLoserPay =
-      Boolean(room?.postGame?.rematchRequested) &&
-      room?.postGame?.rematchWaitingForSessionID === currentSessionID;
-    const rematchReady =
-      (room?.postGame?.rematchRequiredAmount ?? 0) > 0 &&
-      Boolean(room?.postGame?.rematchEventId);
     const next = nextZapAutoPrepare({
       paymentMode,
       nostrLinkActive,
       hasSeatZapInvoice: Boolean(seatZapInvoice),
       zapPayBusy,
       signedIn: nostrSession.signedIn,
-      rematchLoserPay,
-      rematchReady,
+      rematchLoserPay: rematch.loserMustPay,
+      rematchReady: rematch.paymentReady,
     });
     if (next === 'reset') {
       zapAutoPreparedRef.current = false;
@@ -945,11 +942,8 @@ export default function OnlineRoomLobby({
     seatZapInvoice,
     zapPayBusy,
     nostrSession.signedIn,
-    room?.postGame?.rematchRequested,
-    room?.postGame?.rematchWaitingForSessionID,
-    room?.postGame?.rematchRequiredAmount,
-    room?.postGame?.rematchEventId,
-    currentSessionID,
+    rematch.loserMustPay,
+    rematch.paymentReady,
   ]);
 
   const isNip46Signer = resolveSignerMode() === 'nip46';
@@ -1152,7 +1146,7 @@ export default function OnlineRoomLobby({
   const isSessionClosed = room?.phase === 'finished';
   const isPostgame = room?.phase === 'postgame';
   const isMatchEnded = isPostgame || isSessionClosed;
-  const rematchPending = Boolean(room?.postGame?.rematchRequested);
+  const rematchPending = rematch.pending;
   const phaseLabel = rematchPending
     ? 'DOUBLE OR NOTHING'
     : (room?.phase ?? 'lobby').toUpperCase();
@@ -1181,15 +1175,11 @@ export default function OnlineRoomLobby({
       });
     };
   }, [socket]);
-  rematchPendingRef.current = rematchPending;
-  const rematchAmount = room?.postGame?.rematchRequiredAmount ?? 0;
-  const rematchEventId = room?.postGame?.rematchEventId ?? '';
-  const rematchPaymentReady = rematchAmount > 0 && Boolean(rematchEventId);
-  const rematchWaitingForSessionID = room?.postGame?.rematchWaitingForSessionID;
-  const amILoserToPay = Boolean(
-    rematchWaitingForSessionID &&
-    rematchWaitingForSessionID === currentSessionID
-  );
+  const rematchAmount = rematch.amount;
+  const rematchEventId = rematch.eventId;
+  const rematchPaymentReady = rematch.paymentReady;
+  const rematchWaitingForSessionID = rematch.waitingSessionId;
+  const amILoserToPay = rematch.loserMustPay;
   /** Seat grid: emphasize your row in lobby; stronger when you are ready to start. */
   const seatHighlightLobby = !isSessionClosed && !rematchPending;
 
