@@ -717,7 +717,7 @@
   overflow: visible !important;
   display: flex;
   flex-direction: column;
-  gap: max(0.1rem, 0.15vw);
+  gap: var(--space-5);
   padding: 0;
   width: 100%;
   min-width: 0;
@@ -913,7 +913,7 @@
   .local-setup-top-row
   .local-mode-config-block {
   padding: 0;
-  gap: max(0.2rem, 0.3vw);
+  gap: 0.45em;
 }
 
 .practice-hub-page
@@ -1165,7 +1165,7 @@
   .local-mode-config-block
   > .p2p-picker-row
   + .local-human-p2p-link {
-  margin-top: max(0px, calc(var(--ph-glow-gutter) * 0.2));
+  margin-top: var(--space-4);
 }
 
 /* Human opponent — optional path to paid P2P entry */
@@ -1400,11 +1400,7 @@
   outline-offset: 0;
 }
 
-/* ── Shared P2P + challenges typography (practice hub) ── */
-.practice-hub-page .p2p-picker-group-label,
-.practice-hub-page .p2p-modifiers-section .p2p-picker-group-label {
-  font-size: var(--ph-fs-caption);
-}
+/* Section labels use the shared .p2p-picker-group-label size from p2p-entry.css. */
 
 /* Compact picker tiles — HOW TO PLAY tabs + free-play format/opponent cards */
 .practice-hub-page
@@ -1436,11 +1432,7 @@
   letter-spacing: 0.1em;
 }
 
-/* Free-play setup — section labels + compact tile subs match footer .practice-start type */
-.practice-hub-page
-  .practice-free-play-panel__body
-  .ph-picker-block
-  .p2p-picker-group-label,
+/* Compact tile subtitles match the footer button type */
 .practice-hub-page
   .practice-free-play-panel__body
   .p2p-picker-card--compact-inline
@@ -2650,7 +2642,7 @@
 
   .practice-free-play-panel__body .local-setup-top-row {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-3);
+    gap: var(--space-5);
   }
 
   .practice-hub-page
@@ -2712,13 +2704,22 @@
     overflow: visible;
   }
 
+  .practice-hub-page
+    .practice-play-style-area
+    > .practice-play-style-panel.practice-play-style-inactive {
+    position: absolute;
+    height: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .practice-hub-page .practice-hub-panel-footer {
     position: static;
     flex-shrink: 0;
     flex-direction: column;
     height: auto;
     gap: var(--space-2);
-    margin-top: var(--space-4);
+    margin-top: var(--space-2);
     padding: var(--space-2) 0 calc(var(--safe-bottom) + 4.75rem);
     background: none;
   }
