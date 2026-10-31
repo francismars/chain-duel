@@ -107,6 +107,7 @@ import {
   readSessionGameConfig,
   sessionUsesPracticeHubConfig,
 } from '@/pages/practiceHubModes';
+import { isDebugPlayConfig } from '@/lib/uiDebug/debugPlay';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import './game.css';
 import '@/styles/components/matchResults.css';
@@ -790,7 +791,7 @@ export default function Game() {
   }, []);
 
   const ignoreSocketSessionUpdates = useMemo(
-    () => sessionUsesPracticeHubConfig(),
+    () => sessionUsesPracticeHubConfig() || isDebugPlayConfig(readSessionGameConfig()),
     []
   );
 
@@ -899,26 +900,33 @@ export default function Game() {
       gameConfig.practiceHudLabel ??
       gameConfig.localHudLabel ??
       gameConfig.testnetHudLabel;
-    const modeLabel =
-      isPracticeHub && typeof hudFromConfig === 'string'
+    const debugPlay = isDebugPlayConfig(gameConfig);
+    const debugMode = String(gameConfig.mode ?? '');
+    const modeLabel = debugPlay
+      ? isPracticeChallengeConfig(gameConfig) &&
+        typeof hudFromConfig === 'string'
+        ? String(hudFromConfig)
+        : debugMode || 'P2P'
+      : isPracticeHub && typeof hudFromConfig === 'string'
         ? String(hudFromConfig)
         : isLegacyPowerup
           ? 'POWER-UP ARENA'
           : 'PRACTICE';
-    const displayP2Name = isPracticeHub
-      ? formatHudPlayerName(
-          {
-            name: optCfgStr(gameConfig.p2Name),
-            fallbackLabel: optCfgStr(gameConfig.p2FallbackLabel),
-            nostrPubkey: optCfgStr(
-              gameConfig.p2NostrPubkey ?? gameConfig.p2Npub
-            ),
-          },
-          'Player 2'
-        )
-      : isPracticeMode
-        ? rawP2Name
-        : 'Player 2';
+    const displayP2Name =
+      isPracticeHub || debugPlay
+        ? formatHudPlayerName(
+            {
+              name: optCfgStr(gameConfig.p2Name),
+              fallbackLabel: optCfgStr(gameConfig.p2FallbackLabel),
+              nostrPubkey: optCfgStr(
+                gameConfig.p2NostrPubkey ?? gameConfig.p2Npub
+              ),
+            },
+            'Player 2'
+          )
+        : isPracticeMode
+          ? rawP2Name
+          : 'Player 2';
 
     const rawTeamMode = (gameConfig.teamMode as string | undefined) ?? 'solo';
     const teamMode =
@@ -983,7 +991,7 @@ export default function Game() {
         p2Human,
         p3Human,
         p4Human,
-        isTournament: false,
+        isTournament: debugPlay && debugMode.toUpperCase().startsWith('TOURNAMENT'),
         aiTier,
         ffaAiTier: gameConfig.ffaAiTier
           ? normalizeAiTier(gameConfig.ffaAiTier as string)
@@ -1148,6 +1156,11 @@ export default function Game() {
         return;
       }
 
+      if (runId === 'debug') {
+        setSoloEndData({ won: true, ...base });
+        return;
+      }
+
       if (challengeWinSubmittedRef.current) return;
       challengeWinSubmittedRef.current = true;
       void applyChallengeWinValidation({
@@ -1230,7 +1243,7 @@ export default function Game() {
 
   useEffect(() => {
     const gameConfig = readSessionGameConfig();
-    if (isExplicitPracticeSession(gameConfig)) {
+    if (isExplicitPracticeSession(gameConfig) || isDebugPlayConfig(gameConfig)) {
       bootstrapLocalGame();
       return;
     }

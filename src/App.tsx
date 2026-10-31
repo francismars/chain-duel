@@ -31,6 +31,7 @@ import OnlinePostGame from './pages/OnlinePostGame';
 import OnlineFinishPreview from './pages/OnlineFinishPreview';
 import OnlineSeatPreview from './pages/OnlineSeatPreview';
 import UiDebugIndex from './pages/UiDebugIndex';
+import DebugPlayLaunch from './pages/DebugPlayLaunch';
 import MatchTriggerLab from './pages/MatchTriggerLab';
 import {
   FreePlaySettingsPreviewB,
@@ -93,6 +94,7 @@ function AppRoutes() {
         <Route path="/online" element={<OnlineRooms />} />
         <Route path="/online/r/:roomCode" element={<OnlineRoom />} />
         <Route path="/preview" element={<UiDebugIndex />} />
+        <Route path="/preview/play/:kind" element={<DebugPlayLaunch />} />
         <Route path="/preview/match-triggers" element={<MatchTriggerLab />} />
         <Route
           path="/preview/p2p-settings-b"
