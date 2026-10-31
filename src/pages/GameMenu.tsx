@@ -56,14 +56,20 @@ import './gamemenu.css';
 const PREVIEW_NOSTR_NOTE1 =
   'note1qurswpc8qurswpc8qurswpc8qurswpc8qurswpc8qurswpc8qurszx33xk';
 
-type HighlightPart = false | 'name' | 'pay' | 'all';
+type HighlightPart = false | 'name' | 'pay' | 'settle' | 'all';
 
 function showsNamePop(part: HighlightPart) {
-  return part === 'name' || part === 'all';
+  return part === 'name' || part === 'settle' || part === 'all';
 }
 
+/** Lightning overlay on the QR. */
 function showsPayPop(part: HighlightPart) {
   return part === 'pay' || part === 'all';
+}
+
+/** Name and deposit amount scale-pop once a payment is applied. */
+function showsSatsPop(part: HighlightPart) {
+  return part === 'pay' || part === 'settle' || part === 'all';
 }
 
 type ButtonSelected =
@@ -387,8 +393,6 @@ export default function GameMenu({
   useEffect(() => {
     if (!preview) return;
 
-    const scene = searchParams.get('scene') ?? 'idle';
-    if (!useNostrFromQuery && scene !== 'play') return;
     let cancelled = false;
     const timers: number[] = [];
     const later = (ms: number, fn: () => void) => {
@@ -451,15 +455,18 @@ export default function GameMenu({
       const cycle = () => {
         if (cancelled) return;
         resetPlayers();
-        later(1400, () => {
+        // Lightning on both QR codes, then names and deposits fill in.
+        later(900, () => {
+          flash(1, 'pay');
+          flash(2, 'pay');
+        });
+        later(900 + HIGHLIGHT_FLASH_TIMEOUT_MS + 280, () => {
           setP1Name('Ada');
-          pay(1, 21_000);
-        });
-        later(4200, () => {
           setP2Name('Hal');
-          pay(2, 21_000);
+          pay(1, 130_321, 'settle');
+          pay(2, 130_322, 'settle');
         });
-        later(7600, cycle);
+        later(900 + HIGHLIGHT_FLASH_TIMEOUT_MS + 4800, cycle);
       };
       cycle();
       return () => {
@@ -491,7 +498,7 @@ export default function GameMenu({
       cancelled = true;
       for (const timer of timers) window.clearTimeout(timer);
     };
-  }, [preview, searchParams, useNostrFromQuery]);
+  }, [preview, useNostrFromQuery]);
 
   useEffect(() => {
     if (!socket || preview) return;
@@ -879,7 +886,7 @@ export default function GameMenu({
               <div id="player1cardinfo" className="player-card-info">
                 <div
                   id="player1satsContainer"
-                  className={`player-sats ${showsPayPop(highlightP1) ? 'highlight' : ''}`}
+                  className={`player-sats ${showsSatsPop(highlightP1) ? 'highlight' : ''}`}
                 >
                   <span id="nostrPlayer1sats">{fmt(player1Sats)}</span>{' '}
                   <span className="grey sats-label">sats</span>
@@ -1018,7 +1025,7 @@ export default function GameMenu({
               <div id="player2cardinfo" className="player-card-info">
                 <div
                   id="player2satsContainer"
-                  className={`player-sats ${showsPayPop(highlightP2) ? 'highlight' : ''}`}
+                  className={`player-sats ${showsSatsPop(highlightP2) ? 'highlight' : ''}`}
                 >
                   <span className="grey sats-label">sats</span>
                   <span id="nostrPlayer2sats">{fmt(player2Sats)}</span>
@@ -1137,7 +1144,7 @@ export default function GameMenu({
                 <div id="player1cardinfo" className="player-card-info">
                   <div
                     id="player1satsContainer"
-                    className={`player-sats ${showsPayPop(highlightP1) ? 'highlight' : ''}`}
+                    className={`player-sats ${showsSatsPop(highlightP1) ? 'highlight' : ''}`}
                   >
                     <span id="player1sats">{fmt(player1Sats)}</span>{' '}
                     <span className="grey sats-label">sats</span>
@@ -1176,7 +1183,7 @@ export default function GameMenu({
                 <div id="player2cardinfo" className="player-card-info">
                   <div
                     id="player2satsContainer"
-                    className={`player-sats ${showsPayPop(highlightP2) ? 'highlight' : ''}`}
+                    className={`player-sats ${showsSatsPop(highlightP2) ? 'highlight' : ''}`}
                   >
                     <span className="grey sats-label">sats</span>
                     <span id="player2sats">{fmt(player2Sats)}</span>

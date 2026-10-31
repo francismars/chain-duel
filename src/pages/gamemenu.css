@@ -663,6 +663,21 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   box-sizing: border-box;
 }
 
+@media (min-width: 641px) {
+  .gamemenu-preview #gameMenuTitle.hero-outline {
+    position: absolute;
+    top: 4.25rem;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    margin: 0;
+  }
+
+  .gamemenu-preview .game-setup-main {
+    transform: translateY(-2.5rem);
+  }
+}
+
 .gamemenu-preview #centerSection {
   display: none;
 }
