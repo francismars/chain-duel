@@ -53,12 +53,19 @@
   transform: translateY(-1.8vw);
 }
 
+.tournbracket-page .tournament-header .label,
+.tournbracket-page #tournament-name.hero-outline,
+.tournbracket-page #sponsorshipBraket {
+  position: relative;
+  top: -2.6vw;
+}
+
 .tournbracket-page #tournament-name.hero-outline {
   font-size: max(22px, 5cqw);
   -webkit-text-stroke-width: 1px;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: white;
-  margin: 0 0 0.1rem 0;
+  margin: 0 0 1.1rem 0;
 }
 
 .tournbracket-page .tournbracketSVG {
@@ -622,6 +629,19 @@
 .tournbracket-page .tournFinishedDiv h1 {
   margin: 0.15vw 0 0.35vw;
   line-height: 0.9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+  font-size: max(22px, 5.4vw);
+}
+
+.tournbracket-page .tourn-champion-avatar {
+  width: 0.95em;
+  height: 0.95em;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
 }
 
 .tournbracket-page .tournFinishedDiv h2.tourn-finished-headline {

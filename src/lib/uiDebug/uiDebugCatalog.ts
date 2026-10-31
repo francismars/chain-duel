@@ -174,6 +174,10 @@ export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
       { label: 'Claim, QR blurred', href: '/postgame?preview=claim&qr=0' },
       { label: 'Claim, already claimed', href: '/postgame?preview=claim' },
       { label: 'Bracket finished', href: '/tournbracket?preview=finished' },
+      {
+        label: 'Bracket finished, Nostr portraits',
+        href: '/tournbracket?mode=tournamentnostr&preview=nostr',
+      },
     ],
   },
 ];
