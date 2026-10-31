@@ -22,10 +22,7 @@ export function postGameWinnerAllowsKey(
 ): boolean {
   if (opts.menu === 3 || opts.practiceMode) return true;
   if (isHorizontalMenuKey(key)) return true;
-  if (
-    !opts.synthetic &&
-    (key === 'ArrowUp' || key === 'ArrowDown')
-  ) {
+  if (!opts.synthetic && (key === 'ArrowUp' || key === 'ArrowDown')) {
     return true;
   }
   if (winner === 'Player 1') return isPlayer1ControlKey(key);

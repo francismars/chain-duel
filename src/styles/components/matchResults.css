@@ -297,10 +297,10 @@
   justify-content: center;
   align-items: start;
   align-self: center;
-  gap: 36px;
+  gap: 20px;
   width: min(100%, 980px);
   margin-inline: auto;
-  margin-top: clamp(16px, 2.4vh, 32px);
+  margin-top: clamp(32px, 4.8vh, 64px);
 }
 #postGame .postgame-claim-row--menu3 {
   display: flex;
@@ -418,7 +418,7 @@
   #postGame .postgame-claim-row {
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;
-    gap: 16px;
+    gap: 10px;
     width: min(100%, 420px);
   }
 

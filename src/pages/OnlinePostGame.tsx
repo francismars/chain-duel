@@ -1192,77 +1192,79 @@ export default function OnlinePostGame({
               <>
                 <div className="online-postgame-payout-choice">
                   <div className="online-postgame-payout-copy">
-                  <p className="online-postgame-payout-title">
-                    Choose payout method
-                  </p>
-                  <p className="online-postgame-payout-note">
-                    Pick one. Once selected, the other method and Double or
-                    Nothing are locked.
-                  </p>
-                  <div className="online-postgame-payout-row">
-                  <Button
-                    variant="custom"
-                    type="button"
-                    className={[
-                      'online-postgame-btn online-postgame-btn-withdraw',
-                      navFocus.type === 'payout' && navFocus.slot === 'withdraw'
-                        ? 'online-selected'
-                        : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    disabled={creatingWithdrawal || donLocked}
-                    onClick={() => {
-                      if (!socket || !roomId || donLocked) {
-                        return;
-                      }
-                      playConfirm();
-                      setError('');
-                      setCreatingWithdrawal(true);
-                      socket.emit('createOnlineWithdrawal', { roomId });
-                    }}
-                  >
-                    {creatingWithdrawal
-                      ? 'Preparing QR...'
-                      : donLocked
-                        ? 'QR payout locked'
-                        : 'Withdraw via QR'}
-                  </Button>
-                  <Button
-                    variant="custom"
-                    type="button"
-                    className={[
-                      winnerHasNostrLn && !donLocked ? '' : 'disabled',
-                      'online-postgame-btn online-postgame-btn-nostr',
-                      navFocus.type === 'payout' && navFocus.slot === 'nostr'
-                        ? 'online-selected'
-                        : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    disabled={
-                      !winnerHasNostrLn || donLocked || creatingNostrPayout
-                    }
-                    onClick={() => {
-                      if (
-                        !socket ||
-                        !roomId ||
-                        !winnerHasNostrLn ||
-                        donLocked
-                      ) {
-                        return;
-                      }
-                      playConfirm();
-                      setError('');
-                      setCreatingNostrPayout(true);
-                      socket.emit('createOnlineNostrPayout', { roomId });
-                    }}
-                  >
-                    {creatingNostrPayout
-                      ? 'Sending to LN address...'
-                      : 'Pay to LN address'}
-                  </Button>
-                  </div>
+                    <p className="online-postgame-payout-title">
+                      Choose payout method
+                    </p>
+                    <p className="online-postgame-payout-note">
+                      Pick one. Once selected, the other method and Double or
+                      Nothing are locked.
+                    </p>
+                    <div className="online-postgame-payout-row">
+                      <Button
+                        variant="custom"
+                        type="button"
+                        className={[
+                          'online-postgame-btn online-postgame-btn-withdraw',
+                          navFocus.type === 'payout' &&
+                          navFocus.slot === 'withdraw'
+                            ? 'online-selected'
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        disabled={creatingWithdrawal || donLocked}
+                        onClick={() => {
+                          if (!socket || !roomId || donLocked) {
+                            return;
+                          }
+                          playConfirm();
+                          setError('');
+                          setCreatingWithdrawal(true);
+                          socket.emit('createOnlineWithdrawal', { roomId });
+                        }}
+                      >
+                        {creatingWithdrawal
+                          ? 'Preparing QR...'
+                          : donLocked
+                            ? 'QR payout locked'
+                            : 'Withdraw via QR'}
+                      </Button>
+                      <Button
+                        variant="custom"
+                        type="button"
+                        className={[
+                          winnerHasNostrLn && !donLocked ? '' : 'disabled',
+                          'online-postgame-btn online-postgame-btn-nostr',
+                          navFocus.type === 'payout' &&
+                          navFocus.slot === 'nostr'
+                            ? 'online-selected'
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        disabled={
+                          !winnerHasNostrLn || donLocked || creatingNostrPayout
+                        }
+                        onClick={() => {
+                          if (
+                            !socket ||
+                            !roomId ||
+                            !winnerHasNostrLn ||
+                            donLocked
+                          ) {
+                            return;
+                          }
+                          playConfirm();
+                          setError('');
+                          setCreatingNostrPayout(true);
+                          socket.emit('createOnlineNostrPayout', { roomId });
+                        }}
+                      >
+                        {creatingNostrPayout
+                          ? 'Sending to LN address...'
+                          : 'Pay to LN address'}
+                      </Button>
+                    </div>
                   </div>
                   <div className="online-postgame-qr-wrap">
                     <p className="online-postgame-qr-title">WITHDRAWAL QR</p>
@@ -1290,7 +1292,10 @@ export default function OnlinePostGame({
                         />
                       )
                     ) : (
-                      <img src="/images/loading.gif" alt="Creating withdrawal" />
+                      <img
+                        src="/images/loading.gif"
+                        alt="Creating withdrawal"
+                      />
                     )}
                     {lnurlw ? (
                       <a
