@@ -27,7 +27,6 @@ import {
 } from '@/game/engine';
 import { resetCuesFromStep } from '@/game/audio/resetCue';
 import {
-  finishTour,
   makeDirector,
   makeTourState,
   TOURS,
@@ -51,6 +50,7 @@ import {
 import { GameInfoLabel } from '@/features/game/GameInfoLabel';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
 import { MatchEndCard } from '@/features/game/MatchEndCard';
+import { PowerUpLegend } from '@/features/game/PowerUpLegend';
 import { OnlineVictoryReveal } from '@/components/online/OnlineVictoryReveal';
 import { DEBUG_P1_SESSION } from '@/lib/online/onlineUiDebug';
 import { PlayerRole, type OnlineRoomState } from '@/types/socket';
@@ -2239,20 +2239,22 @@ export default function MatchTriggerLab() {
             hitClearRef.current = window.setTimeout(() => setBarHit(null), 900);
           }
         }
-        if (!state.gameEnded && elapsed >= tour.lengthMs) finishTour(state);
+        // Out of time with no winner: start over quietly, with no fake result.
+        if (!state.gameEnded && elapsed >= tour.lengthMs) break;
         if (steps > 0 || state.gameEnded) bump();
       }
       if (state.gameEnded) {
         setEnded(true);
         note(`${state.winnerName ?? 'Match'} wins · match over`);
       }
+      return state.gameEnded;
     };
 
     void (async () => {
       while (live()) {
-        await runOnce();
-        // Hold on the end card, then go again.
-        await wait(4000);
+        const finished = await runOnce();
+        // Hold on the end card after a real finish, then go again.
+        await wait(finished ? 4000 : 400);
       }
     })();
   };
@@ -2557,6 +2559,7 @@ export default function MatchTriggerLab() {
             <div className="match-lab__host" ref={hostRef} />
           </div>
         </div>
+        {touring === 'powerups' ? <PowerUpLegend /> : null}
         <MempoolFooter highlight={blockLit} />
         <section
           className="match-lab__readout"

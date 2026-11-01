@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createNewCoinbase, getCaptureLabel, stepGame } from '@/game/engine';
-import { reorgCaptureGap } from '@/game/audio/gameAudio';
+import { createNewCoinbase, stepGame } from '@/game/engine';
+import type { GridPos } from '@/game/engine/types';
 import {
-  finishTour,
+  guardHeadOn,
   makeDirector,
   makeTourState,
   TOURS,
@@ -10,133 +10,121 @@ import {
 } from './matchTriggerLabTours';
 
 const STEP_MS = 100;
+const key = (pos: GridPos) => `${pos[0]},${pos[1]}`;
 
-/** Steps a tour headlessly and counts resets per seat. */
+/**
+ * Plays a tour headlessly and checks the board stays honest each step:
+ * coins leave only when a head eats them, appear only after an eat or a block,
+ * and power-ups never move while they are out.
+ */
 function play(tour: TourSpec, ms: number) {
   const state = makeTourState(tour);
   const notes: string[] = [];
+  const dropped = { block: false };
   const director = makeDirector(tour, {
     dropBlock: (fee) => {
-      if (fee !== null) createNewCoinbase(state, fee);
+      if (fee !== null) {
+        createNewCoinbase(state, fee);
+        dropped.block = true;
+      }
     },
-    note: (l) => notes.push(l),
+    note: (line) => notes.push(line),
   });
-  let elapsed = 0;
+  const problems: string[] = [];
   let guard = 0;
   while (state.countdownStart && !state.gameStarted && guard < 100) {
     stepGame(state);
     guard += 1;
   }
-  const resets = { white: 0, black: 0 };
-  let longest = 0;
-  let maxCoins = 0;
-  let maxPlain = 0;
-  let maxRewards = 0;
-  let cutSeen = false;
-  let bigCrashIsReorg = false;
-  let bigCrashSeen = false;
-  let resetsAfterCut = 0;
+  const plainCoins = () =>
+    new Set(state.coinbases.filter((c) => !c.isDecoy).map((c) => key(c.pos)));
+  let elapsed = 0;
   while (elapsed < ms && !state.gameEnded) {
-    const whiteLen = state.p1.body.length;
-    const blackLen = state.p2.body.length;
+    dropped.block = false;
+    const coinsBefore = plainCoins();
     director.beforeStep(state, elapsed);
-    cutSeen ||= notes.some((line) => line.includes('cuts'));
+    const itemsBefore = state.powerUpItems.map((item) => key(item.pos));
+    const coinsAfterDirector = plainCoins();
+    const wallsBefore = JSON.stringify(state.shrinkBorder);
+    const changesBefore = state.pointChanges.length;
     stepGame(state);
-    if (elapsed >= 16_800 && state.resetCueP1 && !bigCrashSeen) {
-      bigCrashSeen = true;
-      bigCrashIsReorg = reorgCaptureGap(
-        Number.parseInt(getCaptureLabel(whiteLen), 10),
-        Number.parseInt(getCaptureLabel(blackLen), 10)
-      );
-    }
     director.afterStep(state);
-    if (cutSeen && (state.resetCueP1 || state.resetCueP2)) resetsAfterCut += 1;
-    if (state.resetCueP1) resets.white += 1;
-    if (state.resetCueP2) resets.black += 1;
-    longest = Math.max(longest, state.p1.body.length, state.p2.body.length);
-    maxCoins = Math.max(maxCoins, state.coinbases.length);
-    const rewards = state.coinbases.filter((coin) => coin.reward).length;
-    maxRewards = Math.max(maxRewards, rewards);
-    // Decoys come from a power-up, not the tour, so they are not counted here.
-    const plain = state.coinbases.filter(
-      (coin) => !coin.reward && !coin.isDecoy
-    ).length;
-    maxPlain = Math.max(maxPlain, plain);
+    // The engine moves a coin or power-up out from under a closing wall. That
+    // is a game rule, in real matches too, so a wall step excuses a move.
+    const wallStepped = JSON.stringify(state.shrinkBorder) !== wallsBefore;
+
+    // The director only adds a block reward. It never moves or removes a coin.
+    for (const pos of coinsBefore) {
+      if (!coinsAfterDirector.has(pos))
+        problems.push(`${elapsed}: director removed coin ${pos}`);
+    }
+    if (!dropped.block && coinsAfterDirector.size > coinsBefore.size)
+      problems.push(`${elapsed}: director added a coin without a block`);
+
+    // Every capture adds a sats popup, so that count is how many coins were
+    // eaten this step, wherever the head ended up (ASIC Boost moves twice,
+    // a chain can eat and reset in one step, Coinjoin wraps through walls).
+    const eaten = state.pointChanges.length - changesBefore;
+    const coinsNow = plainCoins();
+    let gone = 0;
+    for (const pos of coinsAfterDirector) if (!coinsNow.has(pos)) gone += 1;
+    if (gone > eaten && !wallStepped)
+      problems.push(
+        `${tour.id} ${elapsed}: ${gone - eaten} coin(s) vanished uneaten`
+      );
+    let appeared = 0;
+    for (const pos of coinsNow) if (!coinsAfterDirector.has(pos)) appeared += 1;
+    if (appeared > eaten && !wallStepped)
+      problems.push(`${elapsed}: coin appeared without an eat`);
+
+    // A power-up that is still out sits where it spawned.
+    for (const item of state.powerUpItems) {
+      const at = key(item.pos);
+      if (itemsBefore.length > 0 && !itemsBefore.includes(at) && !wallStepped)
+        problems.push(`${elapsed}: power-up moved to ${at}`);
+    }
     elapsed += STEP_MS;
   }
-  return {
-    state,
-    resets,
-    notes,
-    longest,
-    resetsAfterCut,
-    maxCoins,
-    maxPlain,
-    maxRewards,
-    bigCrashIsReorg,
-  };
+  return { state, notes, problems };
 }
 
 describe('lab tours', () => {
-  it('steers each chain into a wall on cue', () => {
-    const base = TOURS.find((tour) => tour.id === 'reset')!;
-    const walls: TourSpec = {
-      ...base,
-      cues: [
-        { at: 500, kind: 'crash', who: 0 },
-        { at: 600, kind: 'crash', who: 1 },
-      ],
-    };
-    const { resets } = play(walls, 12_000);
-    expect(resets.white).toBeGreaterThan(0);
-    expect(resets.black).toBeGreaterThan(0);
-  });
-
-  it('lands cut-offs in the reset tour', () => {
-    const reset = TOURS.find((tour) => tour.id === 'reset')!;
-    let landed = 0;
-    for (let run = 0; run < 12; run += 1) {
-      const { notes, resetsAfterCut } = play(reset, 11_000);
-      if (notes.some((line) => line.includes('cuts')) && resetsAfterCut > 0)
-        landed += 1;
-    }
-    // Bots move at random. About three in four runs land a cut in this window.
-    expect(landed).toBeGreaterThanOrEqual(5);
-  });
-
-  it('ends the reset tour on a reorg: long White down, Black short', () => {
-    const reset = TOURS.find((tour) => tour.id === 'reset')!;
-    let reorgs = 0;
-    for (let run = 0; run < 8; run += 1) {
-      if (play(reset, 21_000).bigCrashIsReorg) reorgs += 1;
-    }
-    // Bots move at random. Nearly every run lands it; leave room for a stray crash.
-    expect(reorgs).toBeGreaterThanOrEqual(5);
-  });
-
-  it('grows a chain to the 16% tier in the chain tour', () => {
-    const chain = TOURS.find((tour) => tour.id === 'chain')!;
-    let reached = 0;
-    for (let run = 0; run < 6; run += 1) {
-      if (play(chain, chain.lengthMs).longest >= 7) reached += 1;
-    }
-    // A stray crash can cut a run short. Most runs still get there.
-    expect(reached).toBeGreaterThanOrEqual(4);
-  });
-
-  it('shows one coinbase at a time, plus a block reward', () => {
+  it('never moves, adds, or removes a reward behind the players', () => {
     for (const tour of TOURS) {
-      const { maxPlain, maxRewards } = play(tour, tour.lengthMs);
-      expect(maxPlain, tour.id).toBeLessThanOrEqual(1);
-      expect(maxRewards, tour.id).toBeLessThanOrEqual(1);
+      for (let run = 0; run < 2; run += 1) {
+        const { problems } = play(tour, Math.min(tour.lengthMs, 30_000));
+        expect(problems, tour.id).toEqual([]);
+      }
     }
   });
 
-  it('ends the match when time runs out', () => {
-    const block = TOURS.find((tour) => tour.id === 'block')!;
-    const { state } = play(block, 2_000);
-    finishTour(state);
-    expect(state.gameEnded).toBe(true);
-    expect(state.winnerName).toBeTruthy();
+  it('races for every power-up in the power-ups tour', () => {
+    const tour = TOURS.find((entry) => entry.id === 'powerups')!;
+    let complete = 0;
+    for (let run = 0; run < 6; run += 1) {
+      const { notes } = play(tour, tour.lengthMs);
+      const taken = notes.filter((line) => line.startsWith('Tour ·'));
+      if (taken.length >= 5) complete += 1;
+    }
+    // Bots vary. A match can end before the last spawn; most get all five.
+    expect(complete).toBeGreaterThanOrEqual(4);
+  });
+
+  it('makes the chain losing the race back off instead of trading heads', () => {
+    const state = makeTourState(TOURS.find((tour) => tour.id === 'chain')!);
+    // White and Black meet on one cell of a row, both heading for it.
+    state.p1.head = [20, 12];
+    state.p1.body = [[19, 12]];
+    state.p1.dir = 'Right';
+    state.p1.dirWanted = 'Right';
+    state.p2.head = [22, 12];
+    state.p2.body = [[23, 12]];
+    state.p2.dir = 'Left';
+    state.p2.dirWanted = 'Left';
+    // The coin sits next to Black, so White is losing the race.
+    state.coinbases = [{ pos: [22, 13] }];
+    guardHeadOn(state);
+    expect(state.p2.dirWanted).toBe('Left');
+    expect(['Up', 'Down']).toContain(state.p1.dirWanted);
   });
 });

@@ -309,8 +309,16 @@
   text-align: left;
 }
 
-.match-lab__tours button:first-child {
+.match-lab__tours button:first-child,
+.match-lab__tours button:last-child:nth-child(even) {
   grid-column: 1 / -1;
+}
+
+/* The power-up key sits between the board and the chain data, like in the game. */
+.match-lab .powerUpLegend {
+  width: 100%;
+  max-width: min(1180px, calc((100vh - 17rem) * 2));
+  margin: 0.5rem auto 0;
 }
 
 .match-lab__tours button[aria-pressed='true'],
