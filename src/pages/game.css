@@ -80,6 +80,7 @@
 #gameInfo {
   overflow: hidden;
   text-align: center;
+  font-size: max(28px, 4cqw);
 }
 
 #gameInfo.gameInfo--challenge {
@@ -1066,27 +1067,39 @@
 #bitcoinDetails {
   display: flex;
   width: 100%;
-  justify-content: center;
-  gap: 4vw;
-  padding: 1vw 0 0.25vw 0;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: clamp(0.35rem, 1.5vw, 1.1rem);
+  padding: 0.3rem 1.5vw calc(0.15rem + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
   transition: all 1000ms;
 }
 
 #bitcoinDetails .detail {
+  flex: 1 1 0;
+  min-width: 0;
   text-align: center;
 }
 
 #bitcoinDetails .label {
-  opacity: 0.2;
+  font-size: clamp(0.68rem, 2.3vh, 0.75rem);
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  opacity: 1;
 }
 
 #bitcoinDetails .value {
-  font-size: max(13px, 1vw);
+  font-size: clamp(0.75rem, 2.6vh, 0.82rem);
+  line-height: 1.15;
   text-align: center;
-  width: 7vw;
-  opacity: 0.4;
-  padding-top: 0.25vw;
+  width: auto;
+  padding-top: 0.1rem;
+  white-space: nowrap;
+  color: #fff;
+  opacity: 1;
 }
 
 #bitcoinDetails.highlight .value {
@@ -1129,76 +1142,9 @@
   }
 }
 
-/* Short landscape: the start modal sits on the board and leaves a thin
-   strip for the block footer. vw columns wrap "1 min ago" / "sat/vb". */
-@media (orientation: landscape) and (max-height: 640px) {
-  #bitcoinDetails {
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    gap: clamp(0.35rem, 1.5vw, 1.1rem);
-    padding: 0.3rem 1.5vw 0.15rem;
-  }
-
-  #bitcoinDetails .detail {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  #bitcoinDetails .label {
-    font-size: clamp(0.68rem, 2.3vh, 0.75rem);
-    letter-spacing: 0.03em;
-    line-height: 1.1;
-    white-space: nowrap;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
-    opacity: 1;
-  }
-
-  #bitcoinDetails .value {
-    font-size: clamp(0.75rem, 2.6vh, 0.82rem);
-    line-height: 1.15;
-    width: auto;
-    padding-top: 0.1rem;
-    white-space: nowrap;
-    color: #fff;
-    opacity: 1;
-  }
-}
-
 /* Phone landscape: the 16:9 stage is short, so the footer sits under the modal. */
 @media (orientation: landscape) and (max-height: 500px),
   (orientation: landscape) and (pointer: coarse) {
-  #bitcoinDetails {
-    justify-content: center;
-    gap: 0.55rem;
-    margin-top: 0.25rem;
-    padding: 0.04rem 0.25rem 0.02rem;
-  }
-
-  #bitcoinDetails .detail {
-    flex: 0 0 auto;
-  }
-
-  #bitcoinDetails .label {
-    font-size: clamp(0.46rem, 1.7vh, 0.56rem);
-    letter-spacing: 0.03em;
-    line-height: 1.05;
-    white-space: nowrap;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
-    opacity: 1;
-  }
-
-  #bitcoinDetails .value {
-    font-size: clamp(0.52rem, 1.9vh, 0.62rem);
-    line-height: 1.1;
-    width: auto;
-    padding-top: 0.04rem;
-    white-space: nowrap;
-    color: #fff;
-    opacity: 1;
-  }
-
   #capturing,
   .capturingAmount {
     font-size: clamp(0.48rem, 2.4vh, 0.58rem);
@@ -2374,45 +2320,6 @@
 
   #gameCanvas:has(+ #powerUpKey) {
     margin-bottom: clamp(2px, 0.5vw, 8px);
-  }
-
-  /* Match mempool type scale to power-up legend (name + desc) */
-  #bitcoinDetails {
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    row-gap: 0.35rem;
-    column-gap: 0.35rem;
-    margin-top: 0.3rem;
-    padding: 0.3rem 0.25rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
-    max-width: 100%;
-  }
-
-  #bitcoinDetails .detail {
-    flex: 1 1 0;
-    min-width: 0;
-    max-width: none;
-  }
-
-  #bitcoinDetails .label {
-    font-size: clamp(0.46rem, 1.7vmin, 0.56rem);
-    letter-spacing: 0.03em;
-    line-height: 1.05;
-    white-space: nowrap;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
-    opacity: 1;
-  }
-
-  #bitcoinDetails .value {
-    font-size: clamp(0.52rem, 1.95vmin, 0.64rem);
-    line-height: 1.15;
-    width: auto;
-    min-width: 0;
-    max-width: 100%;
-    padding-top: 0.18rem;
-    white-space: nowrap;
-    color: #fff;
-    opacity: 1;
   }
 
   #zapMessages {
