@@ -56,12 +56,16 @@ body.game-page.touch-match-active * {
   box-sizing: border-box;
 }
 
+/* Thumbs rest on the stage's left/right edges and the stick spawns under them,
+   so keep a gutter on each side clear of the board. */
 .touch-match-frame--on #gameContainer {
-  --game-board-width: 70cqw;
-}
-
-.touch-match-frame--on #zapMessages {
-  width: 70cqw;
+  --game-thumb-gutter: max(6rem, 14cqw);
+  --game-hud-reserve: calc(10cqw + 3.5rem);
+  --game-board-width: min(
+    70cqw,
+    calc(100cqw - 2 * var(--game-thumb-gutter)),
+    calc((100cqh - var(--game-hud-reserve)) * var(--game-board-aspect))
+  );
 }
 
 .touch-match-frame--on .zapMessage {
@@ -93,29 +97,64 @@ body.game-page.touch-match-active * {
   height: 100%;
 }
 
-.touch-match-portrait-game {
-  pointer-events: none;
+/* Phone portrait: board pinned to the top, the free area below is the stick
+   pad so the steering thumb never covers the board. */
+.touch-match-root--portrait {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: transparent;
 }
 
-.touch-match-rotate {
-  position: fixed;
-  inset: 0;
-  z-index: 10500;
+.touch-match-frame--portrait {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.touch-match-frame--portrait .flex.full.game {
+  min-height: 0;
+  justify-content: flex-start;
+  padding-bottom: 0.25rem;
+}
+
+.touch-pad {
+  flex: 1 1 auto;
+  min-height: 8rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
-  box-sizing: border-box;
-  background: #000;
-  color: #fff;
-  text-align: center;
+  margin: 0 1rem 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  pointer-events: none;
 }
 
-.touch-match-rotate__title {
-  margin: 0;
-  font-size: clamp(1.4rem, 6vw, 2rem);
+.touch-pad__hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  opacity: 0.45;
+}
+
+.touch-pad__ring {
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 1px dashed rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+.touch-pad__label {
+  font-size: 0.8rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: #fff;
 }
 
 .touch-stick {

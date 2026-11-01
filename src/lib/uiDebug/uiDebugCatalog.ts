@@ -20,6 +20,15 @@ export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
     ],
   },
   {
+    title: 'Touch controls (mouse = finger)',
+    links: [
+      { label: 'Phone portrait', href: '/game?touch=portrait' },
+      { label: 'Phone landscape', href: '/game?touch=landscape' },
+      { label: 'Follow window shape', href: '/game?touch=on' },
+      { label: 'Back to desktop', href: '/game?touch=off' },
+    ],
+  },
+  {
     title: 'In-game triggers',
     links: [
       { label: 'Sounds, chains, walls, pops', href: '/preview/match-triggers' },
