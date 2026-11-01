@@ -159,6 +159,21 @@ test.describe('desktop 1440x900', () => {
     await expect(page).toHaveURL(/\/online\/r\/e2e-room/);
   });
 
+  test('home on an unclaimed prize asks before leaving', async ({ page }) => {
+    await page.goto('/postgame?preview=claim&qr=blur');
+    await expect(
+      page.getByRole('button', { name: 'SWEEP VIA LNURL' })
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Home' }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'Unclaimed prize' })
+    ).toBeVisible();
+    await expect(
+      page.getByText('Your prize is not claimed yet. Leave anyway?')
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/postgame/);
+  });
+
   test('home on the stake screen asks before leaving', async ({ page }) => {
     await page.goto('/gamemenu');
     await expect(page.locator('#gameMenuTitle')).toBeVisible();

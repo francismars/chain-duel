@@ -20,7 +20,15 @@ import {
   TOURNAMENT_MIN_PLAYERS,
 } from '@/shared/constants/payment';
 import { createLogger } from '@/shared/utils/logger';
-import { navigateToPostGame } from '@/shared/constants/menuNavigation';
+import {
+  navigateToMainMenu,
+  navigateToPostGame,
+} from '@/shared/constants/menuNavigation';
+import {
+  bracketBlocksCornerHome,
+  bracketHomeConfirm,
+  type BracketHomeConfirm,
+} from '@/pages/bracketCornerHome';
 import { useBlockMainMenu } from '@/shared/hooks/useBlockMainMenu';
 import {
   clearClientGameConfig,
@@ -81,6 +89,10 @@ export default function TournamentBracket() {
 
   // Cancel / refund flow
   const [panelView, setPanelView] = useState<PanelView>('payment');
+  const [bracketLeave, setBracketLeave] = useState<Exclude<
+    BracketHomeConfirm,
+    'buy-in'
+  > | null>(null);
   const [withdrawLnurl, setWithdrawLnurl] = useState<string | null>(null);
   const [playerListSequential, setPlayerListSequential] = useState<string[]>(
     []
@@ -619,13 +631,25 @@ export default function TournamentBracket() {
     setFocusedBtn('left');
   }, [playConfirm]);
 
-  const collectingBuyIn =
-    !isBracketPreview && tournamentPhase === 'payment' && !preStartReady;
-  const onCornerHomeDuringBuyIn = useCallback(() => {
-    setShowPaymentPanel(true);
-    if (panelView === 'payment') handleCancel();
-  }, [handleCancel, panelView]);
-  useBlockMainMenu(collectingBuyIn, onCornerHomeDuringBuyIn);
+  const blockCornerHome = bracketBlocksCornerHome({
+    preview: isBracketPreview,
+    phase: tournamentPhase,
+    // The champion prize is claimed on /postgame, so this screen stays guarded.
+    prizeClaimed: false,
+  });
+  const onCornerHome = useCallback(() => {
+    const kind = bracketHomeConfirm({
+      phase: tournamentPhase,
+      preStartReady,
+    });
+    if (kind === 'buy-in') {
+      setShowPaymentPanel(true);
+      if (panelView === 'payment') handleCancel();
+      return;
+    }
+    setBracketLeave(kind);
+  }, [handleCancel, panelView, preStartReady, tournamentPhase]);
+  useBlockMainMenu(blockCornerHome, onCornerHome);
 
   const handleBackToPayment = useCallback(() => {
     playSelect();
@@ -706,6 +730,10 @@ export default function TournamentBracket() {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      if (bracketLeave) {
+        if (e.key === 'Escape') setBracketLeave(null);
+        return;
+      }
       // Tournament in progress: only Enter/Space to start next game
       if (tournamentPhase === 'next-game' || preStartReady) {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -759,6 +787,7 @@ export default function TournamentBracket() {
       handleConfirmCancel,
       handleStartNextGame,
       handleStartTournament,
+      bracketLeave,
     ]
   );
 
@@ -1150,6 +1179,45 @@ export default function TournamentBracket() {
       <div className={`overlay${loading ? '' : ' hide'}`} id="loading">
         <img src="/images/loading.gif" alt="Loading" />
       </div>
+
+      {bracketLeave ? (
+        <div
+          className="overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Leave the bracket"
+        >
+          <div className="warning">
+            <div className="warning-inner">
+              <h2 className="warning-title condensed">Leave the bracket?</h2>
+              <div className="warning-text">
+                {bracketLeave === 'unclaimed-prize'
+                  ? 'The prize is not claimed yet. Leave anyway?'
+                  : 'Buy-ins are already in. Leave the bracket anyway?'}
+              </div>
+            </div>
+            <div className="warning-actions">
+              <Button
+                className="button half"
+                type="button"
+                onClick={() => setBracketLeave(null)}
+              >
+                No
+              </Button>
+              <Button
+                className="button half"
+                type="button"
+                onClick={() => {
+                  playConfirm();
+                  navigateToMainMenu(navigate);
+                }}
+              >
+                Yes
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </div>
