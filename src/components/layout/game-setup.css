@@ -285,7 +285,7 @@
     top: 0;
     z-index: 5;
     padding-bottom: 0.35rem;
-    padding-left: calc(10px + 44px + var(--space-2));
+    padding-left: var(--page-inline);
     padding-right: var(--page-inline);
     background: linear-gradient(to bottom, rgb(0 0 0 / 0.45), rgb(0 0 0 / 0));
   }
