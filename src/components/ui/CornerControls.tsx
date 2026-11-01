@@ -5,7 +5,8 @@ import {
   useRef,
   type CSSProperties,
 } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
+import { requestMainMenu } from '@/shared/constants/menuNavigation';
 import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
@@ -144,6 +145,8 @@ const UiDebugMenu = previewLabsEnabled
 
 export function CornerControls() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const onHome = pathname === '/';
   const {
     musicVolume,
     masterVolume,
@@ -252,6 +255,29 @@ export function CornerControls() {
         </button>
       ) : null}
       <div className="corner-controls__panel">
+        {onHome ? null : (
+          <button
+            type="button"
+            className="corner-btn"
+            onClick={() => {
+              setTouchOpen(false);
+              requestMainMenu(navigate);
+            }}
+            aria-label="Home"
+            data-tooltip="Home"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
+              <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z" />
+            </svg>
+          </button>
+        )}
+
         {!touch || canFullscreen ? (
           <button
             type="button"

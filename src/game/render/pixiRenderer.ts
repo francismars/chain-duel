@@ -75,7 +75,7 @@ import {
   type QuietMark,
   type QuietSnake,
 } from '@/game/render/quietChainCells';
-import { readGraphicsSettings } from '@/lib/graphicsSettings';
+import { canvasResolution, readGraphicsSettings } from '@/lib/graphicsSettings';
 
 type CapturePulse = { startMs: number; reward: number };
 
@@ -89,6 +89,9 @@ export type PixiRenderOpts = {
 export class PixiGameRenderer {
   /** Config → Graphics, read once per match. Declared first so overlays below can read it. */
   private readonly graphics = readGraphicsSettings();
+  /** Canvas pixels per CSS pixel for this match (Config → Graphics → Resolution). */
+  private readonly resolution = canvasResolution(this.graphics.resolution);
+  private readonly textResolution = pixiTextResolution(this.resolution);
   private app: Application | null = null;
   private fallbackCanvas: HTMLCanvasElement | null = null;
   private fallbackCtx: CanvasRenderingContext2D | null = null;
@@ -141,12 +144,14 @@ export class PixiGameRenderer {
   private startWordsContainer: Container = new Container();
   private startPromptSubtext: Text;
   private objectives = new CanvasObjectivesOverlay(
-    this.graphics.shadowsAndTransparency
+    this.graphics.shadowsAndTransparency,
+    this.textResolution
   );
-  private startReady = new OnlineStartReadyOverlay();
-  private controls = new CanvasControlsOverlay();
+  private startReady = new OnlineStartReadyOverlay(this.textResolution);
+  private controls = new CanvasControlsOverlay(this.textResolution);
   private pointChangesOverlay = new PointChangeOverlay(
-    this.graphics.pointPopups
+    this.graphics.pointPopups,
+    this.textResolution
   );
   private streakPopOverlay = new StreakPopOverlay();
   private startRevealTime = -1;
@@ -154,7 +159,7 @@ export class PixiGameRenderer {
   private lastCountdownPhase: '3' | '2' | '1' | 'LFG' | null = null;
   private lastOverlayWidth = 0;
   private lastOverlayHeight = 0;
-  private endOverlay = new EndGameOverlay();
+  private endOverlay = new EndGameOverlay(this.textResolution);
   private countdown3: Text;
   private countdown2: Text;
   private countdown1: Text;
@@ -174,7 +179,6 @@ export class PixiGameRenderer {
   private chainMotionWasActive = false;
   /** Bumped on destroy / remount so in-flight async init cannot attach a stale canvas. */
   private mountGeneration = 0;
-  private readonly textResolution = pixiTextResolution();
   /** Time inside Pixi's app.render() (draw calls and uploads) on the last paint; Show FPS reads it. */
   lastSubmitMs = 0;
   /** Last `game-result-active` value applied to the board. */
@@ -271,6 +275,10 @@ export class PixiGameRenderer {
         antialias: this.graphics.antialias,
         width: initWidth,
         height: initHeight,
+        // Denser backing store; autoDensity keeps the canvas at CSS size, so
+        // game coordinates stay in CSS pixels.
+        resolution: this.resolution,
+        autoDensity: true,
         preference: 'webgl',
         // The match loop calls app.render() itself. Leaving the ticker on
         // draws the same frame a second time, including while nothing moves.
@@ -328,8 +336,8 @@ export class PixiGameRenderer {
       return;
     }
     if (this.fallbackCanvas) {
-      this.fallbackCanvas.width = width;
-      this.fallbackCanvas.height = height;
+      this.fallbackCanvas.width = Math.round(width * this.resolution);
+      this.fallbackCanvas.height = Math.round(height * this.resolution);
     }
   }
 
@@ -852,8 +860,8 @@ export class PixiGameRenderer {
     let width = this.lastResizeWidth;
     let height = this.lastResizeHeight;
     if (width <= 0 || height <= 0) {
-      width = renderer.width;
-      height = renderer.height;
+      width = renderer.screen.width;
+      height = renderer.screen.height;
     }
     if (width > 0 && height > 0) {
       this.lastOverlayWidth = width;
@@ -1159,8 +1167,9 @@ export class PixiGameRenderer {
     }
 
     // Keep WebGL buffer in sync with layout (avoids stretched / nested-frame artifacts).
-    const rw = this.app.renderer.width;
-    const rh = this.app.renderer.height;
+    // screen is CSS size; renderer.width/height are the backing store (× resolution).
+    const rw = this.app.renderer.screen.width;
+    const rh = this.app.renderer.screen.height;
     if (Math.abs(rw - width) > 1 || Math.abs(rh - height) > 1) {
       this.app.renderer.resize(width, height);
       this.lastResizeWidth = width;
@@ -1977,12 +1986,14 @@ export class PixiGameRenderer {
   private renderFallback(state: GameState, opts?: PixiRenderOpts): void {
     if (!this.host || !this.fallbackCanvas || !this.fallbackCtx) return;
     const ctx = this.fallbackCtx;
-    const width = this.fallbackCanvas.width;
-    const height = this.fallbackCanvas.height;
-    if (width <= 0 || height <= 0) {
+    // Draw in CSS pixels; the transform maps them onto the denser bitmap.
+    const width = this.lastResizeWidth;
+    const height = this.lastResizeHeight;
+    if (width <= 0 || height <= 0 || this.fallbackCanvas.width <= 0) {
       this.resize();
       return;
     }
+    ctx.setTransform(this.resolution, 0, 0, this.resolution, 0, 0);
 
     const colSize = width / state.cols;
     const rowSize = height / state.rows;

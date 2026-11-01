@@ -65,7 +65,7 @@ export function AppUpdatePrompt() {
           if (cancelled || !existing) return;
           sessionStorage.setItem(PWA_KILL_ATTEMPTED, '1');
         }
-        const { registerSW } = await import('virtual:pwa-register');
+        const { registerSW } = await import('@/lib/pwa/registerSwDevStub');
         if (cancelled) return;
         updateServiceWorkerRef.current = registerSW({
           immediate: true,

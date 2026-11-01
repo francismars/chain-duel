@@ -36,7 +36,7 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin: 0.35vw 15%;
+  margin: 0.35vw var(--game-board-margin-x, 15%);
 }
 
 .flex.points {
@@ -80,6 +80,7 @@
 #gameInfo {
   overflow: hidden;
   text-align: center;
+  font-size: max(28px, 4cqw);
 }
 
 #gameInfo.gameInfo--challenge {
@@ -312,10 +313,18 @@
   font-size: max(18px, 2.5cqw);
 }
 
-/* Shared board strip width — canvas + power-up legend stay aligned */
+/* Shared board strip width — HUD rows, canvas and power-up legend stay aligned.
+   The board takes 70vw unless that would push it past the bottom of a short
+   window; then it shrinks to the height left after the HUD + mempool footer.
+   The HUD type is vw-based, so its reserve is too (measured: ~10vw + 3.25rem). */
 #gameContainer {
-  --game-board-width: 70vw;
-  --game-board-margin-x: 15%;
+  --game-board-aspect: 1055 / 527;
+  --game-hud-reserve: calc(10vw + 3.5rem);
+  --game-board-width: min(
+    70vw,
+    calc((100dvh - var(--game-hud-reserve)) * var(--game-board-aspect))
+  );
+  --game-board-margin-x: calc((100% - var(--game-board-width)) / 2);
 }
 
 #gameCanvas {
@@ -326,7 +335,7 @@
   width: var(--game-board-width);
   /* Match game_bg.png (1055×527) so its frame lines sit on the container edge. */
   height: auto;
-  aspect-ratio: 1055 / 527;
+  aspect-ratio: var(--game-board-aspect);
   background-color: #6969698f;
   background-image: url('/images/game_bg.png');
   background-size: 100% 100%;
@@ -610,7 +619,7 @@
 }
 
 .gameState {
-  margin: 0vw 15% 0.65vw 15%;
+  margin: 0vw var(--game-board-margin-x, 15%) 0.65vw;
   text-transform: uppercase;
   text-align: center;
   font-size: max(11px, 0.7vw);
@@ -1058,27 +1067,42 @@
 #bitcoinDetails {
   display: flex;
   width: 100%;
-  justify-content: center;
-  gap: 4vw;
-  padding: 1vw 0 0.25vw 0;
+  max-width: var(--game-board-width, 70vw);
+  margin: 0.45rem auto 0;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: clamp(0.35rem, 1.5vw, 1.1rem);
+  padding: 0.3rem 1.5vw calc(0.15rem + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
+  opacity: 0.7;
   transition: all 1000ms;
 }
 
 #bitcoinDetails .detail {
+  flex: 1 1 0;
+  min-width: 0;
   text-align: center;
 }
 
 #bitcoinDetails .label {
-  opacity: 0.2;
+  font-size: clamp(0.68rem, 2.3vh, 0.75rem);
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  opacity: 1;
 }
 
 #bitcoinDetails .value {
-  font-size: max(13px, 1vw);
+  font-size: clamp(0.75rem, 2.6vh, 0.82rem);
+  line-height: 1.15;
   text-align: center;
-  width: 7vw;
-  opacity: 0.4;
-  padding-top: 0.25vw;
+  width: auto;
+  padding-top: 0.1rem;
+  white-space: nowrap;
+  color: #fff;
+  opacity: 1;
 }
 
 #bitcoinDetails.highlight .value {
@@ -1121,9 +1145,19 @@
   }
 }
 
+/* Phone landscape: the 16:9 stage is short, so the footer sits under the modal. */
+@media (orientation: landscape) and (max-height: 500px),
+  (orientation: landscape) and (pointer: coarse) {
+  #capturing,
+  .capturingAmount {
+    font-size: clamp(0.48rem, 2.4vh, 0.58rem);
+    line-height: 1.1;
+  }
+}
+
 #zapMessages {
   position: absolute;
-  width: 70vw;
+  width: var(--game-board-width, 70vw);
   height: 20vw;
   margin: auto;
   bottom: 0;
@@ -2118,9 +2152,11 @@
    with the longer edge) plus tighter horizontal margins so labels stay readable.
    ─────────────────────────────────────────────────────────────────────────── */
 @media (max-aspect-ratio: 1/1) {
+  /* Leave the wireframe and CHAIN / DUEL on the viewport edges. */
   #gameContainer {
-    --game-board-width: 94vw;
-    --game-board-margin-x: 3%;
+    --game-edge-gutter: max(3.4rem, 12vw);
+    --game-board-width: min(78vw, calc(100vw - 2 * var(--game-edge-gutter)));
+    --game-board-margin-x: calc((100% - var(--game-board-width)) / 2);
   }
 
   .flex.full.game {
@@ -2132,8 +2168,8 @@
 
   .flex.points,
   .flex.players {
-    margin-left: 4%;
-    margin-right: 4%;
+    margin-left: var(--game-board-margin-x, 12vw);
+    margin-right: var(--game-board-margin-x, 12vw);
   }
 
   .flex.players {
@@ -2170,7 +2206,7 @@
     flex: 1 0 100%;
     width: 100%;
     overflow: visible;
-    font-size: 0.68rem;
+    font-size: clamp(1rem, 4.2vmin, 1.45rem);
     line-height: 1.2;
     letter-spacing: 0.04em;
     text-align: center;
@@ -2191,6 +2227,22 @@
 
   .player-sats span.grey {
     opacity: 0.88;
+  }
+
+  #bitcoinDetails {
+    gap: 0.25rem;
+    padding-left: 0.45rem;
+    padding-right: 0.45rem;
+  }
+
+  #bitcoinDetails .label {
+    font-size: 0.5rem;
+    letter-spacing: 0.01em;
+  }
+
+  #bitcoinDetails .value {
+    font-size: 0.56rem;
+    padding-top: 0.05rem;
   }
 
   .match-start__objectives {
@@ -2226,7 +2278,7 @@
   }
 
   .gameState {
-    margin: 0.3rem 4% 0.55rem;
+    margin: 0.3rem var(--game-board-margin-x, 12vw) 0.55rem;
     font-size: clamp(0.58rem, 2.1vmax, 0.82rem);
     height: auto;
     min-height: 0;
@@ -2289,39 +2341,6 @@
 
   #gameCanvas:has(+ #powerUpKey) {
     margin-bottom: clamp(2px, 0.5vw, 8px);
-  }
-
-  /* Match mempool type scale to power-up legend (name + desc) */
-  #bitcoinDetails {
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    row-gap: 0.35rem;
-    column-gap: 0.35rem;
-    margin-top: 0.5rem;
-    padding: 0.65rem 0.35rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
-    max-width: 100%;
-  }
-
-  #bitcoinDetails .detail {
-    flex: 1 1 0;
-    min-width: 0;
-    max-width: none;
-  }
-
-  #bitcoinDetails .label {
-    font-size: clamp(0.42rem, 1.65vmin, 0.62rem);
-    opacity: 0.55;
-    letter-spacing: 0.03em;
-    white-space: nowrap;
-  }
-
-  #bitcoinDetails .value {
-    font-size: clamp(0.48rem, 1.85vmin, 0.7rem);
-    width: auto;
-    min-width: 0;
-    max-width: 100%;
-    padding-top: 0.18rem;
-    opacity: 0.92;
   }
 
   #zapMessages {
@@ -2525,10 +2544,21 @@
   #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(5) {
     animation-delay: 0.8s;
   }
-  /* Bitcoin block footer rises from below last */
+  /* Bitcoin block footer rises from below last, settling at 70% opacity. */
   #gameContainer:not(.hide) #bitcoinDetails {
-    animation: game-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.96s
+    animation: bitcoin-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.96s
       both;
+  }
+
+  @keyframes bitcoin-footer-rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 0.7;
+      transform: translateY(0);
+    }
   }
 }
 

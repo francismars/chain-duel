@@ -1,11 +1,27 @@
-/* Phone landscape: the match is a 16:9 stage. The rest of the screen is black. */
+/* Phone landscape: 16:9 stage centered; viewport sides use the same cover as the game. */
 
 body.game-page.touch-match-active {
   overflow: hidden;
-  background: #000;
-  background-image: none;
   touch-action: none;
   overscroll-behavior: none;
+}
+
+body.game-page.touch-match-active.touch-match-portrait {
+  background-color: #000;
+  background-image:
+    linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
+    url('/images/chainduel_bg_no_sat.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+body.game-page.touch-match-active.touch-match-landscape {
+  background-color: #000;
+  background-image:
+    linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
+    url('/images/chainduel_bg_no_sat.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
 body.game-page.touch-match-active * {
@@ -22,11 +38,19 @@ body.game-page.touch-match-active * {
   box-sizing: border-box;
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
     env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-  background: #000;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+}
+
+.touch-match-root:not(.touch-match-root--portrait) {
+  background-color: #000;
+  background-image:
+    linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
+    url('/images/chainduel_bg_no_sat.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
 .touch-match-frame--on {
@@ -39,12 +63,7 @@ body.game-page.touch-match-active * {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background-color: #000;
-  background-image:
-    linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
-    url('/images/chainduel_bg_no_sat.jpg');
-  background-size: cover;
-  background-position: center;
+  background: transparent;
 }
 
 /* Viewport units would size the board to the whole phone, wider than 16:9.
@@ -56,12 +75,16 @@ body.game-page.touch-match-active * {
   box-sizing: border-box;
 }
 
+/* Thumbs rest on the stage's left/right edges and the stick spawns under them,
+   so keep a gutter on each side clear of the board. */
 .touch-match-frame--on #gameContainer {
-  --game-board-width: 70cqw;
-}
-
-.touch-match-frame--on #zapMessages {
-  width: 70cqw;
+  --game-thumb-gutter: max(6rem, 14cqw);
+  --game-hud-reserve: calc(10cqw + 3.5rem);
+  --game-board-width: min(
+    70cqw,
+    calc(100cqw - 2 * var(--game-thumb-gutter)),
+    calc((100cqh - var(--game-hud-reserve)) * var(--game-board-aspect))
+  );
 }
 
 .touch-match-frame--on .zapMessage {
@@ -71,11 +94,6 @@ body.game-page.touch-match-active * {
 
 .touch-match-frame--on .online-replay-controls {
   width: 70cqw;
-}
-
-.touch-match-frame--on #brand {
-  position: absolute;
-  width: 100%;
 }
 
 .touch-match-frame--on
@@ -93,32 +111,65 @@ body.game-page.touch-match-active * {
   height: 100%;
 }
 
-.touch-match-portrait-game {
-  pointer-events: none;
+/* Phone portrait: board pinned to the top, the free area below is the stick
+   pad so the steering thumb never covers the board. */
+.touch-match-root--portrait {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: transparent;
 }
 
-.touch-match-rotate {
-  position: fixed;
-  inset: 0;
-  z-index: 10500;
+.touch-match-frame--portrait {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.touch-match-frame--portrait .flex.full.game {
+  min-height: 0;
+  justify-content: flex-start;
+  padding-bottom: 0.25rem;
+}
+
+.touch-pad {
+  flex: 1 1 auto;
+  min-height: 8rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: calc(1.5rem + env(safe-area-inset-top, 0px))
-    calc(1.5rem + env(safe-area-inset-right, 0px))
-    calc(1.5rem + env(safe-area-inset-bottom, 0px))
-    calc(1.5rem + env(safe-area-inset-left, 0px));
-  box-sizing: border-box;
-  background: #000;
-  color: #fff;
-  text-align: center;
+  margin: 0 1rem 0.5rem;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  pointer-events: none;
 }
 
-.touch-match-rotate__title {
-  margin: 0;
-  font-size: clamp(1.4rem, 6vw, 2rem);
+.touch-pad__hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  opacity: 0.45;
+}
+
+.touch-pad__ring {
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 1px dashed rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+.touch-pad__label {
+  font-family: Inter, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: #fff;
 }
 
 .touch-stick {

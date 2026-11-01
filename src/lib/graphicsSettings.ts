@@ -7,6 +7,11 @@ export type PointPopupMode = 'full' | 'simple' | 'off';
  * off = no capture/surge/streak/reveal motion, CSS animations jump to their end.
  */
 export type AnimationMode = 'full' | 'reduced' | 'off';
+/**
+ * Canvas backing-store density. sharp = the screen's own density (capped at 3);
+ * balanced = up to 2; fast = 1 canvas pixel per CSS pixel.
+ */
+export type ResolutionMode = 'sharp' | 'balanced' | 'fast';
 
 /**
  * Renderer knobs for slow browsers (Safari mainly). Read when a match mounts,
@@ -21,6 +26,8 @@ export interface GraphicsSettings {
   pointPopups: PointPopupMode;
   /** Capture pulses, surge trails, streak rings, board reveal, and HUD/CSS motion. */
   animations: AnimationMode;
+  /** How many canvas pixels back each CSS pixel of the board. */
+  resolution: ResolutionMode;
   /** Effect sounds plus tension (music layers), streak, and shrink tracking. Music itself keeps playing. */
   soundAndTension: boolean;
   /** Small frames-per-second readout in the corner during a match. */
@@ -32,12 +39,21 @@ export const DEFAULT_GRAPHICS_SETTINGS: GraphicsSettings = {
   shadowsAndTransparency: true,
   pointPopups: 'full',
   animations: 'full',
+  resolution: 'balanced',
   soundAndTension: true,
   showFps: false,
 };
 
 const POINT_POPUP_MODES: readonly string[] = ['full', 'simple', 'off'];
 const ANIMATION_MODES: readonly string[] = ['full', 'reduced', 'off'];
+const RESOLUTION_MODES: readonly string[] = ['sharp', 'balanced', 'fast'];
+
+/** Pixels per CSS pixel for the match canvas. Capped at 3 so a 4× screen does not allocate 16× the pixels. */
+export function canvasResolution(mode: ResolutionMode): number {
+  if (mode === 'fast') return 1;
+  const dpr = window.devicePixelRatio || 1;
+  return Math.min(dpr, mode === 'sharp' ? 3 : 2);
+}
 
 /** On <html> while the HUD capture flash is off; game.css drops the animation. */
 const NO_HUD_FLASH_CLASS = 'graphics-no-hud-flash';
@@ -100,6 +116,12 @@ export function readGraphicsSettings(): GraphicsSettings {
     ) {
       merged.animations = 'reduced';
     }
+    if (
+      typeof parsed.resolution === 'string' &&
+      RESOLUTION_MODES.includes(parsed.resolution)
+    ) {
+      merged.resolution = parsed.resolution as ResolutionMode;
+    }
     return merged;
   } catch {
     return { ...DEFAULT_GRAPHICS_SETTINGS };
@@ -124,6 +146,7 @@ export function performanceGraphicsSettings(
     shadowsAndTransparency: false,
     pointPopups: 'simple',
     animations: 'reduced',
+    resolution: 'fast',
     // Sound is a choice, not just a cost; keep whatever the player picked.
     soundAndTension: current.soundAndTension,
     showFps: current.showFps,

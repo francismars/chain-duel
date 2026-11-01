@@ -508,6 +508,9 @@
 .corner-controls--open .corner-controls__panel > :nth-child(6) {
   transition-delay: 190ms;
 }
+.corner-controls--open .corner-controls__panel > :nth-child(7) {
+  transition-delay: 220ms;
+}
 
 .corner-controls--touch .corner-controls__panel .corner-volume {
   display: flex;

@@ -95,7 +95,10 @@ import {
 import { ffaHudReadoutSame } from '@/game/engine/ffa';
 import type { FfaHudPlayer } from '@/game/engine/types';
 import { GAME_BOOTSTRAP_TIMEOUT_MS } from '@/shared/constants/timeouts';
-import { navigateToPostGame } from '@/shared/constants/menuNavigation';
+import {
+  navigateToPostGame,
+  REQUEST_MAIN_MENU_EVENT,
+} from '@/shared/constants/menuNavigation';
 import {
   challengeStartSatsPerPlayer,
   isExplicitPracticeSession,
@@ -1670,8 +1673,18 @@ export default function Game() {
       }
     };
 
+    const onRequestMainMenu = (event: Event) => {
+      event.preventDefault();
+      setExitOverlayFocus('abort');
+      setShowExitOverlay(true);
+    };
+
     window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
+    window.addEventListener(REQUEST_MAIN_MENU_EVENT, onRequestMainMenu);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener(REQUEST_MAIN_MENU_EVENT, onRequestMainMenu);
+    };
   }, [
     confirmExitToMenu,
     exitOverlayFocus,

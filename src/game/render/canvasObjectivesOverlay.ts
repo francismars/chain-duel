@@ -58,8 +58,14 @@ export class CanvasObjectivesOverlay {
   private bodyY = 0;
   private stakesY = 0;
 
-  /** `shadows` false drops the blurred drop shadow (Config → Graphics). */
-  constructor(private readonly shadows = true) {
+  /**
+   * `shadows` false drops the blurred drop shadow (Config → Graphics).
+   * `textResolution` comes from the match canvas (see pixiTextResolution).
+   */
+  constructor(
+    private readonly shadows = true,
+    textResolution = pixiTextResolution(1)
+  ) {
     this.container.cullable = false;
     for (const item of MATCH_OBJECTIVES) {
       const root = new Container();
@@ -71,8 +77,8 @@ export class CanvasObjectivesOverlay {
       const body = new Text({ text: item.body, style: new TextStyle() });
       title.anchor.set(0.5, 0);
       body.anchor.set(0.5, 0);
-      title.resolution = pixiTextResolution();
-      body.resolution = pixiTextResolution();
+      title.resolution = textResolution;
+      body.resolution = textResolution;
       title.cullable = false;
       body.cullable = false;
       root.addChild(title);
@@ -83,7 +89,7 @@ export class CanvasObjectivesOverlay {
       this.cards.push({ root, title, body });
     }
     this.stakes.anchor.set(0.5, 0);
-    this.stakes.resolution = pixiTextResolution();
+    this.stakes.resolution = textResolution;
     this.stakes.cullable = false;
     this.stakes.visible = false;
     this.container.addChild(this.stakes);

@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  margin: 0.35vw 15% 0.45vw;
+  margin: 0.35vw var(--game-board-margin-x, 15%) 0.45vw;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: max(11px, 0.58vw);
@@ -19,7 +19,7 @@
 /* Match 1v1 #gameInfo — override the 33% width rule from game.css */
 .ffa-hud #gameInfo.ffa-hud-mode {
   width: auto;
-  font-size: max(18px, 2.5cqw);
+  font-size: max(28px, 4cqw);
   line-height: 1;
   text-align: center;
   overflow: visible;
@@ -433,7 +433,7 @@
   }
 
   .ffa-hud #gameInfo.ffa-hud-mode {
-    font-size: clamp(0.65rem, 2.25vmax, 1rem);
+    font-size: clamp(1rem, 4.2vmin, 1.45rem);
   }
 
   .ffa-hud-bars #initialDistribution .distributionTitle {

@@ -8,6 +8,7 @@ import {
   type AnimationMode,
   type GraphicsSettings,
   type PointPopupMode,
+  type ResolutionMode,
 } from '@/lib/graphicsSettings';
 import './graphics-settings.css';
 
@@ -23,7 +24,9 @@ type ToggleSpec = {
   copy: string;
 };
 
-type ChoiceSpec<K extends 'pointPopups' | 'animations'> = {
+type ChoiceKey = 'pointPopups' | 'animations' | 'resolution';
+
+type ChoiceSpec<K extends ChoiceKey> = {
   key: K;
   title: string;
   copy: string;
@@ -49,6 +52,17 @@ const ANIMATIONS: ChoiceSpec<'animations'> = {
     { value: 'full' satisfies AnimationMode, label: 'Full' },
     { value: 'reduced' satisfies AnimationMode, label: 'Reduced' },
     { value: 'off' satisfies AnimationMode, label: 'Off' },
+  ],
+};
+
+const RESOLUTION: ChoiceSpec<'resolution'> = {
+  key: 'resolution',
+  title: 'Resolution',
+  copy: 'How sharp the board is. Sharp matches the screen. Balanced is nearly as sharp and lighter. Fast is the lightest.',
+  options: [
+    { value: 'sharp' satisfies ResolutionMode, label: 'Sharp' },
+    { value: 'balanced' satisfies ResolutionMode, label: 'Balanced' },
+    { value: 'fast' satisfies ResolutionMode, label: 'Fast' },
   ],
 };
 
@@ -83,7 +97,7 @@ function sameSettings(a: GraphicsSettings, b: GraphicsSettings): boolean {
   );
 }
 
-function ChoiceRow<K extends 'pointPopups' | 'animations'>({
+function ChoiceRow<K extends ChoiceKey>({
   spec,
   value,
   onChange,
@@ -176,6 +190,11 @@ export function GraphicsSettingsPanel() {
       </div>
 
       <ul className="graphics-settings__list">
+        <ChoiceRow
+          spec={RESOLUTION}
+          value={settings.resolution}
+          onChange={(resolution) => apply({ ...settings, resolution })}
+        />
         <ChoiceRow
           spec={POINT_POPUPS}
           value={settings.pointPopups}

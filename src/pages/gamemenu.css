@@ -98,6 +98,11 @@
   font-size: var(--fs-sm);
 }
 
+#splits span + span::before {
+  content: '•';
+  margin: 0 0.35rem;
+}
+
 #prizevaluesats {
   margin-top: 0;
   color: white;
@@ -661,6 +666,21 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   justify-content: center;
   padding-bottom: 1.6rem;
   box-sizing: border-box;
+}
+
+@media (min-width: 641px) {
+  .gamemenu-preview #gameMenuTitle.hero-outline {
+    position: absolute;
+    top: 4.25rem;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    margin: 0;
+  }
+
+  .gamemenu-preview .game-setup-main {
+    transform: translateY(-2.5rem);
+  }
 }
 
 .gamemenu-preview #centerSection {
@@ -1407,7 +1427,8 @@ html.tv-safe-inset .gamemenu-preview #splits {
   width: fit-content;
   min-width: 8.5rem;
   padding-inline: 1.6rem;
-  margin-top: -2.6rem;
+  margin-top: 0.85rem;
+  margin-inline: auto;
 }
 
 .gamemenu-preview #gameButtons {
@@ -1482,6 +1503,10 @@ html.tv-safe-inset .gamemenu-preview #splits {
   .gamemenu-page #bottomInfo {
     flex-wrap: wrap;
     row-gap: var(--space-4);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .gamemenu-page:not(.is-nostr) .player-cards-slider {
@@ -1489,6 +1514,9 @@ html.tv-safe-inset .gamemenu-preview #splits {
     flex: 1 0 100%;
     order: 1;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scroll-padding-inline: 0;
@@ -1524,6 +1552,25 @@ html.tv-safe-inset .gamemenu-preview #splits {
     order: -1;
   }
 
+  /* One cut per line so "(0 sats)" stays with its percentage. */
+  .gamemenu-page #splits {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    max-width: 22rem;
+    margin-inline: auto;
+  }
+
+  .gamemenu-page #splits span {
+    white-space: nowrap;
+  }
+
+  .gamemenu-page #splits span + span::before {
+    content: none;
+    margin: 0;
+  }
+
   .gamemenu-page #player2card {
     flex-direction: row-reverse;
   }
@@ -1556,37 +1603,53 @@ html.tv-safe-inset .gamemenu-preview #splits {
   .gamemenu-page:not(.is-nostr) #player1card,
   .gamemenu-page:not(.is-nostr) #player2card {
     flex-direction: column;
-    align-items: center;
-    flex-wrap: wrap;
-    row-gap: 0.65rem;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    row-gap: 0.75rem;
+    min-width: 0;
   }
 
   .gamemenu-page:not(.is-nostr) #qrcodeContainer1,
   .gamemenu-page:not(.is-nostr) #qrcodeContainer2 {
     order: -1;
+    align-self: center;
   }
 
+  /* flex-basis 100% on a column would be the card height and wrap the
+     buttons into a second column beside the QR. Width keeps them a row. */
   .gamemenu-page .gamemenu-lnurl-actions {
     display: flex;
-    flex: 1 0 100%;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     gap: 0.5rem;
-    order: 3;
+    order: 0;
+    padding: 0;
   }
 
   .gamemenu-page .gamemenu-lnurl-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex: 1 1 0;
     min-width: 0;
-    padding: 0.55rem 0.4rem;
+    height: 2.75rem;
+    margin: 0;
+    padding: 0.12em 0.5rem 0;
     border: 1px solid rgba(255, 255, 255, 0.55);
     background: transparent;
     color: #fff;
     font: inherit;
     font-size: 0.72rem;
+    line-height: 1;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-align: center;
     text-decoration: none;
     cursor: pointer;
+    white-space: normal;
+    box-sizing: border-box;
   }
 
   .gamemenu-page #player1cardinfo,
@@ -1595,18 +1658,26 @@ html.tv-safe-inset .gamemenu-preview #splits {
     min-width: 0;
     align-items: flex-start;
     text-align: left;
-    padding: 0 var(--space-3);
+    padding: 0;
   }
 
   /* Preview locks player 2 to a right-aligned desktop column. On a phone that
      parks the name on the far edge, away from the code. */
+  .gamemenu-page.gamemenu-preview .player-cards-slider {
+    gap: 0;
+  }
+
   .gamemenu-page.gamemenu-preview #player1card,
   .gamemenu-page.gamemenu-preview #player2card {
+    flex: 0 0 100%;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
     gap: 0.65rem;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
   }
 
   .gamemenu-page.gamemenu-preview #player2card {
@@ -1618,30 +1689,65 @@ html.tv-safe-inset .gamemenu-preview #splits {
     order: -1;
   }
 
+  .gamemenu-page.gamemenu-preview .gamemenu-lnurl-actions {
+    flex-direction: column;
+    width: min(100%, 16rem);
+    max-width: 16rem;
+    margin-inline: auto;
+    order: 0;
+  }
+
+  .gamemenu-page.gamemenu-preview .gamemenu-lnurl-action {
+    flex: 0 0 auto;
+    width: 100%;
+    height: 2.75rem;
+  }
+
   .gamemenu-page.gamemenu-preview #player1cardinfo,
   .gamemenu-page.gamemenu-preview #player2cardinfo {
-    order: 0;
+    order: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.2rem;
   }
 
-  .gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer,
   .gamemenu-page.gamemenu-preview #player1cardinfo .condensed,
-  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
-  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+  .gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer {
     align-self: center;
     justify-content: center;
     text-align: center;
     flex-direction: row;
   }
 
+  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed,
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer {
+    align-self: center;
+    justify-content: center;
+    text-align: center;
+    flex-direction: row-reverse;
+  }
+
   .gamemenu-preview .gamemenu-preview-deposit,
   .gamemenu-preview #splits {
-    width: min(100%, 20rem);
+    flex: 0 0 auto;
+    align-self: center;
+    width: min(100%, 16rem);
+    max-width: 16rem;
     margin-inline: auto;
     text-align: center;
+  }
+
+  /* Desktop pins the cuts over the footer. On a phone that footer is the
+     fixed start button, so the fee has to stay in the column above it. */
+  .gamemenu-preview #splits {
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    z-index: auto;
+    margin-top: var(--space-4);
+    pointer-events: auto;
   }
 
   .gamemenu-page.gamemenu-preview #player1cardinfo,
@@ -1656,12 +1762,17 @@ html.tv-safe-inset .gamemenu-preview #splits {
   }
 
   .gamemenu-page.gamemenu-preview #player1cardinfo .condensed,
+  .gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer,
   .gamemenu-page.gamemenu-preview #player2cardinfo .condensed,
-  .gamemenu-page.gamemenu-preview #player1satsContainer,
-  .gamemenu-page.gamemenu-preview #player2satsContainer {
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer {
     align-self: center;
     justify-content: center;
     text-align: center;
+  }
+
+  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed,
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer {
+    flex-direction: row-reverse;
   }
 
   .gamemenu-preview .qrcodeContainer .qrcode {
@@ -1689,9 +1800,11 @@ html.tv-safe-inset .gamemenu-preview #splits {
 
   .gamemenu-preview #leaderboard {
     margin-top: 0.7rem;
-    font-size: clamp(12px, 3.6vw, 15px);
+    font-size: clamp(12px, 3.4vw, 15px);
     padding: 0.5em 0.95em;
     max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
   }
 
   .gamemenu-page #player2cardinfo #player2satsContainer,
@@ -1700,6 +1813,22 @@ html.tv-safe-inset .gamemenu-preview #splits {
     align-self: flex-start;
     justify-content: flex-start;
     text-align: left;
+  }
+
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
+  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+    align-self: center;
+    justify-content: center;
+    text-align: center;
+    flex-direction: row-reverse;
+  }
+
+  .gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer,
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer {
+    align-self: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
   }
 
   /* Nostr is one shared note, not two payment cards. Desktop keeps five columns;

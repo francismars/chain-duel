@@ -21,6 +21,7 @@ import {
   readTouchPlaySlot,
   TOUCH_PLAY_TARGET_EVENT,
 } from '@/features/game/touch/touchPlayTarget';
+import { readTouchDebugMode } from '@/shared/utils/inputMode';
 import './touchMatchFrame.css';
 
 type TouchMatchMode = 'off' | 'landscape' | 'portrait';
@@ -29,7 +30,9 @@ const PUCK_TRAVEL_PX = 22;
 
 function readTouchMatchMode(): TouchMatchMode {
   if (typeof window === 'undefined') return 'off';
-  if (!window.matchMedia('(pointer: coarse)').matches) return 'off';
+  const forced = readTouchDebugMode();
+  if (forced === 'portrait' || forced === 'landscape') return forced;
+  if (!forced && !window.matchMedia('(pointer: coarse)').matches) return 'off';
   return window.matchMedia('(orientation: landscape)').matches
     ? 'landscape'
     : 'portrait';
@@ -89,7 +92,9 @@ function useStickPointer(
   puckRef: RefObject<HTMLDivElement | null>
 ): void {
   useEffect(() => {
-    if (mode !== 'landscape') return;
+    if (mode === 'off') return;
+    // `?touch=` debug: no fingers on a desktop, so the mouse drives the stick.
+    const mouseSteers = readTouchDebugMode() !== null;
 
     let session: StickSession | null = null;
     let sessionSlot: PlayerControlSlot | null = null;
@@ -165,9 +170,8 @@ function useStickPointer(
     // Pens don't emit touch events. A finger's pointer stream is ignored so a
     // pointercancel cannot end the stick while the touch is still down.
     const onPointerDown = (event: PointerEvent) => {
-      if (event.pointerType === 'touch' || event.pointerType === 'mouse') {
-        return;
-      }
+      if (event.pointerType === 'touch') return;
+      if (event.pointerType === 'mouse' && !mouseSteers) return;
       if (event.button !== 0 || session) return;
       window.dispatchEvent(new Event(TOUCH_GESTURE_EVENT));
       if (isStickBlockedTarget(event.target)) return;
@@ -222,51 +226,58 @@ function useStickPointer(
   }, [mode, puckRef, ringRef]);
 }
 
-/** Touch phones: landscape 16:9 stage, portrait rotate gate, finger steering. */
+/**
+ * Touch phones, finger steering. Landscape: 16:9 stage, stick anywhere.
+ * Portrait: board pinned to the top, the free area below is the stick pad
+ * (a finger can still steer from anywhere that isn't a button).
+ */
 export function TouchMatchFrame({ children }: { children: ReactNode }) {
   const mode = useTouchMatchMode();
   const ringRef = useRef<HTMLDivElement>(null);
   const puckRef = useRef<HTMLDivElement>(null);
-  const portraitRef = useRef<HTMLDivElement>(null);
   useStickPointer(mode, ringRef, puckRef);
 
   useEffect(() => {
     if (mode === 'off') return;
-    document.body.classList.add('touch-match-active');
-    return () => document.body.classList.remove('touch-match-active');
-  }, [mode]);
-
-  useEffect(() => {
-    const node = portraitRef.current;
-    if (!node) return;
-    node.inert = true;
+    document.body.classList.add('touch-match-active', `touch-match-${mode}`);
+    return () =>
+      document.body.classList.remove(
+        'touch-match-active',
+        `touch-match-${mode}`
+      );
   }, [mode]);
 
   if (mode === 'off') return children;
 
+  const stick = (
+    <div className="touch-stick" ref={ringRef} aria-hidden>
+      <div className="touch-stick__puck" ref={puckRef} />
+    </div>
+  );
+
   if (mode === 'portrait') {
     return (
-      <>
-        <div
-          ref={portraitRef}
-          className="touch-match-portrait-game"
-          aria-hidden="true"
-        >
+      <div className="touch-match-root touch-match-root--portrait">
+        <div className="touch-match-frame touch-match-frame--portrait">
           {children}
         </div>
-        <div className="touch-match-rotate" role="status">
-          <p className="touch-match-rotate__title condensed">Turn sideways</p>
+        <div className="touch-pad" aria-hidden>
+          <div className="touch-pad__hint">
+            <span className="touch-pad__ring" />
+            <span className="touch-pad__label">
+              Drag to steer · tap to start
+            </span>
+          </div>
         </div>
-      </>
+        {stick}
+      </div>
     );
   }
 
   return (
     <div className="touch-match-root">
       <div className="touch-match-frame touch-match-frame--on">{children}</div>
-      <div className="touch-stick" ref={ringRef} aria-hidden>
-        <div className="touch-stick__puck" ref={puckRef} />
-      </div>
+      {stick}
     </div>
   );
 }
