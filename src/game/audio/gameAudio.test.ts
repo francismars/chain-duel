@@ -136,6 +136,30 @@ describe('game tension', () => {
     audio.stopAll();
   });
 
+  it('scales music and effects without letting the listener volume drift the mix', () => {
+    const audio = new GameAudioSystem();
+    const state = match();
+    audio.applyAppMuteState(false, false, 0.5, 0.5);
+    audio.startMusic();
+    expect(cue('produced_game').volume).toBeCloseTo(0.25);
+    state.p1.body = Array(7).fill([1, 1]);
+    audio.updateGameState(state);
+    vi.advanceTimersByTime(3500);
+    expect(cue('pressure').volume).toBeCloseTo(0.34 * 0.25);
+    vi.advanceTimersByTime(3500);
+    expect(cue('pressure').volume).toBeCloseTo(0.34 * 0.25);
+    const plays = cue('produced_game').play.mock.calls.length;
+    audio.applyAppMuteState(false, false, 0.8, 0.5);
+    expect(cue('produced_game').play.mock.calls.length).toBe(plays);
+    expect(cue('pressure').volume).toBeCloseTo(0.34 * 0.4);
+    audio.playReset('P1');
+    expect(cue('P1-HWAC').volume).toBeCloseTo(0.5);
+    audio.applyAppMuteState(false, false, 0, 0.5);
+    expect(cue('produced_game').muted).toBe(true);
+    expect(cue('produced_game').pause).toHaveBeenCalled();
+    audio.stopAll();
+  });
+
   it('holds critical pressure, then fades back to the bed', () => {
     const audio = new GameAudioSystem();
     const state = match();

@@ -176,6 +176,11 @@ const PRESSURE_THEMES = [
   { level: 4, name: 'critical', volume: 0.65 },
 ] as const;
 
+function clampUnit(value: number): number {
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(1, Math.max(0, value));
+}
+
 function createAudio(src: string, loop = false): HTMLAudioElement {
   const audio = new Audio(src);
   audio.loop = loop;
@@ -232,10 +237,18 @@ export class GameAudioSystem {
 
   /** Set by startMusic(); gates resume after unmute and avoids BGM before match load. */
   private musicShouldPlay = false;
-  /** Full mute (speaker button) — blocks in-game SFX. */
+  /** Full mute (speaker button at zero) — blocks in-game SFX. */
   private appSfxMuted = false;
-  /** Music mute (note button) or full mute — blocks looping BGM only. */
+  /** Music mute (note button at zero) or full mute — blocks looping BGM only. */
   private appMusicMuted = false;
+  /** Music channel × master. 1 leaves the tension mix untouched. */
+  private musicGain = 1;
+  /** Master level for effects. 0 is full mute. */
+  private sfxGain = 1;
+  /** Tension-stem levels before the listener's music volume is applied. */
+  private stemMix = [0, 0, 0, 0];
+  /** Bed level before the listener's music volume is applied. */
+  private bedMix = 1;
 
   /** In-game SFX only (not the looping game music). */
   private readonly sfx: HTMLAudioElement[] = [
@@ -258,16 +271,32 @@ export class GameAudioSystem {
   ];
 
   /**
-   * Keeps in-game audio aligned with `AudioContext` / corner controls:
-   * full mute silences everything; music-only mute pauses game BGM like the menu player.
+   * Keeps in-game audio aligned with `AudioContext` / corner controls.
+   * Full mute (master at 0) silences everything. Music at 0 pauses game BGM
+   * like the menu player. Levels between mute and full scale the mix
+   * without changing how the tension stems balance.
+   * Omitted levels stay at 0 or 1 from the mute flags.
    */
-  applyAppMuteState(isMuted: boolean, isMusicMuted: boolean): void {
-    this.appSfxMuted = isMuted;
-    this.appMusicMuted = isMuted || isMusicMuted;
+  applyAppMuteState(
+    isMuted: boolean,
+    isMusicMuted: boolean,
+    musicVolume = isMusicMuted ? 0 : 1,
+    masterVolume = isMuted ? 0 : 1
+  ): void {
+    const wasMusicMuted = this.appMusicMuted;
+    const master = clampUnit(masterVolume);
+    const music = clampUnit(musicVolume);
+    this.sfxGain = isMuted || master <= 0 ? 0 : master;
+    this.musicGain =
+      isMuted || isMusicMuted || music <= 0 || master <= 0 ? 0 : music * master;
+    this.appSfxMuted = this.sfxGain <= 0;
+    this.appMusicMuted = this.musicGain <= 0;
 
     for (const a of this.sfx) {
       a.muted = this.appSfxMuted;
+      a.volume = this.sfxGain;
     }
+    this.writeMusicVolumes();
 
     if (this.appMusicMuted) {
       this.music.muted = true;
@@ -278,11 +307,14 @@ export class GameAudioSystem {
         audio.pause();
         audio.muted = true;
       }
-    } else {
-      this.music.muted = false;
-      if (this.musicShouldPlay) {
-        this.playMusicLayers();
-      }
+      return;
+    }
+
+    this.music.muted = false;
+    this.menuMusic.muted = false;
+    for (const { audio } of this.themes) audio.muted = false;
+    if (wasMusicMuted && this.musicShouldPlay) {
+      this.playMusicLayers();
     }
   }
 
@@ -296,6 +328,7 @@ export class GameAudioSystem {
     if (this.appMusicMuted) {
       return;
     }
+    this.writeMusicVolumes();
     this.playMusicLayers();
   }
 
@@ -311,8 +344,9 @@ export class GameAudioSystem {
     this.music.pause();
     this.menuMusic.pause();
     for (const { audio } of this.themes) audio.pause();
-    for (const { audio } of this.themes) audio.volume = 0;
-    this.music.volume = 1;
+    this.stemMix = [0, 0, 0, 0];
+    this.bedMix = 1;
+    this.writeMusicVolumes();
     this.tensionLevel = 0;
     this.tensionHoldUntil = 0;
     this.streakPlayer = null;
@@ -578,7 +612,8 @@ export class GameAudioSystem {
       return;
     }
     let combinedVolume = 0;
-    for (const theme of this.themes) {
+    for (let index = 0; index < this.themes.length; index += 1) {
+      const theme = this.themes[index]!;
       const { audio } = theme;
       const audible = this.audibleLevel();
       const target =
@@ -586,12 +621,12 @@ export class GameAudioSystem {
       const fadeMs = Number.isFinite(this.recipe.fadeMs)
         ? this.recipe.fadeMs
         : 2500;
-      const step =
-        fadeMs <= 0 ? 1 : (50 / fadeMs) * (audio.volume < target ? 2 : 1);
-      audio.volume +=
-        Math.sign(target - audio.volume) *
-        Math.min(step, Math.abs(target - audio.volume));
-      combinedVolume += audio.volume;
+      let level = this.stemMix[index] ?? 0;
+      const step = fadeMs <= 0 ? 1 : (50 / fadeMs) * (level < target ? 2 : 1);
+      level +=
+        Math.sign(target - level) * Math.min(step, Math.abs(target - level));
+      this.stemMix[index] = level;
+      combinedVolume += level;
       if (
         audio.readyState >= 1 &&
         Math.abs(audio.currentTime - this.music.currentTime) > 0.15
@@ -599,8 +634,19 @@ export class GameAudioSystem {
         audio.currentTime = this.music.currentTime;
       }
     }
-    this.music.volume = 1 - Math.min(1, combinedVolume) * this.recipe.duck;
+    this.bedMix = 1 - Math.min(1, combinedVolume) * this.recipe.duck;
+    this.writeMusicVolumes();
     this.publishHeardLayers();
+  }
+
+  /** Applies the listener's music volume on top of the tension mix. */
+  private writeMusicVolumes(): void {
+    const gain = this.musicGain;
+    this.music.volume = this.bedMix * gain;
+    this.menuMusic.volume = gain;
+    this.themes.forEach((theme, index) => {
+      theme.audio.volume = (this.stemMix[index] ?? 0) * gain;
+    });
   }
 
   /**
@@ -628,10 +674,10 @@ export class GameAudioSystem {
       return;
     }
     publishTensionLayers([
-      { name: 'game', volume: this.music.volume },
-      ...this.themes.map((theme) => ({
+      { name: 'game', volume: this.bedMix },
+      ...this.themes.map((theme, index) => ({
         name: theme.name,
-        volume: theme.audio.volume,
+        volume: this.stemMix[index] ?? theme.audio.volume,
       })),
     ]);
   }
@@ -725,6 +771,7 @@ export class GameAudioSystem {
     if (this.appSfxMuted || (!this.extras && !always)) {
       return;
     }
+    audio.volume = this.sfxGain;
     audio.pause();
     audio.currentTime = 0;
     void audio.play().catch(() => undefined);

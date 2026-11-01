@@ -96,7 +96,7 @@ export default function OnlineGame({
 }: OnlineGameProps = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { stop, isMuted, isMusicMuted } = useAudio();
+  const { stop, isMuted, isMusicMuted, musicVolume, masterVolume } = useAudio();
   const { socket } = useSocket({ autoConnect: true });
   const roomId = roomIdProp ?? searchParams.get('roomId') ?? '';
   const replayMode = searchParams.has('replay');
@@ -223,8 +223,13 @@ export default function OnlineGame({
   }, [stop]);
 
   useEffect(() => {
-    audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
-  }, [isMuted, isMusicMuted]);
+    audioRef.current?.applyAppMuteState(
+      isMuted,
+      isMusicMuted,
+      musicVolume,
+      masterVolume
+    );
+  }, [isMuted, isMusicMuted, musicVolume, masterVolume]);
 
   useEffect(() => {
     return () => {

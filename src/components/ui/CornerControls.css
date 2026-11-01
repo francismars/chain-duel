@@ -133,6 +133,141 @@
   transform: translateY(-50%) translateX(0);
 }
 
+/* Music and master volume. Click the icon to mute; drag to set a level.
+   The pop sits just to the right and only appears on hover or keyboard focus. */
+.corner-volume {
+  position: relative;
+}
+
+.corner-volume:hover,
+.corner-volume:focus-within {
+  z-index: 1;
+}
+
+.corner-volume__pop {
+  position: absolute;
+  left: calc(100% + 0.35rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.55rem;
+  background: rgb(0 0 0 / 88%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+}
+
+/* Keeps the pointer on the control while it crosses from the icon to the slider. */
+.corner-volume__pop::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 0;
+  width: 0.55rem;
+  height: 100%;
+}
+
+.corner-controls:not(.corner-controls--touch)
+  .corner-volume:hover
+  .corner-volume__pop,
+.corner-controls:not(.corner-controls--touch)
+  .corner-volume:focus-within
+  .corner-volume__pop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.corner-controls:not(.corner-controls--touch)
+  .corner-volume:hover
+  .corner-btn::after,
+.corner-controls:not(.corner-controls--touch)
+  .corner-volume:focus-within
+  .corner-btn::after {
+  opacity: 0;
+}
+
+.corner-volume__name,
+.corner-volume__value {
+  font-family: 'Inter', sans-serif;
+  font-size: max(0.65rem, 0.7vw);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 78%);
+  line-height: 1;
+}
+
+.corner-volume__value {
+  min-width: 1.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.corner-volume__slider {
+  --track: linear-gradient(
+    90deg,
+    #fff 0 var(--volume, 100%),
+    rgb(255 255 255 / 28%) var(--volume, 100%) 100%
+  );
+  -webkit-appearance: none;
+  appearance: none;
+  width: 5.5rem;
+  height: 1.1rem;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.corner-volume__slider:focus {
+  outline: none;
+}
+
+.corner-volume__slider:focus-visible {
+  outline: 1px solid rgb(255 255 255 / 45%);
+  outline-offset: 2px;
+}
+
+.corner-volume__slider::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--track);
+  border: none;
+}
+
+.corner-volume__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  margin-top: -4px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.corner-volume__slider::-moz-range-track {
+  height: 2px;
+  background: rgb(255 255 255 / 28%);
+  border: none;
+}
+
+.corner-volume__slider::-moz-range-progress {
+  height: 2px;
+  background: #fff;
+}
+
+.corner-volume__slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+}
+
 @media (max-aspect-ratio: 1/1) {
   .corner-controls {
     left: max(2px, 0.5vmin);
@@ -271,7 +406,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 13rem;
+  min-width: 17rem;
   padding: 6px;
   border-radius: 0;
   border: 1px solid rgb(255 255 255 / 14%);
@@ -355,23 +490,85 @@
     background 0.15s ease;
 }
 
-.corner-controls--open .corner-controls__panel .corner-btn:nth-child(1) {
+.corner-controls--open .corner-controls__panel > :nth-child(1) {
   transition-delay: 40ms;
 }
-.corner-controls--open .corner-controls__panel .corner-btn:nth-child(2) {
+.corner-controls--open .corner-controls__panel > :nth-child(2) {
   transition-delay: 70ms;
 }
-.corner-controls--open .corner-controls__panel .corner-btn:nth-child(3) {
+.corner-controls--open .corner-controls__panel > :nth-child(3) {
   transition-delay: 100ms;
 }
-.corner-controls--open .corner-controls__panel .corner-btn:nth-child(4) {
+.corner-controls--open .corner-controls__panel > :nth-child(4) {
   transition-delay: 130ms;
 }
-.corner-controls--open .corner-controls__panel .corner-btn:nth-child(5) {
+.corner-controls--open .corner-controls__panel > :nth-child(5) {
   transition-delay: 160ms;
 }
-.corner-controls--open .corner-controls__panel .corner-btn:nth-child(6) {
+.corner-controls--open .corner-controls__panel > :nth-child(6) {
   transition-delay: 190ms;
+}
+
+.corner-controls--touch .corner-controls__panel .corner-volume {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 4px;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+}
+
+.corner-controls--dock-right .corner-controls__panel .corner-volume {
+  transform: translateX(6px);
+}
+
+.corner-controls--touch.corner-controls--open
+  .corner-controls__panel
+  .corner-volume {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.24s ease,
+    transform 0.32s var(--fab-ease);
+}
+
+.corner-controls--touch .corner-controls__panel .corner-volume .corner-btn {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  opacity: 1;
+  transform: none;
+}
+
+.corner-controls--touch .corner-volume__pop {
+  position: static;
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+  gap: 6px;
+  margin: 0;
+  padding: 0 4px 0 0;
+  background: none;
+  border: 0;
+}
+
+.corner-controls--touch .corner-volume__pop::before {
+  display: none;
+}
+
+.corner-controls--touch .corner-volume__name {
+  display: none;
+}
+
+.corner-controls--touch .corner-volume__slider {
+  width: 4.75rem;
+}
+
+.corner-controls--touch .corner-volume__value {
+  font-size: var(--fs-sm);
 }
 
 .corner-controls--touch .corner-controls__panel .corner-btn:active,
@@ -427,7 +624,9 @@
   .corner-controls__fab,
   .corner-controls__fab-icon > span,
   .corner-controls--touch .corner-controls__panel,
-  .corner-controls--touch .corner-controls__panel .corner-btn {
+  .corner-controls--touch .corner-controls__panel .corner-btn,
+  .corner-controls--touch .corner-controls__panel .corner-volume,
+  .corner-volume__pop {
     transition-duration: 0s !important;
     transition-delay: 0s !important;
   }
