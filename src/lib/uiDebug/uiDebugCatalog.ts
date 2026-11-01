@@ -55,8 +55,8 @@ export const UI_DEBUG_GROUPS: UiDebugGroup[] = [
   {
     title: 'P2P payment',
     links: [
-      { label: 'Current layout', href: '/gamemenu', variant: 'A' },
-      { label: 'New layout', href: '/preview/p2p-payment-b', variant: 'B' },
+      { label: 'Live', href: '/gamemenu' },
+      { label: 'Mock players', href: '/preview/p2p-payment-b' },
       {
         label: 'Payment play',
         href: '/preview/p2p-payment-b?scene=play',
