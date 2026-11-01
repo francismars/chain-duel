@@ -50,6 +50,11 @@ import {
 } from './matchTriggerLabMotion';
 import { GameInfoLabel } from '@/features/game/GameInfoLabel';
 import { MempoolFooter } from '@/features/game/MempoolFooter';
+import { MatchEndCard } from '@/features/game/MatchEndCard';
+import { OnlineVictoryReveal } from '@/components/online/OnlineVictoryReveal';
+import { DEBUG_P1_SESSION } from '@/lib/online/onlineUiDebug';
+import { PlayerRole, type OnlineRoomState } from '@/types/socket';
+import '@/styles/components/matchResults.css';
 import {
   captureFeedbackStyleFromCtx,
   captureHitStyleVars,
@@ -966,6 +971,99 @@ function musicReason(tension: TensionDebugSnapshot): string {
 const SETUP_OPEN_WIDTH = '20rem';
 const PANE_RAIL_WIDTH = '2.25rem';
 
+/**
+ * Game config each lab mode's outro reads, the way the real pages write it.
+ * Practice modes show FREE GAME; paid ones show the sats won.
+ */
+const OUTRO_CONFIG: Record<LabModeId, Record<string, unknown>> = {
+  freeplay: {
+    sessionOrigin: 'practice',
+    mode: 'PRACTICE',
+    practiceHudLabel: 'FREE PLAY',
+  },
+  ffa: {
+    sessionOrigin: 'practice',
+    mode: 'PRACTICE',
+    practiceHudLabel: 'FREE FOR ALL',
+  },
+  challenge: {
+    sessionOrigin: 'practice',
+    mode: 'SOLO',
+    practiceHudLabel: 'CHALLENGE',
+  },
+  p2p: { mode: 'P2P' },
+  tournament: { mode: 'TOURNAMENT' },
+  // Online uses OnlineVictoryReveal instead.
+  online: { mode: 'ONLINE' },
+};
+
+/** A finished online room built from the lab match, for the online outro. */
+function labOnlineRoom(state: GameState): OnlineRoomState {
+  const [p1Score, p2Score] = state.score;
+  const whiteWon = state.winnerPlayer !== 'P2';
+  const winnerRole = whiteWon ? PlayerRole.Player1 : PlayerRole.Player2;
+  const winnerName = whiteWon ? state.p1Name : state.p2Name;
+  const total = p1Score + p2Score;
+  return {
+    roomId: 'lab',
+    roomCode: 'LAB',
+    hostSessionID: DEBUG_P1_SESSION,
+    buyin: Math.floor(total / 2),
+    matchRound: 1,
+    phase: 'postgame',
+    seats: {
+      [PlayerRole.Player1]: {
+        role: PlayerRole.Player1,
+        name: state.p1Name,
+        sessionID: DEBUG_P1_SESSION,
+        status: 'paid',
+      },
+      [PlayerRole.Player2]: {
+        role: PlayerRole.Player2,
+        name: state.p2Name,
+        sessionID: 'lab-p2',
+        status: 'paid',
+      },
+    },
+    spectators: [],
+    snapshot: {
+      tick: state.tickCount,
+      phase: 'postgame',
+      state: {
+        score: [p1Score, p2Score],
+        p1Name: state.p1Name,
+        p2Name: state.p2Name,
+      },
+      hud: {
+        p1Points: p1Score,
+        p2Points: p2Score,
+        captureP1: '',
+        captureP2: '',
+        initialWidthP1: 1,
+        initialWidthP2: 1,
+        currentWidthP1: 1,
+        currentWidthP2: 1,
+      },
+    },
+    result: {
+      winnerName,
+      p1Name: state.p1Name,
+      p2Name: state.p2Name,
+      p1Score,
+      p2Score,
+      netPrize: Math.floor(total * 0.95),
+      winnerRole,
+    },
+    postGame: {
+      winnerRole,
+      winnerName,
+      winnerPoints: whiteWon ? p1Score : p2Score,
+      totalPrize: total,
+      doubleOrNothingVotes: 0,
+    },
+  } as OnlineRoomState;
+}
+
 /** Pane title bar. Collapses the pane to a rail on wide screens, a bar on phones. */
 function PaneHead({
   title,
@@ -1147,6 +1245,9 @@ export default function MatchTriggerLab() {
   const touringRef = useRef<TourId | null>(null);
   touringRef.current = touring;
   const [blockLit, setBlockLit] = useState(false);
+  // The stage hosts the outro, so it covers the board and not the panes.
+  const [stageEl, setStageEl] = useState<HTMLElement | null>(null);
+  const noPromptRef = useRef<string | null>('');
   const [setupOpen, setSetupOpen] = useState(true);
   const [triggersOpen, setTriggersOpen] = useState(true);
   // The floating corner buttons ride the Setup drawer's right edge on wide screens.
@@ -1998,6 +2099,10 @@ export default function MatchTriggerLab() {
     remember();
     pathRef.current = [];
     current.gameEnded = true;
+    // The outro needs a winner. The leader takes it, like a match on time.
+    const whiteLeads = current.score[0] >= current.score[1];
+    current.winnerPlayer = whiteLeads ? 'P1' : 'P2';
+    current.winnerName = whiteLeads ? current.p1Name : current.p2Name;
     audio.updateGameState(current);
     setEnded(true);
     note('Match end · end cue, then menu music');
@@ -2010,6 +2115,8 @@ export default function MatchTriggerLab() {
     if (!current || !audio || !current.gameEnded) return;
     if (current.score[0] <= 0 || current.score[1] <= 0) return;
     current.gameEnded = false;
+    current.winnerPlayer = null;
+    current.winnerName = '';
     audio.updateGameState(current);
     setEnded(false);
     note('Match resumed · game bed from the start');
@@ -2421,7 +2528,24 @@ export default function MatchTriggerLab() {
           </div>
         </div>
       </aside>
-      <section className="match-lab__stage">
+      <section className="match-lab__stage" ref={setStageEl}>
+        {/* The real outro for the selected mode, kept inside the stage. */}
+        {modeId === 'online' ? (
+          state?.gameEnded ? (
+            <OnlineVictoryReveal
+              room={labOnlineRoom(state)}
+              sessionID={DEBUG_P1_SESSION}
+              onComplete={() => undefined}
+            />
+          ) : null
+        ) : (
+          <MatchEndCard
+            getState={() => stateRef.current}
+            config={OUTRO_CONFIG[modeId]}
+            portalTarget={stageEl}
+            continueLabelRef={noPromptRef}
+          />
+        )}
         <div className="match-lab__match">
           <ScoreHud state={state} modeLabel={mode.modeLabel} barHit={barHit} />
           <div
@@ -2431,18 +2555,6 @@ export default function MatchTriggerLab() {
             onPointerMove={onPointerMove}
           >
             <div className="match-lab__host" ref={hostRef} />
-            {state?.gameEnded ? (
-              <div className="match-lab__over" role="status">
-                <strong>
-                  {state.winnerName ? `${state.winnerName} wins` : 'Match over'}
-                </strong>
-                <span>
-                  {state.winnerPlayer
-                    ? 'One side has no sats left'
-                    : 'The match has ended'}
-                </span>
-              </div>
-            ) : null}
           </div>
         </div>
         <MempoolFooter highlight={blockLit} />

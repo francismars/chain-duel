@@ -32,6 +32,11 @@
 }
 
 .match-lab__stage {
+  /* Hosts the outro, which is fixed full-screen in the game. Containing paint
+     makes the stage the box for fixed children, so the outro and its rays
+     stay inside it instead of spilling over the panes. */
+  position: relative;
+  contain: paint;
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -159,32 +164,6 @@
   inset: 0;
   width: 100%;
   height: 100%;
-}
-
-.match-lab__over {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  background: rgb(0 0 0 / 0.62);
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  pointer-events: none;
-}
-
-.match-lab__over strong {
-  font-size: clamp(1.4rem, 4cqw, 2.4rem);
-}
-
-.match-lab__over span {
-  color: #c8c8c8;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
 }
 
 .match-lab__readout {
