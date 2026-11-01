@@ -2,8 +2,9 @@
 
 export type PracticePlayStyle = 'free' | 'challenges';
 
-/** Keyboard focus zones on /practice (play style cards → panel → footer). */
+/** Keyboard focus zones on /practice (rules → play style cards → panel → footer). */
 export type PracticeHubFocus =
+  | { zone: 'rules' }
   | { zone: 'playStyle'; idx: 0 | 1 }
   | { zone: 'panel' }
   | { zone: 'footer'; which: 'back' | 'start' };

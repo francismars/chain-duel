@@ -110,7 +110,13 @@ export default function PracticeHub({
     dir: 'next' as 'next' | 'prev',
   });
   const closeRules = useCallback(() => setRulesOpen(false), []);
+  const openRules = useCallback(() => {
+    // Rules zone keeps focus on the button, so closing the modal lands back on it.
+    setHubFocus({ zone: 'rules' });
+    setRulesOpen(true);
+  }, []);
 
+  const rulesRef = useRef<HTMLButtonElement | null>(null);
   const playStyleRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const footerBackRef = useRef<HTMLButtonElement | null>(null);
   const footerStartRef = useRef<HTMLButtonElement | null>(null);
@@ -252,6 +258,8 @@ export default function PracticeHub({
       if (document.querySelector('.sc-gate-check-overlay')) {
         return;
       }
+      // Modal and RulesSection own Escape / arrows / confirm while rules are open.
+      if (rulesOpen) return;
 
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -321,6 +329,25 @@ export default function PracticeHub({
         }
       }
 
+      if (hubFocus.zone === 'rules') {
+        if (!isDown && !isLeft && !isActivate && !isTab) {
+          if (isUp || isRight || isTabBack) e.preventDefault();
+          return;
+        }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (isActivate) {
+          if (e.repeat) return;
+          playSfx(SFX.MENU_CONFIRM);
+          openRules();
+          return;
+        }
+        playSfx(SFX.MENU_SELECT);
+        if (showStyle) enterPlayStyle();
+        else enterPanel();
+        return;
+      }
+
       if (hubFocus.zone === 'panel') {
         if (isTabBack) {
           e.preventDefault();
@@ -332,9 +359,11 @@ export default function PracticeHub({
         return;
       }
 
-      // playStyle zone ("HOW TO PLAY") — Up is a no-op; nothing above this row
-      if (isUp) {
+      // playStyle zone ("HOW TO PLAY") — Up / Shift+Tab reach the Rules button above
+      if (isUp || isTabBack) {
         e.preventDefault();
+        playSfx(SFX.MENU_SELECT);
+        setHubFocus({ zone: 'rules' });
         return;
       }
 
@@ -357,10 +386,6 @@ export default function PracticeHub({
           return;
         }
         enterPanel();
-        return;
-      }
-
-      if (isTabBack) {
         return;
       }
 
@@ -395,14 +420,21 @@ export default function PracticeHub({
     hubFocus,
     playSfx,
     hubStep,
+    openRules,
     openSetup,
     playStyle,
     resumePanelFromFooter,
+    rulesOpen,
     setPlayStyle,
+    showStyle,
     stepped,
   ]);
 
   useEffect(() => {
+    if (hubFocus.zone === 'rules') {
+      if (!rulesOpen) rulesRef.current?.focus();
+      return;
+    }
     if (hubFocus.zone === 'playStyle') {
       focusPlayStyleCard(hubFocus.idx);
       return;
@@ -411,7 +443,7 @@ export default function PracticeHub({
       if (hubFocus.which === 'back') footerBackRef.current?.focus();
       else footerStartRef.current?.focus();
     }
-  }, [hubFocus, focusPlayStyleCard]);
+  }, [hubFocus, focusPlayStyleCard, rulesOpen]);
 
   const playStyleFocusClass = (idx: 0 | 1) =>
     hubFocus.zone === 'playStyle' && hubFocus.idx === idx
@@ -422,6 +454,12 @@ export default function PracticeHub({
     hubFocus.zone === 'footer' && hubFocus.which === 'back';
   const footerStartFocused =
     hubFocus.zone === 'footer' && hubFocus.which === 'start';
+
+  const rulesFocused = hubFocus.zone === 'rules' && !rulesOpen;
+
+  useEffect(() => {
+    setButtonGlow(rulesRef.current, rulesFocused);
+  }, [rulesFocused]);
 
   useEffect(() => {
     setButtonGlow(footerBackRef.current, footerBackFocused);
@@ -486,9 +524,11 @@ export default function PracticeHub({
               : 'QUICK MATCH'}
         </h2>
         <Button
+          ref={rulesRef}
           type="button"
           className="practice-hub-rules"
-          onClick={() => setRulesOpen(true)}
+          tabIndex={rulesFocused ? 0 : -1}
+          onClick={openRules}
         >
           Rules
         </Button>
