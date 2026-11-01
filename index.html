@@ -162,11 +162,17 @@
           event.preventDefault();
           reloadOnce();
         });
-        window.setTimeout(function () {
-          var root = document.getElementById('root');
-          if (root && root.childElementCount > 0) return;
-          reloadOnce();
-        }, 8000);
+        // The entry is about 500 KB. A timer from parse time reloads on a
+        // slow link while that script is still downloading. Wait until static
+        // scripts and styles have finished or failed, then give React a moment
+        // to mount. A real asset error still reloads immediately.
+        window.addEventListener('load', function () {
+          window.setTimeout(function () {
+            var root = document.getElementById('root');
+            if (root && root.childElementCount > 0) return;
+            reloadOnce();
+          }, 3000);
+        });
       })();
     </script>
     <script type="module" src="/src/main.tsx"></script>
