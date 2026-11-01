@@ -6,7 +6,7 @@ import {
   type CSSProperties,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { navigateToMainMenu } from '@/shared/constants/menuNavigation';
+import { requestMainMenu } from '@/shared/constants/menuNavigation';
 import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
@@ -261,7 +261,7 @@ export function CornerControls() {
             className="corner-btn"
             onClick={() => {
               setTouchOpen(false);
-              navigateToMainMenu(navigate);
+              requestMainMenu(navigate);
             }}
             aria-label="Home"
             data-tooltip="Home"

@@ -138,6 +138,17 @@ test.describe('desktop 1440x900', () => {
       await expectNoHorizontalScroll(page);
     });
   }
+
+  test('home on a practice match asks before leaving', async ({ page }) => {
+    await openPracticeMatch(page);
+    await expect(
+      page.locator('.match-start__word', { hasText: /^TAP$/ })
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Home' }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'Leave practice game' })
+    ).toBeVisible();
+  });
 });
 
 test.describe('phone landscape 915x412', () => {
@@ -184,13 +195,18 @@ test.describe('phone landscape 915x412', () => {
 test.describe('phone portrait', () => {
   test.use(phonePortrait);
 
-  test('a practice match says to turn sideways', async ({ page }) => {
+  test('a practice match shows the steer pad', async ({ page }) => {
     await openPracticeMatch(page);
     const media = await page.evaluate(() => ({
       coarse: window.matchMedia('(pointer: coarse)').matches,
       portrait: window.matchMedia('(orientation: portrait)').matches,
     }));
     expect(media).toEqual({ coarse: true, portrait: true });
-    await expect(page.getByText('Turn sideways')).toBeVisible();
+    await expect(page.locator('.touch-pad__label')).toHaveText(
+      'Drag to steer · tap to start'
+    );
+    await expect(
+      page.locator('.match-start__word', { hasText: /^TAP$/ })
+    ).toBeVisible();
   });
 });

@@ -27,6 +27,18 @@ export function navigateToMainMenu(navigate: NavigateFunction): void {
   navigate('/', { state: mainMenuReturnState() });
 }
 
+/**
+ * Ask the current page to leave. A practice match opens "Leave game?" and
+ * cancels this event; every other page falls through to the main menu.
+ */
+export const REQUEST_MAIN_MENU_EVENT = 'chainduel-request-main-menu';
+
+export function requestMainMenu(navigate: NavigateFunction): void {
+  const event = new CustomEvent(REQUEST_MAIN_MENU_EVENT, { cancelable: true });
+  window.dispatchEvent(event);
+  if (!event.defaultPrevented) navigateToMainMenu(navigate);
+}
+
 /** Navigate to local post-game and swallow the GAME OVER confirm still held on the pad. */
 export function navigateToPostGame(
   navigate: NavigateFunction,
