@@ -142,7 +142,7 @@ test.describe('desktop 1440x900', () => {
   test('home on a practice match asks before leaving', async ({ page }) => {
     await openPracticeMatch(page);
     await expect(
-      page.locator('.match-start__word', { hasText: /^TAP$/ })
+      page.locator('.match-start__word', { hasText: /^SPACE$/ })
     ).toBeVisible();
     await page.getByRole('button', { name: 'Home' }).click();
     await expect(
