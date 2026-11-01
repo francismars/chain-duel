@@ -14,6 +14,12 @@ import { BrandHeader } from '@/components/layout/BrandHeader';
 
 type ButtonSelected = 'mainMenuButton' | 'nextButton' | 'prevButton';
 
+export function sortLedgerByPrize<T extends { prize: number }>(
+  entries: readonly T[]
+): T[] {
+  return [...entries].sort((a, b) => Number(b.prize) - Number(a.prize));
+}
+
 interface Highscore {
   p1Name: string;
   p1sats: number;
@@ -53,15 +59,8 @@ export default function Highscores() {
     const loadJson = async () => {
       try {
         const response = await fetch('/files/highscores.json');
-        const data = await response.json();
-        // Sort by prize (descending)
-        const sorted = data.sort((a: Highscore, b: Highscore) => {
-          if (a.prize > b.prize) {
-            return -1;
-          }
-          return 0;
-        });
-        setHighscores(sorted);
+        const data = (await response.json()) as Highscore[];
+        setHighscores(sortLedgerByPrize(data));
       } catch (error) {
         console.error('Failed to load highscores:', error);
       }
