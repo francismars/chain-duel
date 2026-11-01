@@ -1663,16 +1663,21 @@ html.tv-safe-inset .gamemenu-preview #splits {
 
   /* Preview locks player 2 to a right-aligned desktop column. On a phone that
      parks the name on the far edge, away from the code. */
+  .gamemenu-page.gamemenu-preview .player-cards-slider {
+    gap: 0;
+  }
+
   .gamemenu-page.gamemenu-preview #player1card,
   .gamemenu-page.gamemenu-preview #player2card {
+    flex: 0 0 100%;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
     gap: 0.65rem;
-    width: min(100%, 16rem);
-    max-width: 16rem;
-    margin-inline: auto;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
   }
 
   .gamemenu-page.gamemenu-preview #player2card {
@@ -1707,14 +1712,20 @@ html.tv-safe-inset .gamemenu-preview #splits {
     gap: 0.2rem;
   }
 
-  .gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer,
   .gamemenu-page.gamemenu-preview #player1cardinfo .condensed,
-  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer,
-  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed {
+  .gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer {
     align-self: center;
     justify-content: center;
     text-align: center;
     flex-direction: row;
+  }
+
+  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed,
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer {
+    align-self: center;
+    justify-content: center;
+    text-align: center;
+    flex-direction: row-reverse;
   }
 
   .gamemenu-preview .gamemenu-preview-deposit,
@@ -1751,12 +1762,16 @@ html.tv-safe-inset .gamemenu-preview #splits {
   }
 
   .gamemenu-page.gamemenu-preview #player1cardinfo .condensed,
+  .gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer,
   .gamemenu-page.gamemenu-preview #player2cardinfo .condensed,
-  .gamemenu-page.gamemenu-preview #player1satsContainer,
-  .gamemenu-page.gamemenu-preview #player2satsContainer {
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer {
     align-self: center;
     justify-content: center;
     text-align: center;
+  }
+
+  .gamemenu-page.gamemenu-preview #player2cardinfo .condensed,
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer {
     flex-direction: row-reverse;
   }
 
@@ -1806,6 +1821,14 @@ html.tv-safe-inset .gamemenu-preview #splits {
     justify-content: center;
     text-align: center;
     flex-direction: row-reverse;
+  }
+
+  .gamemenu-page.gamemenu-preview #player1cardinfo #player1satsContainer,
+  .gamemenu-page.gamemenu-preview #player2cardinfo #player2satsContainer {
+    align-self: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
   }
 
   /* Nostr is one shared note, not two payment cards. Desktop keeps five columns;
