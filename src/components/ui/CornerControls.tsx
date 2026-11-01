@@ -7,6 +7,8 @@ import {
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { requestMainMenu } from '@/shared/constants/menuNavigation';
+import { sessionUsesPracticeHubConfig } from '@/pages/practiceHubModes';
+import { hideCornerHomeButton } from './cornerHome';
 import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
 import { STORAGE_KEY_TV_SAFE_INSET } from '@/shared/constants/storageKeys';
@@ -147,6 +149,10 @@ export function CornerControls() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const onHome = pathname === '/';
+  const hideHome = hideCornerHomeButton(
+    pathname,
+    sessionUsesPracticeHubConfig()
+  );
   const {
     musicVolume,
     masterVolume,
@@ -255,7 +261,7 @@ export function CornerControls() {
         </button>
       ) : null}
       <div className="corner-controls__panel">
-        {onHome ? null : (
+        {onHome || hideHome ? null : (
           <button
             type="button"
             className="corner-btn"

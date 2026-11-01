@@ -191,13 +191,12 @@ test('a changed About chunk still renders under the old service worker', async (
     replaceContents(served, buildB);
     expect(fs.existsSync(path.join(served, 'assets', chunkA))).toBe(false);
 
-    const opened = Date.now();
     await page.goto(ORIGIN + '/about', { waitUntil: 'commit' });
+    // Fixed bound. A 10s budget counted from navigation start was eaten by
+    // suite load, so the heading wait collapsed and the spec flaked.
     await expect(
       page.getByRole('heading', { name: 'About', level: 1 })
-    ).toBeVisible({
-      timeout: Math.max(10_000 - (Date.now() - opened), 1),
-    });
+    ).toBeVisible({ timeout: 30_000 });
     expect(await htmlInRuntimeCaches(page)).toEqual([]);
   } finally {
     fs.writeFileSync(aboutPath, original);

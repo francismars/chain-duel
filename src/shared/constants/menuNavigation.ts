@@ -29,7 +29,9 @@ export function navigateToMainMenu(navigate: NavigateFunction): void {
 
 /**
  * Ask the current page to leave. A practice match opens "Leave game?" and
- * cancels this event; every other page falls through to the main menu.
+ * cancels this event. A screen collecting a Lightning deposit does the same
+ * and shows its own confirm. Every other page falls through to the main menu.
+ * Paid local matches and live online rooms hide the Home button instead.
  */
 export const REQUEST_MAIN_MENU_EVENT = 'chainduel-request-main-menu';
 

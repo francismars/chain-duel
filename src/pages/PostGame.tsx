@@ -20,6 +20,8 @@ import {
   navigateToMainMenu,
   type MenuNavigationState,
 } from '@/shared/constants/menuNavigation';
+import { useBlockMainMenu } from '@/shared/hooks/useBlockMainMenu';
+import { postGameBlocksCornerHome } from '@/pages/postGameCornerHome';
 import { LOADING_FALLBACK_TIMEOUT_MS } from '@/shared/constants/timeouts';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { CHAINDUEL_NPUB } from '@/lib/nostr/formatNoteContentForDisplay';
@@ -90,6 +92,7 @@ export default function PostGame() {
   const [prizeClaimed, setPrizeClaimed] = useState(false);
   const [creatingWithdrawal, setCreatingWithdrawal] = useState(false);
   const [qrRevealed, setQrRevealed] = useState(false);
+  const [showUnclaimedLeave, setShowUnclaimedLeave] = useState(false);
   const postGameReportedRef = useRef(false);
   const claimButtonRef = useRef<HTMLButtonElement>(null);
   const doubleOrNothingRef = useRef<HTMLButtonElement>(null);
@@ -389,6 +392,15 @@ export default function PostGame() {
   const designerFee = Math.floor(feeBase * DESIGNER_FEE_RATIO);
   const hostFee = developerFee;
   const practiceMode = gameMode === 'PRACTICE';
+  const blockCornerHome = postGameBlocksCornerHome({
+    practiceMode,
+    menu,
+    loading,
+  });
+  const askBeforeLeavingPrize = useCallback(() => {
+    setShowUnclaimedLeave(true);
+  }, []);
+  useBlockMainMenu(blockCornerHome, askBeforeLeavingPrize);
   const canDoubleOrNothing =
     !qrRevealed && !tournamentMode && !prizeClaimed && !loading;
 
@@ -429,6 +441,13 @@ export default function PostGame() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (showUnclaimedLeave) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setShowUnclaimedLeave(false);
+        }
+        return;
+      }
       const winnerAllows = postGameWinnerAllowsKey(winnerPlayer, event.key, {
         practiceMode,
         menu,
@@ -507,6 +526,7 @@ export default function PostGame() {
     onMainMenu,
     playConfirm,
     playSelect,
+    showUnclaimedLeave,
   ]);
 
   useEffect(() => {
@@ -699,6 +719,42 @@ export default function PostGame() {
       <div className={`overlay ${loading ? '' : 'hide'}`} id="loading">
         <img src="/images/loading.gif" alt="Loading" />
       </div>
+
+      {showUnclaimedLeave ? (
+        <div
+          className="overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Unclaimed prize"
+        >
+          <div className="warning">
+            <div className="warning-inner">
+              <h2 className="warning-title condensed">
+                Leave without claiming?
+              </h2>
+              <div className="warning-text">
+                Your prize is not claimed yet. Leave anyway?
+              </div>
+            </div>
+            <div className="warning-actions">
+              <Button
+                className="button half"
+                type="button"
+                onClick={() => setShowUnclaimedLeave(false)}
+              >
+                No
+              </Button>
+              <Button
+                className="button half"
+                type="button"
+                onClick={onMainMenu}
+              >
+                Yes
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
     </>
