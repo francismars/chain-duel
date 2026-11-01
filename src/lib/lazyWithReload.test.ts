@@ -309,6 +309,67 @@ describe('lazyWithReload', () => {
     }
   });
 
+  it('does not reload while a new worker is still installing', async () => {
+    vi.useFakeTimers();
+    try {
+      const stateListeners = new Set<() => void>();
+      const installing = {
+        state: 'installing',
+        addEventListener: (_type: string, listener: () => void) => {
+          stateListeners.add(listener);
+        },
+        removeEventListener: (_type: string, listener: () => void) => {
+          stateListeners.delete(listener);
+        },
+      };
+      const waiting = { postMessage: vi.fn() };
+      const registration = {
+        update: () => Promise.resolve(),
+        waiting: null as { postMessage: ReturnType<typeof vi.fn> } | null,
+        installing,
+      };
+      const controllerListeners = new Set<() => void>();
+      vi.stubGlobal('navigator', {
+        serviceWorker: {
+          controller: {},
+          getRegistration: () => Promise.resolve(registration),
+          addEventListener: (_type: string, listener: () => void) => {
+            controllerListeners.add(listener);
+          },
+          removeEventListener: (_type: string, listener: () => void) => {
+            controllerListeners.delete(listener);
+          },
+        },
+      });
+      vi.stubGlobal('window', {
+        location: { reload, pathname: '/about' },
+      });
+
+      const pending = start(() => Promise.reject(new Error('missing chunk')));
+      for (let i = 0; i < 10; i += 1) await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(reload).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(15_000);
+      for (let i = 0; i < 10; i += 1) await Promise.resolve();
+      expect(reload).not.toHaveBeenCalled();
+      expect(waiting.postMessage).not.toHaveBeenCalled();
+
+      registration.waiting = waiting;
+      installing.state = 'installed';
+      for (const listener of stateListeners) listener();
+      for (let i = 0; i < 10; i += 1) await Promise.resolve();
+      expect(waiting.postMessage).toHaveBeenCalledWith({
+        type: 'SKIP_WAITING',
+      });
+      expect(reload).not.toHaveBeenCalled();
+      for (const listener of controllerListeners) listener();
+      expect(reload).toHaveBeenCalledOnce();
+      void pending;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rethrows when sessionStorage is blocked so a reload cannot loop', async () => {
     vi.stubGlobal('sessionStorage', {
       getItem: () => {

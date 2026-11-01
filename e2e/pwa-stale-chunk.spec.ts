@@ -72,6 +72,52 @@ function aboutChunk(dir: string): string {
   return names[0];
 }
 
+/**
+ * A stuck blank document used to sit until the heading timeout. Fail when the
+ * boot reload already ran and the app is still empty, or when nothing mounts
+ * for longer than that guard.
+ */
+async function waitForAboutOrBlank(page: Page): Promise<void> {
+  const deadline = Date.now() + 30_000;
+  let blankSince = 0;
+  while (Date.now() < deadline) {
+    const state = await page
+      .evaluate(() => {
+        const heading = document.querySelector('h1');
+        const about =
+          heading != null && (heading.textContent || '').trim() === 'About';
+        const root = document.getElementById('root');
+        const mounted = Boolean(root && root.childElementCount > 0);
+        let boot = false;
+        try {
+          boot = sessionStorage.getItem('chainduel_bootReload') === '1';
+        } catch {
+          /* ignore */
+        }
+        return { about, mounted, boot };
+      })
+      .catch(() => ({ about: false, mounted: false, boot: false }));
+    if (state.about) return;
+    if (!state.mounted) {
+      if (blankSince === 0) blankSince = Date.now();
+      const blankFor = Date.now() - blankSince;
+      const bootGaveUp = state.boot && blankFor > 3_000;
+      const neverMounted = blankFor > 12_000;
+      if (bootGaveUp || neverMounted) {
+        throw new Error(
+          'blank page: stale-chunk recovery reloaded once and the app did not mount'
+        );
+      }
+    } else {
+      blankSince = 0;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  await expect(
+    page.getByRole('heading', { name: 'About', level: 1 })
+  ).toBeVisible({ timeout: 1_000 });
+}
+
 async function htmlInRuntimeCaches(page: Page): Promise<string[]> {
   return page.evaluate(async () => {
     const keys = await caches.keys();
@@ -192,11 +238,7 @@ test('a changed About chunk still renders under the old service worker', async (
     expect(fs.existsSync(path.join(served, 'assets', chunkA))).toBe(false);
 
     await page.goto(ORIGIN + '/about', { waitUntil: 'commit' });
-    // Fixed bound. A 10s budget counted from navigation start was eaten by
-    // suite load, so the heading wait collapsed and the spec flaked.
-    await expect(
-      page.getByRole('heading', { name: 'About', level: 1 })
-    ).toBeVisible({ timeout: 30_000 });
+    await waitForAboutOrBlank(page);
     expect(await htmlInRuntimeCaches(page)).toEqual([]);
   } finally {
     fs.writeFileSync(aboutPath, original);
