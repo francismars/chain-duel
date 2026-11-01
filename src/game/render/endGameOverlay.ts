@@ -105,13 +105,19 @@ export function winnerSats(state: GameState): number {
 export class EndGameOverlay {
   readonly container = new Container();
   private frame = new Graphics();
-  private label = this.text('Inter', '#aaaaaa');
-  private name = this.text('BureauGrotesque', '#ffffff');
-  private result = this.text('BureauGrotesque', '#ffffff');
-  private amount = this.text('BureauGrotesque', '#ffffff');
-  private prompt = this.text('Inter', '#cccccc');
+  private label: Text;
+  private name: Text;
+  private result: Text;
+  private amount: Text;
+  private prompt: Text;
 
-  constructor() {
+  /** `textResolution` comes from the match canvas (see pixiTextResolution). */
+  constructor(private readonly textResolution = pixiTextResolution(1)) {
+    this.label = this.text('Inter', '#aaaaaa');
+    this.name = this.text('BureauGrotesque', '#ffffff');
+    this.result = this.text('BureauGrotesque', '#ffffff');
+    this.amount = this.text('BureauGrotesque', '#ffffff');
+    this.prompt = this.text('Inter', '#cccccc');
     this.container.addChild(
       this.frame,
       this.label,
@@ -129,7 +135,7 @@ export class EndGameOverlay {
       style: { fontFamily, fill, align: 'center' },
     });
     text.anchor.set(0.5);
-    text.resolution = pixiTextResolution();
+    text.resolution = this.textResolution;
     return text;
   }
 

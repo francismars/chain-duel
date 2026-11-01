@@ -191,7 +191,8 @@ export class OnlineStartReadyOverlay {
   private p1: SeatLayout;
   private p2: SeatLayout;
 
-  constructor() {
+  /** `textResolution` comes from the match canvas (see pixiTextResolution). */
+  constructor(textResolution = pixiTextResolution(1)) {
     this.container.cullable = false;
     this.container.visible = false;
 
@@ -205,7 +206,7 @@ export class OnlineStartReadyOverlay {
       const status = new Text({ text: '', style: new TextStyle() });
       const hint = new Text({ text: '', style: new TextStyle() });
       for (const t of [status, hint]) {
-        t.resolution = pixiTextResolution();
+        t.resolution = textResolution;
         t.cullable = false;
         t.roundPixels = true;
       }

@@ -439,8 +439,11 @@ export class PointChangeOverlay {
   private readonly glow: boolean;
   private readonly simple: boolean;
 
-  /** Config → Graphics → Point popups. */
-  constructor(private readonly mode: PointPopupMode = 'full') {
+  /** Config → Graphics → Point popups; `textResolution` comes from the match canvas. */
+  constructor(
+    private readonly mode: PointPopupMode = 'full',
+    private readonly textResolution = pixiTextResolution(1)
+  ) {
     this.glow = mode === 'full';
     this.simple = mode === 'simple';
   }
@@ -606,7 +609,7 @@ export class PointChangeOverlay {
     });
     for (const text of [main, label]) {
       text.anchor.set(0, 0.5);
-      text.resolution = pixiTextResolution();
+      text.resolution = this.textResolution;
       text.roundPixels = true;
     }
     const rate = new Text({
@@ -614,7 +617,7 @@ export class PointChangeOverlay {
       style: makePointChangeStyle(11, 's', true, true),
     });
     rate.anchor.set(0.5, 0.5);
-    rate.resolution = pixiTextResolution();
+    rate.resolution = this.textResolution;
     rate.roundPixels = true;
     root.addChild(rate);
     root.addChild(main);

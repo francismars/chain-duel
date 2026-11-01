@@ -245,7 +245,8 @@ export class CanvasControlsOverlay {
   private keyPx = 16;
   private keyGap = 4;
 
-  constructor() {
+  /** `textResolution` comes from the match canvas (see pixiTextResolution). */
+  constructor(textResolution = pixiTextResolution(1)) {
     for (let i = 0; i < 4; i += 1) {
       const root = new Container();
       const caps: KeyCap[] = [];
@@ -255,7 +256,7 @@ export class CanvasControlsOverlay {
         const border = new Graphics();
         const label = new Text({ text: '', style: new TextStyle() });
         label.anchor.set(0.5);
-        label.resolution = pixiTextResolution();
+        label.resolution = textResolution;
         capRoot.addChild(border);
         capRoot.addChild(label);
         root.addChild(capRoot);
@@ -277,7 +278,7 @@ export class CanvasControlsOverlay {
           }),
         });
         face.anchor.set(0.5);
-        face.resolution = pixiTextResolution();
+        face.resolution = textResolution;
         face.visible = false;
         root.addChild(face);
         gamepadLabels.push(face);
