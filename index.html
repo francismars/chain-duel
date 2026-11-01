@@ -47,6 +47,128 @@
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      Runs before the entry. A deploy can serve the previous index.html, then
+      drop that entry script. Reload once, unless a match is on screen.
+      Same key as STORAGE_KEY_BOOT_RELOAD. Live paths match isLiveMatchPath.
+    -->
+    <script>
+      (function () {
+        var KEY = 'chainduel_bootReload';
+        var LIVE = /^\/game\/?$|^\/online\/r(?:\/|$)/;
+        var ASSET = /^\/assets\/[^/?#]+\.(?:js|css)$/;
+        var INSTALL_WAIT_MS = 15000;
+        var staticAssets = new Set();
+        var arming = false;
+        function liveMatch() {
+          return LIVE.test(location.pathname || '');
+        }
+        function alreadyReloaded() {
+          try {
+            return sessionStorage.getItem(KEY) === '1';
+          } catch (e) {
+            return true;
+          }
+        }
+        function commitReload() {
+          if (liveMatch() || alreadyReloaded()) return;
+          try {
+            sessionStorage.setItem(KEY, '1');
+          } catch (e) {
+            return;
+          }
+          location.reload();
+        }
+        function whenInstallSettles(installing, done) {
+          if (!installing || installing.state !== 'installing') {
+            done();
+            return;
+          }
+          var timer = window.setTimeout(finish, INSTALL_WAIT_MS);
+          function finish() {
+            window.clearTimeout(timer);
+            installing.removeEventListener('statechange', onState);
+            if (installing.state === 'installing') {
+              installing.addEventListener('statechange', function waitOut() {
+                if (installing.state === 'installing') return;
+                installing.removeEventListener('statechange', waitOut);
+                done();
+              });
+              return;
+            }
+            done();
+          }
+          function onState() {
+            if (installing.state !== 'installing') finish();
+          }
+          installing.addEventListener('statechange', onState);
+        }
+        function reloadOnce() {
+          if (liveMatch() || alreadyReloaded() || arming) return;
+          var sw = navigator.serviceWorker;
+          if (!sw || !sw.controller) {
+            commitReload();
+            return;
+          }
+          arming = true;
+          sw.getRegistration()
+            .then(function (registration) {
+              whenInstallSettles(
+                registration && registration.installing,
+                function () {
+                  arming = false;
+                  commitReload();
+                }
+              );
+            })
+            .catch(function () {
+              arming = false;
+              commitReload();
+            });
+        }
+        function collectStaticAssets() {
+          var nodes = document.querySelectorAll('script[src], link[href]');
+          for (var i = 0; i < nodes.length; i += 1) staticAssets.add(nodes[i]);
+        }
+        function isDocumentAsset(node) {
+          if (!staticAssets.has(node) || !node.tagName) return false;
+          var tag = node.tagName;
+          if (tag !== 'SCRIPT' && tag !== 'LINK') return false;
+          var raw = tag === 'LINK' ? node.href : node.src;
+          if (!raw) return false;
+          try {
+            var url = new URL(raw, location.href);
+            return url.origin === location.origin && ASSET.test(url.pathname);
+          } catch (e) {
+            return false;
+          }
+        }
+        collectStaticAssets();
+        document.addEventListener('DOMContentLoaded', collectStaticAssets);
+        window.addEventListener(
+          'error',
+          function (event) {
+            if (isDocumentAsset(event.target)) reloadOnce();
+          },
+          true
+        );
+        window.addEventListener('vite:preloadError', function (event) {
+          if (liveMatch() || alreadyReloaded()) return;
+          var sw = navigator.serviceWorker;
+          // A controlling worker may still be installing the new precache.
+          // preventDefault has to be synchronous, and reloading now would
+          // load the old shell. Leave the error for lazyWithReload.
+          if (sw && sw.controller) return;
+          event.preventDefault();
+          reloadOnce();
+        });
+        window.setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && root.childElementCount > 0) return;
+          reloadOnce();
+        }, 8000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

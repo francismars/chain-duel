@@ -25,7 +25,8 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npx playwright test --grep-invert "changed About chunk"
+      - run: npx playwright test e2e/pwa-stale-chunk.spec.ts --repeat-each 10 --workers=1
 
   # Sibling checkout so src/game/sim/challengeParity.test.ts resolves ../marspay.
   # Bump the pin when the client engine changes, to the marspay commit it must match.

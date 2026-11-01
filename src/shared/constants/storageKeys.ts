@@ -11,3 +11,9 @@ export const STORAGE_KEY_QUICK_MENU_DOCK = 'chainduel_quickMenuDock_v2';
  * clears it, so a later deploy can reload once.
  */
 export const STORAGE_KEY_CHUNK_RELOAD = 'chainduel_chunkReload';
+/**
+ * sessionStorage: index.html reloaded once because the entry script failed
+ * or the app never mounted. Separate from the lazy-chunk flag. Cleared when
+ * the app mounts. The inline script in index.html uses this same string.
+ */
+export const STORAGE_KEY_BOOT_RELOAD = 'chainduel_bootReload';

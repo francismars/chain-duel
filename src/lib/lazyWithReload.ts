@@ -2,8 +2,14 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
 import { isLiveMatchPath } from '@/lib/pwa/isLiveMatchPath';
 import { STORAGE_KEY_CHUNK_RELOAD } from '@/shared/constants/storageKeys';
 
-/** How long to wait for the new service worker to take control. */
+/** How long to wait for the new service worker to take control after skipWaiting. */
 const CONTROLLER_CHANGE_MS = 3000;
+/**
+ * Precache can still be running when `update()` resolves. Reloading under the
+ * old worker during that install serves the old `index.html`, then the new
+ * worker drops the old entry script and the page stays blank.
+ */
+const INSTALL_WAIT_MS = 15_000;
 
 /**
  * `React.lazy` that reloads once when a dynamic import fails.
@@ -12,8 +18,9 @@ const CONTROLLER_CHANGE_MS = 3000;
  * The first failure reloads so the browser loads the new `index.html`.
  * When a service worker controls the page (and this is not a live match),
  * that reload first checks for a waiting worker: `registration.update()`,
- * then `{type:'SKIP_WAITING'}`, then reload on `controllerchange` or after
- * 3 seconds. A live match keeps the immediate reload.
+ * then waits out an install (up to 15s), `{type:'SKIP_WAITING'}`, then
+ * reload on `controllerchange` or after 3 seconds. It does not reload while
+ * the new worker is still installing. A live match keeps the immediate reload.
  * The import is left pending so React does not flash an error mid-reload.
  * A second failure before any chunk loads successfully is rethrown: if the
  * chunk is actually missing, or `index.html` itself is cached, reloading
@@ -82,33 +89,79 @@ function reloadWhenControllerChanges(sw: ServiceWorkerContainer): void {
   sw.addEventListener('controllerchange', reloadNow);
 }
 
-/** `update()` can resolve while the new worker is still installing. */
-function workerWaiting(
-  registration: ServiceWorkerRegistration
-): Promise<ServiceWorker | null> {
-  if (registration.waiting) return Promise.resolve(registration.waiting);
-  const installing = registration.installing;
-  if (!installing) return Promise.resolve(null);
+type InstallWatch = 'ready' | 'timeout';
+
+/** Resolves when `worker` leaves `installing`, or when `timeoutMs` elapses. */
+function watchInstall(
+  worker: ServiceWorker,
+  timeoutMs: number
+): Promise<InstallWatch> {
+  if (worker.state !== 'installing') return Promise.resolve('ready');
   return new Promise((resolve) => {
     let settled = false;
-    const finish = () => {
+    const finish = (result: InstallWatch) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      installing.removeEventListener('statechange', onState);
-      resolve(registration.waiting);
+      worker.removeEventListener('statechange', onState);
+      resolve(result);
     };
     const onState = () => {
-      if (
-        installing.state === 'installed' ||
-        installing.state === 'redundant'
-      ) {
-        finish();
-      }
+      if (worker.state !== 'installing') finish('ready');
     };
-    const timer = setTimeout(finish, CONTROLLER_CHANGE_MS);
-    installing.addEventListener('statechange', onState);
+    const timer = setTimeout(() => finish('timeout'), timeoutMs);
+    worker.addEventListener('statechange', onState);
   });
+}
+
+function skipWaitingAndReload(
+  waiting: ServiceWorker,
+  sw: ServiceWorkerContainer
+): void {
+  waiting.postMessage({ type: 'SKIP_WAITING' });
+  reloadWhenControllerChanges(sw);
+}
+
+/**
+ * `update()` can resolve while the new worker is still installing.
+ * Returns the worker to activate, or `'installing'` when it is still
+ * precaching after the cap. The caller must not reload in that case.
+ */
+async function workerWaiting(
+  registration: ServiceWorkerRegistration
+): Promise<ServiceWorker | 'installing' | null> {
+  if (registration.waiting) return registration.waiting;
+  const installing = registration.installing;
+  if (!installing) return null;
+
+  const first = await watchInstall(installing, CONTROLLER_CHANGE_MS);
+  if (registration.waiting) return registration.waiting;
+  if (first === 'ready' || installing.state !== 'installing') return null;
+
+  const extended = await watchInstall(installing, INSTALL_WAIT_MS);
+  if (registration.waiting) return registration.waiting;
+  if (extended === 'timeout' && installing.state === 'installing') {
+    return 'installing';
+  }
+  return null;
+}
+
+/** After the cap, reload only once the worker finishes installing. */
+function reloadWhenInstallFinishes(
+  installing: ServiceWorker,
+  registration: ServiceWorkerRegistration,
+  sw: ServiceWorkerContainer
+): void {
+  const onState = () => {
+    if (installing.state === 'installing') return;
+    installing.removeEventListener('statechange', onState);
+    if (registration.waiting) {
+      skipWaitingAndReload(registration.waiting, sw);
+      return;
+    }
+    window.location.reload();
+  };
+  installing.addEventListener('statechange', onState);
 }
 
 async function reloadOncePerTab(): Promise<boolean> {
@@ -127,9 +180,12 @@ async function reloadOncePerTab(): Promise<boolean> {
       if (registration) {
         await registration.update();
         const waiting = await workerWaiting(registration);
-        if (waiting) {
-          waiting.postMessage({ type: 'SKIP_WAITING' });
-          reloadWhenControllerChanges(sw);
+        if (waiting === 'installing' && registration.installing) {
+          reloadWhenInstallFinishes(registration.installing, registration, sw);
+          return true;
+        }
+        if (waiting && waiting !== 'installing') {
+          skipWaitingAndReload(waiting, sw);
           return true;
         }
       }
