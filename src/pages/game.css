@@ -1067,11 +1067,14 @@
 #bitcoinDetails {
   display: flex;
   width: 100%;
+  max-width: var(--game-board-width, 70vw);
+  margin: 0.45rem auto 0;
   flex-wrap: nowrap;
   justify-content: space-between;
   gap: clamp(0.35rem, 1.5vw, 1.1rem);
   padding: 0.3rem 1.5vw calc(0.15rem + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
+  opacity: 0.7;
   transition: all 1000ms;
 }
 
@@ -2539,10 +2542,21 @@
   #gameContainer:not(.hide) #powerUpKey .powerUpKeyEntry:nth-child(5) {
     animation-delay: 0.8s;
   }
-  /* Bitcoin block footer rises from below last */
+  /* Bitcoin block footer rises from below last, settling at 70% opacity. */
   #gameContainer:not(.hide) #bitcoinDetails {
-    animation: game-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.96s
-      both;
+    animation: bitcoin-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1)
+      0.96s both;
+  }
+
+  @keyframes bitcoin-footer-rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 0.7;
+      transform: translateY(0);
+    }
   }
 }
 
