@@ -1129,6 +1129,83 @@
   }
 }
 
+/* Short landscape: the start modal sits on the board and leaves a thin
+   strip for the block footer. vw columns wrap "1 min ago" / "sat/vb". */
+@media (orientation: landscape) and (max-height: 640px) {
+  #bitcoinDetails {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: clamp(0.35rem, 1.5vw, 1.1rem);
+    padding: 0.3rem 1.5vw 0.15rem;
+  }
+
+  #bitcoinDetails .detail {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  #bitcoinDetails .label {
+    font-size: clamp(0.68rem, 2.3vh, 0.75rem);
+    letter-spacing: 0.03em;
+    line-height: 1.1;
+    white-space: nowrap;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    opacity: 1;
+  }
+
+  #bitcoinDetails .value {
+    font-size: clamp(0.75rem, 2.6vh, 0.82rem);
+    line-height: 1.15;
+    width: auto;
+    padding-top: 0.1rem;
+    white-space: nowrap;
+    color: #fff;
+    opacity: 1;
+  }
+}
+
+/* Phone landscape: the 16:9 stage is short, so the footer sits under the modal. */
+@media (orientation: landscape) and (max-height: 500px),
+  (orientation: landscape) and (pointer: coarse) {
+  #bitcoinDetails {
+    justify-content: center;
+    gap: 0.55rem;
+    margin-top: 0.25rem;
+    padding: 0.04rem 0.25rem 0.02rem;
+  }
+
+  #bitcoinDetails .detail {
+    flex: 0 0 auto;
+  }
+
+  #bitcoinDetails .label {
+    font-size: clamp(0.46rem, 1.7vh, 0.56rem);
+    letter-spacing: 0.03em;
+    line-height: 1.05;
+    white-space: nowrap;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    opacity: 1;
+  }
+
+  #bitcoinDetails .value {
+    font-size: clamp(0.52rem, 1.9vh, 0.62rem);
+    line-height: 1.1;
+    width: auto;
+    padding-top: 0.04rem;
+    white-space: nowrap;
+    color: #fff;
+    opacity: 1;
+  }
+
+  #capturing,
+  .capturingAmount {
+    font-size: clamp(0.48rem, 2.4vh, 0.58rem);
+    line-height: 1.1;
+  }
+}
+
 #zapMessages {
   position: absolute;
   width: var(--game-board-width, 70vw);
@@ -2305,8 +2382,8 @@
     justify-content: space-between;
     row-gap: 0.35rem;
     column-gap: 0.35rem;
-    margin-top: 0.5rem;
-    padding: 0.65rem 0.35rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    margin-top: 0.3rem;
+    padding: 0.3rem 0.25rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
     max-width: 100%;
   }
 
@@ -2317,19 +2394,25 @@
   }
 
   #bitcoinDetails .label {
-    font-size: clamp(0.42rem, 1.65vmin, 0.62rem);
-    opacity: 0.55;
+    font-size: clamp(0.46rem, 1.7vmin, 0.56rem);
     letter-spacing: 0.03em;
+    line-height: 1.05;
     white-space: nowrap;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    opacity: 1;
   }
 
   #bitcoinDetails .value {
-    font-size: clamp(0.48rem, 1.85vmin, 0.7rem);
+    font-size: clamp(0.52rem, 1.95vmin, 0.64rem);
+    line-height: 1.15;
     width: auto;
     min-width: 0;
     max-width: 100%;
     padding-top: 0.18rem;
-    opacity: 0.92;
+    white-space: nowrap;
+    color: #fff;
+    opacity: 1;
   }
 
   #zapMessages {
