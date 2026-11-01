@@ -825,7 +825,7 @@ export default function GameMenu({
   return (
     <>
       <GameSetupLayout
-        title={preview ? 'P2P duel' : gameMenuTitle}
+        title={preview ? 'P2P' : gameMenuTitle}
         pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}${
           preview ? ' gamemenu-preview' : ''
         }`}
