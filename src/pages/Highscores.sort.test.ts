@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sortLedgerByPrize } from './Highscores';
+import { sortLedgerByPrize } from './highscoresSort';
 
 describe('sortLedgerByPrize', () => {
   it('places a larger prize ahead of smaller ones that appear earlier in the file', () => {

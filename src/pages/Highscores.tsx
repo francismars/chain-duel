@@ -11,14 +11,9 @@ import {
   type MenuNavigationState,
 } from '@/shared/constants/menuNavigation';
 import { BrandHeader } from '@/components/layout/BrandHeader';
+import { sortLedgerByPrize } from './highscoresSort';
 
 type ButtonSelected = 'mainMenuButton' | 'nextButton' | 'prevButton';
-
-export function sortLedgerByPrize<T extends { prize: number }>(
-  entries: readonly T[]
-): T[] {
-  return [...entries].sort((a, b) => Number(b.prize) - Number(a.prize));
-}
 
 interface Highscore {
   p1Name: string;
