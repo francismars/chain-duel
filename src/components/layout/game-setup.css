@@ -257,9 +257,12 @@
     min-height: 100dvh;
     overflow: visible;
     gap: var(--space-4);
-    padding: calc(var(--safe-top) + 2.15rem)
-      calc(var(--safe-right) + var(--space-3)) calc(var(--safe-bottom) + 6.5rem)
-      calc(var(--safe-left) + var(--space-3));
+    --page-inline: max(
+      calc(var(--safe-left) + var(--space-4)),
+      calc(var(--safe-right) + var(--space-4))
+    );
+    padding: calc(var(--safe-top) + 2.15rem) var(--page-inline)
+      calc(var(--safe-bottom) + 6.5rem) var(--page-inline);
     box-sizing: border-box;
   }
 
@@ -282,6 +285,8 @@
     top: 0;
     z-index: 5;
     padding-bottom: 0.35rem;
+    padding-left: calc(10px + 44px + var(--space-2));
+    padding-right: var(--page-inline);
     background: linear-gradient(to bottom, rgb(0 0 0 / 0.45), rgb(0 0 0 / 0));
   }
 
@@ -311,8 +316,11 @@
   .game-setup-page .game-setup-main {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 0.35rem;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .game-setup-page .game-setup-main > div:first-child {
@@ -393,7 +401,7 @@
     gap: var(--space-2);
     width: auto;
     margin: 0;
-    padding: var(--space-4) var(--space-3)
+    padding: var(--space-4) var(--page-inline, var(--space-4))
       calc(var(--safe-bottom) + var(--space-3));
     background: linear-gradient(to top, #000 72%, rgb(0 0 0 / 0));
   }
@@ -405,6 +413,8 @@
 
   #gameButtons .button {
     white-space: normal;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   /* One fixed action. Leave sits at the end of the page. */
@@ -417,8 +427,11 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    width: min(100%, 22rem);
-    margin: var(--space-5) auto 0;
+    order: 5;
+    width: 100%;
+    max-width: none;
+    margin: var(--space-5) 0 0;
+    box-sizing: border-box;
   }
 
   /* Rules move below the actions with their own heading. */
@@ -429,15 +442,30 @@
   .game-setup-page #centerSection {
     order: 4;
     flex-direction: column;
+    align-items: flex-start;
     gap: var(--space-3);
-    padding-bottom: var(--space-5);
+    width: 100%;
+    margin-top: var(--space-5);
+    padding-bottom: 0;
+    text-align: left;
   }
 
   .game-setup-page #centerSection::before {
     content: 'Rules';
-    text-align: center;
+    align-self: stretch;
+    text-align: left;
     font-size: var(--fs-lg);
     font-weight: 300;
+  }
+
+  .game-setup-page #centerSection .ruleTitle,
+  .game-setup-page #centerSection .gameDescription {
+    text-align: left;
+  }
+
+  .game-setup-page #centerSection .rewards {
+    margin-left: 0;
+    margin-right: auto;
   }
 
   #gameCard {

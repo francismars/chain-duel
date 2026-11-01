@@ -98,6 +98,11 @@
   font-size: var(--fs-sm);
 }
 
+#splits span + span::before {
+  content: '•';
+  margin: 0 0.35rem;
+}
+
 #prizevaluesats {
   margin-top: 0;
   color: white;
@@ -1422,7 +1427,8 @@ html.tv-safe-inset .gamemenu-preview #splits {
   width: fit-content;
   min-width: 8.5rem;
   padding-inline: 1.6rem;
-  margin-top: -2.6rem;
+  margin-top: 0.85rem;
+  margin-inline: auto;
 }
 
 .gamemenu-preview #gameButtons {
@@ -1497,6 +1503,10 @@ html.tv-safe-inset .gamemenu-preview #splits {
   .gamemenu-page #bottomInfo {
     flex-wrap: wrap;
     row-gap: var(--space-4);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .gamemenu-page:not(.is-nostr) .player-cards-slider {
@@ -1504,6 +1514,9 @@ html.tv-safe-inset .gamemenu-preview #splits {
     flex: 1 0 100%;
     order: 1;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scroll-padding-inline: 0;
@@ -1539,6 +1552,25 @@ html.tv-safe-inset .gamemenu-preview #splits {
     order: -1;
   }
 
+  /* One cut per line so "(0 sats)" stays with its percentage. */
+  .gamemenu-page #splits {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    max-width: 22rem;
+    margin-inline: auto;
+  }
+
+  .gamemenu-page #splits span {
+    white-space: nowrap;
+  }
+
+  .gamemenu-page #splits span + span::before {
+    content: none;
+    margin: 0;
+  }
+
   .gamemenu-page #player2card {
     flex-direction: row-reverse;
   }
@@ -1571,37 +1603,53 @@ html.tv-safe-inset .gamemenu-preview #splits {
   .gamemenu-page:not(.is-nostr) #player1card,
   .gamemenu-page:not(.is-nostr) #player2card {
     flex-direction: column;
-    align-items: center;
-    flex-wrap: wrap;
-    row-gap: 0.65rem;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    row-gap: 0.75rem;
+    min-width: 0;
   }
 
   .gamemenu-page:not(.is-nostr) #qrcodeContainer1,
   .gamemenu-page:not(.is-nostr) #qrcodeContainer2 {
     order: -1;
+    align-self: center;
   }
 
+  /* flex-basis 100% on a column would be the card height and wrap the
+     buttons into a second column beside the QR. Width keeps them a row. */
   .gamemenu-page .gamemenu-lnurl-actions {
     display: flex;
-    flex: 1 0 100%;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     gap: 0.5rem;
-    order: 3;
+    order: 0;
+    padding: 0;
   }
 
   .gamemenu-page .gamemenu-lnurl-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex: 1 1 0;
     min-width: 0;
-    padding: 0.55rem 0.4rem;
+    height: 2.75rem;
+    margin: 0;
+    padding: 0.12em 0.5rem 0;
     border: 1px solid rgba(255, 255, 255, 0.55);
     background: transparent;
     color: #fff;
     font: inherit;
     font-size: 0.72rem;
+    line-height: 1;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-align: center;
     text-decoration: none;
     cursor: pointer;
+    white-space: normal;
+    box-sizing: border-box;
   }
 
   .gamemenu-page #player1cardinfo,
@@ -1610,7 +1658,7 @@ html.tv-safe-inset .gamemenu-preview #splits {
     min-width: 0;
     align-items: flex-start;
     text-align: left;
-    padding: 0 var(--space-3);
+    padding: 0;
   }
 
   /* Preview locks player 2 to a right-aligned desktop column. On a phone that

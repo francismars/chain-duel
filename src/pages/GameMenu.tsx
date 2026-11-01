@@ -1065,8 +1065,8 @@ export default function GameMenu({
               <div id="prizeinfosats">Total Prize</div>
               {preview ? null : (
                 <div id="splits">
-                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
-                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
+                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span>
+                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span>
                   <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
                 </div>
               )}
@@ -1275,8 +1275,8 @@ export default function GameMenu({
                   deposits.
                 </div>
                 <div id="splits">
-                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span> •{' '}
-                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span> •{' '}
+                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span>
+                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span>
                   <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
                 </div>
               </>
