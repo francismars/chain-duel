@@ -36,7 +36,7 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin: 0.35vw 15%;
+  margin: 0.35vw var(--game-board-margin-x, 15%);
 }
 
 .flex.points {
@@ -312,10 +312,18 @@
   font-size: max(18px, 2.5cqw);
 }
 
-/* Shared board strip width — canvas + power-up legend stay aligned */
+/* Shared board strip width — HUD rows, canvas and power-up legend stay aligned.
+   The board takes 70vw unless that would push it past the bottom of a short
+   window; then it shrinks to the height left after the HUD + mempool footer.
+   The HUD type is vw-based, so its reserve is too (measured: ~10vw + 3.25rem). */
 #gameContainer {
-  --game-board-width: 70vw;
-  --game-board-margin-x: 15%;
+  --game-board-aspect: 1055 / 527;
+  --game-hud-reserve: calc(10vw + 3.5rem);
+  --game-board-width: min(
+    70vw,
+    calc((100dvh - var(--game-hud-reserve)) * var(--game-board-aspect))
+  );
+  --game-board-margin-x: calc((100% - var(--game-board-width)) / 2);
 }
 
 #gameCanvas {
@@ -326,7 +334,7 @@
   width: var(--game-board-width);
   /* Match game_bg.png (1055×527) so its frame lines sit on the container edge. */
   height: auto;
-  aspect-ratio: 1055 / 527;
+  aspect-ratio: var(--game-board-aspect);
   background-color: #6969698f;
   background-image: url('/images/game_bg.png');
   background-size: 100% 100%;
@@ -610,7 +618,7 @@
 }
 
 .gameState {
-  margin: 0vw 15% 0.65vw 15%;
+  margin: 0vw var(--game-board-margin-x, 15%) 0.65vw;
   text-transform: uppercase;
   text-align: center;
   font-size: max(11px, 0.7vw);
@@ -1123,7 +1131,7 @@
 
 #zapMessages {
   position: absolute;
-  width: 70vw;
+  width: var(--game-board-width, 70vw);
   height: 20vw;
   margin: auto;
   bottom: 0;
