@@ -2155,10 +2155,7 @@
   /* Leave the wireframe and CHAIN / DUEL on the viewport edges. */
   #gameContainer {
     --game-edge-gutter: max(3.4rem, 12vw);
-    --game-board-width: min(
-      78vw,
-      calc(100vw - 2 * var(--game-edge-gutter))
-    );
+    --game-board-width: min(78vw, calc(100vw - 2 * var(--game-edge-gutter)));
     --game-board-margin-x: calc((100% - var(--game-board-width)) / 2);
   }
 
