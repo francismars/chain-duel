@@ -2549,8 +2549,8 @@
   }
   /* Bitcoin block footer rises from below last, settling at 70% opacity. */
   #gameContainer:not(.hide) #bitcoinDetails {
-    animation: bitcoin-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1)
-      0.96s both;
+    animation: bitcoin-footer-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.96s
+      both;
   }
 
   @keyframes bitcoin-footer-rise-in {
