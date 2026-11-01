@@ -7,8 +7,12 @@ body.game-page.touch-match-active {
 }
 
 body.game-page.touch-match-active.touch-match-portrait {
-  background: #000;
-  background-image: none;
+  background-color: #000;
+  background-image:
+    linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
+    url('/images/chainduel_bg_no_sat.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
 body.game-page.touch-match-active.touch-match-landscape {
@@ -90,11 +94,6 @@ body.game-page.touch-match-active * {
 
 .touch-match-frame--on .online-replay-controls {
   width: 70cqw;
-}
-
-.touch-match-frame--on #brand {
-  position: absolute;
-  width: 100%;
 }
 
 .touch-match-frame--on
