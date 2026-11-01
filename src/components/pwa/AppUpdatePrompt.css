@@ -1,0 +1,48 @@
+.app-update {
+  position: fixed;
+  z-index: 10000;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 0.75rem);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: calc(100vw - var(--safe-left) - var(--safe-right) - 1.5rem);
+  padding: 0.55rem 0.65rem 0.55rem 0.9rem;
+  box-sizing: border-box;
+  background: #000;
+  color: #fff;
+  border: 1px solid rgb(255 255 255 / 72%);
+  box-shadow: 0 0 24px rgb(255 255 255 / 25%);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-update__text {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.app-update__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.app-update__button {
+  min-height: var(--tap-min);
+  padding: 0 0.85rem;
+  border: 1px solid #fff;
+  background: #fff;
+  color: #000;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.app-update__button--later {
+  background: transparent;
+  color: #fff;
+}

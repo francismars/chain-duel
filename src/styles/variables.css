@@ -37,7 +37,9 @@
   --btn-w: min(100%, clamp(14rem, 28vw, 22rem));
   --btn-letter-spacing: 0.1em;
 
-  /* Device safe areas (notch, home indicator). Needs viewport-fit=cover. */
+  /* Device safe areas (notch, home indicator). Needs viewport-fit=cover.
+     Pages apply these themselves. Do not also pad body: an installed
+     window with a translucent status bar would inset twice. */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);

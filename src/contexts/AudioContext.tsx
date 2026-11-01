@@ -34,8 +34,14 @@ interface BackgroundAudioContextType {
   isPlaying: boolean;
   isMusicMuted: boolean;
   isMuted: boolean;
+  /** Music channel, 0–1. Zero is music mute. */
+  musicVolume: number;
+  /** Master level, 0–1. Zero is mute all. Music is scaled by this too. */
+  masterVolume: number;
   toggleMusicMute: () => void;
   toggleMute: () => void;
+  setMusicVolume: (volume: number) => void;
+  setMasterVolume: (volume: number) => void;
   currentSrc: string | null;
 }
 
@@ -45,48 +51,95 @@ const BackgroundAudioContext = createContext<BackgroundAudioContextType | null>(
 
 const STORAGE_KEY_MUSIC_MUTED = 'chainduel_musicMuted';
 const STORAGE_KEY_MUTED = 'chainduel_muted';
+const STORAGE_KEY_MUSIC_VOLUME = 'chainduel_musicVolume';
+const STORAGE_KEY_MASTER_VOLUME = 'chainduel_masterVolume';
+const STORAGE_KEY_MUSIC_VOLUME_LAST = 'chainduel_musicVolumeLast';
+const STORAGE_KEY_MASTER_VOLUME_LAST = 'chainduel_masterVolumeLast';
 
-function getStoredMusicMuted(): boolean {
+function clampVolume(value: number): number {
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(1, Math.max(0, value));
+}
+
+function writeStored(key: string, value: string) {
   try {
-    const v = localStorage.getItem(STORAGE_KEY_MUSIC_MUTED);
+    localStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
+}
+
+function getStoredFlag(key: string): boolean {
+  try {
+    const v = localStorage.getItem(key);
     return v === '1' || v === 'true';
   } catch {
     return false;
   }
 }
 
-function getStoredMuted(): boolean {
+/** Volume key wins. Older installs only have the mute flag, which is 0. */
+function readStoredVolume(key: string, muted: boolean): number {
   try {
-    const v = localStorage.getItem(STORAGE_KEY_MUTED);
-    return v === '1' || v === 'true';
+    const raw = localStorage.getItem(key);
+    if (raw == null) return muted ? 0 : 1;
+    return clampVolume(Number(raw));
   } catch {
-    return false;
+    return muted ? 0 : 1;
   }
+}
+
+function readStoredLast(key: string, current: number): number {
+  const stored = readStoredVolume(key, false);
+  if (stored > 0) return stored;
+  return current > 0 ? current : 1;
 }
 
 export function AudioProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMusicMuted, setIsMusicMuted] = useState(getStoredMusicMuted);
-  const [isMuted, setIsMuted] = useState(getStoredMuted);
+  const [musicVolume, setMusicVolumeState] = useState(() =>
+    readStoredVolume(
+      STORAGE_KEY_MUSIC_VOLUME,
+      getStoredFlag(STORAGE_KEY_MUSIC_MUTED)
+    )
+  );
+  const [masterVolume, setMasterVolumeState] = useState(() =>
+    readStoredVolume(
+      STORAGE_KEY_MASTER_VOLUME,
+      getStoredFlag(STORAGE_KEY_MUTED)
+    )
+  );
   const [currentSrc, setCurrentSrc] = useState<string | null>(null);
+  const isMusicMuted = musicVolume <= 0;
+  const isMuted = masterVolume <= 0;
   // Refs so play() always reads the latest mute state without stale closures
-  const isMusicMutedRef = useRef(getStoredMusicMuted());
-  const isMutedRef = useRef(getStoredMuted());
+  const musicVolumeRef = useRef(musicVolume);
+  const masterVolumeRef = useRef(masterVolume);
+  const isMusicMutedRef = useRef(isMusicMuted);
+  const isMutedRef = useRef(isMuted);
+  const musicLastRef = useRef(
+    readStoredLast(STORAGE_KEY_MUSIC_VOLUME_LAST, musicVolume)
+  );
+  const masterLastRef = useRef(
+    readStoredLast(STORAGE_KEY_MASTER_VOLUME_LAST, masterVolume)
+  );
   // When we skip play() because muted, we still need the src so unmute can start playback
   const lastRequestedSrcRef = useRef<string | null>(null);
 
   // Keep refs in sync with state (e.g. after hydration from localStorage)
   useEffect(() => {
-    isMusicMutedRef.current = isMusicMuted;
-    isMutedRef.current = isMuted;
-  }, [isMusicMuted, isMuted]);
+    musicVolumeRef.current = musicVolume;
+    masterVolumeRef.current = masterVolume;
+    isMusicMutedRef.current = musicVolume <= 0;
+    isMutedRef.current = masterVolume <= 0;
+  }, [musicVolume, masterVolume]);
 
   const playSfx = useCallback((src: string) => {
-    if (isMutedRef.current) return;
+    if (masterVolumeRef.current <= 0) return;
     const normalized = src.startsWith('/') ? src : `/${src}`;
     const audio = new Audio(normalized);
-    audio.volume = SFX_VOLUME[normalized] ?? 1;
+    audio.volume = (SFX_VOLUME[normalized] ?? 1) * masterVolumeRef.current;
     audio.play().catch(() => {});
     audio.addEventListener('ended', () => {
       audio.removeAttribute('src');
@@ -98,9 +151,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     audioRef.current = new Audio();
     audioRef.current.loop = true;
-    if (getStoredMuted()) {
-      audioRef.current.muted = true;
-    }
+    audioRef.current.volume = musicVolumeRef.current * masterVolumeRef.current;
+    audioRef.current.muted =
+      musicVolumeRef.current <= 0 || masterVolumeRef.current <= 0;
 
     // Handle play/pause events
     audioRef.current.addEventListener('play', () => setIsPlaying(true));
@@ -142,6 +195,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     const attemptPlay = () => {
       // Respect mute state — don't play if music or all audio is muted
       if (isMusicMutedRef.current || isMutedRef.current) return;
+      audio.volume = musicVolumeRef.current * masterVolumeRef.current;
       resumeMenuMusicPosition(audio);
       audio.play().catch((error) => {
         console.warn('Audio autoplay prevented:', error.message);
@@ -182,27 +236,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const toggleMusicMute = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const next = !isMusicMutedRef.current;
-    isMusicMutedRef.current = next;
-    setIsMusicMuted(next);
-    try {
-      localStorage.setItem(STORAGE_KEY_MUSIC_MUTED, next ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
-    audio.muted = next || isMutedRef.current;
-    if (next) {
-      audio.pause();
-    } else if (!isMutedRef.current) {
-      resumeMenuMusic(audio);
-    }
-  };
-
   const resumeMenuMusic = (audio: HTMLAudioElement) => {
     const src = lastRequestedSrcRef.current;
+    audio.volume = musicVolumeRef.current * masterVolumeRef.current;
     if (src) {
       audio.loop = true;
       setCurrentSrc(src);
@@ -226,24 +262,83 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const toggleMute = () => {
+  const applyMenuLevel = (wasAudible: boolean) => {
     const audio = audioRef.current;
     if (!audio) return;
-    const next = !isMutedRef.current;
-    isMutedRef.current = next;
-    setIsMuted(next);
-    try {
-      localStorage.setItem(STORAGE_KEY_MUTED, next ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
-    // Full mute silences menu audio; music-only mute is independent (note button).
-    audio.muted = next || isMusicMutedRef.current;
-    if (next) {
+    const audible = musicVolumeRef.current > 0 && masterVolumeRef.current > 0;
+    audio.volume = musicVolumeRef.current * masterVolumeRef.current;
+    audio.muted = !audible;
+    if (!audible) {
       audio.pause();
-    } else if (!isMusicMutedRef.current) {
-      resumeMenuMusic(audio);
+      return;
     }
+    if (!wasAudible) resumeMenuMusic(audio);
+  };
+
+  const commitMusicVolume = (next: number, remember: number | null) => {
+    const wasAudible =
+      musicVolumeRef.current > 0 && masterVolumeRef.current > 0;
+    const volume = clampVolume(next);
+    musicVolumeRef.current = volume;
+    isMusicMutedRef.current = volume <= 0;
+    if (remember != null && remember > 0) {
+      musicLastRef.current = remember;
+      writeStored(STORAGE_KEY_MUSIC_VOLUME_LAST, String(remember));
+    }
+    writeStored(STORAGE_KEY_MUSIC_VOLUME, String(volume));
+    writeStored(STORAGE_KEY_MUSIC_MUTED, volume <= 0 ? '1' : '0');
+    setMusicVolumeState(volume);
+    applyMenuLevel(wasAudible);
+  };
+
+  const commitMasterVolume = (next: number, remember: number | null) => {
+    const wasAudible =
+      musicVolumeRef.current > 0 && masterVolumeRef.current > 0;
+    const volume = clampVolume(next);
+    masterVolumeRef.current = volume;
+    isMutedRef.current = volume <= 0;
+    if (remember != null && remember > 0) {
+      masterLastRef.current = remember;
+      writeStored(STORAGE_KEY_MASTER_VOLUME_LAST, String(remember));
+    }
+    writeStored(STORAGE_KEY_MASTER_VOLUME, String(volume));
+    writeStored(STORAGE_KEY_MUTED, volume <= 0 ? '1' : '0');
+    setMasterVolumeState(volume);
+    applyMenuLevel(wasAudible);
+  };
+
+  const setMusicVolume = (value: number) => {
+    const next = clampVolume(value);
+    const prev = musicVolumeRef.current;
+    commitMusicVolume(next, next > 0 ? next : prev > 0 ? prev : null);
+  };
+
+  const setMasterVolume = (value: number) => {
+    const next = clampVolume(value);
+    const prev = masterVolumeRef.current;
+    commitMasterVolume(next, next > 0 ? next : prev > 0 ? prev : null);
+  };
+
+  const toggleMusicMute = () => {
+    if (musicVolumeRef.current > 0) {
+      commitMusicVolume(0, musicVolumeRef.current);
+      return;
+    }
+    commitMusicVolume(
+      musicLastRef.current > 0 ? musicLastRef.current : 1,
+      null
+    );
+  };
+
+  const toggleMute = () => {
+    if (masterVolumeRef.current > 0) {
+      commitMasterVolume(0, masterVolumeRef.current);
+      return;
+    }
+    commitMasterVolume(
+      masterLastRef.current > 0 ? masterLastRef.current : 1,
+      null
+    );
   };
 
   return (
@@ -257,8 +352,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         isPlaying,
         isMusicMuted,
         isMuted,
+        musicVolume,
+        masterVolume,
         toggleMusicMute,
         toggleMute,
+        setMusicVolume,
+        setMasterVolume,
         currentSrc,
       }}
     >

@@ -134,6 +134,181 @@ describe('lazyWithReload', () => {
     expect(reload).not.toHaveBeenCalled();
   });
 
+  it('asks a waiting service worker to take control before reloading', async () => {
+    const waiting = { postMessage: vi.fn() };
+    const update = vi.fn(() => Promise.resolve());
+    const listeners = new Set<() => void>();
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        controller: {},
+        getRegistration: () =>
+          Promise.resolve({
+            update,
+            waiting,
+            installing: null,
+          }),
+        addEventListener: (_type: string, listener: () => void) => {
+          listeners.add(listener);
+        },
+        removeEventListener: (_type: string, listener: () => void) => {
+          listeners.delete(listener);
+        },
+      },
+    });
+    vi.stubGlobal('window', {
+      location: { reload, pathname: '/about' },
+    });
+
+    const pending = start(() => Promise.reject(new Error('missing chunk')));
+    await vi.waitFor(() => {
+      expect(waiting.postMessage).toHaveBeenCalledWith({
+        type: 'SKIP_WAITING',
+      });
+    });
+    expect(update).toHaveBeenCalledOnce();
+    expect(reload).not.toHaveBeenCalled();
+
+    for (const listener of listeners) listener();
+    expect(reload).toHaveBeenCalledOnce();
+    expect(storage.get(STORAGE_KEY_CHUNK_RELOAD)).toBe('1');
+    void pending;
+  });
+
+  it('reloads when the controlling worker has no update waiting', async () => {
+    const update = vi.fn(() => Promise.resolve());
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        controller: {},
+        getRegistration: () =>
+          Promise.resolve({
+            update,
+            waiting: null,
+            installing: null,
+          }),
+      },
+    });
+    vi.stubGlobal('window', {
+      location: { reload, pathname: '/about' },
+    });
+
+    const pending = start(() => Promise.reject(new Error('missing chunk')));
+    await vi.waitFor(() => {
+      expect(reload).toHaveBeenCalledOnce();
+    });
+    expect(update).toHaveBeenCalledOnce();
+    void pending;
+  });
+
+  it('waits until an installing worker is waiting, then skips waiting', async () => {
+    let onState: (() => void) | undefined;
+    const installing = {
+      state: 'installing',
+      addEventListener: (_type: string, listener: () => void) => {
+        onState = listener;
+      },
+      removeEventListener: () => {},
+    };
+    const waiting = { postMessage: vi.fn() };
+    const registration = {
+      update: vi.fn(() => Promise.resolve()),
+      waiting: null as { postMessage: ReturnType<typeof vi.fn> } | null,
+      installing,
+    };
+    const listeners = new Set<() => void>();
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        controller: {},
+        getRegistration: () => Promise.resolve(registration),
+        addEventListener: (_type: string, listener: () => void) => {
+          listeners.add(listener);
+        },
+        removeEventListener: () => {},
+      },
+    });
+    vi.stubGlobal('window', {
+      location: { reload, pathname: '/about' },
+    });
+
+    const pending = start(() => Promise.reject(new Error('missing chunk')));
+    await vi.waitFor(() => {
+      expect(onState).toBeTypeOf('function');
+    });
+    expect(reload).not.toHaveBeenCalled();
+    registration.waiting = waiting;
+    installing.state = 'installed';
+    onState?.();
+    await vi.waitFor(() => {
+      expect(waiting.postMessage).toHaveBeenCalledWith({
+        type: 'SKIP_WAITING',
+      });
+    });
+    expect(reload).not.toHaveBeenCalled();
+    for (const listener of listeners) listener();
+    expect(reload).toHaveBeenCalledOnce();
+    void pending;
+  });
+
+  it('reloads immediately during a live match', async () => {
+    const update = vi.fn(() => Promise.resolve());
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        controller: {},
+        getRegistration: () =>
+          Promise.resolve({
+            update,
+            waiting: { postMessage: vi.fn() },
+            installing: null,
+          }),
+      },
+    });
+    vi.stubGlobal('window', {
+      location: { reload, pathname: '/game' },
+    });
+
+    const pending = start(() => Promise.reject(new Error('missing chunk')));
+    await Promise.resolve();
+    expect(reload).toHaveBeenCalledOnce();
+    expect(update).not.toHaveBeenCalled();
+    void pending;
+  });
+
+  it('reloads if the new worker never takes control', async () => {
+    vi.useFakeTimers();
+    try {
+      const waiting = { postMessage: vi.fn() };
+      vi.stubGlobal('navigator', {
+        serviceWorker: {
+          controller: {},
+          getRegistration: () =>
+            Promise.resolve({
+              update: () => Promise.resolve(),
+              waiting,
+              installing: null,
+            }),
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        },
+      });
+      vi.stubGlobal('window', {
+        location: { reload, pathname: '/about' },
+      });
+
+      const pending = start(() => Promise.reject(new Error('missing chunk')));
+      for (let i = 0; i < 10; i += 1) await Promise.resolve();
+      expect(waiting.postMessage).toHaveBeenCalledWith({
+        type: 'SKIP_WAITING',
+      });
+      expect(reload).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(2999);
+      expect(reload).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(reload).toHaveBeenCalledOnce();
+      void pending;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rethrows when sessionStorage is blocked so a reload cannot loop', async () => {
     vi.stubGlobal('sessionStorage', {
       getItem: () => {

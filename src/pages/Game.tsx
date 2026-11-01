@@ -218,7 +218,7 @@ export default function Game() {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
   const nostrSession = useNostrSession();
-  const { stop, isMuted, isMusicMuted } = useAudio();
+  const { stop, isMuted, isMusicMuted, musicVolume, masterVolume } = useAudio();
 
   const stateRef = useRef<GameState | null>(null);
   const rendererRef = useRef<PixiGameRenderer | null>(null);
@@ -1275,8 +1275,13 @@ export default function Game() {
       : null;
 
   useEffect(() => {
-    audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
-  }, [isMuted, isMusicMuted, loading]);
+    audioRef.current?.applyAppMuteState(
+      isMuted,
+      isMusicMuted,
+      musicVolume,
+      masterVolume
+    );
+  }, [isMuted, isMusicMuted, musicVolume, masterVolume, loading]);
 
   useEffect(() => {
     const gameConfig = readSessionGameConfig();

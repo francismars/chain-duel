@@ -1081,7 +1081,7 @@ function lookLabel(recipe: MatchRecipe): string {
 }
 
 export default function MatchTriggerLab() {
-  const { stop, isMuted, isMusicMuted } = useAudio();
+  const { stop, isMuted, isMusicMuted, musicVolume, masterVolume } = useAudio();
   const stopRef = useRef(stop);
   stopRef.current = stop;
   const stateRef = useRef<GameState | null>(null);
@@ -1123,8 +1123,8 @@ export default function MatchTriggerLab() {
     intensity: number;
     id: number;
   } | null>(null);
-  const mutedRef = useRef(isMuted);
-  mutedRef.current = isMuted;
+  const masterVolumeRef = useRef(masterVolume);
+  masterVolumeRef.current = masterVolume;
   const mode = labMode(modeId);
   riderRef.current = rider;
   growRef.current = growOn;
@@ -1380,9 +1380,17 @@ export default function MatchTriggerLab() {
   }, [draft, bump]);
 
   useEffect(() => {
-    audioRef.current?.applyAppMuteState(isMuted, isMusicMuted);
-    if (soloRef.current) soloRef.current.muted = isMuted;
-  }, [isMuted, isMusicMuted]);
+    audioRef.current?.applyAppMuteState(
+      isMuted,
+      isMusicMuted,
+      musicVolume,
+      masterVolume
+    );
+    if (soloRef.current) {
+      soloRef.current.muted = masterVolume <= 0;
+      soloRef.current.volume = masterVolume;
+    }
+  }, [isMuted, isMusicMuted, musicVolume, masterVolume]);
 
   const state = stateRef.current;
   const chain = state?.p1.body.length ?? 1;
@@ -1478,7 +1486,8 @@ export default function MatchTriggerLab() {
     stopSolo();
     const clipAudio = new Audio(clip.src);
     clipAudio.loop = clip.loop;
-    clipAudio.muted = mutedRef.current;
+    clipAudio.muted = masterVolumeRef.current <= 0;
+    clipAudio.volume = masterVolumeRef.current;
     void clipAudio.play().catch(() => undefined);
     soloRef.current = clipAudio;
     setSoloId(clip.id);

@@ -1,14 +1,32 @@
 {
-    "name": "Chain Duel",
-    "short_name": "Chain Duel",
-    "icons": [
-        {
-            "src": "/images/favicon_package/android-chrome-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        }
-    ],
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
-    "display": "standalone"
+  "id": "/",
+  "name": "Chain Duel",
+  "short_name": "Chain Duel",
+  "description": "Lightning-native competitive Snake.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/images/favicon_package/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/favicon_package/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/favicon_package/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }

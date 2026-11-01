@@ -14,6 +14,7 @@ import type {
   ServerToClientEvents,
 } from '@/types/socket';
 import { disconnectSocket, getSocket, type SocketConfig } from '@/lib/socket';
+import { reconnectSocketOnVisible } from '@/lib/socketVisibility';
 import { loadConfig } from '@/lib/config';
 
 export type SocketContextValue = {
@@ -66,6 +67,21 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void connect();
   }, [connect]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      reconnectSocketOnVisible(socketRef.current, document.visibilityState);
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) onVisible();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, []);
 
   useEffect(() => {
     const s = socket;

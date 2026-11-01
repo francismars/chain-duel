@@ -1,4 +1,10 @@
-import { Suspense, useState, useEffect, useRef } from 'react';
+import {
+  Suspense,
+  useState,
+  useEffect,
+  useRef,
+  type CSSProperties,
+} from 'react';
 import { useNavigate } from 'react-router';
 import { useAudio } from '@/contexts/AudioContext';
 import { useNostrSession } from '@/contexts/NostrSessionContext';
@@ -24,6 +30,106 @@ function getStoredTvSafeInset(): boolean {
 /** Diameter of the floating quick-settings button (px). */
 const FAB_SIZE = 44;
 
+function MusicIcon({ muted }: { muted: boolean }) {
+  return muted ? (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M9 18V5l12-2v13" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  );
+}
+
+function SpeakerIcon({ volume }: { volume: number }) {
+  if (volume <= 0) {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+        <line x1="23" y1="9" x2="17" y2="15" />
+        <line x1="17" y1="9" x2="23" y2="15" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      {volume >= 0.34 ? <path d="M15.54 8.46a5 5 0 0 1 0 7.07" /> : null}
+      {volume >= 0.67 ? <path d="M19.07 4.93a10 10 0 0 1 0 14.14" /> : null}
+    </svg>
+  );
+}
+
+function VolumeControl({
+  kind,
+  volume,
+  onToggle,
+  onVolume,
+}: {
+  kind: 'music' | 'all';
+  volume: number;
+  onToggle: () => void;
+  onVolume: (volume: number) => void;
+}) {
+  const muted = volume <= 0;
+  const name = kind === 'music' ? 'Music' : 'All';
+  const toggleLabel = muted
+    ? `Unmute ${name.toLowerCase()}`
+    : `Mute ${name.toLowerCase()}`;
+  const percent = Math.round(volume * 100);
+
+  return (
+    <div className={`corner-volume${muted ? ' corner-volume--muted' : ''}`}>
+      <button
+        type="button"
+        className={`corner-btn${muted ? ' corner-btn--muted' : ''}`}
+        onClick={onToggle}
+        aria-label={toggleLabel}
+        data-tooltip={toggleLabel}
+      >
+        {kind === 'music' ? (
+          <MusicIcon muted={muted} />
+        ) : (
+          <SpeakerIcon volume={volume} />
+        )}
+      </button>
+      <div className="corner-volume__pop">
+        <span className="corner-volume__name">{name}</span>
+        <input
+          className="corner-volume__slider"
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={percent}
+          aria-label={`${name} volume`}
+          aria-orientation="horizontal"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={percent}
+          aria-valuetext={`${percent}%`}
+          style={{ '--volume': `${percent}%` } as CSSProperties}
+          onChange={(event) => onVolume(Number(event.target.value) / 100)}
+        />
+        <span className="corner-volume__value" aria-hidden>
+          {percent}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /** Same switch as the `/preview` routes in App.tsx. */
 const previewLabsEnabled =
   import.meta.env.DEV || import.meta.env.VITE_ENABLE_PREVIEW === 'true';
@@ -38,7 +144,14 @@ const UiDebugMenu = previewLabsEnabled
 
 export function CornerControls() {
   const navigate = useNavigate();
-  const { isMusicMuted, isMuted, toggleMusicMute, toggleMute } = useAudio();
+  const {
+    musicVolume,
+    masterVolume,
+    setMusicVolume,
+    setMasterVolume,
+    toggleMusicMute,
+    toggleMute,
+  } = useAudio();
   const nostr = useNostrSession();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [tvSafeInset, setTvSafeInset] = useState(getStoredTvSafeInset);
@@ -199,68 +312,19 @@ export function CornerControls() {
           </button>
         )}
 
-        <button
-          className={`corner-btn ${isMusicMuted ? 'corner-btn--muted' : ''}`}
-          onClick={toggleMusicMute}
-          aria-label={isMusicMuted ? 'Unmute music' : 'Mute music'}
-          data-tooltip={isMusicMuted ? 'Unmute music' : 'Mute music'}
-        >
-          {isMusicMuted ? (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M9 18V5l12-2v13" />
-              <line x1="1" y1="1" x2="23" y2="23" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
-          ) : (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
-          )}
-        </button>
+        <VolumeControl
+          kind="music"
+          volume={musicVolume}
+          onToggle={toggleMusicMute}
+          onVolume={setMusicVolume}
+        />
 
-        <button
-          className={`corner-btn ${isMuted ? 'corner-btn--muted' : ''}`}
-          onClick={toggleMute}
-          aria-label={isMuted ? 'Unmute all' : 'Mute all'}
-          data-tooltip={isMuted ? 'Unmute all' : 'Mute all'}
-        >
-          {isMuted ? (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <line x1="23" y1="9" x2="17" y2="15" />
-              <line x1="17" y1="9" x2="23" y2="15" />
-            </svg>
-          ) : (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-            </svg>
-          )}
-        </button>
+        <VolumeControl
+          kind="all"
+          volume={masterVolume}
+          onToggle={toggleMute}
+          onVolume={setMasterVolume}
+        />
 
         <button
           type="button"
