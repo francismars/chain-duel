@@ -72,6 +72,22 @@ self.addEventListener('activate', (event) => {
 });
 `;
 
+/**
+ * Dev cannot resolve `virtual:pwa-register` while the service worker is off.
+ * The update prompt imports a stub; production build swaps it for the virtual module.
+ */
+function pwaRegisterForBuild(): Plugin {
+  return {
+    name: 'pwa-register-for-build',
+    apply: 'build',
+    enforce: 'pre',
+    load(id) {
+      if (!id.includes('registerSwDevStub.ts')) return;
+      return 'export { registerSW } from "virtual:pwa-register";\n';
+    },
+  };
+}
+
 function pwaKillSwitch(disabled: boolean): Plugin {
   return {
     name: 'pwa-kill-switch',
@@ -150,6 +166,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
+      pwaRegisterForBuild(),
       rememberBuildOutDir(),
       react(),
       VitePWA({
