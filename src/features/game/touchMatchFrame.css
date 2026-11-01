@@ -141,7 +141,6 @@ body.game-page.touch-match-active * {
   align-items: center;
   justify-content: center;
   margin: 0 1rem 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: radial-gradient(
     ellipse at center,
     rgba(255, 255, 255, 0.05) 0%,
@@ -166,7 +165,9 @@ body.game-page.touch-match-active * {
 }
 
 .touch-pad__label {
+  font-family: Inter, sans-serif;
   font-size: 0.8rem;
+  font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #fff;

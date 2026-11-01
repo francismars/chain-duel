@@ -264,7 +264,7 @@ export function TouchMatchFrame({ children }: { children: ReactNode }) {
         <div className="touch-pad" aria-hidden>
           <div className="touch-pad__hint">
             <span className="touch-pad__ring" />
-            <span className="touch-pad__label condensed">
+            <span className="touch-pad__label">
               Drag to steer · tap to start
             </span>
           </div>
