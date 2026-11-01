@@ -2152,9 +2152,14 @@
    with the longer edge) plus tighter horizontal margins so labels stay readable.
    ─────────────────────────────────────────────────────────────────────────── */
 @media (max-aspect-ratio: 1/1) {
+  /* Leave the wireframe and CHAIN / DUEL on the viewport edges. */
   #gameContainer {
-    --game-board-width: 94vw;
-    --game-board-margin-x: 3%;
+    --game-edge-gutter: max(3.4rem, 12vw);
+    --game-board-width: min(
+      78vw,
+      calc(100vw - 2 * var(--game-edge-gutter))
+    );
+    --game-board-margin-x: calc((100% - var(--game-board-width)) / 2);
   }
 
   .flex.full.game {
@@ -2166,8 +2171,8 @@
 
   .flex.points,
   .flex.players {
-    margin-left: 4%;
-    margin-right: 4%;
+    margin-left: var(--game-board-margin-x, 12vw);
+    margin-right: var(--game-board-margin-x, 12vw);
   }
 
   .flex.players {
@@ -2276,7 +2281,7 @@
   }
 
   .gameState {
-    margin: 0.3rem 4% 0.55rem;
+    margin: 0.3rem var(--game-board-margin-x, 12vw) 0.55rem;
     font-size: clamp(0.58rem, 2.1vmax, 0.82rem);
     height: auto;
     min-height: 0;
