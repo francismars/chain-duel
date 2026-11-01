@@ -149,6 +149,25 @@ test.describe('desktop 1440x900', () => {
       page.getByRole('dialog', { name: 'Leave practice game' })
     ).toBeVisible();
   });
+
+  test('home is hidden in an online room', async ({ page }) => {
+    await page.goto('/online/r/e2e-room');
+    await expect(
+      page.getByRole('button', { name: 'TV safe margin' })
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Home' })).toHaveCount(0);
+    await expect(page).toHaveURL(/\/online\/r\/e2e-room/);
+  });
+
+  test('home on the stake screen asks before leaving', async ({ page }) => {
+    await page.goto('/gamemenu');
+    await expect(page.locator('#gameMenuTitle')).toBeVisible();
+    await page.getByRole('button', { name: 'Home' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Cancel game?' })
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/gamemenu$/);
+  });
 });
 
 test.describe('phone landscape 915x412', () => {

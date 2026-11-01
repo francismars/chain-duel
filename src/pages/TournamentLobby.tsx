@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
@@ -13,6 +13,7 @@ import {
 } from '@/shared/constants/payment';
 import { computeFinalPrize } from '@/features/tournament/bracketModel';
 import { lightningUriHref } from '@/lib/lightning/lightningUriHref';
+import { useBlockMainMenu } from '@/shared/hooks/useBlockMainMenu';
 import '@/components/ui/Button.css';
 import './tournlobby.css';
 import { BrandHeader } from '@/components/layout/BrandHeader';
@@ -32,6 +33,7 @@ export default function TournamentLobby() {
   const { socket, connected } = useSocket();
   const [playersPaid, setPlayersPaid] = useState<Record<string, string>>({});
   const [payLink, setPayLink] = useState<TournamentPayLink | null>(null);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [buttonSelected, setButtonSelected] =
     useState<SelectState>('backButton');
 
@@ -53,6 +55,10 @@ export default function TournamentLobby() {
   );
   const finalPrize = computeFinalPrize(numberOfPlayers, deposit);
   const paidCount = Object.keys(playersPaid).length;
+  const askBeforeLeavingDeposit = useCallback(() => {
+    setShowLeaveConfirm(true);
+  }, []);
+  useBlockMainMenu(true, askBeforeLeavingDeposit);
 
   useGamepad(true);
 
@@ -112,6 +118,13 @@ export default function TournamentLobby() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (showLeaveConfirm) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setShowLeaveConfirm(false);
+        }
+        return;
+      }
       if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
         event.preventDefault();
         if (buttonSelected !== 'backButton') playSelect();
@@ -131,6 +144,10 @@ export default function TournamentLobby() {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         if (buttonSelected === 'backButton') {
+          if (paidCount > 0) {
+            setShowLeaveConfirm(true);
+            return;
+          }
           playSelect();
           navigate('/p2p');
         } else if (buttonSelected === 'proceedButton') {
@@ -149,8 +166,10 @@ export default function TournamentLobby() {
     buttonSelected,
     canProceed,
     deposit,
+    showLeaveConfirm,
     navigate,
     numberOfPlayers,
+    paidCount,
     playersPaid,
     playConfirm,
     playSelect,
@@ -219,6 +238,10 @@ export default function TournamentLobby() {
                 id="backButton"
                 type="button"
                 onClick={() => {
+                  if (paidCount > 0) {
+                    setShowLeaveConfirm(true);
+                    return;
+                  }
                   playSelect();
                   navigate('/p2p');
                 }}
@@ -275,6 +298,50 @@ export default function TournamentLobby() {
       </div>
 
       <BackgroundAudio src="/sound/chain_duel_produced_menu.m4a" autoplay />
+
+      {showLeaveConfirm ? (
+        <div
+          className="overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Leave tournament lobby"
+        >
+          <div className="warning">
+            <div className="warning-inner">
+              <h2 className="warning-title condensed">
+                Leave tournament lobby?
+              </h2>
+              <div className="warning-text">
+                {paidCount > 0
+                  ? 'Deposited funds may be lost.'
+                  : 'A Lightning payment may still arrive. Leave anyway?'}
+              </div>
+            </div>
+            <div className="warning-actions">
+              <Button
+                className="button half"
+                type="button"
+                onClick={() => {
+                  playSelect();
+                  setShowLeaveConfirm(false);
+                }}
+              >
+                No
+              </Button>
+              <Button
+                className="button half"
+                type="button"
+                onClick={() => {
+                  playConfirm();
+                  navigate('/p2p');
+                }}
+              >
+                Yes
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

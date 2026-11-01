@@ -21,6 +21,7 @@ import {
 } from '@/shared/constants/payment';
 import { createLogger } from '@/shared/utils/logger';
 import { navigateToPostGame } from '@/shared/constants/menuNavigation';
+import { useBlockMainMenu } from '@/shared/hooks/useBlockMainMenu';
 import {
   clearClientGameConfig,
   markSocketDuelSession,
@@ -617,6 +618,14 @@ export default function TournamentBracket() {
     setPanelView('confirm-cancel');
     setFocusedBtn('left');
   }, [playConfirm]);
+
+  const collectingBuyIn =
+    !isBracketPreview && tournamentPhase === 'payment' && !preStartReady;
+  const onCornerHomeDuringBuyIn = useCallback(() => {
+    setShowPaymentPanel(true);
+    if (panelView === 'payment') handleCancel();
+  }, [handleCancel, panelView]);
+  useBlockMainMenu(collectingBuyIn, onCornerHomeDuringBuyIn);
 
   const handleBackToPayment = useCallback(() => {
     playSelect();

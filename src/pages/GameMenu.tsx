@@ -50,6 +50,7 @@ import {
 } from '@/pages/practiceHubModes';
 import { reportClientEvent } from '@/lib/telemetry/reportClientEvent';
 import { lightningUriHref } from '@/lib/lightning/lightningUriHref';
+import { useBlockMainMenu } from '@/shared/hooks/useBlockMainMenu';
 import './gamemenu.css';
 
 /** Valid note1 so the Nostr payment preview can show a note id and nevent. */
@@ -600,6 +601,10 @@ export default function GameMenu({
     setShowCancelOverlay(true);
     setButtonSelected('cancelGameAbort');
   }, [playSfx]);
+
+  // This page is the stake screen. Corner Home must not leave while a
+  // Lightning (or Nostr) payment can still land, or after sats are in.
+  useBlockMainMenu(true, openExitOverlay);
 
   const confirmExit = useCallback(() => {
     playSfx(SFX.MENU_CONFIRM);
