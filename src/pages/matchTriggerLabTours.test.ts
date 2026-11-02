@@ -21,12 +21,12 @@ function play(tour: TourSpec, ms: number) {
   const state = makeTourState(tour);
   const notes: string[] = [];
   const dropped = { block: false };
+  let blocks = 0;
   const director = makeDirector(tour, {
     dropBlock: (fee) => {
-      if (fee !== null) {
-        createNewCoinbase(state, fee);
-        dropped.block = true;
-      }
+      createNewCoinbase(state, fee);
+      dropped.block = true;
+      blocks += 1;
     },
     note: (line) => notes.push(line),
   });
@@ -39,6 +39,8 @@ function play(tour: TourSpec, ms: number) {
   const plainCoins = () =>
     new Set(state.coinbases.filter((c) => !c.isDecoy).map((c) => key(c.pos)));
   let elapsed = 0;
+  let firstReset = -1;
+  const rates = new Set<string>();
   while (elapsed < ms && !state.gameEnded) {
     dropped.block = false;
     const coinsBefore = plainCoins();
@@ -49,6 +51,10 @@ function play(tour: TourSpec, ms: number) {
     const changesBefore = state.pointChanges.length;
     stepGame(state);
     director.afterStep(state);
+    if (firstReset < 0 && (state.resetCueP1 || state.resetCueP2))
+      firstReset = elapsed;
+    for (const change of state.pointChanges.slice(changesBefore))
+      if (change.captureRateLabel) rates.add(change.captureRateLabel);
     // The engine moves a coin or power-up out from under a closing wall. That
     // is a game rule, in real matches too, so a wall step excuses a move.
     const wallStepped = JSON.stringify(state.shrinkBorder) !== wallsBefore;
@@ -85,7 +91,7 @@ function play(tour: TourSpec, ms: number) {
     }
     elapsed += STEP_MS;
   }
-  return { state, notes, problems };
+  return { state, notes, problems, blocks, firstReset, rates };
 }
 
 describe('lab tours', () => {
@@ -98,16 +104,50 @@ describe('lab tours', () => {
     }
   });
 
-  it('races for every power-up in the power-ups tour', () => {
+  it('races for every power-up and springs the Fork Coin in the power-ups tour', () => {
     const tour = TOURS.find((entry) => entry.id === 'powerups')!;
     let complete = 0;
-    for (let run = 0; run < 6; run += 1) {
+    let sprung = 0;
+    for (let run = 0; run < 8; run += 1) {
       const { notes } = play(tour, tour.lengthMs);
-      const taken = notes.filter((line) => line.startsWith('Tour ·'));
+      const taken = notes.filter((line) => /^Tour · [^:]+: /.test(line));
       if (taken.length >= 5) complete += 1;
+      if (notes.some((line) => line.includes('eats the Fork Coin')))
+        sprung += 1;
     }
     // Bots vary. A match can end before the last spawn; most get all five.
-    expect(complete).toBeGreaterThanOrEqual(4);
+    expect(complete).toBeGreaterThanOrEqual(6);
+    expect(sprung).toBeGreaterThanOrEqual(6);
+  });
+
+  it('resets a chain early in the reset tour', () => {
+    const tour = TOURS.find((entry) => entry.id === 'reset')!;
+    let early = 0;
+    for (let run = 0; run < 12; run += 1) {
+      const { firstReset } = play(tour, tour.lengthMs);
+      if (firstReset >= 0 && firstReset <= 30_000) early += 1;
+    }
+    // Bots vary. Most first resets come in 7-20s; a few take up to 30s.
+    expect(early).toBeGreaterThanOrEqual(9);
+  });
+
+  it('drops a reward for every block in the new block tour', () => {
+    const tour = TOURS.find((entry) => entry.id === 'block')!;
+    const cues = tour.cues.length;
+    let complete = 0;
+    for (let run = 0; run < 8; run += 1) {
+      if (play(tour, tour.lengthMs).blocks === cues) complete += 1;
+    }
+    expect(complete).toBeGreaterThanOrEqual(6);
+  });
+
+  it('climbs the capture tiers to 16% in the longer chains tour', () => {
+    const tour = TOURS.find((entry) => entry.id === 'chain')!;
+    let climbed = 0;
+    for (let run = 0; run < 8; run += 1) {
+      if (play(tour, tour.lengthMs).rates.has('16%')) climbed += 1;
+    }
+    expect(climbed).toBeGreaterThanOrEqual(6);
   });
 
   it('makes the chain losing the race back off instead of trading heads', () => {

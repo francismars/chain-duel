@@ -48,6 +48,11 @@ export type TourSpec = {
   cues: Cue[];
   /** AI tier per seat, White then Black. Defaults to TOUR_STYLES. */
   styles?: [AiTier, AiTier];
+  /**
+   * Let grown chains fight head to head. Fresh genesis chains still give way,
+   * or mirrored respawns would trade heads over and over.
+   */
+  headOns?: boolean;
 };
 
 /**
@@ -62,15 +67,17 @@ export const TOURS: TourSpec[] = [
     id: 'match',
     label: 'Full match',
     blurb:
-      'Two strong bots play a whole match: countdown, eats up the capture tiers, power-ups, walls closing, resets, new blocks, and the finish. Loops.',
+      'Two strong bots play a whole match: countdown, eats up the capture tiers, power-ups, new blocks, and the finish. In a long match the walls close in and chains reset. Loops.',
     lengthMs: 120_000,
     countdown: true,
     walls: true,
     powerups: true,
     points: [5000, 5000],
     cues: [
-      { at: 15_000, kind: 'block', fee: 60 },
-      { at: 40_000, kind: 'block', fee: 600 },
+      // Most matches between strong bots end within 20-30s, so both blocks
+      // come early.
+      { at: 5_000, kind: 'block', fee: 60 },
+      { at: 11_000, kind: 'block', fee: 600 },
     ],
   },
   {
@@ -90,7 +97,7 @@ export const TOURS: TourSpec[] = [
     label: '2 · Longer chains',
     blurb:
       'Each capture grows the chain, and the capture rate climbs with it: 2%, 4%, 8%, 16%. A longer chain takes a larger share of the sats.',
-    lengthMs: 30_000,
+    lengthMs: 45_000,
     countdown: false,
     walls: false,
     powerups: false,
@@ -106,7 +113,10 @@ export const TOURS: TourSpec[] = [
     countdown: false,
     walls: true,
     wallStepTicks: 25,
+    // Two strong, aggressive bots. Once both chains have grown they fight
+    // head to head instead of giving way, as the walls close in.
     styles: ['sovereign', 'sovereign'],
+    headOns: true,
     powerups: false,
     points: [5000, 5000],
     cues: [],
@@ -121,11 +131,13 @@ export const TOURS: TourSpec[] = [
     walls: false,
     powerups: false,
     points: [5000, 5000],
+    // Each block waits for the last reward to be eaten, and a match can end
+    // in 15s, so they come close together.
     cues: [
-      { at: 2_000, kind: 'block', fee: 10 },
-      { at: 7_500, kind: 'block', fee: 60 },
-      { at: 13_000, kind: 'block', fee: 200 },
-      { at: 18_500, kind: 'block', fee: 600 },
+      { at: 1_000, kind: 'block', fee: 10 },
+      { at: 3_500, kind: 'block', fee: 60 },
+      { at: 6_000, kind: 'block', fee: 200 },
+      { at: 8_500, kind: 'block', fee: 600 },
     ],
   },
   {
@@ -142,12 +154,13 @@ export const TOURS: TourSpec[] = [
     styles: ['noderunner', 'noderunner'],
     cues: [
       // Each waits for the last to be taken, so they come one at a time. A
-      // match can end in 15s, so they come quickly.
+      // match can end in 15s, so they come quickly. Fork Coin comes early so
+      // the rival has time to chase its fake coin before the match ends.
       { at: 500, kind: 'powerup', type: 'SURGE' },
-      { at: 2_500, kind: 'powerup', type: 'FREEZE' },
-      { at: 4_500, kind: 'powerup', type: 'PHANTOM' },
-      { at: 6_500, kind: 'powerup', type: 'AMPLIFIER' },
-      { at: 8_500, kind: 'powerup', type: 'DECOY' },
+      { at: 2_500, kind: 'powerup', type: 'DECOY' },
+      { at: 4_500, kind: 'powerup', type: 'FREEZE' },
+      { at: 6_500, kind: 'powerup', type: 'PHANTOM' },
+      { at: 8_500, kind: 'powerup', type: 'AMPLIFIER' },
     ],
   },
 ];
@@ -307,6 +320,18 @@ function contestedCell(state: GameState): GridPos | null {
   return best?.pos ?? null;
 }
 
+/** The seat that just took the power-up at `pos`: its head or the cell behind it. */
+function takerOf(state: GameState, pos: GridPos): Seat {
+  const near = (who: Seat) => {
+    const snake = snakeOf(state, who);
+    return [snake.head, ...snake.body.slice(0, 2)].some((cell) =>
+      same(cell, pos)
+    );
+  };
+  if (near(0) !== near(1)) return near(0) ? 0 : 1;
+  return dist(state.p1.head, pos) <= dist(state.p2.head, pos) ? 0 : 1;
+}
+
 export function makeTourState(tour: TourSpec): GameState {
   const state = createGameState({
     p1Name: 'White',
@@ -358,21 +383,27 @@ export function makeTourState(tour: TourSpec): GameState {
 }
 
 type Hooks = {
-  /** `null` plays the block without dropping a reward. */
-  dropBlock: (medianFee: number | null) => void;
+  /** A new block that drops a reward sized by the median fee. */
+  dropBlock: (medianFee: number) => void;
   note: (line: string) => void;
 };
 
 export function makeDirector(tour: TourSpec, hooks: Hooks) {
   const pending = [...tour.cues].sort((a, b) => a.at - b.at);
   const scriptedPowerUps = tour.cues.some((cue) => cue.kind === 'powerup');
-  let offered: PowerUpType | null = null;
+  let offered: { type: PowerUpType; pos: GridPos } | null = null;
+  /**
+   * The rival of whoever took Fork Coin. Bots can always tell the fake coin
+   * apart, so the tour plays this seat as a player who is fooled by it.
+   */
+  let fooled: Seat | null = null;
 
   const run = (state: GameState, cue: Cue): boolean => {
     if (cue.kind === 'block') {
-      // One reward at a time: the flash and sound play, the reward waits.
-      const rewardOut = state.coinbases.some((coin) => coin.reward);
-      hooks.dropBlock(rewardOut ? null : cue.fee);
+      // One reward at a time, so every block shows its own reward: a block
+      // waits until the last reward is eaten.
+      if (state.coinbases.some((coin) => coin.reward)) return false;
+      hooks.dropBlock(cue.fee);
       return true;
     }
     // A power-up spawn waits until the last one is taken.
@@ -390,7 +421,8 @@ export function makeDirector(tour: TourSpec, hooks: Hooks) {
         if (!run(state, pending[0]!)) break;
         pending.shift();
       }
-      offered = state.powerUpItems[0]?.type ?? null;
+      const item = state.powerUpItems[0];
+      offered = item ? { type: item.type, pos: item.pos } : null;
       if (!state.gameStarted || state.gameEnded) return;
       // The bots decide here instead of inside the step, so the guard can see
       // both moves. Each seat counts as human for this one step only, so the
@@ -402,7 +434,18 @@ export function makeDirector(tour: TourSpec, hooks: Hooks) {
       state.meta.aiTier = styles[1];
       decideAiForPlayer(state, 1);
       state.meta.aiTier = tier;
-      guardHeadOn(state);
+      const decoy = state.coinbases.find((coin) => coin.isDecoy);
+      if (fooled !== null && decoy) {
+        const move = safeMove(
+          state,
+          fooled,
+          nextHead(state, fooled === 0 ? 1 : 0),
+          decoy.pos
+        );
+        if (move) snakeOf(state, fooled).dirWanted = move;
+      }
+      const grown = Math.min(state.p1.body.length, state.p2.body.length) > 2;
+      if (!tour.headOns || !grown) guardHeadOn(state);
       state.meta.p1Human = true;
       state.meta.p2Human = true;
     },
@@ -413,9 +456,19 @@ export function makeDirector(tour: TourSpec, hooks: Hooks) {
       if (scriptedPowerUps)
         state.powerUpRespawnCooldownTick = Number.MAX_SAFE_INTEGER;
       if (offered && state.powerUpItems.length === 0) {
-        const { title, subtitle } = POWERUP_DISPLAY[offered];
+        const { title, subtitle } = POWERUP_DISPLAY[offered.type];
         hooks.note(`Tour · ${title}: ${subtitle}`);
+        if (offered.type === 'DECOY')
+          fooled = takerOf(state, offered.pos) === 0 ? 1 : 0;
         offered = null;
+      }
+      if (fooled !== null && !state.coinbases.some((coin) => coin.isDecoy)) {
+        const reset = fooled === 0 ? state.resetCueP1 : state.resetCueP2;
+        if (reset)
+          hooks.note(
+            `Tour · ${fooled === 0 ? 'White' : 'Black'} eats the Fork Coin and resets`
+          );
+        fooled = null;
       }
     },
   };
