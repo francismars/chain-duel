@@ -847,11 +847,7 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 
 .rules-modal .rules-slider {
   /* ~22rem = mast + title + description + actions; keeps Close on short screens */
-  width: min(
-    86vw,
-    calc(54svh * 51 / 25),
-    calc((100svh - 22rem) * 51 / 25)
-  );
+  width: min(86vw, calc(54svh * 51 / 25), calc((100svh - 22rem) * 51 / 25));
 }
 
 /* Let the clip fill the modal slider instead of the inline 26rem cap */

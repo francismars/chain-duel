@@ -1597,13 +1597,11 @@ export class PixiGameRenderer {
 
       // Yellow SURGE outline on each body segment: steady, inside the cell
       if (effects.surging) {
-        this.scene
-          .rect(px + 1, py + 1, colSize - 2, segHeight - 2)
-          .stroke({
-            width: 1.5,
-            color: SURGE_COLOR,
-            alpha: SURGE_OUTLINE_ALPHA,
-          });
+        this.scene.rect(px + 1, py + 1, colSize - 2, segHeight - 2).stroke({
+          width: 1.5,
+          color: SURGE_COLOR,
+          alpha: SURGE_OUTLINE_ALPHA,
+        });
       }
 
       // AMP green border on body (subtler than head)
