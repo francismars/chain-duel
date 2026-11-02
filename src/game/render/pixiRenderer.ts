@@ -84,6 +84,8 @@ const SURGE_COLOR = POWERUP_COLORS.SURGE!;
 const FULL_BLOCK_COLOR = POWERUP_COLORS.AMPLIFIER!;
 const cssHex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
 const SURGE_CSS = cssHex(SURGE_COLOR);
+/** ASIC Boost outlines each block inside its cell, without flashing. */
+const SURGE_OUTLINE_ALPHA = 0.9;
 const FULL_BLOCK_CSS = cssHex(FULL_BLOCK_COLOR);
 
 /**
@@ -979,7 +981,7 @@ export class PixiGameRenderer {
       const p1Amped = p1Effects.amped;
       const p2Amped = p2Effects.amped;
 
-      // Record the cells each boosted head left since the last paint
+      // Record the cells each boosted tail left since the last paint
       const trailOn =
         state.gameStarted &&
         !state.gameEnded &&
@@ -1517,6 +1519,18 @@ export class PixiGameRenderer {
       );
     }
 
+    // Yellow SURGE outline on head: steady, inside the cell
+    if (effects.surging) {
+      this.scene
+        .rect(
+          snake.head[0] * colSize + 1,
+          segTop(snake.head[1]) + 1,
+          colSize - 2,
+          segHeight - 2
+        )
+        .stroke({ width: 1.5, color: SURGE_COLOR, alpha: SURGE_OUTLINE_ALPHA });
+    }
+
     // AMP pulsing green border on head (on top of base)
     if (effects.amped) {
       const ampPulse = 0.6 + 0.4 * Math.sin(now / 220);
@@ -1579,6 +1593,17 @@ export class PixiGameRenderer {
           pulseTint,
           boost * 0.85
         );
+      }
+
+      // Yellow SURGE outline on each body segment: steady, inside the cell
+      if (effects.surging) {
+        this.scene
+          .rect(px + 1, py + 1, colSize - 2, segHeight - 2)
+          .stroke({
+            width: 1.5,
+            color: SURGE_COLOR,
+            alpha: SURGE_OUTLINE_ALPHA,
+          });
       }
 
       // AMP green border on body (subtler than head)
@@ -2260,6 +2285,18 @@ export class PixiGameRenderer {
       );
       ctx.globalAlpha = 1;
     }
+    if (fbP1Surging) {
+      ctx.globalAlpha = SURGE_OUTLINE_ALPHA;
+      ctx.strokeStyle = SURGE_CSS;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(
+        state.p1.head[0] * colSize + 1,
+        p1SegTop(state.p1.head[1]) + 1,
+        colSize - 2,
+        p1SegH - 2
+      );
+      ctx.globalAlpha = 1;
+    }
     if (fbP1Frozen) {
       ctx.globalAlpha = 0.7;
       ctx.strokeStyle = '#3090C8';
@@ -2283,6 +2320,18 @@ export class PixiGameRenderer {
         p1SegH
       );
       ctx.globalAlpha = 1;
+      if (fbP1Surging) {
+        ctx.globalAlpha = SURGE_OUTLINE_ALPHA;
+        ctx.strokeStyle = SURGE_CSS;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(
+          state.p1.body[i][0] * colSize + 1,
+          p1SegTop(state.p1.body[i][1]) + 1,
+          colSize - 2,
+          p1SegH - 2
+        );
+        ctx.globalAlpha = 1;
+      }
       if (fbP1Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
         ctx.globalAlpha = ap;
@@ -2360,6 +2409,18 @@ export class PixiGameRenderer {
       );
       ctx.globalAlpha = 1;
     }
+    if (fbP2Surging) {
+      ctx.globalAlpha = SURGE_OUTLINE_ALPHA;
+      ctx.strokeStyle = SURGE_CSS;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(
+        state.p2.head[0] * colSize + 1,
+        p2SegTop(state.p2.head[1]) + 1,
+        colSize - 2,
+        p2SegH - 2
+      );
+      ctx.globalAlpha = 1;
+    }
     if (fbP2Frozen) {
       ctx.globalAlpha = 0.7;
       ctx.strokeStyle = '#3090C8';
@@ -2394,6 +2455,18 @@ export class PixiGameRenderer {
         );
       }
       ctx.globalAlpha = 1;
+      if (fbP2Surging) {
+        ctx.globalAlpha = SURGE_OUTLINE_ALPHA;
+        ctx.strokeStyle = SURGE_CSS;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(
+          state.p2.body[i][0] * colSize + 1,
+          p2SegTop(state.p2.body[i][1]) + 1,
+          colSize - 2,
+          p2SegH - 2
+        );
+        ctx.globalAlpha = 1;
+      }
       if (fbP2Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
         ctx.globalAlpha = ap;

@@ -8,18 +8,22 @@ export const SURGE_TRAIL_PEAK_ALPHA = 0.75;
 const TAIL_MIN_SCALE = 0.3;
 /** Enough for ~1.5 cells per tick over the fade, with headroom. */
 const CAPACITY = 32;
-/** A boosted head moves at most two cells per tick. */
+/** A boosted chain moves at most two cells per tick. */
 const MAX_STEP_CELLS = 2;
 /** Frozen + boosted moves every other tick, so a step can span two ticks. */
 const MAX_STEP_SPAN_MS = 200;
 
+/** Not a board cell: marks a chain too short to have that cell. */
+const NONE = -32768;
+
 /**
- * Cells a boosted head passed through, oldest first, in a fixed ring.
+ * Cells a boosted chain's tail let go of, oldest first, in a fixed ring: the
+ * exhaust behind the last block.
  *
- * One entry per cell the head left, not per frame, so the fade does not
+ * One entry per cell the tail left, not per frame, so the fade does not
  * depend on frame rate and a cell is never painted twice. A two-cell step
- * also records the cell it jumped over, with departure times spread across
- * the step so the trail fades as a ramp instead of pairs.
+ * also records the second cell, with departure times spread across the step
+ * so the trail fades as a ramp instead of pairs.
  */
 export class SurgeTrail {
   private readonly xs = new Int16Array(CAPACITY);
@@ -28,51 +32,53 @@ export class SurgeTrail {
   private start = 0;
   private count = 0;
   private tracking = false;
-  private lastX = 0;
-  private lastY = 0;
+  /** The chain's last cells last paint: [0] the tail, then towards the head. */
+  private readonly endX = new Int16Array(MAX_STEP_CELLS + 1);
+  private readonly endY = new Int16Array(MAX_STEP_CELLS + 1);
   private lastT = 0;
 
   get length(): number {
     return this.count;
   }
 
-  /** Call once per paint. Records cells the head left since the last call. */
+  /** Call once per paint. Records cells the tail left since the last call. */
   note(head: GridPos, body: GridPos[], surging: boolean, now: number): void {
     if (!surging) {
       this.tracking = false;
       return;
     }
-    const hx = head[0];
-    const hy = head[1];
-    if (!this.tracking) {
-      this.tracking = true;
-      this.lastX = hx;
-      this.lastY = hy;
-      this.lastT = now;
-      return;
-    }
-    if (hx === this.lastX && hy === this.lastY) return;
-
-    // The old head is body[0] after one step, body[1] after a double step.
-    let k = -1;
-    const scan = Math.min(body.length, MAX_STEP_CELLS);
-    for (let i = 0; i < scan; i += 1) {
-      if (body[i]![0] === this.lastX && body[i]![1] === this.lastY) {
-        k = i;
-        break;
+    const last = body.length;
+    // The tail, and how many of the previous end cells the chain moved past.
+    const tx = last > 0 ? body[last - 1]![0] : head[0];
+    const ty = last > 0 ? body[last - 1]![1] : head[1];
+    if (this.tracking && (tx !== this.endX[0] || ty !== this.endY[0])) {
+      let k = -1;
+      for (let i = 1; i <= MAX_STEP_CELLS; i += 1) {
+        if (this.endX[i] === tx && this.endY[i] === ty) {
+          k = i;
+          break;
+        }
+      }
+      // Respawn or reset: nothing to trail between the two tails.
+      if (k > 0) {
+        const span = Math.min(Math.max(0, now - this.lastT), MAX_STEP_SPAN_MS);
+        for (let j = 0; j < k; j += 1) {
+          this.push(
+            this.endX[j]!,
+            this.endY[j]!,
+            now - span + (span * (j + 1)) / k
+          );
+        }
       }
     }
-    // Respawn or reset: nothing to trail between the two heads.
-    if (k >= 0) {
-      const span = Math.min(Math.max(0, now - this.lastT), MAX_STEP_SPAN_MS);
-      const n = k + 1;
-      for (let j = k; j >= 0; j -= 1) {
-        const left = now - span + (span * (k - j + 1)) / n;
-        this.push(body[j]![0], body[j]![1], left);
-      }
+    for (let i = 0; i <= MAX_STEP_CELLS; i += 1) {
+      // Index i from the tail, along body then head.
+      const at = last - 1 - i;
+      const cell = at >= 0 ? body[at]! : at === -1 ? head : null;
+      this.endX[i] = cell ? cell[0] : NONE;
+      this.endY[i] = cell ? cell[1] : NONE;
     }
-    this.lastX = hx;
-    this.lastY = hy;
+    this.tracking = true;
     this.lastT = now;
   }
 
@@ -118,7 +124,7 @@ export class SurgeTrail {
   }
 
   /**
-   * Paints the tail as one tapering streak: a shrinking square per cell, and
+   * Paints the trail as one tapering streak: a shrinking square per cell, and
    * a bridge between neighbouring cells so the 1px grid gaps and the size
    * steps do not break it into separate blocks.
    */
