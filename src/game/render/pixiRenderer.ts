@@ -75,7 +75,15 @@ import {
   type QuietMark,
   type QuietSnake,
 } from '@/game/render/quietChainCells';
+import { SurgeTrail } from '@/game/render/surgeTrail';
 import { canvasResolution, readGraphicsSettings } from '@/lib/graphicsSettings';
+
+/** Chain effects match their power-up icons: ASIC Boost yellow, Full Block green. */
+const SURGE_COLOR = POWERUP_COLORS.SURGE!;
+const FULL_BLOCK_COLOR = POWERUP_COLORS.AMPLIFIER!;
+const cssHex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
+const SURGE_CSS = cssHex(SURGE_COLOR);
+const FULL_BLOCK_CSS = cssHex(FULL_BLOCK_COLOR);
 
 type CapturePulse = { startMs: number; reward: number };
 
@@ -137,9 +145,8 @@ export class PixiGameRenderer {
   private static readonly SCALE_MS = 390;
   private static readonly GROW_MS = TAIL_GROW_MS;
   // SURGE fading-square trail
-  private p1SurgeTrail: { pos: GridPos; time: number }[] = [];
-  private p2SurgeTrail: { pos: GridPos; time: number }[] = [];
-  private static readonly SURGE_TRAIL_FADE_MS = 480;
+  private p1SurgeTrail = new SurgeTrail();
+  private p2SurgeTrail = new SurgeTrail();
   private startWords: Text[] = [];
   private startWordsContainer: Container = new Container();
   private startPromptSubtext: Text;
@@ -929,52 +936,27 @@ export class PixiGameRenderer {
       const p1Amped = p1Effects.amped;
       const p2Amped = p2Effects.amped;
 
-      // Record surge trail positions each frame
-      const FADE = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
-      if (
+      // Record the cells each boosted head left since the last paint
+      const trailOn =
         state.gameStarted &&
         !state.gameEnded &&
-        this.graphics.animations !== 'off'
-      ) {
-        if (p1Surging)
-          this.p1SurgeTrail.push({
-            pos: [state.p1.head[0], state.p1.head[1]],
-            time: now,
-          });
-        if (p2Surging)
-          this.p2SurgeTrail.push({
-            pos: [state.p2.head[0], state.p2.head[1]],
-            time: now,
-          });
-      }
-      this.p1SurgeTrail = this.p1SurgeTrail.filter((t) => now - t.time < FADE);
-      this.p2SurgeTrail = this.p2SurgeTrail.filter((t) => now - t.time < FADE);
+        this.graphics.animations !== 'off';
+      this.p1SurgeTrail.note(
+        state.p1.head,
+        state.p1.body,
+        trailOn && p1Surging,
+        now
+      );
+      this.p2SurgeTrail.note(
+        state.p2.head,
+        state.p2.body,
+        trailOn && p2Surging,
+        now
+      );
 
-      // Draw fading orange trail squares (rendered before snakes so snakes appear on top)
-      for (const t of this.p1SurgeTrail) {
-        const a = (1 - (now - t.time) / FADE) * 0.6;
-        const pad = 1;
-        this.scene
-          .rect(
-            t.pos[0] * colSize + pad,
-            t.pos[1] * rowSize + pad,
-            colSize - pad * 2,
-            rowSize - pad * 2
-          )
-          .fill({ color: 0xff7200, alpha: a });
-      }
-      for (const t of this.p2SurgeTrail) {
-        const a = (1 - (now - t.time) / FADE) * 0.6;
-        const pad = 1;
-        this.scene
-          .rect(
-            t.pos[0] * colSize + pad,
-            t.pos[1] * rowSize + pad,
-            colSize - pad * 2,
-            rowSize - pad * 2
-          )
-          .fill({ color: 0xff7200, alpha: a });
-      }
+      // Draw the fading yellow tail (rendered before snakes so snakes appear on top)
+      this.drawSurgeTrail(this.p1SurgeTrail, colSize, rowSize, now);
+      this.drawSurgeTrail(this.p2SurgeTrail, colSize, rowSize, now);
 
       // Extra snakes (teams / ffa) — drawn behind main snakes
       for (let ei = 0; ei < (state.extraSnakes ?? []).length; ei += 1) {
@@ -1385,7 +1367,7 @@ export class PixiGameRenderer {
     const totalLen = 1 + snake.body.length;
     const isLight = color === 0xffffff;
 
-    // AMP pulsing gold glow under the whole chain (drawn first, underneath)
+    // AMP pulsing green glow under the whole chain (drawn first, underneath)
     if (effects.amped) {
       const ampPulse = 0.5 + 0.5 * Math.sin(now / 220);
       const ampAlpha = 0.18 + ampPulse * 0.22;
@@ -1398,7 +1380,7 @@ export class PixiGameRenderer {
           colSize + expand * 2,
           segHeight + expand * 2
         )
-        .fill({ color: 0xffbb00, alpha: ampAlpha * 1.4 });
+        .fill({ color: FULL_BLOCK_COLOR, alpha: ampAlpha * 1.4 });
       // Body glow
       for (const seg of snake.body) {
         this.scene
@@ -1408,7 +1390,7 @@ export class PixiGameRenderer {
             colSize + expand,
             segHeight + expand
           )
-          .fill({ color: 0xffbb00, alpha: ampAlpha * 0.7 });
+          .fill({ color: FULL_BLOCK_COLOR, alpha: ampAlpha * 0.7 });
       }
     }
 
@@ -1454,20 +1436,7 @@ export class PixiGameRenderer {
       );
     }
 
-    // Orange SURGE border on head
-    if (effects.surging) {
-      const surgePulse = 0.7 + 0.3 * Math.sin(now / 80);
-      this.scene
-        .rect(
-          snake.head[0] * colSize - 2,
-          segTop(snake.head[1]) - 2,
-          colSize + 4,
-          segHeight + 4
-        )
-        .stroke({ width: 2.5, color: 0xff7200, alpha: surgePulse });
-    }
-
-    // AMP pulsing gold border on head (on top of base)
+    // AMP pulsing green border on head (on top of base)
     if (effects.amped) {
       const ampPulse = 0.6 + 0.4 * Math.sin(now / 220);
       this.scene
@@ -1477,7 +1446,7 @@ export class PixiGameRenderer {
           colSize + 4,
           segHeight + 4
         )
-        .stroke({ width: 2, color: 0xffbb00, alpha: ampPulse });
+        .stroke({ width: 2, color: FULL_BLOCK_COLOR, alpha: ampPulse });
     }
 
     // Frozen ring around head
@@ -1531,22 +1500,28 @@ export class PixiGameRenderer {
         );
       }
 
-      // Orange SURGE border on each body segment
-      if (effects.surging) {
-        const surgePulse = 0.5 + 0.3 * Math.sin(now / 80 + i * 0.4);
-        this.scene
-          .rect(px - 1, py - 1, colSize + 2, segHeight + 2)
-          .stroke({ width: 1.5, color: 0xff7200, alpha: surgePulse });
-      }
-
-      // AMP gold border on body (subtler than head)
+      // AMP green border on body (subtler than head)
       if (effects.amped) {
         const ampPulse = 0.4 + 0.3 * Math.sin(now / 220 + i * 0.2);
-        this.scene
-          .rect(px - 1, py - 1, colSize + 2, segHeight + 2)
-          .stroke({ width: 1.5, color: 0xffbb00, alpha: ampPulse * 0.7 });
+        this.scene.rect(px - 1, py - 1, colSize + 2, segHeight + 2).stroke({
+          width: 1.5,
+          color: FULL_BLOCK_COLOR,
+          alpha: ampPulse * 0.7,
+        });
       }
     }
+  }
+
+  private drawSurgeTrail(
+    trail: SurgeTrail,
+    colSize: number,
+    rowSize: number,
+    now: number
+  ): void {
+    trail.prune(now);
+    trail.paint(now, colSize, rowSize, 1, (x, y, w, h, alpha) => {
+      this.scene.rect(x, y, w, h).fill({ color: SURGE_COLOR, alpha });
+    });
   }
 
   private fillSegment(
@@ -1983,6 +1958,20 @@ export class PixiGameRenderer {
     this.resize();
   }
 
+  private fillSurgeTrailFb(
+    ctx: CanvasRenderingContext2D,
+    trail: SurgeTrail,
+    colSize: number,
+    rowSize: number,
+    now: number
+  ): void {
+    trail.prune(now);
+    trail.paint(now, colSize, rowSize, 1, (x, y, w, h, alpha) => {
+      ctx.globalAlpha = alpha;
+      ctx.fillRect(x, y, w, h);
+    });
+  }
+
   private renderFallback(state: GameState, opts?: PixiRenderOpts): void {
     if (!this.host || !this.fallbackCanvas || !this.fallbackCtx) return;
     const ctx = this.fallbackCtx;
@@ -2069,45 +2058,22 @@ export class PixiGameRenderer {
     const fbP2Frozen = fbP2Effects.frozen;
 
     // FADE surge trails
-    const FADE_FB = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
-    if (state.gameStarted && !state.gameEnded) {
-      if (fbP1Surging)
-        this.p1SurgeTrail.push({
-          pos: [state.p1.head[0], state.p1.head[1]],
-          time: nowFb,
-        });
-      if (fbP2Surging)
-        this.p2SurgeTrail.push({
-          pos: [state.p2.head[0], state.p2.head[1]],
-          time: nowFb,
-        });
-    }
-    this.p1SurgeTrail = this.p1SurgeTrail.filter(
-      (t) => nowFb - t.time < FADE_FB
+    const fbTrailOn = state.gameStarted && !state.gameEnded;
+    this.p1SurgeTrail.note(
+      state.p1.head,
+      state.p1.body,
+      fbTrailOn && fbP1Surging,
+      nowFb
     );
-    this.p2SurgeTrail = this.p2SurgeTrail.filter(
-      (t) => nowFb - t.time < FADE_FB
+    this.p2SurgeTrail.note(
+      state.p2.head,
+      state.p2.body,
+      fbTrailOn && fbP2Surging,
+      nowFb
     );
-    for (const t of this.p1SurgeTrail) {
-      ctx.globalAlpha = (1 - (nowFb - t.time) / FADE_FB) * 0.6;
-      ctx.fillStyle = '#FF7200';
-      ctx.fillRect(
-        t.pos[0] * colSize + 1,
-        t.pos[1] * rowSize + 1,
-        colSize - 2,
-        rowSize - 2
-      );
-    }
-    for (const t of this.p2SurgeTrail) {
-      ctx.globalAlpha = (1 - (nowFb - t.time) / FADE_FB) * 0.6;
-      ctx.fillStyle = '#FF7200';
-      ctx.fillRect(
-        t.pos[0] * colSize + 1,
-        t.pos[1] * rowSize + 1,
-        colSize - 2,
-        rowSize - 2
-      );
-    }
+    ctx.fillStyle = SURGE_CSS;
+    this.fillSurgeTrailFb(ctx, this.p1SurgeTrail, colSize, rowSize, nowFb);
+    this.fillSurgeTrailFb(ctx, this.p2SurgeTrail, colSize, rowSize, nowFb);
     ctx.globalAlpha = 1;
 
     // P1
@@ -2117,7 +2083,7 @@ export class PixiGameRenderer {
       const ampP = 0.5 + 0.5 * Math.sin(nowFb / 220);
       const expand = 2 + ampP * 3;
       ctx.globalAlpha = 0.18 + ampP * 0.22;
-      ctx.fillStyle = '#FFBB00';
+      ctx.fillStyle = FULL_BLOCK_CSS;
       ctx.fillRect(
         state.p1.head[0] * colSize - expand,
         state.p1.head[1] * rowSize - expand,
@@ -2199,23 +2165,10 @@ export class PixiGameRenderer {
       colSize,
       p1SegH
     );
-    if (fbP1Surging) {
-      const sp = 0.7 + 0.3 * Math.sin(nowFb / 80);
-      ctx.globalAlpha = sp;
-      ctx.strokeStyle = '#FF7200';
-      ctx.lineWidth = 2.5;
-      ctx.strokeRect(
-        state.p1.head[0] * colSize - 2,
-        p1SegTop(state.p1.head[1]) - 2,
-        colSize + 4,
-        p1SegH + 4
-      );
-      ctx.globalAlpha = 1;
-    }
     if (fbP1Amped) {
       const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
       ctx.globalAlpha = ap;
-      ctx.strokeStyle = '#FFBB00';
+      ctx.strokeStyle = FULL_BLOCK_CSS;
       ctx.lineWidth = 2;
       ctx.strokeRect(
         state.p1.head[0] * colSize - 2,
@@ -2248,23 +2201,10 @@ export class PixiGameRenderer {
         p1SegH
       );
       ctx.globalAlpha = 1;
-      if (fbP1Surging) {
-        const sp = 0.5 + 0.3 * Math.sin(nowFb / 80 + i * 0.4);
-        ctx.globalAlpha = sp;
-        ctx.strokeStyle = '#FF7200';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(
-          state.p1.body[i][0] * colSize - 1,
-          p1SegTop(state.p1.body[i][1]) - 1,
-          colSize + 2,
-          p1SegH + 2
-        );
-        ctx.globalAlpha = 1;
-      }
       if (fbP1Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
         ctx.globalAlpha = ap;
-        ctx.strokeStyle = '#FFBB00';
+        ctx.strokeStyle = FULL_BLOCK_CSS;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(
           state.p1.body[i][0] * colSize - 1,
@@ -2283,7 +2223,7 @@ export class PixiGameRenderer {
       const ampP = 0.5 + 0.5 * Math.sin(nowFb / 220);
       const expand = 2 + ampP * 3;
       ctx.globalAlpha = 0.18 + ampP * 0.22;
-      ctx.fillStyle = '#FFBB00';
+      ctx.fillStyle = FULL_BLOCK_CSS;
       ctx.fillRect(
         state.p2.head[0] * colSize - expand,
         state.p2.head[1] * rowSize - expand,
@@ -2325,23 +2265,10 @@ export class PixiGameRenderer {
       colSize,
       p2SegH
     );
-    if (fbP2Surging) {
-      const sp = 0.7 + 0.3 * Math.sin(nowFb / 80);
-      ctx.globalAlpha = sp;
-      ctx.strokeStyle = '#FF7200';
-      ctx.lineWidth = 2.5;
-      ctx.strokeRect(
-        state.p2.head[0] * colSize - 2,
-        p2SegTop(state.p2.head[1]) - 2,
-        colSize + 4,
-        p2SegH + 4
-      );
-      ctx.globalAlpha = 1;
-    }
     if (fbP2Amped) {
       const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
       ctx.globalAlpha = ap;
-      ctx.strokeStyle = '#FFBB00';
+      ctx.strokeStyle = FULL_BLOCK_CSS;
       ctx.lineWidth = 2;
       ctx.strokeRect(
         state.p2.head[0] * colSize - 2,
@@ -2385,23 +2312,10 @@ export class PixiGameRenderer {
         );
       }
       ctx.globalAlpha = 1;
-      if (fbP2Surging) {
-        const sp = 0.5 + 0.3 * Math.sin(nowFb / 80 + i * 0.4);
-        ctx.globalAlpha = sp;
-        ctx.strokeStyle = '#FF7200';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(
-          state.p2.body[i][0] * colSize - 1,
-          p2SegTop(state.p2.body[i][1]) - 1,
-          colSize + 2,
-          p2SegH + 2
-        );
-        ctx.globalAlpha = 1;
-      }
       if (fbP2Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
         ctx.globalAlpha = ap;
-        ctx.strokeStyle = '#FFBB00';
+        ctx.strokeStyle = FULL_BLOCK_CSS;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(
           state.p2.body[i][0] * colSize - 1,
