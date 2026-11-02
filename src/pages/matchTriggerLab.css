@@ -1,15 +1,28 @@
 .match-lab {
+  /* Setup width matches SETUP_OPEN_WIDTH / PANE_RAIL_WIDTH in MatchTriggerLab.tsx. */
+  --setup-col: 20rem;
+  --triggers-col: 17rem;
+  --rail: 2.25rem;
+  --hairline: rgb(255 255 255 / 0.1);
   height: 100vh;
   max-height: 100vh;
   box-sizing: border-box;
   overflow: hidden;
-  padding: 1.25rem 1.25rem 1rem 4.5rem;
-  background: #050505;
+  padding: 0;
+  background: #000;
   color: #eee;
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(22rem, 26rem);
-  gap: 1.25rem 1.5rem;
+  grid-template-columns: var(--setup-col) minmax(0, 1fr) var(--triggers-col);
   align-items: stretch;
+  transition: grid-template-columns 0.28s ease;
+}
+
+.match-lab--setup-closed {
+  --setup-col: var(--rail);
+}
+
+.match-lab--triggers-closed {
+  --triggers-col: var(--rail);
 }
 
 .match-lab__stage,
@@ -19,17 +32,19 @@
 }
 
 .match-lab__stage {
+  /* Hosts the outro, which is fixed full-screen in the game. Containing paint
+     makes the stage the box for fixed children, so the outro and its rays
+     stay inside it instead of spilling over the panes. */
+  position: relative;
+  contain: paint;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  /* The left side clears the floating corner buttons riding the Setup edge.
+     The right side mirrors it so the board sits centered between the panes. */
+  padding: 1.25rem calc(3.2vw + 1.25rem) 1rem;
 }
 
-.match-lab header h1 {
-  margin: 0.15rem 0 0.35rem;
-  font-size: clamp(1.4rem, 2.4vw, 2rem);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.match-lab header p,
 .match-lab__note,
 .match-lab__log,
 .match-lab__why {
@@ -39,17 +54,40 @@
   line-height: 1.45;
 }
 
-.match-lab header a {
-  color: #9a9a9a;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+.match-lab__back {
+  display: inline-block;
+  margin-top: 0.55rem;
+  color: #6e6e6e;
+  font-size: 0.68rem;
+  font-weight: 300;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   text-decoration: none;
 }
 
+.match-lab__back:hover {
+  color: #fff;
+}
+
 .match-lab__match {
+  /* With both panes shut the board would run edge to edge. Cap it so the whole
+     field, HUD included, still fits the window height. */
+  max-width: min(1180px, calc((100vh - 17rem) * 2));
+  margin-inline: auto;
+}
+
+.match-lab__match {
+  /* Auto margins stop flex stretch; a size container needs the width spelled out. */
+  width: 100%;
   container-type: inline-size;
-  margin-top: 0.85rem;
+  /* With the readout's auto top margin, this centers the board and chain data
+     vertically in the space above the readout. */
+  margin-top: auto;
+}
+
+/* Same live chain data as the game, the width of the board. */
+.match-lab #bitcoinDetails {
+  max-width: min(1180px, calc((100vh - 17rem) * 2));
 }
 
 .match-lab__match .flex.players,
@@ -128,37 +166,33 @@
   height: 100%;
 }
 
-.match-lab__over {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  background: rgb(0 0 0 / 0.62);
-  text-align: center;
-  text-transform: uppercase;
+.match-lab__readout {
+  /* Lab readouts sit at the foot of the stage, away from the match. */
+  width: 100%;
+  max-width: min(1180px, calc((100vh - 17rem) * 2));
+  margin: auto auto 0;
+  padding-top: 1rem;
+}
+
+.match-lab__readout-title {
+  margin: 0 0 0.4rem;
+  color: #6e6e6e;
+  font-size: 0.62rem;
+  font-weight: 300;
   letter-spacing: 0.14em;
-  pointer-events: none;
-}
-
-.match-lab__over strong {
-  font-size: clamp(1.4rem, 4cqw, 2.4rem);
-}
-
-.match-lab__over span {
-  color: #c8c8c8;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .match-lab__hud {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.4rem;
-  margin-top: 0.55rem;
+}
+
+.match-lab__hud small {
+  color: #6e6e6e;
+  font-size: 0.66rem;
+  line-height: 1.3;
 }
 
 .match-lab__hud div {
@@ -191,16 +225,36 @@
 }
 
 .match-lab__nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   flex: none;
+  /* Runs to the pane edges, right under the title bar. */
+  margin: -1rem -1rem 0.35rem;
+  border-bottom: 1px solid var(--hairline);
 }
 
-.match-lab__nav button[aria-selected='true'] {
-  background: #fff;
-  color: #111;
-  border-color: #fff;
+.match-lab .match-lab__nav button {
+  padding: 0.75rem 0.5rem;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: #7a7a7a;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.match-lab .match-lab__nav button:hover {
+  color: #ddd;
+}
+
+.match-lab .match-lab__nav button[aria-selected='true'] {
+  color: #fff;
+  border-bottom-color: #fff;
 }
 
 .match-lab__sheet {
@@ -230,10 +284,12 @@
 
 .match-lab__panel h2 {
   margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.66rem;
+  font-weight: 300;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #9a9a9a;
+  color: #8a8a8a;
 }
 
 .match-lab__ride {
@@ -243,6 +299,29 @@
   align-items: center;
 }
 
+.match-lab__tours {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.match-lab__tours button {
+  text-align: left;
+}
+
+.match-lab__tours button:first-child,
+.match-lab__tours button:last-child:nth-child(even) {
+  grid-column: 1 / -1;
+}
+
+/* The power-up key sits between the board and the chain data, like in the game. */
+.match-lab .powerUpLegend {
+  width: 100%;
+  max-width: min(1180px, calc((100vh - 17rem) * 2));
+  margin: 0.5rem auto 0;
+}
+
+.match-lab__tours button[aria-pressed='true'],
 .match-lab__ride button[aria-pressed='true'] {
   background: #fff;
   color: #111;
@@ -304,7 +383,7 @@
 .match-lab__layer b i {
   display: block;
   height: 100%;
-  background: #e7a23a;
+  background: #fff;
 }
 
 .match-lab label.slider {
@@ -327,7 +406,7 @@
 
 .match-lab input[type='range'] {
   width: 100%;
-  accent-color: #e7a23a;
+  accent-color: #fff;
 }
 
 .match-lab__actions,
@@ -354,6 +433,7 @@
 .match-lab__moment-group > p {
   margin: 0.2rem 0 0;
   font-size: 0.62rem;
+  font-weight: 300;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #6e6e6e;
@@ -468,12 +548,135 @@
   color: #eee;
 }
 
+/* ── Panes: Setup on the left, Triggers on the right ─────────────────────── */
+
+.match-lab__pane {
+  gap: 0;
+  background: #000;
+}
+
+.match-lab__pane--setup {
+  border-right: 1px solid var(--hairline);
+}
+
+.match-lab__pane--triggers {
+  border-left: 1px solid var(--hairline);
+}
+
+.match-lab .match-lab__pane-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  background: transparent;
+  color: #fff;
+  text-align: left;
+}
+
+.match-lab .match-lab__pane-head:hover,
+.match-lab .match-lab__pane-head:focus-visible {
+  background: rgb(255 255 255 / 0.04);
+}
+
+.match-lab__pane-title {
+  font-family: 'BureauGrotesque', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.match-lab__pane-chevron {
+  color: rgb(255 255 255 / 0.45);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.match-lab__pane-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem;
+}
+
+.match-lab__pane[data-open='false'] .match-lab__pane-body {
+  display: none;
+}
+
+@media (min-width: 961px) {
+  /* Closed on wide screens: a rail flush with the window, title running down it. */
+  .match-lab .match-lab__pane[data-open='false'] .match-lab__pane-head {
+    height: 100%;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    border-bottom: 0;
+  }
+
+  .match-lab__pane[data-open='false'] .match-lab__pane-title {
+    writing-mode: vertical-rl;
+    font-size: 1rem;
+  }
+
+  .match-lab__pane[data-open='false'] .match-lab__pane-chevron {
+    order: -1;
+  }
+}
+
+@media (max-width: 1280px) and (min-width: 961px) {
+  .match-lab {
+    --setup-col: 20rem;
+    --triggers-col: 15rem;
+  }
+
+  .match-lab--setup-closed {
+    --setup-col: var(--rail);
+  }
+
+  .match-lab--triggers-closed {
+    --triggers-col: var(--rail);
+  }
+}
+
 @media (max-width: 960px) {
   .match-lab {
     height: auto;
     max-height: none;
     overflow: visible;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+    gap: 0;
+  }
+
+  .match-lab__stage {
+    padding: 3.75rem 0.75rem 1rem;
+  }
+
+  /* Phones: panes run edge to edge, split by hairlines. */
+  .match-lab__pane--setup,
+  .match-lab__pane--triggers {
+    border: 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* Phones: board first, then what you tap, then setup. */
+  .match-lab__stage {
+    order: 1;
+  }
+
+  .match-lab__pane--triggers {
+    order: 2;
+  }
+
+  .match-lab__pane--setup {
+    order: 3;
   }
 
   .match-lab__stage,
@@ -481,6 +684,19 @@
   .match-lab__sheet {
     height: auto;
     overflow: visible;
+  }
+
+  .match-lab__hud {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .match-lab__pane-head {
+    padding: 0.75rem;
+  }
+
+  .match-lab__moments button,
+  .match-lab__ride button {
+    min-height: 2.6rem;
   }
 }
 
@@ -566,7 +782,7 @@ html.tv-safe-inset .match-lab {
   width: 2px;
   height: 0.65rem;
   margin: 0.12rem auto 0;
-  background: #e7a23a;
+  background: #fff;
 }
 
 .recipe__end {
@@ -598,7 +814,7 @@ html.tv-safe-inset .match-lab {
 .match-lab button.recipe__tick:focus-visible {
   z-index: 1;
   border: 0;
-  color: #e7a23a;
+  color: #fff;
 }
 
 .recipe__hint {

@@ -1,6 +1,8 @@
 .corner-controls {
   position: fixed;
-  left: 1vw;
+  /* A page with a left drawer sets the offset so the column rides its edge. */
+  left: calc(1vw + var(--corner-controls-offset, 0px));
+  transition: left 0.28s ease;
   top: 50%;
   transform: translateY(-50%);
   display: flex;

@@ -33,13 +33,17 @@ function localViewerLost(state: GameState): boolean {
 
 function readCopy(
   state: GameState,
-  continueLabel: string | null | undefined
+  continueLabel: string | null | undefined,
+  config?: Record<string, unknown>
 ): EndCopy {
   let freeGame: boolean;
   let cfg: Record<string, unknown> = {};
   try {
-    const raw = sessionStorage.getItem('gameConfig');
-    cfg = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    if (config) cfg = config;
+    else {
+      const raw = sessionStorage.getItem('gameConfig');
+      cfg = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    }
     freeGame = isPracticeFreePlayConfig(cfg);
   } catch {
     freeGame = false;
@@ -63,6 +67,8 @@ export function MatchEndCard({
   continueLabelRef,
   instantRef,
   hidden = false,
+  config,
+  portalTarget,
 }: {
   getState: () => GameState | null;
   suppressedRef?: MutableRefObject<boolean>;
@@ -70,7 +76,13 @@ export function MatchEndCard({
   /** Snap the card to its finished frame. A confirm press sets this during the hold. */
   instantRef?: MutableRefObject<boolean>;
   hidden?: boolean;
+  /** Game config to read instead of sessionStorage. The trigger lab passes its mode. */
+  config?: Record<string, unknown>;
+  /** Where the card and its rays mount. Defaults to the page body. */
+  portalTarget?: Element | null;
 }) {
+  const configRef = useRef(config);
+  configRef.current = config;
   const [copy, setCopy] = useState<EndCopy | null>(null);
   const [viewerLost, setViewerLost] = useState(false);
   const [instant, setInstant] = useState(false);
@@ -105,7 +117,11 @@ export function MatchEndCard({
         }
       } else if (state) {
         setViewerLost(localViewerLost(state));
-        const next = readCopy(state, continueLabelRef?.current);
+        const next = readCopy(
+          state,
+          continueLabelRef?.current,
+          configRef.current
+        );
         const nextKey = `${next.winner}|${next.kicker}|${next.figure.kind}|${next.prompt}`;
         if (nextKey !== key) {
           key = nextKey;
@@ -130,7 +146,7 @@ export function MatchEndCard({
               }`}
               tone="burst"
             />,
-            document.body
+            portalTarget ?? document.body
           )
         : null}
       {createPortal(
@@ -163,7 +179,7 @@ export function MatchEndCard({
             ) : null}
           </div>
         </div>,
-        document.body
+        portalTarget ?? document.body
       )}
     </>
   );

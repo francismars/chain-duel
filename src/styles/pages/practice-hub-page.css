@@ -34,11 +34,7 @@
   --ph-fs-heading: max(16px, calc(0.5rem + 1.38vw));
   --ph-fs-display-sm: max(20px, calc(0.58rem + 1.9vw));
   --ph-fs-display: max(24px, calc(0.72rem + 2.85vw));
-  /* Panel caps — chrome reserve scales with viewport width */
   --ph-page-max-width: 88vw;
-  --ph-chrome-vw: 22vw;
-  --ph-panel-max-height: calc(100dvh - var(--ph-chrome-vw));
-  --ph-play-area-max-height: calc(var(--ph-panel-max-height) - 14vw);
   /* Room for card glow + focus ring; kept in sync with --ph-card-glow-blur */
   --ph-card-glow-blur: 22px;
   --ph-glow-gutter: max(1.5rem, 2.5vw, calc(var(--ph-card-glow-blur) * 0.85));
@@ -130,7 +126,6 @@
   min-width: 0;
   min-height: 0;
   height: auto;
-  max-height: var(--ph-panel-max-height);
   overflow: visible;
   display: flex;
   flex-direction: column;
@@ -709,11 +704,10 @@
   min-height: 0;
 }
 
-/* Scrollable setup when viewport is tight; ph-picker-blocks supply shared inset */
+/* No height cap: overflow is visible, so a cap only pushes content under the footer */
 .practice-free-play-panel__body {
   flex: 0 1 auto;
   min-height: 0;
-  max-height: var(--ph-play-area-max-height);
   overflow: visible !important;
   display: flex;
   flex-direction: column;
@@ -2618,8 +2612,6 @@
   }
 
   .practice-hub-page.practice-hub--practice {
-    --ph-play-area-max-height: none;
-    --ph-panel-max-height: none;
     --ph-compact-icon: 18px;
     --ph-content-inset: 0;
   }

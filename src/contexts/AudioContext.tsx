@@ -10,6 +10,17 @@ import {
 } from 'react';
 
 import { resumeMenuMusicPosition } from '@/game/audio/resultMusicHandoff';
+import {
+  STORAGE_KEY_MASTER_VOLUME,
+  STORAGE_KEY_MASTER_VOLUME_LAST,
+  STORAGE_KEY_MUSIC_MUTED,
+  STORAGE_KEY_MUSIC_VOLUME,
+  STORAGE_KEY_MUSIC_VOLUME_LAST,
+  STORAGE_KEY_MUTED,
+  clampVolume,
+  getStoredFlag,
+  readStoredVolume,
+} from '@/lib/audioLevels';
 
 /** One-shot sound effect paths for menu UI */
 export const SFX = {
@@ -49,43 +60,11 @@ const BackgroundAudioContext = createContext<BackgroundAudioContextType | null>(
   null
 );
 
-const STORAGE_KEY_MUSIC_MUTED = 'chainduel_musicMuted';
-const STORAGE_KEY_MUTED = 'chainduel_muted';
-const STORAGE_KEY_MUSIC_VOLUME = 'chainduel_musicVolume';
-const STORAGE_KEY_MASTER_VOLUME = 'chainduel_masterVolume';
-const STORAGE_KEY_MUSIC_VOLUME_LAST = 'chainduel_musicVolumeLast';
-const STORAGE_KEY_MASTER_VOLUME_LAST = 'chainduel_masterVolumeLast';
-
-function clampVolume(value: number): number {
-  if (!Number.isFinite(value)) return 1;
-  return Math.min(1, Math.max(0, value));
-}
-
 function writeStored(key: string, value: string) {
   try {
     localStorage.setItem(key, value);
   } catch {
     /* ignore */
-  }
-}
-
-function getStoredFlag(key: string): boolean {
-  try {
-    const v = localStorage.getItem(key);
-    return v === '1' || v === 'true';
-  } catch {
-    return false;
-  }
-}
-
-/** Volume key wins. Older installs only have the mute flag, which is 0. */
-function readStoredVolume(key: string, muted: boolean): number {
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw == null) return muted ? 0 : 1;
-    return clampVolume(Number(raw));
-  } catch {
-    return muted ? 0 : 1;
   }
 }
 

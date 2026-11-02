@@ -1,17 +1,77 @@
 import { Container, Graphics } from 'pixi.js';
-import { streakPops, type StreakPop } from '@/game/audio/tensionDebug';
+import {
+  getResetMarkStyle,
+  streakPops,
+  type StreakPop,
+} from '@/game/audio/tensionDebug';
+import {
+  classicV3Strokes,
+  drawClassicPopCanvas,
+  paintClassicPop,
+} from './streakPopOverlayClassic';
+import {
+  headOfPath,
+  pathLength,
+  trimEnd,
+  trimStart,
+  type Point,
+  type Stroke,
+} from './gridPath';
 
 const WHITE = 0xffffff;
 const BLACK = 0x111111;
 
-type RingSpec = { life: number; from: number; to: number; peak: number };
+/**
+ * A square outlined on the grid, `cells` wide and centered on the pop's cell.
+ * Odd sizes keep every edge on a grid line. `ink` picks the pop's fill or fillInner.
+ * It shows from `from` until `until` in the pop's life (0..1).
+ */
+type GridSquare = {
+  cells: number;
+  ink: 'outer' | 'inner';
+  from: number;
+  until?: number;
+};
+type MarkSpec = { peak: number; squares: readonly GridSquare[] };
 
-/** WALL and CLASH: quiet ack — short, little expand. White ink peaks here. */
-const HIT_RING: RingSpec = { life: 1, from: 0.72, to: 0.98, peak: 0.35 };
-/** REORG: story beat — about a cell and a half, still brief. */
-const REORG_RING: RingSpec = { life: 1, from: 0.58, to: 1.02, peak: 0.35 };
-/** Soft home flash after a reset. A little under one cell. */
-const SPAWN_RING: RingSpec = { life: 1, from: 0.85, to: 1.05, peak: 0.32 };
+/** WALL: quiet ack — the cell it hit, nothing more. */
+const HIT_MARK: MarkSpec = {
+  peak: 0.35,
+  squares: [{ cells: 1, ink: 'outer', from: 0 }],
+};
+/** Head-to-head: the meeting cell in one color, the ring around it in the other. */
+const CLASH_MARK: MarkSpec = {
+  peak: 0.35,
+  squares: [
+    { cells: 1, ink: 'inner', from: 0 },
+    { cells: 3, ink: 'outer', from: 0.2 },
+  ],
+};
+/** REORG: story beat — steps out one cell ring at a time. Head-on puts the shorter chain in the middle. */
+const REORG_MARK: MarkSpec = {
+  peak: 0.35,
+  squares: [
+    { cells: 1, ink: 'outer', from: 0 },
+    { cells: 3, ink: 'inner', from: 0.2 },
+    { cells: 5, ink: 'outer', from: 0.4 },
+  ],
+};
+/**
+ * Home flash after a reset: closes in on the spawn cell one ring at a time.
+ * It stops at the ring around the head. A square on the head itself vanishes into its fill.
+ */
+const SPAWN_MARK: MarkSpec = {
+  peak: 0.45,
+  squares: [
+    { cells: 5, ink: 'outer', from: 0, until: 0.35 },
+    { cells: 3, ink: 'outer', from: 0.35 },
+  ],
+};
+/** The ring the spawn flash settles on. The wipe stops at its edge. */
+const SPAWN_LANDING_CELLS = 3;
+/** Wipe draws no square of its own. */
+const WIPE_MARK: MarkSpec = { peak: 0.35, squares: [] };
+
 /** Wipe line, as a fraction of the death square's opacity. */
 const WIPE_ALPHA = 0.3;
 /**
@@ -20,45 +80,28 @@ const WIPE_ALPHA = 0.3;
  */
 const DARK_PEAK = 0.55;
 
-function ringColor(pop: StreakPop): { fill: number; css: string } {
-  const tone =
-    pop.tone ??
-    (pop.text === 'CLASH' ||
-    pop.text === 'REORG' ||
-    pop.text === 'WALL' ||
-    pop.text === 'SPAWN'
-      ? 'white'
-      : 'black');
-  if (pop.fill != null) {
-    return {
-      fill: pop.fill,
-      css: `#${pop.fill.toString(16).padStart(6, '0')}`,
-    };
-  }
-  if (tone === 'white') return { fill: WHITE, css: '#ffffff' };
-  return { fill: BLACK, css: '#111111' };
+function specFor(text: string): MarkSpec {
+  if (text === 'REORG') return REORG_MARK;
+  if (text === 'CLASH') return CLASH_MARK;
+  if (text === 'SPAWN') return SPAWN_MARK;
+  if (text === 'WIPE') return WIPE_MARK;
+  return HIT_MARK;
 }
 
-/** Head-to-head inner square, as a fraction of the outer one. Wide enough that both colors read. */
-const CLASH_INNER = 0.62;
-/** Reorg nested squares, as a fraction of the one outside. */
-const REORG_INNER = 0.74;
+function isDeathMark(text: string): boolean {
+  return text === 'WALL' || text === 'CLASH' || text === 'REORG';
+}
 
-/**
- * Half-side in cells, before the small expand.
- * A wall ends near one cell across. A head-to-head ends near a cell and a quarter.
- * Reorg ends near a cell and a half. Spawn ends a little under one cell.
- */
-const HIT_RADIUS = 0.51;
-const CLASH_RADIUS = 0.64;
-const REORG_RADIUS = 0.74;
-const SPAWN_RADIUS = 0.4;
+function ringColor(pop: StreakPop): number {
+  if (pop.fill != null) return pop.fill;
+  const tone =
+    pop.tone ??
+    (isDeathMark(pop.text) || pop.text === 'SPAWN' ? 'white' : 'black');
+  return tone === 'white' ? WHITE : BLACK;
+}
 
-function baseRadiusCells(pop: StreakPop): number {
-  if (pop.text === 'REORG') return REORG_RADIUS;
-  if (pop.text === 'CLASH') return CLASH_RADIUS;
-  if (pop.text === 'SPAWN') return SPAWN_RADIUS;
-  return HIT_RADIUS;
+function toCss(color: number): string {
+  return `#${color.toString(16).padStart(6, '0')}`;
 }
 
 /** #111111 and anything darker. Mid grays stay on the shared peak. */
@@ -75,23 +118,107 @@ function inkAlpha(color: number, alpha: number, peak: number): number {
   return alpha * (DARK_PEAK / peak);
 }
 
-function ringAlpha(
-  popLife: number,
-  spec: RingSpec
-): { scale: number; alpha: number } | null {
-  const t = popLife / spec.life;
-  if (t >= 1) return null;
-  const eased = 1 - Math.pow(1 - t, 2);
-  return {
-    scale: spec.from + (spec.to - spec.from) * eased,
-    alpha: spec.peak * (1 - t),
-  };
+/** Largest square this pop ever shows, in cells. Zero when it has none. */
+function outerCells(pop: StreakPop): number {
+  return specFor(pop.text).squares.reduce(
+    (most, square) => Math.max(most, square.cells),
+    0
+  );
 }
 
-function specFor(text: string): RingSpec {
-  if (text === 'REORG') return REORG_RING;
-  if (text === 'SPAWN') return SPAWN_RING;
-  return HIT_RING;
+/**
+ * Death→spawn path in pixels relative to the death cell center.
+ * It runs along the death row, then down the spawn column, through cell centers.
+ * It leaves the death mark's outer square and stops at the spawn ring it lands on.
+ */
+function wipePath(
+  pop: StreakPop,
+  colSize: number,
+  rowSize: number
+): Point[] | null {
+  if (pop.toCol === undefined || pop.toRow === undefined) return null;
+  const dx = (pop.toCol - pop.col) * colSize;
+  const dy = (pop.toRow - pop.row) * rowSize;
+  if (dx === 0 && dy === 0) return null;
+  const death = isDeathMark(pop.text)
+    ? pop
+    : streakPops().find(
+        (other) =>
+          other.col === pop.col &&
+          other.row === pop.row &&
+          isDeathMark(other.text)
+      );
+  const deathCells = death ? outerCells(death) : 0;
+  const origin = { x: 0, y: 0 };
+  const home = { x: dx, y: dy };
+  const corner = { x: dx, y: 0 };
+  let points = dx === 0 || dy === 0 ? [origin, home] : [origin, corner, home];
+  points = trimStart(
+    points,
+    origin,
+    (deathCells * colSize) / 2,
+    (deathCells * rowSize) / 2
+  );
+  if (points.length < 2) return null;
+  points = trimEnd(
+    points,
+    home,
+    (SPAWN_LANDING_CELLS * colSize) / 2,
+    (SPAWN_LANDING_CELLS * rowSize) / 2
+  );
+  if (points.length < 2 || pathLength(points) <= 0) return null;
+  return points;
+}
+
+/** Everything one pop draws this frame. Empty once it has faded. */
+function markStrokes(
+  pop: StreakPop,
+  colSize: number,
+  rowSize: number
+): Stroke[] {
+  const life = 1 - pop.alpha;
+  if (life >= 1) return [];
+  const spec = specFor(pop.text);
+  const alpha = spec.peak * (1 - life);
+  const cell = Math.min(colSize, rowSize);
+  const outer = ringColor(pop);
+  const inner = pop.fillInner ?? outer;
+  const strokes: Stroke[] = [];
+
+  const wipe = wipePath(pop, colSize, rowSize);
+  if (pop.text !== 'SPAWN' && wipe) {
+    const travel = Math.min(1, life * 1.35);
+    const points = headOfPath(wipe, pathLength(wipe) * travel);
+    // The first frame has no length yet.
+    if (points.length >= 2) {
+      strokes.push({
+        kind: 'path',
+        points,
+        width: Math.max(1, cell * 0.04),
+        color: outer,
+        alpha: inkAlpha(outer, alpha, spec.peak) * WIPE_ALPHA,
+      });
+    }
+  }
+
+  const width = Math.max(1, cell * 0.06);
+  for (const square of spec.squares) {
+    if (life < square.from || life >= (square.until ?? 1)) continue;
+    const color = square.ink === 'inner' ? inner : outer;
+    const w = square.cells * colSize;
+    const h = square.cells * rowSize;
+    strokes.push({
+      kind: 'rect',
+      x: -w / 2,
+      y: -h / 2,
+      w,
+      h,
+      width,
+      color,
+      alpha: inkAlpha(color, alpha, spec.peak),
+    });
+  }
+  return strokes;
 }
 
 type Mark = {
@@ -113,10 +240,9 @@ export class StreakPopOverlay {
       this.hide();
       return;
     }
-    const cell = Math.min(colSize, rowSize);
     pops.forEach((pop, index) => {
       const mark = this.acquire(index);
-      paintMark(mark, pop, cell, colSize, rowSize);
+      paintMark(mark, pop, colSize, rowSize);
     });
     for (let i = pops.length; i < this.pool.length; i += 1) {
       this.pool[i]!.root.visible = false;
@@ -136,157 +262,42 @@ export class StreakPopOverlay {
   }
 }
 
-function strokeSquare(
-  ring: Graphics,
-  half: number,
-  width: number,
-  color: number,
-  alpha: number
-): void {
-  ring.rect(-half, -half, half * 2, half * 2).stroke({ width, color, alpha });
-}
-
-function outerHalfPx(pop: StreakPop, cell: number): number {
-  const spec = specFor(pop.text);
-  const drawn = ringAlpha(1 - pop.alpha, spec);
-  return baseRadiusCells(pop) * cell * (drawn?.scale ?? spec.to);
-}
-
-/** Offset from a square's center to the edge facing (dx, dy). */
-function squareEdge(
-  dx: number,
-  dy: number,
-  half: number
-): { x: number; y: number } {
-  const span = Math.max(Math.abs(dx), Math.abs(dy));
-  if (span < 1e-4 || half <= 0) return { x: 0, y: 0 };
-  const t = half / span;
-  return { x: dx * t, y: dy * t };
-}
-
-/**
- * Death→spawn line in pixels relative to the death cell center.
- * It leaves the death square's outer edge and stops at the spawn square's outer edge.
- */
-function wipeSegment(
-  pop: StreakPop,
-  colSize: number,
-  rowSize: number,
-  cell: number
-): { from: { x: number; y: number }; to: { x: number; y: number } } | null {
-  if (pop.toCol === undefined || pop.toRow === undefined) return null;
-  const dx = (pop.toCol - pop.col) * colSize;
-  const dy = (pop.toRow - pop.row) * rowSize;
-  const death =
-    pop.text === 'WALL' || pop.text === 'CLASH' || pop.text === 'REORG'
-      ? pop
-      : streakPops().find(
-          (other) =>
-            other.col === pop.col &&
-            other.row === pop.row &&
-            (other.text === 'REORG' ||
-              other.text === 'CLASH' ||
-              other.text === 'WALL')
-        );
-  const spawn = streakPops().find(
-    (other) =>
-      other.text === 'SPAWN' &&
-      other.col === pop.toCol &&
-      other.row === pop.toRow
-  );
-  const start = squareEdge(dx, dy, death ? outerHalfPx(death, cell) : 0);
-  const inset = squareEdge(
-    dx,
-    dy,
-    spawn ? outerHalfPx(spawn, cell) : SPAWN_RADIUS * cell * SPAWN_RING.to
-  );
-  const end = { x: dx - inset.x, y: dy - inset.y };
-  if ((end.x - start.x) * dx + (end.y - start.y) * dy <= 0) return null;
-  return { from: start, to: end };
-}
-
 function paintMark(
   mark: Mark,
   pop: StreakPop,
-  cell: number,
   colSize: number,
   rowSize: number
 ): void {
-  const life = 1 - pop.alpha;
-  const color = ringColor(pop).fill;
-  const spec = specFor(pop.text);
-  const base = baseRadiusCells(pop) * cell;
-  const drawn = ringAlpha(life, spec);
   mark.root.position.set(
     pop.col * colSize + colSize / 2,
     pop.row * rowSize + rowSize / 2
   );
   mark.root.visible = true;
   mark.ring.clear();
-  if (!drawn) return;
-  const half = base * drawn.scale;
-  const width = Math.max(1, cell * 0.06);
-
-  const wipe = wipeSegment(pop, colSize, rowSize, cell);
-  if (pop.text !== 'SPAWN' && wipe) {
-    const travel = Math.min(1, life * 1.35);
-    mark.ring
-      .moveTo(wipe.from.x, wipe.from.y)
-      .lineTo(
-        wipe.from.x + (wipe.to.x - wipe.from.x) * travel,
-        wipe.from.y + (wipe.to.y - wipe.from.y) * travel
-      )
-      .stroke({
-        width: Math.max(1, cell * 0.04),
-        color,
-        alpha: inkAlpha(color, drawn.alpha, spec.peak) * WIPE_ALPHA,
-      });
-  }
-  if (pop.text === 'WIPE') return;
-
-  // Head-to-head: one square, both chain colors, on the cell where they meet.
-  if (pop.text === 'CLASH' && pop.fillInner != null) {
-    const innerHalf = half * CLASH_INNER;
-    strokeSquare(
-      mark.ring,
-      half,
-      width,
-      color,
-      inkAlpha(color, drawn.alpha, spec.peak)
-    );
-    strokeSquare(
-      mark.ring,
-      innerHalf,
-      width,
-      pop.fillInner,
-      inkAlpha(pop.fillInner, drawn.alpha, spec.peak)
-    );
+  const style = getResetMarkStyle();
+  if (style === 'classic' || style === 'classic-v2') {
+    paintClassicPop(mark.ring, pop, colSize, rowSize, style === 'classic-v2');
     return;
   }
-  // REORG: three squares. Solo is one color. Head-on puts the shorter chain in the middle.
-  if (pop.text === 'REORG') {
-    const midHalf = half * REORG_INNER;
-    const innerHalf = midHalf * REORG_INNER;
-    const mid = pop.fillInner ?? color;
-    const outerAlpha = inkAlpha(color, drawn.alpha, spec.peak);
-    strokeSquare(mark.ring, half, width, color, outerAlpha);
-    strokeSquare(
-      mark.ring,
-      midHalf,
-      width,
-      mid,
-      inkAlpha(mid, drawn.alpha, spec.peak)
-    );
-    strokeSquare(mark.ring, innerHalf, width, color, outerAlpha);
-    return;
+  const strokes =
+    style === 'classic-v3'
+      ? classicV3Strokes(pop, colSize, rowSize)
+      : markStrokes(pop, colSize, rowSize);
+  for (const stroke of strokes) {
+    const style = {
+      width: stroke.width,
+      color: stroke.color,
+      alpha: stroke.alpha,
+    };
+    if (stroke.kind === 'rect') {
+      mark.ring.rect(stroke.x, stroke.y, stroke.w, stroke.h).stroke(style);
+      continue;
+    }
+    const [first, ...rest] = stroke.points;
+    mark.ring.moveTo(first!.x, first!.y);
+    for (const point of rest) mark.ring.lineTo(point.x, point.y);
+    mark.ring.stroke({ ...style, join: 'miter', cap: 'butt' });
   }
-  strokeSquare(
-    mark.ring,
-    half,
-    width,
-    color,
-    inkAlpha(color, drawn.alpha, spec.peak)
-  );
 }
 
 export function drawStreakPopsCanvas(
@@ -296,81 +307,35 @@ export function drawStreakPopsCanvas(
 ): void {
   const pops = streakPops();
   if (pops.length === 0) return;
-  const cell = Math.min(colSize, rowSize);
   ctx.save();
+  const style = getResetMarkStyle();
   for (const pop of pops) {
-    const life = 1 - pop.alpha;
-    const paint = ringColor(pop);
-    const css = paint.css;
-    const spec = specFor(pop.text);
-    const base = baseRadiusCells(pop) * cell;
-    const drawn = ringAlpha(life, spec);
-    if (!drawn) continue;
-    const half = base * drawn.scale;
+    if (style === 'classic' || style === 'classic-v2') {
+      drawClassicPopCanvas(ctx, pop, colSize, rowSize, style === 'classic-v2');
+      continue;
+    }
     const x = pop.col * colSize + colSize / 2;
     const y = pop.row * rowSize + rowSize / 2;
-    const width = Math.max(1, cell * 0.06);
-    const alphaFor = (color: number) => inkAlpha(color, drawn.alpha, spec.peak);
-    ctx.strokeStyle = css;
-    ctx.lineWidth = width;
-    const wipe = wipeSegment(pop, colSize, rowSize, cell);
-    if (pop.text !== 'SPAWN' && wipe) {
-      const travel = Math.min(1, life * 1.35);
-      ctx.strokeStyle = css;
-      ctx.globalAlpha = alphaFor(paint.fill) * WIPE_ALPHA;
-      ctx.lineWidth = Math.max(1, cell * 0.04);
+    const strokes =
+      style === 'classic-v3'
+        ? classicV3Strokes(pop, colSize, rowSize)
+        : markStrokes(pop, colSize, rowSize);
+    for (const stroke of strokes) {
+      ctx.globalAlpha = stroke.alpha;
+      ctx.strokeStyle = toCss(stroke.color);
+      ctx.lineWidth = stroke.width;
+      if (stroke.kind === 'rect') {
+        ctx.strokeRect(x + stroke.x, y + stroke.y, stroke.w, stroke.h);
+        continue;
+      }
+      ctx.lineJoin = 'miter';
+      ctx.lineCap = 'butt';
       ctx.beginPath();
-      ctx.moveTo(x + wipe.from.x, y + wipe.from.y);
-      ctx.lineTo(
-        x + wipe.from.x + (wipe.to.x - wipe.from.x) * travel,
-        y + wipe.from.y + (wipe.to.y - wipe.from.y) * travel
-      );
+      const [first, ...rest] = stroke.points;
+      ctx.moveTo(x + first!.x, y + first!.y);
+      for (const point of rest) ctx.lineTo(x + point.x, y + point.y);
       ctx.stroke();
-      ctx.lineWidth = width;
     }
-    if (pop.text === 'WIPE') continue;
-    if (pop.text === 'CLASH' && pop.fillInner != null) {
-      const innerHalf = half * CLASH_INNER;
-      const inner = `#${pop.fillInner.toString(16).padStart(6, '0')}`;
-      ctx.globalAlpha = alphaFor(paint.fill);
-      ctx.strokeStyle = css;
-      ctx.strokeRect(x - half, y - half, half * 2, half * 2);
-      ctx.globalAlpha = alphaFor(pop.fillInner);
-      ctx.strokeStyle = inner;
-      ctx.strokeRect(
-        x - innerHalf,
-        y - innerHalf,
-        innerHalf * 2,
-        innerHalf * 2
-      );
-      continue;
-    }
-    if (pop.text === 'REORG') {
-      const midHalf = half * REORG_INNER;
-      const innerHalf = midHalf * REORG_INNER;
-      const midColor = pop.fillInner ?? paint.fill;
-      const mid =
-        pop.fillInner == null
-          ? css
-          : `#${pop.fillInner.toString(16).padStart(6, '0')}`;
-      ctx.globalAlpha = alphaFor(paint.fill);
-      ctx.strokeStyle = css;
-      ctx.strokeRect(x - half, y - half, half * 2, half * 2);
-      ctx.globalAlpha = alphaFor(midColor);
-      ctx.strokeStyle = mid;
-      ctx.strokeRect(x - midHalf, y - midHalf, midHalf * 2, midHalf * 2);
-      ctx.globalAlpha = alphaFor(paint.fill);
-      ctx.strokeStyle = css;
-      ctx.strokeRect(
-        x - innerHalf,
-        y - innerHalf,
-        innerHalf * 2,
-        innerHalf * 2
-      );
-      continue;
-    }
-    ctx.globalAlpha = alphaFor(paint.fill);
-    ctx.strokeRect(x - half, y - half, half * 2, half * 2);
   }
   ctx.restore();
 }

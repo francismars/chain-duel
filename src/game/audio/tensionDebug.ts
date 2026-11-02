@@ -186,12 +186,42 @@ export function pushSpawnFlash(
   pushCaptureRatePop(head, 'SPAWN', true, tone, undefined, fill);
 }
 
+/**
+ * Grid: cell-aligned marks that step. Classic: the original eased squares, kept to compare.
+ * Classic v2: classic shapes with the weight moved onto the spawn.
+ * Classic v3: v2's timing, snapped to the grid and drawn stronger.
+ */
+export type ResetMarkStyle = 'grid' | 'classic' | 'classic-v2' | 'classic-v3';
+
+/** Per-frame fade of the spawn flash. v2 waits for the wipe to land, so it lives longer. */
+const SPAWN_FADE: Record<ResetMarkStyle, number> = {
+  grid: 0.04,
+  classic: 0.06,
+  'classic-v2': 0.03,
+  'classic-v3': 0.03,
+};
+export const DEFAULT_RESET_MARK_STYLE: ResetMarkStyle = 'classic-v3';
+let resetMarkStyle: ResetMarkStyle = DEFAULT_RESET_MARK_STYLE;
+
+/** Classic v3 plays its marks this much faster than v2. */
+const V3_SPEED = 2.1;
+
+export function getResetMarkStyle(): ResetMarkStyle {
+  return resetMarkStyle;
+}
+
+export function setResetMarkStyle(style: ResetMarkStyle): void {
+  resetMarkStyle = style;
+}
+
 export function streakPops(): readonly StreakPop[] {
   return pops;
 }
 
 /**
- * WALL/CLASH ~0.35s, REORG ~0.5s, SPAWN ~0.25s at 60fps.
+ * WALL/CLASH ~0.35s, REORG ~0.5s, SPAWN ~0.4s (classic ~0.25s, classic v2 ~0.55s) at 60fps.
+ * Classic v3 runs every mark 2.1x faster. The spawn still waits for the wipe,
+ * since both speed up together.
  */
 export function advanceStreakPops(): void {
   if (pops.length === 0) return;
@@ -201,7 +231,12 @@ export function advanceStreakPops(): void {
       yOffsetPx: pop.yOffsetPx,
       alpha:
         pop.alpha -
-        (pop.text === 'SPAWN' ? 0.06 : pop.text === 'REORG' ? 0.028 : 0.045),
+        (pop.text === 'SPAWN'
+          ? SPAWN_FADE[resetMarkStyle]
+          : pop.text === 'REORG'
+            ? 0.028
+            : 0.045) *
+          (resetMarkStyle === 'classic-v3' ? V3_SPEED : 1),
     }))
     .filter((pop) => pop.alpha >= 0);
 }

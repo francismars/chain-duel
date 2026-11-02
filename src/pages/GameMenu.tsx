@@ -84,7 +84,7 @@ type ButtonSelected =
 export default function GameMenu({
   preview = false,
 }: {
-  /** Preview layout: both players pay from their own station. */
+  /** Mock players and payments for /preview — no socket. */
   preview?: boolean;
 } = {}) {
   const logger = useMemo(() => createLogger('GameMenu'), []);
@@ -722,7 +722,7 @@ export default function GameMenu({
       }
       const down = e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
       const up = e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W';
-      if (preview && up && !showCancelOverlay) {
+      if (up && !showCancelOverlay) {
         if (
           buttonSelected === 'mainMenuButton' ||
           buttonSelected === 'startgame' ||
@@ -733,7 +733,7 @@ export default function GameMenu({
           setButtonSelected('rules');
         }
       }
-      if (preview && down && !showCancelOverlay && buttonSelected === 'rules') {
+      if (down && !showCancelOverlay && buttonSelected === 'rules') {
         playSfx(SFX.MENU_SELECT);
         setButtonSelected('mainMenuButton');
       }
@@ -831,9 +831,7 @@ export default function GameMenu({
     <>
       <GameSetupLayout
         title={preview ? 'P2P' : gameMenuTitle}
-        pageClass={`gamemenu-page ${isNostrMode ? 'is-nostr' : ''}${
-          preview ? ' gamemenu-preview' : ''
-        }`}
+        pageClass={`gamemenu-page gamemenu-preview${isNostrMode ? ' is-nostr' : ''}`}
         mainMenuDisabled={false}
         canStart={canStart}
         paySeat={
@@ -1068,13 +1066,6 @@ export default function GameMenu({
                 <span className="grey sats-label">sats</span>
               </div>
               <div id="prizeinfosats">Total Prize</div>
-              {preview ? null : (
-                <div id="splits">
-                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span>
-                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span>
-                  <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
-                </div>
-              )}
               <div id="leaderboard">
                 <p id="leaderboard-inner">
                   <span id="leaderboardSats">{fmt(leaderboardThreshold)}</span>{' '}
@@ -1269,23 +1260,18 @@ export default function GameMenu({
                 ) : null}
               </div>
             </div>
-            {preview ? (
-              <>
-                <div className="deposit-message gamemenu-preview-deposit">
-                  Deposit between <b>{fmt(Math.min(minP1, minP2))}</b> and{' '}
-                  <b>{fmt(SATS_DISPLAY_MAX)}</b> sats. Set player name on the
-                  payment note.
-                  <br />
-                  LNURL compatible wallet required. Allows for multiple
-                  deposits.
-                </div>
-                <div id="splits">
-                  <span id="rules1">host 2% ({fmt(hostCut)} sats)</span>
-                  <span id="rules2">developer 2% ({fmt(devCut)} sats)</span>
-                  <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
-                </div>
-              </>
-            ) : null}
+            <div className="deposit-message gamemenu-preview-deposit">
+              Deposit between <b>{fmt(Math.min(minP1, minP2))}</b> and{' '}
+              <b>{fmt(SATS_DISPLAY_MAX)}</b> sats. Set player name on the
+              payment note.
+              <br />
+              LNURL compatible wallet required. Allows for multiple deposits.
+            </div>
+            <div id="splits">
+              <span id="rules1">host 2% ({fmt(hostCut)} sats)</span>
+              <span id="rules2">developer 2% ({fmt(devCut)} sats)</span>
+              <span id="rules3">designer 1% ({fmt(designCut)} sats)</span>
+            </div>
           </>
         )}
       </GameSetupLayout>

@@ -372,7 +372,7 @@ html.tv-safe-inset .tournbracket-page .tournbracket-middle {
 
 /* Match default .corner-controls (1vw) but from the TV-safe content edge; aligns with CHAIN / #brand inset */
 html.tv-safe-inset .corner-controls {
-  left: calc(var(--tv-safe-padding) + 1vw);
+  left: calc(var(--tv-safe-padding) + 1vw + var(--corner-controls-offset, 0px));
 }
 
 .backend-status {
