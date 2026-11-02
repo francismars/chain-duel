@@ -76,6 +76,7 @@ import {
   type QuietSnake,
 } from '@/game/render/quietChainCells';
 import { SurgeTrail } from '@/game/render/surgeTrail';
+import type { MatchEndPops } from '@/game/render/pointChangeOverlay';
 import { canvasResolution, readGraphicsSettings } from '@/lib/graphicsSettings';
 
 /** Chain effects match their power-up icons: ASIC Boost yellow, Full Block green. */
@@ -84,6 +85,27 @@ const FULL_BLOCK_COLOR = POWERUP_COLORS.AMPLIFIER!;
 const cssHex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
 const SURGE_CSS = cssHex(SURGE_COLOR);
 const FULL_BLOCK_CSS = cssHex(FULL_BLOCK_COLOR);
+
+/**
+ * Game end, before the overlay: the loser's chain mutes and each coin pops
+ * and vanishes. Both finish well inside END_OVERLAY_DELAY_MS.
+ */
+const END_LOSER_MUTE_MS = 450;
+/** How far the loser's chain fades. */
+const END_LOSER_MUTE = 0.72;
+const END_COIN_POP_UP_MS = 130;
+const END_COIN_POP_OUT_MS = 290;
+const END_COIN_POP_SCALE = 1.45;
+
+/** Coin size during the end pop: a quick swell, then a shrink to nothing. */
+function endCoinPopScale(elapsedMs: number): number {
+  if (elapsedMs < END_COIN_POP_UP_MS) {
+    const t = elapsedMs / END_COIN_POP_UP_MS;
+    return 1 + (END_COIN_POP_SCALE - 1) * (1 - (1 - t) * (1 - t));
+  }
+  const t = Math.min(1, (elapsedMs - END_COIN_POP_UP_MS) / END_COIN_POP_OUT_MS);
+  return END_COIN_POP_SCALE * (1 - t * t * t);
+}
 
 type CapturePulse = { startMs: number; reward: number };
 
@@ -108,6 +130,9 @@ export class PixiGameRenderer {
   private deadZone: Graphics = new Graphics();
   private grid: Graphics = new Graphics();
   private scene: Graphics = new Graphics();
+  /** The losing chain at game end, so it can fade without redrawing. */
+  private loserLayer: Graphics = new Graphics();
+  private endFxStartMs: number | null = null;
   /**
    * Quiet-step picture. Walls and coins stay put. Chain fills are sprites that
    * share one texture, so they batch into one draw. Strokes (outlines, frozen
@@ -303,6 +328,7 @@ export class PixiGameRenderer {
       this.root.addChild(this.chainCells);
       this.root.addChild(this.chainMarks);
       this.root.addChild(this.scene);
+      this.root.addChild(this.loserLayer);
       this.root.addChild(this.coinLayer);
       this.root.addChild(this.powerUpLayer);
       this.overlay.addChild(this.startWordsContainer);
@@ -615,6 +641,7 @@ export class PixiGameRenderer {
   ): void {
     if (!this.quietCellsOn) {
       this.scene.clear();
+      this.loserLayer.clear();
       this.scene.visible = false;
       this.quietCellsOn = true;
       this.stillBoardKey = '';
@@ -922,7 +949,23 @@ export class PixiGameRenderer {
 
       // ── Scene ─────────────────────────────────────────────────────────────────
       this.scene.clear();
+      this.loserLayer.clear();
       this.drawWalls(this.scene, state, colSize, rowSize);
+      const endFx = this.endFxElapsed(state, now);
+      const loser =
+        endFx === null
+          ? null
+          : state.winnerPlayer === 'P1'
+            ? 'p2'
+            : state.winnerPlayer === 'P2'
+              ? 'p1'
+              : null;
+      this.loserLayer.alpha =
+        loser === null
+          ? 1
+          : 1 -
+            END_LOSER_MUTE *
+              (1 - Math.pow(1 - Math.min(1, endFx! / END_LOSER_MUTE_MS), 3));
 
       // Snakes
       const p1Effects = getSnakeEffects(state, 0);
@@ -1002,6 +1045,8 @@ export class PixiGameRenderer {
       }
 
       const p1Bob = preStartControllerBobPx(state, 0, rowSize);
+      const scene = this.scene;
+      if (loser === 'p1') this.scene = this.loserLayer;
       this.drawSnake(
         state.p1,
         0xffffff,
@@ -1019,9 +1064,11 @@ export class PixiGameRenderer {
         p1Bob,
         'p1'
       );
+      this.scene = scene;
 
       const p2Color = P2_SNAKE_COLOR;
       const p2Bob = preStartControllerBobPx(state, 1, rowSize);
+      if (loser === 'p2') this.scene = this.loserLayer;
       this.drawSnake(
         state.p2,
         p2Color,
@@ -1039,9 +1086,11 @@ export class PixiGameRenderer {
         p2Bob,
         'p2'
       );
+      this.scene = scene;
 
+      const coinScale = endFx === null ? 1 : endCoinPopScale(endFx);
       for (const cb of state.coinbases ?? []) {
-        if (cb.isDecoy) continue;
+        if (cb.isDecoy || coinScale <= 0) continue;
         this.drawCoinbase(
           cb.pos,
           colSize,
@@ -1050,7 +1099,9 @@ export class PixiGameRenderer {
             reward: cb.reward,
             isDecoy: false,
           },
-          boardElapsed
+          boardElapsed,
+          this.scene,
+          coinScale
         );
       }
 
@@ -1137,7 +1188,8 @@ export class PixiGameRenderer {
       colSize,
       rowSize,
       width,
-      height
+      height,
+      this.matchEndPops(state, now)
     );
     if (this.streakPopOverlay.container.parent !== this.overlay) {
       this.overlay.addChild(this.streakPopOverlay.container);
@@ -1182,6 +1234,35 @@ export class PixiGameRenderer {
       1,
       (performance.now() - this.resolveAnimStartMs) / END_RESOLVE_DURATION_MS
     );
+  }
+
+  /**
+   * Ms since the game ended, for the loser mute and coin pop; null while
+   * playing. With animations off, both jump straight to their end state.
+   */
+  private endFxElapsed(state: GameState, now: number): number | null {
+    if (!state.gameEnded) {
+      this.endFxStartMs = null;
+      return null;
+    }
+    if (this.graphics.animations === 'off') return Infinity;
+    if (this.endFxStartMs === null) this.endFxStartMs = now;
+    return now - this.endFxStartMs;
+  }
+
+  /** Winner's prize and loser's zero over their heads, once a match ends. */
+  private matchEndPops(state: GameState, now: number): MatchEndPops | null {
+    if (!state.gameEnded) return null;
+    const off = this.graphics.animations === 'off';
+    if (!off && this.endFxStartMs === null) return null;
+    const winner = state.winnerPlayer;
+    if (winner !== 'P1' && winner !== 'P2') return null;
+    return {
+      winner: (winner === 'P1' ? state.p1 : state.p2).head,
+      loser: (winner === 'P1' ? state.p2 : state.p1).head,
+      prize: state.totalPoints,
+      elapsedMs: off ? Infinity : now - this.endFxStartMs!,
+    };
   }
 
   private resetEndOverlayTiming(): void {
@@ -1724,7 +1805,8 @@ export class PixiGameRenderer {
     rowSize: number,
     opts: { reward?: number; isDecoy?: boolean },
     boardElapsed: number = Infinity,
-    target: Graphics = this.scene
+    target: Graphics = this.scene,
+    scale = 1
   ): void {
     const coinReveal = (() => {
       if (boardElapsed === Infinity) return 1;
@@ -1732,7 +1814,7 @@ export class PixiGameRenderer {
       return 1 - Math.pow(1 - t, 3);
     })();
     const baseRadius = rowSize / 2 - rowSize / 5.4;
-    const radius = baseRadius * coinReveal;
+    const radius = baseRadius * coinReveal * scale;
     const cx = pos[0] * colSize + colSize / 2;
     const cy = pos[1] * rowSize + rowSize / 2;
 
@@ -1784,7 +1866,7 @@ export class PixiGameRenderer {
       for (let ring = rings; ring > 0; ring -= 1) {
         const alpha = 0.1 / rings + transparencyAdder / 20;
         target
-          .circle(cx, cy, radius + ring * rowSize * 0.38)
+          .circle(cx, cy, radius + ring * rowSize * 0.38 * scale)
           .stroke({ width: 1, color: 0xffffff, alpha });
         transparencyAdder += 1;
       }
