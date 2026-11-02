@@ -350,6 +350,55 @@ function buildPopSpecs(
   ];
 }
 
+/** The match result on the board: the winner's prize and the loser's zero. */
+export type MatchEndPops = {
+  winner: GridPos;
+  loser: GridPos;
+  prize: number;
+  /** Ms since the game ended. */
+  elapsedMs: number;
+};
+
+const END_POP_IN_MS = 150;
+const END_POP_RISE_MS = 400;
+
+/** The two end-of-match pops: they pop in like a capture, rise a little, and hold. */
+export function buildEndPopSpecs(
+  end: MatchEndPops,
+  colSize: number,
+  rowSize: number
+): PopSpec[] {
+  // Same life curve as a capture pop, stopped once the pop has settled.
+  const life = 0.14 * Math.min(1, end.elapsedMs / END_POP_IN_MS);
+  const rise =
+    1 - Math.pow(1 - Math.min(1, end.elapsedMs / END_POP_RISE_MS), 3);
+  const lift = -rowSize * (1.25 + 0.5 * rise);
+  const winner = popScreenPos(end.winner, 0, colSize, rowSize, lift);
+  const loser = popScreenPos(end.loser, 0, colSize, rowSize, lift);
+  return [
+    {
+      mainText: end.prize.toLocaleString('en-US'),
+      labelText: SATS_LABEL,
+      x: winner.x,
+      y: winner.y,
+      value: end.prize,
+      isGain: true,
+      alpha: 1 - life,
+      drift: outwardDrift(winner.x, loser.x, true),
+    },
+    {
+      mainText: '0',
+      labelText: SATS_LABEL,
+      x: loser.x,
+      y: loser.y,
+      value: 0,
+      isGain: false,
+      alpha: 1 - life,
+      drift: outwardDrift(winner.x, loser.x, false),
+    },
+  ];
+}
+
 function drawFilledText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -491,9 +540,10 @@ export class PointChangeOverlay {
     colSize: number,
     rowSize: number,
     boardWidth = Number.POSITIVE_INFINITY,
-    boardHeight = Number.POSITIVE_INFINITY
+    boardHeight = Number.POSITIVE_INFINITY,
+    end: MatchEndPops | null = null
   ): void {
-    if (changes.length === 0 || this.mode === 'off') {
+    if ((changes.length === 0 && !end) || this.mode === 'off') {
       this.release();
       return;
     }
@@ -501,8 +551,12 @@ export class PointChangeOverlay {
     const cellSize = Math.min(colSize, rowSize);
     this.claimed.clear();
 
-    for (const change of changes) {
-      for (const spec of buildPopSpecs(change, colSize, rowSize)) {
+    // At the end, the result replaces any capture pops still in the air.
+    const batches = end
+      ? [buildEndPopSpecs(end, colSize, rowSize)]
+      : changes.map((change) => buildPopSpecs(change, colSize, rowSize));
+    for (const specs of batches) {
+      for (const spec of specs) {
         const fontSize = Math.round(
           pointChangeFontSize(spec.value, cellSize) *
             (spec.isGain ? GAIN_SIZE_SCALE : LOSS_SIZE_SCALE)

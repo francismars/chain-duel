@@ -714,3 +714,54 @@ describe('board contraction audio', () => {
     expect(cue('chain_duel_shrink').play).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('saved listener levels', () => {
+  function storeLevels(levels: Record<string, string>) {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => levels[key] ?? null,
+      setItem: () => undefined,
+    });
+  }
+
+  it('starts silent when the corner controls were muted before a remount', () => {
+    storeLevels({ chainduel_masterVolume: '0' });
+    const audio = new GameAudioSystem();
+    audio.startMusic();
+    audio.playPowerUp();
+    expect(cue('produced_game').play).not.toHaveBeenCalled();
+    expect(cue('powerup').play).not.toHaveBeenCalled();
+    audio.stopAll();
+  });
+
+  it('keeps effects but holds the music when only music was muted', () => {
+    storeLevels({ chainduel_musicVolume: '0' });
+    const audio = new GameAudioSystem();
+    audio.startMusic();
+    audio.playPowerUp();
+    expect(cue('produced_game').play).not.toHaveBeenCalled();
+    expect(cue('powerup').play).toHaveBeenCalled();
+    audio.stopAll();
+  });
+
+  it('honours the legacy mute flag from older installs', () => {
+    storeLevels({ chainduel_muted: '1' });
+    const audio = new GameAudioSystem();
+    audio.startMusic();
+    expect(cue('produced_game').play).not.toHaveBeenCalled();
+    audio.stopAll();
+  });
+
+  it('starts at the saved level instead of full volume', () => {
+    storeLevels({
+      chainduel_masterVolume: '0.5',
+      chainduel_musicVolume: '0.4',
+    });
+    const audio = new GameAudioSystem();
+    audio.startMusic();
+    expect(cue('produced_game').play).toHaveBeenCalled();
+    expect(cue('produced_game').volume).toBeCloseTo(0.2);
+    audio.playPowerUp();
+    expect(cue('powerup').volume).toBeCloseTo(0.5);
+    audio.stopAll();
+  });
+});

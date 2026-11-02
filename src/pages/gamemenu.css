@@ -668,19 +668,10 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   box-sizing: border-box;
 }
 
-@media (min-width: 641px) {
-  .gamemenu-preview #gameMenuTitle.hero-outline {
-    position: absolute;
-    top: 4.25rem;
-    left: 0;
-    right: 0;
-    z-index: 2;
-    margin: 0;
-  }
-
-  .gamemenu-preview .game-setup-main {
-    transform: translateY(-2.5rem);
-  }
+/* No transform on .game-setup-main: it would become the containing block for the
+   fixed #splits bar and pull it up over the Rules button. */
+.gamemenu-preview #gameMenuTitle.hero-outline {
+  margin: 0 0 0.5rem;
 }
 
 .gamemenu-preview #centerSection {
@@ -712,7 +703,9 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: #0b0b0b;
+  background: rgba(11, 11, 11, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border: none;
 }
 
@@ -853,7 +846,17 @@ html.tv-safe-inset .gamemenu-preview.game-setup-page .game-setup-middle {
 }
 
 .rules-modal .rules-slider {
-  width: min(86vw, calc(54svh * 51 / 25));
+  /* ~22rem = mast + title + description + actions; keeps Close on short screens */
+  width: min(
+    86vw,
+    calc(54svh * 51 / 25),
+    calc((100svh - 22rem) * 51 / 25)
+  );
+}
+
+/* Let the clip fill the modal slider instead of the inline 26rem cap */
+.rules-modal .rule-clip-frame {
+  max-width: none;
 }
 
 .rules-slider__card {

@@ -20,6 +20,7 @@ import {
   resetTensionDebug,
 } from './tensionDebug';
 import { saveMenuMusicPosition } from './resultMusicHandoff';
+import { readStoredAudioLevels } from '@/lib/audioLevels';
 import { readGraphicsSettings } from '@/lib/graphicsSettings';
 
 function headTravel(before: TensionPlayer, after: TensionPlayer): number {
@@ -217,6 +218,15 @@ export class GameAudioSystem {
   constructor() {
     for (const { audio } of this.themes) audio.volume = 0;
     this.applyRecipeFiles();
+    // A system built after a remount or hot reload must not start at full
+    // volume while the corner controls are muted. Pages re-apply live levels.
+    const { musicVolume, masterVolume } = readStoredAudioLevels();
+    this.applyAppMuteState(
+      masterVolume <= 0,
+      musicVolume <= 0,
+      musicVolume,
+      masterVolume
+    );
   }
   private beep1 = createAudio('/sound/Beep1.m4a');
   private beep2 = createAudio('/sound/Beep2.m4a');

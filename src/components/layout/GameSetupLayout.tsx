@@ -96,7 +96,6 @@ export function GameSetupLayout({
   cancelGameConfirmRef,
   children,
 }: GameSetupLayoutProps) {
-  const previewSwap = pageClass.includes('gamemenu-preview');
   const [rulesOpen, setRulesOpen] = useState(false);
   const [rulesTitle, setRulesTitle] = useState({
     kicker: 'Rule 1',
@@ -314,32 +313,22 @@ export function GameSetupLayout({
               <h2 id="gameMenuTitle" className="hero-outline condensed">
                 {title}
               </h2>
-              {previewSwap ? null : <p id="titleslogan">Rules</p>}
             </div>
 
-            {previewSwap ? (
-              <div id="bottomInfo" className="game-setup-bottom">
-                {children}
-              </div>
-            ) : (
-              <div id="bottomInfo" className="game-setup-bottom">
-                {children}
-              </div>
-            )}
-            {previewSwap ? null : <RulesSection />}
+            <div id="bottomInfo" className="game-setup-bottom">
+              {children}
+            </div>
             {statusMessage ? (
               <p className="game-setup-status grey">{statusMessage}</p>
             ) : null}
-            {previewSwap ? (
-              <Button
-                ref={rulesButtonRef}
-                id="gamemenu-rules"
-                type="button"
-                onClick={() => setRulesOpen(true)}
-              >
-                Rules
-              </Button>
-            ) : null}
+            <Button
+              ref={rulesButtonRef}
+              id="gamemenu-rules"
+              type="button"
+              onClick={() => setRulesOpen(true)}
+            >
+              Rules
+            </Button>
             <Button
               type="button"
               className={`game-setup-scroll-exit${mainMenuDisabled ? ' disabled' : ''}`}

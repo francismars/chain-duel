@@ -75,7 +75,39 @@ import {
   type QuietMark,
   type QuietSnake,
 } from '@/game/render/quietChainCells';
+import { SurgeTrail } from '@/game/render/surgeTrail';
+import type { MatchEndPops } from '@/game/render/pointChangeOverlay';
 import { canvasResolution, readGraphicsSettings } from '@/lib/graphicsSettings';
+
+/** Chain effects match their power-up icons: ASIC Boost yellow, Full Block green. */
+const SURGE_COLOR = POWERUP_COLORS.SURGE!;
+const FULL_BLOCK_COLOR = POWERUP_COLORS.AMPLIFIER!;
+const cssHex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
+const SURGE_CSS = cssHex(SURGE_COLOR);
+/** ASIC Boost outlines each block inside its cell, without flashing. */
+const SURGE_OUTLINE_ALPHA = 0.9;
+const FULL_BLOCK_CSS = cssHex(FULL_BLOCK_COLOR);
+
+/**
+ * Game end, before the overlay: the loser's chain mutes and each coin pops
+ * and vanishes. Both finish well inside END_OVERLAY_DELAY_MS.
+ */
+const END_LOSER_MUTE_MS = 450;
+/** How far the loser's chain fades. */
+const END_LOSER_MUTE = 0.72;
+const END_COIN_POP_UP_MS = 130;
+const END_COIN_POP_OUT_MS = 290;
+const END_COIN_POP_SCALE = 1.45;
+
+/** Coin size during the end pop: a quick swell, then a shrink to nothing. */
+function endCoinPopScale(elapsedMs: number): number {
+  if (elapsedMs < END_COIN_POP_UP_MS) {
+    const t = elapsedMs / END_COIN_POP_UP_MS;
+    return 1 + (END_COIN_POP_SCALE - 1) * (1 - (1 - t) * (1 - t));
+  }
+  const t = Math.min(1, (elapsedMs - END_COIN_POP_UP_MS) / END_COIN_POP_OUT_MS);
+  return END_COIN_POP_SCALE * (1 - t * t * t);
+}
 
 type CapturePulse = { startMs: number; reward: number };
 
@@ -100,6 +132,9 @@ export class PixiGameRenderer {
   private deadZone: Graphics = new Graphics();
   private grid: Graphics = new Graphics();
   private scene: Graphics = new Graphics();
+  /** The losing chain at game end, so it can fade without redrawing. */
+  private loserLayer: Graphics = new Graphics();
+  private endFxStartMs: number | null = null;
   /**
    * Quiet-step picture. Walls and coins stay put. Chain fills are sprites that
    * share one texture, so they batch into one draw. Strokes (outlines, frozen
@@ -137,9 +172,8 @@ export class PixiGameRenderer {
   private static readonly SCALE_MS = 390;
   private static readonly GROW_MS = TAIL_GROW_MS;
   // SURGE fading-square trail
-  private p1SurgeTrail: { pos: GridPos; time: number }[] = [];
-  private p2SurgeTrail: { pos: GridPos; time: number }[] = [];
-  private static readonly SURGE_TRAIL_FADE_MS = 480;
+  private p1SurgeTrail = new SurgeTrail();
+  private p2SurgeTrail = new SurgeTrail();
   private startWords: Text[] = [];
   private startWordsContainer: Container = new Container();
   private startPromptSubtext: Text;
@@ -296,6 +330,7 @@ export class PixiGameRenderer {
       this.root.addChild(this.chainCells);
       this.root.addChild(this.chainMarks);
       this.root.addChild(this.scene);
+      this.root.addChild(this.loserLayer);
       this.root.addChild(this.coinLayer);
       this.root.addChild(this.powerUpLayer);
       this.overlay.addChild(this.startWordsContainer);
@@ -608,6 +643,7 @@ export class PixiGameRenderer {
   ): void {
     if (!this.quietCellsOn) {
       this.scene.clear();
+      this.loserLayer.clear();
       this.scene.visible = false;
       this.quietCellsOn = true;
       this.stillBoardKey = '';
@@ -915,7 +951,23 @@ export class PixiGameRenderer {
 
       // ── Scene ─────────────────────────────────────────────────────────────────
       this.scene.clear();
+      this.loserLayer.clear();
       this.drawWalls(this.scene, state, colSize, rowSize);
+      const endFx = this.endFxElapsed(state, now);
+      const loser =
+        endFx === null
+          ? null
+          : state.winnerPlayer === 'P1'
+            ? 'p2'
+            : state.winnerPlayer === 'P2'
+              ? 'p1'
+              : null;
+      this.loserLayer.alpha =
+        loser === null
+          ? 1
+          : 1 -
+            END_LOSER_MUTE *
+              (1 - Math.pow(1 - Math.min(1, endFx! / END_LOSER_MUTE_MS), 3));
 
       // Snakes
       const p1Effects = getSnakeEffects(state, 0);
@@ -929,52 +981,27 @@ export class PixiGameRenderer {
       const p1Amped = p1Effects.amped;
       const p2Amped = p2Effects.amped;
 
-      // Record surge trail positions each frame
-      const FADE = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
-      if (
+      // Record the cells each boosted tail left since the last paint
+      const trailOn =
         state.gameStarted &&
         !state.gameEnded &&
-        this.graphics.animations !== 'off'
-      ) {
-        if (p1Surging)
-          this.p1SurgeTrail.push({
-            pos: [state.p1.head[0], state.p1.head[1]],
-            time: now,
-          });
-        if (p2Surging)
-          this.p2SurgeTrail.push({
-            pos: [state.p2.head[0], state.p2.head[1]],
-            time: now,
-          });
-      }
-      this.p1SurgeTrail = this.p1SurgeTrail.filter((t) => now - t.time < FADE);
-      this.p2SurgeTrail = this.p2SurgeTrail.filter((t) => now - t.time < FADE);
+        this.graphics.animations !== 'off';
+      this.p1SurgeTrail.note(
+        state.p1.head,
+        state.p1.body,
+        trailOn && p1Surging,
+        now
+      );
+      this.p2SurgeTrail.note(
+        state.p2.head,
+        state.p2.body,
+        trailOn && p2Surging,
+        now
+      );
 
-      // Draw fading orange trail squares (rendered before snakes so snakes appear on top)
-      for (const t of this.p1SurgeTrail) {
-        const a = (1 - (now - t.time) / FADE) * 0.6;
-        const pad = 1;
-        this.scene
-          .rect(
-            t.pos[0] * colSize + pad,
-            t.pos[1] * rowSize + pad,
-            colSize - pad * 2,
-            rowSize - pad * 2
-          )
-          .fill({ color: 0xff7200, alpha: a });
-      }
-      for (const t of this.p2SurgeTrail) {
-        const a = (1 - (now - t.time) / FADE) * 0.6;
-        const pad = 1;
-        this.scene
-          .rect(
-            t.pos[0] * colSize + pad,
-            t.pos[1] * rowSize + pad,
-            colSize - pad * 2,
-            rowSize - pad * 2
-          )
-          .fill({ color: 0xff7200, alpha: a });
-      }
+      // Draw the fading yellow tail (rendered before snakes so snakes appear on top)
+      this.drawSurgeTrail(this.p1SurgeTrail, colSize, rowSize, now);
+      this.drawSurgeTrail(this.p2SurgeTrail, colSize, rowSize, now);
 
       // Extra snakes (teams / ffa) — drawn behind main snakes
       for (let ei = 0; ei < (state.extraSnakes ?? []).length; ei += 1) {
@@ -1020,6 +1047,8 @@ export class PixiGameRenderer {
       }
 
       const p1Bob = preStartControllerBobPx(state, 0, rowSize);
+      const scene = this.scene;
+      if (loser === 'p1') this.scene = this.loserLayer;
       this.drawSnake(
         state.p1,
         0xffffff,
@@ -1037,9 +1066,11 @@ export class PixiGameRenderer {
         p1Bob,
         'p1'
       );
+      this.scene = scene;
 
       const p2Color = P2_SNAKE_COLOR;
       const p2Bob = preStartControllerBobPx(state, 1, rowSize);
+      if (loser === 'p2') this.scene = this.loserLayer;
       this.drawSnake(
         state.p2,
         p2Color,
@@ -1057,9 +1088,11 @@ export class PixiGameRenderer {
         p2Bob,
         'p2'
       );
+      this.scene = scene;
 
+      const coinScale = endFx === null ? 1 : endCoinPopScale(endFx);
       for (const cb of state.coinbases ?? []) {
-        if (cb.isDecoy) continue;
+        if (cb.isDecoy || coinScale <= 0) continue;
         this.drawCoinbase(
           cb.pos,
           colSize,
@@ -1068,7 +1101,9 @@ export class PixiGameRenderer {
             reward: cb.reward,
             isDecoy: false,
           },
-          boardElapsed
+          boardElapsed,
+          this.scene,
+          coinScale
         );
       }
 
@@ -1155,7 +1190,8 @@ export class PixiGameRenderer {
       colSize,
       rowSize,
       width,
-      height
+      height,
+      this.matchEndPops(state, now)
     );
     if (this.streakPopOverlay.container.parent !== this.overlay) {
       this.overlay.addChild(this.streakPopOverlay.container);
@@ -1200,6 +1236,35 @@ export class PixiGameRenderer {
       1,
       (performance.now() - this.resolveAnimStartMs) / END_RESOLVE_DURATION_MS
     );
+  }
+
+  /**
+   * Ms since the game ended, for the loser mute and coin pop; null while
+   * playing. With animations off, both jump straight to their end state.
+   */
+  private endFxElapsed(state: GameState, now: number): number | null {
+    if (!state.gameEnded) {
+      this.endFxStartMs = null;
+      return null;
+    }
+    if (this.graphics.animations === 'off') return Infinity;
+    if (this.endFxStartMs === null) this.endFxStartMs = now;
+    return now - this.endFxStartMs;
+  }
+
+  /** Winner's prize and loser's zero over their heads, once a match ends. */
+  private matchEndPops(state: GameState, now: number): MatchEndPops | null {
+    if (!state.gameEnded) return null;
+    const off = this.graphics.animations === 'off';
+    if (!off && this.endFxStartMs === null) return null;
+    const winner = state.winnerPlayer;
+    if (winner !== 'P1' && winner !== 'P2') return null;
+    return {
+      winner: (winner === 'P1' ? state.p1 : state.p2).head,
+      loser: (winner === 'P1' ? state.p2 : state.p1).head,
+      prize: state.totalPoints,
+      elapsedMs: off ? Infinity : now - this.endFxStartMs!,
+    };
   }
 
   private resetEndOverlayTiming(): void {
@@ -1385,7 +1450,7 @@ export class PixiGameRenderer {
     const totalLen = 1 + snake.body.length;
     const isLight = color === 0xffffff;
 
-    // AMP pulsing gold glow under the whole chain (drawn first, underneath)
+    // AMP pulsing green glow under the whole chain (drawn first, underneath)
     if (effects.amped) {
       const ampPulse = 0.5 + 0.5 * Math.sin(now / 220);
       const ampAlpha = 0.18 + ampPulse * 0.22;
@@ -1398,7 +1463,7 @@ export class PixiGameRenderer {
           colSize + expand * 2,
           segHeight + expand * 2
         )
-        .fill({ color: 0xffbb00, alpha: ampAlpha * 1.4 });
+        .fill({ color: FULL_BLOCK_COLOR, alpha: ampAlpha * 1.4 });
       // Body glow
       for (const seg of snake.body) {
         this.scene
@@ -1408,7 +1473,7 @@ export class PixiGameRenderer {
             colSize + expand,
             segHeight + expand
           )
-          .fill({ color: 0xffbb00, alpha: ampAlpha * 0.7 });
+          .fill({ color: FULL_BLOCK_COLOR, alpha: ampAlpha * 0.7 });
       }
     }
 
@@ -1454,20 +1519,19 @@ export class PixiGameRenderer {
       );
     }
 
-    // Orange SURGE border on head
+    // Yellow SURGE outline on head: steady, inside the cell
     if (effects.surging) {
-      const surgePulse = 0.7 + 0.3 * Math.sin(now / 80);
       this.scene
         .rect(
-          snake.head[0] * colSize - 2,
-          segTop(snake.head[1]) - 2,
-          colSize + 4,
-          segHeight + 4
+          snake.head[0] * colSize + 1,
+          segTop(snake.head[1]) + 1,
+          colSize - 2,
+          segHeight - 2
         )
-        .stroke({ width: 2.5, color: 0xff7200, alpha: surgePulse });
+        .stroke({ width: 1.5, color: SURGE_COLOR, alpha: SURGE_OUTLINE_ALPHA });
     }
 
-    // AMP pulsing gold border on head (on top of base)
+    // AMP pulsing green border on head (on top of base)
     if (effects.amped) {
       const ampPulse = 0.6 + 0.4 * Math.sin(now / 220);
       this.scene
@@ -1477,7 +1541,7 @@ export class PixiGameRenderer {
           colSize + 4,
           segHeight + 4
         )
-        .stroke({ width: 2, color: 0xffbb00, alpha: ampPulse });
+        .stroke({ width: 2, color: FULL_BLOCK_COLOR, alpha: ampPulse });
     }
 
     // Frozen ring around head
@@ -1531,22 +1595,39 @@ export class PixiGameRenderer {
         );
       }
 
-      // Orange SURGE border on each body segment
+      // Yellow SURGE outline on each body segment: steady, inside the cell
       if (effects.surging) {
-        const surgePulse = 0.5 + 0.3 * Math.sin(now / 80 + i * 0.4);
         this.scene
-          .rect(px - 1, py - 1, colSize + 2, segHeight + 2)
-          .stroke({ width: 1.5, color: 0xff7200, alpha: surgePulse });
+          .rect(px + 1, py + 1, colSize - 2, segHeight - 2)
+          .stroke({
+            width: 1.5,
+            color: SURGE_COLOR,
+            alpha: SURGE_OUTLINE_ALPHA,
+          });
       }
 
-      // AMP gold border on body (subtler than head)
+      // AMP green border on body (subtler than head)
       if (effects.amped) {
         const ampPulse = 0.4 + 0.3 * Math.sin(now / 220 + i * 0.2);
-        this.scene
-          .rect(px - 1, py - 1, colSize + 2, segHeight + 2)
-          .stroke({ width: 1.5, color: 0xffbb00, alpha: ampPulse * 0.7 });
+        this.scene.rect(px - 1, py - 1, colSize + 2, segHeight + 2).stroke({
+          width: 1.5,
+          color: FULL_BLOCK_COLOR,
+          alpha: ampPulse * 0.7,
+        });
       }
     }
+  }
+
+  private drawSurgeTrail(
+    trail: SurgeTrail,
+    colSize: number,
+    rowSize: number,
+    now: number
+  ): void {
+    trail.prune(now);
+    trail.paint(now, colSize, rowSize, 1, (x, y, w, h, alpha) => {
+      this.scene.rect(x, y, w, h).fill({ color: SURGE_COLOR, alpha });
+    });
   }
 
   private fillSegment(
@@ -1749,7 +1830,8 @@ export class PixiGameRenderer {
     rowSize: number,
     opts: { reward?: number; isDecoy?: boolean },
     boardElapsed: number = Infinity,
-    target: Graphics = this.scene
+    target: Graphics = this.scene,
+    scale = 1
   ): void {
     const coinReveal = (() => {
       if (boardElapsed === Infinity) return 1;
@@ -1757,7 +1839,7 @@ export class PixiGameRenderer {
       return 1 - Math.pow(1 - t, 3);
     })();
     const baseRadius = rowSize / 2 - rowSize / 5.4;
-    const radius = baseRadius * coinReveal;
+    const radius = baseRadius * coinReveal * scale;
     const cx = pos[0] * colSize + colSize / 2;
     const cy = pos[1] * rowSize + rowSize / 2;
 
@@ -1809,7 +1891,7 @@ export class PixiGameRenderer {
       for (let ring = rings; ring > 0; ring -= 1) {
         const alpha = 0.1 / rings + transparencyAdder / 20;
         target
-          .circle(cx, cy, radius + ring * rowSize * 0.38)
+          .circle(cx, cy, radius + ring * rowSize * 0.38 * scale)
           .stroke({ width: 1, color: 0xffffff, alpha });
         transparencyAdder += 1;
       }
@@ -1983,6 +2065,20 @@ export class PixiGameRenderer {
     this.resize();
   }
 
+  private fillSurgeTrailFb(
+    ctx: CanvasRenderingContext2D,
+    trail: SurgeTrail,
+    colSize: number,
+    rowSize: number,
+    now: number
+  ): void {
+    trail.prune(now);
+    trail.paint(now, colSize, rowSize, 1, (x, y, w, h, alpha) => {
+      ctx.globalAlpha = alpha;
+      ctx.fillRect(x, y, w, h);
+    });
+  }
+
   private renderFallback(state: GameState, opts?: PixiRenderOpts): void {
     if (!this.host || !this.fallbackCanvas || !this.fallbackCtx) return;
     const ctx = this.fallbackCtx;
@@ -2069,45 +2165,22 @@ export class PixiGameRenderer {
     const fbP2Frozen = fbP2Effects.frozen;
 
     // FADE surge trails
-    const FADE_FB = PixiGameRenderer.SURGE_TRAIL_FADE_MS;
-    if (state.gameStarted && !state.gameEnded) {
-      if (fbP1Surging)
-        this.p1SurgeTrail.push({
-          pos: [state.p1.head[0], state.p1.head[1]],
-          time: nowFb,
-        });
-      if (fbP2Surging)
-        this.p2SurgeTrail.push({
-          pos: [state.p2.head[0], state.p2.head[1]],
-          time: nowFb,
-        });
-    }
-    this.p1SurgeTrail = this.p1SurgeTrail.filter(
-      (t) => nowFb - t.time < FADE_FB
+    const fbTrailOn = state.gameStarted && !state.gameEnded;
+    this.p1SurgeTrail.note(
+      state.p1.head,
+      state.p1.body,
+      fbTrailOn && fbP1Surging,
+      nowFb
     );
-    this.p2SurgeTrail = this.p2SurgeTrail.filter(
-      (t) => nowFb - t.time < FADE_FB
+    this.p2SurgeTrail.note(
+      state.p2.head,
+      state.p2.body,
+      fbTrailOn && fbP2Surging,
+      nowFb
     );
-    for (const t of this.p1SurgeTrail) {
-      ctx.globalAlpha = (1 - (nowFb - t.time) / FADE_FB) * 0.6;
-      ctx.fillStyle = '#FF7200';
-      ctx.fillRect(
-        t.pos[0] * colSize + 1,
-        t.pos[1] * rowSize + 1,
-        colSize - 2,
-        rowSize - 2
-      );
-    }
-    for (const t of this.p2SurgeTrail) {
-      ctx.globalAlpha = (1 - (nowFb - t.time) / FADE_FB) * 0.6;
-      ctx.fillStyle = '#FF7200';
-      ctx.fillRect(
-        t.pos[0] * colSize + 1,
-        t.pos[1] * rowSize + 1,
-        colSize - 2,
-        rowSize - 2
-      );
-    }
+    ctx.fillStyle = SURGE_CSS;
+    this.fillSurgeTrailFb(ctx, this.p1SurgeTrail, colSize, rowSize, nowFb);
+    this.fillSurgeTrailFb(ctx, this.p2SurgeTrail, colSize, rowSize, nowFb);
     ctx.globalAlpha = 1;
 
     // P1
@@ -2117,7 +2190,7 @@ export class PixiGameRenderer {
       const ampP = 0.5 + 0.5 * Math.sin(nowFb / 220);
       const expand = 2 + ampP * 3;
       ctx.globalAlpha = 0.18 + ampP * 0.22;
-      ctx.fillStyle = '#FFBB00';
+      ctx.fillStyle = FULL_BLOCK_CSS;
       ctx.fillRect(
         state.p1.head[0] * colSize - expand,
         state.p1.head[1] * rowSize - expand,
@@ -2199,11 +2272,11 @@ export class PixiGameRenderer {
       colSize,
       p1SegH
     );
-    if (fbP1Surging) {
-      const sp = 0.7 + 0.3 * Math.sin(nowFb / 80);
-      ctx.globalAlpha = sp;
-      ctx.strokeStyle = '#FF7200';
-      ctx.lineWidth = 2.5;
+    if (fbP1Amped) {
+      const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
+      ctx.globalAlpha = ap;
+      ctx.strokeStyle = FULL_BLOCK_CSS;
+      ctx.lineWidth = 2;
       ctx.strokeRect(
         state.p1.head[0] * colSize - 2,
         p1SegTop(state.p1.head[1]) - 2,
@@ -2212,16 +2285,15 @@ export class PixiGameRenderer {
       );
       ctx.globalAlpha = 1;
     }
-    if (fbP1Amped) {
-      const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
-      ctx.globalAlpha = ap;
-      ctx.strokeStyle = '#FFBB00';
-      ctx.lineWidth = 2;
+    if (fbP1Surging) {
+      ctx.globalAlpha = SURGE_OUTLINE_ALPHA;
+      ctx.strokeStyle = SURGE_CSS;
+      ctx.lineWidth = 1.5;
       ctx.strokeRect(
-        state.p1.head[0] * colSize - 2,
-        p1SegTop(state.p1.head[1]) - 2,
-        colSize + 4,
-        p1SegH + 4
+        state.p1.head[0] * colSize + 1,
+        p1SegTop(state.p1.head[1]) + 1,
+        colSize - 2,
+        p1SegH - 2
       );
       ctx.globalAlpha = 1;
     }
@@ -2249,22 +2321,21 @@ export class PixiGameRenderer {
       );
       ctx.globalAlpha = 1;
       if (fbP1Surging) {
-        const sp = 0.5 + 0.3 * Math.sin(nowFb / 80 + i * 0.4);
-        ctx.globalAlpha = sp;
-        ctx.strokeStyle = '#FF7200';
+        ctx.globalAlpha = SURGE_OUTLINE_ALPHA;
+        ctx.strokeStyle = SURGE_CSS;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(
-          state.p1.body[i][0] * colSize - 1,
-          p1SegTop(state.p1.body[i][1]) - 1,
-          colSize + 2,
-          p1SegH + 2
+          state.p1.body[i][0] * colSize + 1,
+          p1SegTop(state.p1.body[i][1]) + 1,
+          colSize - 2,
+          p1SegH - 2
         );
         ctx.globalAlpha = 1;
       }
       if (fbP1Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
         ctx.globalAlpha = ap;
-        ctx.strokeStyle = '#FFBB00';
+        ctx.strokeStyle = FULL_BLOCK_CSS;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(
           state.p1.body[i][0] * colSize - 1,
@@ -2283,7 +2354,7 @@ export class PixiGameRenderer {
       const ampP = 0.5 + 0.5 * Math.sin(nowFb / 220);
       const expand = 2 + ampP * 3;
       ctx.globalAlpha = 0.18 + ampP * 0.22;
-      ctx.fillStyle = '#FFBB00';
+      ctx.fillStyle = FULL_BLOCK_CSS;
       ctx.fillRect(
         state.p2.head[0] * colSize - expand,
         state.p2.head[1] * rowSize - expand,
@@ -2325,11 +2396,11 @@ export class PixiGameRenderer {
       colSize,
       p2SegH
     );
-    if (fbP2Surging) {
-      const sp = 0.7 + 0.3 * Math.sin(nowFb / 80);
-      ctx.globalAlpha = sp;
-      ctx.strokeStyle = '#FF7200';
-      ctx.lineWidth = 2.5;
+    if (fbP2Amped) {
+      const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
+      ctx.globalAlpha = ap;
+      ctx.strokeStyle = FULL_BLOCK_CSS;
+      ctx.lineWidth = 2;
       ctx.strokeRect(
         state.p2.head[0] * colSize - 2,
         p2SegTop(state.p2.head[1]) - 2,
@@ -2338,16 +2409,15 @@ export class PixiGameRenderer {
       );
       ctx.globalAlpha = 1;
     }
-    if (fbP2Amped) {
-      const ap = 0.6 + 0.4 * Math.sin(nowFb / 220);
-      ctx.globalAlpha = ap;
-      ctx.strokeStyle = '#FFBB00';
-      ctx.lineWidth = 2;
+    if (fbP2Surging) {
+      ctx.globalAlpha = SURGE_OUTLINE_ALPHA;
+      ctx.strokeStyle = SURGE_CSS;
+      ctx.lineWidth = 1.5;
       ctx.strokeRect(
-        state.p2.head[0] * colSize - 2,
-        p2SegTop(state.p2.head[1]) - 2,
-        colSize + 4,
-        p2SegH + 4
+        state.p2.head[0] * colSize + 1,
+        p2SegTop(state.p2.head[1]) + 1,
+        colSize - 2,
+        p2SegH - 2
       );
       ctx.globalAlpha = 1;
     }
@@ -2386,22 +2456,21 @@ export class PixiGameRenderer {
       }
       ctx.globalAlpha = 1;
       if (fbP2Surging) {
-        const sp = 0.5 + 0.3 * Math.sin(nowFb / 80 + i * 0.4);
-        ctx.globalAlpha = sp;
-        ctx.strokeStyle = '#FF7200';
+        ctx.globalAlpha = SURGE_OUTLINE_ALPHA;
+        ctx.strokeStyle = SURGE_CSS;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(
-          state.p2.body[i][0] * colSize - 1,
-          p2SegTop(state.p2.body[i][1]) - 1,
-          colSize + 2,
-          p2SegH + 2
+          state.p2.body[i][0] * colSize + 1,
+          p2SegTop(state.p2.body[i][1]) + 1,
+          colSize - 2,
+          p2SegH - 2
         );
         ctx.globalAlpha = 1;
       }
       if (fbP2Amped) {
         const ap = (0.4 + 0.3 * Math.sin(nowFb / 220 + i * 0.2)) * 0.7;
         ctx.globalAlpha = ap;
-        ctx.strokeStyle = '#FFBB00';
+        ctx.strokeStyle = FULL_BLOCK_CSS;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(
           state.p2.body[i][0] * colSize - 1,
