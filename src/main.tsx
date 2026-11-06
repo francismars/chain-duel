@@ -9,7 +9,10 @@ import {
   applyGraphicsDocumentClasses,
   readGraphicsSettings,
 } from './lib/graphicsSettings';
+import { installGamepadConnectionLog } from './lib/controls/gamepadConnectionLog';
 import './styles/index.css';
+
+installGamepadConnectionLog();
 
 try {
   const v = localStorage.getItem(STORAGE_KEY_TV_SAFE_INSET);

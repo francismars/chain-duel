@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { isGamepadSyntheticKey } from '@/hooks/useGamepad';
+import {
+  readGamepadLog,
+  type GamepadLogEntry,
+} from '@/lib/controls/gamepadConnectionLog';
 
 /**
  * Debug: `?gamepads=probe` shows every raw `navigator.getGamepads()` slot, the
@@ -53,7 +57,7 @@ type ProbeReport = {
   userAgent: string;
   slotCount: number;
   slots: SlotReport[];
-  events: LogEntry[];
+  events: GamepadLogEntry[];
   keys: LogEntry[];
 };
 
@@ -77,28 +81,15 @@ export function GamepadProbe() {
   useEffect(() => {
     if (!enabled) return;
 
-    const events: LogEntry[] = [];
     const keys: LogEntry[] = [];
     const lastTimestamp = new Map<number, number>();
     const lastChangeAt = new Map<number, number>();
 
-    const onConnect = (e: GamepadEvent) =>
-      pushLog(
-        events,
-        `+ connected slot ${e.gamepad.index} · ${e.gamepad.id} · ${e.gamepad.mapping || 'custom'}`
-      );
-    const onDisconnect = (e: GamepadEvent) =>
-      pushLog(
-        events,
-        `− disconnected slot ${e.gamepad.index} · ${e.gamepad.id}`
-      );
     const onKey = (e: KeyboardEvent) => {
       if (!isGamepadSyntheticKey(e)) return;
       pushLog(keys, `${e.type === 'keydown' ? '↓' : '↑'} ${e.code || e.key}`);
     };
 
-    window.addEventListener('gamepadconnected', onConnect);
-    window.addEventListener('gamepaddisconnected', onDisconnect);
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', onKey, true);
 
@@ -144,7 +135,7 @@ export function GamepadProbe() {
         userAgent: navigator.userAgent,
         slotCount: pads.length,
         slots,
-        events: [...events],
+        events: readGamepadLog().slice(0, LOG_LIMIT),
         keys: [...keys],
       };
     };
@@ -167,8 +158,6 @@ export function GamepadProbe() {
 
     return () => {
       window.cancelAnimationFrame(rafId);
-      window.removeEventListener('gamepadconnected', onConnect);
-      window.removeEventListener('gamepaddisconnected', onDisconnect);
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('keyup', onKey, true);
       delete w.__gamepadProbe;
@@ -240,9 +229,16 @@ export function GamepadProbe() {
         );
       })}
       <div style={{ marginTop: 6, color: '#9fd0ff' }}>
-        events{'\n'}
-        {report.events.map((e) => `  ${e.t} ${e.text}`).join('\n') ||
-          '  (none since load)'}
+        connections
+        {report.events.length === 0 && '\n  (none since load)'}
+        {report.events.map((e, i) => (
+          <div
+            key={i}
+            style={e.kind === 'kick' ? { color: '#ff6b6b' } : undefined}
+          >
+            {`  ${(e.t / 1000).toFixed(2)}s ${e.text}`}
+          </div>
+        ))}
       </div>
       <div style={{ marginTop: 6, color: '#ffe79f' }}>
         synthetic keys{'\n'}
