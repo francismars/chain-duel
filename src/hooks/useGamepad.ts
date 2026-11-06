@@ -418,13 +418,61 @@ function pollPlayerPad(
   }
 }
 
+/**
+ * Key-ups for everything a vanished pad was holding. Without this a pad that
+ * drops mid-press (macOS wired Switch Pro reconnects every ~1.5s) leaves its
+ * keys stuck down. A fresh state replaces it, so buttons still held when the
+ * pad returns must be released first.
+ */
+function releasePad(
+  state: PadPollState,
+  keys: PlayerKeys,
+  faceKey: string,
+  controlCode: 'ControlLeft' | 'ControlRight'
+) {
+  for (const dir of ['up', 'down', 'left', 'right'] as const) {
+    if (state.synthHeld[dir]) dispatchKey('keyup', { key: keys[dir] });
+  }
+  if (state.synthFaceHeld) dispatchKey('keyup', { key: faceKey });
+  if (state.synthFaceXHeld) dispatchKey('keyup', { key: 'x', code: 'KeyX' });
+  if (state.synthControlHeld) {
+    dispatchKey('keyup', { key: 'Control', code: controlCode });
+  }
+}
+
+const PLAYER_BINDINGS = [
+  {
+    keys: { up: 'w', down: 's', left: 'a', right: 'd' },
+    faceKey: ' ',
+    controlCode: 'ControlLeft',
+  },
+  {
+    keys: {
+      up: 'ArrowUp',
+      down: 'ArrowDown',
+      left: 'ArrowLeft',
+      right: 'ArrowRight',
+    },
+    faceKey: 'Enter',
+    controlCode: 'ControlRight',
+  },
+] as const satisfies ReadonlyArray<{
+  keys: PlayerKeys;
+  faceKey: string;
+  controlCode: 'ControlLeft' | 'ControlRight';
+}>;
+
 type PollSessionState = {
-  p1: PadPollState;
-  p2: PadPollState;
+  pads: [PadPollState, PadPollState];
+  /** Whether each slot had a pad on the previous poll. */
+  present: [boolean, boolean];
 };
 
-function createPollSessionState(): PollSessionState {
-  return { p1: createPadPollState(), p2: createPadPollState() };
+export function createPollSessionState(): PollSessionState {
+  return {
+    pads: [createPadPollState(), createPadPollState()],
+    present: [false, false],
+  };
 }
 
 /**
@@ -437,36 +485,26 @@ export function pollGamepads(
 ) {
   const now = performance.now();
   const gamepads = navigator.getGamepads();
-  const pad1 = gamepads[0];
-  const pad2 = gamepads[1];
 
-  if (pad1) {
-    pollPlayerPad(
-      pad1,
-      mode,
-      session.p1,
-      now,
-      { up: 'w', down: 's', left: 'a', right: 'd' },
-      ' ',
-      'ControlLeft'
-    );
-  }
-  if (pad2) {
-    pollPlayerPad(
-      pad2,
-      mode,
-      session.p2,
-      now,
-      {
-        up: 'ArrowUp',
-        down: 'ArrowDown',
-        left: 'ArrowLeft',
-        right: 'ArrowRight',
-      },
-      'Enter',
-      'ControlRight'
-    );
-  }
+  PLAYER_BINDINGS.forEach(({ keys, faceKey, controlCode }, slot) => {
+    const pad = gamepads[slot];
+    if (pad?.connected) {
+      session.present[slot] = true;
+      pollPlayerPad(
+        pad,
+        mode,
+        session.pads[slot],
+        now,
+        keys,
+        faceKey,
+        controlCode
+      );
+    } else if (session.present[slot]) {
+      session.present[slot] = false;
+      releasePad(session.pads[slot], keys, faceKey, controlCode);
+      session.pads[slot] = createPadPollState();
+    }
+  });
 }
 
 /** True while any connected pad has a face button held (A/B/X/Y). */
