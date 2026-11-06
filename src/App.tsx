@@ -11,6 +11,7 @@ import { NostrSessionProvider } from './contexts/NostrSessionContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { AppUpdatePrompt } from './components/pwa/AppUpdatePrompt';
 import { CornerControls } from './components/ui/CornerControls';
+import { GamepadProbe } from './components/debug/GamepadProbe';
 import { TouchMatchFrame } from './features/game/TouchMatchFrame';
 import { PageRevealOutlet } from './components/layout/PageRevealOutlet';
 import { useClientTelemetry } from './hooks/useClientTelemetry';
@@ -226,6 +227,7 @@ function App() {
           <BrowserRouter>
             <CornerControls />
             <AppUpdatePrompt />
+            <GamepadProbe />
             <AppRoutes />
           </BrowserRouter>
         </NostrSessionProvider>
