@@ -1286,17 +1286,37 @@ function getBracketSlotEdges(nameEl: SVGElement): {
   left: number;
   right: number;
 } {
+  const box = bracketSlotRectBox(nameEl);
+  if (!box) return { left: 0, right: 120 };
+  return { left: box.x, right: box.x + box.width };
+}
+
+/**
+ * The slot's rect in the name's coordinates. Sums every translate between the
+ * rect and the name's parent: the 8/16/32 Winner rect sits in a wrapper group
+ * whose translate cancels the rect's own.
+ */
+function bracketSlotRectBox(
+  nameEl: SVGElement
+): { x: number; y: number; width: number; height: number } | null {
   const posId = nameEl.id.replace(/_name$/, '');
   const slotGroup = nameEl.parentElement;
   const rectG =
     slotGroup?.querySelector(`#${posId}_rect`) ??
     slotGroup?.querySelector('[id$="_rect"]');
   const rect = rectG?.querySelector('rect');
-  if (!rect) return { left: 0, right: 120 };
+  if (!rect) return null;
 
   const rectBBox = (rect as SVGGraphicsElement).getBBox();
-  const left = translateX(rectG ?? null) + rectBBox.x;
-  return { left, right: left + rectBBox.width };
+  let x = rectBBox.x;
+  let y = rectBBox.y;
+  for (let el: Element | null = rectG ?? null; el && el !== slotGroup;) {
+    const shift = translateXY(el);
+    x += shift.x;
+    y += shift.y;
+    el = el.parentElement;
+  }
+  return { x, y, width: rectBBox.width, height: rectBBox.height };
 }
 
 function bracketNameAnchorX(nameEl: SVGElement): number {
@@ -1307,12 +1327,6 @@ function bracketNameAnchorX(nameEl: SVGElement): number {
   const match = transformAttr.match(
     /translate\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)/
   );
-  return match ? Number.parseFloat(match[1]) : 0;
-}
-
-function translateX(el: Element | null): number {
-  const transform = el?.getAttribute('transform') ?? '';
-  const match = transform.match(/translate\(\s*([-+]?\d*\.?\d+)/);
   return match ? Number.parseFloat(match[1]) : 0;
 }
 
@@ -1397,17 +1411,10 @@ function liftShrunkBracketName(nameEl: SVGElement, baseFontSize: number): void {
   const tx = Number.parseFloat(match[1]);
   let ty = Number.parseFloat(match[2]);
   if (baseFontSize - current >= 0.5) {
-    const posId = nameEl.id.replace(/_name$/, '');
-    const rectG =
-      nameEl.parentElement?.querySelector(`#${posId}_rect`) ??
-      nameEl.parentElement?.querySelector('[id$="_rect"]');
-    const rect = rectG?.querySelector('rect');
-    if (rect) {
+    const rectMid = bracketSlotRectMidY(nameEl);
+    if (rectMid != null) {
       nameEl.setAttribute('transform', stored);
       const box = (nameEl as unknown as SVGGraphicsElement).getBBox();
-      const rectBox = (rect as SVGGraphicsElement).getBBox();
-      const rectShift = translateXY(rectG ?? null);
-      const rectMid = rectShift.y + rectBox.y + rectBox.height / 2;
       const textMid = ty + box.y + box.height / 2;
       ty -= textMid - rectMid;
     }
@@ -1416,15 +1423,8 @@ function liftShrunkBracketName(nameEl: SVGElement, baseFontSize: number): void {
 }
 
 function bracketSlotRectMidY(nameEl: SVGElement): number | null {
-  const posId = nameEl.id.replace(/_name$/, '');
-  const rectG =
-    nameEl.parentElement?.querySelector(`#${posId}_rect`) ??
-    nameEl.parentElement?.querySelector('[id$="_rect"]');
-  const rect = rectG?.querySelector('rect');
-  if (!rect) return null;
-  const rectBox = (rect as SVGGraphicsElement).getBBox();
-  const rectShift = translateXY(rectG ?? null);
-  return rectShift.y + rectBox.y + rectBox.height / 2;
+  const box = bracketSlotRectBox(nameEl);
+  return box ? box.y + box.height / 2 : null;
 }
 
 function translateXY(el: Element | null): { x: number; y: number } {
